@@ -18,9 +18,14 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QTabWidget,
+    QTextEdit,
     QTimeEdit,
     QVBoxLayout,
     QWidget,
+)
+from services.calculador_guardias import (
+    calcular_guardias_por_profesor,
+    obtener_estadisticas,
 )
 
 
@@ -435,6 +440,151 @@ class ConfiguracionForm(QWidget):
             session.close()
 
 
+class AsignacionGuardiasForm(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Asignación de Guardias")
+        self.layout = QVBoxLayout()
+
+        # Título
+        self.layout.addWidget(QLabel("=== CÁLCULO Y ASIGNACIÓN DE GUARDIAS ==="))
+
+        # Área de estadísticas
+        self.layout.addWidget(QLabel("\n📊 ESTADÍSTICAS DEL CURSO:"))
+        self.stats_text = QTextEdit()
+        self.stats_text.setReadOnly(True)
+        self.stats_text.setMaximumHeight(200)
+        self.layout.addWidget(self.stats_text)
+
+        # Botón para calcular distribución
+        calc_button = QPushButton("📊 Calcular Distribución")
+        calc_button.clicked.connect(self.calcular_distribucion)
+        self.layout.addWidget(calc_button)
+
+        # Área de resultados de distribución
+        self.layout.addWidget(QLabel("\n📋 DISTRIBUCIÓN DE GUARDIAS POR PROFESOR:"))
+        self.distribucion_text = QTextEdit()
+        self.distribucion_text.setReadOnly(True)
+        self.distribucion_text.setMaximumHeight(250)
+        self.layout.addWidget(self.distribucion_text)
+
+        # Botón para generar guardias (deshabilitado inicialmente)
+        self.generar_button = QPushButton("🎯 Generar Asignación de Guardias")
+        self.generar_button.setEnabled(False)
+        self.generar_button.clicked.connect(self.generar_guardias)
+        self.layout.addWidget(self.generar_button)
+
+        # Área de resultados de generación
+        self.resultado_text = QTextEdit()
+        self.resultado_text.setReadOnly(True)
+        self.resultado_text.setMaximumHeight(150)
+        self.layout.addWidget(self.resultado_text)
+
+        self.setLayout(self.layout)
+
+        # Cargar estadísticas al inicio
+        self.cargar_estadisticas()
+
+    def cargar_estadisticas(self):
+        """Muestra las estadísticas del curso"""
+        session = SessionLocal()
+        try:
+            stats = obtener_estadisticas(session)
+
+            if not stats:
+                self.stats_text.setText(
+                    "⚠️  No hay configuración del curso.\n"
+                    "Por favor, configure primero las fechas y recreos."
+                )
+                return
+
+            texto = f"""
+Días lectivos: {stats.get('dias_lectivos', 0)} días (L-V)
+Recreos mañana: {stats.get('recreos_manana', 0)}
+Recreos tarde: {stats.get('recreos_tarde', 0)}
+Total recreos/día: {stats.get('recreos_manana', 0) + stats.get('recreos_tarde', 0)}
+Número de zonas: {stats.get('num_zonas', 0)}
+Número de profesores: {stats.get('num_profesores', 0)}
+
+📌 SLOTS TOTALES: {stats.get('slots_totales', 0)} guardias
+   (días × recreos × zonas = {stats.get('dias_lectivos', 0)} ×
+   {stats.get('recreos_manana', 0) + stats.get('recreos_tarde', 0)} ×
+   {stats.get('num_zonas', 0)})
+            """
+            self.stats_text.setText(texto.strip())
+
+        except ValueError as e:
+            self.stats_text.setText(f"⚠️  {str(e)}")
+        finally:
+            session.close()
+
+    def calcular_distribucion(self):
+        """Calcula y muestra la distribución de guardias"""
+        session = SessionLocal()
+        try:
+            # Validar que hay datos
+            stats = obtener_estadisticas(session)
+            if not stats or stats.get('slots_totales', 0) == 0:
+                QMessageBox.warning(
+                    self,
+                    "Datos incompletos",
+                    "Debe configurar el curso, profesores y zonas antes de calcular."
+                )
+                return
+
+            # Calcular distribución
+            distribucion = calcular_guardias_por_profesor(session)
+
+            # Obtener nombres de profesores
+            texto = "Distribución calculada:\n\n"
+            total = 0
+
+            profesores_ordenados = sorted(
+                distribucion.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )
+
+            for profesor_id, guardias in profesores_ordenados:
+                profesor = session.query(Profesor).get(profesor_id)
+                if profesor:
+                    texto += (
+                        f"• {profesor.nombre} {profesor.apellidos} "
+                        f"({profesor.turno}, {profesor.porcentaje_jornada*100:.0f}%): "
+                        f"{guardias} guardias\n"
+                    )
+                    total += guardias
+
+            texto += f"\n✅ TOTAL: {total} guardias"
+            texto += f"\n📌 Slots disponibles: {stats.get('slots_totales', 0)}"
+
+            if total == stats.get('slots_totales', 0):
+                texto += "\n\n✅ La distribución es exacta"
+            else:
+                diff = abs(total - stats.get('slots_totales', 0))
+                texto += f"\n\n⚠️  Diferencia: {diff}"
+
+            self.distribucion_text.setText(texto)
+
+            # Habilitar botón de generación
+            self.generar_button.setEnabled(True)
+
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", str(e))
+            self.distribucion_text.setText(f"❌ Error: {str(e)}")
+        finally:
+            session.close()
+
+    def generar_guardias(self):
+        """Genera la asignación concreta de guardias (próximamente)"""
+        QMessageBox.information(
+            self,
+            "Próximamente",
+            "La función de generación de guardias se implementará en el siguiente paso.\n\n"
+            "Por ahora puedes ver la distribución calculada de guardias por profesor."
+        )
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -446,6 +596,7 @@ class MainWindow(QWidget):
         self.tabs.addTab(ProfesorForm(), "Profesores")
         self.tabs.addTab(ZonaForm(), "Zonas")
         self.tabs.addTab(ConfiguracionForm(), "Configuración")
+        self.tabs.addTab(AsignacionGuardiasForm(), "Asignación de Guardias")
 
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)

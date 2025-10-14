@@ -83,16 +83,53 @@ alembic revision -m "crear tablas base"
 alembic upgrade head
 ```
 
-## 📦 Empaquetado (Futuro)
-Generación de ejecutable standalone con PyInstaller + base de datos SQLite inicial.
+## 📦 Instalación
 
-## 🔮 Funcionalidades Avanzadas (Roadmap)
-- Exclusiones (vacaciones / bajas)
-- Preferencias de zonas
-- Ajustes manuales e intercambios
-- Histórico multi-curso
-- Dashboard de estadísticas (matplotlib)
-- Multiidioma
+### Requisitos Previos
+- Python 3.9 o superior
+- pip
+- macOS, Linux o Windows
+
+### Pasos de Instalación
+
+1. **Clonar el repositorio**:
+   ```bash
+   git clone https://github.com/cferrerobonet/guardias_patio.git
+   cd guardias_patio
+   ```
+
+2. **Crear y activar entorno virtual**:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # En Windows: .venv\Scripts\activate
+   ```
+
+3. **Instalar dependencias**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+   **⚠️ Nota para macOS**: Si encuentras errores con PyQt6, ejecuta:
+   ```bash
+   ./fix_pyqt6.sh
+   ```
+   O consulta `documentacion/solucion_pyqt6.md` para más detalles.
+
+4. **Configurar la base de datos**:
+   ```bash
+   alembic upgrade head
+   ```
+
+5. **Ejecutar la aplicación**:
+   ```bash
+   ./run_app.sh  # En macOS/Linux
+   python src/main.py  # En Windows
+   ```
+
+### Solución de Problemas
+- **Error de importación de PyQt6**: Ver `documentacion/solucion_pyqt6.md`
+- **Error de base de datos**: Asegúrate de ejecutar `alembic upgrade head`
+- **Otros errores**: Revisa los logs y reporta issues en GitHub
 
 ## 📁 requirements.txt (Inicial sugerido)
 ```
