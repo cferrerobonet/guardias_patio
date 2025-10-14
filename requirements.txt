@@ -1,3 +1,4 @@
 SQLAlchemy
 alembic
 python-dateutil
+PyQt6==6.7.0
