@@ -1,5 +1,7 @@
 # Guardias de Patio
 
+![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
+
 Aplicación de escritorio para planificar, asignar, visualizar y exportar las guardias de patio de un centro educativo de forma equitativa y transparente.
 
 ## 🚀 Objetivo

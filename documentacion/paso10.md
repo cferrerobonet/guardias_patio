@@ -1,76 +1,66 @@
-PASO 10: Testing y Documentación Final
-Objetivo: Asegurar calidad del código y documentar el sistema.
-Tareas:
+# PASO 10: Testing y Documentación Final
 
-Crea tests unitarios en tests/:
+## 🎯 Objetivo
+Asegurar la calidad del sistema mediante pruebas, documentación y empaquetado distribuible.
 
-test_calculo_guardias.py: verifica cálculos matemáticos
-test_asignador.py: verifica lógica de asignación
-test_servicios.py: verifica CRUD operations
+## 🧪 Pruebas Unitarias (`tests/`)
+Archivos sugeridos:
+- `test_calculo_guardias.py`
+- `test_asignador.py`
+- `test_servicios.py`
 
+Ejemplos de casos:
+| Test | Descripción |
+|------|-------------|
+| Cálculo proporcional | Verifica reparto exacto con escenarios simples |
+| Asignación sin conflictos | No duplica guardias en mismo slot |
+| CRUD Profesor | Crear / actualizar / eliminar |
+| Exclusiones (futuro) | No asigna dentro de rango |
 
-Crea tests de integración:
+## 🔄 Pruebas de Integración
+Flujo completo:
+1. Crear profesores y zonas
+2. Configurar curso
+3. Generar calendario
+4. Validar totales y ausencia de conflictos
 
-Flujo completo: crear profesores → configurar curso → generar guardias → verificar asignaciones
+## 🧾 Documentación
+- Docstrings (formato Google o reStructuredText)
+- Comentarios en algoritmos complejos
+- Manual de usuario (Markdown / PDF) con capturas
 
+## 📘 README
+Debe incluir: descripción, instalación, ejecución, pruebas, roadmap (ya creado en raíz).
 
-Documenta el código:
+## 📦 Empaquetado
+Uso de PyInstaller:
+```
+pyinstaller --name GuardiasPatio --onefile run.py
+```
+Incluir:
+- Base de datos SQLite inicial vacía
+- Recursos estáticos (iconos, etc.)
 
-Docstrings en todas las funciones públicas
-Comentarios en lógica compleja
+## ✅ Criterios de Verificación
+- [ ] Todos los tests pasan (CI futuro)
+- [ ] Cobertura adecuada de lógica crítica
+- [ ] Documentación clara y versionada
+- [ ] Ejecutable funciona en máquina sin Python
 
+## 🧠 Patrones y Diseño
+- Repository para acceso a datos
+- Strategy para variantes de asignación
+- Separación UI / lógica / datos
 
-Crea documentación de usuario:
+## 🚀 Optimización y Escalabilidad
+- Cachear cálculos para >100 profesores
+- Índices en columnas filtradas (fecha, profesor_id, zona_id)
+- Localización/multiidioma temprana
 
-Manual de uso en formato PDF o Markdown
-Screenshots de la interfaz
-Casos de uso comunes
+## 🔮 Futuro
+- Integración con API web
+- Autenticación usuarios (roles)
+- Notificaciones (correo / interna)
 
-
-Crea README.md del proyecto:
-
-Descripción del proyecto
-Requisitos e instalación
-Cómo ejecutar la aplicación
-Cómo ejecutar tests
-
-
-Empaqueta la aplicación:
-
-Usa PyInstaller para crear ejecutable standalone
-Incluye base de datos SQLite vacía inicial
-
-
-
-Criterio de verificación:
-
-Todos los tests pasan
-La documentación es clara y completa
-El ejecutable funciona en un equipo sin Python instalado
-
-
-Consideraciones Técnicas Adicionales
-Recomendaciones de Diseño:
-
-Usa patrón Repository para acceso a datos
-Implementa patrón Strategy para diferentes algoritmos de asignación
-Separa lógica de negocio de la interfaz (arquitectura en capas)
-
-Optimizaciones:
-
-Para colegios grandes (>100 profesores), considera cachear cálculos
-Implementa índices en la base de datos para las consultas frecuentes
-
-Escalabilidad Futura:
-
-Diseña pensando en añadir guardias de aula/biblioteca más adelante
-Considera soporte multiidioma desde el inicio
-
-
-Este prompt te permitirá desarrollar la aplicación paso a paso, verificando cada componente antes de avanzar al siguiente. ¿Quieres que profundice en alguno de los pasos específicos?ReintentarCMme puedes dar un md por cada pasoPASO 1: Configuración del Proyecto y Base de DatosDocumento # PASO 1: Configuración del Proyecto y Base de Datos
-
-## Objetivo
-Establecer la estructura básica del proyecto con gestión de base de datos usando SQLAlchemy y Alembic.
-
-## Descripción
-En este primer paso crearemos la arquitectura base del proyecto, ReintentarClaude puede cometer errores. Por favor, verifique las respuestas.
+---
+Fin del documento maestro de pasos. Consultar pasos previos para detalle de implementación.
