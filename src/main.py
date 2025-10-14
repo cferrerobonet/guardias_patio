@@ -5,10 +5,12 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from database.db_manager import SessionLocal
-from models.models import Profesor, Zona
+from models.models import Configuracion, Profesor, Zona
+from PyQt6.QtCore import QDate, QTime
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
+    QDateEdit,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -16,6 +18,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QTabWidget,
+    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -309,6 +312,129 @@ class ZonaForm(QWidget):
             finally:
                 session.close()
 
+
+class ConfiguracionForm(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Configuración del Curso")
+        self.layout = QVBoxLayout()
+
+        self.layout.addWidget(QLabel("=== CONFIGURACIÓN DEL CURSO ESCOLAR ==="))
+
+        # Fechas del curso
+        self.layout.addWidget(QLabel("Fecha de inicio del curso:"))
+        self.fecha_inicio_input = QDateEdit()
+        self.fecha_inicio_input.setCalendarPopup(True)
+        self.fecha_inicio_input.setDate(QDate.currentDate())
+        self.layout.addWidget(self.fecha_inicio_input)
+
+        self.layout.addWidget(QLabel("Fecha de fin del curso:"))
+        self.fecha_fin_input = QDateEdit()
+        self.fecha_fin_input.setCalendarPopup(True)
+        self.fecha_fin_input.setDate(QDate.currentDate().addMonths(9))
+        self.layout.addWidget(self.fecha_fin_input)
+
+        # Horarios de recreos mañana
+        self.layout.addWidget(QLabel("=== RECREOS DE MAÑANA ==="))
+
+        self.layout.addWidget(QLabel("Hora recreo 1 mañana:"))
+        self.recreo1_manana_input = QTimeEdit()
+        self.recreo1_manana_input.setTime(QTime(10, 30))
+        self.layout.addWidget(self.recreo1_manana_input)
+
+        self.layout.addWidget(QLabel("Hora recreo 2 mañana:"))
+        self.recreo2_manana_input = QTimeEdit()
+        self.recreo2_manana_input.setTime(QTime(12, 0))
+        self.layout.addWidget(self.recreo2_manana_input)
+
+        # Horarios de recreos tarde (opcionales)
+        self.layout.addWidget(QLabel("=== RECREOS DE TARDE (opcional) ==="))
+
+        self.layout.addWidget(QLabel("Hora recreo 1 tarde (opcional):"))
+        self.recreo1_tarde_input = QTimeEdit()
+        self.recreo1_tarde_input.setTime(QTime(15, 30))
+        self.layout.addWidget(self.recreo1_tarde_input)
+
+        self.layout.addWidget(QLabel("Hora recreo 2 tarde (opcional):"))
+        self.recreo2_tarde_input = QTimeEdit()
+        self.recreo2_tarde_input.setTime(QTime(17, 0))
+        self.layout.addWidget(self.recreo2_tarde_input)
+
+        # Botones
+        btn_layout = QHBoxLayout()
+        self.save_btn = QPushButton("Guardar configuración")
+        self.save_btn.clicked.connect(self.guardar_configuracion)
+        self.load_btn = QPushButton("Cargar configuración actual")
+        self.load_btn.clicked.connect(self.cargar_configuracion)
+        btn_layout.addWidget(self.save_btn)
+        btn_layout.addWidget(self.load_btn)
+        self.layout.addLayout(btn_layout)
+
+        self.setLayout(self.layout)
+        self.cargar_configuracion()  # Cargar al inicio si existe
+
+    def guardar_configuracion(self):
+        session = SessionLocal()
+        try:
+            # Solo debe haber una configuración
+            config_existente = session.query(Configuracion).first()
+
+            fecha_inicio = self.fecha_inicio_input.date().toPyDate()
+            fecha_fin = self.fecha_fin_input.date().toPyDate()
+            recreo1_manana = self.recreo1_manana_input.time().toPyTime()
+            recreo2_manana = self.recreo2_manana_input.time().toPyTime()
+            recreo1_tarde = self.recreo1_tarde_input.time().toPyTime()
+            recreo2_tarde = self.recreo2_tarde_input.time().toPyTime()
+
+            if config_existente:
+                # Actualizar configuración existente
+                config_existente.fecha_inicio_curso = fecha_inicio
+                config_existente.fecha_fin_curso = fecha_fin
+                config_existente.hora_recreo1_manana = recreo1_manana
+                config_existente.hora_recreo2_manana = recreo2_manana
+                config_existente.hora_recreo1_tarde = recreo1_tarde
+                config_existente.hora_recreo2_tarde = recreo2_tarde
+                mensaje = "Configuración actualizada correctamente."
+            else:
+                # Crear nueva configuración
+                nueva_config = Configuracion(
+                    fecha_inicio_curso=fecha_inicio,
+                    fecha_fin_curso=fecha_fin,
+                    hora_recreo1_manana=recreo1_manana,
+                    hora_recreo2_manana=recreo2_manana,
+                    hora_recreo1_tarde=recreo1_tarde,
+                    hora_recreo2_tarde=recreo2_tarde
+                )
+                session.add(nueva_config)
+                mensaje = "Configuración guardada correctamente."
+
+            session.commit()
+            QMessageBox.information(self, "Éxito", mensaje)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al guardar: {e}")
+        finally:
+            session.close()
+
+    def cargar_configuracion(self):
+        """Cargar la configuración desde la base de datos"""
+        session = SessionLocal()
+        try:
+            config = session.query(Configuracion).first()
+            if config:
+                self.fecha_inicio_input.setDate(QDate(config.fecha_inicio_curso))
+                self.fecha_fin_input.setDate(QDate(config.fecha_fin_curso))
+                self.recreo1_manana_input.setTime(QTime(config.hora_recreo1_manana))
+                self.recreo2_manana_input.setTime(QTime(config.hora_recreo2_manana))
+                if config.hora_recreo1_tarde:
+                    self.recreo1_tarde_input.setTime(QTime(config.hora_recreo1_tarde))
+                if config.hora_recreo2_tarde:
+                    self.recreo2_tarde_input.setTime(QTime(config.hora_recreo2_tarde))
+        except Exception as e:
+            QMessageBox.warning(self, "Info", f"No hay configuración guardada: {e}")
+        finally:
+            session.close()
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -319,6 +445,7 @@ class MainWindow(QWidget):
         self.tabs = QTabWidget()
         self.tabs.addTab(ProfesorForm(), "Profesores")
         self.tabs.addTab(ZonaForm(), "Zonas")
+        self.tabs.addTab(ConfiguracionForm(), "Configuración")
 
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
