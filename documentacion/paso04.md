@@ -1,51 +1,60 @@
-PASO 4: Algoritmo de Asignación de Guardias
-Objetivo: Crear el sistema que asigna guardias específicas (fecha, recreo, zona) a cada profesor.
-Tareas:
+# PASO 4: Algoritmo de Asignación de Guardias
 
-Crea src/services/asignador_guardias.py
-Implementa la función generar_calendario_guardias():
+## 🎯 Objetivo
+Asignar cada slot (fecha × recreo × zona × turno) a un profesor válido respetando la distribución calculada.
 
-Obtiene la lista de días lectivos del curso
-Para cada día:
+## 📄 Archivo
+`src/services/asignador_guardias.py`
 
-Para cada recreo (1 y 2):
+## 🔁 Flujo General (`generar_calendario_guardias`)
+1. Obtener configuración + distribución base de cargas.
+2. Generar lista de días lectivos.
+3. Iterar días → recreos → turnos → zonas.
+4. Seleccionar profesor elegible:
+   - No ha excedido su cuota.
+   - Turno compatible.
+   - No asignado previamente ese día (si se puede evitar).
+   - No misma zona que día anterior (soft constraint).
+5. Registrar guardia provisional.
+6. Persistir al final (`guardar_guardias_en_bd`).
 
-Para cada turno (mañana/tarde):
+## 🧮 Estructuras Sugeridas
+```python
+cargas = {profesor_id: total}
+asignadas = {profesor_id: 0}
+ultimo_por_zona = {zona_id: profesor_id}
+guardias_por_dia_profesor = {(fecha, profesor_id): count}
+```
 
-Asigna profesores a cada zona según su disponibilidad
+## ✅ Selección de Profesor (Heurística)
+1. Filtrar elegibles.
+2. Ordenar por:
+   - Menor guardias asignadas
+   - Mayor diferencia (carga_total - asignadas)
+   - Aleatoriedad controlada como desempate (para diversidad)
 
+## 🔍 `validar_asignacion(guardia, profesor)`
+Comprueba:
+- Turno compatible
+- No guardia previa en mismo (fecha, recreo)
+- No exceder cuota
 
+## 💾 Persistencia
+`guardar_guardias_en_bd(calendario)` inserta en lote para optimizar (bulk_save_objects).
 
+## 🧪 Verificación
+- Suma de guardias == total slots
+- Diferencia por profesor ≤ 2 de su cuota teórica
+- Sin duplicados (mismo profesor, mismo día, mismo recreo)
 
+## ⚠️ Errores Potenciales
+- Falta de profesores de un turno → levantar excepción clara
+- Zonas > profesores disponibles en turno → registrar incidencia
 
+## 🔄 Regeneración
+Proveer función `regenerar(calendario_existente=True)` que:
+1. Borra guardias previas (confirmación UI)
+2. Recalcula y reasigna
 
-
-
-Implementa estrategia de distribución equitativa:
-
-Mantén un contador de guardias asignadas por profesor
-Prioriza asignar a quien tenga menos guardias acumuladas
-Respeta el turno del profesor
-Evita asignar la misma zona consecutivamente al mismo profesor (si es posible)
-Evita asignar dos guardias el mismo día al mismo profesor (si es posible)
-
-
-Implementa validar_asignacion(guardia, profesor):
-
-Verifica que el profesor trabaje en ese turno
-Verifica que no tenga ya una guardia ese día en ese recreo
-Verifica que no supere su cuota de guardias
-
-
-Implementa guardar_guardias_en_bd(calendario):
-
-Guarda todas las guardias generadas en la tabla Guardias
-
-
-
-Criterio de verificación:
-
-Genera el calendario completo
-Verifica que cada profesor tenga aproximadamente el número de guardias calculado (±2 de diferencia)
-Verifica que todos los slots de guardias estén cubiertos
-Verifica que no haya conflictos (mismo profesor, mismo día, mismo recreo)
+---
+Continúa con el PASO 5: interfaz de gestión de datos.

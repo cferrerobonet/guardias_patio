@@ -1,35 +1,49 @@
-PASO 3: Lógica de Cálculo de Guardias
-Objetivo: Desarrollar el algoritmo que calcula el número de guardias por profesor según su contrato.
-Tareas:
+# PASO 3: Lógica de Cálculo de Guardias
 
-Crea src/services/calculo_guardias.py:
-Implementa la función calcular_guardias_por_profesor():
+## 🎯 Objetivo
+Calcular cuántas guardias corresponden a cada profesor según porcentaje de jornada, turno y estructura del curso.
 
-Calcula los días lectivos totales entre fecha inicio y fin (excluyendo sábados/domingos)
-Calcula el número total de recreos a cubrir (días_lectivos × 2 recreos × número de turnos activos)
-Calcula el número total de "slots" de guardia necesarios (recreos × número de zonas)
-Distribuye los slots entre profesores según su porcentaje de jornada
+## 📄 Archivo
+`src/services/calculo_guardias.py`
 
+## 🔢 Conceptos Clave
+- Días lectivos: rango fecha_inicio → fecha_fin excluyendo fines de semana (y futuros festivos/exclusiones).
+- Recreos por día: 2 (mañana y tarde; se ajusta según turnos activos).
+- Slots = días_lectivos × recreos_activos × número_zonas.
+- Distribución proporcional al porcentaje_jornada (normalizada dentro de cada conjunto de turnos).
 
-Implementa la función calcular_guardias_por_turno(profesor):
+## 🧠 Funciones Propuestas
+### `calcular_dias_lectivos(fecha_inicio, fecha_fin) -> int`
+Excluye sábados y domingos.
 
-Si turno = "mañana": solo recreos de mañana
-Si turno = "tarde": solo recreos de tarde
-Si turno = "completo": ambos turnos proporcionalmente
+### `calcular_guardias_por_turno(profesor)`
+Devuelve factor de participación (mañana, tarde, ambos).
 
+### `calcular_distribucion_base(profesores, zonas, config) -> dict`
+Devuelve `{profesor_id: total_guardias_asignables}`.
 
-Implementa la función calcular_distribucion_base():
+### `calcular_guardias_por_profesor()`
+Orquesta el proceso: obtiene configuración, cuenta días, calcula slots y reparte redondeando.
 
-Devuelve un diccionario: {profesor_id: número_guardias_a_asignar}
+## ⚖️ Redondeo y Ajustes
+1. Calcular guardias crudas (float).
+2. Aplicar `math.floor` a cada una.
+3. Repartir los slots sobrantes empezando por quienes tengan mayor residuo decimal.
 
+## 🧪 Ejemplo Numérico
+Escenario: 180 días lectivos, 4 zonas, 2 recreos, 10 profesores jornada completa.
+Slots = 180 × 2 × 4 = 1440.
+- Profesor 100%: 144 guardias
+- Profesor 50%: 72 guardias
 
+## ✅ Criterios de Verificación
+- [ ] La suma de guardias asignadas == slots totales
+- [ ] Proporcionalidad dentro de ±1–2 de diferencia por ajustes de redondeo
+- [ ] Profesores de mañana no reciben guardias de tarde y viceversa
 
-Criterio de verificación:
+## 💡 Mejoras Futuras
+- Ajustar por preferencias y exclusiones.
+- Añadir ponderación por saturación de días consecutivos.
 
-Con 180 días lectivos, 4 zonas, 2 recreos/día y 10 profesores:
-
-Un profesor a jornada completa (100%) debe tener ~144 guardias
-Un profesor al 50% debe tener ~72 guardias
-
-
-Los números deben sumar exactamente el total de slots disponibles
+---
+Sigue con el PASO 4: algoritmo de asignación concreta.

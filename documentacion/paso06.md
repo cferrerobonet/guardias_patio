@@ -1,40 +1,49 @@
-PASO 6: Interfaz de Usuario - Visualización de Guardias
-Objetivo: Mostrar el calendario de guardias generado de forma clara y permitir exportación.
-Tareas:
+# PASO 6: Interfaz – Visualización de Guardias
 
-Crea src/ui/calendario_guardias.py:
+## 🎯 Objetivo
+Ofrecer vistas claras del calendario de guardias con filtros y navegación flexible.
 
-Vista de calendario mensual o tabla
-Filtros: por profesor, por zona, por turno, por mes
-Colores diferentes para turnos de mañana/tarde
+## 🧩 Archivos
+```
+src/ui/
+ ├── calendario_guardias.py
+ ├── vista_profesor.py
+ └── vista_zona.py
+```
 
+## 📅 `calendario_guardias.py`
+Funciones:
+- Tabla / vista mensual
+- Filtros: Profesor | Zona | Turno | Mes
+- Colores diferenciados (mañana = azul / tarde = verde, p.ej.)
+- Botones: Generar / Regenerar / Exportar (posterior)
 
-Implementa src/ui/vista_profesor.py:
+## 👤 `vista_profesor.py`
+Lista cronológica:
+- Fecha
+- Turno / recreo
+- Zona
+- (Opcional) Botón para intercambio manual (futuro)
 
-Muestra todas las guardias asignadas a un profesor específico
-Lista cronológica con fecha, hora, recreo y zona
+## 🗺️ `vista_zona.py`
+Grid por fecha mostrando profesor asignado por recreo.
 
+## 🔄 Generación desde UI
+Botón "Generar Guardias":
+1. Muestra `QProgressDialog`
+2. Llama a servicio de asignación
+3. Refresca vistas
 
-Implementa src/ui/vista_zona.py:
+Botón "Borrar y Regenerar": confirmación previa.
 
-Muestra qué profesores vigilan cada zona cada día
+## 🧪 Criterios de Verificación
+- [ ] Se visualizan todas las guardias
+- [ ] Filtros combinados funcionan
+- [ ] Vistas profesor/zona coherentes entre sí
 
+## 💡 Mejores Prácticas
+- No bloquear UI: usar `QThread` o `QRunnable` para generación si es costosa
+- Cachear resultados en memoria para filtros rápidos
 
-Crea botón "Generar Guardias" en la ventana principal:
-
-Ejecuta el algoritmo de asignación
-Muestra progreso con barra de carga
-Al finalizar, abre automáticamente la vista del calendario
-
-
-Añade funcionalidad de regeneración:
-
-Botón "Borrar y Regenerar" que elimina guardias existentes y genera nuevas
-
-
-
-Criterio de verificación:
-
-El calendario se muestra correctamente
-Los filtros funcionan
-Puedes ver las guardias desde diferentes perspectivas (por profesor, por zona, por fecha)
+---
+Siguiente: PASO 7 (exportaciones e informes).

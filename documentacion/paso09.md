@@ -1,42 +1,48 @@
-PASO 9: Funcionalidades Avanzadas
-Objetivo: Añadir características que mejoren la usabilidad.
-Tareas:
+# PASO 9: Funcionalidades Avanzadas
 
-Implementa sistema de exclusiones:
+## 🎯 Objetivo
+Ampliar la utilidad y flexibilidad del sistema con exclusiones, preferencias, histórico y estadísticas.
 
-Tabla Exclusiones: profesor_id, fecha_inicio, fecha_fin, motivo
-Los profesores con exclusiones no reciben guardias en ese período
+## 🗄️ Nuevas Tablas
+| Tabla | Campos |
+|-------|--------|
+| Exclusiones | id, profesor_id, fecha_inicio, fecha_fin, motivo |
+| Preferencias | id, profesor_id, zona_id, preferencia (int: -1/0/+1) |
+| Calendarios | id, curso, fecha_generacion, metadatos |
 
+## 🧩 Exclusiones
+- Aplicar filtro antes de asignar.
+- Opción visual de "periodos no asignables" en vista profesor.
 
-Implementa ajustes manuales:
+## 🎚️ Preferencias
+- Ajustar heurística de asignación: sumar/restar peso.
+- Evitar violar preferencias negativas salvo necesidad.
 
-Permitir cambiar una guardia específica de profesor manualmente
-Intercambiar guardias entre dos profesores
+## 🔁 Ajustes Manuales
+- Intercambiar guardias (validación de cuotas y turnos).
+- Registrar auditoría de cambios (tabla changes_log opcional).
 
+## 🗂️ Histórico
+- Guardar snapshot de guardias por curso.
+- Permitir consultar cursos anteriores sin mezclar datos.
 
-Implementa preferencias:
+## 📊 Estadísticas
+- Guardias por profesor (total, mañana, tarde).
+- Uso de zonas.
+- Distribución mensual.
+- Visualización con matplotlib (barras, pastel, heatmap simple).
 
-Tabla Preferencias: profesor_id, zona_id, preferencia (positiva/negativa)
-El algoritmo intenta respetar preferencias si es posible
+## ✅ Criterios de Verificación
+- [ ] Exclusiones respetadas (ninguna guardia dentro del rango excluido)
+- [ ] Ajuste manual no rompe integridad
+- [ ] Preferencias influyen en asignaciones (analizar % cumplimiento)
+- [ ] Estadísticas coinciden con consultas SQL directas
 
+## 🔮 Futuro
+- Sistema de notificaciones / recordatorios
+- Exportación de cambios auditados
 
-Implementa histórico:
-
-Permitir guardar múltiples calendarios (por curso escolar)
-Selector de curso para ver calendarios anteriores
-
-
-Implementa estadísticas:
-
-Dashboard con métricas: guardias por profesor, por zona, por mes
-Gráficos básicos (matplotlib)
-
-
-
-Criterio de verificación:
-
-Las exclusiones funcionan correctamente
-Puedes hacer ajustes manuales sin romper el sistema
-Las estadísticas reflejan la realidad de las asignaciones
+---
+Pasar al PASO 10: testing y documentación final.
 
 

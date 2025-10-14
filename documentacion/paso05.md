@@ -1,40 +1,68 @@
-PASO 5: Interfaz de Usuario - Gestión de Datos
-Objetivo: Crear la interfaz gráfica para gestionar profesores, zonas y configuración.
-Tareas:
+# PASO 5: Interfaz de Usuario – Gestión de Datos
 
-Elige framework (recomendado: PyQt6) y crea src/ui/main_window.py
-Implementa la ventana principal con menú:
+## 🎯 Objetivo
+Proveer pantallas CRUD para profesores, zonas y configuración del curso usando PyQt6 (recomendado).
 
-Profesores
-Zonas
-Configuración
-Guardias
-Generar Calendario
+## 📄 Archivos Principales
+```
+src/ui/
+ ├── main_window.py
+ ├── profesor_dialog.py
+ ├── zona_dialog.py
+ └── configuracion_dialog.py
+```
 
+## 🪟 Ventana Principal (`main_window.py`)
+Menú / navegación:
+- Profesores
+- Zonas
+- Configuración
+- Guardias (vista – pasos posteriores)
+- Generar Calendario
 
-Crea src/ui/profesor_dialog.py:
+## 👤 Diálogo de Profesores
+Campos:
+- Nombre
+- Apellidos
+- Horas de contrato (horas_contrato)
+- % Jornada (porcentaje_jornada)
+- Turno (Combo: mañana / tarde / completo)
 
-Formulario para añadir/editar profesores
-Campos: nombre, apellidos, horas de contrato, % jornada, turno (dropdown)
-Tabla para listar profesores existentes
-Botones: Nuevo, Editar, Eliminar
+Funciones:
+- Listado en tabla (sortable)
+- Botones: Nuevo / Editar / Eliminar
+- Validaciones inline
 
+## 📍 Diálogo de Zonas
+Campos:
+- Nombre de zona
+- Descripción
 
-Crea src/ui/zona_dialog.py:
+Funciones:
+- Tabla de zonas
+- CRUD básico
 
-Formulario para añadir/editar zonas
-Tabla de zonas existentes
+## 🗓️ Diálogo de Configuración
+Elementos:
+- Fecha inicio / fin curso (DateEdit)
+- Horarios recreos (TimeEdit) mañana y tarde (dos cada uno si aplica)
+- Botón Guardar / Cancelar
 
+## ✅ Validaciones UI
+- % jornada: 0 < valor ≤ 100
+- Fechas: fin > inicio
+- Turno obligatorio
+- Nombres no vacíos
 
-Crea src/ui/configuracion_dialog.py:
+## 🧪 Criterios de Verificación
+- [ ] Alta / edición / eliminación de profesor refleja cambios en BD
+- [ ] CRUD zonas funcional
+- [ ] Configuración persiste y se recupera al reabrir
+- [ ] Errores muestran diálogos claros
 
-Selectores de fecha para inicio/fin de curso
-Campos de hora para los recreos de mañana y tarde
+## 🔍 Mejores Prácticas
+- Desacoplar: UI llama a servicios, no a modelos directamente
+- Uso de `QAbstractTableModel` para escalabilidad
 
-
-
-Criterio de verificación:
-
-Puedes añadir, editar y eliminar profesores desde la interfaz
-Los datos se guardan correctamente en la base de datos
-La interfaz valida los datos (no permite % jornada > 100, fechas inválidas, etc.)
+---
+Siguiente: PASO 6 (vista de calendario y visualización).

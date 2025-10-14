@@ -1,37 +1,51 @@
-PASO 8: Validaciones y Manejo de Errores
-Objetivo: Asegurar robustez de la aplicación con validaciones y mensajes de error claros.
-Tareas:
+# PASO 8: Validaciones y Manejo de Errores
 
-Implementa validaciones en los servicios:
+## 🎯 Objetivo
+Fortalecer la aplicación añadiendo validaciones de negocio y tratamiento consistente de errores.
 
-No permitir porcentajes de jornada > 100% o < 0%
-No permitir fechas de fin de curso anteriores a inicio
-No permitir eliminar profesores con guardias asignadas
-No permitir eliminar zonas en uso
+## ✅ Validaciones en Servicios
+- Porcentaje jornada: 0 < valor ≤ 100
+- Fechas curso: `fin > inicio`
+- No eliminar profesor con guardias asignadas
+- No eliminar zona en uso
+- Configuración única activa (si aplica)
 
+## ⚠️ Asignador
+Errores a detectar:
+- Falta de profesores en un turno requerido
+- Zonas > profesores disponibles en un recreo
+- Distribución imposible (lanzar excepción especializada)
 
-Implementa manejo de errores en el asignador:
+## 🪵 Logging
+Archivo: `src/utils/logger.py`
+Sugerido:
+```python
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
+)
+logger = logging.getLogger("guardias")
+```
+Registrar:
+- Operaciones CRUD
+- Inicio/fin de generación de calendario
+- Errores con `logger.exception`
 
-Si no hay suficientes profesores para cubrir todas las zonas, mostrar error claro
-Si la distribución es imposible (ej: solo profesores de mañana pero hay guardias de tarde), avisar
+## 💬 Interfaz (Confirmaciones)
+- Eliminar profesor/zona: diálogo sí/no
+- Regenerar guardias: advertir pérdida de datos previos
 
+## 🧪 Criterios de Verificación
+- [ ] Operaciones inválidas muestran mensaje claro
+- [ ] No hay excepciones sin capturar en consola
+- [ ] Logs contienen trazas de eventos clave
 
-Añade logs del sistema:
+## 🔄 Estrategia de Errores
+Crear excepciones personalizadas (`exceptions.py`):
+- `TurnoInsuficienteError`
+- `DistribucionImposibleError`
+- `EntidadEnUsoError`
 
-Implementa logging en src/utils/logger.py
-Registra todas las operaciones importantes
-Registra errores con stack trace
-
-
-Implementa ventanas de diálogo de confirmación:
-
-Confirmar antes de eliminar datos
-Confirmar antes de regenerar guardias (se perderán las existentes)
-
-
-
-Criterio de verificación:
-
-Intenta operaciones inválidas y verifica que se manejan correctamente
-Los mensajes de error son claros y útiles
-No hay crashes sin capturar
+---
+Siguiente: PASO 9 (funcionalidades avanzadas).

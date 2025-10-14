@@ -1,39 +1,44 @@
-PASO 7: Exportación e Informes
-Objetivo: Permitir exportar los calendarios a formatos útiles (PDF, Excel, CSV).
-Tareas:
+# PASO 7: Exportación e Informes
 
-Instala dependencias adicionales:
+## 🎯 Objetivo
+Generar representaciones externas del calendario en formatos Excel y PDF.
 
-reportlab (para PDF)
-openpyxl (para Excel)
-pandas (para manipulación de datos)
+## 📦 Dependencias
+```
+reportlab
+openpyxl
+pandas
+```
 
+## 📄 Archivo Principal
+`src/services/exportador.py`
 
-Crea src/services/exportador.py:
-Implementa exportar_a_excel():
+## 📊 Excel (`exportar_a_excel`)
+Hojas sugeridas:
+1. Calendario completo: Fecha | Día semana | Turno | Recreo | Zona | Profesor
+2. Resumen por profesor: Profesor | Total | Mañana | Tarde | % Distribución
+3. Distribución por zona: Zona | Total guardias | % sobre total
 
-Hoja 1: Calendario completo (columnas: Fecha, Día semana, Turno, Recreo, Zona, Profesor)
-Hoja 2: Resumen por profesor (Profesor, Total guardias, Guardias mañana, Guardias tarde)
-Hoja 3: Distribución por zona
+## 📄 PDF por Profesor (`exportar_a_pdf_profesor(profesor_id)`)
+Contenido:
+- Encabezado con nombre y total
+- Tabla cronológica
+- Totales por turno
 
+## 📘 PDF Calendario Completo (`exportar_calendario_completo_pdf`)
+Formato:
+- Una página por mes
+- Tabla (día vs recreo/zonas)
+- Leyenda colores turno
 
-Implementa exportar_a_pdf_profesor(profesor_id):
+## 🧪 Criterios de Verificación
+- [ ] Archivos se abren sin errores
+- [ ] Totales coinciden con base de datos
+- [ ] Formato legible y ordenado
 
-Genera PDF individual para cada profesor con su calendario personal
-Incluye: nombre, total de guardias, listado de fechas con zona asignada
+## 🔍 Notas
+- Considerar exportación CSV simple como fallback
+- Para grandes volúmenes, generar en hilo separado
 
-
-Implementa exportar_calendario_completo_pdf():
-
-Genera PDF con calendario mensual visual
-Una página por mes
-Tabla con días del mes y asignaciones
-
-
-Añade botones de exportación en la interfaz
-
-Criterio de verificación:
-
-Los archivos Excel se generan correctamente y se pueden abrir
-Los PDF se generan con formato legible
-Los datos exportados coinciden con los de la base de datos
+---
+Siguiente: PASO 8 (validaciones y manejo de errores).
