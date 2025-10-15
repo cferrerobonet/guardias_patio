@@ -2,20 +2,20 @@
 Módulo para calcular la distribución de guardias entre profesores.
 
 Implementa la lógica de cálculo basada en:
-- Días lectivos del curso
+- Días lectivos del curso (incluye festivos automáticos y personalizados)
 - Número de zonas
-- Recreos por día según turnos
-- Porcentaje de jornada de cada profesor
+- Recreos por día (configurables por turno y zonas por recreo)
+- Porcentaje de jornada de cada profesor y ajuste por tutoría
 - Turno de trabajo (mañana, tarde, mixto)
 """
 
+import json
 import math
-from datetime import datetime, timedelta
-from typing import Dict, Tuple
+from datetime import date, datetime, timedelta
+from typing import Dict, List, Optional, Tuple
 
+from models.models import Configuracion, Profesor, Zona
 from sqlalchemy.orm import Session
-
-from src.models.models import Configuracion, Profesor, Zona
 
 
 def calcular_dias_lectivos(fecha_inicio: datetime, fecha_fin: datetime) -> int:
@@ -46,6 +46,143 @@ def calcular_dias_lectivos(fecha_inicio: datetime, fecha_fin: datetime) -> int:
     return dias_lectivos
 
 
+def _easter_sunday(year: int) -> date:
+    """Calcula la fecha de Domingo de Pascua (algoritmo de Butcher)."""
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    ell = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * ell) // 451
+    month = (h + ell - 7 * m + 114) // 31
+    day = ((h + ell - 7 * m + 114) % 31) + 1
+    return date(year, month, day)
+
+
+def _festivos_automaticos_en_rango(
+    inicio: date,
+    fin: date,
+) -> set:
+    """Genera el conjunto de fechas no lectivas automáticas dentro del rango.
+
+    Incluye: 9/10, 12/10, 1/11, 6/12, 8/12, 22/12–6/01, 16–19/03, Jueves Santo–+12, 1/05.
+    """
+    no_lectivos = set()
+    if inicio > fin:
+        return no_lectivos
+
+    # Años potenciales (curso puede abarcar dos)
+    years = {inicio.year, fin.year}
+    if inicio.year != fin.year:
+        years.add(inicio.year + 1)
+
+    def add_if_in_range(d: date):
+        if inicio <= d <= fin and d.weekday() < 5:
+            no_lectivos.add(d)
+
+    current = inicio
+    while current <= fin:
+        # Fines de semana se gestionan aparte en días lectivos, aquí no hace falta añadir
+        current += timedelta(days=1)
+
+    for y in years:
+        # Fechas fijas en ambos años
+        for month, days in (
+            (10, [9, 12]),
+            (11, [1]),
+            (12, [6, 8]),
+            (5, [1]),
+        ):
+            for d in days:
+                add_if_in_range(date(y, month, d))
+
+        # 22/12 a 06/01 (puede cruzar de y a y+1)
+        for day_ in range(22, 32):
+            add_if_in_range(date(y, 12, day_))
+        for day_ in range(1, 7):
+            add_if_in_range(date(y + 1, 1, day_))
+
+        # 16–19 de marzo
+        for day_ in range(16, 20):
+            add_if_in_range(date(y, 3, day_))
+
+        # Jueves Santo a +12 días
+        easter = _easter_sunday(y)
+        jueves_santo = easter - timedelta(days=3)
+        for delta in range(0, 13):
+            add_if_in_range(jueves_santo + timedelta(days=delta))
+
+    return no_lectivos
+
+
+def _parse_custom_no_lectivos(csv_text: Optional[str]) -> set:
+    fechas = set()
+    if not csv_text:
+        return fechas
+    for token in csv_text.split(','):
+        t = token.strip()
+        if not t:
+            continue
+        try:
+            y, m, d = [int(x) for x in t.split('-')]
+            fechas.add(date(y, m, d))
+        except Exception:
+            continue
+    return fechas
+
+
+def listar_dias_lectivos(config: Configuracion) -> List[date]:
+    """Genera la lista de días lectivos, excluyendo festivos automáticos/personalizados."""
+    inicio = config.fecha_inicio_curso
+    fin = config.fecha_fin_curso
+    dias: List[date] = []
+    if inicio > fin:
+        return dias
+
+    autom = (
+        _festivos_automaticos_en_rango(inicio, fin)
+        if getattr(config, 'activar_festivos_automaticos', True)
+        else set()
+    )
+    custom = _parse_custom_no_lectivos(getattr(config, 'dias_no_lectivos_personalizados', None))
+    no_lectivos = autom | custom
+
+    curr = inicio
+    while curr <= fin:
+        if curr.weekday() < 5 and curr not in no_lectivos:
+            dias.append(curr)
+        curr += timedelta(days=1)
+    return dias
+
+
+def _parse_recreos_config(config: Configuracion) -> List[dict]:
+    """Parsea recreos_config JSON en una lista de dicts normalizados."""
+    raw = getattr(config, 'recreos_config', None)
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+        out = []
+        for r in data:
+            out.append(
+                {
+                    'id': int(r.get('id')),
+                    'etiqueta': r.get('etiqueta', ''),
+                    'turno': r.get('turno', 'mañana'),
+                    'zonas': int(r.get('zonas', 1)),
+                }
+            )
+        return out
+    except Exception:
+        return []
+
+
 def calcular_recreos_activos(session: Session) -> Tuple[int, int]:
     """
     Determina cuántos recreos están activos en mañana y tarde.
@@ -60,6 +197,14 @@ def calcular_recreos_activos(session: Session) -> Tuple[int, int]:
     if not config:
         return (0, 0)
 
+    # Si hay recreos_config, usarlo
+    lista = _parse_recreos_config(config)
+    if lista:
+        rm = sum(1 for r in lista if r.get('turno') == 'mañana')
+        rt = sum(1 for r in lista if r.get('turno') == 'tarde')
+        return (rm, rt)
+
+    # Fallback a campos de horas
     recreos_manana = 0
     if config.hora_recreo1_manana:
         recreos_manana += 1
@@ -128,16 +273,14 @@ def calcular_distribucion_base(
     if not zonas:
         raise ValueError("No hay zonas registradas")
 
-    # Calcular días lectivos
-    dias_lectivos = calcular_dias_lectivos(
-        config.fecha_inicio_curso,
-        config.fecha_fin_curso
-    )
+    # Calcular días lectivos con festivos
+    dias_list = listar_dias_lectivos(config)
+    dias_lectivos = len(dias_list)
 
     if dias_lectivos == 0:
         raise ValueError("No hay días lectivos en el rango configurado")
 
-    # Calcular recreos activos
+    # Calcular recreos activos y slots por día
     recreos_manana, recreos_tarde = calcular_recreos_activos(session)
     recreos_totales_dia = recreos_manana + recreos_tarde
 
@@ -146,7 +289,13 @@ def calcular_distribucion_base(
 
     # Calcular slots totales
     num_zonas = len(zonas)
-    slots_totales = dias_lectivos * recreos_totales_dia * num_zonas
+    lista_recreos = _parse_recreos_config(config)
+    if lista_recreos:
+        # Sumar zonas por recreo, pero no exceder zonas reales disponibles
+        zonas_por_dia = sum(min(r.get('zonas', 1), num_zonas) for r in lista_recreos)
+        slots_totales = dias_lectivos * zonas_por_dia
+    else:
+        slots_totales = dias_lectivos * recreos_totales_dia * num_zonas
 
     # Calcular factor de participación y porcentaje total
     profesores_con_factor = []
@@ -158,8 +307,12 @@ def calcular_distribucion_base(
             recreos_manana,
             recreos_tarde
         )
-        # El factor pondera el porcentaje según turnos disponibles
-        participacion = profesor.porcentaje_jornada * factor
+        # El factor pondera el porcentaje según turnos disponibles y tutoría
+        ajuste_tutoria = (
+            getattr(config, 'ajuste_tutores', 1.0) if getattr(profesor, 'tutor', False)
+            else getattr(config, 'ajuste_no_tutores', 1.0)
+        )
+        participacion = profesor.porcentaje_jornada * factor * ajuste_tutoria
         profesores_con_factor.append((profesor.id, participacion))
         suma_ponderada += participacion
 
@@ -255,16 +408,18 @@ def obtener_estadisticas(session: Session) -> Dict:
     if not config:
         return {}
 
-    dias_lectivos = calcular_dias_lectivos(
-        config.fecha_inicio_curso,
-        config.fecha_fin_curso
-    )
+    dias_lectivos = len(listar_dias_lectivos(config))
 
     recreos_manana, recreos_tarde = calcular_recreos_activos(session)
     num_zonas = session.query(Zona).count()
     num_profesores = session.query(Profesor).count()
 
-    slots_totales = dias_lectivos * (recreos_manana + recreos_tarde) * num_zonas
+    lista_recreos = _parse_recreos_config(config)
+    if lista_recreos:
+        zonas_por_dia = sum(min(r.get('zonas', 1), num_zonas) for r in lista_recreos)
+        slots_totales = dias_lectivos * zonas_por_dia
+    else:
+        slots_totales = dias_lectivos * (recreos_manana + recreos_tarde) * num_zonas
 
     return {
         "dias_lectivos": dias_lectivos,

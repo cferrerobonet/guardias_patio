@@ -48,18 +48,37 @@ Futuro:
    - Evita dos guardias el mismo día para la misma persona (si es posible)
    - Evita repetir zona consecutiva (si es posible)
 
-## 🖥️ Interfaz de Usuario (Prevista)
+## 🖥️ Interfaz de Usuario
+Módulos implementados:
+- ✅ **Gestión de profesores**: Alta, visualización y eliminación
+- ✅ **Gestión de zonas**: Creación y gestión de zonas de vigilancia
+- ✅ **Configuración de curso**: Fechas, horarios de recreos, festivos automáticos, multiplicadores
+- ✅ **Generación de calendario**: Cálculo automático de guardias con distribución equitativa
+- ✅ **Vista de Calendario**: Visualización interactiva de guardias asignadas con filtros por profesor, zona y turno
+- ✅ **Importar/Exportar datos**: Portabilidad completa de datos entre equipos (ver [documentación](documentacion/importar_exportar.md))
+
 Módulos previstos:
-- Gestión de profesores
-- Gestión de zonas
-- Configuración de curso y horarios de recreos
-- Generación de calendario
-- Vista calendario (filtros por profesor / zona / turno / mes)
 - Vista detalle por profesor y por zona
 - Regeneración controlada
-- Exportación (Excel / PDF)
+- Exportación avanzada (Excel / PDF)
 
-## 📤 Exportación (Roadmap)
+## 📤 Exportación e Importación
+
+### ✅ Importar/Exportar Datos (Implementado)
+La aplicación permite exportar e importar **todos los datos** (profesores, zonas, configuración, guardias) en formato JSON para:
+- **Portabilidad**: Transferir datos entre diferentes equipos
+- **Respaldo**: Hacer copias de seguridad completas
+- **Migración**: Facilitar actualizaciones de la aplicación
+
+**Características**:
+- Exportación completa a archivo JSON con un clic
+- Importación con opción de limpieza de datos existentes
+- Preservación de todas las relaciones (profesores ↔ guardias, zonas ↔ guardias)
+- Formato legible y editable manualmente si es necesario
+
+**Documentación completa**: Ver [documentacion/importar_exportar.md](documentacion/importar_exportar.md)
+
+### 🔜 Exportación Avanzada (Roadmap)
 - Excel (openpyxl, pandas): calendario completo + resumen por profesor + distribución por zona
 - PDF (reportlab): calendario completo y PDFs individuales por profesor
 
@@ -158,15 +177,20 @@ Commits (Conventional Commits):
 - feat:, fix:, docs:, refactor:, test:, chore:
 Ramas: `feat/`, `fix/`, `chore/`, `refactor/`
 
-## 📂 Estructura de Servicios (Ejemplo)
+## 📂 Estructura de Servicios
 ```
 services/
- ├── profesor_service.py      # CRUD profesores
- ├── zona_service.py          # CRUD zonas
- ├── configuracion_service.py # Configuración curso
- ├── calculo_guardias.py      # Cálculo de cargas
- ├── asignador_guardias.py    # Generación de calendario
- ├── exportador.py            # Exportaciones (roadmap)
+ ├── calculador_guardias.py   # Cálculo de cargas y generación de calendario
+ ├── exportador.py            # Exportación e importación de datos JSON
+```
+
+Servicios previstos:
+```
+ ├── profesor_service.py      # CRUD profesores (futuro)
+ ├── zona_service.py          # CRUD zonas (futuro)
+ ├── configuracion_service.py # Configuración curso (futuro)
+ ├── exportador_excel.py      # Exportaciones Excel (roadmap)
+ ├── exportador_pdf.py        # Exportaciones PDF (roadmap)
 ```
 
 ## 🧠 Diseño y Patrones
@@ -193,7 +217,28 @@ Con 180 días lectivos, 4 zonas, 2 recreos/día, turnos completos:
 5. Desarrollar algoritmo de cálculo y asignación
 6. Conectar con interfaz (PyQt6)
 
-## 📄 Licencia
+## � Documentación
+
+### Guías de Usuario
+- [Vista de Calendario](documentacion/vista_calendario.md) - Visualización interactiva de guardias asignadas
+- [Tutorial de Importación/Exportación](documentacion/TUTORIAL_IMPORTAR_EXPORTAR.md) - Guía paso a paso para transferir datos
+- [Importar/Exportar Datos](documentacion/importar_exportar.md) - Documentación técnica de portabilidad
+
+### Documentación Técnica
+- [Validaciones de Asignación](documentacion/validaciones_asignacion.md) - **[NUEVO]** Guía completa de todas las validaciones del sistema
+- [Condiciones Generales de Asignación](documentacion/condiciones_generales_asignacion.md) - Reglas globales de asignación
+- [Condiciones Particulares por Profesor](documentacion/condiciones_particulares_profesores.md) - Restricciones individuales
+
+### Guías de Desarrollo
+- Pasos de implementación: [paso01](documentacion/paso01.md) a [paso10](documentacion/paso10.md)
+- [Solución PyQt6 en macOS](documentacion/solucion_pyqt6.md) - Resolución de problemas de instalación
+
+### Notas de Versión
+- [Versión 1.2.0](documentacion/RESUMEN_VALIDACION_NO_SIMULTANEIDAD.md) - Validación de no simultaneidad de zonas
+- [Versión 1.1.0](documentacion/NOTAS_VERSION_1_1_0.md) - Sistema de importación/exportación
+- [Resumen Importación/Exportación](documentacion/RESUMEN_IMPORTACION_EXPORTACION.md)
+
+## �📄 Licencia
 (Define la licencia: MIT / GPL / privativa según corresponda.)
 
 ---
