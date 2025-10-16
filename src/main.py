@@ -8,6 +8,10 @@ from services.calculador_guardias import (
     obtener_estadisticas,
 )
 from services.exportador import ExportadorDatos
+from services.exportador_pdf import ExportadorPDF
+from widgets.gestionar_sustituciones import GestorSustituciones
+from widgets.panel_estadisticas import PanelEstadisticas
+from widgets.vista_calendario import VistaCalendario
 
 GUI_AVAILABLE = True
 try:
@@ -1264,6 +1268,60 @@ class ImportExportForm(QWidget):
         self.importar_btn.clicked.connect(self.importar_datos)
         layout.addWidget(self.importar_btn)
 
+        # Sección de exportación a PDF
+        pdf_label = QLabel("EXPORTAR A PDF")
+        pdf_label.setStyleSheet("font-weight: bold; margin-top: 20px;")
+        layout.addWidget(pdf_label)
+
+        pdf_info = QLabel(
+            "Genera calendarios individuales en PDF para cada profesor con sus guardias."
+        )
+        layout.addWidget(pdf_info)
+
+        pdf_form_layout = QHBoxLayout()
+
+        pdf_mes_label = QLabel("Mes:")
+        pdf_form_layout.addWidget(pdf_mes_label)
+
+        self.pdf_mes_combo = QComboBox()
+        meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                 "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+        self.pdf_mes_combo.addItems(meses)
+        # Seleccionar mes actual
+        from datetime import datetime
+        self.pdf_mes_combo.setCurrentIndex(datetime.now().month - 1)
+        pdf_form_layout.addWidget(self.pdf_mes_combo)
+
+        pdf_anio_label = QLabel("Año:")
+        pdf_form_layout.addWidget(pdf_anio_label)
+
+        self.pdf_anio_combo = QComboBox()
+        anio_actual = datetime.now().year
+        for anio in range(anio_actual - 1, anio_actual + 3):
+            self.pdf_anio_combo.addItem(str(anio))
+        self.pdf_anio_combo.setCurrentIndex(1)  # Año actual
+        pdf_form_layout.addWidget(self.pdf_anio_combo)
+
+        layout.addLayout(pdf_form_layout)
+
+        self.exportar_pdf_btn = QPushButton("📄 Generar PDFs para todos los profesores...")
+        self.exportar_pdf_btn.clicked.connect(self.exportar_pdfs)
+        self.exportar_pdf_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #e74c3c;
+                color: white;
+                padding: 8px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+            """
+        )
+        layout.addWidget(self.exportar_pdf_btn)
+
         # Resultado
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
@@ -1370,6 +1428,55 @@ class ImportExportForm(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al importar: {e}")
             self.resultado_text.setText(f"❌ Error al importar: {e}")
+
+    def exportar_pdfs(self):
+        """Exporta calendarios PDF para todos los profesores."""
+        try:
+            # Obtener mes y año seleccionados
+            mes = self.pdf_mes_combo.currentIndex() + 1
+            anio = int(self.pdf_anio_combo.currentText())
+
+            # Diálogo para seleccionar carpeta de destino
+            carpeta = QFileDialog.getExistingDirectory(
+                self,
+                "Seleccionar carpeta para guardar PDFs",
+                "",
+                QFileDialog.Option.ShowDirsOnly
+            )
+
+            if not carpeta:
+                return  # Usuario canceló
+
+            session = SessionLocal()
+            try:
+                # Generar PDFs
+                exitos = ExportadorPDF.exportar_todos_los_profesores(
+                    session, mes, anio, carpeta
+                )
+
+                meses = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+
+                mensaje = (
+                    f"✅ PDFs generados exitosamente\n\n"
+                    f"Mes: {meses[mes]} {anio}\n"
+                    f"Carpeta: {carpeta}\n"
+                    f"PDFs generados: {exitos}\n"
+                )
+
+                self.resultado_text.setText(mensaje)
+                QMessageBox.information(
+                    self,
+                    "Éxito",
+                    f"Se generaron {exitos} calendarios PDF correctamente."
+                )
+
+            finally:
+                session.close()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al generar PDFs: {e}")
+            self.resultado_text.setText(f"❌ Error al generar PDFs: {e}")
 
 
 class CalendarioGuardiasForm(QWidget):
@@ -1626,17 +1733,51 @@ class MainWindow(QWidget):
         self.setWindowTitle("Guardias de Patio - Gestión")
         self.layout = QVBoxLayout()
 
+        # Crear sesión para widgets que la necesiten
+        self.session = SessionLocal()
+
         # Pestañas para profesores y zonas
         self.tabs = QTabWidget()
-        self.tabs.addTab(ProfesorForm(), "Profesores")
-        self.tabs.addTab(ZonaForm(), "Zonas")
-        self.tabs.addTab(ConfiguracionForm(), "Configuración")
-        self.tabs.addTab(AsignacionGuardiasForm(), "Asignación de Guardias")
-        self.tabs.addTab(CalendarioGuardiasForm(), "Calendario")
-        self.tabs.addTab(ImportExportForm(), "Importar / Exportar")
+        self.tabs.addTab(ProfesorForm(), "👨‍🏫 Profesores")
+        self.tabs.addTab(ZonaForm(), "🏫 Zonas")
+        self.tabs.addTab(ConfiguracionForm(), "⚙️ Configuración")
+        self.tabs.addTab(AsignacionGuardiasForm(), "📋 Asignación de Guardias")
+
+        # NUEVAS PESTAÑAS
+        self.vista_calendario = VistaCalendario(self.session)
+        self.tabs.addTab(self.vista_calendario, "📅 Vista Calendario")
+
+        self.panel_estadisticas = PanelEstadisticas(self.session)
+        self.tabs.addTab(self.panel_estadisticas, "📊 Estadísticas")
+
+        self.gestor_sustituciones = GestorSustituciones(self.session)
+        self.tabs.addTab(self.gestor_sustituciones, "🔄 Sustituciones")
+
+        self.tabs.addTab(CalendarioGuardiasForm(), "📆 Calendario (Antiguo)")
+        self.tabs.addTab(ImportExportForm(), "💾 Importar / Exportar")
 
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
+
+        # Conectar señal de cambio de pestaña para refrescar widgets
+        self.tabs.currentChanged.connect(self.on_tab_changed)
+
+    def on_tab_changed(self, index):
+        """Refresca los widgets cuando se cambia de pestaña."""
+        # Refrescar calendario si se muestra
+        if self.tabs.widget(index) == self.vista_calendario:
+            self.vista_calendario.refrescar()
+        # Refrescar estadísticas si se muestran
+        elif self.tabs.widget(index) == self.panel_estadisticas:
+            self.panel_estadisticas.refrescar()
+        # Refrescar sustituciones si se muestran
+        elif self.tabs.widget(index) == self.gestor_sustituciones:
+            self.gestor_sustituciones.refrescar()
+
+    def closeEvent(self, event):
+        """Cierra la sesión al cerrar la ventana."""
+        self.session.close()
+        event.accept()
 
 def main():
     # Mensaje de smoke test siempre visible (usado por tests)

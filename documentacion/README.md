@@ -11,7 +11,13 @@ Bienvenido a la documentación completa del sistema de gestión de guardias de p
 | **[REQUISITOS_Y_VALIDACIONES.md](REQUISITOS_Y_VALIDACIONES.md)** | Documento maestro con todos los requisitos funcionales, validaciones críticas y especificaciones técnicas | 15/10/2025 v2.0 |
 | **[REQUISITO_MAX_UNA_GUARDIA_DIA.md](REQUISITO_MAX_UNA_GUARDIA_DIA.md)** | Especificación detallada del requisito de máximo 1 guardia por día por profesor | 15/10/2025 v2.0 |
 
-### 🐛 Soluciones y Fixes
+### � Nuevas Funcionalidades
+
+| Documento | Descripción | Actualización |
+|-----------|-------------|---------------|
+| **[NUEVAS_FUNCIONALIDADES_V2_1.md](NUEVAS_FUNCIONALIDADES_V2_1.md)** | 📅 Vista Calendario, 📊 Estadísticas, 📄 Exportación PDF, 🔄 Gestión de Sustituciones | 16/10/2025 v2.1 ✨ **NUEVO** |
+
+### �🐛 Soluciones y Fixes
 
 | Documento | Descripción | Actualización |
 |-----------|-------------|---------------|
@@ -31,6 +37,18 @@ Bienvenido a la documentación completa del sistema de gestión de guardias de p
 - CRUD de profesores
 - Gestión de guardias
 - Configuración del curso
+
+---
+
+#### 🚀 **Nuevas Funcionalidades v2.1**
+👉 Lee: [NUEVAS_FUNCIONALIDADES_V2_1.md](NUEVAS_FUNCIONALIDADES_V2_1.md)
+
+**Las 4 nuevas funcionalidades:**
+
+1. **📅 Vista Calendario Mensual**: Visualización interactiva con colores por día
+2. **📊 Panel de Estadísticas**: Dashboard con métricas, tablas y gráficos matplotlib
+3. **📄 Exportador PDF**: Genera calendarios individuales por profesor (ReportLab)
+4. **🔄 Gestor de Sustituciones**: Sistema para reasignar guardias en ausencias
 
 ---
 
@@ -113,6 +131,7 @@ Bienvenido a la documentación completa del sistema de gestión de guardias de p
 | 15/10/2025 | 1.2 | UI profesional con QGroupBox y CSS | ✅ Completado |
 | 15/10/2025 | 1.3 | Fix: Duplicados en mismo slot (Validación 1) | ✅ Completado |
 | **15/10/2025** | **2.0** | **Máximo 1 guardia por día (Validación 2)** | ✅ **Completado** |
+| **16/10/2025** | **2.1** | **Vista Calendario + Estadísticas + PDF + Sustituciones** | ✅ **Completado** |
 
 ---
 
@@ -135,8 +154,9 @@ python src/main.py
 ### Para Usuarios
 
 1. **Lee primero**: [REQUISITOS_Y_VALIDACIONES.md](REQUISITOS_Y_VALIDACIONES.md) para entender las reglas del sistema
-2. **Problema con duplicados?**: [SOLUCION_DUPLICADOS_GUARDIAS.md](SOLUCION_DUPLICADOS_GUARDIAS.md)
-3. **Duda sobre límite diario?**: [REQUISITO_MAX_UNA_GUARDIA_DIA.md](REQUISITO_MAX_UNA_GUARDIA_DIA.md)
+2. **Nuevas funcionalidades**: [NUEVAS_FUNCIONALIDADES_V2_1.md](NUEVAS_FUNCIONALIDADES_V2_1.md) para descubrir las últimas mejoras ✨
+3. **Problema con duplicados?**: [SOLUCION_DUPLICADOS_GUARDIAS.md](SOLUCION_DUPLICADOS_GUARDIAS.md)
+4. **Duda sobre límite diario?**: [REQUISITO_MAX_UNA_GUARDIA_DIA.md](REQUISITO_MAX_UNA_GUARDIA_DIA.md)
 
 ---
 
@@ -156,11 +176,12 @@ documentacion/
 ├── README.md                              ← Este archivo (índice)
 ├── REQUISITOS_Y_VALIDACIONES.md          ← Documento maestro
 ├── REQUISITO_MAX_UNA_GUARDIA_DIA.md      ← Detalle requisito específico
+├── NUEVAS_FUNCIONALIDADES_V2_1.md        ← 4 funcionalidades avanzadas ✨
 └── SOLUCION_DUPLICADOS_GUARDIAS.md       ← Fix problema conocido
 ```
 
 ---
 
-**Última actualización:** 15 de octubre de 2025  
-**Versión del sistema:** 2.0  
+**Última actualización:** 16 de octubre de 2025  
+**Versión del sistema:** 2.1  
 **Estado:** ✅ Documentación completa y actualizada
