@@ -14,7 +14,7 @@ from typing import Callable
 from sqlalchemy import event
 from sqlalchemy.orm import Query, joinedload
 
-from src.utils.logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
