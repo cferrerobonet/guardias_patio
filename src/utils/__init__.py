@@ -3,9 +3,21 @@ Módulo de utilidades para la aplicación de Guardias de Patio.
 Contiene helpers, validadores, constantes y funciones comunes.
 """
 
-# Logging
 # Constantes
 from . import constants
+
+# Caché
+from .cache import (
+    cache_long,
+    cache_medium,
+    cache_query,
+    cache_short,
+    clear_all_cache,
+    get_cache_stats,
+    invalidate_cache,
+    print_cache_stats,
+    reset_cache_stats,
+)
 
 # Excepciones
 from .exceptions import (
@@ -22,6 +34,8 @@ from .exceptions import (
     ValidationError,
     ZonaNotFoundError,
 )
+
+# Logging
 from .logger import get_logger, log_function_call, setup_logging
 
 # Validadores
@@ -40,6 +54,16 @@ __all__ = [
     "get_logger",
     "setup_logging",
     "log_function_call",
+    # Caché
+    "cache_query",
+    "cache_short",
+    "cache_medium",
+    "cache_long",
+    "invalidate_cache",
+    "clear_all_cache",
+    "get_cache_stats",
+    "print_cache_stats",
+    "reset_cache_stats",
     # Validadores
     "validar_email",
     "validar_fecha",
