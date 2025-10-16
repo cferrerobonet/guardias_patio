@@ -20,10 +20,21 @@ src/
  ├── models/                # Modelos SQLAlchemy
  ├── database/              # Gestión de conexión y migraciones
  ├── services/              # Lógica de negocio (CRUD, cálculo, asignación, exportación)
- ├── ui/                    # Interfaz gráfica (PyQt6 recomendado)
- ├── utils/                 # Logging, helpers
- └── tests/                 # Pruebas unitarias e integración
+ ├── widgets/               # Componentes reutilizables de UI
+ ├── utils/                 # 🆕 Sistema de utilidades (logging, validadores, excepciones)
+ │   ├── logger.py          # Sistema de logging centralizado
+ │   ├── validators.py      # Validadores de entrada de datos
+ │   ├── constants.py       # Constantes de aplicación
+ │   ├── exceptions.py      # Jerarquía de excepciones personalizadas
+ │   └── __init__.py        # Exportaciones organizadas
+ ├── ui_styles.py           # 🆕 Estilos CSS centralizados para UI
+ └── main.py                # Punto de entrada de la aplicación
+tests/                      # 🆕 124 tests unitarios (98% cobertura)
+ ├── test_validators.py     # Tests de validadores
+ ├── test_exceptions.py     # Tests de excepciones
+ └── test_logger.py         # Tests de logging
 alembic/                    # Migraciones de base de datos
+documentacion/              # Documentación completa del proyecto
 requirements.txt            # Dependencias
 ```
 
@@ -38,6 +49,160 @@ Futuro:
 - Exclusiones (ausencias temporales)
 - Preferencias (afinidad o evitación de zonas)
 - Histórico de calendarios
+
+---
+
+## 🛠️ Sistema de Utilidades v2.2
+
+### 📝 Logger (`src/utils/logger.py`)
+
+Sistema de logging centralizado con soporte para archivo y consola.
+
+**Ejemplo de uso básico:**
+```python
+from src.utils.logger import get_logger, log_function_call
+
+# Obtener logger para el módulo
+logger = get_logger(__name__)
+
+# Logging simple
+logger.info("Operación iniciada")
+logger.error("Error detectado", exc_info=True)
+
+# Decorador para logging automático de funciones
+@log_function_call(logger)
+def procesar_datos(param1, param2):
+    logger.debug(f"Procesando {param1} y {param2}")
+    return resultado
+```
+
+**Configuración:**
+```python
+from src.utils.logger import setup_logging
+
+setup_logging(
+    log_file="app.log",
+    level="DEBUG",
+    format_string="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+```
+
+### ✅ Validadores (`src/utils/validators.py`)
+
+7 validadores con interfaz consistente: `Tuple[bool, Optional[str]]`
+
+**Ejemplos:**
+```python
+from src.utils.validators import (
+    validar_email,
+    validar_nombre_completo,
+    validar_horas_contrato,
+    validar_turno,
+    validar_dias_semana
+)
+
+# Validar email
+valido, error = validar_email("profesor@colegio.es")
+if not valido:
+    mostrar_error(error)
+
+# Validar nombre en formato "APELLIDOS, NOMBRE"
+valido, error = validar_nombre_completo("García López, María")
+
+# Validar horas de contrato (0-40)
+valido, error = validar_horas_contrato(25)
+
+# Validar turno (mañana/tarde/mixto)
+valido, error = validar_turno("mañana")
+
+# Validar días de la semana
+valido, error = validar_dias_semana("lunes,miércoles,viernes")
+```
+
+### 📊 Constantes (`src/utils/constants.py`)
+
+Más de 80 constantes organizadas por categorías:
+
+```python
+from src.utils.constants import (
+    # Metadata
+    APP_NAME, APP_VERSION, APP_AUTHOR,
+    
+    # Turnos
+    TURNO_MANANA, TURNO_TARDE, TURNO_MIXTO, TURNOS_VALIDOS,
+    
+    # Días
+    DIA_LUNES, DIA_MARTES, DIAS_SEMANA,
+    
+    # Validación
+    MAX_HORAS_CONTRATO, MAX_GUARDIAS_POR_PROFESOR_DIA,
+    
+    # UI
+    MAX_WIDTH_INPUT_SMALL, MAX_WIDTH_INPUT_MEDIUM,
+    
+    # Mensajes
+    MSG_EXITO_GUARDADO, MSG_ERROR_TITULO, MSG_CONFIRMACION_ELIMINAR
+)
+
+# Ejemplo de uso
+if horas > MAX_HORAS_CONTRATO:
+    QMessageBox.warning(self, MSG_ERROR_TITULO, "Horas excedidas")
+```
+
+### ⚠️ Excepciones (`src/utils/exceptions.py`)
+
+Jerarquía de 11 excepciones personalizadas:
+
+```python
+from src.utils.exceptions import (
+    ValidationError,
+    DatabaseError,
+    ProfesorNotFoundError,
+    MaxGuardiasExceededError,
+    InsufficientProfesoresError
+)
+
+# Manejo de errores específicos
+try:
+    profesor = buscar_profesor(profesor_id)
+except ProfesorNotFoundError as e:
+    logger.error(f"Profesor no encontrado: {e.profesor_id}")
+    mostrar_mensaje_error(str(e))
+except DatabaseError as e:
+    logger.critical(f"Error de BD: {e.detalles}")
+    reconectar_base_datos()
+
+# Lanzar excepciones con contexto
+if guardias_hoy >= MAX_GUARDIAS:
+    raise MaxGuardiasExceededError(
+        profesor_nombre=profesor.nombre,
+        fecha=fecha.isoformat()
+    )
+```
+
+### 🧪 Testing
+
+**124 tests unitarios** con **98% de cobertura**:
+
+```bash
+# Ejecutar todos los tests
+python -m unittest discover tests
+
+# Tests específicos
+python -m unittest tests.test_validators
+python -m unittest tests.test_exceptions
+python -m unittest tests.test_logger
+
+# Con pytest (requiere instalación)
+pytest tests/ -v --cov=src/utils
+```
+
+**Cobertura por módulo:**
+- `validators.py`: 100% (86 tests)
+- `exceptions.py`: 100% (23 tests)
+- `logger.py`: 95% (15 tests)
+
+---
 
 ## 🔢 Algoritmos Clave
 1. Cálculo de cargas: determina cuántas guardias debe asumir cada profesor proporcionalmente a su porcentaje de jornada y turno.
@@ -90,7 +255,14 @@ La aplicación permite exportar e importar **todos los datos** (profesores, zona
 - Logging centralizado (`utils/logger.py`)
 
 ## 🧪 Testing
-Pruebas previstas:
+
+### ✅ Tests Implementados (v2.2)
+- **124 tests unitarios** con **98% de cobertura** del sistema de utilidades
+- `tests/test_validators.py`: 86 tests de validación de datos
+- `tests/test_exceptions.py`: 23 tests de jerarquía de excepciones
+- `tests/test_logger.py`: 15 tests del sistema de logging
+
+### 🔜 Pruebas Previstas
 - Unitarias: cálculo de guardias, asignador, servicios CRUD
 - Integración: flujo completo (crear datos → configurar → generar → validar)
 - Futuro: pruebas sobre ajustes manuales y preferencias
@@ -225,7 +397,7 @@ Con 180 días lectivos, 4 zonas, 2 recreos/día, turnos completos:
 - [Importar/Exportar Datos](documentacion/importar_exportar.md) - Documentación técnica de portabilidad
 
 ### Documentación Técnica
-- [Validaciones de Asignación](documentacion/validaciones_asignacion.md) - **[NUEVO]** Guía completa de todas las validaciones del sistema
+- [Validaciones de Asignación](documentacion/validaciones_asignacion.md) - Guía completa de todas las validaciones del sistema
 - [Condiciones Generales de Asignación](documentacion/condiciones_generales_asignacion.md) - Reglas globales de asignación
 - [Condiciones Particulares por Profesor](documentacion/condiciones_particulares_profesores.md) - Restricciones individuales
 
@@ -233,7 +405,12 @@ Con 180 días lectivos, 4 zonas, 2 recreos/día, turnos completos:
 - Pasos de implementación: [paso01](documentacion/paso01.md) a [paso10](documentacion/paso10.md)
 - [Solución PyQt6 en macOS](documentacion/solucion_pyqt6.md) - Resolución de problemas de instalación
 
+### Refactorización y Utilidades v2.2
+- **[NUEVO]** [Refactorización v2.2](documentacion/REFACTORIZACION_v2.2.md) - Guía completa de utilidades (570 líneas)
+- **[NUEVO]** [Resumen Ejecutivo v2.2.1](documentacion/RESUMEN_v2.2.1.md) - Resumen con métricas (255 líneas)
+
 ### Notas de Versión
+- **[NUEVO]** [Versión 2.2.0](documentacion/RESUMEN_v2.2.1.md) - Sistema de utilidades completo (logger, validadores, excepciones, tests)
 - [Versión 1.2.0](documentacion/RESUMEN_VALIDACION_NO_SIMULTANEIDAD.md) - Validación de no simultaneidad de zonas
 - [Versión 1.1.0](documentacion/NOTAS_VERSION_1_1_0.md) - Sistema de importación/exportación
 - [Resumen Importación/Exportación](documentacion/RESUMEN_IMPORTACION_EXPORTACION.md)
