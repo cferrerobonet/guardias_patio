@@ -842,22 +842,39 @@ class ZonaForm(QWidget):
     def guardar_zona(self):
         session = SessionLocal()
         try:
-            nombre_zona = self.nombre_zona_input.text()
-            descripcion = self.descripcion_input.text()
+            nombre_zona = self.nombre_zona_input.text().strip()
+            descripcion = self.descripcion_input.text().strip()
 
+            # Validar nombre de zona
             if not nombre_zona:
-                QMessageBox.warning(self, "Falta nombre", "Debes indicar el nombre de la zona.")
+                QMessageBox.warning(
+                    self,
+                    constants.MSG_ERROR_TITULO,
+                    "El nombre de la zona no puede estar vacío.",
+                )
                 return
 
-            nueva_zona = Zona(nombre_zona=nombre_zona, descripcion=descripcion)
+            if len(nombre_zona) < 3:
+                QMessageBox.warning(
+                    self,
+                    constants.MSG_ERROR_TITULO,
+                    "El nombre de la zona debe tener al menos 3 caracteres.",
+                )
+                return
+
+            nueva_zona = Zona(nombre_zona=nombre_zona, descripcion=descripcion or None)
             session.add(nueva_zona)
             session.commit()
-            QMessageBox.information(self, "Éxito", f"Zona '{nombre_zona}' guardada correctamente.")
+            QMessageBox.information(
+                self,
+                constants.MSG_EXITO_GUARDAR,
+                f"Zona '{nombre_zona}' guardada correctamente.",
+            )
             self.nombre_zona_input.clear()
             self.descripcion_input.clear()
             self.cargar_zonas()  # Actualizar lista tras guardar
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error al guardar: {e}")
+            QMessageBox.critical(self, constants.MSG_ERROR_BD, f"Error al guardar: {e}")
         finally:
             session.close()
 

@@ -16,6 +16,9 @@ from typing import Dict, List, Optional, Tuple
 
 from models.models import Configuracion, Profesor, Zona
 from sqlalchemy.orm import Session
+from utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def calcular_dias_lectivos(fecha_inicio: datetime, fecha_fin: datetime) -> int:
@@ -248,7 +251,7 @@ def calcular_factor_participacion(
         return 1.0
 
 
-def calcular_distribucion_base(
+def calcular_distribucion_cruda(
     session: Session
 ) -> Dict[int, float]:
     """
@@ -260,18 +263,25 @@ def calcular_distribucion_base(
     Returns:
         Diccionario {profesor_id: guardias_crudas_float}
     """
+    logger.info("Iniciando cálculo de distribución cruda de guardias")
+
     # Obtener datos necesarios
     config = session.query(Configuracion).first()
     if not config:
+        logger.error("No existe configuración del curso")
         raise ValueError("No existe configuración del curso")
 
     profesores = session.query(Profesor).all()
     if not profesores:
+        logger.error("No hay profesores registrados")
         raise ValueError("No hay profesores registrados")
+    logger.info(f"Profesores a considerar: {len(profesores)}")
 
     zonas = session.query(Zona).all()
     if not zonas:
+        logger.error("No hay zonas registradas")
         raise ValueError("No hay zonas registradas")
+    logger.info(f"Zonas disponibles: {len(zonas)}")
 
     # Calcular días lectivos con festivos
     dias_list = listar_dias_lectivos(config)
@@ -327,6 +337,10 @@ def calcular_distribucion_base(
     for profesor_id, participacion in profesores_con_factor:
         guardias_crudas = (participacion / suma_ponderada) * slots_totales
         distribucion[profesor_id] = guardias_crudas
+
+    logger.info(f"Distribución cruda calculada para {len(distribucion)} profesores")
+    logger.debug(f"Total slots a distribuir: {slots_totales}")
+    logger.debug(f"Días lectivos: {dias_lectivos}, Recreos/día: {recreos_totales_dia}")
 
     return distribucion
 
@@ -388,7 +402,7 @@ def calcular_guardias_por_profesor(session: Session) -> Dict[int, int]:
     Raises:
         ValueError: Si faltan datos de configuración, profesores o zonas
     """
-    distribucion_cruda = calcular_distribucion_base(session)
+    distribucion_cruda = calcular_distribucion_cruda(session)
     distribucion_final = ajustar_redondeo(distribucion_cruda)
 
     return distribucion_final
