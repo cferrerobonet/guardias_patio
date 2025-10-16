@@ -179,19 +179,45 @@ STYLE_BUTTON_SECONDARY = f"""
 
 STYLE_INPUT = """
     QLineEdit, QDateEdit, QTimeEdit, QComboBox, QTextEdit {{
-        padding: 8px;
-        border: 2px solid #e0e0e0;
-        border-radius: 4px;
-        font-size: 13px;
-        background-color: white;
+        padding: 10px;
+        border: 2px solid #bdbdbd;
+        border-radius: 5px;
+        font-size: 14px;
+        background-color: #fafafa;
         min-height: 20px;
+        color: #212121;
     }}
     QLineEdit:focus, QDateEdit:focus, QTimeEdit:focus, QComboBox:focus, QTextEdit:focus {{
         border-color: #2196F3;
+        background-color: white;
+        border-width: 3px;
     }}
     QLineEdit:disabled, QDateEdit:disabled, QTimeEdit:disabled, QComboBox:disabled {{
-        background-color: #f5f5f5;
+        background-color: #eeeeee;
         color: #999999;
+        border-color: #e0e0e0;
+    }}
+    QComboBox::drop-down {{
+        border: none;
+        width: 30px;
+    }}
+    QComboBox::down-arrow {{
+        image: none;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid #666666;
+        margin-right: 8px;
+    }}
+"""
+
+# Estilo específico para etiquetas de campos
+STYLE_LABEL_FIELD = f"""
+    QLabel {{
+        font-size: 13px;
+        font-weight: bold;
+        color: {COLOR_TEXT_DARK};
+        margin-bottom: 4px;
+        margin-top: 8px;
     }}
 """
 

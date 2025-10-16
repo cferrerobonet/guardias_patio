@@ -7,7 +7,7 @@ from calendar import monthrange
 from collections import defaultdict
 from datetime import date, datetime
 
-from models.models import Guardia, Profesor, Zona
+from models.models import Ausencia, Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -95,6 +95,9 @@ class VistaCalendario(QWidget):
         leyenda_hoy = QLabel("🟨 Hoy")
         leyenda_layout.addWidget(leyenda_hoy)
 
+        leyenda_ausencias = QLabel("🏥 Con ausencias")
+        leyenda_layout.addWidget(leyenda_ausencias)
+
         leyenda_layout.addStretch()
         layout_principal.addLayout(leyenda_layout)
 
@@ -156,6 +159,31 @@ class VistaCalendario(QWidget):
         for g in guardias:
             guardias_por_fecha[g.fecha].append(g)
 
+        # Cargar ausencias del mes
+        ausencias = (
+            self.session.query(Ausencia)
+            .filter(
+                Ausencia.activa == True,  # noqa: E712
+                Ausencia.fecha_inicio <= ultimo_dia,
+                Ausencia.fecha_fin >= primer_dia,
+            )
+            .all()
+        )
+
+        # Agrupar ausencias por fecha (una ausencia puede abarcar múltiples días)
+        ausencias_por_fecha = defaultdict(list)
+        for ausencia in ausencias:
+            # Iterar sobre cada día de la ausencia
+            fecha_actual_ausencia = max(ausencia.fecha_inicio, primer_dia)
+            fecha_fin_ausencia = min(ausencia.fecha_fin, ultimo_dia)
+
+            from datetime import timedelta
+
+            while fecha_actual_ausencia <= fecha_fin_ausencia:
+                if fecha_actual_ausencia.month == self.mes_mostrado:
+                    ausencias_por_fecha[fecha_actual_ausencia].append(ausencia)
+                fecha_actual_ausencia = fecha_actual_ausencia + timedelta(days=1)
+
         # Día de la semana del primer día (0=Lunes, 6=Domingo)
         dia_semana_inicio = primer_dia.weekday()
 
@@ -166,9 +194,10 @@ class VistaCalendario(QWidget):
         for dia_num in range(1, dias_en_mes + 1):
             fecha_dia = date(self.anio_mostrado, self.mes_mostrado, dia_num)
             guardias_dia = guardias_por_fecha.get(fecha_dia, [])
+            ausencias_dia = ausencias_por_fecha.get(fecha_dia, [])
 
             # Crear celda de día
-            celda = self.crear_celda_dia(dia_num, guardias_dia, fecha_dia)
+            celda = self.crear_celda_dia(dia_num, guardias_dia, fecha_dia, ausencias_dia)
             self.calendario_layout.addWidget(celda, fila, columna)
 
             columna += 1
@@ -176,13 +205,22 @@ class VistaCalendario(QWidget):
                 columna = 0
                 fila += 1
 
-    def crear_celda_dia(self, dia_num: int, guardias: list, fecha: date) -> QGroupBox:
+    def crear_celda_dia(
+        self, dia_num: int, guardias: list, fecha: date, ausencias: list = None
+    ) -> QGroupBox:
         """Crea una celda para un día del calendario."""
+        if ausencias is None:
+            ausencias = []
+
         celda = QGroupBox()
         layout = QVBoxLayout()
 
-        # Número del día
-        label_dia = QLabel(str(dia_num))
+        # Número del día con icono de ausencia si aplica
+        texto_dia = str(dia_num)
+        if len(ausencias) > 0:
+            texto_dia = f"{dia_num} 🏥"
+
+        label_dia = QLabel(texto_dia)
         label_dia.setAlignment(Qt.AlignmentFlag.AlignRight)
         font_dia = QFont()
         font_dia.setBold(True)
@@ -193,6 +231,7 @@ class VistaCalendario(QWidget):
         # Determinar color de fondo
         es_hoy = fecha == self.fecha_actual
         tiene_guardias = len(guardias) > 0
+        tiene_ausencias = len(ausencias) > 0
 
         if es_hoy:
             celda.setStyleSheet(
@@ -254,6 +293,22 @@ class VistaCalendario(QWidget):
                 label_guardia.setWordWrap(True)
                 layout.addWidget(label_guardia)
                 guardias_mostradas += 1
+
+        # Mostrar ausencias
+        if tiene_ausencias:
+            profesores_ausentes = set()
+            for ausencia in ausencias:
+                if ausencia.profesor:
+                    profesores_ausentes.add(ausencia.profesor.nombre_completo)
+
+            if len(profesores_ausentes) > 0:
+                texto_ausencias = f"🏥 {len(profesores_ausentes)} ausente(s)"
+                label_ausencias = QLabel(texto_ausencias)
+                label_ausencias.setStyleSheet(
+                    "font-size: 8px; padding: 2px; background-color: #ffebee; "
+                    "border-radius: 3px; margin: 2px; color: #c62828;"
+                )
+                layout.addWidget(label_ausencias)
 
         # Si hay más guardias, mostrar contador
         if len(guardias) > 3:

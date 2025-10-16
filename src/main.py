@@ -16,6 +16,7 @@ from utils.validators import (
     validar_horas_contrato,
     validar_nombre_completo,
 )
+from widgets.gestionar_ausencias import GestionarAusenciasForm
 from widgets.gestionar_sustituciones import GestorSustituciones
 from widgets.panel_estadisticas import PanelEstadisticas
 from widgets.vista_calendario import VistaCalendario
@@ -26,6 +27,7 @@ setup_logging()
 GUI_AVAILABLE = True
 try:
     from PyQt6.QtCore import QDate, Qt, QTime
+    from PyQt6.QtGui import QKeySequence, QShortcut
     from PyQt6.QtWidgets import (
         QApplication,
         QCalendarWidget,
@@ -40,6 +42,7 @@ try:
         QLineEdit,
         QListWidget,
         QMessageBox,
+        QProgressDialog,
         QPushButton,
         QTableWidget,
         QTableWidgetItem,
@@ -197,6 +200,9 @@ class ProfesorForm(QWidget):
         # Variable para trackear si estamos editando
         self.profesor_editando_id = None
 
+        # Configurar atajos de teclado
+        self._configurar_atajos()
+
         # Layout principal horizontal: Tabla a la izquierda, Formulario a la derecha
         main_layout = QHBoxLayout()
 
@@ -207,7 +213,42 @@ class ProfesorForm(QWidget):
 
         titulo_lista = QLabel("📋 PROFESORES REGISTRADOS")
         titulo_lista.setStyleSheet(styles.STYLE_TITLE_MAIN)
-        left_section.addWidget(titulo_lista)        # Tabla de profesores con columnas
+        left_section.addWidget(titulo_lista)
+
+        # Campo de búsqueda
+        busqueda_layout = QHBoxLayout()
+        busqueda_layout.setSpacing(8)
+
+        busqueda_label = QLabel("🔍 Buscar:")
+        busqueda_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        busqueda_layout.addWidget(busqueda_label)
+
+        self.busqueda_input = QLineEdit()
+        self.busqueda_input.setPlaceholderText("Buscar por nombre o email...")
+        self.busqueda_input.setStyleSheet(styles.STYLE_INPUT)
+        self.busqueda_input.textChanged.connect(self.filtrar_profesores)
+        busqueda_layout.addWidget(self.busqueda_input)
+
+        self.limpiar_busqueda_btn = QPushButton("✖")
+        self.limpiar_busqueda_btn.setFixedWidth(30)
+        self.limpiar_busqueda_btn.setToolTip("Limpiar búsqueda")
+        self.limpiar_busqueda_btn.clicked.connect(self.limpiar_busqueda)
+        self.limpiar_busqueda_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e0e0e0;
+                border: none;
+                border-radius: 3px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #d0d0d0;
+            }
+        """)
+        busqueda_layout.addWidget(self.limpiar_busqueda_btn)
+
+        left_section.addLayout(busqueda_layout)
+
+        # Tabla de profesores con columnas
         self.tabla_profesores = QTableWidget()
         self.tabla_profesores.setColumnCount(6)
         self.tabla_profesores.setHorizontalHeaderLabels([
@@ -244,14 +285,17 @@ class ProfesorForm(QWidget):
         self.refresh_btn = QPushButton("🔄 Actualizar")
         self.refresh_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.refresh_btn.clicked.connect(self.cargar_profesores)
+        self.refresh_btn.setToolTip("Recargar la lista de profesores desde la base de datos (F5)")
 
         self.editar_btn = QPushButton("✏️ Editar")
         self.editar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
         self.editar_btn.clicked.connect(self.editar_profesor)
+        self.editar_btn.setToolTip("Editar el profesor seleccionado en la tabla")
 
         self.delete_btn = QPushButton("🗑️ Eliminar")
         self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.delete_btn.clicked.connect(self.eliminar_profesor)
+        self.delete_btn.setToolTip("Eliminar el profesor seleccionado (Del)")
 
         btn_layout.addWidget(self.refresh_btn)
         btn_layout.addWidget(self.editar_btn)
@@ -275,25 +319,40 @@ class ProfesorForm(QWidget):
         layout_basicos.setSpacing(8)
 
         label_nombre = QLabel("Nombre completo (formato: APELLIDOS, NOMBRE):")
-        label_nombre.setStyleSheet("font-size: 12px; color: #555;")
+        label_nombre.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_basicos.addWidget(label_nombre)
         self.nombre_completo_input = QLineEdit()
         self.nombre_completo_input.setPlaceholderText("GARCÍA LÓPEZ, JUAN")
         self.nombre_completo_input.setStyleSheet(styles.STYLE_INPUT)
         self.nombre_completo_input.setMaximumWidth(350)
+        self.nombre_completo_input.setToolTip(
+            "Formato requerido: APELLIDOS, NOMBRE\n"
+            "Ejemplo: GARCÍA LÓPEZ, JUAN\n"
+            "Debe contener una coma separando apellidos y nombre"
+        )
         layout_basicos.addWidget(self.nombre_completo_input)
 
         label_email = QLabel("Email corporativo:")
-        label_email.setStyleSheet("font-size: 12px; color: #555;")
+        label_email.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_basicos.addWidget(label_email)
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("profesor@colegio.edu")
         self.email_input.setStyleSheet(styles.STYLE_INPUT)
         self.email_input.setMaximumWidth(350)
+        self.email_input.setToolTip(
+            "Email corporativo del profesor (opcional)\n"
+            "Se usará para enviar calendarios y notificaciones\n"
+            "Debe ser una dirección de email válida"
+        )
         layout_basicos.addWidget(self.email_input)
 
         self.tutor_checkbox = QCheckBox("✓ Es tutor/a")
         self.tutor_checkbox.setStyleSheet("font-size: 13px; margin-top: 5px;")
+        self.tutor_checkbox.setToolTip(
+            "Marca si el profesor es tutor de un grupo\n"
+            "Los tutores pueden tener un ajuste de carga diferente\n"
+            "configurado en la sección de Configuración"
+        )
         layout_basicos.addWidget(self.tutor_checkbox)
 
         grupo_basicos.setLayout(layout_basicos)
@@ -306,16 +365,22 @@ class ProfesorForm(QWidget):
         layout_horario.setSpacing(8)
 
         label_horas = QLabel("Horas de contrato (total):")
-        label_horas.setStyleSheet("font-size: 12px; color: #555;")
+        label_horas.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_horario.addWidget(label_horas)
         self.horas_input = QLineEdit()
         self.horas_input.setPlaceholderText("Ej: 30.0")
         self.horas_input.setStyleSheet(styles.STYLE_INPUT)
         self.horas_input.setMaximumWidth(150)
+        self.horas_input.setToolTip(
+            "Horas totales de contrato del profesor\n"
+            "Debe ser un número positivo (ej: 30.0)\n"
+            "Se usará para calcular el porcentaje de jornada\n"
+            "y la distribución proporcional de guardias"
+        )
         layout_horario.addWidget(self.horas_input)
 
         label_turno = QLabel("Turno:")
-        label_turno.setStyleSheet("font-size: 12px; color: #555;")
+        label_turno.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_horario.addWidget(label_turno)
         self.turno_input = QComboBox()
         self.turno_input.addItems(["mañana", "tarde", "mixto"])
@@ -325,7 +390,7 @@ class ProfesorForm(QWidget):
 
         # Campos para turno mixto (inicialmente ocultos)
         self.label_horas_manana = QLabel("Horas de mañana:")
-        self.label_horas_manana.setStyleSheet("font-size: 12px; color: #555;")
+        self.label_horas_manana.setStyleSheet(styles.STYLE_LABEL_FIELD)
         self.horas_manana_input = QLineEdit()
         self.horas_manana_input.setPlaceholderText("Ej: 15.0")
         self.horas_manana_input.setStyleSheet(styles.STYLE_INPUT)
@@ -334,7 +399,7 @@ class ProfesorForm(QWidget):
         layout_horario.addWidget(self.horas_manana_input)
 
         self.label_horas_tarde = QLabel("Horas de tarde:")
-        self.label_horas_tarde.setStyleSheet("font-size: 12px; color: #555;")
+        self.label_horas_tarde.setStyleSheet(styles.STYLE_LABEL_FIELD)
         self.horas_tarde_input = QLineEdit()
         self.horas_tarde_input.setPlaceholderText("Ej: 15.0")
         self.horas_tarde_input.setStyleSheet(styles.STYLE_INPUT)
@@ -356,7 +421,7 @@ class ProfesorForm(QWidget):
         layout_restricciones.setSpacing(8)
 
         label_fecha = QLabel("Fecha de inicio de guardias (opcional):")
-        label_fecha.setStyleSheet("font-size: 12px; color: #555;")
+        label_fecha.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_restricciones.addWidget(label_fecha)
         self.fecha_inicio_guardias_input = QDateEdit()
         self.fecha_inicio_guardias_input.setCalendarPopup(True)
@@ -366,7 +431,7 @@ class ProfesorForm(QWidget):
         layout_restricciones.addWidget(self.fecha_inicio_guardias_input)
 
         label_dias = QLabel("Días de la semana permitidos (opcional):")
-        label_dias.setStyleSheet("font-size: 12px; color: #555;")
+        label_dias.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_restricciones.addWidget(label_dias)
         self.dias_semana_input = QLineEdit()
         self.dias_semana_input.setPlaceholderText("Ej: 0,1,2,3,4 (0=Lun, 6=Dom)")
@@ -375,7 +440,7 @@ class ProfesorForm(QWidget):
         layout_restricciones.addWidget(self.dias_semana_input)
 
         label_recreos = QLabel("Recreos permitidos (opcional):")
-        label_recreos.setStyleSheet("font-size: 12px; color: #555;")
+        label_recreos.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_restricciones.addWidget(label_recreos)
         self.recreos_permitidos_input = QLineEdit()
         self.recreos_permitidos_input.setPlaceholderText("Ej: 1,2 (IDs de recreo)")
@@ -425,6 +490,28 @@ class ProfesorForm(QWidget):
 
     def _on_turno_changed(self, value: str):
         self._toggle_mixto_fields(value == "mixto")
+
+    def _configurar_atajos(self):
+        """Configurar atajos de teclado para el formulario"""
+        # Ctrl+S: Guardar profesor
+        atajo_guardar = QShortcut(QKeySequence("Ctrl+S"), self)
+        atajo_guardar.activated.connect(self.guardar_profesor)
+
+        # Ctrl+F: Enfocar búsqueda
+        atajo_buscar = QShortcut(QKeySequence("Ctrl+F"), self)
+        atajo_buscar.activated.connect(lambda: self.busqueda_input.setFocus())
+
+        # F5: Refrescar lista
+        atajo_refrescar = QShortcut(QKeySequence("F5"), self)
+        atajo_refrescar.activated.connect(self.cargar_profesores)
+
+        # Esc: Cancelar edición
+        atajo_cancelar = QShortcut(QKeySequence("Esc"), self)
+        atajo_cancelar.activated.connect(self.cancelar_edicion)
+
+        # Del: Eliminar profesor seleccionado
+        atajo_eliminar = QShortcut(QKeySequence("Del"), self)
+        atajo_eliminar.activated.connect(self.eliminar_profesor)
 
     def _limpiar_formulario(self):
         """Limpiar todos los campos del formulario"""
@@ -624,6 +711,34 @@ class ProfesorForm(QWidget):
         finally:
             session.close()
 
+    def filtrar_profesores(self):
+        """Filtrar profesores en la tabla según el texto de búsqueda"""
+        texto_busqueda = self.busqueda_input.text().lower().strip()
+
+        # Si no hay texto de búsqueda, mostrar todas las filas
+        if not texto_busqueda:
+            for i in range(self.tabla_profesores.rowCount()):
+                self.tabla_profesores.setRowHidden(i, False)
+            return
+
+        # Filtrar filas según el texto de búsqueda
+        for i in range(self.tabla_profesores.rowCount()):
+            # Obtener nombre y email de la fila
+            nombre_item = self.tabla_profesores.item(i, 1)
+            email_item = self.tabla_profesores.item(i, 2)
+
+            nombre = nombre_item.text().lower() if nombre_item else ""
+            email = email_item.text().lower() if email_item else ""
+
+            # Mostrar fila si el texto está en nombre o email
+            coincide = texto_busqueda in nombre or texto_busqueda in email
+            self.tabla_profesores.setRowHidden(i, not coincide)
+
+    def limpiar_busqueda(self):
+        """Limpiar el campo de búsqueda y mostrar todos los profesores"""
+        self.busqueda_input.clear()
+        # filtrar_profesores se llamará automáticamente por textChanged
+
     def editar_profesor(self):
         """Cargar los datos del profesor seleccionado en el formulario para edición"""
         # Obtener la fila seleccionada
@@ -803,7 +918,7 @@ class ZonaForm(QWidget):
         layout_datos.setSpacing(8)
 
         label_nombre = QLabel("Nombre de la zona:")
-        label_nombre.setStyleSheet("font-size: 12px; color: #555;")
+        label_nombre.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_datos.addWidget(label_nombre)
         self.nombre_zona_input = QLineEdit()
         self.nombre_zona_input.setPlaceholderText("Ej: Patio Principal, Porche, etc.")
@@ -812,7 +927,7 @@ class ZonaForm(QWidget):
         layout_datos.addWidget(self.nombre_zona_input)
 
         label_desc = QLabel("Descripción (opcional):")
-        label_desc.setStyleSheet("font-size: 12px; color: #555;")
+        label_desc.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_datos.addWidget(label_desc)
         self.descripcion_input = QLineEdit()
         self.descripcion_input.setPlaceholderText("Detalles adicionales sobre la zona")
@@ -947,7 +1062,7 @@ class ConfiguracionForm(QWidget):
 
         # Fecha inicio
         label_inicio = QLabel("Fecha de inicio del curso:")
-        label_inicio.setStyleSheet("font-size: 12px; color: #555;")
+        label_inicio.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_fechas.addWidget(label_inicio)
         self.fecha_inicio_input = QDateEdit()
         self.fecha_inicio_input.setCalendarPopup(True)
@@ -958,7 +1073,7 @@ class ConfiguracionForm(QWidget):
 
         # Fecha fin
         label_fin = QLabel("Fecha de fin del curso:")
-        label_fin.setStyleSheet("font-size: 12px; color: #555;")
+        label_fin.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_fechas.addWidget(label_fin)
         self.fecha_fin_input = QDateEdit()
         self.fecha_fin_input.setCalendarPopup(True)
@@ -980,7 +1095,7 @@ class ConfiguracionForm(QWidget):
         col1 = QVBoxLayout()
         col1.setSpacing(5)
         label_r1m = QLabel("Recreo 1:")
-        label_r1m.setStyleSheet("font-size: 12px; color: #555;")
+        label_r1m.setStyleSheet(styles.STYLE_LABEL_FIELD)
         col1.addWidget(label_r1m)
         self.recreo1_manana_input = QTimeEdit()
         self.recreo1_manana_input.setTime(QTime(10, 30))
@@ -993,7 +1108,7 @@ class ConfiguracionForm(QWidget):
         col2 = QVBoxLayout()
         col2.setSpacing(5)
         label_r2m = QLabel("Recreo 2:")
-        label_r2m.setStyleSheet("font-size: 12px; color: #555;")
+        label_r2m.setStyleSheet(styles.STYLE_LABEL_FIELD)
         col2.addWidget(label_r2m)
         self.recreo2_manana_input = QTimeEdit()
         self.recreo2_manana_input.setTime(QTime(12, 0))
@@ -1016,7 +1131,7 @@ class ConfiguracionForm(QWidget):
         col3 = QVBoxLayout()
         col3.setSpacing(5)
         label_r1t = QLabel("Recreo 1:")
-        label_r1t.setStyleSheet("font-size: 12px; color: #555;")
+        label_r1t.setStyleSheet(styles.STYLE_LABEL_FIELD)
         col3.addWidget(label_r1t)
         self.recreo1_tarde_input = QTimeEdit()
         self.recreo1_tarde_input.setTime(QTime(15, 30))
@@ -1029,7 +1144,7 @@ class ConfiguracionForm(QWidget):
         col4 = QVBoxLayout()
         col4.setSpacing(5)
         label_r2t = QLabel("Recreo 2:")
-        label_r2t.setStyleSheet("font-size: 12px; color: #555;")
+        label_r2t.setStyleSheet(styles.STYLE_LABEL_FIELD)
         col4.addWidget(label_r2t)
         self.recreo2_tarde_input = QTimeEdit()
         self.recreo2_tarde_input.setTime(QTime(17, 0))
@@ -1052,7 +1167,7 @@ class ConfiguracionForm(QWidget):
         col5 = QVBoxLayout()
         col5.setSpacing(5)
         label_tutores = QLabel("Multiplicador tutores:")
-        label_tutores.setStyleSheet("font-size: 12px; color: #555;")
+        label_tutores.setStyleSheet(styles.STYLE_LABEL_FIELD)
         col5.addWidget(label_tutores)
         self.ajuste_tutores_input = QLineEdit()
         self.ajuste_tutores_input.setPlaceholderText("0.90")
@@ -1065,7 +1180,7 @@ class ConfiguracionForm(QWidget):
         col6 = QVBoxLayout()
         col6.setSpacing(5)
         label_no_tutores = QLabel("Multiplicador no tutores:")
-        label_no_tutores.setStyleSheet("font-size: 12px; color: #555;")
+        label_no_tutores.setStyleSheet(styles.STYLE_LABEL_FIELD)
         col6.addWidget(label_no_tutores)
         self.ajuste_no_tutores_input = QLineEdit()
         self.ajuste_no_tutores_input.setPlaceholderText("1.00")
@@ -1085,7 +1200,7 @@ class ConfiguracionForm(QWidget):
         layout_festivos.setSpacing(8)
 
         label_auto = QLabel("Aplicar festivos automáticos (1 sí / 0 no):")
-        label_auto.setStyleSheet("font-size: 12px; color: #555;")
+        label_auto.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_festivos.addWidget(label_auto)
         self.festivos_auto_input = QLineEdit()
         self.festivos_auto_input.setPlaceholderText("1")
@@ -1094,7 +1209,7 @@ class ConfiguracionForm(QWidget):
         layout_festivos.addWidget(self.festivos_auto_input)
 
         label_custom = QLabel("Días no lectivos personalizados (YYYY-MM-DD, separados por coma):")
-        label_custom.setStyleSheet("font-size: 12px; color: #555;")
+        label_custom.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_festivos.addWidget(label_custom)
         self.no_lectivos_input = QLineEdit()
         self.no_lectivos_input.setPlaceholderText("2025-10-09, 2025-10-12")
@@ -1112,7 +1227,7 @@ class ConfiguracionForm(QWidget):
         layout_avanzado.setSpacing(8)
 
         label_recreos = QLabel("Recreos configurables JSON (lista de objetos):")
-        label_recreos.setStyleSheet("font-size: 12px; color: #555;")
+        label_recreos.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_avanzado.addWidget(label_recreos)
         self.recreos_config_input = QLineEdit()
         self.recreos_config_input.setStyleSheet(styles.STYLE_INPUT)
@@ -1410,8 +1525,33 @@ Número de profesores: {stats.get('num_profesores', 0)}
             stats = obtener_estadisticas(session) or {}
             esperado = stats.get('slots_totales', 0)
 
-            calendario, resumen = generar_calendario_guardias(session)
-            guardar_guardias_en_bd(session, calendario)
+            # Crear y mostrar progress dialog
+            progress = QProgressDialog(
+                "Generando calendario de guardias...",
+                "Cancelar",
+                0,
+                100,
+                self
+            )
+            progress.setWindowTitle("Generando Guardias")
+            progress.setWindowModality(Qt.WindowModality.WindowModal)
+            progress.setMinimumDuration(0)  # Mostrar inmediatamente
+            progress.setValue(10)  # Inicio
+
+            try:
+                progress.setLabelText("Calculando distribución de guardias...")
+                progress.setValue(30)
+
+                calendario, resumen = generar_calendario_guardias(session)
+
+                progress.setLabelText("Guardando guardias en base de datos...")
+                progress.setValue(70)
+
+                guardar_guardias_en_bd(session, calendario)
+
+                progress.setValue(100)
+            finally:
+                progress.close()
 
             total_generado = len(calendario)
             diff = esperado - total_generado if esperado else 0
@@ -1521,6 +1661,7 @@ class ImportExportForm(QWidget):
         pdf_form_layout = QHBoxLayout()
 
         pdf_mes_label = QLabel("Mes:")
+        pdf_mes_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         pdf_form_layout.addWidget(pdf_mes_label)
 
         self.pdf_mes_combo = QComboBox()
@@ -1533,6 +1674,7 @@ class ImportExportForm(QWidget):
         pdf_form_layout.addWidget(self.pdf_mes_combo)
 
         pdf_anio_label = QLabel("Año:")
+        pdf_anio_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         pdf_form_layout.addWidget(pdf_anio_label)
 
         self.pdf_anio_combo = QComboBox()
@@ -1745,7 +1887,7 @@ class CalendarioGuardiasForm(QWidget):
         # Panel izquierdo: Calendario
         calendar_panel = QVBoxLayout()
         calendar_label = QLabel("Selecciona una fecha:")
-        calendar_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+        calendar_label.setStyleSheet(styles.STYLE_LABEL_FIELD + " margin-top: 10px;")
         calendar_panel.addWidget(calendar_label)
 
         self.calendario = QCalendarWidget()
@@ -1760,25 +1902,31 @@ class CalendarioGuardiasForm(QWidget):
 
         # Filtros
         filtros_label = QLabel("Filtros:")
-        filtros_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+        filtros_label.setStyleSheet(styles.STYLE_LABEL_FIELD + " margin-top: 10px;")
         right_panel.addWidget(filtros_label)
 
         # Filtro por profesor
-        right_panel.addWidget(QLabel("Profesor:"))
+        label_profesor_filtro = QLabel("Profesor:")
+        label_profesor_filtro.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        right_panel.addWidget(label_profesor_filtro)
         self.filtro_profesor = QComboBox()
         self.filtro_profesor.addItem("Todos los profesores", None)
         self.filtro_profesor.currentIndexChanged.connect(self.aplicar_filtros)
         right_panel.addWidget(self.filtro_profesor)
 
         # Filtro por zona
-        right_panel.addWidget(QLabel("Zona:"))
+        label_zona_filtro = QLabel("Zona:")
+        label_zona_filtro.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        right_panel.addWidget(label_zona_filtro)
         self.filtro_zona = QComboBox()
         self.filtro_zona.addItem("Todas las zonas", None)
         self.filtro_zona.currentIndexChanged.connect(self.aplicar_filtros)
         right_panel.addWidget(self.filtro_zona)
 
         # Filtro por turno
-        right_panel.addWidget(QLabel("Turno:"))
+        label_turno_filtro = QLabel("Turno:")
+        label_turno_filtro.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        right_panel.addWidget(label_turno_filtro)
         self.filtro_turno = QComboBox()
         self.filtro_turno.addItems(["Todos", "mañana", "tarde"])
         self.filtro_turno.currentIndexChanged.connect(self.aplicar_filtros)
@@ -1791,7 +1939,7 @@ class CalendarioGuardiasForm(QWidget):
 
         # Detalles del día seleccionado
         detalles_label = QLabel("Guardias del día seleccionado:")
-        detalles_label.setStyleSheet("font-weight: bold; margin-top: 20px;")
+        detalles_label.setStyleSheet(styles.STYLE_LABEL_FIELD + " margin-top: 20px;")
         right_panel.addWidget(detalles_label)
 
         self.guardias_dia_text = QTextEdit()
@@ -1801,7 +1949,7 @@ class CalendarioGuardiasForm(QWidget):
 
         # Estadísticas
         stats_label = QLabel("Estadísticas:")
-        stats_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+        stats_label.setStyleSheet(styles.STYLE_LABEL_FIELD + " margin-top: 10px;")
         right_panel.addWidget(stats_label)
 
         self.stats_text = QTextEdit()
@@ -1976,12 +2124,16 @@ class MainWindow(QWidget):
         # Crear sesión para widgets que la necesiten
         self.session = SessionLocal()
 
+        # Configurar atajos de teclado globales
+        self._configurar_atajos_globales()
+
         # Pestañas para profesores y zonas
         self.tabs = QTabWidget()
         self.tabs.addTab(ProfesorForm(), "👨‍🏫 Profesores")
         self.tabs.addTab(ZonaForm(), "🏫 Zonas")
         self.tabs.addTab(ConfiguracionForm(), "⚙️ Configuración")
         self.tabs.addTab(AsignacionGuardiasForm(), "📋 Asignación de Guardias")
+        self.tabs.addTab(GestionarAusenciasForm(), "🏥 Ausencias")
 
         # NUEVAS PESTAÑAS
         self.vista_calendario = VistaCalendario(self.session)
@@ -2001,6 +2153,32 @@ class MainWindow(QWidget):
 
         # Conectar señal de cambio de pestaña para refrescar widgets
         self.tabs.currentChanged.connect(self.on_tab_changed)
+
+    def _configurar_atajos_globales(self):
+        """Configurar atajos de teclado globales"""
+        # Ctrl+Tab: Siguiente pestaña
+        atajo_siguiente = QShortcut(QKeySequence("Ctrl+Tab"), self)
+        atajo_siguiente.activated.connect(self._siguiente_pestana)
+
+        # Ctrl+Shift+Tab: Pestaña anterior
+        atajo_anterior = QShortcut(QKeySequence("Ctrl+Shift+Tab"), self)
+        atajo_anterior.activated.connect(self._pestana_anterior)
+
+        # Ctrl+Q: Salir
+        atajo_salir = QShortcut(QKeySequence("Ctrl+Q"), self)
+        atajo_salir.activated.connect(self.close)
+
+    def _siguiente_pestana(self):
+        """Cambiar a la siguiente pestaña"""
+        index_actual = self.tabs.currentIndex()
+        siguiente = (index_actual + 1) % self.tabs.count()
+        self.tabs.setCurrentIndex(siguiente)
+
+    def _pestana_anterior(self):
+        """Cambiar a la pestaña anterior"""
+        index_actual = self.tabs.currentIndex()
+        anterior = (index_actual - 1) % self.tabs.count()
+        self.tabs.setCurrentIndex(anterior)
 
     def on_tab_changed(self, index):
         """Refresca los widgets cuando se cambia de pestaña."""

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
-from models.models import Configuracion, Guardia, Profesor, Zona
+from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
     calcular_guardias_por_profesor,
@@ -16,6 +16,31 @@ from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
+
+
+def profesor_ausente(session: Session, profesor_id: int, fecha: date) -> bool:
+    """
+    Verifica si un profesor está ausente en una fecha específica.
+
+    Args:
+        session: Sesión de SQLAlchemy
+        profesor_id: ID del profesor a verificar
+        fecha: Fecha a verificar
+
+    Returns:
+        True si el profesor tiene una ausencia activa en esa fecha, False en caso contrario
+    """
+    ausencia = (
+        session.query(Ausencia)
+        .filter(
+            Ausencia.profesor_id == profesor_id,
+            Ausencia.fecha_inicio <= fecha,
+            Ausencia.fecha_fin >= fecha,
+            Ausencia.activa == True,  # noqa: E712
+        )
+        .first()
+    )
+    return ausencia is not None
 
 
 @dataclass
@@ -136,6 +161,10 @@ def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[i
             if not _dias_semana_ok(slot.fecha, p.dias_semana_permitidos):
                 continue
             if not _recreo_ok(slot.recreo_id, p.recreos_permitidos):
+                continue
+            # VALIDACIÓN AUSENCIAS: Excluir profesores ausentes en esta fecha
+            if profesor_ausente(session, p.id, slot.fecha):
+                logger.debug(f"Profesor {p.nombre_completo} ausente el {slot.fecha}")
                 continue
             # VALIDACIÓN CRÍTICA 1: Un profesor NO puede estar en dos zonas al mismo tiempo
             # (mismo día, mismo turno, mismo recreo)

@@ -1,4 +1,17 @@
-from sqlalchemy import Boolean, Column, Date, Float, ForeignKey, Integer, String, Text, Time
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    Time,
+)
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -49,3 +62,25 @@ class Guardia(Base):
     zona_id = Column(Integer, ForeignKey('zonas.id'))
     profesor = relationship('Profesor', back_populates='guardias')
     zona = relationship('Zona', back_populates='guardias')
+
+
+class Ausencia(Base):
+    """
+    Modelo para gestionar ausencias de profesores.
+    Permite registrar periodos en los que un profesor no está disponible.
+    """
+
+    __tablename__ = 'ausencias'
+    id = Column(Integer, primary_key=True)
+    profesor_id = Column(Integer, ForeignKey('profesores.id'), nullable=False)
+    fecha_inicio = Column(Date, nullable=False)
+    fecha_fin = Column(Date, nullable=False)
+    tipo = Column(String, nullable=False)  # baja_medica, permiso, vacaciones, otros
+    motivo = Column(Text, nullable=True)
+    documento_path = Column(String, nullable=True)  # Ruta al justificante
+    activa = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relación con Profesor
+    profesor = relationship('Profesor', backref='ausencias')
