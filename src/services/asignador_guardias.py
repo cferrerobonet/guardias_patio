@@ -13,6 +13,9 @@ from services.calculador_guardias import (
     listar_dias_lectivos,
 )
 from sqlalchemy.orm import Session
+from utils import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -84,15 +87,24 @@ def _build_slots(session: Session, config: Configuracion) -> List[Slot]:
 
 
 def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[int, int]]:
+    logger.info("Iniciando generación de calendario de guardias")
+
     config = session.query(Configuracion).first()
     if not config:
+        logger.error("No existe configuración del curso")
         raise ValueError("No existe configuración del curso")
+
     profesores = session.query(Profesor).all()
     if not profesores:
+        logger.error("No hay profesores registrados")
         raise ValueError("No hay profesores registrados")
+    logger.info(f"Profesores disponibles: {len(profesores)}")
+
     zonas = session.query(Zona).all()
     if not zonas:
+        logger.error("No hay zonas registradas")
         raise ValueError("No hay zonas registradas")
+    logger.info(f"Zonas configuradas: {len(zonas)}")
 
     cuotas = calcular_guardias_por_profesor(session)  # {prof_id: total}
     asignadas = defaultdict(int)
@@ -171,11 +183,16 @@ def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[i
         # Marcar que este profesor ya tiene guardia en este día (cualquier turno)
         guardias_por_dia_prof[(elegido.id, slot.fecha)] = True
 
+    logger.info(f"Calendario generado: {len(calendario)} guardias asignadas")
+    logger.debug(f"Distribución por profesor: {dict(asignadas)}")
     return (calendario, dict(asignadas))
 
 
 def guardar_guardias_en_bd(session: Session, calendario: List[Guardia]) -> None:
     if not calendario:
+        logger.warning("No hay guardias para guardar en la base de datos")
         return
+    logger.info(f"Guardando {len(calendario)} guardias en la base de datos")
     session.bulk_save_objects(calendario)
     session.commit()
+    logger.info("Guardias guardadas exitosamente")

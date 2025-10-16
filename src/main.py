@@ -1,6 +1,7 @@
 import os
 import sys
 
+import ui_styles as styles
 from database.db_manager import SessionLocal
 from models.models import Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
@@ -9,9 +10,18 @@ from services.calculador_guardias import (
 )
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
+from utils import constants, setup_logging
+from utils.validators import (
+    validar_email,
+    validar_horas_contrato,
+    validar_nombre_completo,
+)
 from widgets.gestionar_sustituciones import GestorSustituciones
 from widgets.panel_estadisticas import PanelEstadisticas
 from widgets.vista_calendario import VistaCalendario
+
+# Configurar logging al inicio
+setup_logging()
 
 GUI_AVAILABLE = True
 try:
@@ -183,148 +193,21 @@ class ProfesorForm(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Gestión de Profesores")
-        self.layout = QVBoxLayout()
 
         # Variable para trackear si estamos editando
         self.profesor_editando_id = None
 
-        # Sección de alta/edición
-        self.titulo_seccion = QLabel("=== ALTA DE PROFESOR ===")
-        self.titulo_seccion.setStyleSheet("font-weight: bold; font-size: 14px;")
-        self.layout.addWidget(self.titulo_seccion)
+        # Layout principal horizontal: Tabla a la izquierda, Formulario a la derecha
+        main_layout = QHBoxLayout()
 
-        # ===== GRUPO: Datos Básicos =====
-        grupo_basicos = QGroupBox("📋 Datos Básicos")
-        grupo_basicos.setStyleSheet("QGroupBox { font-weight: bold; }")
-        layout_basicos = QVBoxLayout()
+        # ========== SECCIÓN IZQUIERDA: LISTA DE PROFESORES ==========
+        left_section = QVBoxLayout()
+        left_section.setContentsMargins(10, 10, 10, 10)
+        left_section.setSpacing(10)
 
-        layout_basicos.addWidget(QLabel("Nombre completo (formato: APELLIDOS, NOMBRE):"))
-        self.nombre_completo_input = QLineEdit()
-        self.nombre_completo_input.setPlaceholderText("GARCÍA LÓPEZ, JUAN")
-        layout_basicos.addWidget(self.nombre_completo_input)
-
-        layout_basicos.addWidget(QLabel("Email corporativo:"))
-        self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("profesor@colegio.edu")
-        layout_basicos.addWidget(self.email_input)
-
-        self.tutor_checkbox = QCheckBox("✓ Es tutor/a")
-        layout_basicos.addWidget(self.tutor_checkbox)
-
-        grupo_basicos.setLayout(layout_basicos)
-        self.layout.addWidget(grupo_basicos)
-
-        # ===== GRUPO: Configuración de Horario =====
-        grupo_horario = QGroupBox("🕐 Configuración de Horario")
-        grupo_horario.setStyleSheet("QGroupBox { font-weight: bold; }")
-        layout_horario = QVBoxLayout()
-
-        layout_horario.addWidget(QLabel("Horas de contrato (total):"))
-        self.horas_input = QLineEdit()
-        self.horas_input.setPlaceholderText("Ej: 30.0")
-        layout_horario.addWidget(self.horas_input)
-
-        layout_horario.addWidget(QLabel("Turno:"))
-        self.turno_input = QComboBox()
-        self.turno_input.addItems(["mañana", "tarde", "mixto"])
-        layout_horario.addWidget(self.turno_input)
-
-        # Campos para turno mixto (inicialmente ocultos)
-        self.label_horas_manana = QLabel("Horas de mañana:")
-        self.horas_manana_input = QLineEdit()
-        self.horas_manana_input.setPlaceholderText("Ej: 15.0")
-        layout_horario.addWidget(self.label_horas_manana)
-        layout_horario.addWidget(self.horas_manana_input)
-
-        self.label_horas_tarde = QLabel("Horas de tarde:")
-        self.horas_tarde_input = QLineEdit()
-        self.horas_tarde_input.setPlaceholderText("Ej: 15.0")
-        layout_horario.addWidget(self.label_horas_tarde)
-        layout_horario.addWidget(self.horas_tarde_input)
-
-        grupo_horario.setLayout(layout_horario)
-        self.layout.addWidget(grupo_horario)
-
-        # Inicialmente ocultar campos mixto
-        self._toggle_mixto_fields(False)
-        self.turno_input.currentTextChanged.connect(self._on_turno_changed)
-
-        # ===== GRUPO: Restricciones y Preferencias =====
-        grupo_restricciones = QGroupBox("⚙️ Restricciones y Preferencias")
-        grupo_restricciones.setStyleSheet("QGroupBox { font-weight: bold; }")
-        layout_restricciones = QVBoxLayout()
-
-        layout_restricciones.addWidget(QLabel("Fecha de inicio de guardias (opcional):"))
-        self.fecha_inicio_guardias_input = QDateEdit()
-        self.fecha_inicio_guardias_input.setCalendarPopup(True)
-        self.fecha_inicio_guardias_input.setDisplayFormat("dd/MM/yyyy")
-        layout_restricciones.addWidget(self.fecha_inicio_guardias_input)
-
-        layout_restricciones.addWidget(QLabel(
-            "Días de la semana permitidos (opcional):"
-        ))
-        self.dias_semana_input = QLineEdit()
-        self.dias_semana_input.setPlaceholderText("Ej: 0,1,2,3,4 (0=Lun, 6=Dom)")
-        layout_restricciones.addWidget(self.dias_semana_input)
-
-        layout_restricciones.addWidget(QLabel("Recreos permitidos (opcional):"))
-        self.recreos_permitidos_input = QLineEdit()
-        self.recreos_permitidos_input.setPlaceholderText("Ej: 1,2 (IDs de recreo)")
-        layout_restricciones.addWidget(self.recreos_permitidos_input)
-
-        grupo_restricciones.setLayout(layout_restricciones)
-        self.layout.addWidget(grupo_restricciones)
-
-        # Botones de acción con estilos
-        botones_accion = QHBoxLayout()
-
-        self.submit_btn = QPushButton("💾 Guardar Profesor")
-        self.submit_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                font-weight: bold;
-                padding: 10px;
-                border-radius: 5px;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:pressed {
-                background-color: #3d8b40;
-            }
-        """)
-        self.submit_btn.clicked.connect(self.guardar_profesor)
-
-        self.cancelar_btn = QPushButton("❌ Cancelar Edición")
-        self.cancelar_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #f44336;
-                color: white;
-                font-weight: bold;
-                padding: 10px;
-                border-radius: 5px;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #da190b;
-            }
-            QPushButton:pressed {
-                background-color: #c1170a;
-            }
-        """)
-        self.cancelar_btn.clicked.connect(self.cancelar_edicion)
-        self.cancelar_btn.setVisible(False)  # Oculto por defecto
-
-        botones_accion.addWidget(self.submit_btn)
-        botones_accion.addWidget(self.cancelar_btn)
-        self.layout.addLayout(botones_accion)
-
-        # Sección de listado
-        self.layout.addWidget(QLabel("=== PROFESORES REGISTRADOS ==="))
-
-        # Tabla de profesores con columnas
+        titulo_lista = QLabel("📋 PROFESORES REGISTRADOS")
+        titulo_lista.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        left_section.addWidget(titulo_lista)        # Tabla de profesores con columnas
         self.tabla_profesores = QTableWidget()
         self.tabla_profesores.setColumnCount(6)
         self.tabla_profesores.setHorizontalHeaderLabels([
@@ -352,57 +235,183 @@ class ProfesorForm(QWidget):
         # Doble clic para editar
         self.tabla_profesores.doubleClicked.connect(self.editar_profesor)
 
-        self.layout.addWidget(self.tabla_profesores)
+        left_section.addWidget(self.tabla_profesores)
 
-        # Botones de gestión de tabla con estilos
+        # Botones de gestión de tabla
         btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(8)
 
         self.refresh_btn = QPushButton("🔄 Actualizar")
-        self.refresh_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2196F3;
-                color: white;
-                padding: 8px 15px;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #0b7dda; }
-        """)
+        self.refresh_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.refresh_btn.clicked.connect(self.cargar_profesores)
 
         self.editar_btn = QPushButton("✏️ Editar")
-        self.editar_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #FF9800;
-                color: white;
-                padding: 8px 15px;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #e68900; }
-        """)
+        self.editar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
         self.editar_btn.clicked.connect(self.editar_profesor)
 
         self.delete_btn = QPushButton("🗑️ Eliminar")
-        self.delete_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #f44336;
-                color: white;
-                padding: 8px 15px;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #da190b; }
-        """)
+        self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.delete_btn.clicked.connect(self.eliminar_profesor)
 
         btn_layout.addWidget(self.refresh_btn)
         btn_layout.addWidget(self.editar_btn)
         btn_layout.addWidget(self.delete_btn)
-        btn_layout.addStretch()  # Añadir espacio flexible al final
-        self.layout.addLayout(btn_layout)
+        btn_layout.addStretch()
+        left_section.addLayout(btn_layout)
 
-        self.setLayout(self.layout)
+        # ========== SECCIÓN DERECHA: FORMULARIO DE ALTA/EDICIÓN ==========
+        right_section = QVBoxLayout()
+        right_section.setContentsMargins(10, 0, 10, 10)
+        right_section.setSpacing(12)
+
+        self.titulo_seccion = QLabel("✏️ ALTA DE PROFESOR")
+        self.titulo_seccion.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        right_section.addWidget(self.titulo_seccion)
+
+        # ===== GRUPO: Datos Básicos =====
+        grupo_basicos = QGroupBox("📋 Datos Básicos")
+        grupo_basicos.setStyleSheet(styles.STYLE_GROUPBOX)
+        layout_basicos = QVBoxLayout()
+        layout_basicos.setSpacing(8)
+
+        label_nombre = QLabel("Nombre completo (formato: APELLIDOS, NOMBRE):")
+        label_nombre.setStyleSheet("font-size: 12px; color: #555;")
+        layout_basicos.addWidget(label_nombre)
+        self.nombre_completo_input = QLineEdit()
+        self.nombre_completo_input.setPlaceholderText("GARCÍA LÓPEZ, JUAN")
+        self.nombre_completo_input.setStyleSheet(styles.STYLE_INPUT)
+        self.nombre_completo_input.setMaximumWidth(350)
+        layout_basicos.addWidget(self.nombre_completo_input)
+
+        label_email = QLabel("Email corporativo:")
+        label_email.setStyleSheet("font-size: 12px; color: #555;")
+        layout_basicos.addWidget(label_email)
+        self.email_input = QLineEdit()
+        self.email_input.setPlaceholderText("profesor@colegio.edu")
+        self.email_input.setStyleSheet(styles.STYLE_INPUT)
+        self.email_input.setMaximumWidth(350)
+        layout_basicos.addWidget(self.email_input)
+
+        self.tutor_checkbox = QCheckBox("✓ Es tutor/a")
+        self.tutor_checkbox.setStyleSheet("font-size: 13px; margin-top: 5px;")
+        layout_basicos.addWidget(self.tutor_checkbox)
+
+        grupo_basicos.setLayout(layout_basicos)
+        right_section.addWidget(grupo_basicos)
+
+        # ===== GRUPO: Configuración de Horario =====
+        grupo_horario = QGroupBox("🕐 Configuración de Horario")
+        grupo_horario.setStyleSheet(styles.STYLE_GROUPBOX)
+        layout_horario = QVBoxLayout()
+        layout_horario.setSpacing(8)
+
+        label_horas = QLabel("Horas de contrato (total):")
+        label_horas.setStyleSheet("font-size: 12px; color: #555;")
+        layout_horario.addWidget(label_horas)
+        self.horas_input = QLineEdit()
+        self.horas_input.setPlaceholderText("Ej: 30.0")
+        self.horas_input.setStyleSheet(styles.STYLE_INPUT)
+        self.horas_input.setMaximumWidth(150)
+        layout_horario.addWidget(self.horas_input)
+
+        label_turno = QLabel("Turno:")
+        label_turno.setStyleSheet("font-size: 12px; color: #555;")
+        layout_horario.addWidget(label_turno)
+        self.turno_input = QComboBox()
+        self.turno_input.addItems(["mañana", "tarde", "mixto"])
+        self.turno_input.setStyleSheet(styles.STYLE_INPUT)
+        self.turno_input.setMaximumWidth(200)
+        layout_horario.addWidget(self.turno_input)
+
+        # Campos para turno mixto (inicialmente ocultos)
+        self.label_horas_manana = QLabel("Horas de mañana:")
+        self.label_horas_manana.setStyleSheet("font-size: 12px; color: #555;")
+        self.horas_manana_input = QLineEdit()
+        self.horas_manana_input.setPlaceholderText("Ej: 15.0")
+        self.horas_manana_input.setStyleSheet(styles.STYLE_INPUT)
+        self.horas_manana_input.setMaximumWidth(150)
+        layout_horario.addWidget(self.label_horas_manana)
+        layout_horario.addWidget(self.horas_manana_input)
+
+        self.label_horas_tarde = QLabel("Horas de tarde:")
+        self.label_horas_tarde.setStyleSheet("font-size: 12px; color: #555;")
+        self.horas_tarde_input = QLineEdit()
+        self.horas_tarde_input.setPlaceholderText("Ej: 15.0")
+        self.horas_tarde_input.setStyleSheet(styles.STYLE_INPUT)
+        self.horas_tarde_input.setMaximumWidth(150)
+        layout_horario.addWidget(self.label_horas_tarde)
+        layout_horario.addWidget(self.horas_tarde_input)
+
+        grupo_horario.setLayout(layout_horario)
+        right_section.addWidget(grupo_horario)
+
+        # Inicialmente ocultar campos mixto
+        self._toggle_mixto_fields(False)
+        self.turno_input.currentTextChanged.connect(self._on_turno_changed)
+
+        # ===== GRUPO: Restricciones y Preferencias =====
+        grupo_restricciones = QGroupBox("⚙️ Restricciones y Preferencias")
+        grupo_restricciones.setStyleSheet(styles.STYLE_GROUPBOX)
+        layout_restricciones = QVBoxLayout()
+        layout_restricciones.setSpacing(8)
+
+        label_fecha = QLabel("Fecha de inicio de guardias (opcional):")
+        label_fecha.setStyleSheet("font-size: 12px; color: #555;")
+        layout_restricciones.addWidget(label_fecha)
+        self.fecha_inicio_guardias_input = QDateEdit()
+        self.fecha_inicio_guardias_input.setCalendarPopup(True)
+        self.fecha_inicio_guardias_input.setDisplayFormat("dd/MM/yyyy")
+        self.fecha_inicio_guardias_input.setStyleSheet(styles.STYLE_INPUT)
+        self.fecha_inicio_guardias_input.setMaximumWidth(200)
+        layout_restricciones.addWidget(self.fecha_inicio_guardias_input)
+
+        label_dias = QLabel("Días de la semana permitidos (opcional):")
+        label_dias.setStyleSheet("font-size: 12px; color: #555;")
+        layout_restricciones.addWidget(label_dias)
+        self.dias_semana_input = QLineEdit()
+        self.dias_semana_input.setPlaceholderText("Ej: 0,1,2,3,4 (0=Lun, 6=Dom)")
+        self.dias_semana_input.setStyleSheet(styles.STYLE_INPUT)
+        self.dias_semana_input.setMaximumWidth(250)
+        layout_restricciones.addWidget(self.dias_semana_input)
+
+        label_recreos = QLabel("Recreos permitidos (opcional):")
+        label_recreos.setStyleSheet("font-size: 12px; color: #555;")
+        layout_restricciones.addWidget(label_recreos)
+        self.recreos_permitidos_input = QLineEdit()
+        self.recreos_permitidos_input.setPlaceholderText("Ej: 1,2 (IDs de recreo)")
+        self.recreos_permitidos_input.setStyleSheet(styles.STYLE_INPUT)
+        self.recreos_permitidos_input.setMaximumWidth(250)
+        layout_restricciones.addWidget(self.recreos_permitidos_input)
+
+        grupo_restricciones.setLayout(layout_restricciones)
+        right_section.addWidget(grupo_restricciones)
+
+        # Botones de acción con estilos
+        botones_accion = QHBoxLayout()
+        botones_accion.setSpacing(10)
+
+        self.submit_btn = QPushButton("💾 Guardar Profesor")
+        self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
+        self.submit_btn.clicked.connect(self.guardar_profesor)
+
+        self.cancelar_btn = QPushButton("❌ Cancelar Edición")
+        self.cancelar_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
+        self.cancelar_btn.clicked.connect(self.cancelar_edicion)
+        self.cancelar_btn.setVisible(False)  # Oculto por defecto
+
+        botones_accion.addWidget(self.submit_btn)
+        botones_accion.addWidget(self.cancelar_btn)
+        right_section.addLayout(botones_accion)
+
+        # Añadir espacio flexible al final del formulario
+        right_section.addStretch()
+
+        # ========== ENSAMBLAR LAYOUT PRINCIPAL ==========
+        # Tabla ocupa 60% del espacio, formulario 40%
+        main_layout.addLayout(left_section, 60)
+        main_layout.addLayout(right_section, 40)
+
+        self.setLayout(main_layout)
         self.cargar_profesores()  # Cargar al inicio
 
     def _toggle_mixto_fields(self, visible: bool):
@@ -431,8 +440,8 @@ class ProfesorForm(QWidget):
         self.turno_input.setCurrentIndex(0)
         # Resetear modo edición
         self.profesor_editando_id = None
-        self.titulo_seccion.setText("=== ALTA DE PROFESOR ===")
-        self.submit_btn.setText("Guardar profesor")
+        self.titulo_seccion.setText("✏️ ALTA DE PROFESOR")
+        self.submit_btn.setText("💾 Guardar Profesor")
         self.cancelar_btn.setVisible(False)
 
     def cancelar_edicion(self):
@@ -443,16 +452,29 @@ class ProfesorForm(QWidget):
     def guardar_profesor(self):
         session = SessionLocal()
         try:
+            # Validar nombre completo
             nombre_completo = self.nombre_completo_input.text().strip()
-            if not nombre_completo:
+            valido, error_msg = validar_nombre_completo(nombre_completo)
+            if not valido:
+                QMessageBox.warning(self, constants.MSG_ERROR_TITULO, error_msg)
+                return
+
+            # Validar horas de contrato
+            try:
+                horas = float(self.horas_input.text())
+            except ValueError:
                 QMessageBox.warning(
                     self,
-                    "Falta nombre",
-                    "Debes indicar el nombre completo (APELLIDOS, NOMBRE).",
+                    constants.MSG_ERROR_TITULO,
+                    "Las horas de contrato deben ser un número válido.",
                 )
                 return
 
-            horas = float(self.horas_input.text())
+            valido, error_msg = validar_horas_contrato(horas)
+            if not valido:
+                QMessageBox.warning(self, constants.MSG_ERROR_TITULO, error_msg)
+                return
+
             turno = self.turno_input.currentText()
             porcentaje = horas / 30.0
             # Si turno mixto, calcular proporciones
@@ -483,6 +505,14 @@ class ProfesorForm(QWidget):
                     )
                     return
                 # Aquí podrías guardar la proporción en la base de datos si el modelo lo permite
+            # Validar email corporativo si se proporciona
+            email_corporativo = self.email_input.text().strip() or None
+            if email_corporativo:
+                valido, error_msg = validar_email(email_corporativo)
+                if not valido:
+                    QMessageBox.warning(self, constants.MSG_ERROR_TITULO, error_msg)
+                    return
+
             # Campos nuevos opcionales
             tutor = self.tutor_checkbox.isChecked()
             fecha_inicio_guardias = (
@@ -491,7 +521,6 @@ class ProfesorForm(QWidget):
             )
             dias_semana_permitidos = self.dias_semana_input.text().strip()
             recreos_permitidos = self.recreos_permitidos_input.text().strip()
-            email_corporativo = self.email_input.text().strip() or None
 
             # Verificar si estamos editando o creando
             if self.profesor_editando_id is not None:
@@ -652,8 +681,8 @@ class ProfesorForm(QWidget):
 
             # Activar modo edición
             self.profesor_editando_id = id_profesor
-            self.titulo_seccion.setText(f"=== EDITAR PROFESOR [{id_profesor}] ===")
-            self.submit_btn.setText("Actualizar profesor")
+            self.titulo_seccion.setText(f"✏️ EDITAR PROFESOR [ID: {id_profesor}]")
+            self.submit_btn.setText("💾 Actualizar Profesor")
             self.cancelar_btn.setVisible(True)
 
         except Exception as e:
@@ -709,38 +738,105 @@ class ZonaForm(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Gestión de Zonas")
-        self.layout = QVBoxLayout()
 
-        # Sección de alta
-        self.layout.addWidget(QLabel("=== ALTA DE ZONA ==="))
+        # Layout principal horizontal
+        main_layout = QHBoxLayout()
 
-        self.nombre_zona_input = QLineEdit()
-        self.descripcion_input = QLineEdit()
+        # ========== SECCIÓN IZQUIERDA: LISTA DE ZONAS ==========
+        left_section = QVBoxLayout()
+        left_section.setContentsMargins(10, 10, 10, 10)
+        left_section.setSpacing(10)
 
-        self.layout.addWidget(QLabel("Nombre de la zona:"))
-        self.layout.addWidget(self.nombre_zona_input)
-        self.layout.addWidget(QLabel("Descripción:"))
-        self.layout.addWidget(self.descripcion_input)
+        titulo_lista = QLabel("🏫 ZONAS REGISTRADAS")
+        titulo_lista.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        left_section.addWidget(titulo_lista)
 
-        self.submit_btn = QPushButton("Guardar zona")
-        self.submit_btn.clicked.connect(self.guardar_zona)
-        self.layout.addWidget(self.submit_btn)
-
-        # Sección de listado
-        self.layout.addWidget(QLabel("=== ZONAS REGISTRADAS ==="))
         self.lista_zonas = QListWidget()
-        self.layout.addWidget(self.lista_zonas)
+        self.lista_zonas.setStyleSheet("""
+            QListWidget {
+                border: 2px solid #e0e0e0;
+                border-radius: 4px;
+                padding: 5px;
+                font-size: 13px;
+            }
+            QListWidget::item {
+                padding: 8px;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            QListWidget::item:selected {
+                background-color: #2196F3;
+                color: white;
+            }
+        """)
+        left_section.addWidget(self.lista_zonas)
 
+        # Botones de gestión
         btn_layout = QHBoxLayout()
-        self.refresh_btn = QPushButton("Actualizar lista")
+        btn_layout.setSpacing(8)
+
+        self.refresh_btn = QPushButton("🔄 Actualizar")
+        self.refresh_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.refresh_btn.clicked.connect(self.cargar_zonas)
-        self.delete_btn = QPushButton("Eliminar seleccionada")
+
+        self.delete_btn = QPushButton("🗑️ Eliminar")
+        self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.delete_btn.clicked.connect(self.eliminar_zona)
+
         btn_layout.addWidget(self.refresh_btn)
         btn_layout.addWidget(self.delete_btn)
-        self.layout.addLayout(btn_layout)
+        btn_layout.addStretch()
+        left_section.addLayout(btn_layout)
 
-        self.setLayout(self.layout)
+        # ========== SECCIÓN DERECHA: FORMULARIO DE ALTA ==========
+        right_section = QVBoxLayout()
+        right_section.setContentsMargins(10, 0, 10, 10)
+        right_section.setSpacing(12)
+
+        titulo_form = QLabel("✏️ NUEVA ZONA")
+        titulo_form.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        right_section.addWidget(titulo_form)
+
+        # Grupo de datos
+        grupo_datos = QGroupBox("📋 Datos de la Zona")
+        grupo_datos.setStyleSheet(styles.STYLE_GROUPBOX)
+        layout_datos = QVBoxLayout()
+        layout_datos.setSpacing(8)
+
+        label_nombre = QLabel("Nombre de la zona:")
+        label_nombre.setStyleSheet("font-size: 12px; color: #555;")
+        layout_datos.addWidget(label_nombre)
+        self.nombre_zona_input = QLineEdit()
+        self.nombre_zona_input.setPlaceholderText("Ej: Patio Principal, Porche, etc.")
+        self.nombre_zona_input.setStyleSheet(styles.STYLE_INPUT)
+        self.nombre_zona_input.setMaximumWidth(350)
+        layout_datos.addWidget(self.nombre_zona_input)
+
+        label_desc = QLabel("Descripción (opcional):")
+        label_desc.setStyleSheet("font-size: 12px; color: #555;")
+        layout_datos.addWidget(label_desc)
+        self.descripcion_input = QLineEdit()
+        self.descripcion_input.setPlaceholderText("Detalles adicionales sobre la zona")
+        self.descripcion_input.setStyleSheet(styles.STYLE_INPUT)
+        self.descripcion_input.setMaximumWidth(350)
+        layout_datos.addWidget(self.descripcion_input)
+
+        grupo_datos.setLayout(layout_datos)
+        right_section.addWidget(grupo_datos)
+
+        # Botón de guardar
+        self.submit_btn = QPushButton("💾 Guardar Zona")
+        self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
+        self.submit_btn.clicked.connect(self.guardar_zona)
+        right_section.addWidget(self.submit_btn)
+
+        # Espacio flexible
+        right_section.addStretch()
+
+        # ========== ENSAMBLAR LAYOUT PRINCIPAL ==========
+        main_layout.addLayout(left_section, 60)
+        main_layout.addLayout(right_section, 40)
+
+        self.setLayout(main_layout)
         self.cargar_zonas()  # Cargar al inicio
 
     def guardar_zona(self):
@@ -818,89 +914,216 @@ class ConfiguracionForm(QWidget):
         super().__init__()
         self.setWindowTitle("Configuración del Curso")
         self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(20, 20, 20, 20)
+        self.layout.setSpacing(15)
 
-        self.layout.addWidget(QLabel("=== CONFIGURACIÓN DEL CURSO ESCOLAR ==="))
+        # Título principal
+        titulo = QLabel("⚙️ CONFIGURACIÓN DEL CURSO ESCOLAR")
+        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        self.layout.addWidget(titulo)
 
-        # Fechas del curso
-        self.layout.addWidget(QLabel("Fecha de inicio del curso:"))
+        # ===== GRUPO: Fechas del Curso =====
+        grupo_fechas = QGroupBox("📅 Fechas del Curso")
+        grupo_fechas.setStyleSheet(styles.STYLE_GROUPBOX)
+        layout_fechas = QVBoxLayout()
+        layout_fechas.setSpacing(8)
+
+        # Fecha inicio
+        label_inicio = QLabel("Fecha de inicio del curso:")
+        label_inicio.setStyleSheet("font-size: 12px; color: #555;")
+        layout_fechas.addWidget(label_inicio)
         self.fecha_inicio_input = QDateEdit()
         self.fecha_inicio_input.setCalendarPopup(True)
         self.fecha_inicio_input.setDate(QDate.currentDate())
-        self.layout.addWidget(self.fecha_inicio_input)
+        self.fecha_inicio_input.setStyleSheet(styles.STYLE_INPUT)
+        self.fecha_inicio_input.setMaximumWidth(200)
+        layout_fechas.addWidget(self.fecha_inicio_input)
 
-        self.layout.addWidget(QLabel("Fecha de fin del curso:"))
+        # Fecha fin
+        label_fin = QLabel("Fecha de fin del curso:")
+        label_fin.setStyleSheet("font-size: 12px; color: #555;")
+        layout_fechas.addWidget(label_fin)
         self.fecha_fin_input = QDateEdit()
         self.fecha_fin_input.setCalendarPopup(True)
         self.fecha_fin_input.setDate(QDate.currentDate().addMonths(9))
-        self.layout.addWidget(self.fecha_fin_input)
+        self.fecha_fin_input.setStyleSheet(styles.STYLE_INPUT)
+        self.fecha_fin_input.setMaximumWidth(200)
+        layout_fechas.addWidget(self.fecha_fin_input)
 
-        # Horarios de recreos mañana
-        self.layout.addWidget(QLabel("=== RECREOS DE MAÑANA ==="))
+        grupo_fechas.setLayout(layout_fechas)
+        self.layout.addWidget(grupo_fechas)
 
-        self.layout.addWidget(QLabel("Hora recreo 1 mañana:"))
+        # ===== GRUPO: Recreos de Mañana =====
+        grupo_manana = QGroupBox("☀️ Recreos de Mañana")
+        grupo_manana.setStyleSheet(styles.STYLE_GROUPBOX)
+        layout_manana = QHBoxLayout()
+        layout_manana.setSpacing(15)
+
+        # Recreo 1 mañana
+        col1 = QVBoxLayout()
+        col1.setSpacing(5)
+        label_r1m = QLabel("Recreo 1:")
+        label_r1m.setStyleSheet("font-size: 12px; color: #555;")
+        col1.addWidget(label_r1m)
         self.recreo1_manana_input = QTimeEdit()
         self.recreo1_manana_input.setTime(QTime(10, 30))
-        self.layout.addWidget(self.recreo1_manana_input)
+        self.recreo1_manana_input.setStyleSheet(styles.STYLE_INPUT)
+        self.recreo1_manana_input.setMaximumWidth(120)
+        col1.addWidget(self.recreo1_manana_input)
+        layout_manana.addLayout(col1)
 
-        self.layout.addWidget(QLabel("Hora recreo 2 mañana:"))
+        # Recreo 2 mañana
+        col2 = QVBoxLayout()
+        col2.setSpacing(5)
+        label_r2m = QLabel("Recreo 2:")
+        label_r2m.setStyleSheet("font-size: 12px; color: #555;")
+        col2.addWidget(label_r2m)
         self.recreo2_manana_input = QTimeEdit()
         self.recreo2_manana_input.setTime(QTime(12, 0))
-        self.layout.addWidget(self.recreo2_manana_input)
+        self.recreo2_manana_input.setStyleSheet(styles.STYLE_INPUT)
+        self.recreo2_manana_input.setMaximumWidth(120)
+        col2.addWidget(self.recreo2_manana_input)
+        layout_manana.addLayout(col2)
 
-        # Horarios de recreos tarde (opcionales)
-        self.layout.addWidget(QLabel("=== RECREOS DE TARDE (opcional) ==="))
+        layout_manana.addStretch()
+        grupo_manana.setLayout(layout_manana)
+        self.layout.addWidget(grupo_manana)
 
-        self.layout.addWidget(QLabel("Hora recreo 1 tarde (opcional):"))
+        # ===== GRUPO: Recreos de Tarde =====
+        grupo_tarde = QGroupBox("🌙 Recreos de Tarde (opcional)")
+        grupo_tarde.setStyleSheet(styles.STYLE_GROUPBOX)
+        layout_tarde = QHBoxLayout()
+        layout_tarde.setSpacing(15)
+
+        # Recreo 1 tarde
+        col3 = QVBoxLayout()
+        col3.setSpacing(5)
+        label_r1t = QLabel("Recreo 1:")
+        label_r1t.setStyleSheet("font-size: 12px; color: #555;")
+        col3.addWidget(label_r1t)
         self.recreo1_tarde_input = QTimeEdit()
         self.recreo1_tarde_input.setTime(QTime(15, 30))
-        self.layout.addWidget(self.recreo1_tarde_input)
+        self.recreo1_tarde_input.setStyleSheet(styles.STYLE_INPUT)
+        self.recreo1_tarde_input.setMaximumWidth(120)
+        col3.addWidget(self.recreo1_tarde_input)
+        layout_tarde.addLayout(col3)
 
-        self.layout.addWidget(QLabel("Hora recreo 2 tarde (opcional):"))
+        # Recreo 2 tarde
+        col4 = QVBoxLayout()
+        col4.setSpacing(5)
+        label_r2t = QLabel("Recreo 2:")
+        label_r2t.setStyleSheet("font-size: 12px; color: #555;")
+        col4.addWidget(label_r2t)
         self.recreo2_tarde_input = QTimeEdit()
         self.recreo2_tarde_input.setTime(QTime(17, 0))
-        self.layout.addWidget(self.recreo2_tarde_input)
+        self.recreo2_tarde_input.setStyleSheet(styles.STYLE_INPUT)
+        self.recreo2_tarde_input.setMaximumWidth(120)
+        col4.addWidget(self.recreo2_tarde_input)
+        layout_tarde.addLayout(col4)
 
-        # Ajustes adicionales
-        self.layout.addWidget(QLabel("=== AJUSTES ADICIONALES ==="))
-        # Ajuste por tutoría
-        self.layout.addWidget(QLabel("Multiplicador tutores (e.g., 0.90):"))
+        layout_tarde.addStretch()
+        grupo_tarde.setLayout(layout_tarde)
+        self.layout.addWidget(grupo_tarde)
+
+        # ===== GRUPO: Ajustes Adicionales =====
+        grupo_ajustes = QGroupBox("🔧 Ajustes Adicionales")
+        grupo_ajustes.setStyleSheet(styles.STYLE_GROUPBOX)
+        layout_ajustes = QHBoxLayout()
+        layout_ajustes.setSpacing(15)
+
+        # Multiplicador tutores
+        col5 = QVBoxLayout()
+        col5.setSpacing(5)
+        label_tutores = QLabel("Multiplicador tutores:")
+        label_tutores.setStyleSheet("font-size: 12px; color: #555;")
+        col5.addWidget(label_tutores)
         self.ajuste_tutores_input = QLineEdit()
         self.ajuste_tutores_input.setPlaceholderText("0.90")
-        self.layout.addWidget(self.ajuste_tutores_input)
+        self.ajuste_tutores_input.setStyleSheet(styles.STYLE_INPUT)
+        self.ajuste_tutores_input.setMaximumWidth(100)
+        col5.addWidget(self.ajuste_tutores_input)
+        layout_ajustes.addLayout(col5)
 
-        self.layout.addWidget(QLabel("Multiplicador no tutores (e.g., 1.00):"))
+        # Multiplicador no tutores
+        col6 = QVBoxLayout()
+        col6.setSpacing(5)
+        label_no_tutores = QLabel("Multiplicador no tutores:")
+        label_no_tutores.setStyleSheet("font-size: 12px; color: #555;")
+        col6.addWidget(label_no_tutores)
         self.ajuste_no_tutores_input = QLineEdit()
         self.ajuste_no_tutores_input.setPlaceholderText("1.00")
-        self.layout.addWidget(self.ajuste_no_tutores_input)
+        self.ajuste_no_tutores_input.setStyleSheet(styles.STYLE_INPUT)
+        self.ajuste_no_tutores_input.setMaximumWidth(100)
+        col6.addWidget(self.ajuste_no_tutores_input)
+        layout_ajustes.addLayout(col6)
 
-        # Festivos automáticos toggle (placeholder)
-        self.layout.addWidget(QLabel("Aplicar festivos automáticos (1 sí / 0 no):"))
+        layout_ajustes.addStretch()
+        grupo_ajustes.setLayout(layout_ajustes)
+        self.layout.addWidget(grupo_ajustes)
+
+        # ===== GRUPO: Festivos =====
+        grupo_festivos = QGroupBox("🎉 Festivos y Días No Lectivos")
+        grupo_festivos.setStyleSheet(styles.STYLE_GROUPBOX)
+        layout_festivos = QVBoxLayout()
+        layout_festivos.setSpacing(8)
+
+        label_auto = QLabel("Aplicar festivos automáticos (1 sí / 0 no):")
+        label_auto.setStyleSheet("font-size: 12px; color: #555;")
+        layout_festivos.addWidget(label_auto)
         self.festivos_auto_input = QLineEdit()
         self.festivos_auto_input.setPlaceholderText("1")
-        self.layout.addWidget(self.festivos_auto_input)
+        self.festivos_auto_input.setStyleSheet(styles.STYLE_INPUT)
+        self.festivos_auto_input.setMaximumWidth(100)
+        layout_festivos.addWidget(self.festivos_auto_input)
 
-        # Fechas no lectivas personalizadas (CSV de fechas ISO)
-        self.layout.addWidget(QLabel(
-            "Días no lectivos personalizados (YYYY-MM-DD, separados por coma):"
-        ))
+        label_custom = QLabel("Días no lectivos personalizados (YYYY-MM-DD, separados por coma):")
+        label_custom.setStyleSheet("font-size: 12px; color: #555;")
+        layout_festivos.addWidget(label_custom)
         self.no_lectivos_input = QLineEdit()
         self.no_lectivos_input.setPlaceholderText("2025-10-09, 2025-10-12")
-        self.layout.addWidget(self.no_lectivos_input)
+        self.no_lectivos_input.setStyleSheet(styles.STYLE_INPUT)
+        self.no_lectivos_input.setMaximumWidth(500)
+        layout_festivos.addWidget(self.no_lectivos_input)
 
-        # Recreos configurables (JSON simple)
-        self.layout.addWidget(QLabel("Recreos configurables JSON (ej. lista de objetos)"))
+        grupo_festivos.setLayout(layout_festivos)
+        self.layout.addWidget(grupo_festivos)
+
+        # ===== GRUPO: Avanzado =====
+        grupo_avanzado = QGroupBox("🔬 Configuración Avanzada (opcional)")
+        grupo_avanzado.setStyleSheet(styles.STYLE_GROUPBOX)
+        layout_avanzado = QVBoxLayout()
+        layout_avanzado.setSpacing(8)
+
+        label_recreos = QLabel("Recreos configurables JSON (lista de objetos):")
+        label_recreos.setStyleSheet("font-size: 12px; color: #555;")
+        layout_avanzado.addWidget(label_recreos)
         self.recreos_config_input = QLineEdit()
-        self.layout.addWidget(self.recreos_config_input)
+        self.recreos_config_input.setStyleSheet(styles.STYLE_INPUT)
+        self.recreos_config_input.setMaximumWidth(500)
+        layout_avanzado.addWidget(self.recreos_config_input)
+
+        grupo_avanzado.setLayout(layout_avanzado)
+        self.layout.addWidget(grupo_avanzado)
 
         # Botones
         btn_layout = QHBoxLayout()
-        self.save_btn = QPushButton("Guardar configuración")
+        btn_layout.setSpacing(10)
+
+        self.save_btn = QPushButton("💾 Guardar Configuración")
+        self.save_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.save_btn.clicked.connect(self.guardar_configuracion)
-        self.load_btn = QPushButton("Cargar configuración actual")
+
+        self.load_btn = QPushButton("🔄 Cargar Actual")
+        self.load_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.load_btn.clicked.connect(self.cargar_configuracion)
+
         btn_layout.addWidget(self.save_btn)
         btn_layout.addWidget(self.load_btn)
+        btn_layout.addStretch()
         self.layout.addLayout(btn_layout)
+
+        # Espacio flexible
+        self.layout.addStretch()
 
         self.setLayout(self.layout)
         self.cargar_configuracion()  # Cargar al inicio si existe
@@ -1786,6 +2009,17 @@ def main():
     # Modo prueba: cuando pytest ejecuta este archivo en un subproceso, evitamos levantar la GUI
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return
+
+    # Fix for Qt platform plugin error
+    # This sets the correct path for Qt plugins, often an issue in bundled applications
+    # or specific environments.
+    try:
+        import PyQt6
+        qt_plugin_path = os.path.join(os.path.dirname(PyQt6.__file__), "Qt", "plugins")
+        os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = qt_plugin_path
+        print(f"Setting QT_QPA_PLATFORM_PLUGIN_PATH to: {qt_plugin_path}")
+    except Exception as e:
+        print(f"Warning: Could not set QT_QPA_PLATFORM_PLUGIN_PATH: {e}")
 
     app = QApplication(sys.argv)
     window = MainWindow()
