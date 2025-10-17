@@ -27,7 +27,7 @@ class ProfesorEntity:
 
     Attributes:
         id: Identificador único del profesor
-        nombre_completo: Nombre completo en formato "APELLIDOS, NOMBRE"
+        nombre_completo: Nombre completo del profesor (formato libre, ej: "APELLIDOS, NOMBRE")
         email_corporativo: Email corporativo (Value Object)
         horas_contrato: Horas de contrato (Value Object)
         porcentaje_jornada: Porcentaje de jornada calculado
@@ -39,6 +39,10 @@ class ProfesorEntity:
         dias_semana_permitidos: Lista de días permitidos (0=Lunes, 6=Domingo)
         recreos_permitidos: Lista de números de recreo permitidos
         guardias_asignadas_dia: Contador de guardias asignadas en el día actual
+
+    Note:
+        El campo nombre_completo es un único campo que contiene el nombre completo
+        del profesor sin separación de apellidos y nombre.
     """
 
     # Identidad
@@ -73,20 +77,6 @@ class ProfesorEntity:
         # Calcular porcentaje de jornada si no está set
         if self.porcentaje_jornada == 0.0:
             self.porcentaje_jornada = self.horas_contrato.porcentaje_jornada()
-
-    @property
-    def nombre(self) -> str:
-        """Extrae solo el nombre del nombre completo."""
-        if ", " in self.nombre_completo:
-            return self.nombre_completo.split(", ")[1].strip()
-        return self.nombre_completo
-
-    @property
-    def apellidos(self) -> str:
-        """Extrae solo los apellidos del nombre completo."""
-        if ", " in self.nombre_completo:
-            return self.nombre_completo.split(", ")[0].strip()
-        return ""
 
     @property
     def ajuste_guardias(self) -> float:

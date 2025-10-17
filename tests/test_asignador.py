@@ -162,11 +162,13 @@ class TestGeneracionCalendario:
             profesor = profesores_dict[guardia.profesor_id]
             if profesor.turno == "mañana":
                 assert guardia.turno == "mañana", (
-                    f"Profesor de mañana {profesor.nombre} tiene guardia de {guardia.turno}"
+                    f"Profesor de mañana {profesor.nombre_completo} "
+                    f"tiene guardia de {guardia.turno}"
                 )
             elif profesor.turno == "tarde":
                 assert guardia.turno == "tarde", (
-                    f"Profesor de tarde {profesor.nombre} tiene guardia de {guardia.turno}"
+                    f"Profesor de tarde {profesor.nombre_completo} "
+                    f"tiene guardia de {guardia.turno}"
                 )
             # Turno mixto puede tener ambos (no se valida)
 

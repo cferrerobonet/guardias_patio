@@ -130,8 +130,7 @@ def demo_entities():
             es_tutor=True,
         )
         print(f"  • Profesor: {profesor}")
-        print(f"  • Nombre: {profesor.nombre}")
-        print(f"  • Apellidos: {profesor.apellidos}")
+        print(f"  • Nombre completo: {profesor.nombre_completo}")
         print(f"  • Ajuste guardias (tutor): {profesor.ajuste_guardias}")
         print(f"  • Guardias esperadas: {profesor.guardias_esperadas:.2f}")
 
@@ -282,7 +281,11 @@ def demo_integracion():
             es_tutor=False,
         )
 
-        logger.info("Profesor creado", profesor_id=profesor.id, nombre=profesor.nombre)
+        logger.info(
+            "Profesor creado",
+            profesor_id=profesor.id,
+            nombre=profesor.nombre_completo
+        )
 
         # 2. Verificar disponibilidad
         fecha = date.today()
@@ -292,7 +295,7 @@ def demo_integracion():
             # 3. Asignar guardia
             profesor.asignar_guardia()
             logger.info("Guardia asignada", profesor_id=profesor.id, fecha=fecha)
-            print(f"  ✅ Guardia asignada a {profesor.nombre}")
+            print(f"  ✅ Guardia asignada a {profesor.nombre_completo}")
             print(f"     Guardias hoy: {profesor.guardias_asignadas_dia}")
 
             # 4. En aplicación real, se guardaría con repository
