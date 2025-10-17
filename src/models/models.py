@@ -24,8 +24,11 @@ class Profesor(Base):
     horas_contrato = Column(Float, nullable=False)
     porcentaje_jornada = Column(Float, nullable=False)
     turno = Column(String, nullable=False)  # mañana, tarde, completo
+    horas_manana = Column(Float, nullable=True)  # Horas en turno de mañana (para mixto)
+    horas_tarde = Column(Float, nullable=True)  # Horas en turno de tarde (para mixto)
     tutor = Column(Boolean, default=False, nullable=False)
     fecha_inicio_guardias = Column(Date, nullable=True)
+    fecha_fin_guardias = Column(Date, nullable=True)  # Fecha límite para terminar guardias
     dias_semana_permitidos = Column(Text, nullable=True)  # JSON: [0..6]
     recreos_permitidos = Column(Text, nullable=True)      # JSON: [1..N]
     guardias = relationship('Guardia', back_populates='profesor')

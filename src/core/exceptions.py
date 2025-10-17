@@ -280,6 +280,37 @@ class AsignacionImpossibleError(BusinessLogicError):
     default_code = "ASIGNACION_IMPOSSIBLE"
 
 
+class GuardiaConflictError(BusinessLogicError):
+    """Conflicto en asignación de guardia."""
+
+    default_message = "Conflicto al asignar guardia (profesor u zona ya ocupados)"
+    default_code = "GUARDIA_CONFLICT"
+
+    def __init__(
+        self,
+        guardia_id: Optional[int] = None,
+        fecha: Optional[str] = None,
+        **kwargs,
+    ):
+        if guardia_id:
+            kwargs["guardia_id"] = guardia_id
+        if fecha:
+            kwargs["fecha"] = fecha
+        super().__init__(**kwargs)
+
+
+class GuardiaInvalidaError(BusinessLogicError):
+    """Guardia inválida."""
+
+    default_message = "La guardia no es válida (faltan datos requeridos)"
+    default_code = "GUARDIA_INVALIDA"
+
+    def __init__(self, guardia_id: Optional[int] = None, **kwargs):
+        if guardia_id:
+            kwargs["guardia_id"] = guardia_id
+        super().__init__(**kwargs)
+
+
 # ============================================================================
 # EXCEPCIONES DE BASE DE DATOS
 # ============================================================================

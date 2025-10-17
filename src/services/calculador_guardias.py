@@ -322,7 +322,43 @@ def calcular_distribucion_cruda(
             getattr(config, 'ajuste_tutores', 1.0) if getattr(profesor, 'tutor', False)
             else getattr(config, 'ajuste_no_tutores', 1.0)
         )
-        participacion = profesor.porcentaje_jornada * factor * ajuste_tutoria
+
+        # Calcular proporción de días disponibles si tiene fechas límite
+        proporcion_tiempo = 1.0
+        if profesor.fecha_inicio_guardias or profesor.fecha_fin_guardias:
+            # Determinar rango efectivo del profesor
+            inicio_prof = (
+                profesor.fecha_inicio_guardias
+                if profesor.fecha_inicio_guardias
+                else config.fecha_inicio_curso
+            )
+            fin_prof = (
+                profesor.fecha_fin_guardias
+                if profesor.fecha_fin_guardias
+                else config.fecha_fin_curso
+            )
+
+            # Contar días lectivos del profesor dentro del curso
+            dias_prof = [d for d in dias_list if inicio_prof <= d <= fin_prof]
+            dias_disponibles = len(dias_prof)
+
+            if dias_disponibles > 0:
+                proporcion_tiempo = dias_disponibles / dias_lectivos
+                logger.debug(
+                    f"Profesor {profesor.nombre_completo}: "
+                    f"{dias_disponibles}/{dias_lectivos} días disponibles "
+                    f"({proporcion_tiempo:.2%})"
+                )
+            else:
+                proporcion_tiempo = 0.0
+                logger.warning(
+                    f"Profesor {profesor.nombre_completo}: "
+                    f"sin días disponibles en el rango configurado"
+                )
+
+        participacion = (
+            profesor.porcentaje_jornada * factor * ajuste_tutoria * proporcion_tiempo
+        )
         profesores_con_factor.append((profesor.id, participacion))
         suma_ponderada += participacion
 

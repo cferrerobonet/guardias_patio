@@ -101,6 +101,8 @@ class Settings(BaseSettings):
     # ========== CÁLCULO DE GUARDIAS ==========
     multiplicador_tutores: float = 0.9
     multiplicador_no_tutores: float = 1.0
+    ajuste_tutores: float = 0.9  # Alias para compatibilidad
+    ajuste_no_tutores: float = 1.0  # Alias para compatibilidad
     festivos_comunidad: int = 1  # 1 = Valencia
 
     # ========== RECREOS (horarios por defecto) ==========

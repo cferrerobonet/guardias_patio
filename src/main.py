@@ -35,6 +35,7 @@ try:
         QComboBox,
         QDateEdit,
         QFileDialog,
+        QGridLayout,
         QGroupBox,
         QHBoxLayout,
         QHeaderView,
@@ -211,9 +212,9 @@ class ProfesorForm(QWidget):
         left_section.setContentsMargins(10, 10, 10, 10)
         left_section.setSpacing(10)
 
-        titulo_lista = QLabel("📋 PROFESORES REGISTRADOS")
-        titulo_lista.setStyleSheet(styles.STYLE_TITLE_MAIN)
-        left_section.addWidget(titulo_lista)
+        self.titulo_lista_profesores = QLabel("📋 PROFESORES REGISTRADOS (0)")
+        self.titulo_lista_profesores.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        left_section.addWidget(self.titulo_lista_profesores)
 
         # Campo de búsqueda
         busqueda_layout = QHBoxLayout()
@@ -250,17 +251,17 @@ class ProfesorForm(QWidget):
 
         # Tabla de profesores con columnas
         self.tabla_profesores = QTableWidget()
-        self.tabla_profesores.setColumnCount(6)
+        self.tabla_profesores.setColumnCount(5)
         self.tabla_profesores.setHorizontalHeaderLabels([
-            "ID", "Nombre Completo", "Email", "Horas", "Turno", "Tutor"
+            "Nombre Completo", "Email", "Horas", "Turno", "Tutor"
         ])
         # Hacer que la columna de nombre se estire para ocupar espacio disponible
         self.tabla_profesores.horizontalHeader().setStretchLastSection(False)
         self.tabla_profesores.horizontalHeader().setSectionResizeMode(
-            1, QHeaderView.ResizeMode.Stretch
+            0, QHeaderView.ResizeMode.Stretch
         )
         # Hacer las demás columnas ajustables al contenido
-        for i in [0, 2, 3, 4, 5]:
+        for i in [1, 2, 3, 4]:
             self.tabla_profesores.horizontalHeader().setSectionResizeMode(
                 i, QHeaderView.ResizeMode.ResizeToContents
             )
@@ -364,48 +365,74 @@ class ProfesorForm(QWidget):
         layout_horario = QVBoxLayout()
         layout_horario.setSpacing(8)
 
-        label_horas = QLabel("Horas de contrato (total):")
+        # Primera fila: Horas de contrato y Turno en horizontal
+        layout_fila1 = QHBoxLayout()
+        layout_fila1.setSpacing(15)
+
+        # Horas de contrato
+        label_horas = QLabel("Horas de contrato:")
         label_horas.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        layout_horario.addWidget(label_horas)
+        layout_fila1.addWidget(label_horas)
+
         self.horas_input = QLineEdit()
         self.horas_input.setPlaceholderText("Ej: 30.0")
         self.horas_input.setStyleSheet(styles.STYLE_INPUT)
-        self.horas_input.setMaximumWidth(150)
+        self.horas_input.setMaximumWidth(100)
         self.horas_input.setToolTip(
             "Horas totales de contrato del profesor\n"
             "Debe ser un número positivo (ej: 30.0)\n"
             "Se usará para calcular el porcentaje de jornada\n"
             "y la distribución proporcional de guardias"
         )
-        layout_horario.addWidget(self.horas_input)
+        layout_fila1.addWidget(self.horas_input)
 
+        layout_fila1.addSpacing(20)
+
+        # Turno
         label_turno = QLabel("Turno:")
         label_turno.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        layout_horario.addWidget(label_turno)
-        self.turno_input = QComboBox()
-        self.turno_input.addItems(["mañana", "tarde", "mixto"])
-        self.turno_input.setStyleSheet(styles.STYLE_INPUT)
-        self.turno_input.setMaximumWidth(200)
-        layout_horario.addWidget(self.turno_input)
+        layout_fila1.addWidget(label_turno)
 
-        # Campos para turno mixto (inicialmente ocultos)
-        self.label_horas_manana = QLabel("Horas de mañana:")
+        self.turno_input = QComboBox()
+        self.turno_input.addItems(["Mañana", "Tarde", "Mixto"])
+        self.turno_input.setStyleSheet(styles.STYLE_INPUT)
+        self.turno_input.setMaximumWidth(120)
+        layout_fila1.addWidget(self.turno_input)
+
+        layout_fila1.addStretch()
+        layout_horario.addLayout(layout_fila1)
+
+        # Añadir espaciado vertical
+        layout_horario.addSpacing(15)
+
+        # Segunda fila: Campos para turno mixto (inicialmente ocultos)
+        layout_mixto = QHBoxLayout()
+        layout_mixto.setSpacing(10)
+
+        self.label_horas_manana = QLabel("  🌅 Horas mañana:")
         self.label_horas_manana.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        layout_mixto.addWidget(self.label_horas_manana)
+
         self.horas_manana_input = QLineEdit()
         self.horas_manana_input.setPlaceholderText("Ej: 15.0")
         self.horas_manana_input.setStyleSheet(styles.STYLE_INPUT)
-        self.horas_manana_input.setMaximumWidth(150)
-        layout_horario.addWidget(self.label_horas_manana)
-        layout_horario.addWidget(self.horas_manana_input)
+        self.horas_manana_input.setMaximumWidth(100)
+        layout_mixto.addWidget(self.horas_manana_input)
 
-        self.label_horas_tarde = QLabel("Horas de tarde:")
+        layout_mixto.addSpacing(20)
+
+        self.label_horas_tarde = QLabel("🌆 Horas tarde:")
         self.label_horas_tarde.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        layout_mixto.addWidget(self.label_horas_tarde)
+
         self.horas_tarde_input = QLineEdit()
         self.horas_tarde_input.setPlaceholderText("Ej: 15.0")
         self.horas_tarde_input.setStyleSheet(styles.STYLE_INPUT)
-        self.horas_tarde_input.setMaximumWidth(150)
-        layout_horario.addWidget(self.label_horas_tarde)
-        layout_horario.addWidget(self.horas_tarde_input)
+        self.horas_tarde_input.setMaximumWidth(100)
+        layout_mixto.addWidget(self.horas_tarde_input)
+
+        layout_mixto.addStretch()
+        layout_horario.addLayout(layout_mixto)
 
         grupo_horario.setLayout(layout_horario)
         right_section.addWidget(grupo_horario)
@@ -420,33 +447,118 @@ class ProfesorForm(QWidget):
         layout_restricciones = QVBoxLayout()
         layout_restricciones.setSpacing(8)
 
-        label_fecha = QLabel("Fecha de inicio de guardias (opcional):")
-        label_fecha.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        layout_restricciones.addWidget(label_fecha)
+        # Fecha de inicio de guardias (mutuamente excluyente con fecha fin)
+        layout_fecha_inicio = QHBoxLayout()
+        self.usar_fecha_inicio_checkbox = QCheckBox("Usar fecha de inicio:")
+        self.usar_fecha_inicio_checkbox.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.usar_fecha_inicio_checkbox.stateChanged.connect(self._toggle_fechas_guardias)
+        layout_fecha_inicio.addWidget(self.usar_fecha_inicio_checkbox)
+
         self.fecha_inicio_guardias_input = QDateEdit()
         self.fecha_inicio_guardias_input.setCalendarPopup(True)
         self.fecha_inicio_guardias_input.setDisplayFormat("dd/MM/yyyy")
         self.fecha_inicio_guardias_input.setStyleSheet(styles.STYLE_INPUT)
         self.fecha_inicio_guardias_input.setMaximumWidth(200)
-        layout_restricciones.addWidget(self.fecha_inicio_guardias_input)
+        # Establecer fecha actual por defecto
+        from PyQt6.QtCore import QDate
+        self.fecha_inicio_guardias_input.setDate(QDate.currentDate())
+        self.fecha_inicio_guardias_input.setEnabled(False)  # Deshabilitado por defecto
+        layout_fecha_inicio.addWidget(self.fecha_inicio_guardias_input)
+        layout_fecha_inicio.addStretch()
+        layout_restricciones.addLayout(layout_fecha_inicio)
 
-        label_dias = QLabel("Días de la semana permitidos (opcional):")
-        label_dias.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        layout_restricciones.addWidget(label_dias)
-        self.dias_semana_input = QLineEdit()
-        self.dias_semana_input.setPlaceholderText("Ej: 0,1,2,3,4 (0=Lun, 6=Dom)")
-        self.dias_semana_input.setStyleSheet(styles.STYLE_INPUT)
-        self.dias_semana_input.setMaximumWidth(250)
-        layout_restricciones.addWidget(self.dias_semana_input)
+        # Fecha de fin de guardias (mutuamente excluyente con fecha inicio)
+        layout_fecha_fin = QHBoxLayout()
+        self.usar_fecha_fin_checkbox = QCheckBox("Usar fecha de fin:")
+        self.usar_fecha_fin_checkbox.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.usar_fecha_fin_checkbox.stateChanged.connect(self._toggle_fechas_guardias)
+        layout_fecha_fin.addWidget(self.usar_fecha_fin_checkbox)
 
-        label_recreos = QLabel("Recreos permitidos (opcional):")
-        label_recreos.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        layout_restricciones.addWidget(label_recreos)
-        self.recreos_permitidos_input = QLineEdit()
-        self.recreos_permitidos_input.setPlaceholderText("Ej: 1,2 (IDs de recreo)")
-        self.recreos_permitidos_input.setStyleSheet(styles.STYLE_INPUT)
-        self.recreos_permitidos_input.setMaximumWidth(250)
-        layout_restricciones.addWidget(self.recreos_permitidos_input)
+        self.fecha_fin_guardias_input = QDateEdit()
+        self.fecha_fin_guardias_input.setCalendarPopup(True)
+        self.fecha_fin_guardias_input.setDisplayFormat("dd/MM/yyyy")
+        self.fecha_fin_guardias_input.setStyleSheet(styles.STYLE_INPUT)
+        self.fecha_fin_guardias_input.setMaximumWidth(200)
+        # Establecer fecha actual por defecto
+        self.fecha_fin_guardias_input.setDate(QDate.currentDate())
+        self.fecha_fin_guardias_input.setEnabled(False)  # Deshabilitado por defecto
+        layout_fecha_fin.addWidget(self.fecha_fin_guardias_input)
+        layout_fecha_fin.addStretch()
+        layout_restricciones.addLayout(layout_fecha_fin)
+
+        # Nueva matriz de disponibilidad día × recreo
+        self.usar_restricciones_horario_checkbox = QCheckBox(
+            "☑️ Usar restricciones personalizadas de horario"
+        )
+        self.usar_restricciones_horario_checkbox.setStyleSheet(
+            styles.STYLE_LABEL_FIELD
+        )
+        self.usar_restricciones_horario_checkbox.stateChanged.connect(
+            self._toggle_matriz_horario
+        )
+        layout_restricciones.addWidget(self.usar_restricciones_horario_checkbox)
+
+        label_matriz = QLabel("📅 Disponibilidad por día y recreo:")
+        label_matriz.setStyleSheet(styles.STYLE_LABEL_FIELD + " font-weight: bold;")
+        layout_restricciones.addWidget(label_matriz)
+
+        # Contenedor para la matriz
+        self.matriz_horario_widget = QWidget()
+        layout_matriz = QVBoxLayout()
+        layout_matriz.setContentsMargins(10, 10, 10, 10)
+        layout_matriz.setSpacing(5)
+
+        # Grid de checkboxes
+        grid_matriz = QGridLayout()
+        grid_matriz.setSpacing(8)
+
+        # Encabezados de columnas (recreos)
+        dias_nombres = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+        grid_matriz.addWidget(QLabel(""), 0, 0)  # Esquina superior izquierda vacía
+        for col in range(4):
+            label_recreo = QLabel(f"<b>R{col+1}</b>")
+            label_recreo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            grid_matriz.addWidget(label_recreo, 0, col + 1)
+
+        # Crear matriz de checkboxes: self.matriz_checks[dia][recreo]
+        self.matriz_checks = {}
+        for fila, dia_idx in enumerate(range(7)):
+            # Etiqueta del día
+            label_dia = QLabel(f"<b>{dias_nombres[dia_idx]}</b>")
+            label_dia.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+            grid_matriz.addWidget(label_dia, fila + 1, 0)
+
+            self.matriz_checks[dia_idx] = {}
+            for col, recreo_id in enumerate(range(1, 5)):
+                checkbox = QCheckBox()
+                checkbox.setEnabled(False)  # Deshabilitado por defecto
+                grid_matriz.addWidget(checkbox, fila + 1, col + 1)
+                self.matriz_checks[dia_idx][recreo_id] = checkbox
+
+        layout_matriz.addLayout(grid_matriz)
+
+        # Botones de acción rápida
+        botones_matriz = QHBoxLayout()
+        botones_matriz.setSpacing(10)
+
+        self.btn_marcar_todos = QPushButton("✓ Marcar todos")
+        self.btn_marcar_todos.setEnabled(False)
+        self.btn_marcar_todos.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
+        self.btn_marcar_todos.clicked.connect(lambda: self._marcar_todos_matriz(True))
+        botones_matriz.addWidget(self.btn_marcar_todos)
+
+        self.btn_desmarcar_todos = QPushButton("✗ Desmarcar todos")
+        self.btn_desmarcar_todos.setEnabled(False)
+        self.btn_desmarcar_todos.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        self.btn_desmarcar_todos.clicked.connect(lambda: self._marcar_todos_matriz(False))
+        botones_matriz.addWidget(self.btn_desmarcar_todos)
+
+        botones_matriz.addStretch()
+        layout_matriz.addLayout(botones_matriz)
+
+        self.matriz_horario_widget.setLayout(layout_matriz)
+        self.matriz_horario_widget.setEnabled(False)  # Deshabilitado por defecto
+        layout_restricciones.addWidget(self.matriz_horario_widget)
 
         grupo_restricciones.setLayout(layout_restricciones)
         right_section.addWidget(grupo_restricciones)
@@ -455,7 +567,7 @@ class ProfesorForm(QWidget):
         botones_accion = QHBoxLayout()
         botones_accion.setSpacing(10)
 
-        self.submit_btn = QPushButton("💾 Guardar Profesor")
+        self.submit_btn = QPushButton("💾 Guardar nuevo profesor")
         self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.submit_btn.clicked.connect(self.guardar_profesor)
 
@@ -489,7 +601,8 @@ class ProfesorForm(QWidget):
             w.setVisible(visible)
 
     def _on_turno_changed(self, value: str):
-        self._toggle_mixto_fields(value == "mixto")
+        # Comparar en minúsculas para ser insensible a mayúsculas
+        self._toggle_mixto_fields(value.lower() == "mixto")
 
     def _configurar_atajos(self):
         """Configurar atajos de teclado para el formulario"""
@@ -521,20 +634,121 @@ class ProfesorForm(QWidget):
         self.horas_manana_input.clear()
         self.horas_tarde_input.clear()
         self.tutor_checkbox.setChecked(False)
+        # Resetear fechas y sus checkboxes
+        self.usar_fecha_inicio_checkbox.setChecked(False)
+        self.usar_fecha_fin_checkbox.setChecked(False)
         self.fecha_inicio_guardias_input.clear()
-        self.dias_semana_input.clear()
-        self.recreos_permitidos_input.clear()
+        self.fecha_inicio_guardias_input.setEnabled(False)
+        self.fecha_fin_guardias_input.clear()
+        self.fecha_fin_guardias_input.setEnabled(False)
+        # Resetear matriz de horario
+        self.usar_restricciones_horario_checkbox.setChecked(False)
+        self._marcar_todos_matriz(False)
         self.turno_input.setCurrentIndex(0)
         # Resetear modo edición
         self.profesor_editando_id = None
         self.titulo_seccion.setText("✏️ ALTA DE PROFESOR")
-        self.submit_btn.setText("💾 Guardar Profesor")
+        self.submit_btn.setText("💾 Guardar nuevo profesor")
         self.cancelar_btn.setVisible(False)
 
     def cancelar_edicion(self):
         """Cancelar la edición actual y volver a modo creación"""
         self._limpiar_formulario()
         QMessageBox.information(self, "Cancelado", "Edición cancelada.")
+
+    def _toggle_fechas_guardias(self):
+        """
+        Controla la exclusividad mutua entre fecha de inicio y fecha de fin.
+        Solo una puede estar activa a la vez.
+        """
+        # Identificar quién disparó el evento
+        sender = self.sender()
+
+        # Si fue el checkbox de fecha de inicio
+        if sender == self.usar_fecha_inicio_checkbox:
+            if self.usar_fecha_inicio_checkbox.isChecked():
+                # Activar fecha de inicio
+                self.fecha_inicio_guardias_input.setEnabled(True)
+                # Desactivar fecha fin (sin disparar eventos adicionales)
+                self.usar_fecha_fin_checkbox.blockSignals(True)
+                self.usar_fecha_fin_checkbox.setChecked(False)
+                self.usar_fecha_fin_checkbox.blockSignals(False)
+                self.fecha_fin_guardias_input.setEnabled(False)
+            else:
+                # Solo desactivar fecha de inicio
+                self.fecha_inicio_guardias_input.setEnabled(False)
+
+        # Si fue el checkbox de fecha de fin
+        elif sender == self.usar_fecha_fin_checkbox:
+            if self.usar_fecha_fin_checkbox.isChecked():
+                # Activar fecha de fin
+                self.fecha_fin_guardias_input.setEnabled(True)
+                # Desactivar fecha inicio (sin disparar eventos adicionales)
+                self.usar_fecha_inicio_checkbox.blockSignals(True)
+                self.usar_fecha_inicio_checkbox.setChecked(False)
+                self.usar_fecha_inicio_checkbox.blockSignals(False)
+                self.fecha_inicio_guardias_input.setEnabled(False)
+            else:
+                # Solo desactivar fecha de fin
+                self.fecha_fin_guardias_input.setEnabled(False)
+
+    def _toggle_matriz_horario(self):
+        """Activa/desactiva la matriz de disponibilidad por día y recreo."""
+        is_checked = self.usar_restricciones_horario_checkbox.isChecked()
+        self.matriz_horario_widget.setEnabled(is_checked)
+        self.btn_marcar_todos.setEnabled(is_checked)
+        self.btn_desmarcar_todos.setEnabled(is_checked)
+
+        # Habilitar/deshabilitar todos los checkboxes individuales
+        for dia in self.matriz_checks:
+            for recreo in self.matriz_checks[dia]:
+                self.matriz_checks[dia][recreo].setEnabled(is_checked)
+
+    def _marcar_todos_matriz(self, estado: bool):
+        """Marca o desmarca todos los checkboxes de la matriz."""
+        for dia in self.matriz_checks:
+            for recreo in self.matriz_checks[dia]:
+                self.matriz_checks[dia][recreo].setChecked(estado)
+
+    def _matriz_a_json(self) -> str:
+        """
+        Convierte la matriz de checkboxes a formato JSON.
+        Retorna: JSON string tipo '{"0": [1, 2], "2": [1, 3, 4]}'
+        donde clave = día (0-6) y valor = lista de recreos (1-4).
+        """
+        import json
+        resultado = {}
+        for dia in self.matriz_checks:
+            recreos_activos = []
+            for recreo in self.matriz_checks[dia]:
+                if self.matriz_checks[dia][recreo].isChecked():
+                    recreos_activos.append(recreo)
+            if recreos_activos:  # Solo incluir días con al menos un recreo
+                resultado[str(dia)] = recreos_activos
+        return json.dumps(resultado) if resultado else ""
+
+    def _json_a_matriz(self, json_str: str):
+        """
+        Carga datos JSON en la matriz de checkboxes.
+        Espera: JSON string tipo '{"0": [1, 2], "2": [1, 3, 4]}'
+        """
+        import json
+        # Primero desmarcar todo
+        self._marcar_todos_matriz(False)
+
+        if not json_str:
+            return
+
+        try:
+            datos = json.loads(json_str)
+            for dia_str, recreos in datos.items():
+                dia = int(dia_str)
+                if dia in self.matriz_checks:
+                    for recreo in recreos:
+                        if recreo in self.matriz_checks[dia]:
+                            self.matriz_checks[dia][recreo].setChecked(True)
+        except (json.JSONDecodeError, ValueError, KeyError) as e:
+            print(f"Error al cargar matriz de horario: {e}")
 
     def guardar_profesor(self):
         session = SessionLocal()
@@ -562,7 +776,7 @@ class ProfesorForm(QWidget):
                 QMessageBox.warning(self, constants.MSG_ERROR_TITULO, error_msg)
                 return
 
-            turno = self.turno_input.currentText()
+            turno = self.turno_input.currentText().lower()  # Convertir a minúsculas para BD
             porcentaje = horas / 30.0
             # Si turno mixto, calcular proporciones
             horas_manana = horas_tarde = 0.0
@@ -602,12 +816,26 @@ class ProfesorForm(QWidget):
 
             # Campos nuevos opcionales
             tutor = self.tutor_checkbox.isChecked()
-            fecha_inicio_guardias = (
-                self.fecha_inicio_guardias_input.date().toPyDate()
-                if self.fecha_inicio_guardias_input.date().isValid() else None
-            )
-            dias_semana_permitidos = self.dias_semana_input.text().strip()
-            recreos_permitidos = self.recreos_permitidos_input.text().strip()
+
+            # Fechas de guardias (mutuamente excluyentes)
+            fecha_inicio_guardias = None
+            fecha_fin_guardias = None
+
+            if self.usar_fecha_inicio_checkbox.isChecked():
+                fecha_inicio_guardias = (
+                    self.fecha_inicio_guardias_input.date().toPyDate()
+                    if self.fecha_inicio_guardias_input.date().isValid() else None
+                )
+            elif self.usar_fecha_fin_checkbox.isChecked():
+                fecha_fin_guardias = (
+                    self.fecha_fin_guardias_input.date().toPyDate()
+                    if self.fecha_fin_guardias_input.date().isValid() else None
+                )
+
+            # Obtener restricciones de horario desde la matriz (si está activada)
+            recreos_permitidos_horario = None
+            if self.usar_restricciones_horario_checkbox.isChecked():
+                recreos_permitidos_horario = self._matriz_a_json()
 
             # Verificar si estamos editando o creando
             if self.profesor_editando_id is not None:
@@ -621,16 +849,16 @@ class ProfesorForm(QWidget):
                     profesor.horas_contrato = horas
                     profesor.porcentaje_jornada = porcentaje
                     profesor.turno = turno
+                    profesor.horas_manana = horas_manana if turno == "mixto" else None
+                    profesor.horas_tarde = horas_tarde if turno == "mixto" else None
                     profesor.tutor = tutor
                     profesor.fecha_inicio_guardias = fecha_inicio_guardias
-                    profesor.dias_semana_permitidos = dias_semana_permitidos or None
-                    profesor.recreos_permitidos = recreos_permitidos or None
+                    profesor.fecha_fin_guardias = fecha_fin_guardias
+                    # Guardar nueva matriz de horario (combina días y recreos)
+                    profesor.recreos_permitidos = recreos_permitidos_horario or None
+                    profesor.dias_semana_permitidos = None  # Ya no se usa por separado
                     session.commit()
-                    QMessageBox.information(
-                        self,
-                        "Éxito",
-                        f"Profesor actualizado correctamente. Porcentaje jornada: {porcentaje:.2f}",
-                    )
+                    # Mensaje de confirmación eliminado para mejor UX
                 else:
                     QMessageBox.warning(self, "Error", "Profesor no encontrado.")
             else:
@@ -641,18 +869,18 @@ class ProfesorForm(QWidget):
                     horas_contrato=horas,
                     porcentaje_jornada=porcentaje,
                     turno=turno,
+                    horas_manana=horas_manana if turno == "mixto" else None,
+                    horas_tarde=horas_tarde if turno == "mixto" else None,
                     tutor=tutor,
                     fecha_inicio_guardias=fecha_inicio_guardias,
-                    dias_semana_permitidos=dias_semana_permitidos or None,
-                    recreos_permitidos=recreos_permitidos or None,
+                    fecha_fin_guardias=fecha_fin_guardias,
+                    # Guardar nueva matriz de horario (combina días y recreos)
+                    recreos_permitidos=recreos_permitidos_horario or None,
+                    dias_semana_permitidos=None,  # Ya no se usa por separado
                 )
                 session.add(nuevo_profesor)
                 session.commit()
-                QMessageBox.information(
-                    self,
-                    "Éxito",
-                    f"Profesor guardado correctamente. Porcentaje jornada: {porcentaje:.2f}",
-                )
+                # Mensaje de confirmación eliminado para mejor UX
 
             # Limpiar formulario y actualizar lista
             self._limpiar_formulario()
@@ -671,37 +899,36 @@ class ProfesorForm(QWidget):
         session = SessionLocal()
         try:
             profesores = session.query(Profesor).order_by(Profesor.id).all()
-            self.tabla_profesores.setRowCount(len(profesores))
+            total_profesores = len(profesores)
+            self.tabla_profesores.setRowCount(total_profesores)
+
+            # Actualizar el título con el conteo en tiempo real
+            self.titulo_lista_profesores.setText(f"📋 PROFESORES REGISTRADOS ({total_profesores})")
 
             for i, prof in enumerate(profesores):
-                # ID
-                id_item = QTableWidgetItem(str(prof.id))
-                id_item.setData(Qt.ItemDataRole.UserRole, prof.id)  # Guardar ID
-                self.tabla_profesores.setItem(i, 0, id_item)
-
-                # Nombre completo
-                self.tabla_profesores.setItem(
-                    i, 1, QTableWidgetItem(prof.nombre_completo or "")
-                )
+                # Nombre completo (guardamos el ID aquí oculto)
+                nombre_item = QTableWidgetItem(prof.nombre_completo or "")
+                nombre_item.setData(Qt.ItemDataRole.UserRole, prof.id)  # Guardar ID oculto
+                self.tabla_profesores.setItem(i, 0, nombre_item)
 
                 # Email
                 self.tabla_profesores.setItem(
-                    i, 2, QTableWidgetItem(prof.email_corporativo or "-")
+                    i, 1, QTableWidgetItem(prof.email_corporativo or "-")
                 )
 
                 # Horas
                 self.tabla_profesores.setItem(
-                    i, 3, QTableWidgetItem(f"{prof.horas_contrato:.1f}h")
+                    i, 2, QTableWidgetItem(f"{prof.horas_contrato:.1f}h")
                 )
 
                 # Turno
                 self.tabla_profesores.setItem(
-                    i, 4, QTableWidgetItem(prof.turno.capitalize())
+                    i, 3, QTableWidgetItem(prof.turno.capitalize())
                 )
 
                 # Tutor
                 tutor_text = "Sí" if prof.tutor else "No"
-                self.tabla_profesores.setItem(i, 5, QTableWidgetItem(tutor_text))
+                self.tabla_profesores.setItem(i, 4, QTableWidgetItem(tutor_text))
 
             # Reactivar ordenación
             self.tabla_profesores.setSortingEnabled(True)
@@ -723,9 +950,9 @@ class ProfesorForm(QWidget):
 
         # Filtrar filas según el texto de búsqueda
         for i in range(self.tabla_profesores.rowCount()):
-            # Obtener nombre y email de la fila
-            nombre_item = self.tabla_profesores.item(i, 1)
-            email_item = self.tabla_profesores.item(i, 2)
+            # Obtener nombre y email de la fila (ahora en columnas 0 y 1)
+            nombre_item = self.tabla_profesores.item(i, 0)
+            email_item = self.tabla_profesores.item(i, 1)
 
             nombre = nombre_item.text().lower() if nombre_item else ""
             email = email_item.text().lower() if email_item else ""
@@ -770,16 +997,32 @@ class ProfesorForm(QWidget):
             self.email_input.setText(profesor.email_corporativo or "")
             self.horas_input.setText(str(profesor.horas_contrato))
 
-            # Seleccionar turno
-            index = self.turno_input.findText(profesor.turno)
+            # Seleccionar turno (capitalizar para que coincida con el ComboBox)
+            index = self.turno_input.findText(profesor.turno.capitalize())
             if index >= 0:
                 self.turno_input.setCurrentIndex(index)
+
+            # Cargar horas de mañana y tarde si es turno mixto
+            if profesor.turno == "mixto":
+                if profesor.horas_manana is not None:
+                    self.horas_manana_input.setText(str(profesor.horas_manana))
+                if profesor.horas_tarde is not None:
+                    self.horas_tarde_input.setText(str(profesor.horas_tarde))
 
             # Cargar checkbox tutor
             self.tutor_checkbox.setChecked(profesor.tutor or False)
 
-            # Cargar fecha inicio guardias
+            # Cargar fechas de guardias (mutuamente excluyentes)
+            # Resetear primero
+            self.usar_fecha_inicio_checkbox.setChecked(False)
+            self.usar_fecha_fin_checkbox.setChecked(False)
+            self.fecha_inicio_guardias_input.setEnabled(False)
+            self.fecha_fin_guardias_input.setEnabled(False)
+
+            # Cargar fecha inicio si existe
             if profesor.fecha_inicio_guardias:
+                self.usar_fecha_inicio_checkbox.setChecked(True)
+                self.fecha_inicio_guardias_input.setEnabled(True)
                 self.fecha_inicio_guardias_input.setDate(
                     QDate(
                         profesor.fecha_inicio_guardias.year,
@@ -787,12 +1030,27 @@ class ProfesorForm(QWidget):
                         profesor.fecha_inicio_guardias.day,
                     )
                 )
-            else:
-                self.fecha_inicio_guardias_input.clear()
+            # Si no hay inicio, cargar fecha fin si existe
+            elif profesor.fecha_fin_guardias:
+                self.usar_fecha_fin_checkbox.setChecked(True)
+                self.fecha_fin_guardias_input.setEnabled(True)
+                self.fecha_fin_guardias_input.setDate(
+                    QDate(
+                        profesor.fecha_fin_guardias.year,
+                        profesor.fecha_fin_guardias.month,
+                        profesor.fecha_fin_guardias.day,
+                    )
+                )
 
-            # Cargar restricciones
-            self.dias_semana_input.setText(profesor.dias_semana_permitidos or "")
-            self.recreos_permitidos_input.setText(profesor.recreos_permitidos or "")
+            # Cargar restricciones de horario (matriz día × recreo)
+            if profesor.recreos_permitidos:
+                # Si tiene datos en recreos_permitidos, asumimos formato JSON nuevo
+                self.usar_restricciones_horario_checkbox.setChecked(True)
+                self._json_a_matriz(profesor.recreos_permitidos)
+            else:
+                # Si no hay datos, dejar desactivado
+                self.usar_restricciones_horario_checkbox.setChecked(False)
+                self._marcar_todos_matriz(False)
 
             # Activar modo edición
             self.profesor_editando_id = id_profesor
@@ -815,13 +1073,12 @@ class ProfesorForm(QWidget):
             )
             return
 
-        # Extraer ID y nombre del profesor
-        id_item = self.tabla_profesores.item(fila_actual, 0)
-        nombre_item = self.tabla_profesores.item(fila_actual, 1)
-        if not id_item or not nombre_item:
+        # Extraer ID y nombre del profesor (el ID está guardado en la columna 0)
+        nombre_item = self.tabla_profesores.item(fila_actual, 0)
+        if not nombre_item:
             return
 
-        id_profesor = id_item.data(Qt.ItemDataRole.UserRole)
+        id_profesor = nombre_item.data(Qt.ItemDataRole.UserRole)
         nombre_profesor = nombre_item.text()
 
         respuesta = QMessageBox.question(
@@ -862,9 +1119,9 @@ class ZonaForm(QWidget):
         left_section.setContentsMargins(10, 10, 10, 10)
         left_section.setSpacing(10)
 
-        titulo_lista = QLabel("🏫 ZONAS REGISTRADAS")
-        titulo_lista.setStyleSheet(styles.STYLE_TITLE_MAIN)
-        left_section.addWidget(titulo_lista)
+        self.titulo_lista_zonas = QLabel("🏫 ZONAS REGISTRADAS (0)")
+        self.titulo_lista_zonas.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        left_section.addWidget(self.titulo_lista_zonas)
 
         self.lista_zonas = QListWidget()
         self.lista_zonas.setStyleSheet("""
@@ -999,6 +1256,11 @@ class ZonaForm(QWidget):
         session = SessionLocal()
         try:
             zonas = session.query(Zona).all()
+            total_zonas = len(zonas)
+
+            # Actualizar el título con el conteo en tiempo real
+            self.titulo_lista_zonas.setText(f"🏫 ZONAS REGISTRADAS ({total_zonas})")
+
             for zona in zonas:
                 desc = zona.descripcion if zona.descripcion else "Sin descripción"
                 texto = f"[{zona.id}] {zona.nombre_zona} - {desc}"

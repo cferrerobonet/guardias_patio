@@ -51,25 +51,36 @@ class Slot:
     zona_id: int
 
 
-def _dias_semana_ok(fecha: date, dias_csv: Optional[str]) -> bool:
-    if not dias_csv:
-        # por defecto L-V
-        return fecha.weekday() < 5
-    try:
-        permitidos = {int(x.strip()) for x in dias_csv.split(',') if x.strip()}
-        return fecha.weekday() in permitidos
-    except Exception:
+def _horario_permitido(
+    fecha: date, recreo_id: int, horario_json: Optional[str]
+) -> bool:
+    """
+    Valida si un día+recreo está permitido según la matriz JSON.
+    Formato esperado: '{"0": [1, 2], "2": [1, 3, 4]}'
+    donde clave = día de semana (0-6) y valor = lista de IDs de recreos.
+
+    Si no hay restricciones definidas, permite L-V y todos los recreos.
+    """
+    if not horario_json:
+        # Por defecto: lunes a viernes (0-4), todos los recreos
         return fecha.weekday() < 5
 
-
-def _recreo_ok(recreo_id: int, recreos_csv: Optional[str]) -> bool:
-    if not recreos_csv:
-        return True
     try:
-        permitidos = {int(x.strip()) for x in recreos_csv.split(',') if x.strip()}
-        return recreo_id in permitidos
-    except Exception:
-        return True
+        import json
+        datos = json.loads(horario_json)
+        dia_str = str(fecha.weekday())
+
+        # Si el día no está en el JSON, no está permitido
+        if dia_str not in datos:
+            return False
+
+        # Verificar si el recreo está en la lista de recreos del día
+        recreos_permitidos = datos[dia_str]
+        return recreo_id in recreos_permitidos
+
+    except (json.JSONDecodeError, ValueError, KeyError):
+        # En caso de error, permitir L-V por defecto
+        return fecha.weekday() < 5
 
 
 def _turno_de_recreo(turno_prof: str, recreo_turno: str) -> bool:
@@ -136,6 +147,8 @@ def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[i
     ultimo_por_zona: Dict[int, Optional[int]] = {z.id: None for z in zonas}
     ultimo_recreo_prof: Dict[int, Optional[int]] = defaultdict(lambda: None)
     ultimo_dia_prof: Dict[int, Optional[date]] = defaultdict(lambda: None)
+    # NUEVO: Zona preferida de cada profesor (la primera que se le asigna)
+    zona_preferida_prof: Dict[int, Optional[int]] = defaultdict(lambda: None)
     # Control de guardias por (fecha, turno, recreo) para cada profesor
     guardias_por_slot_prof: Dict[Tuple[int, date, str, int], bool] = {}
     # REQUISITO: Máximo 1 guardia al día por profesor (sumando mañana + tarde)
@@ -156,11 +169,16 @@ def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[i
                 continue
             if not _turno_de_recreo(p.turno, slot.turno):
                 continue
+            # VALIDACIÓN: Respetar fecha de inicio de guardias (si está definida)
             if p.fecha_inicio_guardias and slot.fecha < p.fecha_inicio_guardias:
                 continue
-            if not _dias_semana_ok(slot.fecha, p.dias_semana_permitidos):
+            # VALIDACIÓN: Respetar fecha de fin de guardias (si está definida)
+            if p.fecha_fin_guardias and slot.fecha > p.fecha_fin_guardias:
                 continue
-            if not _recreo_ok(slot.recreo_id, p.recreos_permitidos):
+            # VALIDACIÓN: Respetar matriz de horario permitido (día × recreo)
+            if not _horario_permitido(
+                slot.fecha, slot.recreo_id, p.recreos_permitidos
+            ):
                 continue
             # VALIDACIÓN AUSENCIAS: Excluir profesores ausentes en esta fecha
             if profesor_ausente(session, p.id, slot.fecha):
@@ -180,16 +198,34 @@ def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[i
             # no se puede cubrir, continuar (se registra hueco no bloqueante)
             continue
 
-        # Scoring con preferencias: continuidad (día consecutivo), misma zona, mismo recreo
-        def score(p: Profesor) -> Tuple[int, int, int, float]:
-            s1 = 1 if (
+        # Scoring con preferencias:
+        # PRIORIDAD 1: Zona preferida (mantener al profesor en la misma zona)
+        # PRIORIDAD 2: Déficit de guardias (equilibrar carga)
+        # PRIORIDAD 3: Continuidad de días consecutivos
+        # PRIORIDAD 4: Mismo recreo anterior
+        def score(p: Profesor) -> Tuple[int, int, int, int, float]:
+            # s_zona: 100 si es su zona preferida, 0 si no tiene aún,
+            # -50 si es otra zona
+            if zona_preferida_prof[p.id] is None:
+                s_zona = 0  # Primera asignación, cualquier zona está bien
+            elif zona_preferida_prof[p.id] == slot.zona_id:
+                s_zona = 100  # ¡Es su zona preferida! Máxima prioridad
+            else:
+                s_zona = -50  # No es su zona preferida, penalizar
+
+            # Déficit de guardias (cuántas le faltan)
+            deficit = cuotas.get(p.id, 0) - asignadas[p.id]
+
+            # Continuidad de días
+            s_continuidad = 1 if (
                 ultimo_dia_prof[p.id]
                 and (slot.fecha - ultimo_dia_prof[p.id]).days == 1
             ) else 0
-            s2 = 1 if ultimo_por_zona.get(slot.zona_id) == p.id else 0
-            s3 = 1 if ultimo_recreo_prof[p.id] == slot.recreo_id else 0
-            deficit = cuotas.get(p.id, 0) - asignadas[p.id]
-            return (s1 + s2 + s3, -asignadas[p.id], deficit, random.random())
+
+            # Mismo recreo
+            s_recreo = 1 if ultimo_recreo_prof[p.id] == slot.recreo_id else 0
+
+            return (s_zona, deficit, s_continuidad, s_recreo, random.random())
 
         elegido = sorted(elegibles, key=score, reverse=True)[0]
 
@@ -207,6 +243,15 @@ def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[i
         ultimo_por_zona[slot.zona_id] = elegido.id
         ultimo_recreo_prof[elegido.id] = slot.recreo_id
         ultimo_dia_prof[elegido.id] = slot.fecha
+
+        # IMPORTANTE: Registrar zona preferida del profesor en su primera asignación
+        if zona_preferida_prof[elegido.id] is None:
+            zona_preferida_prof[elegido.id] = slot.zona_id
+            logger.debug(
+                f"Zona preferida asignada a {elegido.nombre_completo}: "
+                f"Zona {slot.zona_id}"
+            )
+
         # Marcar que este profesor ya tiene guardia en este slot (fecha, turno, recreo)
         guardias_por_slot_prof[(elegido.id, slot.fecha, slot.turno, slot.recreo_id)] = True
         # Marcar que este profesor ya tiene guardia en este día (cualquier turno)
