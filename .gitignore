@@ -1,10 +1,59 @@
-# Python
-__pycache__/
-*.py[cod]
-*.env
-.env
+# ============================================================================
+# .gitignore - Configuración Conservadora
+# Solo ignora archivos que NO son parte del proyecto y pueden regenerarse
+# ============================================================================
+
+# Entornos Virtuales de Python (se crean con: python -m venv .venv)
 venv/
 .venv/
+env/
+ENV/
+
+# Archivos compilados de Python (se regeneran automáticamente)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Cachés de herramientas (se regeneran automáticamente)
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDEs y Editores (configuraciones locales del usuario)
 .idea/
 .vscode/
-.DS_Store
+*.swp
+*.swo
+*~
+
+# Sistema Operativo
+.DS_Store      # macOS
+Thumbs.db      # Windows
+desktop.ini    # Windows
+
+# Variables de entorno locales (¡pueden contener secretos!)
+.env
+.env.local
+*.env
+
+# Archivos temporales de SQLite en modo WAL
+# (solo los temporales -shm y -wal, la base de datos principal se conserva)
+*.db-shm
+*.db-wal
+
+# ============================================================================
+# NOTA IMPORTANTE: 
+# Los siguientes archivos SÍ se suben a Git (NO están en .gitignore):
+# 
+# ✅ guardias_patio.db         - Base de datos con datos del proyecto
+# ✅ Todos los archivos .py     - Código fuente
+# ✅ Todos los tests/           - Tests del proyecto
+# ✅ Toda la documentacion/     - Documentación
+# ✅ alembic/versions/*.py      - Migraciones de base de datos
+# ✅ requirements.txt           - Dependencias del proyecto
+# ✅ *.sh                       - Scripts de ejecución
+# ✅ imagenes/*                 - Imágenes del proyecto
+# ============================================================================

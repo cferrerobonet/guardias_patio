@@ -1,8 +1,33 @@
 # Guardias de Patio
 
 ![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
+![Version](https://img.shields.io/badge/Version-2.6.0-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.9+-green.svg)
+![PyQt6](https://img.shields.io/badge/PyQt6-6.7.0-orange.svg)
 
 Aplicación de escritorio para planificar, asignar, visualizar y exportar las guardias de patio de un centro educativo de forma equitativa y transparente.
+
+## 🆕 Novedades v2.6.0 (17 de Octubre de 2025)
+
+### ✨ Nueva Funcionalidad: Matriz Visual Día × Recreo
+
+Ahora puedes especificar restricciones de disponibilidad de profesores de forma granular mediante una **matriz visual interactiva** que relaciona días de la semana con recreos específicos.
+
+**Antes**: Campos de texto separados sin relación  
+**Ahora**: Matriz 7×4 visual con checkboxes
+
+```
+☑️ Usar restricciones personalizadas de horario
+
+📅 Disponibilidad por día y recreo:
+     R1  R2  R3  R4
+Lun  ☑️  ☑️  ☐   ☐
+Mar  ☑️  ☐   ☑️  ☐
+Mié  ☑️  ☑️  ☑️  ☑️
+...
+```
+
+📚 **Documentación completa**: [documentacion/RESUMEN_SESION_2025-10-17.md](documentacion/RESUMEN_SESION_2025-10-17.md)
 
 ## 🚀 Objetivo
 Automatizar el cálculo y la asignación de guardias (recreos) entre el profesorado según:
