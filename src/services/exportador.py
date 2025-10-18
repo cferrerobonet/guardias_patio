@@ -155,7 +155,13 @@ class ExportadorDatos:
             Número de profesores importados
         """
         if limpiar:
+            # Eliminar guardias primero por FOREIGN KEY constraint
+            session.query(Guardia).delete()
+            session.flush()
+            # Ahora eliminar profesores
             session.query(Profesor).delete()
+            session.flush()
+            session.expire_all()
 
         count = 0
         for p_data in profesores_data:
@@ -204,6 +210,8 @@ class ExportadorDatos:
         """
         if limpiar:
             session.query(Zona).delete()
+            session.flush()
+            session.expire_all()
 
         count = 0
         for z_data in zonas_data:
@@ -237,6 +245,8 @@ class ExportadorDatos:
 
         if limpiar:
             session.query(Configuracion).delete()
+            session.flush()
+            session.expire_all()
 
         config = Configuracion(
             fecha_inicio_curso=ExportadorDatos._deserializar_fecha(

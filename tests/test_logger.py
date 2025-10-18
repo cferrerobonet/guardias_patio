@@ -6,7 +6,7 @@ Valida la configuración y funcionalidad del logging.
 
 import logging
 
-from src.utils.logger import get_logger, log_function_call, setup_logging
+from utils.logger import get_logger, log_function_call, setup_logging
 
 
 class TestSetupLogging:

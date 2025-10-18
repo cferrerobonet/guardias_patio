@@ -5,7 +5,7 @@ Valida que las excepciones se crean correctamente y contienen
 la información esperada.
 """
 
-from src.utils.exceptions import (
+from utils.exceptions import (
     ConfiguracionError,
     DatabaseError,
     DuplicateGuardiaError,

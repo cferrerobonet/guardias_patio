@@ -226,12 +226,21 @@ class TestImportarProfesores:
             }
         ]
 
-        count = ExportadorDatos.importar_profesores(session, datos, limpiar=True)
-        assert count == 1
+        # Cerrar la sesión actual y crear una nueva para evitar conflictos
+        session.close()
+        from database.db_manager import SessionLocal
+        new_session = SessionLocal()
 
-        profesores = session.query(Profesor).all()
-        assert len(profesores) == 1
-        assert profesores[0].nombre_completo == "Profesor, Nuevo"
+        try:
+            count = ExportadorDatos.importar_profesores(new_session, datos, limpiar=True)
+            assert count == 1
+
+            new_session.expire_all()
+            profesores = new_session.query(Profesor).all()
+            assert len(profesores) == 1
+            assert profesores[0].nombre_completo == "Profesor, Nuevo"
+        finally:
+            new_session.close()
 
 
 class TestImportarZonas:

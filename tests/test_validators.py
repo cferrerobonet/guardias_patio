@@ -6,7 +6,7 @@ Tests para todas las funciones de validación de datos.
 
 from datetime import date
 
-from src.utils.validators import (
+from utils.validators import (
     validar_dias_semana,
     validar_email,
     validar_fecha,
