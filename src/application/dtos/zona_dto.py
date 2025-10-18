@@ -6,7 +6,7 @@ Data Transfer Objects para operaciones con zonas de recreo.
 
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ZonaDTO(BaseModel):
@@ -15,12 +15,8 @@ class ZonaDTO(BaseModel):
     id: int
     nombre_zona: str
     descripcion: Optional[str] = None
-    capacidad_profesores: Optional[int] = None
-    activa: bool = True
 
-    class Config:
-        """Configuración de Pydantic."""
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class CrearZonaDTO(BaseModel):
@@ -28,8 +24,17 @@ class CrearZonaDTO(BaseModel):
 
     nombre_zona: str = Field(..., min_length=3, max_length=100)
     descripcion: Optional[str] = Field(None, max_length=500)
-    capacidad_profesores: Optional[int] = Field(None, ge=1, le=20)
-    activa: bool = True
+
+    @field_validator("nombre_zona")
+    @classmethod
+    def validar_nombre_zona(cls, v: str) -> str:
+        """Validar que el nombre de la zona no esté vacío después de strip"""
+        v_stripped = v.strip()
+        if not v_stripped:
+            raise ValueError("El nombre de la zona no puede estar vacío")
+        if len(v_stripped) < 3:
+            raise ValueError("El nombre de la zona debe tener al menos 3 caracteres")
+        return v_stripped
 
 
 class ActualizarZonaDTO(BaseModel):
@@ -37,5 +42,16 @@ class ActualizarZonaDTO(BaseModel):
 
     nombre_zona: Optional[str] = Field(None, min_length=3, max_length=100)
     descripcion: Optional[str] = Field(None, max_length=500)
-    capacidad_profesores: Optional[int] = Field(None, ge=1, le=20)
-    activa: Optional[bool] = None
+
+    @field_validator("nombre_zona")
+    @classmethod
+    def validar_nombre_zona(cls, v: Optional[str]) -> Optional[str]:
+        """Validar que el nombre de la zona no esté vacío si se proporciona"""
+        if v is not None:
+            v_stripped = v.strip()
+            if not v_stripped:
+                raise ValueError("El nombre de la zona no puede estar vacío")
+            if len(v_stripped) < 3:
+                raise ValueError("El nombre de la zona debe tener al menos 3 caracteres")
+            return v_stripped
+        return v

@@ -26,6 +26,18 @@ class ValidationError(GuardiasBaseException):
     pass
 
 
+class NotFoundError(GuardiasBaseException):
+    """Error cuando no se encuentra un recurso solicitado."""
+
+    pass
+
+
+class BusinessLogicError(GuardiasBaseException):
+    """Error en la lógica de negocio de la aplicación."""
+
+    pass
+
+
 class DatabaseError(GuardiasBaseException):
     """Error relacionado con operaciones de base de datos."""
 

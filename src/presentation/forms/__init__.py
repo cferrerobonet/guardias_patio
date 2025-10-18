@@ -7,5 +7,6 @@ Cada form es un QWidget que representa una pantalla completa.
 
 from .base_form import BaseForm
 from .configuracion_form import ConfiguracionForm
+from .zona_form import ZonaForm
 
-__all__ = ['BaseForm', 'ConfiguracionForm']
+__all__ = ['BaseForm', 'ConfiguracionForm', 'ZonaForm']

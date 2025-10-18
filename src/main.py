@@ -7,6 +7,7 @@ from models.models import Configuracion, Guardia, Profesor, Zona
 
 # Importar forms refactorizados (Sprint 4)
 from presentation.forms import ConfiguracionForm as ConfiguracionFormRefactorizado
+from presentation.forms import ZonaForm as ZonaFormRefactorizado
 from services.calculador_guardias import (
     calcular_guardias_por_profesor,
     obtener_estadisticas,
@@ -1109,210 +1110,12 @@ class ProfesorForm(QWidget):
             finally:
                 session.close()
 
-class ZonaForm(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Gestión de Zonas")
-
-        # Layout principal horizontal
-        main_layout = QHBoxLayout()
-
-        # ========== SECCIÓN IZQUIERDA: LISTA DE ZONAS ==========
-        left_section = QVBoxLayout()
-        left_section.setContentsMargins(10, 10, 10, 10)
-        left_section.setSpacing(10)
-
-        self.titulo_lista_zonas = QLabel("🏫 ZONAS REGISTRADAS (0)")
-        self.titulo_lista_zonas.setStyleSheet(styles.STYLE_TITLE_MAIN)
-        left_section.addWidget(self.titulo_lista_zonas)
-
-        self.lista_zonas = QListWidget()
-        self.lista_zonas.setStyleSheet("""
-            QListWidget {
-                border: 2px solid #e0e0e0;
-                border-radius: 4px;
-                padding: 5px;
-                font-size: 13px;
-            }
-            QListWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #f0f0f0;
-            }
-            QListWidget::item:selected {
-                background-color: #2196F3;
-                color: white;
-            }
-        """)
-        left_section.addWidget(self.lista_zonas)
-
-        # Botones de gestión
-        btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(8)
-
-        self.refresh_btn = QPushButton("🔄 Actualizar")
-        self.refresh_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
-        self.refresh_btn.clicked.connect(self.cargar_zonas)
-
-        self.delete_btn = QPushButton("🗑️ Eliminar")
-        self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
-        self.delete_btn.clicked.connect(self.eliminar_zona)
-
-        btn_layout.addWidget(self.refresh_btn)
-        btn_layout.addWidget(self.delete_btn)
-        btn_layout.addStretch()
-        left_section.addLayout(btn_layout)
-
-        # ========== SECCIÓN DERECHA: FORMULARIO DE ALTA ==========
-        right_section = QVBoxLayout()
-        right_section.setContentsMargins(10, 0, 10, 10)
-        right_section.setSpacing(12)
-
-        titulo_form = QLabel("✏️ NUEVA ZONA")
-        titulo_form.setStyleSheet(styles.STYLE_TITLE_MAIN)
-        right_section.addWidget(titulo_form)
-
-        # Grupo de datos
-        grupo_datos = QGroupBox("📋 Datos de la Zona")
-        grupo_datos.setStyleSheet(styles.STYLE_GROUPBOX)
-        layout_datos = QVBoxLayout()
-        layout_datos.setSpacing(8)
-
-        label_nombre = QLabel("Nombre de la zona:")
-        label_nombre.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        layout_datos.addWidget(label_nombre)
-        self.nombre_zona_input = QLineEdit()
-        self.nombre_zona_input.setPlaceholderText("Ej: Patio Principal, Porche, etc.")
-        self.nombre_zona_input.setStyleSheet(styles.STYLE_INPUT)
-        self.nombre_zona_input.setMaximumWidth(350)
-        layout_datos.addWidget(self.nombre_zona_input)
-
-        label_desc = QLabel("Descripción (opcional):")
-        label_desc.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        layout_datos.addWidget(label_desc)
-        self.descripcion_input = QLineEdit()
-        self.descripcion_input.setPlaceholderText("Detalles adicionales sobre la zona")
-        self.descripcion_input.setStyleSheet(styles.STYLE_INPUT)
-        self.descripcion_input.setMaximumWidth(350)
-        layout_datos.addWidget(self.descripcion_input)
-
-        grupo_datos.setLayout(layout_datos)
-        right_section.addWidget(grupo_datos)
-
-        # Botón de guardar
-        self.submit_btn = QPushButton("💾 Guardar Zona")
-        self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
-        self.submit_btn.clicked.connect(self.guardar_zona)
-        right_section.addWidget(self.submit_btn)
-
-        # Espacio flexible
-        right_section.addStretch()
-
-        # ========== ENSAMBLAR LAYOUT PRINCIPAL ==========
-        main_layout.addLayout(left_section, 60)
-        main_layout.addLayout(right_section, 40)
-
-        self.setLayout(main_layout)
-        self.cargar_zonas()  # Cargar al inicio
-
-    def guardar_zona(self):
-        session = SessionLocal()
-        try:
-            nombre_zona = self.nombre_zona_input.text().strip()
-            descripcion = self.descripcion_input.text().strip()
-
-            # Validar nombre de zona
-            if not nombre_zona:
-                QMessageBox.warning(
-                    self,
-                    constants.MSG_ERROR_TITULO,
-                    "El nombre de la zona no puede estar vacío.",
-                )
-                return
-
-            if len(nombre_zona) < 3:
-                QMessageBox.warning(
-                    self,
-                    constants.MSG_ERROR_TITULO,
-                    "El nombre de la zona debe tener al menos 3 caracteres.",
-                )
-                return
-
-            nueva_zona = Zona(nombre_zona=nombre_zona, descripcion=descripcion or None)
-            session.add(nueva_zona)
-            session.commit()
-            QMessageBox.information(
-                self,
-                constants.MSG_EXITO_GUARDAR,
-                f"Zona '{nombre_zona}' guardada correctamente.",
-            )
-            self.nombre_zona_input.clear()
-            self.descripcion_input.clear()
-            self.cargar_zonas()  # Actualizar lista tras guardar
-        except Exception as e:
-            QMessageBox.critical(self, constants.MSG_ERROR_BD, f"Error al guardar: {e}")
-        finally:
-            session.close()
-
-    def cargar_zonas(self):
-        """Cargar la lista de zonas desde la base de datos"""
-        self.lista_zonas.clear()
-        session = SessionLocal()
-        try:
-            zonas = session.query(Zona).all()
-            total_zonas = len(zonas)
-
-            # Actualizar el título con el conteo en tiempo real
-            self.titulo_lista_zonas.setText(f"🏫 ZONAS REGISTRADAS ({total_zonas})")
-
-            for zona in zonas:
-                desc = zona.descripcion if zona.descripcion else "Sin descripción"
-                texto = f"[{zona.id}] {zona.nombre_zona} - {desc}"
-                self.lista_zonas.addItem(texto)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error al cargar zonas: {e}")
-        finally:
-            session.close()
-
-    def eliminar_zona(self):
-        """Eliminar la zona seleccionada"""
-        item_actual = self.lista_zonas.currentItem()
-        if not item_actual:
-            QMessageBox.warning(self, "Sin selección", "Selecciona una zona para eliminar.")
-            return
-
-        # Extraer ID del texto [ID] nombre...
-        texto = item_actual.text()
-        id_zona = int(texto.split("]")[0].replace("[", ""))
-
-        respuesta = QMessageBox.question(
-            self,
-            "Confirmar eliminación",
-            f"¿Eliminar zona con ID {id_zona}?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-
-        if respuesta == QMessageBox.StandardButton.Yes:
-            session = SessionLocal()
-            try:
-                zona = session.query(Zona).filter(Zona.id == id_zona).first()
-                if zona:
-                    session.delete(zona)
-                    session.commit()
-                    QMessageBox.information(self, "Éxito", "Zona eliminada correctamente.")
-                    self.cargar_zonas()
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Error al eliminar: {e}")
-            finally:
-                session.close()
-
-
 
 # ==============================================================================
-# ConfiguracionForm - Movida a src/presentation/forms/configuracion_form.py
+# ZonaForm - Movida a src/presentation/forms/zona_form.py
 # La clase antigua ha sido eliminada y reemplazada por versión refactorizada
 # que sigue el patrón MVP (Sprint 4)
 # ==============================================================================
-
 
 class AsignacionGuardiasForm(QWidget):
     def __init__(self):
@@ -2095,7 +1898,8 @@ class MainWindow(QWidget):
         # Pestañas para profesores y zonas
         self.tabs = QTabWidget()
         self.tabs.addTab(ProfesorForm(), "👨‍🏫 Profesores")
-        self.tabs.addTab(ZonaForm(), "🏫 Zonas")
+        # Usar ZonaForm refactorizado (Sprint 4)
+        self.tabs.addTab(ZonaFormRefactorizado(self.session), "🏫 Zonas")
         # Usar ConfiguracionForm refactorizado (Sprint 4)
         self.tabs.addTab(ConfiguracionFormRefactorizado(self.session), "⚙️ Configuración")
         self.tabs.addTab(AsignacionGuardiasForm(), "📋 Asignación de Guardias")
