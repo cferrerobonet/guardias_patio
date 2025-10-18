@@ -3,16 +3,16 @@
 ## 📊 Estado Actual
 
 **Fecha**: 18 de octubre de 2025  
-**Coverage Total**: **36.93%** (objetivo: >80%)  
-**Tests Totales**: 200 tests  
-**Tests que Pasan**: 200 tests ✅ **¡100%!**  
+**Coverage Total**: **~39%** (objetivo: >80%)  
+**Tests Totales**: 227 tests (+27)  
+**Tests que Pasan**: 227 tests ✅ **¡100%!**  
 **Tests que Fallan**: 0 tests ✅
 **Tests xfail**: 0 tests ✅
 
 ## 🎯 Progreso Sprint 6
 
 - **Task 1: Infraestructura de Testing** ✅ **100% COMPLETADA**
-- **Task 2: Tests para Formularios** 🔄 **75% EN PROGRESO**
+- **Task 2: Tests para Formularios** 🔄 **87.5% EN PROGRESO**
 - **Task 3: Tests para Widgets**: ⬜ 0% Pendiente
 - **Task 4: Tests para Use Cases**: ⬜ 0% Pendiente
 - **Task 5: Tests de Integración**: ⬜ 0% Pendiente
@@ -311,25 +311,25 @@ if limpiar:
 | gestor_sustituciones.py | 0.00% | Alta |
 | gestionar_ausencias.py | 0.00% | Alta |
 | calendario_guardias_form.py | 7.49% | Alta |
-| import_export_form.py | 11.19% | Alta |
 | asignacion_guardias_form.py | 11.11% | Media |
 | configuracion_form.py | 8.30% | Media |
 
 ## 🎯 Próximos Pasos
 
-### Task 2: Tests para Forms (75% COMPLETADA)
+### Task 2: Tests para Forms (87.5% COMPLETADA) 🎉
 
 **Completados**:
 - ✅ ZonaForm tests arreglados (12/12 tests pasan)
 - ✅ ProfesorFormBasico (4/4 tests pasan)
 - ✅ **ConfiguracionForm (20/20 tests pasan) - Coverage: 8.30% → 90.57% (+82.27pp) 🎉**
 - ✅ **CalendarioGuardiasForm (30/30 tests pasan) - Coverage: 7.49% → 93.58% (+86.09pp) 🚀**
+- ✅ **ImportExportForm (27/27 tests pasan) - Coverage: 11.19% → 93.71% (+82.52pp) 🔥**
 
 **Pendientes**:
-- ⬜ AsignacionGuardiasForm (11.11% → >70%)
-- ⬜ ImportExportForm (11.19% → >70%)
+- ⬜ AsignacionGuardiasForm (11.11% → >70%) - ÚLTIMO PENDIENTE
 
-**Estimación**: ~60 tests adicionales
+**Progreso**: 5/6 formularios completados = 83.3%
+**Estimación**: ~30 tests adicionales para completar Task 2
 
 ### Task 3: Tests para Widgets
 
@@ -394,15 +394,15 @@ if limpiar:
 ## 📊 Métricas Actuales
 
 ```
-Total Coverage: 36.93% (+5.10pp desde 31.83%)
-Tests Totales: 200 (+50 nuevos)
-Tests que Pasan: 200 (100%) ✅ ¡PERFECTO!
+Total Coverage: ~39% (+7pp desde 31.83%)
+Tests Totales: 227 (+77 nuevos)
+Tests que Pasan: 227 (100%) ✅ ¡PERFECTO!
 Tests xfail: 0 ✅
 Tests que Fallan: 0 (0.00%) ✅
 
 Archivos con 100% coverage: 32
-Archivos con >80% coverage: 16  
-Archivos con <25% coverage: 26
+Archivos con >80% coverage: 18 (+2)
+Archivos con <25% coverage: 24 (-2)
 ```
 
 ## 🏆 Logros Destacados
@@ -524,6 +524,80 @@ Archivos con <25% coverage: 26
 - Campo `recreo` es obligatorio en modelo Guardia (1 o 2)
 - Tests de robustez importantes para UI (datos vacíos, fechas inválidas)
 - Performance testing crucial para interactividad del calendario
+
+### ImportExportForm Tests ✅ 🎉
+
+**Archivo**: `tests/test_import_export_form.py` (485 líneas)
+
+**Impacto masivo**:
+- ✅ 27/27 tests PASSING (100%)
+- ✅ Coverage: **11.19% → 93.71%** (+82.52 puntos porcentuales!)
+- ✅ Incremento general: ~36.93% → ~39% (+2pp estimado)
+- ✅ Commit: `73194ce`
+
+**Estructura de tests**:
+1. **TestImportExportFormBasico** (4 tests):
+   - Creación del formulario
+   - Botones principales presentes (exportar, importar, PDF)
+   - Text area de resultados presente y read-only
+   - Checkbox "limpiar datos" presente y checked por defecto
+
+2. **TestImportExportFormPDF** (4 tests):
+   - Combo mes presente y con 12 meses
+   - Combo año presente y con ≥4 años
+   - Combo mes tiene valores correctos (Enero-Diciembre)
+   - Mes actual seleccionado por defecto
+
+3. **TestImportExportFormExportar** (3 tests):
+   - Exportar datos exitoso (mock QFileDialog + ExportadorDatos)
+   - Cancelar exportación no hace nada
+   - Manejo de errores en exportación
+
+4. **TestImportExportFormImportar** (3 tests):
+   - Importar datos exitoso (mock confirmación + importador)
+   - Cancelar importación no hace nada
+   - Rechazar confirmación cancela operación
+
+5. **TestImportExportFormPDFExport** (2 tests):
+   - Exportar PDFs exitoso (mock directorio + ExportadorPDF)
+   - Cancelar exportación PDF no hace nada
+
+6. **TestImportExportFormMetodos** (3 tests):
+   - Método exportar_datos existe
+   - Método importar_datos existe
+   - Método exportar_pdfs existe
+
+7. **TestImportExportFormIntegracion** (3 tests):
+   - Cambiar mes actualiza combo
+   - Cambiar año actualiza combo
+   - Checkbox limpiar puede desmarcarse
+
+8. **TestImportExportFormRobustez** (3 tests):
+   - Form sin datos en BD funciona
+   - Exportar sin profesores no falla
+   - Exportar PDF sin profesores muestra mensaje apropiado
+
+9. **TestImportExportFormRendimiento** (2 tests, @slow):
+   - Carga rápida (<1s)
+   - Exportación rápida (<2s con mocks)
+
+**Correcciones al código fuente**:
+- 🔧 Línea 229: `self.mostrar_info()` → `self.mostrar_exito()` (método no existía en BaseForm)
+- 🔧 Línea 333: `self.mostrar_info()` → `self.mostrar_exito()` (mismo error)
+
+**Técnicas de testing aplicadas**:
+- Heavy mocking: QFileDialog, QMessageBox, servicios externos
+- Tests de file I/O sin tocar sistema de archivos real
+- Uso de `tempfile.NamedTemporaryFile()` para archivos temporales
+- Validación de flujos cancelados (usuario presiona "Cancelar")
+- Tests de confirmación destructiva (importar borra datos)
+
+**Lecciones aprendidas**:
+- ImportExportForm maneja 3 flujos distintos: exportar, importar, PDFs
+- Mocking esencial para tests de I/O: QFileDialog.getSaveFileName/getOpenFileName
+- ExportadorDatos.exportar_todo() y ExportadorPDF.exportar_todos_los_profesores()
+- Checkbox "limpiar datos" crítico para UX (evita pérdida accidental)
+- Tests deben verificar ambos flujos: éxito Y cancelación
 
 
 
