@@ -3,16 +3,16 @@
 ## 📊 Estado Actual
 
 **Fecha**: 18 de octubre de 2025  
-**Coverage Total**: **34.86%** (objetivo: >80%)  
-**Tests Totales**: 170 tests  
-**Tests que Pasan**: 170 tests ✅ **¡100%!**  
+**Coverage Total**: **36.93%** (objetivo: >80%)  
+**Tests Totales**: 200 tests  
+**Tests que Pasan**: 200 tests ✅ **¡100%!**  
 **Tests que Fallan**: 0 tests ✅
 **Tests xfail**: 0 tests ✅
 
 ## 🎯 Progreso Sprint 6
 
 - **Task 1: Infraestructura de Testing** ✅ **100% COMPLETADA**
-- **Task 2: Tests para Formularios** 🔄 **60% EN PROGRESO**
+- **Task 2: Tests para Formularios** 🔄 **75% EN PROGRESO**
 - **Task 3: Tests para Widgets**: ⬜ 0% Pendiente
 - **Task 4: Tests para Use Cases**: ⬜ 0% Pendiente
 - **Task 5: Tests de Integración**: ⬜ 0% Pendiente
@@ -317,19 +317,19 @@ if limpiar:
 
 ## 🎯 Próximos Pasos
 
-### Task 2: Tests para Forms (60% COMPLETADA)
+### Task 2: Tests para Forms (75% COMPLETADA)
 
 **Completados**:
 - ✅ ZonaForm tests arreglados (12/12 tests pasan)
 - ✅ ProfesorFormBasico (4/4 tests pasan)
 - ✅ **ConfiguracionForm (20/20 tests pasan) - Coverage: 8.30% → 90.57% (+82.27pp) 🎉**
+- ✅ **CalendarioGuardiasForm (30/30 tests pasan) - Coverage: 7.49% → 93.58% (+86.09pp) 🚀**
 
 **Pendientes**:
 - ⬜ AsignacionGuardiasForm (11.11% → >70%)
-- ⬜ CalendarioGuardiasForm (7.49% → >70%)
 - ⬜ ImportExportForm (11.19% → >70%)
 
-**Estimación**: ~100 tests adicionales
+**Estimación**: ~60 tests adicionales
 
 ### Task 3: Tests para Widgets
 
@@ -394,15 +394,15 @@ if limpiar:
 ## 📊 Métricas Actuales
 
 ```
-Total Coverage: 34.86% (+3.03pp desde 31.83%)
-Tests Totales: 170 (+20 nuevos)
-Tests que Pasan: 170 (100%) ✅ ¡PERFECTO!
+Total Coverage: 36.93% (+5.10pp desde 31.83%)
+Tests Totales: 200 (+50 nuevos)
+Tests que Pasan: 200 (100%) ✅ ¡PERFECTO!
 Tests xfail: 0 ✅
 Tests que Fallan: 0 (0.00%) ✅
 
-Archivos con 100% coverage: 31
-Archivos con >80% coverage: 14
-Archivos con <25% coverage: 28
+Archivos con 100% coverage: 32
+Archivos con >80% coverage: 16  
+Archivos con <25% coverage: 26
 ```
 
 ## 🏆 Logros Destacados
@@ -460,6 +460,70 @@ Archivos con <25% coverage: 28
 - Tests deben verificar widgets (`fecha_inicio_input`, etc.)
 - Fixtures `config_completa` compartida entre tests
 - Importante verificar tipos QDateEdit, QTimeEdit
+
+### CalendarioGuardiasForm Tests ✅ 🚀
+
+**Archivo**: `tests/test_calendario_guardias_form.py` (420 líneas)
+
+**Impacto masivo**:
+- ✅ 30/30 tests PASSING
+- ✅ Coverage: **7.49% → 93.58%** (+86.09 puntos porcentuales!)
+- ✅ Incremento general: 34.86% → 36.93% (+2.07pp)
+- ✅ Commit: `cbc516c`
+
+**Estructura de tests**:
+1. **TestCalendarioGuardiasFormBasico** (4 tests):
+   - Creación del formulario
+   - Widget de calendario presente
+   - Filtros presentes (profesor, zona, turno)
+   - Áreas de texto (detalles y estadísticas)
+
+2. **TestCalendarioGuardiasFormFiltros** (5 tests):
+   - Filtro profesor carga profesores
+   - Filtro zona carga zonas
+   - Filtro turno tiene opciones
+   - Botón limpiar filtros existe
+   - Limpiar filtros resetea selección
+
+3. **TestCalendarioGuardiasFormCalendario** (3 tests):
+   - Seleccionar fecha actualiza detalles
+   - Fecha sin guardias muestra mensaje
+   - Calendario con fecha actual por defecto
+
+4. **TestCalendarioGuardiasFormEstadisticas** (2 tests):
+   - Estadísticas se actualizan
+   - Estadísticas muestran total guardias
+
+5. **TestCalendarioGuardiasFormIntegracion** (4 tests):
+   - Cambiar filtro profesor actualiza vista
+   - Cambiar filtro turno actualiza vista
+   - Ciclo completo de filtrado
+   - Múltiples cambios de fecha consecutivos
+
+6. **TestCalendarioGuardiasFormMetodos** (5 tests):
+   - Método cargar_filtros existe
+   - Método actualizar_guardias_dia existe
+   - Método actualizar_estadisticas existe
+   - Método aplicar_filtros existe
+   - Método limpiar_filtros existe
+
+7. **TestCalendarioGuardiasFormRobustez** (4 tests):
+   - Form sin guardias en BD
+   - Form sin profesores en BD
+   - Form sin zonas en BD
+   - Actualizar con fecha None no falla
+
+8. **TestCalendarioGuardiasFormRendimiento** (3 tests, @slow):
+   - Carga rápida (<2s)
+   - Cambio de fecha rápido (<0.5s)
+   - Aplicar filtros rápido (<0.3s)
+
+**Lecciones aprendidas**:
+- CalendarioGuardiasForm combina QCalendarWidget con filtros dinámicos
+- Usa factories (profesor_factory, zona_factory) para datos de prueba
+- Campo `recreo` es obligatorio en modelo Guardia (1 o 2)
+- Tests de robustez importantes para UI (datos vacíos, fechas inválidas)
+- Performance testing crucial para interactividad del calendario
 
 
 
