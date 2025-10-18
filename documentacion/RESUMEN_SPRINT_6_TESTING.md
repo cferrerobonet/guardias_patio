@@ -3,16 +3,16 @@
 ## 📊 Estado Actual
 
 **Fecha**: 18 de octubre de 2025  
-**Coverage Total**: **31.83%** (objetivo: >80%)  
-**Tests Totales**: 150 tests  
-**Tests que Pasan**: 150 tests ✅ **¡100%!**  
+**Coverage Total**: **34.86%** (objetivo: >80%)  
+**Tests Totales**: 170 tests  
+**Tests que Pasan**: 170 tests ✅ **¡100%!**  
 **Tests que Fallan**: 0 tests ✅
 **Tests xfail**: 0 tests ✅
 
 ## 🎯 Progreso Sprint 6
 
 - **Task 1: Infraestructura de Testing** ✅ **100% COMPLETADA**
-- **Task 2: Tests para Formularios** 🔄 **50% EN PROGRESO**
+- **Task 2: Tests para Formularios** 🔄 **60% EN PROGRESO**
 - **Task 3: Tests para Widgets**: ⬜ 0% Pendiente
 - **Task 4: Tests para Use Cases**: ⬜ 0% Pendiente
 - **Task 5: Tests de Integración**: ⬜ 0% Pendiente
@@ -317,19 +317,19 @@ if limpiar:
 
 ## 🎯 Próximos Pasos
 
-### Task 2: Tests para Forms (50% COMPLETADA)
+### Task 2: Tests para Forms (60% COMPLETADA)
 
 **Completados**:
 - ✅ ZonaForm tests arreglados (12/12 tests pasan)
 - ✅ ProfesorFormBasico (4/4 tests pasan)
+- ✅ **ConfiguracionForm (20/20 tests pasan) - Coverage: 8.30% → 90.57% (+82.27pp) 🎉**
 
 **Pendientes**:
-- ⬜ ConfiguracionForm (8.30% → >70%)
 - ⬜ AsignacionGuardiasForm (11.11% → >70%)
 - ⬜ CalendarioGuardiasForm (7.49% → >70%)
 - ⬜ ImportExportForm (11.19% → >70%)
 
-**Estimación**: ~150 tests adicionales
+**Estimación**: ~100 tests adicionales
 
 ### Task 3: Tests para Widgets
 
@@ -349,9 +349,10 @@ if limpiar:
 - ✅ exportador.py: 84.43% (muy bien - mejorado con fix FK)
 - ⬜ gestor_ausencias.py: Necesita tests
 
-**Bugs identificados en asignador**:
-- ⚠️ No respeta `dias_semana_permitidos` (2 tests xfail documentados)
-- Requiere fix en `generar_calendario_guardias()`
+**✅ Bugs del asignador ARREGLADOS**:
+- ✅ Bug `dias_semana_permitidos` arreglado (commit 00fd191)
+- ✅ 2 tests xfail → PASSED
+- ✅ 9 validaciones activas en asignador (antes 7)
 
 **Estimación**: ~50 tests para gestor_ausencias
 
@@ -393,16 +394,74 @@ if limpiar:
 ## 📊 Métricas Actuales
 
 ```
-Total Coverage: 31.83%
-Tests Totales: 150
-Tests que Pasan: 150 (100%) ✅ ¡PERFECTO!
+Total Coverage: 34.86% (+3.03pp desde 31.83%)
+Tests Totales: 170 (+20 nuevos)
+Tests que Pasan: 170 (100%) ✅ ¡PERFECTO!
 Tests xfail: 0 ✅
 Tests que Fallan: 0 (0.00%) ✅
 
-Archivos con 100% coverage: 30
-Archivos con >80% coverage: 11
-Archivos con <25% coverage: 30
+Archivos con 100% coverage: 31
+Archivos con >80% coverage: 14
+Archivos con <25% coverage: 28
 ```
+
+## 🏆 Logros Destacados
+
+### ConfiguracionForm Tests ✅ 🎉
+
+**Archivo**: `tests/test_configuracion_form.py` (290 líneas)
+
+**Impacto masivo**:
+- ✅ 20/20 tests PASSING
+- ✅ Coverage: **8.30% → 90.57%** (+82.27 puntos porcentuales!)
+- ✅ Incremento general: 31.83% → 34.86% (+3.03pp)
+- ✅ Commit: `65f0ed0`
+
+**Estructura de tests**:
+1. **TestConfiguracionFormBasico** (4 tests):
+   - Creación del formulario
+   - Carga de configuración existente
+   - Manejo sin configuración previa
+   - Verificación de botones
+
+2. **TestConfiguracionFormFechas** (2 tests):
+   - Campos de fecha presentes
+   - Actualización de fechas
+
+3. **TestConfiguracionFormRecreos** (3 tests):
+   - Campos de recreo mañana
+   - Campos de recreo tarde
+   - Carga de valores desde BD
+
+4. **TestConfiguracionFormCamposAdicionales** (3 tests):
+   - Campos de ajuste (tutores/no tutores)
+   - Campos de festivos
+   - Campo de configuración de recreos
+
+5. **TestConfiguracionFormValidaciones** (2 tests):
+   - Método validar_formulario existe
+   - Retorna tupla (bool, str)
+
+6. **TestConfiguracionFormGuardado** (2 tests):
+   - Método guardar existe
+   - Método cargar funciona
+
+7. **TestConfiguracionFormIntegracion** (2 tests):
+   - Ciclo completo crear configuración
+   - Actualizar configuración existente
+
+8. **TestConfiguracionFormRendimiento** (2 tests, @slow):
+   - Carga rápida (<1s)
+   - Recarga rápida (<200ms)
+
+**Lecciones aprendidas**:
+- ConfiguracionForm usa arquitectura MVP con Use Cases
+- No guarda configuración como atributo, la carga dinámicamente
+- Tests deben verificar widgets (`fecha_inicio_input`, etc.)
+- Fixtures `config_completa` compartida entre tests
+- Importante verificar tipos QDateEdit, QTimeEdit
+
+
 
 ## ✅ Problemas Resueltos
 
