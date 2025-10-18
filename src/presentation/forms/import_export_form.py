@@ -226,7 +226,7 @@ class ImportExportForm(BaseForm):
             )
 
             self.resultado_text.setText(mensaje)
-            self.mostrar_info("Datos exportados correctamente.")
+            self.mostrar_exito("Datos exportados", "Los datos se exportaron correctamente.")
 
         except Exception as e:
             self.manejar_excepcion(e, "exportar datos")
@@ -329,7 +329,9 @@ class ImportExportForm(BaseForm):
             )
 
             self.resultado_text.setText(mensaje)
-            self.mostrar_info(f"Se generaron {exitos} calendarios PDF correctamente.")
+            self.mostrar_exito(
+                "PDFs generados", f"Se generaron {exitos} calendarios PDF correctamente."
+            )
 
         except Exception as e:
             self.manejar_excepcion(e, "generar PDFs")
