@@ -1,15 +1,15 @@
 """
-Widgets de presentación.
-
-Widgets reutilizables para la interfaz de usuario.
+Widgets refactorizados de la capa de presentación.
 """
 
+from .gestionar_ausencias import GestionarAusenciasForm
 from .gestor_sustituciones import GestorSustituciones
 from .panel_estadisticas import PanelEstadisticas
 from .vista_calendario import VistaCalendario
 
 __all__ = [
+    "VistaCalendario",
     "GestorSustituciones",
     "PanelEstadisticas",
-    "VistaCalendario",
+    "GestionarAusenciasForm",
 ]

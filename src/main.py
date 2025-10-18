@@ -12,11 +12,19 @@ from presentation.forms import ProfesorForm as ProfesorFormRefactorizado
 from presentation.forms import ZonaForm as ZonaFormRefactorizado
 
 # Importar widgets refactorizados (Sprint 5)
-from presentation.widgets import GestorSustituciones as GestorSustitucionesRefactorizado
-from presentation.widgets import PanelEstadisticas as PanelEstadisticasRefactorizado
-from presentation.widgets import VistaCalendario as VistaCalendarioRefactorizada
+from presentation.widgets import (
+    GestionarAusenciasForm as GestionarAusenciasRefactorizado,
+)
+from presentation.widgets import (
+    GestorSustituciones as GestorSustitucionesRefactorizado,
+)
+from presentation.widgets import (
+    PanelEstadisticas as PanelEstadisticasRefactorizado,
+)
+from presentation.widgets import (
+    VistaCalendario as VistaCalendarioRefactorizada,
+)
 from utils import setup_logging
-from widgets.gestionar_ausencias import GestionarAusenciasForm
 
 # Configurar logging al inicio
 setup_logging()
@@ -238,10 +246,11 @@ class MainWindow(QWidget):
             AsignacionGuardiasFormRefactorizado(self.session),
             "🎯 Asignación de Guardias",
         )
-        self.tabs.addTab(GestionarAusenciasForm(), "🏥 Ausencias")
 
-        # Usar VistaCalendario refactorizada (Sprint 5)
+        # Usar widgets refactorizados (Sprint 5)
         self.vista_calendario = VistaCalendarioRefactorizada(self.session)
+        self.gestionar_ausencias = GestionarAusenciasRefactorizado(self.session)
+        self.tabs.addTab(self.gestionar_ausencias, "🏥 Ausencias")
         self.tabs.addTab(self.vista_calendario, "📅 Vista Calendario")
 
         # Usar PanelEstadisticas refactorizado (Sprint 5)
