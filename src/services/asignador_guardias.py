@@ -175,6 +175,17 @@ def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[i
             # VALIDACIÓN: Respetar fecha de fin de guardias (si está definida)
             if p.fecha_fin_guardias and slot.fecha > p.fecha_fin_guardias:
                 continue
+            # VALIDACIÓN: Respetar días de la semana permitidos (si está definida)
+            if p.dias_semana_permitidos:
+                # Parse "0,1,2" -> [0, 1, 2]
+                try:
+                    dias_permitidos = [int(d.strip()) for d in p.dias_semana_permitidos.split(",")]
+                    dia_semana = slot.fecha.weekday()  # 0=Lun, 1=Mar, ..., 6=Dom
+                    if dia_semana not in dias_permitidos:
+                        continue
+                except (ValueError, AttributeError):
+                    # Si hay error en el formato, ignorar restricción
+                    pass
             # VALIDACIÓN: Respetar matriz de horario permitido (día × recreo)
             if not _horario_permitido(
                 slot.fecha, slot.recreo_id, p.recreos_permitidos
