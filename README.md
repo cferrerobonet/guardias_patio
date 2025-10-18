@@ -4,30 +4,36 @@
 ![Version](https://img.shields.io/badge/Version-2.6.0-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.9+-green.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.7.0-orange.svg)
+![Arquitectura](https://img.shields.io/badge/Arquitectura-Clean-brightgreen.svg)
 
 Aplicación de escritorio para planificar, asignar, visualizar y exportar las guardias de patio de un centro educativo de forma equitativa y transparente.
 
-## 🆕 Novedades v2.6.0 (17 de Octubre de 2025)
+## 🆕 Novedades v2.6.0 (18 de Octubre de 2025)
 
-### ✨ Nueva Funcionalidad: Matriz Visual Día × Recreo
+### 🏗️ Sprint 5 Completado: Arquitectura Limpia al 100%
 
-Ahora puedes especificar restricciones de disponibilidad de profesores de forma granular mediante una **matriz visual interactiva** que relaciona días de la semana con recreos específicos.
+**Migración completa de widgets a Presentation Layer** ✅
 
-**Antes**: Campos de texto separados sin relación  
-**Ahora**: Matriz 7×4 visual con checkboxes
+Hemos completado la refactorización arquitectónica de todos los widgets, estableciendo un patrón consistente de diseño limpio con inyección de dependencias y separación de responsabilidades.
 
-```
-☑️ Usar restricciones personalizadas de horario
+**Widgets refactorizados (1,813 líneas)**:
+- ✅ **VistaCalendario** (349 líneas): Visualización mensual con color-coding
+- ✅ **GestorSustituciones** (347 líneas): Sistema de asignación de sustitutos
+- ✅ **PanelEstadisticas** (401 líneas): Dashboard con gráficos matplotlib
+- ✅ **GestionarAusenciasForm** (716 líneas): CRUD completo de ausencias + reasignación automática
 
-📅 Disponibilidad por día y recreo:
-     R1  R2  R3  R4
-Lun  ☑️  ☑️  ☐   ☐
-Mar  ☑️  ☐   ☑️  ☐
-Mié  ☑️  ☑️  ☑️  ☑️
-...
-```
+**Beneficios de la refactorización**:
+- 🎯 **Arquitectura consistente**: Todos los componentes siguen el mismo patrón
+- � **Mantenibilidad mejorada**: Código organizado y documentado
+- ✅ **Testeable**: Session injection facilita unit tests
+- 📈 **Escalable**: Fácil agregar nuevos componentes
 
-📚 **Documentación completa**: [documentacion/RESUMEN_SESION_2025-10-17.md](documentacion/RESUMEN_SESION_2025-10-17.md)
+**Total refactorizado (Sprints 4 + 5)**: **~4,280 líneas** de código limpio
+
+📚 **Documentación completa**:
+- [Sprint 5: Migración de Widgets](documentacion/SPRINT_5_WIDGETS.md)
+- [Changelog v2.6](documentacion/CHANGELOG_v2.6.md)
+- [Resumen de Arquitectura v2.6](documentacion/RESUMEN_ARQUITECTURA_v2.6.md)
 
 ## 🚀 Objetivo
 Automatizar el cálculo y la asignación de guardias (recreos) entre el profesorado según:
@@ -37,31 +43,65 @@ Automatizar el cálculo y la asignación de guardias (recreos) entre el profesor
 - Periodo lectivo del curso
 - Preferencias y exclusiones (futuro)
 
-## 🏗️ Arquitectura General
-Estructura en capas separando datos, servicios, lógica de negocio, interfaz y utilidades.
+## 🏗️ Arquitectura v2.6 - Clean Architecture
+
+Estructura en capas con **separación clara de responsabilidades** y **inyección de dependencias**.
 
 ```
 src/
- ├── models/                # Modelos SQLAlchemy
- ├── database/              # Gestión de conexión y migraciones
- ├── services/              # Lógica de negocio (CRUD, cálculo, asignación, exportación)
- ├── widgets/               # Componentes reutilizables de UI
- ├── utils/                 # 🆕 Sistema de utilidades (logging, validadores, excepciones)
- │   ├── logger.py          # Sistema de logging centralizado
- │   ├── validators.py      # Validadores de entrada de datos
- │   ├── constants.py       # Constantes de aplicación
- │   ├── exceptions.py      # Jerarquía de excepciones personalizadas
- │   └── __init__.py        # Exportaciones organizadas
- ├── ui_styles.py           # 🆕 Estilos CSS centralizados para UI
- └── main.py                # Punto de entrada de la aplicación
-tests/                      # 🆕 124 tests unitarios (98% cobertura)
- ├── test_validators.py     # Tests de validadores
- ├── test_exceptions.py     # Tests de excepciones
- └── test_logger.py         # Tests de logging
-alembic/                    # Migraciones de base de datos
-documentacion/              # Documentación completa del proyecto
-requirements.txt            # Dependencias
+ ├── presentation/              # 🆕 CAPA DE PRESENTACIÓN
+ │   ├── forms/                 # Formularios CRUD (Sprint 4)
+ │   │   ├── base_form.py       # ⭐ Clase base compartida
+ │   │   ├── profesor_form.py
+ │   │   ├── zona_form.py
+ │   │   ├── configuracion_form.py
+ │   │   ├── asignacion_guardias_form.py
+ │   │   ├── calendario_guardias_form.py
+ │   │   └── import_export_form.py
+ │   └── widgets/               # Widgets visualización (Sprint 5) 🆕
+ │       ├── vista_calendario.py
+ │       ├── gestor_sustituciones.py
+ │       ├── panel_estadisticas.py
+ │       └── gestionar_ausencias.py
+ ├── services/                  # CAPA DE SERVICIOS
+ │   ├── asignador_guardias.py
+ │   ├── calculador_guardias.py
+ │   ├── exportador_pdf.py
+ │   ├── exportador.py
+ │   └── gestor_ausencias.py
+ ├── models/                    # CAPA DE DOMINIO
+ │   └── models.py              # Profesor, Zona, Guardia, Ausencia, etc.
+ ├── database/                  # CAPA DE DATOS
+ │   └── db_manager.py          # SessionLocal, engine
+ ├── utils/                     # UTILIDADES
+ │   ├── logger.py              # Sistema de logging centralizado
+ │   ├── validators.py          # Validadores de entrada
+ │   ├── constants.py           # Constantes de aplicación
+ │   ├── exceptions.py          # Jerarquía de excepciones
+ │   └── __init__.py
+ ├── ui_styles.py               # Estilos CSS centralizados
+ ├── main.py                    # Punto de entrada (MainWindow)
+ └── widgets/                   # ⚠️ LEGACY (deprecado)
+tests/                          # 124 tests unitarios (98% cobertura utils)
+ ├── test_validators.py
+ ├── test_exceptions.py
+ ├── test_logger.py
+ └── ...
+alembic/                        # Migraciones de base de datos
+documentacion/                  # Documentación completa del proyecto
+requirements.txt                # Dependencias
 ```
+
+**Patrón de diseño establecido**:
+```python
+class ComponenteUI(BaseForm):
+    def __init__(self, session):
+        """Session inyectada desde MainWindow"""
+        super().__init__(session)
+        self.setup_ui()
+```
+
+📚 **Documentación de arquitectura**: [RESUMEN_ARQUITECTURA_v2.6.md](documentacion/RESUMEN_ARQUITECTURA_v2.6.md)
 
 ## 🗄️ Modelo de Datos (Base inicial)
 Tablas principales:
@@ -434,11 +474,18 @@ Con 180 días lectivos, 4 zonas, 2 recreos/día, turnos completos:
 - **[NUEVO]** [Refactorización v2.2](documentacion/REFACTORIZACION_v2.2.md) - Guía completa de utilidades (570 líneas)
 - **[NUEVO]** [Resumen Ejecutivo v2.2.1](documentacion/RESUMEN_v2.2.1.md) - Resumen con métricas (255 líneas)
 
+### Arquitectura y Refactorización
+- **[NUEVO]** [Resumen de Arquitectura v2.6](documentacion/RESUMEN_ARQUITECTURA_v2.6.md) - Arquitectura limpia completa
+- **[NUEVO]** [Sprint 5: Widgets](documentacion/SPRINT_5_WIDGETS.md) - Migración de widgets a Presentation Layer
+- **[NUEVO]** [Changelog v2.6](documentacion/CHANGELOG_v2.6.md) - Release notes Sprint 5
+- [Refactorización v2.2](documentacion/REFACTORIZACION_v2.2.md) - Sistema de utilidades
+- [Resumen Ejecutivo v2.2.1](documentacion/RESUMEN_v2.2.1.md) - Métricas de utilidades
+
 ### Notas de Versión
-- **[NUEVO]** [Versión 2.2.0](documentacion/RESUMEN_v2.2.1.md) - Sistema de utilidades completo (logger, validadores, excepciones, tests)
-- [Versión 1.2.0](documentacion/RESUMEN_VALIDACION_NO_SIMULTANEIDAD.md) - Validación de no simultaneidad de zonas
+- **[ACTUAL]** [Versión 2.6.0](documentacion/CHANGELOG_v2.6.md) - Arquitectura limpia al 100% (Sprints 4 + 5)
+- [Versión 2.2.0](documentacion/RESUMEN_v2.2.1.md) - Sistema de utilidades completo
+- [Versión 1.2.0](documentacion/RESUMEN_VALIDACION_NO_SIMULTANEIDAD.md) - Validación de no simultaneidad
 - [Versión 1.1.0](documentacion/NOTAS_VERSION_1_1_0.md) - Sistema de importación/exportación
-- [Resumen Importación/Exportación](documentacion/RESUMEN_IMPORTACION_EXPORTACION.md)
 
 ## �📄 Licencia
 (Define la licencia: MIT / GPL / privativa según corresponda.)
