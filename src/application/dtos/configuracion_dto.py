@@ -20,6 +20,11 @@ class ConfiguracionDTO(BaseModel):
     hora_recreo2_manana: time
     hora_recreo1_tarde: Optional[time] = None
     hora_recreo2_tarde: Optional[time] = None
+    ajuste_tutores: float = 1.0
+    ajuste_no_tutores: float = 1.0
+    activar_festivos_automaticos: bool = True
+    dias_no_lectivos_personalizados: Optional[str] = None
+    recreos_config: Optional[str] = None
 
     class Config:
         """Configuración de Pydantic."""
@@ -35,6 +40,11 @@ class ActualizarConfiguracionDTO(BaseModel):
     hora_recreo2_manana: Optional[time] = None
     hora_recreo1_tarde: Optional[time] = None
     hora_recreo2_tarde: Optional[time] = None
+    ajuste_tutores: Optional[float] = None
+    ajuste_no_tutores: Optional[float] = None
+    activar_festivos_automaticos: Optional[bool] = None
+    dias_no_lectivos_personalizados: Optional[str] = None
+    recreos_config: Optional[str] = None
 
     class Config:
         """Configuración de Pydantic."""
