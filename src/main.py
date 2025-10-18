@@ -10,11 +10,13 @@ from presentation.forms import ConfiguracionForm as ConfiguracionFormRefactoriza
 from presentation.forms import ImportExportForm as ImportExportFormRefactorizado
 from presentation.forms import ProfesorForm as ProfesorFormRefactorizado
 from presentation.forms import ZonaForm as ZonaFormRefactorizado
+
+# Importar widgets refactorizados (Sprint 5)
+from presentation.widgets import GestorSustituciones as GestorSustitucionesRefactorizado
+from presentation.widgets import PanelEstadisticas as PanelEstadisticasRefactorizado
+from presentation.widgets import VistaCalendario as VistaCalendarioRefactorizada
 from utils import setup_logging
 from widgets.gestionar_ausencias import GestionarAusenciasForm
-from widgets.gestionar_sustituciones import GestorSustituciones
-from widgets.panel_estadisticas import PanelEstadisticas
-from widgets.vista_calendario import VistaCalendario
 
 # Configurar logging al inicio
 setup_logging()
@@ -238,14 +240,16 @@ class MainWindow(QWidget):
         )
         self.tabs.addTab(GestionarAusenciasForm(), "🏥 Ausencias")
 
-        # NUEVAS PESTAÑAS
-        self.vista_calendario = VistaCalendario(self.session)
+        # Usar VistaCalendario refactorizada (Sprint 5)
+        self.vista_calendario = VistaCalendarioRefactorizada(self.session)
         self.tabs.addTab(self.vista_calendario, "📅 Vista Calendario")
 
-        self.panel_estadisticas = PanelEstadisticas(self.session)
+        # Usar PanelEstadisticas refactorizado (Sprint 5)
+        self.panel_estadisticas = PanelEstadisticasRefactorizado(self.session)
         self.tabs.addTab(self.panel_estadisticas, "📊 Estadísticas")
 
-        self.gestor_sustituciones = GestorSustituciones(self.session)
+        # Usar GestorSustituciones refactorizado (Sprint 5)
+        self.gestor_sustituciones = GestorSustitucionesRefactorizado(self.session)
         self.tabs.addTab(self.gestor_sustituciones, "🔄 Sustituciones")
 
         # Usar CalendarioGuardiasForm refactorizado (Sprint 4)
