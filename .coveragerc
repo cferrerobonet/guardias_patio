@@ -1,0 +1,73 @@
+# Coverage configuration
+[run]
+# Source code to measure
+source = src
+
+# Omit specific files
+omit =
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */site-packages/*
+    .venv/*
+    venv/*
+    */alembic/*
+    */versions/*
+
+# Branch coverage
+branch = True
+
+# Parallel mode (for multiprocessing tests)
+parallel = False
+
+[report]
+# Show missing lines
+show_missing = True
+
+# Precision of percentages
+precision = 2
+
+# Skip covered files
+skip_covered = False
+
+# Skip empty files
+skip_empty = True
+
+# Sort by coverage percentage
+sort = Cover
+
+# Exclude lines from coverage
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+    
+    # Don't complain about missing debug-only code
+    def __repr__
+    def __str__
+    
+    # Don't complain if tests don't hit defensive assertion code
+    raise AssertionError
+    raise NotImplementedError
+    
+    # Don't complain if non-runnable code isn't run
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    
+    # Don't complain about abstract methods
+    @abstractmethod
+    @abc.abstractmethod
+    
+    # Don't complain about protocol methods
+    @typing.overload
+    @overload
+    
+    # Don't complain about typing imports
+    if typing.TYPE_CHECKING:
+
+[html]
+# Directory for HTML coverage report
+directory = htmlcov
+
+[xml]
+# File for XML coverage report
+output = coverage.xml
