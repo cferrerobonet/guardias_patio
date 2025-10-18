@@ -22,7 +22,7 @@ class ProfesorDTO(BaseModel):
     turno: str  # "mañana", "tarde", "mixto"
     horas_manana: Optional[float] = None
     horas_tarde: Optional[float] = None
-    es_tutor: bool
+    tutor: bool  # Nombre del campo en el modelo
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
     dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(7)))
@@ -46,7 +46,7 @@ class CrearProfesorDTO(BaseModel):
     turno: str = Field(..., pattern="^(mañana|tarde|mixto)$")
     horas_manana: Optional[float] = Field(None, ge=0.0, le=40.0)
     horas_tarde: Optional[float] = Field(None, ge=0.0, le=40.0)
-    es_tutor: bool = False
+    tutor: bool = False  # Nombre del campo en el modelo
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
     dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(7)))
@@ -86,7 +86,7 @@ class ActualizarProfesorDTO(BaseModel):
     turno: Optional[str] = Field(None, pattern="^(mañana|tarde|mixto)$")
     horas_manana: Optional[float] = Field(None, ge=0.0, le=40.0)
     horas_tarde: Optional[float] = Field(None, ge=0.0, le=40.0)
-    es_tutor: Optional[bool] = None
+    tutor: Optional[bool] = None  # Nombre del campo en el modelo
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
     dias_semana_permitidos: Optional[list[int]] = None
