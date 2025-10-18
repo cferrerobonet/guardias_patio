@@ -20,7 +20,7 @@ from services.calculador_guardias import (
     _parse_recreos_config,
     ajustar_redondeo,
     calcular_dias_lectivos,
-    calcular_distribucion_base,
+    calcular_distribucion_cruda,
     calcular_guardias_por_profesor,
     calcular_recreos_activos,
     listar_dias_lectivos,
@@ -264,7 +264,7 @@ class TestDistribucionBase:
         config_basica.fecha_fin_curso = date(2025, 9, 5)  # 5 días
         session.commit()
 
-        distribucion = calcular_distribucion_base(session)
+        distribucion = calcular_distribucion_cruda(session)
 
         # Ana (tutor): recibe 0.9x
         # Luis (no tutor): recibe 1.0x
@@ -297,7 +297,7 @@ class TestDistribucionBase:
         session.add_all([prof_manana, prof_mixto])
         session.commit()
 
-        distribucion = calcular_distribucion_base(session)
+        distribucion = calcular_distribucion_cruda(session)
 
         # Mixto debería tener más guardias que mañana (participa en 3 recreos vs 2)
         assert distribucion[prof_mixto.id] > distribucion[prof_manana.id]
