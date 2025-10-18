@@ -70,8 +70,8 @@ class TestZonaFormBasico:
         form = ZonaForm(session)
         qtbot.addWidget(form)
 
-        assert hasattr(form, 'tabla_zonas')
-        assert form.tabla_zonas.rowCount() == 0
+        assert hasattr(form, 'lista_zonas')
+        assert form.lista_zonas.count() == 0
 
     def test_cargar_tabla_con_datos(self, qtbot, db_with_data):
         """Verificar carga con datos existentes."""
@@ -79,17 +79,16 @@ class TestZonaFormBasico:
         qtbot.addWidget(form)
 
         # db_with_data tiene 3 zonas
-        assert form.tabla_zonas.rowCount() == 3
+        assert form.lista_zonas.count() == 3
 
     def test_use_cases_inicializados(self, qtbot, session):
         """Verificar que los use cases existen."""
         form = ZonaForm(session)
         qtbot.addWidget(form)
 
-        assert form.crear_use_case is not None
-        assert form.actualizar_use_case is not None
-        assert form.eliminar_use_case is not None
-        assert form.listar_use_case is not None
+        assert form.crear_zona_uc is not None
+        assert form.eliminar_zona_uc is not None
+        assert form.listar_zonas_uc is not None
 
 
 @pytest.mark.ui
@@ -128,7 +127,7 @@ class TestFormulariosCargaMasiva:
         form = ZonaForm(session)
         qtbot.addWidget(form)
 
-        assert form.tabla_zonas.rowCount() == 30
+        assert form.lista_zonas.count() == 30
 
 
 @pytest.mark.integration
