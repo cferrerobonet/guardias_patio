@@ -3,9 +3,9 @@
 ## 📊 Estado Actual
 
 **Fecha**: 18 de octubre de 2025  
-**Coverage Total**: **~40.4%** (objetivo: >80%)  
-**Tests Totales**: 253 tests (+26)  
-**Tests que Pasan**: 253 tests ✅ **¡100%!**  
+**Coverage Total**: **~43.7%** (objetivo: >80%)  
+**Tests Totales**: 290 tests (+37)  
+**Tests que Pasan**: 290 tests ✅ **¡100%!**  
 **Tests que Fallan**: 0 tests ✅
 **Tests xfail**: 0 tests ✅
 
@@ -13,7 +13,7 @@
 
 - **Task 1: Infraestructura de Testing** ✅ **100% COMPLETADA**
 - **Task 2: Tests para Formularios** ✅ **100% COMPLETADA** 🎉
-- **Task 3: Tests para Widgets**: ⬜ 0% Pendiente
+- **Task 3: Tests para Widgets**: 🔄 **25% EN PROGRESO** (1/4 widgets)
 - **Task 4: Tests para Use Cases**: ⬜ 0% Pendiente
 - **Task 5: Tests de Integración**: ⬜ 0% Pendiente
 - **Task 6: CI/CD**: ⬜ 0% Pendiente
@@ -330,6 +330,109 @@ if limpiar:
 **Impacto**: +140 tests, +4.56pp cobertura global
 
 ### Task 3: Tests para Widgets
+
+**Estado**: 🔄 **25% EN PROGRESO** (1/4 widgets completos)
+
+#### ✅ 1. VistaCalendario - COMPLETADO (97.92% coverage)
+
+**Archivo**: `tests/test_vista_calendario.py` (~800 líneas, 37 tests)
+
+**Coverage**: 0.00% → **97.92%** (+97.92pp) ✨
+
+**Clases de Tests**:
+
+1. **TestVistaCalendarioBasico** (6 tests):
+   - Creación del widget con session
+   - Inicialización con fecha actual (datetime.now())
+   - Existencia de botones de navegación (anterior/siguiente/hoy)
+   - Existencia de label mes/año
+   - Existencia de calendario layout
+   - Window title
+
+2. **TestVistaCalendarioNavegacion** (6 tests):
+   - Mes siguiente dentro del año (Oct → Nov)
+   - Mes siguiente con cambio de año (Dic → Ene)
+   - Mes anterior dentro del año (Nov → Oct)
+   - Mes anterior con cambio de año (Ene → Dic)
+   - Botón "Ir a hoy" (actualiza a fecha actual)
+   - Navegación múltiple meses (5 meses forward, 3 back)
+
+3. **TestVistaCalendarioRenderizado** (5 tests):
+   - Actualizar calendario sin guardias (grid vacía)
+   - Encabezados días semana (L, M, X, J, V, S, D)
+   - Actualizar calendario con guardias (datos visibles)
+   - Label mes mostrado se actualiza
+   - Limpieza calendario anterior (no data overlap)
+
+4. **TestVistaCalendarioGuardias** (3 tests):
+   - Cargar guardias del mes (5 guardias octubre)
+   - Guardias de otros meses no afectan vista
+   - Múltiples guardias en mismo día (stack correctamente)
+
+5. **TestVistaCalendarioAusencias** (3 tests):
+   - Cargar ausencias del mes con ícono 🏥
+   - Ausencias múltiples días (span 3 días: 10-12 Oct)
+   - Ausencias inactivas no aparecen (filtrado)
+
+6. **TestVistaCalendarioEstilos** (4 tests):
+   - Estilo día hoy: fondo amarillo (#fff9c4)
+   - Estilo día con guardias: fondo azul (#e3f2fd)
+   - Estilo día sin guardias: fondo gris (#fafafa)
+   - Prioridad estilo hoy > guardias (amarillo gana)
+
+7. **TestVistaCalendarioCeldas** (4 tests):
+   - Crear celda día básica (número día visible)
+   - Celda con guardias (nombre profesor + zona)
+   - Celda con ausencias muestra ícono (🏥)
+   - Celda limita guardias mostradas (max 3 + contador)
+
+8. **TestVistaCalendarioIntegracion** (3 tests):
+   - Flujo completo navegación con datos (crear guardias → navegar → verificar)
+   - Método refrescar (actualizar vista sin navegación)
+   - Crear celda con datos completos (guardias + ausencias)
+
+9. **TestVistaCalendarioRendimiento** (3 tests, @slow):
+   - Carga inicial rápida (<1s)
+   - Navegación rápida (<500ms por mes)
+   - Calendario con muchas guardias (<2s para 100+ guardias)
+
+**Fixtures utilizadas**:
+- `vista_calendario`: VistaCalendario(session)
+- `fecha_fija`: date(2024, 10, 15) para tests determinísticos
+- `guardias_mes`: 5 guardias en octubre 2024
+- `ausencias_mes`: Ausencia multi-día (10-12 Oct)
+
+**Técnicas de testing aplicadas**:
+- Mocking de `datetime.now()` para tests determinísticos
+- Uso de `patch` para control de fechas en navegación
+- Tests de estilos con verificación CSS (#fff9c4, #e3f2fd, #fafafa)
+- Tests de celdas con validación de contenido (texto, iconos)
+- Tests de rendimiento con `@pytest.mark.slow`
+- Fixtures compartidas para datos de prueba (guardias_mes, ausencias_mes)
+
+**Desafíos superados**:
+- Mockear `datetime.now()` en módulo correcto (`presentation.widgets.vista_calendario`)
+- Transiciones de mes con cambio de año (Dic ↔ Ene)
+- Validación de estilos CSS en QLabel (styleSheet())
+- Límite de 3 guardias por día + contador ("...y X más")
+- Ausencias multi-día que se marcan en todos los días del rango
+- Prioridad de estilos (hoy > guardias > normal)
+
+**Lecciones aprendidas**:
+- VistaCalendario usa `calendar.monthcalendar()` para generar grid
+- Ausencias se agrupan por `fecha_inicio` en dict para búsqueda rápida
+- Estilos se aplican con `setStyleSheet()` en QLabel
+- Navegación actualiza `self.mes_actual` y `self.anio_actual`, luego llama `actualizar_calendario()`
+- Método `refrescar()` permite actualizar vista sin cambiar mes
+- Widget carga guardias y ausencias del mes mostrado, no de todo el año
+
+**Impacto en TASK 3**:
+- ✅ **1/4 widgets completados (25%)**
+- ✅ VistaCalendario: 0% → 97.92% coverage
+- ✅ +37 tests
+- ✅ +3.33pp coverage general (40.39% → 43.72%)
+
+#### Widgets Pendientes:
 
 **Pendientes**:
 - ⬜ VistaCalendario (0.00% → >70%)
