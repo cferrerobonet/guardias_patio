@@ -3,9 +3,9 @@
 ## 📊 Estado Actual
 
 **Fecha**: 18 de octubre de 2025  
-**Coverage Total**: **~43.7%** (objetivo: >80%)  
-**Tests Totales**: 290 tests (+37)  
-**Tests que Pasan**: 290 tests ✅ **¡100%!**  
+**Coverage Total**: **~45.8%** (objetivo: >80%)  
+**Tests Totales**: 324 tests (+34)  
+**Tests que Pasan**: 324 tests ✅ **¡100%!**  
 **Tests que Fallan**: 0 tests ✅
 **Tests xfail**: 0 tests ✅
 
@@ -13,7 +13,7 @@
 
 - **Task 1: Infraestructura de Testing** ✅ **100% COMPLETADA**
 - **Task 2: Tests para Formularios** ✅ **100% COMPLETADA** 🎉
-- **Task 3: Tests para Widgets**: 🔄 **25% EN PROGRESO** (1/4 widgets)
+- **Task 3: Tests para Widgets**: 🔄 **50% EN PROGRESO** (2/4 widgets)
 - **Task 4: Tests para Use Cases**: ⬜ 0% Pendiente
 - **Task 5: Tests de Integración**: ⬜ 0% Pendiente
 - **Task 6: CI/CD**: ⬜ 0% Pendiente
