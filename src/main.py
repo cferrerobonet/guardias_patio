@@ -3,15 +3,14 @@ import sys
 
 import ui_styles as styles
 from database.db_manager import SessionLocal
-from models.models import Configuracion, Guardia, Profesor, Zona
+from models.models import Guardia, Profesor, Zona
 
 # Importar forms refactorizados (Sprint 4)
 from presentation.forms import AsignacionGuardiasForm as AsignacionGuardiasFormRefactorizado
 from presentation.forms import ConfiguracionForm as ConfiguracionFormRefactorizado
+from presentation.forms import ImportExportForm as ImportExportFormRefactorizado
 from presentation.forms import ProfesorForm as ProfesorFormRefactorizado
 from presentation.forms import ZonaForm as ZonaFormRefactorizado
-from services.exportador import ExportadorDatos
-from services.exportador_pdf import ExportadorPDF
 from utils import setup_logging
 from widgets.gestionar_ausencias import GestionarAusenciasForm
 from widgets.gestionar_sustituciones import GestorSustituciones
@@ -31,7 +30,6 @@ try:
         QCheckBox,
         QComboBox,
         QDateEdit,
-        QFileDialog,
         QHBoxLayout,
         QLabel,
         QLineEdit,
@@ -203,277 +201,11 @@ sin PyQt6 (CI), se inyectan stubs si la importación de PyQt6 falla.
 # ==============================================================================
 
 
-class ImportExportForm(QWidget):
-    """Formulario para importar y exportar datos de la aplicación."""
-
-    def __init__(self):
-        super().__init__()
-        layout = QVBoxLayout()
-
-        # Título
-        titulo = QLabel("Importar / Exportar Datos")
-        titulo.setStyleSheet("font-size: 16px; font-weight: bold;")
-        layout.addWidget(titulo)
-
-        # Descripción
-        desc = QLabel(
-            "Exporta todos los datos de la aplicación (profesores, zonas, "
-            "configuración, guardias)\n"
-            "a un archivo JSON para copiar a otro equipo o hacer respaldo.\n\n"
-            "También puedes importar datos desde un archivo JSON exportado previamente."
-        )
-        layout.addWidget(desc)
-
-        # Sección de exportación
-        export_label = QLabel("EXPORTAR DATOS")
-        export_label.setStyleSheet("font-weight: bold; margin-top: 20px;")
-        layout.addWidget(export_label)
-
-        export_info = QLabel(
-            "Exporta todos los datos actuales de la base de datos a un archivo JSON."
-        )
-        layout.addWidget(export_info)
-
-        self.exportar_btn = QPushButton("Exportar a JSON...")
-        self.exportar_btn.clicked.connect(self.exportar_datos)
-        layout.addWidget(self.exportar_btn)
-
-        # Sección de importación
-        import_label = QLabel("IMPORTAR DATOS")
-        import_label.setStyleSheet("font-weight: bold; margin-top: 20px;")
-        layout.addWidget(import_label)
-
-        import_info = QLabel(
-            "Importa datos desde un archivo JSON.\n"
-            "⚠️ ATENCIÓN: Esto ELIMINARÁ todos los datos actuales y los reemplazará "
-            "con los del archivo."
-        )
-        import_info.setStyleSheet("color: #d63031;")
-        layout.addWidget(import_info)
-
-        self.limpiar_checkbox = QCheckBox(
-            "Eliminar datos existentes antes de importar (recomendado)"
-        )
-        self.limpiar_checkbox.setChecked(True)
-        layout.addWidget(self.limpiar_checkbox)
-
-        self.importar_btn = QPushButton("Importar desde JSON...")
-        self.importar_btn.clicked.connect(self.importar_datos)
-        layout.addWidget(self.importar_btn)
-
-        # Sección de exportación a PDF
-        pdf_label = QLabel("EXPORTAR A PDF")
-        pdf_label.setStyleSheet("font-weight: bold; margin-top: 20px;")
-        layout.addWidget(pdf_label)
-
-        pdf_info = QLabel(
-            "Genera calendarios individuales en PDF para cada profesor con sus guardias."
-        )
-        layout.addWidget(pdf_info)
-
-        pdf_form_layout = QHBoxLayout()
-
-        pdf_mes_label = QLabel("Mes:")
-        pdf_mes_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        pdf_form_layout.addWidget(pdf_mes_label)
-
-        self.pdf_mes_combo = QComboBox()
-        meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                 "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-        self.pdf_mes_combo.addItems(meses)
-        # Seleccionar mes actual
-        from datetime import datetime
-        self.pdf_mes_combo.setCurrentIndex(datetime.now().month - 1)
-        pdf_form_layout.addWidget(self.pdf_mes_combo)
-
-        pdf_anio_label = QLabel("Año:")
-        pdf_anio_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        pdf_form_layout.addWidget(pdf_anio_label)
-
-        self.pdf_anio_combo = QComboBox()
-        anio_actual = datetime.now().year
-        for anio in range(anio_actual - 1, anio_actual + 3):
-            self.pdf_anio_combo.addItem(str(anio))
-        self.pdf_anio_combo.setCurrentIndex(1)  # Año actual
-        pdf_form_layout.addWidget(self.pdf_anio_combo)
-
-        layout.addLayout(pdf_form_layout)
-
-        self.exportar_pdf_btn = QPushButton("📄 Generar PDFs para todos los profesores...")
-        self.exportar_pdf_btn.clicked.connect(self.exportar_pdfs)
-        self.exportar_pdf_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #e74c3c;
-                color: white;
-                padding: 8px;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #c0392b;
-            }
-            """
-        )
-        layout.addWidget(self.exportar_pdf_btn)
-
-        # Resultado
-        self.resultado_text = QTextEdit()
-        self.resultado_text.setReadOnly(True)
-        self.resultado_text.setMaximumHeight(200)
-        layout.addWidget(self.resultado_text)
-
-        layout.addStretch()
-        self.setLayout(layout)
-
-    def exportar_datos(self):
-        """Exporta todos los datos a un archivo JSON."""
-        try:
-            # Diálogo para seleccionar archivo de destino
-            archivo, _ = QFileDialog.getSaveFileName(
-                self,
-                "Exportar datos",
-                "guardias_patio_export.json",
-                "Archivos JSON (*.json)",
-            )
-
-            if not archivo:
-                return  # Usuario canceló
-
-            session = SessionLocal()
-            try:
-                ExportadorDatos.exportar_todo(session, archivo)
-
-                # Mostrar resumen
-                prof_count = session.query(Profesor).count()
-                zona_count = session.query(Zona).count()
-                config_count = session.query(Configuracion).count()
-
-                mensaje = (
-                    f"✅ Datos exportados exitosamente a:\n{archivo}\n\n"
-                    f"Datos exportados:\n"
-                    f"• Profesores: {prof_count}\n"
-                    f"• Zonas: {zona_count}\n"
-                    f"• Configuración: {config_count}\n"
-                )
-
-                self.resultado_text.setText(mensaje)
-                QMessageBox.information(self, "Éxito", "Datos exportados correctamente.")
-
-            finally:
-                session.close()
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error al exportar: {e}")
-            self.resultado_text.setText(f"❌ Error al exportar: {e}")
-
-    def importar_datos(self):
-        """Importa datos desde un archivo JSON."""
-        try:
-            # Confirmación previa
-            limpiar = self.limpiar_checkbox.isChecked()
-            if limpiar:
-                respuesta = QMessageBox.question(
-                    self,
-                    "Confirmar importación",
-                    "⚠️ ATENCIÓN: Se eliminarán TODOS los datos actuales.\n\n"
-                    "¿Está seguro de que desea continuar?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No,
-                )
-
-                if respuesta != QMessageBox.StandardButton.Yes:
-                    return
-
-            # Diálogo para seleccionar archivo
-            archivo, _ = QFileDialog.getOpenFileName(
-                self,
-                "Importar datos",
-                "",
-                "Archivos JSON (*.json)",
-            )
-
-            if not archivo:
-                return  # Usuario canceló
-
-            session = SessionLocal()
-            try:
-                resultado = ExportadorDatos.importar_todo(session, archivo, limpiar)
-
-                mensaje = (
-                    f"✅ Datos importados exitosamente desde:\n{archivo}\n\n"
-                    f"Datos importados:\n"
-                    f"• Profesores: {resultado['profesores']}\n"
-                    f"• Zonas: {resultado['zonas']}\n"
-                    f"• Configuración: {resultado['configuracion']}\n"
-                    f"• Guardias: {resultado['guardias']}\n"
-                )
-
-                self.resultado_text.setText(mensaje)
-                QMessageBox.information(
-                    self,
-                    "Éxito",
-                    "Datos importados correctamente.\n\n"
-                    "Se recomienda reiniciar la aplicación para ver los cambios.",
-                )
-
-            finally:
-                session.close()
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error al importar: {e}")
-            self.resultado_text.setText(f"❌ Error al importar: {e}")
-
-    def exportar_pdfs(self):
-        """Exporta calendarios PDF para todos los profesores."""
-        try:
-            # Obtener mes y año seleccionados
-            mes = self.pdf_mes_combo.currentIndex() + 1
-            anio = int(self.pdf_anio_combo.currentText())
-
-            # Diálogo para seleccionar carpeta de destino
-            carpeta = QFileDialog.getExistingDirectory(
-                self,
-                "Seleccionar carpeta para guardar PDFs",
-                "",
-                QFileDialog.Option.ShowDirsOnly
-            )
-
-            if not carpeta:
-                return  # Usuario canceló
-
-            session = SessionLocal()
-            try:
-                # Generar PDFs
-                exitos = ExportadorPDF.exportar_todos_los_profesores(
-                    session, mes, anio, carpeta
-                )
-
-                meses = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-
-                mensaje = (
-                    f"✅ PDFs generados exitosamente\n\n"
-                    f"Mes: {meses[mes]} {anio}\n"
-                    f"Carpeta: {carpeta}\n"
-                    f"PDFs generados: {exitos}\n"
-                )
-
-                self.resultado_text.setText(mensaje)
-                QMessageBox.information(
-                    self,
-                    "Éxito",
-                    f"Se generaron {exitos} calendarios PDF correctamente."
-                )
-
-            finally:
-                session.close()
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error al generar PDFs: {e}")
-            self.resultado_text.setText(f"❌ Error al generar PDFs: {e}")
-
-
+# ==============================================================================
+# ImportExportForm - Movida a src/presentation/forms/import_export_form.py
+# La clase antigua ha sido eliminada y reemplazada por versión refactorizada
+# que sigue el patrón MVP (Sprint 4)
+# ==============================================================================
 class CalendarioGuardiasForm(QWidget):
     """Formulario para visualizar el calendario de guardias asignadas."""
 
@@ -766,7 +498,8 @@ class MainWindow(QWidget):
         self.tabs.addTab(self.gestor_sustituciones, "🔄 Sustituciones")
 
         self.tabs.addTab(CalendarioGuardiasForm(), "📆 Calendario (Antiguo)")
-        self.tabs.addTab(ImportExportForm(), "💾 Importar / Exportar")
+        # Usar ImportExportForm refactorizado (Sprint 4)
+        self.tabs.addTab(ImportExportFormRefactorizado(self.session), "💾 Importar / Exportar")
 
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
