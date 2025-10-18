@@ -6,12 +6,9 @@ from database.db_manager import SessionLocal
 from models.models import Configuracion, Guardia, Profesor, Zona
 
 # Importar forms refactorizados (Sprint 4)
+from presentation.forms import AsignacionGuardiasForm as AsignacionGuardiasFormRefactorizado
 from presentation.forms import ConfiguracionForm as ConfiguracionFormRefactorizado
 from presentation.forms import ZonaForm as ZonaFormRefactorizado
-from services.calculador_guardias import (
-    calcular_guardias_por_profesor,
-    obtener_estadisticas,
-)
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
 from utils import constants, setup_logging
@@ -47,7 +44,6 @@ try:
         QLineEdit,
         QListWidget,
         QMessageBox,
-        QProgressDialog,
         QPushButton,
         QTableWidget,
         QTableWidgetItem,
@@ -1117,245 +1113,11 @@ class ProfesorForm(QWidget):
 # que sigue el patrón MVP (Sprint 4)
 # ==============================================================================
 
-class AsignacionGuardiasForm(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Asignación de Guardias")
-        self.layout = QVBoxLayout()
-
-        # Título
-        self.layout.addWidget(QLabel("=== CÁLCULO Y ASIGNACIÓN DE GUARDIAS ==="))
-
-        # Área de estadísticas
-        self.layout.addWidget(QLabel("\n📊 ESTADÍSTICAS DEL CURSO:"))
-        self.stats_text = QTextEdit()
-        self.stats_text.setReadOnly(True)
-        self.stats_text.setMaximumHeight(200)
-        self.layout.addWidget(self.stats_text)
-
-        # Botón para calcular distribución
-        calc_button = QPushButton("📊 Calcular Distribución")
-        calc_button.clicked.connect(self.calcular_distribucion)
-        self.layout.addWidget(calc_button)
-
-        # Área de resultados de distribución
-        self.layout.addWidget(QLabel("\n📋 DISTRIBUCIÓN DE GUARDIAS POR PROFESOR:"))
-        self.distribucion_text = QTextEdit()
-        self.distribucion_text.setReadOnly(True)
-        self.distribucion_text.setMaximumHeight(250)
-        self.layout.addWidget(self.distribucion_text)
-
-        # Botón para generar guardias (deshabilitado inicialmente)
-        self.generar_button = QPushButton("🎯 Generar Asignación de Guardias")
-        self.generar_button.setEnabled(False)
-        self.generar_button.clicked.connect(self.generar_guardias)
-        self.layout.addWidget(self.generar_button)
-
-        # Área de resultados de generación
-        self.resultado_text = QTextEdit()
-        self.resultado_text.setReadOnly(True)
-        self.resultado_text.setMaximumHeight(150)
-        self.layout.addWidget(self.resultado_text)
-
-        self.setLayout(self.layout)
-
-        # Cargar estadísticas al inicio
-        self.cargar_estadisticas()
-
-    def cargar_estadisticas(self):
-        """Muestra las estadísticas del curso"""
-        session = SessionLocal()
-        try:
-            stats = obtener_estadisticas(session)
-
-            if not stats:
-                self.stats_text.setText(
-                    "⚠️  No hay configuración del curso.\n"
-                    "Por favor, configure primero las fechas y recreos."
-                )
-                return
-
-            texto = f"""
-Días lectivos: {stats.get('dias_lectivos', 0)} días (L-V)
-Recreos mañana: {stats.get('recreos_manana', 0)}
-Recreos tarde: {stats.get('recreos_tarde', 0)}
-Total recreos/día: {stats.get('recreos_manana', 0) + stats.get('recreos_tarde', 0)}
-Número de zonas: {stats.get('num_zonas', 0)}
-Número de profesores: {stats.get('num_profesores', 0)}
-
-📌 SLOTS TOTALES: {stats.get('slots_totales', 0)} guardias
-   (días × recreos × zonas = {stats.get('dias_lectivos', 0)} ×
-   {stats.get('recreos_manana', 0) + stats.get('recreos_tarde', 0)} ×
-   {stats.get('num_zonas', 0)})
-            """
-            self.stats_text.setText(texto.strip())
-
-        except ValueError as e:
-            self.stats_text.setText(f"⚠️  {str(e)}")
-        finally:
-            session.close()
-
-    def calcular_distribucion(self):
-        """Calcula y muestra la distribución de guardias"""
-        session = SessionLocal()
-        try:
-            # Validar que hay datos
-            stats = obtener_estadisticas(session)
-            if not stats or stats.get('slots_totales', 0) == 0:
-                QMessageBox.warning(
-                    self,
-                    "Datos incompletos",
-                    "Debe configurar el curso, profesores y zonas antes de calcular."
-                )
-                return
-
-            # Calcular distribución
-            distribucion = calcular_guardias_por_profesor(session)
-
-            # Obtener nombres de profesores
-            texto = "Distribución calculada:\n\n"
-            total = 0
-
-            profesores_ordenados = sorted(
-                distribucion.items(),
-                key=lambda x: x[1],
-                reverse=True
-            )
-
-            for profesor_id, guardias in profesores_ordenados:
-                profesor = session.query(Profesor).get(profesor_id)
-                if profesor:
-                    texto += (
-                        f"• {profesor.nombre_completo} "
-                        f"({profesor.turno}, {profesor.porcentaje_jornada*100:.0f}%): "
-                        f"{guardias} guardias\n"
-                    )
-                    total += guardias
-
-            texto += f"\n✅ TOTAL: {total} guardias"
-            texto += f"\n📌 Slots disponibles: {stats.get('slots_totales', 0)}"
-
-            if total == stats.get('slots_totales', 0):
-                texto += "\n\n✅ La distribución es exacta"
-            else:
-                diff = abs(total - stats.get('slots_totales', 0))
-                texto += f"\n\n⚠️  Diferencia: {diff}"
-
-            self.distribucion_text.setText(texto)
-
-            # Habilitar botón de generación
-            self.generar_button.setEnabled(True)
-
-        except ValueError as e:
-            QMessageBox.critical(self, "Error", str(e))
-            self.distribucion_text.setText(f"❌ Error: {str(e)}")
-        finally:
-            session.close()
-
-    def generar_guardias(self):
-        session = SessionLocal()
-        try:
-            # Verificar si ya existen guardias
-            count_guardias = session.query(Guardia).count()
-
-            if count_guardias > 0:
-                respuesta = QMessageBox.question(
-                    self,
-                    "⚠️ Guardias Existentes",
-                    f"Ya existen {count_guardias} guardias en la base de datos.\n\n"
-                    f"¿Deseas ELIMINAR todas las guardias existentes antes de generar nuevas?\n\n"
-                    f"• SÍ: Eliminará todas y generará desde cero (recomendado)\n"
-                    f"• NO: Agregará nuevas guardias a las existentes (puede crear duplicados)",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No |
-                    QMessageBox.StandardButton.Cancel
-                )
-
-                if respuesta == QMessageBox.StandardButton.Cancel:
-                    return
-
-                if respuesta == QMessageBox.StandardButton.Yes:
-                    # Eliminar todas las guardias existentes
-                    session.query(Guardia).delete()
-                    session.commit()
-                    QMessageBox.information(
-                        self,
-                        "Limpieza completada",
-                        f"{count_guardias} guardias eliminadas. Generando calendario nuevo..."
-                    )
-
-            # Importación local para evitar lint de imports no usados
-            from services.asignador_guardias import (
-                generar_calendario_guardias,
-                guardar_guardias_en_bd,
-            )
-            from services.calculador_guardias import obtener_estadisticas
-
-            stats = obtener_estadisticas(session) or {}
-            esperado = stats.get('slots_totales', 0)
-
-            # Crear y mostrar progress dialog
-            progress = QProgressDialog(
-                "Generando calendario de guardias...",
-                "Cancelar",
-                0,
-                100,
-                self
-            )
-            progress.setWindowTitle("Generando Guardias")
-            progress.setWindowModality(Qt.WindowModality.WindowModal)
-            progress.setMinimumDuration(0)  # Mostrar inmediatamente
-            progress.setValue(10)  # Inicio
-
-            try:
-                progress.setLabelText("Calculando distribución de guardias...")
-                progress.setValue(30)
-
-                calendario, resumen = generar_calendario_guardias(session)
-
-                progress.setLabelText("Guardando guardias en base de datos...")
-                progress.setValue(70)
-
-                guardar_guardias_en_bd(session, calendario)
-
-                progress.setValue(100)
-            finally:
-                progress.close()
-
-            total_generado = len(calendario)
-            diff = esperado - total_generado if esperado else 0
-
-            # Mostrar resumen
-            lineas = [
-                f"Guardias generadas: {total_generado}",
-            ]
-            if esperado:
-                lineas.append(f"Slots esperados: {esperado}")
-                if diff == 0:
-                    lineas.append("✅ Cobertura completa")
-                elif diff > 0:
-                    lineas.append(f"⚠️ {diff} slots sin cubrir (falta elegibilidad)")
-
-            # Top profesores (opc)
-            if resumen:
-                top = sorted(resumen.items(), key=lambda x: x[1], reverse=True)[:10]
-                lineas.append("\nPor profesor (top):")
-                for pid, cnt in top:
-                    prof = session.query(Profesor).get(pid)
-                    if prof:
-                        lineas.append(f"• {prof.nombre_completo}: {cnt}")
-
-            self.resultado_text.setText("\n".join(lineas))
-
-            QMessageBox.information(
-                self,
-                "Asignación generada",
-                "Guardias generadas y guardadas en la base de datos.",
-            )
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"No se pudo generar: {e}")
-        finally:
-            session.close()
+# ==============================================================================
+# AsignacionGuardiasForm - Movida a src/presentation/forms/asignacion_guardias_form.py
+# La clase antigua ha sido eliminada y reemplazada por versión refactorizada
+# que sigue el patrón MVP (Sprint 4)
+# ==============================================================================
 
 
 class ImportExportForm(QWidget):
@@ -1902,7 +1664,11 @@ class MainWindow(QWidget):
         self.tabs.addTab(ZonaFormRefactorizado(self.session), "🏫 Zonas")
         # Usar ConfiguracionForm refactorizado (Sprint 4)
         self.tabs.addTab(ConfiguracionFormRefactorizado(self.session), "⚙️ Configuración")
-        self.tabs.addTab(AsignacionGuardiasForm(), "📋 Asignación de Guardias")
+        # Usar AsignacionGuardiasForm refactorizado (Sprint 4)
+        self.tabs.addTab(
+            AsignacionGuardiasFormRefactorizado(self.session),
+            "🎯 Asignación de Guardias",
+        )
         self.tabs.addTab(GestionarAusenciasForm(), "🏥 Ausencias")
 
         # NUEVAS PESTAÑAS
