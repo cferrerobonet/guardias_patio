@@ -3,9 +3,9 @@
 ## 📊 Estado Actual
 
 **Fecha**: 19 de octubre de 2025  
-**Coverage Total**: **~51%** (objetivo: >80%)  
-**Tests Totales**: 415 tests (+19)  
-**Tests que Pasan**: 415 tests ✅ **¡100%!**  
+**Coverage Total**: **~52%** (objetivo: >80%)  
+**Tests Totales**: 441 tests (+26 desde Task 4.1)  
+**Tests que Pasan**: 441 tests ✅ **¡100%!**  
 **Tests que Fallan**: 0 tests ✅
 **Tests xfail**: 0 tests ✅
 
@@ -14,8 +14,7 @@
 - **Task 1: Infraestructura de Testing** ✅ **100% COMPLETADA**
 - **Task 2: Tests para Formularios** ✅ **100% COMPLETADA** 🎉
 - **Task 3: Tests para Widgets**: ✅ **100% COMPLETADA** 🎉 (4/4 widgets)
-- **Task 4: Tests para Use Cases**: 🔄 **20% EN PROGRESO** (1/5 categorías)
-- **Task 4: Tests para Use Cases**: ⬜ 0% Pendiente
+- **Task 4: Tests para Use Cases**: 🔄 **40% EN PROGRESO** (2/5 categorías) 🚀
 - **Task 5: Tests de Integración**: ⬜ 0% Pendiente
 - **Task 6: CI/CD**: ⬜ 0% Pendiente
 - **Task 7: Documentación**: ⬜ 0% Pendiente
@@ -911,7 +910,7 @@ Archivos con <25% coverage: 10 (-12)
 
 ## 📝 Task 4: Tests para Use Cases
 
-**Estado**: 🔄 **20% EN PROGRESO** (1/5 categorías)
+**Estado**: 🔄 **40% EN PROGRESO** (2/5 categorías) 🚀
 
 ### Use Cases Zona Tests ✅ 🎉
 
@@ -946,11 +945,98 @@ Archivos con <25% coverage: 10 (-12)
 - Campos opcionales (descripción)
 - Rollback en errores de BD
 
-**Categorías pendientes** (4/5):
-- ⬜ Profesor Use Cases (6): crear, actualizar, eliminar, obtener, listar, buscar
+**Categorías pendientes** (3/5):
 - ⬜ Guardia Use Cases (2): asignar, obtener
 - ⬜ Configuración Use Cases (2): actualizar, obtener
 - ⬜ Asignación Guardias Use Cases (3): generar, calcular_distribucion, obtener_estadisticas
+
+---
+
+### Use Cases Profesor Tests ✅ 🎉
+
+**Archivo**: `tests/test_use_cases_profesor.py` (541 líneas)
+
+**Impacto masivo - TASK 4 AVANZANDO**:
+- ✅ 26/26 tests PASSING (100%)
+- ✅ Coverage: **0% → 100%** en 4 use cases (+400 puntos porcentuales!)
+- ✅ Incremento general: ~51% → ~52% (+~1pp)
+- ✅ **TASK 4: 40% COMPLETADA** (2/5 categorías)
+- ✅ Commit: `3c68dfe`
+
+**Estructura de tests**:
+1. **TestCrearProfesorUseCase** (5 tests): 
+   - Crear profesor completo con email y fechas
+   - Crear profesor sin email (campo opcional)
+   - Nombre duplicado (ValidationError)
+   - Horas inválidas (validación en DTO)
+   - Error BD con rollback (mocker)
+
+2. **TestActualizarProfesorUseCase** (6 tests):
+   - Actualizar nombre de profesor
+   - Actualizar email y horas simultáneamente
+   - Actualizar turno (mañana → mixto)
+   - Profesor no existente (NotFoundError)
+   - Nombre duplicado con otro profesor (BusinessLogicError)
+   - Mantener mismo nombre (permitido)
+
+3. **TestEliminarProfesorUseCase** (3 tests):
+   - Eliminar profesor sin guardias
+   - Profesor no existente (NotFoundError)
+   - Profesor con guardias asignadas (BusinessLogicError, regex match)
+
+4. **TestObtenerProfesorUseCase** (2 tests):
+   - Obtener por ID exitoso (validar todos los campos DTO)
+   - Profesor no existente (NotFoundError)
+
+5. **TestListarProfesoresUseCase** (3 tests):
+   - Lista vacía cuando no hay profesores
+   - Listar todos los profesores (3 profesores)
+   - Orden alfabético por nombre_completo
+
+6. **TestBuscarProfesoresUseCase** (4 tests):
+   - Buscar por nombre (case-insensitive, parcial)
+   - Buscar por email (case-insensitive)
+   - Término vacío devuelve todos
+   - Sin resultados devuelve lista vacía
+
+7. **TestProfesorUseCasesIntegracion** (3 tests):
+   - Flujo CRUD completo (Crear → Listar → Obtener → Actualizar → Eliminar)
+   - Buscar después de crear múltiples profesores
+   - Listar después de crear múltiples (verificar orden alfabético)
+
+**Use Cases testeados** (6/6):
+- ✅ CrearProfesorUseCase: **100% coverage**
+- ✅ ObtenerProfesorUseCase: **100% coverage**
+- ✅ ListarProfesoresUseCase: **100% coverage**
+- ✅ BuscarProfesoresUseCase: **100% coverage**
+- ✅ ActualizarProfesorUseCase: **80.81% coverage**
+- ✅ EliminarProfesorUseCase: **89.29% coverage**
+
+**Bugs corregidos durante testing**:
+1. **🔧 tutor vs es_tutor**: DTO usa `tutor`, entidad usa `es_tutor` → Fixed en CrearProfesorUseCase, ObtenerProfesorUseCase, ListarProfesoresUseCase
+2. **🔧 NotFoundError**: Inconsistencia entre `core.exceptions.NotFoundError` y `utils.exceptions.NotFoundError` → Fixed en ActualizarProfesorUseCase, EliminarProfesorUseCase
+3. **🔧 Repository ordenamiento**: `get_all()` no ordenaba alfabéticamente → Fixed en SQLAlchemyProfesorRepository (added `.order_by(Profesor.nombre_completo)`)
+4. **🔧 Turnos con horas**: No pasar `horas_manana`/`horas_tarde` cuando turno no es "mixto" → Fixed en tests
+
+**Validaciones testeadas**:
+- Nombres únicos (no duplicados entre profesores)
+- Email opcional (None permitido)
+- Horas de contrato válidas (1.0-40.0)
+- Turno válido ("mañana", "tarde", "mixto")
+- Relaciones con guardias (no eliminar si hay guardias)
+- Not found errors (profesores no existentes)
+- Búsqueda case-insensitive (nombre y email)
+- Orden alfabético en listados
+- Value Objects (Email, HorasContrato, Turno)
+- Rollback en errores de BD
+
+**Patterns aplicados**:
+- Un test class por Use Case
+- Test de integración para flujos completos
+- Uso de factories (profesor_factory, zona_factory, guardia_factory)
+- Mocking para errores de BD (mocker.patch)
+- Validación de DTOs con Pydantic
+- Regex matching para mensajes de error dinámicos
 
 
 
@@ -980,17 +1066,17 @@ Archivos con <25% coverage: 10 (-12)
 
 ✅ Infraestructura de testing completamente funcional  
 ✅ 10+ fixtures reutilizables listos  
-✅ **415 tests pasando, 0 fallos** 🎯 **¡100%!**  
+✅ **441 tests pasando, 0 fallos** 🎯 **¡100%!**  
 ✅ **Bugs del asignador ARREGLADOS** 🐛→✅  
-✅ Coverage mejorado de 31.65% a ~51% (+19.35pp) 📈  
+✅ Coverage mejorado de 31.65% a ~52% (+20.35pp) 📈  
 ✅ Tests automáticos para servicios críticos (>80% coverage)  
 ✅ Configuración de coverage con branch coverage  
 ✅ Markers personalizados para categorizar tests  
 ✅ Validación de dias_semana_permitidos implementada  
 ✅ **6 formularios testeados completamente (Task 2: 100%)** ✅  
 ✅ **4 widgets testeados completamente (Task 3: 100%)** ✅  
-✅ **5 Use Cases Zona testeados (Task 4: 20%)** 🔄  
-✅ 18+ commits realizados y pusheados a GitHub  
+✅ **11 Use Cases testeados (Task 4: 40%)** 🔄 - 5 Zona + 6 Profesor
+✅ 20+ commits realizados y pusheados a GitHub  
 
 ## 📝 Conclusiones
 
@@ -1008,8 +1094,9 @@ El Sprint 6 está avanzando de manera **excepcional**. Se completaron Tasks 1, 2
 - �📊 **51% de coverage total alcanzado** (objetivo 80%)
 
 **Siguiente fase**:
-- Task 4 continuar: Profesor Use Cases (estimated +2-3pp)
-- Task 4: Guardia, Configuración, Asignación Use Cases (estimated +5-7pp total)
+- Task 4 continuar: Guardia Use Cases (estimated +1-2pp)
+- Task 4: Configuración Use Cases (estimated +1pp)
+- Task 4: Asignación Guardias Use Cases (estimated +3-5pp)
 - Task 5: Tests de Integración (estimated +10-15pp coverage)
 - Task 6: CI/CD
 - Task 7: Documentación final
