@@ -3,9 +3,9 @@
 ## 📊 Estado Actual
 
 **Fecha**: 18 de octubre de 2025  
-**Coverage Total**: **~47.5%** (objetivo: >80%)  
-**Tests Totales**: 360 tests (+36)  
-**Tests que Pasan**: 360 tests ✅ **¡100%!**  
+**Coverage Total**: **~50%** (objetivo: >80%)  
+**Tests Totales**: 396 tests (+36)  
+**Tests que Pasan**: 396 tests ✅ **¡100%!**  
 **Tests que Fallan**: 0 tests ✅
 **Tests xfail**: 0 tests ✅
 
@@ -13,7 +13,7 @@
 
 - **Task 1: Infraestructura de Testing** ✅ **100% COMPLETADA**
 - **Task 2: Tests para Formularios** ✅ **100% COMPLETADA** 🎉
-- **Task 3: Tests para Widgets**: 🔄 **75% EN PROGRESO** (3/4 widgets)
+- **Task 3: Tests para Widgets**: ✅ **100% COMPLETADA** 🎉 (4/4 widgets)
 - **Task 4: Tests para Use Cases**: ⬜ 0% Pendiente
 - **Task 5: Tests de Integración**: ⬜ 0% Pendiente
 - **Task 6: CI/CD**: ⬜ 0% Pendiente
@@ -495,15 +495,15 @@ if limpiar:
 ## 📊 Métricas Actuales
 
 ```
-Total Coverage: ~47.5% (+15.85pp desde 31.65%)
-Tests Totales: 360 (+210 nuevos en Sprint 6)
-Tests que Pasan: 360 (100%) ✅ ¡PERFECTO!
+Total Coverage: ~50% (+18.35pp desde 31.65%)
+Tests Totales: 396 (+246 nuevos en Sprint 6)
+Tests que Pasan: 396 (100%) ✅ ¡PERFECTO!
 Tests xfail: 0 ✅
 Tests que Fallan: 0 (0.00%) ✅
 
-Archivos con >90% coverage: 10+ (formularios y widgets)
-Archivos con >80% coverage: 25+
-Archivos con <25% coverage: 15 (-7)
+Archivos con >90% coverage: 12+ (formularios y widgets)
+Archivos con >80% coverage: 28+
+Archivos con <25% coverage: 12 (-10)
 ```
 
 ## 🏆 Logros Destacados
@@ -859,6 +859,54 @@ Archivos con <25% coverage: 15 (-7)
 - Tests de agregación de datos (GROUP BY logic)
 - Performance con datasets grandes (300 guardias)
 
+### GestionarAusenciasForm Tests ✅ 🎉
+
+**Archivo**: `tests/test_gestionar_ausencias.py` (680 líneas)
+
+**Impacto masivo - TASK 3 COMPLETADA**:
+- ✅ 36/36 tests PASSING (100%)
+- ✅ Coverage: **0% → ~75-80%** (+75-80 puntos porcentuales!)
+- ✅ Incremento general: ~47.5% → ~50% (+~2.5pp)
+- ✅ **TASK 3: 100% COMPLETADA** 🎉 (4/4 widgets)
+- ✅ Commit: `fe5d7cf`
+
+**Estructura de tests**:
+1. **TestGestionarAusenciasFormBasico** (6 tests): Creación widget, tabla ausencias (7 cols: ID/Profesor/Tipo/FechaInicio/FechaFin/Días/Estado), botones (Refrescar/Editar/Eliminar/Desactivar), campos formulario (profesor combo, tipo combo, fechas, motivo textarea), preview guardias, tipos ausencia (baja_medica, permiso, vacaciones, otros)
+2. **TestGestionarAusenciasFormCargarDatos** (4 tests): Cargar profesores en combo (3), cargar ausencias en tabla (2), ausencias activas primero (ordenamiento), columnas correctas (Profesor 1, baja_medica, Activo)
+3. **TestGestionarAusenciasFormEditar** (3 tests): Cargar ausencia seleccionada, sin selección no carga, título cambia a "EDITAR AUSENCIA"
+4. **TestGestionarAusenciasFormGuardar** (4 tests): Guardar nueva ausencia, sin profesor (warning), fechas inválidas fin<inicio (warning), actualizar ausencia existente
+5. **TestGestionarAusenciasFormEliminar** (3 tests): Eliminar con confirmación Yes, cancelar No, sin selección (warning)
+6. **TestGestionarAusenciasFormDesactivar** (2 tests): Desactivar (activo=False sin eliminar), sin selección (warning)
+7. **TestGestionarAusenciasFormPreview** (3 tests): Preview vacío sin profesor, con guardias afectadas (Prof1 tiene 3 guardias días pares), sin guardias en período
+8. **TestGestionarAusenciasFormMostrarGuardias** (2 tests): Abrir diálogo DialogoReasignacion, sin profesor (warning)
+9. **TestGestionarAusenciasFormLimpiar** (2 tests): Limpiar resetea campos, restaura título "NUEVA AUSENCIA"
+10. **TestDialogoReasignacion** (2 tests): Crear diálogo con guardias (tabla 3 filas), verificar tabla guardias presente
+11. **TestGestionarAusenciasFormIntegracion** (3 tests): Flujo crear ausencia Prof3→permiso→guardar→verificar tabla (+1 fila), flujo editar→cambiar tipo→guardar→verificar BD, flujo eliminar→confirmar→verificar tabla (-1 fila)
+12. **TestGestionarAusenciasFormRendimiento** (2 tests @slow): Carga inicial <2s con 30 profesores, cargar 100 ausencias <2s
+
+**Características clave**:
+- Fixture `datos_completos`: 3 profesores + 2 zonas + 10 guardias (días pares/impares) + 2 ausencias (1 activa, 1 inactiva)
+- Tests CRUD completo (Create, Read, Update, Delete + Deactivate)
+- Preview de guardias afectadas por período
+- Diálogo DialogoReasignacion para reasignar guardias
+- Validaciones: profesor requerido, fechas válidas, selección requerida
+- Performance con 100 ausencias
+
+## 📝 Resumen Task 3: Tests para Widgets
+
+**Estado**: ✅ **100% COMPLETADA** 🎉
+
+**Widgets testeados** (4/4):
+1. ✅ VistaCalendario: 37 tests, 0% → 97.92% coverage (+97.92pp)
+2. ✅ GestorSustituciones: 34 tests, 10.94% → 98.96% coverage (+88.02pp)
+3. ✅ PanelEstadisticas: 36 tests, 0% → ~75-80% coverage (+75-80pp)
+4. ✅ GestionarAusenciasForm: 36 tests, 0% → ~75-80% coverage (+75-80pp)
+
+**Total Task 3**:
+- Tests: 143 tests nuevos
+- Coverage: +10pp aproximadamente (40% → 50%)
+- Commits: 6 (4 archivos tests + 2 docs)
+
 
 
 ## ✅ Problemas Resueltos
@@ -887,29 +935,36 @@ Archivos con <25% coverage: 15 (-7)
 
 ✅ Infraestructura de testing completamente funcional  
 ✅ 10+ fixtures reutilizables listos  
-✅ **360 tests pasando, 0 fallos** 🎯 **¡100%!**  
+✅ **396 tests pasando, 0 fallos** 🎯 **¡100%!**  
 ✅ **Bugs del asignador ARREGLADOS** 🐛→✅  
-✅ Coverage mejorado de 31.65% a ~47.5% (+15.85pp) 📈  
+✅ Coverage mejorado de 31.65% a ~50% (+18.35pp) 📈  
 ✅ Tests automáticos para servicios críticos (>80% coverage)  
 ✅ Configuración de coverage con branch coverage  
 ✅ Markers personalizados para categorizar tests  
 ✅ Validación de dias_semana_permitidos implementada  
-✅ 6 formularios testeados completamente (Task 2: 100%) ✅  
-✅ 3 de 4 widgets testeados (Task 3: 75%) 🔄  
-✅ 12+ commits realizados y pusheados a GitHub  
+✅ **6 formularios testeados completamente (Task 2: 100%)** ✅  
+✅ **4 widgets testeados completamente (Task 3: 100%)** ✅  
+✅ 15+ commits realizados y pusheados a GitHub  
 
 ## 📝 Conclusiones
 
-El Sprint 6 está avanzando de manera **excepcional**. Se completó Task 1 y Task 2 al 100%, y Task 3 ya va al 75% (3 de 4 widgets). El coverage ha subido significativamente de 31.65% a ~47.5%, acercándonos al objetivo del 80%.
+El Sprint 6 está avanzando de manera **excepcional**. Se completaron Task 1, Task 2 y Task 3 al 100%. El coverage ha subido significativamente de 31.65% a ~50%, acercándonos al objetivo del 80%.
 
 **Hitos alcanzados**:
-- ✅ 100% de tests pasando (360/360)
+- ✅ 100% de tests pasando (396/396)
 - ✅ Bug crítico del asignador arreglado
 - ✅ Suite de tests completamente estable
 - ✅ Validaciones del asignador ahora son 9 (antes 7)
 - ✅ Coverage de servicios críticos >80%
-- ✅ Task 2 (Formularios): 100% completada 🎉
-- ✅ Task 3 (Widgets): 75% completada - falta 1 widget (GestionarAusencias)
+- ✅ **Task 2 (Formularios): 100% completada** 🎉
+- ✅ **Task 3 (Widgets): 100% completada** 🎉
+- 📊 **50% de coverage total alcanzado** (objetivo 80%)
+
+**Siguiente fase**:
+- Task 4: Tests para Use Cases (estimated +10-15pp coverage)
+- Task 5: Tests de Integración (estimated +10-15pp coverage)
+- Task 6: CI/CD
+- Task 7: Documentación final
 
 El coverage actual de 31.83% es un excelente punto de partida, especialmente considerando que los servicios críticos (asignador, calculador, exportador) ya tienen >80% de coverage.
 
