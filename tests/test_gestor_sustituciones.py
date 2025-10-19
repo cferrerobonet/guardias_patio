@@ -8,10 +8,11 @@ from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
-from models.models import Guardia, Profesor, Zona
-from presentation.widgets.gestor_sustituciones import GestorSustituciones
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMessageBox
+
+from models.models import Guardia, Profesor, Zona
+from presentation.widgets.gestor_sustituciones import GestorSustituciones
 
 # ============================================================================
 # FIXTURES

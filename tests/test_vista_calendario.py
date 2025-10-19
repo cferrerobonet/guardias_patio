@@ -13,9 +13,10 @@ from datetime import date, datetime
 from unittest.mock import Mock, patch
 
 import pytest
+from PyQt6.QtWidgets import QGroupBox, QLabel, QPushButton
+
 from models.models import Ausencia, Guardia
 from presentation.widgets.vista_calendario import VistaCalendario
-from PyQt6.QtWidgets import QGroupBox, QLabel, QPushButton
 
 # ========================================
 # FIXTURES

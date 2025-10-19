@@ -38,12 +38,23 @@ class ProfesorMapper:
         # Horas de contrato
         horas = HorasContrato(model.horas_contrato)
 
-        # Turno (con horas de mañana/tarde si es completo)
-        turno = Turno.from_string(
-            model.turno,
-            horas_manana=model.horas_manana,
-            horas_tarde=model.horas_tarde
-        )
+        # Turno - manejar casos especiales de datos inconsistentes
+        turno_str = model.turno.lower().strip()
+
+        # Si es turno mixto, verificar que tiene horas; si no, usar mañana como fallback
+        if turno_str == "mixto":
+            if model.horas_manana or model.horas_tarde:
+                turno = Turno.from_string(
+                    model.turno,
+                    horas_manana=model.horas_manana,
+                    horas_tarde=model.horas_tarde
+                )
+            else:
+                # Datos inconsistentes: turno mixto sin horas -> fallback a mañana
+                turno = Turno.from_string("mañana")
+        else:
+            # Turnos simples
+            turno = Turno.from_string(model.turno)
 
         # Zona preferida (implementación futura, por ahora None)
         zona_preferida = ZonaPreferida.sin_preferencia()

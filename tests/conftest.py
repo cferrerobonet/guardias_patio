@@ -1,3 +1,10 @@
+"""Pytest conftest to ensure project root is on sys.path so tests can import `src` package."""
+import sys
+from pathlib import Path
+
+# Insert project root (two levels up from tests/) to sys.path so `import src` resolves.
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 """
 Configuración compartida para tests con pytest.
 

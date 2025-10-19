@@ -7,8 +7,6 @@ y generar calendarios PDF para profesores.
 
 from datetime import datetime
 
-import ui_styles as styles
-from models.models import Configuracion, Profesor, Zona
 from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -20,10 +18,14 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+
+import ui_styles as styles
+from models.models import Configuracion, Profesor, Zona
+from presentation.forms.base_form import BaseForm
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
-
-from presentation.forms.base_form import BaseForm
+from services.importador_profesores import importar_profesores_desde_excel
+from widgets.progress_indicators import ejecutar_con_progreso
 
 
 class ImportExportForm(BaseForm):
@@ -62,6 +64,9 @@ class ImportExportForm(BaseForm):
 
         # Sección de importación
         layout.addLayout(self._crear_seccion_importar())
+
+        # Sección de importación de profesores desde Excel
+        layout.addLayout(self._crear_seccion_importar_profesores())
 
         # Sección de exportación a PDF
         layout.addLayout(self._crear_seccion_pdf())
@@ -119,6 +124,26 @@ class ImportExportForm(BaseForm):
         self.importar_btn = QPushButton("Importar desde JSON...")
         self.importar_btn.clicked.connect(self.importar_datos)
         seccion.addWidget(self.importar_btn)
+
+        return seccion
+
+    def _crear_seccion_importar_profesores(self) -> QVBoxLayout:
+        """Crear sección de importación de profesores desde Excel."""
+        seccion = QVBoxLayout()
+
+        import_prof_label = QLabel("IMPORTAR PROFESORES DESDE EXCEL")
+        import_prof_label.setStyleSheet("font-weight: bold; margin-top: 20px;")
+        seccion.addWidget(import_prof_label)
+
+        import_prof_info = QLabel(
+            "Importa profesores desde un archivo Excel (.xlsx).\n"
+            "Los profesores nuevos se añadirán, los existentes se omitirán."
+        )
+        seccion.addWidget(import_prof_info)
+
+        self.importar_profesores_btn = QPushButton("Importar Profesores desde Excel...")
+        self.importar_profesores_btn.clicked.connect(self.importar_profesores)
+        seccion.addWidget(self.importar_profesores_btn)
 
         return seccion
 
@@ -300,10 +325,22 @@ class ImportExportForm(BaseForm):
             if not carpeta:
                 return  # Usuario canceló
 
-            # Generar PDFs
-            exitos = ExportadorPDF.exportar_todos_los_profesores(
-                self.session, mes, anio, carpeta
+            # Generar PDFs con indicador de progreso
+            def tarea_exportacion(progress_callback):
+                return ExportadorPDF.exportar_todos_los_profesores(
+                    self.session, mes, anio, carpeta, progress_callback=progress_callback
+                )
+
+            exitos, cancelado = ejecutar_con_progreso(
+                tarea_exportacion,
+                titulo="Exportando PDFs",
+                mensaje="Preparando exportación...",
+                padre=self,
+                cancelable=False,
             )
+
+            if cancelado:
+                return
 
             meses = [
                 "",
@@ -336,3 +373,66 @@ class ImportExportForm(BaseForm):
         except Exception as e:
             self.manejar_excepcion(e, "generar PDFs")
             self.resultado_text.setText(f"❌ Error al generar PDFs: {e}")
+
+    def importar_profesores(self):
+        """Importar profesores desde un archivo Excel."""
+        try:
+            # Diálogo para seleccionar archivo Excel
+            archivo, _ = QFileDialog.getOpenFileName(
+                self,
+                "Seleccionar archivo Excel de profesores",
+                "",
+                "Archivos Excel (*.xlsx *.xls)",
+            )
+
+            if not archivo:
+                return  # Usuario canceló
+
+            # Importar con indicador de progreso
+            def tarea_importacion(progress_callback):
+                return importar_profesores_desde_excel(
+                    self.session,
+                    archivo,
+                    skip_rows=9,
+                    progress_callback=progress_callback,
+                )
+
+            resultados, cancelado = ejecutar_con_progreso(
+                tarea_importacion,
+                titulo="Importando Profesores",
+                mensaje="Preparando importación...",
+                padre=self,
+                cancelable=True,  # Permitir cancelar si hay muchos registros
+            )
+
+            if cancelado:
+                self.resultado_text.setText("⚠️ Importación cancelada por el usuario")
+                return
+
+            # Mostrar resultados
+            mensaje = (
+                f"✅ Importación completada\n\n"
+                f"Archivo: {resultados['archivo']}\n"
+                f"Profesores leídos: {resultados['leidos']}\n"
+                f"✅ Nuevos importados: {resultados['importados']}\n"
+                f"⏭️  Ya existentes: {resultados['existentes']}\n"
+                f"❌ Errores: {resultados['errores']}\n"
+            )
+
+            self.resultado_text.setText(mensaje)
+
+            if resultados["importados"] > 0:
+                self.mostrar_exito(
+                    "Profesores importados",
+                    f"Se importaron {resultados['importados']} profesores correctamente.",
+                )
+            elif resultados["existentes"] > 0:
+                self.mostrar_informacion(
+                    "Sin cambios",
+                    f"Todos los profesores ({resultados['existentes']}) "
+                    f"ya existían en la base de datos.",
+                )
+
+        except Exception as e:
+            self.manejar_excepcion(e, "importar profesores desde Excel")
+            self.resultado_text.setText(f"❌ Error al importar profesores: {e}")

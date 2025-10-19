@@ -4,9 +4,11 @@ Use Case: Eliminar un profesor.
 Permite eliminar un profesor del sistema, verificando que no tenga guardias asignadas.
 """
 
-from core.exceptions import NotFoundError
-from models.models import Guardia, Profesor
 from sqlalchemy.orm import Session
+
+from core.exceptions import NotFoundError
+from core.observability import with_metrics
+from models.models import Guardia, Profesor
 from utils.exceptions import BusinessLogicError
 from utils.logger import get_logger
 
@@ -29,6 +31,7 @@ class EliminarProfesorUseCase:
         """
         self.session = session
 
+    @with_metrics("eliminar_profesor")
     def execute(self, profesor_id: int) -> None:
         """
         Ejecutar la eliminación de un profesor.

@@ -4,13 +4,14 @@ Use Case: Obtener Profesor
 Caso de uso para obtener un profesor por ID.
 """
 
-from core.exceptions import NotFoundError
-from domain.entities import ProfesorEntity
-from domain.repositories import IProfesorRepository
-from infrastructure.repositories import SQLAlchemyProfesorRepository
 from sqlalchemy.orm import Session
 
 from application.dtos import ProfesorDTO
+from core.exceptions import NotFoundError
+from core.observability import with_metrics
+from domain.entities import ProfesorEntity
+from domain.repositories import IProfesorRepository
+from infrastructure.repositories import SQLAlchemyProfesorRepository
 
 
 class ObtenerProfesorUseCase:
@@ -26,6 +27,7 @@ class ObtenerProfesorUseCase:
         self.session = session
         self.repository: IProfesorRepository = SQLAlchemyProfesorRepository(session)
 
+    @with_metrics("obtener_profesor")
     def execute(self, profesor_id: int) -> ProfesorDTO:
         """
         Ejecuta el caso de uso.

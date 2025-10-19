@@ -5,8 +5,6 @@ Este módulo implementa la UI para visualizar guardias asignadas
 por fecha, con filtros por profesor, zona y turno.
 """
 
-import ui_styles as styles
-from models.models import Guardia, Profesor, Zona
 from PyQt6.QtWidgets import (
     QCalendarWidget,
     QComboBox,
@@ -17,6 +15,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+import ui_styles as styles
+from models.models import Guardia, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 
 

@@ -4,25 +4,24 @@ Formulario de asignación de guardias.
 Permite calcular distribución y generar el calendario completo de guardias.
 """
 
+from PyQt6.QtWidgets import (
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+)
+from sqlalchemy.orm import Session
+
 from application.use_cases.asignacion_guardias import (
     CalcularDistribucionUseCase,
     GenerarGuardiasUseCase,
     ObtenerEstadisticasUseCase,
 )
 from models.models import Guardia, Profesor
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
-    QLabel,
-    QMessageBox,
-    QProgressDialog,
-    QPushButton,
-    QTextEdit,
-    QVBoxLayout,
-)
-from sqlalchemy.orm import Session
-from utils.exceptions import BusinessLogicError
-
 from presentation.forms.base_form import BaseForm
+from utils.exceptions import BusinessLogicError
+from widgets.progress_indicators import ejecutar_con_progreso
 
 
 class AsignacionGuardiasForm(BaseForm):
@@ -201,30 +200,24 @@ Número de profesores: {stats.num_profesores}
                         f"Generando calendario nuevo...",
                     )
 
-            # Crear progress dialog
-            progress = QProgressDialog(
-                "Generando calendario de guardias...",
-                "Cancelar",
-                0,
-                100,
-                self,
-            )
-            progress.setWindowTitle("Generando Guardias")
-            progress.setWindowModality(Qt.WindowModality.WindowModal)
-            progress.setMinimumDuration(0)
-
-            try:
-                # Callback para actualizar progreso
-                def update_progress(mensaje: str, porcentaje: int):
-                    progress.setLabelText(mensaje)
-                    progress.setValue(porcentaje)
-
-                # Ejecutar Use Case
-                resumen = self.generar_guardias_uc.execute(
+            # Función para ejecutar con progreso
+            def tarea_generacion(progress_callback):
+                """Ejecuta la generación de guardias con callback de progreso."""
+                return self.generar_guardias_uc.execute(
                     eliminar_existentes=eliminar_existentes,
-                    progress_callback=update_progress,
+                    progress_callback=progress_callback,
                 )
 
+            # Ejecutar con indicador de progreso mejorado
+            resumen, cancelado = ejecutar_con_progreso(
+                tarea_generacion,
+                titulo="Generando Guardias",
+                mensaje="Preparando generación de calendario...",
+                padre=self,
+                cancelable=False,  # La generación no es cancelable
+            )
+
+            if not cancelado and resumen:
                 # Mostrar resumen en el área de resultados
                 texto = self._formatear_resumen(resumen)
                 self.resultado_text.setText(texto)
@@ -234,9 +227,6 @@ Número de profesores: {stats.num_profesores}
                     resumen.mensaje
                     or "Guardias generadas y guardadas en la base de datos.",
                 )
-
-            finally:
-                progress.close()
 
         except BusinessLogicError as e:
             self.mostrar_error("Error en Generación", str(e))

@@ -6,9 +6,10 @@ Permite registrar, editar y eliminar ausencias, así como encontrar y reasignar 
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
+from sqlalchemy.orm import Session
+
 from models.models import Ausencia, Guardia, Profesor
 from services.asignador_guardias import profesor_ausente
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)

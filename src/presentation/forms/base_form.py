@@ -7,8 +7,10 @@ Proporciona funcionalidad común y establece el patrón MVP.
 
 from PyQt6.QtWidgets import QMessageBox, QWidget
 from sqlalchemy.orm import Session
+
 from utils.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
+from utils.ui_helpers import get_corporate_icon
 
 
 class BaseForm(QWidget):
@@ -44,7 +46,12 @@ class BaseForm(QWidget):
             mensaje: Contenido del mensaje
         """
         self.logger.info(f"Mensaje de éxito mostrado: {titulo} - {mensaje}")
-        QMessageBox.information(self, titulo, mensaje)
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(titulo)
+        msg_box.setText(mensaje)
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        msg_box.setWindowIcon(get_corporate_icon())
+        msg_box.exec()
 
     def mostrar_error(self, titulo: str, mensaje: str) -> None:
         """
@@ -55,7 +62,12 @@ class BaseForm(QWidget):
             mensaje: Descripción del error
         """
         self.logger.error(f"Error mostrado al usuario: {titulo} - {mensaje}")
-        QMessageBox.critical(self, titulo, mensaje)
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(titulo)
+        msg_box.setText(mensaje)
+        msg_box.setIcon(QMessageBox.Icon.Critical)
+        msg_box.setWindowIcon(get_corporate_icon())
+        msg_box.exec()
 
     def mostrar_advertencia(self, titulo: str, mensaje: str) -> None:
         """
@@ -65,8 +77,13 @@ class BaseForm(QWidget):
             titulo: Título de la advertencia
             mensaje: Contenido de la advertencia
         """
-        QMessageBox.warning(self, titulo, mensaje)
         self.logger.warning(f"Advertencia mostrada: {titulo} - {mensaje}")
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(titulo)
+        msg_box.setText(mensaje)
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+        msg_box.setWindowIcon(get_corporate_icon())
+        msg_box.exec()
 
     def confirmar_accion(self, titulo: str, mensaje: str) -> bool:
         """
@@ -79,14 +96,17 @@ class BaseForm(QWidget):
         Returns:
             True si el usuario confirma, False en caso contrario
         """
-        respuesta = QMessageBox.question(
-            self,
-            titulo,
-            mensaje,
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(titulo)
+        msg_box.setText(mensaje)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowIcon(get_corporate_icon())
+        msg_box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        confirmado = respuesta == QMessageBox.StandardButton.Yes
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        respuesta = msg_box.exec()
+        confirmado = respuesta == QMessageBox.StandardButton.Yes.value
         self.logger.info(f"Confirmación solicitada: {titulo} - Confirmado: {confirmado}")
         return confirmado
 

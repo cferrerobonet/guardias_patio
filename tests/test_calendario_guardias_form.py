@@ -8,10 +8,11 @@ Objetivo: >70%
 from datetime import date, timedelta
 
 import pytest
-from models.models import Guardia
-from presentation.forms.calendario_guardias_form import CalendarioGuardiasForm
 from PyQt6.QtCore import QDate
 from PyQt6.QtWidgets import QCalendarWidget, QComboBox, QPushButton, QTextEdit
+
+from models.models import Guardia
+from presentation.forms.calendario_guardias_form import CalendarioGuardiasForm
 
 
 @pytest.fixture

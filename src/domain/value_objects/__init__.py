@@ -7,12 +7,13 @@ y no tienen identidad propia (se comparan por valor, no por ID).
 
 from .email import Email
 from .horas_contrato import HorasContrato
-from .turno import Turno
+from .turno import Turno, TurnoEnum
 from .zona_preferida import ZonaPreferida
 
 __all__ = [
     "Email",
     "HorasContrato",
     "Turno",
+    "TurnoEnum",
     "ZonaPreferida",
 ]

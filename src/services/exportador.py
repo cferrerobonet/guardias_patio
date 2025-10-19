@@ -8,8 +8,9 @@ from datetime import date, time
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from models.models import Configuracion, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session
+
+from models.models import Configuracion, Guardia, Profesor, Zona
 
 
 class ExportadorDatos:

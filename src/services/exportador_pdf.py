@@ -7,8 +7,8 @@ from calendar import monthrange
 from collections import defaultdict
 from datetime import date
 from pathlib import Path
+from typing import Callable, Optional
 
-from models.models import Guardia, Profesor, Zona
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -21,6 +21,11 @@ from reportlab.platypus import (
     TableStyle,
 )
 from sqlalchemy.orm import Session
+
+from models.models import Guardia, Profesor, Zona
+from utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class ExportadorPDF:
@@ -249,7 +254,11 @@ class ExportadorPDF:
 
     @staticmethod
     def exportar_todos_los_profesores(
-        session: Session, mes: int, anio: int, carpeta_salida: str
+        session: Session,
+        mes: int,
+        anio: int,
+        carpeta_salida: str,
+        progress_callback: Optional[Callable[[int, str], None]] = None
     ) -> int:
         """
         Exporta calendarios PDF para todos los profesores con guardias.
@@ -259,17 +268,33 @@ class ExportadorPDF:
             mes: Mes (1-12)
             anio: Año
             carpeta_salida: Carpeta donde guardar los PDFs
+            progress_callback: Función opcional para reportar progreso.
+                              Recibe (porcentaje, mensaje_detalle)
 
         Returns:
             Número de PDFs generados exitosamente
         """
+        def reportar_progreso(porcentaje: int, mensaje: str = ""):
+            """Helper para reportar progreso de forma segura."""
+            if progress_callback:
+                try:
+                    progress_callback(porcentaje, mensaje)
+                except Exception as e:
+                    logger.warning(f"Error al reportar progreso: {e}")
+
+        reportar_progreso(0, "Preparando exportación de PDFs...")
+
         carpeta = Path(carpeta_salida)
         carpeta.mkdir(parents=True, exist_ok=True)
+
+        reportar_progreso(10, "Carpeta de salida creada")
 
         # Obtener profesores con guardias en ese mes
         primer_dia = date(anio, mes, 1)
         dias_en_mes = monthrange(anio, mes)[1]
         ultimo_dia = date(anio, mes, dias_en_mes)
+
+        reportar_progreso(15, "Consultando profesores con guardias...")
 
         profesores_con_guardias = (
             session.query(Guardia.profesor_id)
@@ -278,10 +303,23 @@ class ExportadorPDF:
             .all()
         )
 
+        total_profesores = len(profesores_con_guardias)
+        reportar_progreso(20, f"{total_profesores} profesores con guardias encontrados")
+
+        if total_profesores == 0:
+            reportar_progreso(100, "No hay profesores con guardias en este mes")
+            return 0
+
         exitos = 0
-        for (profesor_id,) in profesores_con_guardias:
+        # Progreso de 20% a 95% (75% del rango total)
+        for idx, (profesor_id,) in enumerate(profesores_con_guardias):
             profesor = session.query(Profesor).get(profesor_id)
             if profesor:
+                # Calcular porcentaje (20% - 95%)
+                porcentaje = 20 + int((idx / total_profesores) * 75)
+                mensaje = f"Generando PDF {idx + 1}/{total_profesores}: {profesor.nombre_completo}"
+                reportar_progreso(porcentaje, mensaje)
+
                 # Crear nombre de archivo seguro
                 nombre_completo = profesor.nombre_completo.replace(" ", "_")
                 nombre_completo = nombre_completo.replace(",", "")
@@ -292,5 +330,8 @@ class ExportadorPDF:
                     session, profesor_id, mes, anio, str(ruta_archivo)
                 ):
                     exitos += 1
+
+        reportar_progreso(95, f"{exitos} PDFs generados exitosamente")
+        reportar_progreso(100, "Exportación completada")
 
         return exitos

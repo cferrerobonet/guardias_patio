@@ -4,7 +4,9 @@ import random
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
+
+from sqlalchemy.orm import Session
 
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
@@ -12,7 +14,6 @@ from services.calculador_guardias import (
     calcular_guardias_por_profesor,
     listar_dias_lectivos,
 )
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -122,13 +123,39 @@ def _build_slots(session: Session, config: Configuracion) -> List[Slot]:
     return slots
 
 
-def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[int, int]]:
+def generar_calendario_guardias(
+    session: Session,
+    progress_callback: Optional[Callable[[int, str], None]] = None
+) -> Tuple[List[Guardia], Dict[int, int]]:
+    """
+    Genera el calendario de guardias para el curso.
+    
+    Args:
+        session: Sesión de SQLAlchemy
+        progress_callback: Función opcional para reportar progreso.
+                          Recibe (porcentaje, mensaje_detalle)
+    
+    Returns:
+        Tuple con (lista de guardias, diccionario de asignaciones por profesor)
+    """
     logger.info("Iniciando generación de calendario de guardias")
+
+    def reportar_progreso(porcentaje: int, mensaje: str = ""):
+        """Helper para reportar progreso de forma segura."""
+        if progress_callback:
+            try:
+                progress_callback(porcentaje, mensaje)
+            except Exception as e:
+                logger.warning(f"Error al reportar progreso: {e}")
+
+    reportar_progreso(0, "Validando configuración...")
 
     config = session.query(Configuracion).first()
     if not config:
         logger.error("No existe configuración del curso")
         raise ValueError("No existe configuración del curso")
+
+    reportar_progreso(5, "Cargando profesores...")
 
     profesores = session.query(Profesor).all()
     if not profesores:
@@ -136,11 +163,16 @@ def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[i
         raise ValueError("No hay profesores registrados")
     logger.info(f"Profesores disponibles: {len(profesores)}")
 
+    reportar_progreso(10, f"{len(profesores)} profesores cargados")
+
     zonas = session.query(Zona).all()
     if not zonas:
         logger.error("No hay zonas registradas")
         raise ValueError("No hay zonas registradas")
     logger.info(f"Zonas configuradas: {len(zonas)}")
+
+    reportar_progreso(15, f"{len(zonas)} zonas configuradas")
+    reportar_progreso(20, "Calculando cuotas de guardias...")
 
     cuotas = calcular_guardias_por_profesor(session)  # {prof_id: total}
     asignadas = defaultdict(int)
@@ -154,14 +186,33 @@ def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[i
     # REQUISITO: Máximo 1 guardia al día por profesor (sumando mañana + tarde)
     guardias_por_dia_prof: Dict[Tuple[int, date], bool] = {}
 
+    reportar_progreso(25, "Construyendo slots de guardias...")
+
     slots = _build_slots(session, config)
     if not slots:
+        reportar_progreso(100, "No hay slots para asignar")
         return ([], {})
+
+    total_slots = len(slots)
+    reportar_progreso(30, f"{total_slots} slots de guardias creados")
 
     calendario: List[Guardia] = []
     random.seed(42)
 
-    for slot in slots:
+    # Progreso del bucle principal: 30% - 90% (60% del rango)
+    progreso_inicial = 30
+    progreso_final = 90
+    intervalo_reporte = max(1, total_slots // 50)  # Reportar cada ~2%
+
+    for idx, slot in enumerate(slots):
+        # Reportar progreso cada cierto intervalo
+        if idx % intervalo_reporte == 0:
+            rango = progreso_final - progreso_inicial
+            porcentaje = progreso_inicial + int((idx / total_slots) * rango)
+            guardias_asignadas = len(calendario)
+            mensaje = f"Asignando guardias: {guardias_asignadas}/{total_slots} completadas"
+            reportar_progreso(porcentaje, mensaje)
+
         # Elegibles
         elegibles: List[Profesor] = []
         for p in profesores:
@@ -268,8 +319,14 @@ def generar_calendario_guardias(session: Session) -> Tuple[List[Guardia], Dict[i
         # Marcar que este profesor ya tiene guardia en este día (cualquier turno)
         guardias_por_dia_prof[(elegido.id, slot.fecha)] = True
 
+    reportar_progreso(90, "Finalizando asignación de guardias...")
+    reportar_progreso(95, f"{len(calendario)} guardias asignadas exitosamente")
+
     logger.info(f"Calendario generado: {len(calendario)} guardias asignadas")
     logger.debug(f"Distribución por profesor: {dict(asignadas)}")
+
+    reportar_progreso(100, "Calendario completado")
+
     return (calendario, dict(asignadas))
 
 

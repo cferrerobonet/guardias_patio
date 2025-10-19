@@ -4,16 +4,17 @@ Use Case: Crear Profesor
 Caso de uso para crear un nuevo profesor en el sistema.
 """
 
+from sqlalchemy.orm import Session
+
+from application.dtos import CrearProfesorDTO, ProfesorDTO
 from core.exceptions import ValidationError
 from core.logging import get_logger
+from core.observability import with_metrics
 from domain.entities import ProfesorEntity
 from domain.repositories import IProfesorRepository
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
 from infrastructure.mappers import ProfesorMapper
 from infrastructure.repositories import SQLAlchemyProfesorRepository
-from sqlalchemy.orm import Session
-
-from application.dtos import CrearProfesorDTO, ProfesorDTO
 
 logger = get_logger(__name__)
 
@@ -50,6 +51,11 @@ class CrearProfesorUseCase:
         Raises:
             ValidationError: Si los datos no son válidos
         """
+        return self._execute_with_metrics(dto)
+
+    @with_metrics("crear_profesor")
+    def _execute_with_metrics(self, dto: CrearProfesorDTO) -> ProfesorDTO:
+        """Ejecuta la lógica con métricas."""
         try:
             # 1. Validar que el nombre no esté duplicado
             profesor_existente = self.repository.find_by_nombre(dto.nombre_completo)

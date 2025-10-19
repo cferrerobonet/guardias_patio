@@ -4,12 +4,13 @@ Use Case: Listar Profesores
 Caso de uso para listar todos los profesores del sistema.
 """
 
-from domain.entities import ProfesorEntity
-from domain.repositories import IProfesorRepository
-from infrastructure.repositories import SQLAlchemyProfesorRepository
 from sqlalchemy.orm import Session
 
 from application.dtos import ProfesorDTO
+from core.observability import with_metrics
+from domain.entities import ProfesorEntity
+from domain.repositories import IProfesorRepository
+from infrastructure.repositories import SQLAlchemyProfesorRepository
 
 
 class ListarProfesoresUseCase:
@@ -25,6 +26,7 @@ class ListarProfesoresUseCase:
         self.session = session
         self.repository: IProfesorRepository = SQLAlchemyProfesorRepository(session)
 
+    @with_metrics("listar_profesores")
     def execute(self) -> list[ProfesorDTO]:
         """
         Ejecuta el caso de uso.

@@ -4,12 +4,13 @@ Use Case: Crear una nueva zona.
 Permite registrar una nueva zona de recreo en el sistema.
 """
 
-from models.models import Zona
 from sqlalchemy.orm import Session
-from utils.exceptions import BusinessLogicError
-from utils.logger import get_logger
 
 from application.dtos.zona_dto import CrearZonaDTO, ZonaDTO
+from core.observability import with_metrics
+from models.models import Zona
+from utils.exceptions import BusinessLogicError
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -30,6 +31,7 @@ class CrearZonaUseCase:
         """
         self.session = session
 
+    @with_metrics("crear_zona")
     def execute(self, data: CrearZonaDTO) -> ZonaDTO:
         """
         Ejecutar la creación de una nueva zona.

@@ -4,12 +4,13 @@ Use Case: Actualizar una zona existente.
 Permite modificar los datos de una zona registrada en el sistema.
 """
 
-from models.models import Zona
 from sqlalchemy.orm import Session
-from utils.exceptions import BusinessLogicError, NotFoundError
-from utils.logger import get_logger
 
 from application.dtos.zona_dto import ActualizarZonaDTO, ZonaDTO
+from core.observability import with_metrics
+from models.models import Zona
+from utils.exceptions import BusinessLogicError, NotFoundError
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -30,6 +31,7 @@ class ActualizarZonaUseCase:
         """
         self.session = session
 
+    @with_metrics("actualizar_zona")
     def execute(self, zona_id: int, data: ActualizarZonaDTO) -> ZonaDTO:
         """
         Ejecutar la actualización de una zona.

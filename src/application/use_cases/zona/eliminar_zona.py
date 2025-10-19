@@ -4,8 +4,10 @@ Use Case: Eliminar una zona.
 Permite eliminar una zona del sistema, verificando que no tenga guardias asignadas.
 """
 
-from models.models import Guardia, Zona
 from sqlalchemy.orm import Session
+
+from core.observability import with_metrics
+from models.models import Guardia, Zona
 from utils.exceptions import BusinessLogicError, NotFoundError
 from utils.logger import get_logger
 
@@ -28,6 +30,7 @@ class EliminarZonaUseCase:
         """
         self.session = session
 
+    @with_metrics("eliminar_zona")
     def execute(self, zona_id: int) -> None:
         """
         Ejecutar la eliminación de una zona.

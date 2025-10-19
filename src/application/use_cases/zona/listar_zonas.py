@@ -6,10 +6,11 @@ Permite obtener el listado completo de zonas registradas en el sistema.
 
 from typing import List
 
-from models.models import Zona
 from sqlalchemy.orm import Session
 
 from application.dtos.zona_dto import ZonaDTO
+from core.observability import with_metrics
+from models.models import Zona
 
 
 class ListarZonasUseCase:
@@ -28,6 +29,7 @@ class ListarZonasUseCase:
         """
         self.session = session
 
+    @with_metrics("listar_zonas")
     def execute(self) -> List[ZonaDTO]:
         """
         Ejecutar el listado de zonas.

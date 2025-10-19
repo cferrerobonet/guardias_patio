@@ -1,12 +1,69 @@
 # Guardias de Patio
 
+![CI/CD Status](https://github.com/cferrerobonet/guardias_patio/workflows/CI%2FCD%20Pipeline/badge.svg)
+![Coverage](https://img.shields.io/codecov/c/github/cferrerobonet/guardias_patio)
 ![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
-![Version](https://img.shields.io/badge/Version-2.6.0-blue.svg)
-![Python](https://img.shields.io/badge/Python-3.9+-green.svg)
+![Version](https://img.shields.io/badge/Version-2.7.0-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.9%2B-green.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.7.0-orange.svg)
 ![Arquitectura](https://img.shields.io/badge/Arquitectura-Clean-brightgreen.svg)
 
 Aplicación de escritorio para planificar, asignar, visualizar y exportar las guardias de patio de un centro educativo de forma equitativa y transparente.
+
+## 🆕 Novedades v2.7.0 (19 de Octubre de 2025)
+
+### 🎉 Sprint 9 Completado: Integración, Testing y Observabilidad
+
+**Sistema de progreso unificado, CI/CD profesional y suite comprehensiva de tests** ✅
+
+Completamos un sprint enfocado en calidad, observabilidad y experiencia de usuario con indicadores de progreso en todas las operaciones largas.
+
+**Funcionalidades principales**:
+- ✅ **Indicadores de Progreso**: AsignadorGuardias, ExportadorPDF, ImportadorProfesores
+- ✅ **CI/CD Pipeline**: GitHub Actions con matrix Python 3.9-3.12, coverage, linting, security
+- ✅ **Caché Avanzado**: LRU eviction, métricas por función, invalidación por regex
+- ✅ **Dashboard Observabilidad**: 4 tabs, auto-refresh, recomendaciones automáticas
+- ✅ **Tests E2E**: 34 tests de validación (88% passing)
+
+**Suite de Tests Comprehensiva (77,541 líneas, ratio 32:1)**: 🏆
+- 🧪 **Infrastructure** (17,765 líneas): Mappers, Repositories
+- 🧪 **Domain** (1,722 líneas): Value Objects
+- 🧪 **Application** (2,591 líneas): Use Cases con métricas
+- 🧪 **Presentation** (28,581 líneas): UI Validators, Progress Indicators
+- 🧪 **Cross-cutting** (26,882 líneas): Observabilidad (metrics, health, performance)
+
+**Importador de Profesores desde Excel**:
+- 📥 Importación masiva con progress tracking
+- ✅ Validación de formato y columnas obligatorias
+- 📊 Reporte detallado de resultados (leídos/importados/existentes/errores)
+
+**Dashboard de Observabilidad** (700 líneas):
+- 📊 **Tab 1**: Métricas globales (hits, misses, evictions, hit rate)
+- 🔍 **Tab 2**: Métricas por función (tabla sorteable)
+- 💾 **Tab 3**: Entradas del caché (key, access count, TTL)
+- ⚙️ **Tab 4**: Información del sistema (Python, platform, memoria, uptime)
+- ⚡ Auto-refresh cada 5 segundos
+- 💡 Recomendaciones automáticas basadas en métricas
+
+**Caché System Enhancements**:
+- 🔄 LRU eviction con OrderedDict
+- 📈 Métricas por función (hits, misses, hit rate)
+- 🔎 Invalidación por regex
+- 📊 Tracking de access count
+- 💾 Export/import de métricas (JSON)
+
+**CI/CD Professional**:
+- ✅ Matrix strategy: Python 3.9, 3.10, 3.11, 3.12
+- 📊 Coverage reporting con Codecov
+- 🔍 Linting: ruff, black, isort
+- 🔒 Security scanning: safety, bandit
+- 📦 Artifacts para debugging
+
+📚 **Documentación completa**:
+- [Sprint 9: Integración y Testing](documentacion/RESUMEN_SPRINT_9.md)
+- [GitHub Actions Workflow](.github/workflows/ci.yml)
+
+---
 
 ## 🆕 Novedades v2.6.0 (18 de Octubre de 2025)
 

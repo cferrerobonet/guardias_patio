@@ -4,12 +4,13 @@ Use Case: Obtener Configuración.
 Obtiene la configuración actual del curso escolar.
 """
 
-from core.exceptions import NotFoundError
-from core.logging import get_logger
-from models.models import Configuracion
 from sqlalchemy.orm import Session
 
 from application.dtos.configuracion_dto import ConfiguracionDTO
+from core.exceptions import NotFoundError
+from core.logging import get_logger
+from core.observability import with_metrics
+from models.models import Configuracion
 
 logger = get_logger(__name__)
 
@@ -30,6 +31,7 @@ class ObtenerConfiguracionUseCase:
         """
         self.session = session
 
+    @with_metrics("obtener_configuracion")
     def execute(self) -> ConfiguracionDTO:
         """
         Obtiene la configuración actual.

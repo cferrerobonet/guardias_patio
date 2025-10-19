@@ -8,10 +8,11 @@ Objetivo: >70%
 from datetime import date, time
 
 import pytest
-from models.models import Configuracion
-from presentation.forms.configuracion_form import ConfiguracionForm
 from PyQt6.QtCore import QDate, QTime
 from PyQt6.QtWidgets import QDateEdit, QPushButton, QTimeEdit
+
+from models.models import Configuracion
+from presentation.forms.configuracion_form import ConfiguracionForm
 
 
 @pytest.fixture

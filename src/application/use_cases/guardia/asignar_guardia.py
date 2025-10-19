@@ -4,8 +4,12 @@ Use Case: Asignar Guardia
 Caso de uso para asignar una guardia a un profesor en una zona específica.
 """
 
+from sqlalchemy.orm import Session
+
+from application.dtos import CrearGuardiaDTO, GuardiaDTO
 from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from core.logging import get_logger
+from core.observability import with_metrics
 from domain.entities import GuardiaEntity, ProfesorEntity, ZonaEntity
 from domain.repositories import IGuardiaRepository, IProfesorRepository, IZonaRepository
 from infrastructure.repositories import (
@@ -13,9 +17,6 @@ from infrastructure.repositories import (
     SQLAlchemyProfesorRepository,
     SQLAlchemyZonaRepository,
 )
-from sqlalchemy.orm import Session
-
-from application.dtos import CrearGuardiaDTO, GuardiaDTO
 
 logger = get_logger(__name__)
 
@@ -40,6 +41,7 @@ class AsignarGuardiaUseCase:
         self.zona_repo: IZonaRepository = SQLAlchemyZonaRepository(session)
         self.guardia_repo: IGuardiaRepository = SQLAlchemyGuardiaRepository(session)
 
+    @with_metrics("asignar_guardia")
     def execute(self, dto: CrearGuardiaDTO) -> GuardiaDTO:
         """
         Ejecuta el caso de uso.
@@ -70,7 +72,7 @@ class AsignarGuardiaUseCase:
                 fecha=dto.fecha,
                 turno_recreo=dto.turno,
                 numero_recreo=dto.numero_recreo,
-                zona_id=dto.zona_id
+                zona_id=dto.zona_id,
             )
 
             if not puede:
@@ -83,7 +85,7 @@ class AsignarGuardiaUseCase:
                 profesor_id=dto.profesor_id,
                 fecha=dto.fecha,
                 turno=dto.turno,
-                recreo=dto.numero_recreo
+                recreo=dto.numero_recreo,
             ):
                 raise BusinessLogicError(
                     f"El profesor {profesor.nombre_completo} ya tiene guardia asignada "
@@ -94,7 +96,7 @@ class AsignarGuardiaUseCase:
             guardias_momento = self.guardia_repo.find_by_fecha_turno_recreo(
                 fecha=dto.fecha,
                 turno=dto.turno,
-                recreo=dto.numero_recreo
+                recreo=dto.numero_recreo,
             )
 
             profesores_en_zona = [
@@ -127,7 +129,7 @@ class AsignarGuardiaUseCase:
                 guardia_id=guardia_guardada.id,
                 profesor_id=dto.profesor_id,
                 zona_id=dto.zona_id,
-                fecha=dto.fecha
+                fecha=dto.fecha,
             )
 
             # 7. Convertir a DTO de salida

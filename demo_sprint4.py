@@ -16,10 +16,11 @@ from pathlib import Path
 # Agregar src al path
 sys.path.insert(0, str(Path(__file__).parent / "src"))  # noqa: E402
 
+from PyQt6.QtWidgets import QApplication  # noqa: E402
+
 from database.db_manager import SessionLocal, engine  # noqa: E402
 from models.models import Base  # noqa: E402
 from presentation.forms.simple_profesor_form import SimpleProfesorForm  # noqa: E402
-from PyQt6.QtWidgets import QApplication  # noqa: E402
 
 
 def main():

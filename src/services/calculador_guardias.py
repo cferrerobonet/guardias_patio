@@ -14,8 +14,9 @@ import math
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
-from models.models import Configuracion, Profesor, Zona
 from sqlalchemy.orm import Session
+
+from models.models import Configuracion, Profesor, Zona
 from utils import get_logger
 
 logger = get_logger(__name__)

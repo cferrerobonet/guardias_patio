@@ -33,6 +33,15 @@ class ZonaPreferida:
     zona_nombre: Optional[str] = None
 
     @property
+    def value(self) -> Optional[str]:
+        """Compatibilidad: devuelve el nombre de la zona si existe, sino el id como str, o None."""
+        if self.zona_nombre is not None:
+            return self.zona_nombre
+        if self.zona_id is not None:
+            return str(self.zona_id)
+        return None
+
+    @property
     def tiene_preferencia(self) -> bool:
         """Verifica si tiene una zona preferida asignada."""
         return self.zona_id is not None

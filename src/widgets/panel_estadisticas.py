@@ -10,7 +10,6 @@ import matplotlib
 matplotlib.use('QtAgg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
-from models.models import Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -25,6 +24,8 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+from models.models import Guardia, Profesor, Zona
 
 
 class PanelEstadisticas(QWidget):

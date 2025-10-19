@@ -7,7 +7,6 @@ from calendar import monthrange
 from collections import defaultdict
 from datetime import date, datetime
 
-from models.models import Ausencia, Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -21,6 +20,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
+
+from models.models import Ausencia, Guardia, Profesor, Zona
 
 
 class VistaCalendario(QWidget):

@@ -24,7 +24,9 @@ from presentation.widgets import (
 from presentation.widgets import (
     VistaCalendario as VistaCalendarioRefactorizada,
 )
+from presentation.widgets.observability_dashboard import ObservabilityDashboard
 from utils import setup_logging
+from utils.corporate_branding import apply_corporate_branding
 
 # Configurar logging al inicio
 setup_logging()
@@ -225,6 +227,11 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Guardias de Patio - Gestión")
+
+        # Aplicar logo corporativo a la ventana principal
+        from utils.ui_helpers import get_corporate_icon
+        self.setWindowIcon(get_corporate_icon())
+
         self.layout = QVBoxLayout()
 
         # Crear sesión para widgets que la necesiten
@@ -267,6 +274,18 @@ class MainWindow(QWidget):
         self.tabs.addTab(ImportExportFormRefactorizado(self.session), "💾 Importar / Exportar")
 
         self.layout.addWidget(self.tabs)
+
+        # Botón para abrir Dashboard de Observabilidad (Sprint 7)
+        btn_observability = QPushButton("📊 Observabilidad")
+        btn_observability.setToolTip("Ver métricas, health checks y performance del sistema")
+        btn_observability.clicked.connect(self._abrir_observabilidad)
+        btn_observability.setMaximumWidth(200)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(btn_observability)
+        self.layout.addLayout(btn_layout)
+
         self.setLayout(self.layout)
 
         # Conectar señal de cambio de pestaña para refrescar widgets
@@ -297,6 +316,11 @@ class MainWindow(QWidget):
         index_actual = self.tabs.currentIndex()
         anterior = (index_actual - 1) % self.tabs.count()
         self.tabs.setCurrentIndex(anterior)
+
+    def _abrir_observabilidad(self):
+        """Abre el dashboard de observabilidad."""
+        dashboard = ObservabilityDashboard(self)
+        dashboard.exec()
 
     def on_tab_changed(self, index):
         """Refresca los widgets cuando se cambia de pestaña."""
@@ -335,6 +359,10 @@ def main():
         print(f"Warning: Could not set QT_QPA_PLATFORM_PLUGIN_PATH: {e}")
 
     app = QApplication(sys.argv)
+
+    # Aplicar branding corporativo de forma discreta a todos los diálogos
+    apply_corporate_branding()
+
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

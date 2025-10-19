@@ -8,7 +8,6 @@ from calendar import monthrange
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
-from models.models import Ausencia, Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -21,6 +20,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from models.models import Ausencia, Guardia, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 
 

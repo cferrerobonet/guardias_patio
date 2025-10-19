@@ -4,11 +4,12 @@ Use Case: Obtener estadísticas del curso.
 Calcula y devuelve estadísticas sobre días lectivos, recreos, zonas y profesores.
 """
 
-from services.calculador_guardias import obtener_estadisticas as obtener_stats_servicio
 from sqlalchemy.orm import Session
-from utils.exceptions import BusinessLogicError
 
 from application.dtos.asignacion_guardias_dto import EstadisticasDTO
+from core.observability import with_metrics
+from services.calculador_guardias import obtener_estadisticas as obtener_stats_servicio
+from utils.exceptions import BusinessLogicError
 
 
 class ObtenerEstadisticasUseCase:
@@ -28,6 +29,7 @@ class ObtenerEstadisticasUseCase:
         """
         self.session = session
 
+    @with_metrics("obtener_estadisticas")
     def execute(self) -> EstadisticasDTO:
         """
         Ejecutar la obtención de estadísticas.

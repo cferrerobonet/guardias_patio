@@ -7,11 +7,6 @@ usando Clean Architecture con Use Cases y DTOs.
 Este form NO reemplaza el actual, es solo una demostración del patrón.
 """
 
-from application.dtos import CrearProfesorDTO
-from application.use_cases.profesor import (
-    CrearProfesorUseCase,
-    ListarProfesoresUseCase,
-)
 from PyQt6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
@@ -24,6 +19,11 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
+from application.dtos import CrearProfesorDTO
+from application.use_cases.profesor import (
+    CrearProfesorUseCase,
+    ListarProfesoresUseCase,
+)
 from presentation.forms.base_form import BaseForm
 
 

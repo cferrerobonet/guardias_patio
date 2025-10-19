@@ -4,11 +4,12 @@ Use Case: Actualizar Configuración.
 Crea o actualiza la configuración del curso escolar.
 """
 
-from core.logging import get_logger
-from models.models import Configuracion
 from sqlalchemy.orm import Session
 
 from application.dtos.configuracion_dto import ActualizarConfiguracionDTO, ConfiguracionDTO
+from core.logging import get_logger
+from core.observability import with_metrics
+from models.models import Configuracion
 
 logger = get_logger(__name__)
 
@@ -30,6 +31,7 @@ class ActualizarConfiguracionUseCase:
         """
         self.session = session
 
+    @with_metrics("actualizar_configuracion")
     def execute(self, dto: ActualizarConfiguracionDTO) -> ConfiguracionDTO:
         """
         Crea o actualiza la configuración.

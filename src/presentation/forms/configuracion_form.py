@@ -5,13 +5,6 @@ Form para gestionar la configuración del curso escolar.
 Sigue el patrón MVP usando Use Cases.
 """
 
-import ui_styles as styles
-from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
-from application.use_cases.configuracion import (
-    ActualizarConfiguracionUseCase,
-    ObtenerConfiguracionUseCase,
-)
-from core.exceptions import NotFoundError
 from PyQt6.QtCore import QDate, QTime
 from PyQt6.QtWidgets import (
     QDateEdit,
@@ -25,6 +18,13 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
+import ui_styles as styles
+from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
+from application.use_cases.configuracion import (
+    ActualizarConfiguracionUseCase,
+    ObtenerConfiguracionUseCase,
+)
+from core.exceptions import NotFoundError
 from presentation.forms.base_form import BaseForm
 
 

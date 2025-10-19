@@ -10,6 +10,7 @@ Para tests más detallados, ver archivos test_*_form_detallado.py
 """
 
 import pytest
+
 from presentation.forms.profesor_form import ProfesorForm
 from presentation.forms.zona_form import ZonaForm
 

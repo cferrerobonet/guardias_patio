@@ -13,6 +13,7 @@ from contextlib import contextmanager
 
 from sqlalchemy import create_engine, event, pool
 from sqlalchemy.orm import sessionmaker
+
 from utils.constants import TIMEOUT_DB
 from utils.logger import get_logger
 

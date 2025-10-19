@@ -6,17 +6,18 @@ Genera todas las guardias del curso y las guarda en la base de datos.
 
 from typing import Callable, Optional
 
+from sqlalchemy.orm import Session
+
+from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
+from core.observability import with_metrics
 from models.models import Guardia
 from services.asignador_guardias import (
     generar_calendario_guardias,
     guardar_guardias_en_bd,
 )
 from services.calculador_guardias import obtener_estadisticas
-from sqlalchemy.orm import Session
 from utils.exceptions import BusinessLogicError
 from utils.logger import get_logger
-
-from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
 
 logger = get_logger(__name__)
 
@@ -38,6 +39,7 @@ class GenerarGuardiasUseCase:
         """
         self.session = session
 
+    @with_metrics("generar_guardias")
     def execute(
         self,
         eliminar_existentes: bool = True,
@@ -80,7 +82,14 @@ class GenerarGuardiasUseCase:
             if progress_callback:
                 progress_callback("Generando calendario de guardias...", 50)
 
-            calendario, resumen = generar_calendario_guardias(self.session)
+            # Crear wrapper para adaptar callback (porcentaje, mensaje) -> (mensaje, porcentaje)
+            def adapter_callback(porcentaje: int, mensaje: str = ""):
+                if progress_callback:
+                    # Escalar porcentaje de 0-100 a 50-80 (30% del rango total)
+                    porcentaje_escalado = 50 + int(porcentaje * 0.30)
+                    progress_callback(mensaje or "Generando guardias...", porcentaje_escalado)
+
+            calendario, resumen = generar_calendario_guardias(self.session, adapter_callback)
 
             # Guardar en base de datos
             if progress_callback:
@@ -106,7 +115,6 @@ class GenerarGuardiasUseCase:
                 resumen_por_profesor=resumen,
                 mensaje=mensaje,
             )
-
         except Exception as e:
             self.session.rollback()
             logger.error(f"Error al generar guardias: {str(e)}")
