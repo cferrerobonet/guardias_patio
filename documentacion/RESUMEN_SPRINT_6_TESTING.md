@@ -3,9 +3,9 @@
 ## 📊 Estado Actual
 
 **Fecha**: 18 de octubre de 2025  
-**Coverage Total**: **~45.8%** (objetivo: >80%)  
-**Tests Totales**: 324 tests (+34)  
-**Tests que Pasan**: 324 tests ✅ **¡100%!**  
+**Coverage Total**: **~47.5%** (objetivo: >80%)  
+**Tests Totales**: 360 tests (+36)  
+**Tests que Pasan**: 360 tests ✅ **¡100%!**  
 **Tests que Fallan**: 0 tests ✅
 **Tests xfail**: 0 tests ✅
 
@@ -13,7 +13,7 @@
 
 - **Task 1: Infraestructura de Testing** ✅ **100% COMPLETADA**
 - **Task 2: Tests para Formularios** ✅ **100% COMPLETADA** 🎉
-- **Task 3: Tests para Widgets**: 🔄 **50% EN PROGRESO** (2/4 widgets)
+- **Task 3: Tests para Widgets**: 🔄 **75% EN PROGRESO** (3/4 widgets)
 - **Task 4: Tests para Use Cases**: ⬜ 0% Pendiente
 - **Task 5: Tests de Integración**: ⬜ 0% Pendiente
 - **Task 6: CI/CD**: ⬜ 0% Pendiente
@@ -495,15 +495,15 @@ if limpiar:
 ## 📊 Métricas Actuales
 
 ```
-Total Coverage: ~40.4% (+8.6pp desde 31.83%)
-Tests Totales: 253 (+103 nuevos en Sprint 6)
-Tests que Pasan: 253 (100%) ✅ ¡PERFECTO!
+Total Coverage: ~47.5% (+15.85pp desde 31.65%)
+Tests Totales: 360 (+210 nuevos en Sprint 6)
+Tests que Pasan: 360 (100%) ✅ ¡PERFECTO!
 Tests xfail: 0 ✅
 Tests que Fallan: 0 (0.00%) ✅
 
-Archivos con 100% coverage: 35
-Archivos con >80% coverage: 20 (+4)
-Archivos con <25% coverage: 22 (-4)
+Archivos con >90% coverage: 10+ (formularios y widgets)
+Archivos con >80% coverage: 25+
+Archivos con <25% coverage: 15 (-7)
 ```
 
 ## 🏆 Logros Destacados
@@ -785,6 +785,80 @@ Archivos con <25% coverage: 22 (-4)
 - ✅ Coverage promedio formularios: >80%
 - ✅ **Sprint 6 avanza al 40% de coverage general**
 
+### VistaCalendario Tests ✅ 🎉
+
+**Archivo**: `tests/test_vista_calendario.py` (802 líneas)
+
+**Impacto masivo - TASK 3 INICIADA**:
+- ✅ 37/37 tests PASSING (100%)
+- ✅ Coverage: **0% → 97.92%** (+97.92 puntos porcentuales!)
+- ✅ Incremento general: 40.39% → 43.72% (+3.33pp)
+- ✅ **TASK 3: 25% COMPLETADA** (1/4 widgets)
+- ✅ Commit: `7fc9d0d`, `00b5e76`
+
+**Estructura de tests**:
+1. **TestVistaCalendarioBasico** (6 tests): Creación, labels, listas, botones, callbacks
+2. **TestVistaCalendarioCargarDatos** (7 tests): Cargar todas guardias, filtro profesor, filtro zona, filtro día, vacías, filtro sin resultados, múltiples guardias mismo día
+3. **TestVistaCalendarioRenderizadoDias** (6 tests): Renderizado semana, días correctos, domingo destacado, día actual, guardias posicionadas, múltiples guardias día
+4. **TestVistaCalendarioRenderizadoGuardia** (5 tests): Widget guardia básico, turno mañana/tarde, botón eliminar, color zona, tooltip
+5. **TestVistaCalendarioFiltros** (4 tests): Combos poblados, filtro día funciona, filtros combinados, limpiar filtros
+6. **TestVistaCalendarioEliminar** (3 tests): Eliminar con confirmación, cancelar eliminación, eliminación excepcional
+7. **TestVistaCalendarioSemana** (3 tests): Navegar anterior/siguiente, cambiar semana actualiza, semana_actual
+8. **TestVistaCalendarioIntegracion** (2 tests): Flujo completo carga→filtro→elimina, múltiples cambios semana
+9. **TestVistaCalendarioRendimiento** (1 test @slow): Carga inicial <2s con 300 guardias
+
+### GestorSustituciones Tests ✅ 🎉
+
+**Archivo**: `tests/test_gestor_sustituciones.py` (740 líneas)
+
+**Impacto masivo - TASK 3 50%**:
+- ✅ 34/34 tests PASSING (100%)
+- ✅ Coverage: **10.94% → 98.96%** (+88.02 puntos porcentuales!)
+- ✅ Incremento general: 43.72% → 45.84% (+2.12pp)
+- ✅ **TASK 3: 50% COMPLETADA** (2/4 widgets)
+- ✅ Commit: `49f4299`, `fd3777b`
+
+**Estructura de tests**:
+1. **TestGestorSustitucionesBasico** (5 tests): Creación, labels, combos, botones, lista resultados
+2. **TestGestorSustitucionesCargarProfesores** (3 tests): Cargar profesores ambos combos, combo sustituto permite "Sin Asignar", sustituto excluye ausente
+3. **TestGestorSustitucionesBuscarGuardias** (7 tests): Buscar por día específico, rango, sin profesores seleccionados, sin guardias, sin día, validar filtrado por profesor, validar rango fechas
+4. **TestGestorSustitucionesSeleccion** (2 tests): Mostrar detalles guardia, guardia no en lista (edge case)
+5. **TestGestorSustitucionesProfesoresDisponibles** (4 tests): Obtener disponibles día, excluir ausente, no sugerir profesor ocupado, ordenar por guardias asignadas
+6. **TestGestorSustitucionesConfirmar** (8 tests): Con sustituto, sin asignar (cancelar guardia), sin guardia seleccionada, sin profesor ausente, sin día específico, sin profesor sustituto, actualizar lista después, múltiples sustituciones consecutivas
+7. **TestGestorSustitucionesLimpiar** (1 test): Limpiar formulario correctamente
+8. **TestGestorSustitucionesRefrescar** (1 test): Llamar cargar_profesores y buscar_guardias
+9. **TestGestorSustitucionesIntegracion** (2 tests): Flujo completo buscar→seleccionar→confirmar→verificar, flujo cancelar guardia
+10. **TestGestorSustitucionesRendimiento** (2 tests @slow): Carga inicial <2s, buscar <1s con 500 guardias
+
+### PanelEstadisticas Tests ✅ 🎉
+
+**Archivo**: `tests/test_panel_estadisticas.py` (616 líneas)
+
+**Impacto masivo - TASK 3 75%**:
+- ✅ 36/36 tests PASSING (100%)
+- ✅ Coverage: **0% → ~75-80%** (+75-80 puntos porcentuales!)
+- ✅ Incremento general: 45.84% → ~47.5% (+~1.7pp)
+- ✅ **TASK 3: 75% COMPLETADA** (3/4 widgets)
+- ✅ Commit: `067b5ff`
+
+**Estructura de tests**:
+1. **TestPanelEstadisticasBasico** (5 tests): Creación widget, 4 tabs (Resumen/Profesor/Zona/Gráficos), labels resumen, 2 tablas (profesores 6 cols, zonas 4 cols), 2 canvas matplotlib
+2. **TestPanelEstadisticasResumen** (4 tests): Sin datos ("0" values), con datos (20 guardias, 3 profs activos, 3 zonas), info detalles (mañana/tarde/promedio), porcentajes correctos
+3. **TestPanelEstadisticasTablaProfesores** (6 tests): Tabla vacía, poblada con 5 profesores, columnas correctas (Prof1: 10 total, 5 mañana, 5 tarde), porcentajes (50%/30%/20%), estados (✅ >=5, ⚠️ <5, ❌ =0), edge case "pocas guardias"
+4. **TestPanelEstadisticasTablaZonas** (4 tests): Tabla vacía, 3 zonas pobladas, nombres correctos, total guardias sum=20, profesores diferentes por zona
+5. **TestPanelEstadisticasGraficos** (6 tests): Sin datos no crash, generar con datos, gráfico profesores tipo bar, gráfico zonas tipo pie, filtrar solo profesores con guardias (3 de 5), truncar nombres >15 chars
+6. **TestPanelEstadisticasActualizar** (3 tests): Actualización completa (resumen+tablas+gráficos), manejo excepciones, refrescar() llama actualizar_estadisticas()
+7. **TestMplCanvas** (2 tests): Creación canvas con axes/figure, dimensiones correctas (width/height/dpi)
+8. **TestPanelEstadisticasIntegracion** (3 tests): Flujo vacío→añadir 5 guardias→actualizar→verificar, cambio entre 4 pestañas, múltiples actualizaciones consistentes
+9. **TestPanelEstadisticasRendimiento** (2 tests @slow): Carga inicial <2s (200 guardias), actualización <3s (300 guardias)
+
+**Características clave**:
+- Fixture `datos_completos`: 5 profesores + 3 zonas + 20 guardias distribuidos estratégicamente
+- Tests de matplotlib (bar charts, pie charts)
+- Validación de cálculos (porcentajes, promedios, estados)
+- Tests de agregación de datos (GROUP BY logic)
+- Performance con datasets grandes (300 guardias)
+
 
 
 ## ✅ Problemas Resueltos
@@ -813,25 +887,29 @@ Archivos con <25% coverage: 22 (-4)
 
 ✅ Infraestructura de testing completamente funcional  
 ✅ 10+ fixtures reutilizables listos  
-✅ **150 tests pasando, 0 fallos** 🎯 **¡100%!**  
+✅ **360 tests pasando, 0 fallos** 🎯 **¡100%!**  
 ✅ **Bugs del asignador ARREGLADOS** 🐛→✅  
-✅ Coverage mejorado de 31.65% a 31.83%  
+✅ Coverage mejorado de 31.65% a ~47.5% (+15.85pp) 📈  
 ✅ Tests automáticos para servicios críticos (>80% coverage)  
 ✅ Configuración de coverage con branch coverage  
 ✅ Markers personalizados para categorizar tests  
-✅ Validación de dias_semana_permitidos implementada
-✅ 6 commits realizados y pusheados a GitHub  
+✅ Validación de dias_semana_permitidos implementada  
+✅ 6 formularios testeados completamente (Task 2: 100%) ✅  
+✅ 3 de 4 widgets testeados (Task 3: 75%) 🔄  
+✅ 12+ commits realizados y pusheados a GitHub  
 
 ## 📝 Conclusiones
 
-El Sprint 6 está avanzando de manera **excepcional**. No solo se completó la infraestructura de testing, sino que también se arreglaron TODOS los tests fallidos incluyendo el bug crítico del asignador que no respetaba las restricciones de días.
+El Sprint 6 está avanzando de manera **excepcional**. Se completó Task 1 y Task 2 al 100%, y Task 3 ya va al 75% (3 de 4 widgets). El coverage ha subido significativamente de 31.65% a ~47.5%, acercándonos al objetivo del 80%.
 
 **Hitos alcanzados**:
-- ✅ 100% de tests pasando (150/150)
+- ✅ 100% de tests pasando (360/360)
 - ✅ Bug crítico del asignador arreglado
 - ✅ Suite de tests completamente estable
 - ✅ Validaciones del asignador ahora son 9 (antes 7)
 - ✅ Coverage de servicios críticos >80%
+- ✅ Task 2 (Formularios): 100% completada 🎉
+- ✅ Task 3 (Widgets): 75% completada - falta 1 widget (GestionarAusencias)
 
 El coverage actual de 31.83% es un excelente punto de partida, especialmente considerando que los servicios críticos (asignador, calculador, exportador) ya tienen >80% de coverage.
 
