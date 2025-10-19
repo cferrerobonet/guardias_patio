@@ -6,9 +6,10 @@ Permite modificar los datos de un profesor registrado en el sistema.
 
 import json
 
+from core.exceptions import NotFoundError
 from models.models import Profesor
 from sqlalchemy.orm import Session
-from utils.exceptions import BusinessLogicError, NotFoundError
+from utils.exceptions import BusinessLogicError
 from utils.logger import get_logger
 from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
 
@@ -52,7 +53,7 @@ class ActualizarProfesorUseCase:
         profesor = self.session.query(Profesor).filter(Profesor.id == profesor_id).first()
 
         if not profesor:
-            raise NotFoundError(f"No se encontró el profesor con ID {profesor_id}")
+            raise NotFoundError(entity_type="Profesor", entity_id=profesor_id)
 
         # Si se va a cambiar el nombre, verificar que no exista otro profesor con ese nombre
         if data.nombre_completo and data.nombre_completo != profesor.nombre_completo:

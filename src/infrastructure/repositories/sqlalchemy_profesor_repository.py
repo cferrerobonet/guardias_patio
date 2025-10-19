@@ -54,9 +54,9 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
 
     @log_function_call()
     def get_all(self) -> list[ProfesorEntity]:
-        """Obtiene todos los profesores."""
+        """Obtiene todos los profesores ordenados alfabéticamente."""
         try:
-            models = self.session.query(Profesor).all()
+            models = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
             return self.mapper.to_entities(models)
         except Exception as e:
             logger.error("Error al obtener todos los profesores", error=str(e))

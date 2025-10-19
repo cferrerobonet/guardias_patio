@@ -72,7 +72,7 @@ class CrearProfesorUseCase:
                 horas_contrato=horas,
                 porcentaje_jornada=horas.porcentaje_jornada(),
                 turno=turno,
-                es_tutor=dto.es_tutor,
+                es_tutor=dto.tutor,  # DTO usa 'tutor', entidad usa 'es_tutor'
                 fecha_inicio_guardias=dto.fecha_inicio_guardias,
                 fecha_fin_guardias=dto.fecha_fin_guardias,
                 zona_preferida=zona_preferida,
@@ -112,7 +112,7 @@ class CrearProfesorUseCase:
             turno=entidad.turno.value.value,
             horas_manana=entidad.turno.horas_manana,
             horas_tarde=entidad.turno.horas_tarde,
-            es_tutor=entidad.es_tutor,
+            tutor=entidad.es_tutor,  # Entidad usa 'es_tutor', DTO usa 'tutor'
             fecha_inicio_guardias=entidad.fecha_inicio_guardias,
             fecha_fin_guardias=entidad.fecha_fin_guardias,
             dias_semana_permitidos=entidad.dias_semana_permitidos,

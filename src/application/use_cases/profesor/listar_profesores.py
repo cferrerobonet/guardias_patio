@@ -46,7 +46,7 @@ class ListarProfesoresUseCase:
             turno=entidad.turno.value.value,
             horas_manana=entidad.turno.horas_manana,
             horas_tarde=entidad.turno.horas_tarde,
-            es_tutor=entidad.es_tutor,
+            tutor=entidad.es_tutor,  # Entidad usa 'es_tutor', DTO usa 'tutor'
             fecha_inicio_guardias=entidad.fecha_inicio_guardias,
             fecha_fin_guardias=entidad.fecha_fin_guardias,
             dias_semana_permitidos=entidad.dias_semana_permitidos,
