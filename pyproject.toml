@@ -7,3 +7,38 @@ exclude = [".venv", "alembic/versions"]
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
+
+# Configuración incremental (no strict desde el inicio)
+# Nivel 1: Checks básicos pero útiles
+warn_return_any = false  # Demasiado restrictivo para empezar
+warn_unused_configs = true
+disallow_untyped_defs = false  # Por ahora, iremos agregando gradualmente
+disallow_incomplete_defs = false  # Por ahora
+check_untyped_defs = true  # Este sí lo dejamos, útil
+disallow_untyped_decorators = false
+no_implicit_optional = true  # Buena práctica
+warn_redundant_casts = true
+warn_unused_ignores = false  # Puede dar muchos falsos positivos
+warn_no_return = true
+warn_unreachable = true
+strict_equality = false  # Por ahora
+
+# Allow dynamic typing para SQLAlchemy
+allow_untyped_defs = true
+allow_incomplete_defs = true
+
+# Módulos externos sin tipos
+[[tool.mypy.overrides]]
+module = [
+    "PyQt6.*",
+    "reportlab.*",
+    "matplotlib.*",
+    "openpyxl.*",
+]
+ignore_missing_imports = true
