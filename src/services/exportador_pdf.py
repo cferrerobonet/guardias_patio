@@ -9,6 +9,7 @@ from datetime import date
 from pathlib import Path
 from typing import Callable, Optional
 
+from models.models import Guardia, Profesor
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -21,8 +22,6 @@ from reportlab.platypus import (
     TableStyle,
 )
 from sqlalchemy.orm import Session, joinedload
-
-from models.models import Guardia, Profesor
 from utils import get_logger
 
 logger = get_logger(__name__)

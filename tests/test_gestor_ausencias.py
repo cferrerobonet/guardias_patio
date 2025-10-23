@@ -12,8 +12,6 @@ from datetime import date
 from unittest.mock import Mock, patch
 
 import pytest
-from sqlalchemy.orm import Session
-
 from models.models import Ausencia, Guardia, Profesor
 from services.gestor_ausencias import (
     desactivar_ausencia,
@@ -26,6 +24,7 @@ from services.gestor_ausencias import (
     reasignar_guardias_automaticamente,
     registrar_ausencia,
 )
+from sqlalchemy.orm import Session
 
 
 @pytest.fixture

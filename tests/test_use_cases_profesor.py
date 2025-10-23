@@ -11,8 +11,6 @@ Target Coverage: >90% para cada Use Case
 from datetime import date
 
 import pytest
-from sqlalchemy.orm import Session
-
 from application.dtos import ActualizarProfesorDTO, CrearProfesorDTO, ProfesorDTO
 from application.use_cases.profesor.actualizar_profesor import ActualizarProfesorUseCase
 from application.use_cases.profesor.buscar_profesores import BuscarProfesoresUseCase
@@ -21,6 +19,7 @@ from application.use_cases.profesor.eliminar_profesor import EliminarProfesorUse
 from application.use_cases.profesor.listar_profesores import ListarProfesoresUseCase
 from application.use_cases.profesor.obtener_profesor import ObtenerProfesorUseCase
 from core.exceptions import NotFoundError, ValidationError
+from sqlalchemy.orm import Session
 from utils.exceptions import BusinessLogicError
 
 # ============================

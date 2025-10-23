@@ -13,7 +13,6 @@ Valida que el sistema maneje correctamente:
 from datetime import date
 
 import pytest
-
 from database.db_manager import SessionLocal
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias

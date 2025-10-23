@@ -7,13 +7,12 @@ Sprint 8 - Task 8.7
 from unittest.mock import Mock, patch
 
 import pytest
-from PyQt6.QtWidgets import QWidget
-
 from presentation.widgets.progress_indicators import (
     ProgressDialog,
     WorkerThread,
     ejecutar_con_progreso,
 )
+from PyQt6.QtWidgets import QWidget
 
 # ========== FIXTURES ==========
 
