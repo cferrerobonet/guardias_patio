@@ -74,6 +74,10 @@ class ZonaEntity:
         if not self.tiene_capacidad_limitada:
             return True
 
+        # Verificar que capacidad_profesores no sea None antes de comparar
+        if self.capacidad_profesores is None:
+            return True
+
         return profesores_actuales < self.capacidad_profesores
 
     def __str__(self) -> str:

@@ -160,6 +160,71 @@ class TestActualizarConfiguracionUseCase:
         assert resultado.hora_recreo1_tarde == time(15, 30)
         assert resultado.hora_recreo2_tarde == time(17, 30)
 
+    def test_actualizar_configuracion_festivos_automaticos(self, session):
+        """Actualizar solo campo activar_festivos_automaticos."""
+        config_inicial = Configuracion(
+            fecha_inicio_curso=date(2024, 9, 1),
+            fecha_fin_curso=date(2025, 6, 30),
+            hora_recreo1_manana=time(10, 30),
+            hora_recreo2_manana=time(12, 30),
+            ajuste_tutores=1.0,
+            ajuste_no_tutores=1.0,
+            activar_festivos_automaticos=True,
+        )
+        session.add(config_inicial)
+        session.commit()
+
+        use_case = ActualizarConfiguracionUseCase(session)
+        dto = ActualizarConfiguracionDTO(activar_festivos_automaticos=False)
+
+        resultado = use_case.execute(dto)
+
+        assert resultado.activar_festivos_automaticos is False
+
+    def test_actualizar_configuracion_dias_no_lectivos(self, session):
+        """Actualizar campo dias_no_lectivos_personalizados."""
+        config_inicial = Configuracion(
+            fecha_inicio_curso=date(2024, 9, 1),
+            fecha_fin_curso=date(2025, 6, 30),
+            hora_recreo1_manana=time(10, 30),
+            hora_recreo2_manana=time(12, 30),
+            ajuste_tutores=1.0,
+            ajuste_no_tutores=1.0,
+        )
+        session.add(config_inicial)
+        session.commit()
+
+        use_case = ActualizarConfiguracionUseCase(session)
+        dto = ActualizarConfiguracionDTO(
+            dias_no_lectivos_personalizados='["2024-12-25", "2025-01-01"]'
+        )
+
+        resultado = use_case.execute(dto)
+
+        assert '2024-12-25' in resultado.dias_no_lectivos_personalizados
+
+    def test_actualizar_configuracion_recreos_config(self, session):
+        """Actualizar campo recreos_config."""
+        config_inicial = Configuracion(
+            fecha_inicio_curso=date(2024, 9, 1),
+            fecha_fin_curso=date(2025, 6, 30),
+            hora_recreo1_manana=time(10, 30),
+            hora_recreo2_manana=time(12, 30),
+            ajuste_tutores=1.0,
+            ajuste_no_tutores=1.0,
+        )
+        session.add(config_inicial)
+        session.commit()
+
+        use_case = ActualizarConfiguracionUseCase(session)
+        dto = ActualizarConfiguracionDTO(
+            recreos_config='[{"id": 1, "turno": "mañana", "zonas": 2}]'
+        )
+
+        resultado = use_case.execute(dto)
+
+        assert 'zonas' in resultado.recreos_config
+
     def test_actualizar_configuracion_error_bd(self, session, mocker):
         """Manejar error de base de datos al actualizar configuración."""
         use_case = ActualizarConfiguracionUseCase(session)

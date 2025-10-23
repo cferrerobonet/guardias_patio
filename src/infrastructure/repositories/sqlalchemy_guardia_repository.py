@@ -8,7 +8,7 @@ from datetime import date
 from typing import Optional
 
 from sqlalchemy import and_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from core.exceptions import DatabaseError, NotFoundError
 from core.logging import get_logger, log_function_call
@@ -51,9 +51,16 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
 
     @log_function_call()
     def get_all(self) -> list[GuardiaEntity]:
-        """Obtiene todas las guardias."""
+        """Obtiene todas las guardias con eager loading de relaciones."""
         try:
-            models = self.session.query(Guardia).all()
+            models = (
+                self.session.query(Guardia)
+                .options(
+                    joinedload(Guardia.profesor),
+                    joinedload(Guardia.zona)
+                )
+                .all()
+            )
             return self.mapper.to_entities(models)
         except Exception as e:
             logger.error("Error al obtener todas las guardias", error=str(e))
@@ -132,10 +139,14 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
 
     @log_function_call()
     def find_by_fecha(self, fecha: date) -> list[GuardiaEntity]:
-        """Obtiene todas las guardias de una fecha."""
+        """Obtiene todas las guardias de una fecha con eager loading."""
         try:
             models = (
                 self.session.query(Guardia)
+                .options(
+                    joinedload(Guardia.profesor),
+                    joinedload(Guardia.zona)
+                )
                 .filter(Guardia.fecha == fecha)
                 .all()
             )
@@ -146,10 +157,11 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
 
     @log_function_call()
     def find_by_profesor(self, profesor_id: int) -> list[GuardiaEntity]:
-        """Obtiene todas las guardias de un profesor."""
+        """Obtiene todas las guardias de un profesor con eager loading."""
         try:
             models = (
                 self.session.query(Guardia)
+                .options(joinedload(Guardia.zona))
                 .filter(Guardia.profesor_id == profesor_id)
                 .all()
             )
@@ -164,16 +176,21 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
 
     @log_function_call()
     def find_by_zona(self, zona_id: int) -> list[GuardiaEntity]:
-        """Obtiene todas las guardias de una zona."""
+        """Obtiene todas las guardias de una zona con eager loading."""
         try:
             models = (
                 self.session.query(Guardia)
+                .options(joinedload(Guardia.profesor))
                 .filter(Guardia.zona_id == zona_id)
                 .all()
             )
             return self.mapper.to_entities(models)
         except Exception as e:
-            logger.error("Error al buscar guardias por zona", zona_id=zona_id, error=str(e))
+            logger.error(
+                "Error al buscar guardias por zona",
+                zona_id=zona_id,
+                error=str(e)
+            )
             raise DatabaseError(f"Error al buscar guardias por zona: {e}") from e
 
     @log_function_call()

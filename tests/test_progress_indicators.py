@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 import pytest
 from PyQt6.QtWidgets import QWidget
 
-from widgets.progress_indicators import (
+from presentation.widgets.progress_indicators import (
     ProgressDialog,
     WorkerThread,
     ejecutar_con_progreso,

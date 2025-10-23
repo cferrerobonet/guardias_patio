@@ -39,21 +39,42 @@ desktop.ini    # Windows
 .env.local
 *.env
 
+# Base de datos de desarrollo (se regenera con: alembic upgrade head)
+guardias_patio.db
+*.db
+
 # Archivos temporales de SQLite en modo WAL
-# (solo los temporales -shm y -wal, la base de datos principal se conserva)
 *.db-shm
 *.db-wal
+
+# Archivos de demostración y testing (obsoletos tras Sprint 12)
+demo_*.py
+
+# Reportes de cobertura de tests
+coverage.xml
+.coverage
+htmlcov/
+
+# Logs de desarrollo
+logs/
+*.log
 
 # ============================================================================
 # NOTA IMPORTANTE: 
 # Los siguientes archivos SÍ se suben a Git (NO están en .gitignore):
 # 
-# ✅ guardias_patio.db         - Base de datos con datos del proyecto
-# ✅ Todos los archivos .py     - Código fuente
-# ✅ Todos los tests/           - Tests del proyecto
-# ✅ Toda la documentacion/     - Documentación
+# ✅ src/**/*.py                - Código fuente de la aplicación
+# ✅ tests/**/*.py              - Tests del proyecto (44+ tests)
+# ✅ documentacion/**/*         - Documentación completa
 # ✅ alembic/versions/*.py      - Migraciones de base de datos
 # ✅ requirements.txt           - Dependencias del proyecto
+# ✅ pyproject.toml             - Configuración del proyecto
 # ✅ *.sh                       - Scripts de ejecución
 # ✅ imagenes/*                 - Imágenes del proyecto
+# ✅ .coveragerc, pytest.ini    - Configuración de herramientas
+# 
+# ❌ guardias_patio.db          - Base de datos (se regenera localmente)
+# ❌ demo_*.py                  - Archivos de demo (obsoletos tras Sprint 12)
+# ❌ htmlcov/, coverage.xml     - Reportes de cobertura (se regeneran)
+# ❌ __pycache__/, *.pyc        - Archivos compilados (se regeneran)
 # ============================================================================

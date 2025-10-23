@@ -368,3 +368,441 @@ class TestCalculoCompleto:
         """Lanza error si no hay zonas."""
         with pytest.raises(ValueError, match="No hay zonas"):
             calcular_guardias_por_profesor(session)
+
+
+class TestProfesoresConFechasLimite:
+    """Tests para profesores con fecha_inicio_guardias y fecha_fin_guardias."""
+
+    def test_profesor_con_fecha_inicio_posterior(self, session, config_basica, zonas_basicas):
+        """Profesor que empieza guardias después del inicio del curso."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 30)  # 22 días lectivos
+        session.commit()
+
+        prof1 = Profesor(
+            nombre_completo="TEMPRANO, JUAN",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+        )
+        prof2 = Profesor(
+            nombre_completo="TARDIO, MARÍA",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+            fecha_inicio_guardias=date(2025, 9, 15),  # Empieza a mitad de mes
+        )
+        session.add_all([prof1, prof2])
+        session.commit()
+
+        distribucion = calcular_distribucion_cruda(session)
+
+        # prof2 tiene menos días disponibles, debe tener menos guardias
+        assert distribucion[prof2.id] < distribucion[prof1.id]
+
+    def test_profesor_con_fecha_fin_anticipada(self, session, config_basica, zonas_basicas):
+        """Profesor que termina guardias antes del fin del curso."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 30)
+        session.commit()
+
+        prof1 = Profesor(
+            nombre_completo="COMPLETO, ANA",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+        )
+        prof2 = Profesor(
+            nombre_completo="TEMPRANO, PEDRO",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+            fecha_fin_guardias=date(2025, 9, 15),  # Termina a mitad
+        )
+        session.add_all([prof1, prof2])
+        session.commit()
+
+        distribucion = calcular_distribucion_cruda(session)
+
+        # prof2 tiene menos días disponibles
+        assert distribucion[prof2.id] < distribucion[prof1.id]
+
+    def test_profesor_rango_completo_fuera_curso(self, session, config_basica, zonas_basicas):
+        """Profesor con rango completamente fuera del curso."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 30)
+        session.commit()
+
+        prof1 = Profesor(
+            nombre_completo="NORMAL, LUIS",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+        )
+        prof2 = Profesor(
+            nombre_completo="FUERA, RANGO",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+            fecha_inicio_guardias=date(2025, 10, 1),  # Después del curso
+            fecha_fin_guardias=date(2025, 10, 31),
+        )
+        session.add_all([prof1, prof2])
+        session.commit()
+
+        distribucion = calcular_distribucion_cruda(session)
+
+        # prof2 no tiene días disponibles, debe tener 0 guardias
+        assert distribucion[prof2.id] == 0.0
+        assert distribucion[prof1.id] > 0.0
+
+    def test_profesor_solo_fecha_inicio(self, session, config_basica, zonas_basicas):
+        """Profesor con solo fecha_inicio_guardias (sin fin)."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 30)
+        session.commit()
+
+        prof = Profesor(
+            nombre_completo="INICIO, SOLO",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+            fecha_inicio_guardias=date(2025, 9, 15),  # Solo inicio
+            fecha_fin_guardias=None,
+        )
+        session.add(prof)
+        session.commit()
+
+        distribucion = calcular_distribucion_cruda(session)
+
+        # Debe tener guardias proporcionales a días disponibles
+        assert distribucion[prof.id] > 0.0
+
+    def test_profesor_solo_fecha_fin(self, session, config_basica, zonas_basicas):
+        """Profesor con solo fecha_fin_guardias (sin inicio)."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 30)
+        session.commit()
+
+        prof = Profesor(
+            nombre_completo="FIN, SOLO",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+            fecha_inicio_guardias=None,
+            fecha_fin_guardias=date(2025, 9, 15),  # Solo fin
+        )
+        session.add(prof)
+        session.commit()
+
+        distribucion = calcular_distribucion_cruda(session)
+
+        # Debe tener guardias proporcionales a días disponibles
+        assert distribucion[prof.id] > 0.0
+
+
+class TestCasosEdge:
+    """Tests para casos edge y extremos."""
+
+    def test_porcentaje_jornada_cero(self, session, config_basica, zonas_basicas):
+        """Profesor con porcentaje_jornada 0 no recibe guardias."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 5)
+        session.commit()
+
+        prof1 = Profesor(
+            nombre_completo="NORMAL, ANA",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+        )
+        prof2 = Profesor(
+            nombre_completo="CERO, JORNADA",
+            horas_contrato=0.0,
+            porcentaje_jornada=0.0,
+            turno="mañana",
+            tutor=False,
+        )
+        session.add_all([prof1, prof2])
+        session.commit()
+
+        distribucion = calcular_distribucion_cruda(session)
+
+        # prof2 con jornada 0 debe tener 0 guardias
+        assert distribucion[prof2.id] == 0.0
+        assert distribucion[prof1.id] > 0.0
+
+    def test_porcentajes_jornada_extremos(self, session, config_basica, zonas_basicas):
+        """Test con porcentajes de jornada muy variados."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 5)
+        session.commit()
+
+        profesores = [
+            Profesor(
+                nombre_completo="COMPLETO, UNO",
+                horas_contrato=30.0,
+                porcentaje_jornada=1.0,
+                turno="mañana",
+                tutor=False,
+            ),
+            Profesor(
+                nombre_completo="MEDIO, DOS",
+                horas_contrato=15.0,
+                porcentaje_jornada=0.5,
+                turno="mañana",
+                tutor=False,
+            ),
+            Profesor(
+                nombre_completo="CUARTO, TRES",
+                horas_contrato=7.5,
+                porcentaje_jornada=0.25,
+                turno="mañana",
+                tutor=False,
+            ),
+        ]
+        for p in profesores:
+            session.add(p)
+        session.commit()
+
+        distribucion = calcular_guardias_por_profesor(session)
+
+        # Guardias deben ser proporcionales a porcentaje
+        assert distribucion[profesores[0].id] > distribucion[profesores[1].id]
+        assert distribucion[profesores[1].id] > distribucion[profesores[2].id]
+
+    def test_todos_profesores_turno_tarde_sin_recreos_tarde(
+        self, session, config_basica, zonas_basicas
+    ):
+        """Todos profesores de tarde pero sin recreos de tarde."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 5)
+        config_basica.hora_recreo1_tarde = None
+        config_basica.hora_recreo2_tarde = None
+        session.commit()
+
+        profesores = [
+            Profesor(
+                nombre_completo="TARDE, UNO",
+                horas_contrato=30.0,
+                porcentaje_jornada=1.0,
+                turno="tarde",
+                tutor=False,
+            ),
+            Profesor(
+                nombre_completo="TARDE, DOS",
+                horas_contrato=30.0,
+                porcentaje_jornada=1.0,
+                turno="tarde",
+                tutor=False,
+            ),
+        ]
+        for p in profesores:
+            session.add(p)
+        session.commit()
+
+        # Esto debe lanzar error porque la suma de participación es 0
+        with pytest.raises(ValueError, match="La suma de participación ponderada es 0"):
+            calcular_distribucion_cruda(session)
+
+    def test_error_dias_lectivos_cero(
+        self, session, config_basica, profesores_basicos, zonas_basicas
+    ):
+        """Error cuando no hay días lectivos."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 8, 31)  # Rango inválido
+        session.commit()
+
+        with pytest.raises(ValueError, match="No hay días lectivos"):
+            calcular_guardias_por_profesor(session)
+
+    def test_error_suma_participacion_cero(self, session, config_basica, zonas_basicas):
+        """Error cuando suma de participación es cero."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 5)
+        session.commit()
+
+        # Profesor con jornada 0
+        prof = Profesor(
+            nombre_completo="CERO, TOTAL",
+            horas_contrato=0.0,
+            porcentaje_jornada=0.0,
+            turno="mañana",
+            tutor=False,
+        )
+        session.add(prof)
+        session.commit()
+
+        with pytest.raises(ValueError, match="La suma de participación ponderada es 0"):
+            calcular_guardias_por_profesor(session)
+
+    def test_redondeo_con_minimo_una_guardia(self, session, config_basica, zonas_basicas):
+        """Verifica que profesores con participación mínima reciben al menos 1 guardia."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 5)
+        session.commit()
+
+        profesores = [
+            Profesor(
+                nombre_completo="PRINCIPAL, UNO",
+                horas_contrato=30.0,
+                porcentaje_jornada=1.0,
+                turno="mañana",
+                tutor=False,
+            ),
+            Profesor(
+                nombre_completo="MINIMO, DOS",
+                horas_contrato=2.0,
+                porcentaje_jornada=0.067,  # Muy poco
+                turno="mañana",
+                tutor=False,
+            ),
+        ]
+        for p in profesores:
+            session.add(p)
+        session.commit()
+
+        distribucion = calcular_guardias_por_profesor(session)
+
+        # Incluso con participación mínima, puede recibir guardias por redondeo
+        # (depende de los residuos)
+        assert distribucion[profesores[0].id] > 0
+        # prof2 puede o no recibir guardias dependiendo del redondeo
+
+    def test_dias_lectivos_con_festivos_automaticos_activos(self, session, config_basica):
+        """Test con festivos automáticos activados."""
+        config_basica.fecha_inicio_curso = date(2025, 10, 1)
+        config_basica.fecha_fin_curso = date(2025, 10, 31)  # Incluye 9 y 12 octubre
+        config_basica.activar_festivos_automaticos = True
+        session.commit()
+
+        dias = listar_dias_lectivos(config_basica)
+
+        # Octubre 2025: 23 días hábiles, menos festivos automáticos
+        # 9 octubre es jueves (festivo)
+        # 12 octubre es domingo (ya no cuenta como día lectivo)
+        assert date(2025, 10, 9) not in dias
+        assert len(dias) < 23  # Debe tener menos por los festivos
+
+
+class TestCalculoFactorParticipacion:
+    """Tests específicos para calcular_factor_participacion."""
+
+    def test_factor_mixto_ambos_recreos(self):
+        """Profesor mixto con recreos en ambos turnos recibe factor 1.0."""
+        from services.calculador_guardias import calcular_factor_participacion
+
+        prof = Profesor(
+            nombre_completo="MIXTO, TEST",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mixto",
+            tutor=False,
+        )
+
+        factor = calcular_factor_participacion(prof, recreos_manana=2, recreos_tarde=1)
+        assert factor == 1.0
+
+    def test_factor_manana_solo_manana(self):
+        """Profesor mañana solo con recreos mañana recibe factor 1.0."""
+        from services.calculador_guardias import calcular_factor_participacion
+
+        prof = Profesor(
+            nombre_completo="MANANA, TEST",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+        )
+
+        factor = calcular_factor_participacion(prof, recreos_manana=2, recreos_tarde=0)
+        assert factor == 1.0
+
+    def test_factor_tarde_solo_tarde(self):
+        """Profesor tarde solo con recreos tarde recibe factor 1.0."""
+        from services.calculador_guardias import calcular_factor_participacion
+
+        prof = Profesor(
+            nombre_completo="TARDE, TEST",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="tarde",
+            tutor=False,
+        )
+
+        factor = calcular_factor_participacion(prof, recreos_manana=0, recreos_tarde=2)
+        assert factor == 1.0
+
+    def test_factor_sin_recreos(self):
+        """Sin recreos el factor es 0."""
+        from services.calculador_guardias import calcular_factor_participacion
+
+        prof = Profesor(
+            nombre_completo="TEST, PROF",
+            horas_contrato=30.0,
+            porcentaje_jornada=1.0,
+            turno="mañana",
+            tutor=False,
+        )
+
+        factor = calcular_factor_participacion(prof, recreos_manana=0, recreos_tarde=0)
+        assert factor == 0.0
+
+
+class TestRecreoConfigAvanzado:
+    """Tests para configuración avanzada de recreos con zonas variables."""
+
+    def test_recreos_con_diferentes_zonas_por_recreo(
+        self, session, config_basica, profesores_basicos
+    ):
+        """Test con recreos que tienen diferente número de zonas."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 5)
+        config_basica.recreos_config = json.dumps([
+            {"id": 1, "etiqueta": "R1", "turno": "mañana", "zonas": 3},
+            {"id": 2, "etiqueta": "R2", "turno": "mañana", "zonas": 2},
+        ])
+        session.commit()
+
+        # Crear 5 zonas pero los recreos solo usan 3 y 2
+        zonas = [Zona(nombre_zona=f"Zona {i}", descripcion=f"Zona {i}") for i in range(1, 6)]
+        for z in zonas:
+            session.add(z)
+        session.commit()
+
+        stats = obtener_estadisticas(session)
+
+        # 5 días × (3 + 2) zonas por día = 25 slots
+        assert stats["slots_totales"] == 25
+        assert stats["num_zonas"] == 5
+
+    def test_recreos_zonas_limitadas_por_zonas_reales(
+        self, session, config_basica, profesores_basicos
+    ):
+        """Test donde recreos_config pide más zonas de las disponibles."""
+        config_basica.fecha_inicio_curso = date(2025, 9, 1)
+        config_basica.fecha_fin_curso = date(2025, 9, 5)
+        config_basica.recreos_config = json.dumps([
+            {"id": 1, "etiqueta": "R1", "turno": "mañana", "zonas": 10},  # Pide 10
+        ])
+        session.commit()
+
+        # Solo hay 2 zonas reales
+        zonas = [Zona(nombre_zona="Z1"), Zona(nombre_zona="Z2")]
+        for z in zonas:
+            session.add(z)
+        session.commit()
+
+        stats = obtener_estadisticas(session)
+
+        # Debe limitarse a 2 zonas: 5 días × 2 = 10 slots
+        assert stats["slots_totales"] == 10

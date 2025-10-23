@@ -20,8 +20,8 @@ from application.use_cases.asignacion_guardias import (
 )
 from models.models import Guardia, Profesor
 from presentation.forms.base_form import BaseForm
+from presentation.widgets.progress_indicators import ejecutar_con_progreso
 from utils.exceptions import BusinessLogicError
-from widgets.progress_indicators import ejecutar_con_progreso
 
 
 class AsignacionGuardiasForm(BaseForm):

@@ -5,6 +5,7 @@ Este módulo proporciona diálogos y widgets para mostrar progreso
 en operaciones que toman tiempo (generación de guardias, exportación, etc.).
 
 Sprint 8 - Task 8.7
+Migrado a presentation/widgets en Sprint 11 - Task 11.1.2
 """
 
 from typing import Callable, Optional

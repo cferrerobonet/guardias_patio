@@ -244,6 +244,120 @@ class TestActualizarProfesorUseCase:
         assert resultado.nombre_completo == "Mismo Nombre"
         assert resultado.horas_contrato == 20.0
 
+    def test_actualizar_profesor_nombre_invalido(self, session: Session, profesor_factory):
+        """Test: validar que Pydantic rechaza nombre muy corto."""
+        profesor = profesor_factory(nombre_completo="Profesor Original")
+        session.add(profesor)
+        session.commit()
+
+        # Pydantic valida en la creación del DTO
+        with pytest.raises(Exception):  # ValidationError de Pydantic
+            ActualizarProfesorDTO(nombre_completo="A")
+
+    def test_actualizar_profesor_horas_invalidas(self, session: Session, profesor_factory):
+        """Test: validar que Pydantic rechaza horas inválidas."""
+        profesor = profesor_factory(nombre_completo="Profesor Test", horas_contrato=25.0)
+        session.add(profesor)
+        session.commit()
+
+        # Pydantic valida en la creación del DTO
+        with pytest.raises(Exception):  # ValidationError de Pydantic
+            ActualizarProfesorDTO(horas_contrato=50.0)
+
+    def test_actualizar_profesor_email_invalido(self, session: Session, profesor_factory):
+        """Test: validar que Pydantic rechaza email inválido."""
+        profesor = profesor_factory(nombre_completo="Profesor Email")
+        session.add(profesor)
+        session.commit()
+
+        # Pydantic valida en la creación del DTO
+        with pytest.raises(Exception):  # ValidationError de Pydantic
+            ActualizarProfesorDTO(email_corporativo="email_sin_arroba")
+
+    def test_actualizar_profesor_fechas_guardias(self, session: Session, profesor_factory):
+        """Test: actualizar fechas de inicio y fin de guardias."""
+        profesor = profesor_factory(nombre_completo="Profesor Fechas")
+        session.add(profesor)
+        session.commit()
+
+        use_case = ActualizarProfesorUseCase(session)
+
+        dto = ActualizarProfesorDTO(
+            fecha_inicio_guardias=date(2024, 10, 1),
+            fecha_fin_guardias=date(2025, 5, 31)
+        )
+
+        resultado = use_case.execute(profesor.id, dto)
+
+        assert resultado.fecha_inicio_guardias == date(2024, 10, 1)
+        assert resultado.fecha_fin_guardias == date(2025, 5, 31)
+
+    def test_actualizar_profesor_dias_semana_permitidos(self, session: Session, profesor_factory):
+        """Test: actualizar días de la semana permitidos."""
+        profesor = profesor_factory(nombre_completo="Profesor Dias")
+        session.add(profesor)
+        session.commit()
+
+        use_case = ActualizarProfesorUseCase(session)
+
+        dto = ActualizarProfesorDTO(
+            dias_semana_permitidos=[0, 1, 2]  # Solo L, M, X
+        )
+
+        resultado = use_case.execute(profesor.id, dto)
+
+        assert resultado.dias_semana_permitidos == [0, 1, 2]
+
+    def test_actualizar_profesor_recreos_permitidos(self, session: Session, profesor_factory):
+        """Test: actualizar recreos permitidos."""
+        profesor = profesor_factory(nombre_completo="Profesor Recreos")
+        session.add(profesor)
+        session.commit()
+
+        use_case = ActualizarProfesorUseCase(session)
+
+        dto = ActualizarProfesorDTO(
+            recreos_permitidos=[1, 2, 3]  # Tres recreos
+        )
+
+        resultado = use_case.execute(profesor.id, dto)
+
+        assert resultado.recreos_permitidos == [1, 2, 3]
+
+    def test_actualizar_profesor_tutor(self, session: Session, profesor_factory):
+        """Test: actualizar campo tutor."""
+        profesor = profesor_factory(nombre_completo="Profesor Tutor", tutor=False)
+        session.add(profesor)
+        session.commit()
+
+        use_case = ActualizarProfesorUseCase(session)
+
+        dto = ActualizarProfesorDTO(
+            tutor=True
+        )
+
+        resultado = use_case.execute(profesor.id, dto)
+
+        assert resultado.tutor is True
+
+    def test_actualizar_profesor_error_commit(self, session: Session, profesor_factory, mocker):
+        """Test: rollback si hay error en commit al actualizar."""
+        profesor = profesor_factory(nombre_completo="Profesor Error")
+        session.add(profesor)
+        session.commit()
+
+        use_case = ActualizarProfesorUseCase(session)
+
+        # Simular error en commit
+        mocker.patch.object(session, 'commit', side_effect=Exception("DB Error"))
+
+        dto = ActualizarProfesorDTO(
+            nombre_completo="Nombre Actualizado"
+        )
+
+        with pytest.raises(BusinessLogicError, match="Error al actualizar el profesor"):
+            use_case.execute(profesor.id, dto)
+
 
 # ================================
 # Tests: EliminarProfesorUseCase

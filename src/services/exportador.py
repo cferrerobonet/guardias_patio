@@ -8,7 +8,7 @@ from datetime import date, time
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from models.models import Configuracion, Guardia, Profesor, Zona
 
@@ -106,7 +106,10 @@ class ExportadorDatos:
     @staticmethod
     def exportar_guardias(session: Session) -> list[dict[str, Any]]:
         """Exporta todas las guardias a diccionario."""
-        guardias = session.query(Guardia).all()
+        guardias = session.query(Guardia).options(
+            joinedload(Guardia.profesor),
+            joinedload(Guardia.zona)
+        ).all()
         return [
             {
                 "profesor_nombre_completo": g.profesor.nombre_completo if g.profesor else None,

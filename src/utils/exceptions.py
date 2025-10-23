@@ -9,7 +9,7 @@ de errores y proporcionar mensajes más claros.
 class GuardiasBaseException(Exception):
     """Excepción base para todas las excepciones de la aplicación."""
 
-    def __init__(self, message: str, detalles: str = None):
+    def __init__(self, message: str, detalles: str | None = None):
         self.message = message
         self.detalles = detalles
         super().__init__(self.message)

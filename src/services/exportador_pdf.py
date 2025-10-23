@@ -20,9 +20,9 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from models.models import Guardia, Profesor, Zona
+from models.models import Guardia, Profesor
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -60,6 +60,7 @@ class ExportadorPDF:
 
             guardias = (
                 session.query(Guardia)
+                .options(joinedload(Guardia.zona))
                 .filter(
                     Guardia.profesor_id == profesor_id,
                     Guardia.fecha >= primer_dia,
@@ -144,8 +145,7 @@ class ExportadorPDF:
 
                 for fecha, guardias_dia in sorted(guardias_por_fecha.items()):
                     for i, guardia in enumerate(guardias_dia):
-                        zona = session.query(Zona).get(guardia.zona_id)
-                        zona_nombre = zona.nombre_zona if zona else "N/A"
+                        zona_nombre = guardia.zona.nombre_zona if guardia.zona else "N/A"
 
                         fecha_str = fecha.strftime("%d/%m/%Y") if i == 0 else ""
                         dia_semana = dias_semana[fecha.weekday()] if i == 0 else ""
@@ -296,14 +296,22 @@ class ExportadorPDF:
 
         reportar_progreso(15, "Consultando profesores con guardias...")
 
-        profesores_con_guardias = (
+        # Obtener IDs de profesores con guardias
+        profesor_ids = (
             session.query(Guardia.profesor_id)
             .filter(Guardia.fecha >= primer_dia, Guardia.fecha <= ultimo_dia)
             .distinct()
             .all()
         )
 
-        total_profesores = len(profesores_con_guardias)
+        # Cargar todos los profesores de una vez
+        profesores_dict = {}
+        if profesor_ids:
+            ids_list = [pid for (pid,) in profesor_ids]
+            profesores = session.query(Profesor).filter(Profesor.id.in_(ids_list)).all()
+            profesores_dict = {p.id: p for p in profesores}
+
+        total_profesores = len(profesores_dict)
         reportar_progreso(20, f"{total_profesores} profesores con guardias encontrados")
 
         if total_profesores == 0:
@@ -312,24 +320,23 @@ class ExportadorPDF:
 
         exitos = 0
         # Progreso de 20% a 95% (75% del rango total)
-        for idx, (profesor_id,) in enumerate(profesores_con_guardias):
-            profesor = session.query(Profesor).get(profesor_id)
-            if profesor:
-                # Calcular porcentaje (20% - 95%)
-                porcentaje = 20 + int((idx / total_profesores) * 75)
-                mensaje = f"Generando PDF {idx + 1}/{total_profesores}: {profesor.nombre_completo}"
-                reportar_progreso(porcentaje, mensaje)
+        for idx, profesor_id in enumerate(profesores_dict.keys()):
+            profesor = profesores_dict[profesor_id]
+            # Calcular porcentaje (20% - 95%)
+            porcentaje = 20 + int((idx / total_profesores) * 75)
+            mensaje = f"Generando PDF {idx + 1}/{total_profesores}: {profesor.nombre_completo}"
+            reportar_progreso(porcentaje, mensaje)
 
-                # Crear nombre de archivo seguro
-                nombre_completo = profesor.nombre_completo.replace(" ", "_")
-                nombre_completo = nombre_completo.replace(",", "")
-                nombre_archivo = f"Guardias_{nombre_completo}_{mes:02d}_{anio}.pdf"
-                ruta_archivo = carpeta / nombre_archivo
+            # Crear nombre de archivo seguro
+            nombre_completo = profesor.nombre_completo.replace(" ", "_")
+            nombre_completo = nombre_completo.replace(",", "")
+            nombre_archivo = f"Guardias_{nombre_completo}_{mes:02d}_{anio}.pdf"
+            ruta_archivo = carpeta / nombre_archivo
 
-                if ExportadorPDF.exportar_calendario_profesor(
-                    session, profesor_id, mes, anio, str(ruta_archivo)
-                ):
-                    exitos += 1
+            if ExportadorPDF.exportar_calendario_profesor(
+                session, profesor_id, mes, anio, str(ruta_archivo)
+            ):
+                exitos += 1
 
         reportar_progreso(95, f"{exitos} PDFs generados exitosamente")
         reportar_progreso(100, "Exportación completada")

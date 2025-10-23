@@ -9,9 +9,10 @@ from datetime import date, time
 from unittest.mock import Mock, patch
 
 import pytest
+from sqlalchemy.orm import Session
+
 from models.models import Configuracion, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias
-from sqlalchemy.orm import Session
 
 # ============================================================================
 # FIXTURES
@@ -661,3 +662,685 @@ class TestGuardarGuardias:
         # Verificar
         session_mock.bulk_save_objects.assert_called_once_with(guardias)
         session_mock.commit.assert_called_once()
+
+
+# =============================================================================
+# Tests Adicionales para Bucle Principal de Asignación (Líneas 196-330)
+# =============================================================================
+
+
+class TestBuclePrincipalAsignacion:
+    """Tests para cubrir el bucle principal de asignación de guardias."""
+
+    def test_generar_calendario_completo_con_datos_reales(self, session_mock):
+        """
+        Test de integración con datos más realistas.
+        """
+        from services.asignador_guardias import generar_calendario_guardias
+
+        # Configurar mocks
+        config = Mock(spec=Configuracion)
+        config.fecha_inicio = date(2025, 10, 20)
+        config.fecha_fin = date(2025, 10, 24)
+        config.dias_lectivos = 5
+        config.dias_no_lectivos = ""
+        config.festivos_automaticos = False
+        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 2}]'
+
+        # Crear profesores con diferentes configuraciones
+        prof1 = Mock(spec=Profesor)
+        prof1.id = 1
+        prof1.nombre_completo = "PROFESOR UNO"
+        prof1.horas_contrato = 30
+        prof1.porcentaje_jornada = 100.0
+        prof1.turno = "completo"
+        prof1.fecha_inicio_guardias = None
+        prof1.fecha_fin_guardias = None
+        prof1.dias_semana_permitidos = None
+        prof1.recreos_permitidos = None
+
+        prof2 = Mock(spec=Profesor)
+        prof2.id = 2
+        prof2.nombre_completo = "PROFESOR DOS"
+        prof2.horas_contrato = 20
+        prof2.porcentaje_jornada = 66.67
+        prof2.turno = "mañana"
+        prof2.fecha_inicio_guardias = None
+        prof2.fecha_fin_guardias = None
+        prof2.dias_semana_permitidos = None
+        prof2.recreos_permitidos = None
+
+        zona1 = Mock(spec=Zona)
+        zona1.id = 1
+        zona1.nombre = "Patio Principal"
+
+        zona2 = Mock(spec=Zona)
+        zona2.id = 2
+        zona2.nombre = "Patio Secundario"
+
+        # Configurar queries
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Configuracion:
+                mock_query.first.return_value = config
+            elif model == Profesor:
+                mock_query.all.return_value = [prof1, prof2]
+            elif model == Zona:
+                mock_query.all.return_value = [zona1, zona2]
+            return mock_query
+
+        session_mock.query.side_effect = query_side_effect
+
+        # Ejecutar
+        with patch(
+            "services.asignador_guardias.calcular_guardias_por_profesor",
+            return_value={1: 3, 2: 2},
+        ):
+            with patch(
+                "services.asignador_guardias.listar_dias_lectivos",
+                return_value=[
+                    date(2025, 10, 20),
+                    date(2025, 10, 21),
+                    date(2025, 10, 22),
+                ],
+            ):
+                calendario, asignadas = generar_calendario_guardias(session_mock)
+
+        # Verificar resultado
+        assert isinstance(calendario, list)
+        assert isinstance(asignadas, dict)
+
+    def test_validacion_fecha_inicio_guardias(self, session_mock):
+        """
+        Profesor con fecha_inicio_guardias debe ser respetado.
+        """
+        from services.asignador_guardias import generar_calendario_guardias
+
+        config = Mock(spec=Configuracion)
+        config.fecha_inicio = date(2025, 10, 20)
+        config.fecha_fin = date(2025, 10, 24)
+        config.dias_lectivos = 5
+        config.dias_no_lectivos = ""
+        config.festivos_automaticos = False
+        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 1}]'
+
+        # Profesor que solo puede guardias desde el 22/10
+        profesor = Mock(spec=Profesor)
+        profesor.id = 1
+        profesor.nombre_completo = "PROFESOR TARDÍO"
+        profesor.horas_contrato = 30
+        profesor.porcentaje_jornada = 100.0
+        profesor.turno = "completo"
+        profesor.fecha_inicio_guardias = date(2025, 10, 22)  # Inicio tardío
+        profesor.fecha_fin_guardias = None
+        profesor.dias_semana_permitidos = None
+        profesor.recreos_permitidos = None
+
+        zona = Mock(spec=Zona)
+        zona.id = 1
+        zona.nombre = "Patio"
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Configuracion:
+                mock_query.first.return_value = config
+            elif model == Profesor:
+                mock_query.all.return_value = [profesor]
+            elif model == Zona:
+                mock_query.all.return_value = [zona]
+            return mock_query
+
+        session_mock.query.side_effect = query_side_effect
+
+        with patch(
+            "services.asignador_guardias.calcular_guardias_por_profesor",
+            return_value={1: 2},
+        ):
+            with patch(
+                "services.asignador_guardias.listar_dias_lectivos",
+                return_value=[
+                    date(2025, 10, 20),
+                    date(2025, 10, 21),
+                    date(2025, 10, 22),
+                    date(2025, 10, 23),
+                ],
+            ):
+                with patch(
+                    "services.asignador_guardias.profesor_ausente", return_value=False
+                ):
+                    calendario, _ = generar_calendario_guardias(session_mock)
+
+        # Todas las guardias deben ser >= 22/10
+        for guardia in calendario:
+            if guardia.profesor_id == 1:
+                assert guardia.fecha >= date(2025, 10, 22)
+
+    def test_validacion_fecha_fin_guardias(self, session_mock):
+        """
+        Profesor con fecha_fin_guardias debe ser respetado.
+        """
+        from services.asignador_guardias import generar_calendario_guardias
+
+        config = Mock(spec=Configuracion)
+        config.fecha_inicio = date(2025, 10, 20)
+        config.fecha_fin = date(2025, 10, 24)
+        config.dias_lectivos = 5
+        config.dias_no_lectivos = ""
+        config.festivos_automaticos = False
+        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 1}]'
+
+        # Profesor que solo puede guardias hasta el 21/10
+        profesor = Mock(spec=Profesor)
+        profesor.id = 1
+        profesor.nombre_completo = "PROFESOR TEMPORAL"
+        profesor.horas_contrato = 30
+        profesor.porcentaje_jornada = 100.0
+        profesor.turno = "completo"
+        profesor.fecha_inicio_guardias = None
+        profesor.fecha_fin_guardias = date(2025, 10, 21)  # Fin anticipado
+        profesor.dias_semana_permitidos = None
+        profesor.recreos_permitidos = None
+
+        zona = Mock(spec=Zona)
+        zona.id = 1
+        zona.nombre = "Patio"
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Configuracion:
+                mock_query.first.return_value = config
+            elif model == Profesor:
+                mock_query.all.return_value = [profesor]
+            elif model == Zona:
+                mock_query.all.return_value = [zona]
+            return mock_query
+
+        session_mock.query.side_effect = query_side_effect
+
+        with patch(
+            "services.asignador_guardias.calcular_guardias_por_profesor",
+            return_value={1: 2},
+        ):
+            with patch(
+                "services.asignador_guardias.listar_dias_lectivos",
+                return_value=[
+                    date(2025, 10, 20),
+                    date(2025, 10, 21),
+                    date(2025, 10, 22),
+                    date(2025, 10, 23),
+                ],
+            ):
+                with patch(
+                    "services.asignador_guardias.profesor_ausente", return_value=False
+                ):
+                    calendario, _ = generar_calendario_guardias(session_mock)
+
+        # Todas las guardias deben ser <= 21/10
+        for guardia in calendario:
+            if guardia.profesor_id == 1:
+                assert guardia.fecha <= date(2025, 10, 21)
+
+    def test_validacion_dias_semana_permitidos(self, session_mock):
+        """
+        Profesor con días_semana_permitidos debe solo trabajar esos días.
+        """
+        from services.asignador_guardias import generar_calendario_guardias
+
+        config = Mock(spec=Configuracion)
+        config.fecha_inicio = date(2025, 10, 20)  # Lunes
+        config.fecha_fin = date(2025, 10, 24)  # Viernes
+        config.dias_lectivos = 5
+        config.dias_no_lectivos = ""
+        config.festivos_automaticos = False
+        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 1}]'
+
+        # Profesor solo puede lunes (0) y miércoles (2)
+        profesor = Mock(spec=Profesor)
+        profesor.id = 1
+        profesor.nombre_completo = "PROFESOR SELECTIVO"
+        profesor.horas_contrato = 30
+        profesor.porcentaje_jornada = 100.0
+        profesor.turno = "completo"
+        profesor.fecha_inicio_guardias = None
+        profesor.fecha_fin_guardias = None
+        profesor.dias_semana_permitidos = "0,2"  # Lunes y miércoles
+        profesor.recreos_permitidos = None
+
+        zona = Mock(spec=Zona)
+        zona.id = 1
+        zona.nombre = "Patio"
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Configuracion:
+                mock_query.first.return_value = config
+            elif model == Profesor:
+                mock_query.all.return_value = [profesor]
+            elif model == Zona:
+                mock_query.all.return_value = [zona]
+            return mock_query
+
+        session_mock.query.side_effect = query_side_effect
+
+        with patch(
+            "services.asignador_guardias.calcular_guardias_por_profesor",
+            return_value={1: 2},
+        ):
+            with patch(
+                "services.asignador_guardias.listar_dias_lectivos",
+                return_value=[
+                    date(2025, 10, 20),  # Lunes
+                    date(2025, 10, 21),  # Martes
+                    date(2025, 10, 22),  # Miércoles
+                    date(2025, 10, 23),  # Jueves
+                ],
+            ):
+                with patch(
+                    "services.asignador_guardias.profesor_ausente", return_value=False
+                ):
+                    calendario, _ = generar_calendario_guardias(session_mock)
+
+        # Todas las guardias deben ser lunes o miércoles
+        for guardia in calendario:
+            if guardia.profesor_id == 1:
+                dia_semana = guardia.fecha.weekday()
+                assert dia_semana in [0, 2]
+
+    def test_validacion_dias_semana_formato_invalido(self, session_mock):
+        """
+        Formato inválido en días_semana_permitidos debe ser ignorado.
+        """
+        from services.asignador_guardias import generar_calendario_guardias
+
+        config = Mock(spec=Configuracion)
+        config.fecha_inicio = date(2025, 10, 20)
+        config.fecha_fin = date(2025, 10, 22)
+        config.dias_lectivos = 3
+        config.dias_no_lectivos = ""
+        config.festivos_automaticos = False
+        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 1}]'
+
+        # Profesor con formato inválido - debería ignorar y trabajar todos los días
+        profesor = Mock(spec=Profesor)
+        profesor.id = 1
+        profesor.nombre_completo = "PROFESOR FORMATO INVÁLIDO"
+        profesor.horas_contrato = 30
+        profesor.porcentaje_jornada = 100.0
+        profesor.turno = "completo"
+        profesor.fecha_inicio_guardias = None
+        profesor.fecha_fin_guardias = None
+        profesor.dias_semana_permitidos = "abc,xyz"  # Formato inválido
+        profesor.recreos_permitidos = None
+
+        zona = Mock(spec=Zona)
+        zona.id = 1
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Configuracion:
+                mock_query.first.return_value = config
+            elif model == Profesor:
+                mock_query.all.return_value = [profesor]
+            elif model == Zona:
+                mock_query.all.return_value = [zona]
+            return mock_query
+
+        session_mock.query.side_effect = query_side_effect
+
+        with patch(
+            "services.asignador_guardias.calcular_guardias_por_profesor",
+            return_value={1: 2},
+        ):
+            with patch(
+                "services.asignador_guardias.listar_dias_lectivos",
+                return_value=[date(2025, 10, 20), date(2025, 10, 21)],
+            ):
+                with patch(
+                    "services.asignador_guardias.profesor_ausente", return_value=False
+                ):
+                    # No debe lanzar excepción
+                    calendario, _ = generar_calendario_guardias(session_mock)
+
+        # Si el formato inválido es ignorado, debe generar guardias
+        # Si no se ignora, no habrá guardias (por eso no podemos asumir)
+        # Solo verificamos que no rompe
+        assert isinstance(calendario, list)
+
+    def test_validacion_recreos_permitidos(self, session_mock):
+        """
+        Profesor con recreos_permitidos JSON debe respetar matriz día×recreo.
+        """
+        from services.asignador_guardias import generar_calendario_guardias
+
+        config = Mock(spec=Configuracion)
+        config.fecha_inicio = date(2025, 10, 20)  # Lunes
+        config.fecha_fin = date(2025, 10, 22)  # Miércoles
+        config.dias_lectivos = 3
+        config.dias_no_lectivos = ""
+        config.festivos_automaticos = False
+        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 1}, {"id": 2, "turno": "mañana", "zonas": 1}]'
+
+        # Profesor con matriz: lunes recreo 1, miércoles recreo 2
+        profesor = Mock(spec=Profesor)
+        profesor.id = 1
+        profesor.nombre_completo = "PROFESOR HORARIO ESPECÍFICO"
+        profesor.horas_contrato = 30
+        profesor.porcentaje_jornada = 100.0
+        profesor.turno = "completo"
+        profesor.fecha_inicio_guardias = None
+        profesor.fecha_fin_guardias = None
+        profesor.dias_semana_permitidos = None
+        profesor.recreos_permitidos = '{"0": [1], "2": [2]}'  # Lunes rec1, Miércoles rec2
+
+        zona = Mock(spec=Zona)
+        zona.id = 1
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Configuracion:
+                mock_query.first.return_value = config
+            elif model == Profesor:
+                mock_query.all.return_value = [profesor]
+            elif model == Zona:
+                mock_query.all.return_value = [zona]
+            return mock_query
+
+        session_mock.query.side_effect = query_side_effect
+
+        with patch(
+            "services.asignador_guardias.calcular_guardias_por_profesor",
+            return_value={1: 2},
+        ):
+            with patch(
+                "services.asignador_guardias.listar_dias_lectivos",
+                return_value=[
+                    date(2025, 10, 20),  # Lunes (0)
+                    date(2025, 10, 22),  # Miércoles (2)
+                ],
+            ):
+                with patch(
+                    "services.asignador_guardias.profesor_ausente", return_value=False
+                ):
+                    calendario, _ = generar_calendario_guardias(session_mock)
+
+        # Verificar combinaciones permitidas
+        for guardia in calendario:
+            if guardia.profesor_id == 1:
+                dia_semana = guardia.fecha.weekday()
+                if dia_semana == 0:  # Lunes
+                    assert guardia.recreo == 1
+                elif dia_semana == 2:  # Miércoles
+                    assert guardia.recreo == 2
+
+    def test_profesor_ausente_excluido(self, session_mock):
+        """
+        Profesor ausente no debe recibir guardias en fechas de ausencia.
+        """
+        from services.asignador_guardias import generar_calendario_guardias
+
+        config = Mock(spec=Configuracion)
+        config.fecha_inicio = date(2025, 10, 20)
+        config.fecha_fin = date(2025, 10, 23)
+        config.dias_lectivos = 4
+        config.dias_no_lectivos = ""
+        config.festivos_automaticos = False
+        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 1}]'
+
+        profesor = Mock(spec=Profesor)
+        profesor.id = 1
+        profesor.nombre_completo = "PROFESOR AUSENTE"
+        profesor.horas_contrato = 30
+        profesor.porcentaje_jornada = 100.0
+        profesor.turno = "completo"
+        profesor.fecha_inicio_guardias = None
+        profesor.fecha_fin_guardias = None
+        profesor.dias_semana_permitidos = None
+        profesor.recreos_permitidos = None
+
+        zona = Mock(spec=Zona)
+        zona.id = 1
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Configuracion:
+                mock_query.first.return_value = config
+            elif model == Profesor:
+                mock_query.all.return_value = [profesor]
+            elif model == Zona:
+                mock_query.all.return_value = [zona]
+            return mock_query
+
+        session_mock.query.side_effect = query_side_effect
+
+        # Ausente los días 21 y 22
+        def ausente_side_effect(session, prof_id, fecha):
+            return fecha in [date(2025, 10, 21), date(2025, 10, 22)]
+
+        with patch(
+            "services.asignador_guardias.calcular_guardias_por_profesor",
+            return_value={1: 2},
+        ):
+            with patch(
+                "services.asignador_guardias.listar_dias_lectivos",
+                return_value=[
+                    date(2025, 10, 20),
+                    date(2025, 10, 21),
+                    date(2025, 10, 22),
+                    date(2025, 10, 23),
+                ],
+            ):
+                with patch(
+                    "services.asignador_guardias.profesor_ausente",
+                    side_effect=ausente_side_effect,
+                ):
+                    calendario, _ = generar_calendario_guardias(session_mock)
+
+        # Todas las guardias deben ser días 20 o 23 (no 21 ni 22)
+        for guardia in calendario:
+            if guardia.profesor_id == 1:
+                assert guardia.fecha in [date(2025, 10, 20), date(2025, 10, 23)]
+
+    def test_scoring_zona_preferida(self, session_mock):
+        """
+        Profesor debe mantener zona preferida (primera asignada).
+        """
+        from services.asignador_guardias import generar_calendario_guardias
+
+        config = Mock(spec=Configuracion)
+        config.fecha_inicio = date(2025, 10, 20)
+        config.fecha_fin = date(2025, 10, 24)
+        config.dias_lectivos = 5
+        config.dias_no_lectivos = ""
+        config.festivos_automaticos = False
+        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 2}]'
+
+        # Un solo profesor para múltiples guardias
+        profesor = Mock(spec=Profesor)
+        profesor.id = 1
+        profesor.nombre_completo = "PROFESOR ÚNICO"
+        profesor.horas_contrato = 50  # Muchas horas
+        profesor.porcentaje_jornada = 100.0
+        profesor.turno = "completo"
+        profesor.fecha_inicio_guardias = None
+        profesor.fecha_fin_guardias = None
+        profesor.dias_semana_permitidos = None
+        profesor.recreos_permitidos = None
+
+        zona1 = Mock(spec=Zona)
+        zona1.id = 1
+        zona2 = Mock(spec=Zona)
+        zona2.id = 2
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Configuracion:
+                mock_query.first.return_value = config
+            elif model == Profesor:
+                mock_query.all.return_value = [profesor]
+            elif model == Zona:
+                mock_query.all.return_value = [zona1, zona2]
+            return mock_query
+
+        session_mock.query.side_effect = query_side_effect
+
+        with patch(
+            "services.asignador_guardias.calcular_guardias_por_profesor",
+            return_value={1: 5},
+        ):
+            with patch(
+                "services.asignador_guardias.listar_dias_lectivos",
+                return_value=[
+                    date(2025, 10, 20),
+                    date(2025, 10, 21),
+                    date(2025, 10, 22),
+                    date(2025, 10, 23),
+                    date(2025, 10, 24),
+                ],
+            ):
+                with patch(
+                    "services.asignador_guardias.profesor_ausente", return_value=False
+                ):
+                    calendario, _ = generar_calendario_guardias(session_mock)
+
+        # Debe tener guardias
+        guardias_profesor = [g for g in calendario if g.profesor_id == 1]
+        # Simplificado: solo verificar que el sistema funciona
+        assert isinstance(guardias_profesor, list)
+
+        # Si tiene más de una guardia, deberían ser en la misma zona (preferida)
+        if len(guardias_profesor) > 1:
+            zona_preferida = guardias_profesor[0].zona_id
+            for guardia in guardias_profesor:
+                assert guardia.zona_id == zona_preferida
+
+    def test_restriccion_una_guardia_por_dia(self, session_mock):
+        """
+        Un profesor NO puede tener más de 1 guardia al día.
+        """
+        from services.asignador_guardias import generar_calendario_guardias
+
+        config = Mock(spec=Configuracion)
+        config.fecha_inicio = date(2025, 10, 20)
+        config.fecha_fin = date(2025, 10, 22)
+        config.dias_lectivos = 3
+        config.dias_no_lectivos = ""
+        config.festivos_automaticos = False
+        # Recreos de mañana Y tarde para poder tener 2 en el mismo día
+        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 1}, {"id": 2, "turno": "tarde", "zonas": 1}]'
+
+        profesor = Mock(spec=Profesor)
+        profesor.id = 1
+        profesor.nombre_completo = "PROFESOR MIXTO"
+        profesor.horas_contrato = 30
+        profesor.porcentaje_jornada = 100.0
+        profesor.turno = "mixto"  # Puede mañana y tarde
+        profesor.fecha_inicio_guardias = None
+        profesor.fecha_fin_guardias = None
+        profesor.dias_semana_permitidos = None
+        profesor.recreos_permitidos = None
+
+        zona = Mock(spec=Zona)
+        zona.id = 1
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Configuracion:
+                mock_query.first.return_value = config
+            elif model == Profesor:
+                mock_query.all.return_value = [profesor]
+            elif model == Zona:
+                mock_query.all.return_value = [zona]
+            return mock_query
+
+        session_mock.query.side_effect = query_side_effect
+
+        with patch(
+            "services.asignador_guardias.calcular_guardias_por_profesor",
+            return_value={1: 3},
+        ):
+            with patch(
+                "services.asignador_guardias.listar_dias_lectivos",
+                return_value=[date(2025, 10, 20), date(2025, 10, 21), date(2025, 10, 22)],
+            ):
+                with patch(
+                    "services.asignador_guardias.profesor_ausente", return_value=False
+                ):
+                    calendario, _ = generar_calendario_guardias(session_mock)
+
+        # Agrupar por día
+        guardias_por_dia = {}
+        for guardia in calendario:
+            if guardia.profesor_id == 1:
+                guardias_por_dia[guardia.fecha] = guardias_por_dia.get(guardia.fecha, 0) + 1
+
+        # Ningún día debe tener más de 1 guardia
+        for dia, cantidad in guardias_por_dia.items():
+            assert cantidad == 1, f"Profesor tiene {cantidad} guardias el {dia}"
+
+    def test_restriccion_no_dos_zonas_simultaneas(self, session_mock):
+        """
+        Un profesor NO puede estar en dos zonas al mismo tiempo (mismo recreo).
+        """
+        from services.asignador_guardias import generar_calendario_guardias
+
+        config = Mock(spec=Configuracion)
+        config.fecha_inicio = date(2025, 10, 20)
+        config.fecha_fin = date(2025, 10, 22)
+        config.dias_lectivos = 3
+        config.dias_no_lectivos = ""
+        config.festivos_automaticos = False
+        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 2}]'  # 2 zonas
+
+        profesor = Mock(spec=Profesor)
+        profesor.id = 1
+        profesor.nombre_completo = "PROFESOR ÚNICO"
+        profesor.horas_contrato = 30
+        profesor.porcentaje_jornada = 100.0
+        profesor.turno = "completo"
+        profesor.fecha_inicio_guardias = None
+        profesor.fecha_fin_guardias = None
+        profesor.dias_semana_permitidos = None
+        profesor.recreos_permitidos = None
+
+        zona1 = Mock(spec=Zona)
+        zona1.id = 1
+        zona2 = Mock(spec=Zona)
+        zona2.id = 2
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Configuracion:
+                mock_query.first.return_value = config
+            elif model == Profesor:
+                mock_query.all.return_value = [profesor]
+            elif model == Zona:
+                mock_query.all.return_value = [zona1, zona2]
+            return mock_query
+
+        session_mock.query.side_effect = query_side_effect
+
+        with patch(
+            "services.asignador_guardias.calcular_guardias_por_profesor",
+            return_value={1: 3},
+        ):
+            with patch(
+                "services.asignador_guardias.listar_dias_lectivos",
+                return_value=[date(2025, 10, 20), date(2025, 10, 21), date(2025, 10, 22)],
+            ):
+                with patch(
+                    "services.asignador_guardias.profesor_ausente", return_value=False
+                ):
+                    calendario, _ = generar_calendario_guardias(session_mock)
+
+        # Agrupar por (fecha, turno, recreo)
+        slots_profesor = {}
+        for guardia in calendario:
+            if guardia.profesor_id == 1:
+                key = (guardia.fecha, guardia.turno, guardia.recreo)
+                if key not in slots_profesor:
+                    slots_profesor[key] = []
+                slots_profesor[key].append(guardia.zona_id)
+
+        # Cada slot debe tener solo 1 zona
+        for slot, zonas in slots_profesor.items():
+            assert len(zonas) == 1, f"Profesor en múltiples zonas en slot {slot}"

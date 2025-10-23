@@ -22,10 +22,10 @@ from PyQt6.QtWidgets import (
 import ui_styles as styles
 from models.models import Configuracion, Profesor, Zona
 from presentation.forms.base_form import BaseForm
+from presentation.widgets.progress_indicators import ejecutar_con_progreso
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
 from services.importador_profesores import importar_profesores_desde_excel
-from widgets.progress_indicators import ejecutar_con_progreso
 
 
 class ImportExportForm(BaseForm):

@@ -337,7 +337,7 @@ class TestAsignacionGuardiasFormGeneracion:
 
             with patch.object(form, "mostrar_exito") as mock_exito:
                 with patch(
-                    "presentation.forms.asignacion_guardias_form.QProgressDialog"
+                    "presentation.widgets.progress_indicators.ProgressDialog"
                 ) as mock_progress:
                     # Mock del progress dialog
                     mock_progress_instance = Mock()
@@ -377,7 +377,7 @@ class TestAsignacionGuardiasFormGeneracion:
                 return_value=QMessageBox.StandardButton.Yes,
             ):
                 with patch(
-                    "presentation.forms.asignacion_guardias_form.QProgressDialog"
+                    "presentation.widgets.progress_indicators.ProgressDialog"
                 ):
                     with patch.object(form, "mostrar_exito"):
                         form.generar_guardias()
@@ -409,7 +409,7 @@ class TestAsignacionGuardiasFormGeneracion:
                 return_value=QMessageBox.StandardButton.No,
             ):
                 with patch(
-                    "presentation.forms.asignacion_guardias_form.QProgressDialog"
+                    "presentation.widgets.progress_indicators.ProgressDialog"
                 ):
                     form.generar_guardias()
 
@@ -450,7 +450,7 @@ class TestAsignacionGuardiasFormGeneracion:
             mock_uc.execute.return_value = mock_resumen
 
             with patch(
-                "presentation.forms.asignacion_guardias_form.QProgressDialog"
+                "presentation.widgets.progress_indicators.ProgressDialog"
             ) as mock_progress_cls:
                 mock_progress = Mock()
                 mock_progress_cls.return_value = mock_progress
@@ -473,7 +473,7 @@ class TestAsignacionGuardiasFormGeneracion:
             )
 
             with patch(
-                "presentation.forms.asignacion_guardias_form.QProgressDialog"
+                "presentation.widgets.progress_indicators.ProgressDialog"
             ):
                 with patch.object(form, "mostrar_error") as mock_error:
                     form.generar_guardias()
@@ -652,7 +652,7 @@ class TestAsignacionGuardiasFormIntegracion:
             mock_gen_uc.execute.return_value = mock_resumen
 
             with patch(
-                "presentation.forms.asignacion_guardias_form.QProgressDialog"
+                "presentation.widgets.progress_indicators.ProgressDialog"
             ):
                 with patch.object(form, "mostrar_exito"):
                     form.generar_guardias()
@@ -689,7 +689,7 @@ class TestAsignacionGuardiasFormIntegracion:
                 return_value=QMessageBox.StandardButton.Yes,
             ):
                 with patch(
-                    "presentation.forms.asignacion_guardias_form.QProgressDialog"
+                    "presentation.widgets.progress_indicators.ProgressDialog"
                 ):
                     with patch.object(form, "mostrar_exito") as mock_exito:
                         form.generar_guardias()

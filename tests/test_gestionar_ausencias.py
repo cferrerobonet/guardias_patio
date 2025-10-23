@@ -11,7 +11,7 @@ from PyQt6.QtCore import QDate
 from PyQt6.QtWidgets import QMessageBox
 
 from models.models import Ausencia
-from widgets.gestionar_ausencias import DialogoReasignacion, GestionarAusenciasForm
+from presentation.widgets.gestionar_ausencias import DialogoReasignacion, GestionarAusenciasForm
 
 # ============================================================================
 # FIXTURES

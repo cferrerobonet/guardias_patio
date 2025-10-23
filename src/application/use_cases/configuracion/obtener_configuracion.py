@@ -2,6 +2,7 @@
 Use Case: Obtener Configuración.
 
 Obtiene la configuración actual del curso escolar.
+Con caching para optimizar lecturas frecuentes.
 """
 
 from sqlalchemy.orm import Session
@@ -11,6 +12,7 @@ from core.exceptions import NotFoundError
 from core.logging import get_logger
 from core.observability import with_metrics
 from models.models import Configuracion
+from utils.repository_cache import cache_configuracion
 
 logger = get_logger(__name__)
 
@@ -32,9 +34,10 @@ class ObtenerConfiguracionUseCase:
         self.session = session
 
     @with_metrics("obtener_configuracion")
+    @cache_configuracion(ttl=600)  # Cache por 10 minutos
     def execute(self) -> ConfiguracionDTO:
         """
-        Obtiene la configuración actual.
+        Obtiene la configuración actual (con caching).
 
         Returns:
             ConfiguracionDTO con los datos de configuración

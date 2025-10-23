@@ -14,24 +14,34 @@ mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
 
-# Configuración incremental (no strict desde el inicio)
-# Nivel 1: Checks básicos pero útiles
-warn_return_any = false  # Demasiado restrictivo para empezar
+# Strict mode progresivo (Sprint Mini-A: Type Safety)
+# Activamos reglas estrictas excepto para módulos legacy
+strict = false  # No activamos strict global aún, sino reglas individuales
+
+# Checks de tipos estrictos
+warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = false  # Por ahora, iremos agregando gradualmente
-disallow_incomplete_defs = false  # Por ahora
-check_untyped_defs = true  # Este sí lo dejamos, útil
-disallow_untyped_decorators = false
-no_implicit_optional = true  # Buena práctica
+disallow_untyped_defs = false  # Activaremos módulo por módulo
+disallow_incomplete_defs = true  # Forzar completar type hints
+check_untyped_defs = true
+disallow_untyped_decorators = false  # PyQt6 usa muchos decorators sin tipos
+no_implicit_optional = true
 warn_redundant_casts = true
-warn_unused_ignores = false  # Puede dar muchos falsos positivos
+warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
-strict_equality = false  # Por ahora
+strict_equality = true
 
-# Allow dynamic typing para SQLAlchemy
-allow_untyped_defs = true
-allow_incomplete_defs = true
+# Mejores prácticas
+disallow_any_unimported = false  # Demasiado estricto
+disallow_any_expr = false  # Demasiado estricto
+disallow_any_decorated = false  # PyQt6 decorators
+disallow_any_explicit = false  # A veces Any es necesario
+disallow_any_generics = false  # Iremos activando gradualmente
+disallow_subclassing_any = true
+
+# SQLAlchemy y ORM considerations
+disallow_untyped_calls = false  # SQLAlchemy tiene muchas calls sin tipos
 
 # Módulos externos sin tipos
 [[tool.mypy.overrides]]
@@ -40,5 +50,31 @@ module = [
     "reportlab.*",
     "matplotlib.*",
     "openpyxl.*",
+    "sqlalchemy.*",
 ]
 ignore_missing_imports = true
+
+# Módulos donde aplicaremos strict typing (Sprint Mini-A)
+[[tool.mypy.overrides]]
+module = "domain.entities.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = "domain.value_objects.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = "domain.services.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+# Legacy modules - relax rules temporalmente
+[[tool.mypy.overrides]]
+module = [
+    "presentation.forms.*",
+    "presentation.dialogs.*",
+]
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
