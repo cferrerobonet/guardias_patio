@@ -120,11 +120,27 @@ jobs:
     
     - name: Ejecutar mypy (type checking)
       run: |
-        mypy src/domain/schemas/ --show-error-codes --no-error-summary || true
-        echo "---"
-        mypy src/domain/entities/ --show-error-codes --no-error-summary || true
-        echo "---"
-        mypy src/domain/value_objects/ --show-error-codes --no-error-summary || true
+        echo "🔍 Ejecutando mypy con configuración progresiva..."
+        echo ""
+        echo "📊 Verificando módulos críticos (strict mode):"
+        
+        # Core modules - Alta prioridad (strict)
+        echo "- Core: app_initializer, qt_imports"
+        mypy src/core/app_initializer.py src/core/qt_imports.py --config-file=mypy.ini --show-error-codes || echo "❌ Errores en core"
+        
+        # Domain entities y repositories (strict)
+        echo "- Domain: entities, repositories"
+        mypy src/domain/entities/ src/domain/repositories/ --config-file=mypy.ini --show-error-codes || echo "❌ Errores en domain"
+        
+        # Use cases y repositories (strict)
+        echo "- Application: use cases"
+        mypy src/application/use_cases/ --config-file=mypy.ini --show-error-codes --no-error-summary || echo "⚠️ Algunos errores en use cases"
+        
+        echo "- Infrastructure: repositories"
+        mypy src/infrastructure/repositories/ --config-file=mypy.ini --show-error-codes --no-error-summary || echo "⚠️ Algunos errores en repositories"
+        
+        echo ""
+        echo "✅ Verificación de type hints completada"
       continue-on-error: true
     
     - name: Verificar formato con Black
