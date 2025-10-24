@@ -12,7 +12,7 @@ from application.use_cases.zona import (
     ListarZonasUseCase,
 )
 from pydantic import ValidationError
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -20,7 +20,9 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QPushButton,
+    QSplitter,
     QVBoxLayout,
+    QWidget,
 )
 from sqlalchemy.orm import Session
 from utils.exceptions import BusinessLogicError, NotFoundError
@@ -58,20 +60,54 @@ class ZonaForm(BaseForm):
 
     def setup_ui(self):
         """Configurar la interfaz de usuario del formulario"""
-        # Layout principal horizontal
-        main_layout = QHBoxLayout()
+        # Layout principal vertical
+        main_layout = QVBoxLayout()
 
-        # Sección izquierda: Lista de zonas
-        left_section = self._crear_seccion_lista()
+        # Crear splitter horizontal para permitir redimensionamiento
+        splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Sección derecha: Formulario de alta
-        right_section = self._crear_seccion_formulario()
+        # Widget izquierdo: Lista de zonas
+        left_widget = self._crear_widget_lista()
 
-        # Ensamblar layout principal
-        main_layout.addLayout(left_section, 60)
-        main_layout.addLayout(right_section, 40)
+        # Widget derecho: Formulario de alta
+        right_widget = self._crear_widget_formulario()
+
+        # Agregar widgets al splitter
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+
+        # Configurar proporciones del splitter (60% lista, 40% formulario)
+        splitter.setStretchFactor(0, 60)
+        splitter.setStretchFactor(1, 40)
+
+        # Agregar splitter al layout principal
+        main_layout.addWidget(splitter)
 
         self.setLayout(main_layout)
+
+    def _crear_widget_lista(self) -> QWidget:
+        """
+        Crear el widget de la sección de lista de zonas.
+
+        Returns:
+            Widget contenedor con la lista y botones de gestión
+        """
+        widget = QWidget()
+        layout = self._crear_seccion_lista()
+        widget.setLayout(layout)
+        return widget
+
+    def _crear_widget_formulario(self) -> QWidget:
+        """
+        Crear el widget de la sección de formulario.
+
+        Returns:
+            Widget contenedor con el formulario de alta
+        """
+        widget = QWidget()
+        layout = self._crear_seccion_formulario()
+        widget.setLayout(layout)
+        return widget
 
     def _crear_seccion_lista(self) -> QVBoxLayout:
         """

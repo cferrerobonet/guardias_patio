@@ -10,11 +10,14 @@ from application.use_cases.asignacion_guardias import (
     ObtenerEstadisticasUseCase,
 )
 from models.models import Guardia, Profesor
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QLabel,
     QPushButton,
+    QScrollArea,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 from sqlalchemy.orm import Session
 from utils.exceptions import BusinessLogicError
@@ -53,7 +56,22 @@ class AsignacionGuardiasForm(BaseForm):
 
     def setup_ui(self):
         """Configurar la interfaz de usuario del formulario"""
+        # Layout principal que contendrá el scroll area
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Crear el contenedor con scroll
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)  # CRÍTICO para responsividad
+        scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        # Widget contenedor del contenido
+        content_widget = QWidget()
         layout = QVBoxLayout()
+        content_widget.setLayout(layout)
 
         # Título
         titulo = QLabel("=== CÁLCULO Y ASIGNACIÓN DE GUARDIAS ===")
@@ -91,7 +109,13 @@ class AsignacionGuardiasForm(BaseForm):
         self.resultado_text.setMaximumHeight(150)
         layout.addWidget(self.resultado_text)
 
-        self.setLayout(layout)
+        # Agregar el widget al scroll area
+        scroll_area.setWidget(content_widget)
+
+        # Agregar el scroll area al layout principal
+        main_layout.addWidget(scroll_area)
+
+        self.setLayout(main_layout)
 
     def cargar_estadisticas(self):
         """Cargar y mostrar estadísticas del curso"""

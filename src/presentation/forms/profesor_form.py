@@ -31,6 +31,8 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QScrollArea,
+    QSplitter,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -77,18 +79,58 @@ class ProfesorForm(BaseForm):
         self.cargar_profesores()
 
     def setup_ui(self):
-        """Construir la interfaz del formulario."""
-        main_layout = QHBoxLayout()
+        """Construir la interfaz del formulario con diseño responsivo."""
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # ========== CREAR SPLITTER HORIZONTAL ==========
+        # Permite redimensionar manualmente tabla vs formulario
+        splitter = QSplitter(Qt.Orientation.Horizontal)
 
         # ========== SECCIÓN IZQUIERDA: TABLA ==========
-        left_section = self._crear_seccion_tabla()
-        main_layout.addLayout(left_section, 60)
+        left_widget = self._crear_widget_tabla()
+        splitter.addWidget(left_widget)
 
-        # ========== SECCIÓN DERECHA: FORMULARIO ==========
-        right_section = self._crear_seccion_formulario()
-        main_layout.addLayout(right_section, 40)
+        # ========== SECCIÓN DERECHA: FORMULARIO CON SCROLL ==========
+        right_widget = self._crear_widget_formulario_con_scroll()
+        splitter.addWidget(right_widget)
 
+        # Establecer proporciones iniciales: 60% tabla, 40% formulario
+        splitter.setStretchFactor(0, 60)
+        splitter.setStretchFactor(1, 40)
+
+        main_layout.addWidget(splitter)
         self.setLayout(main_layout)
+
+    def _crear_widget_tabla(self) -> QWidget:
+        """Crear widget contenedor para la sección de tabla."""
+        widget = QWidget()
+        layout = self._crear_seccion_tabla()
+        widget.setLayout(layout)
+        return widget
+
+    def _crear_widget_formulario_con_scroll(self) -> QWidget:
+        """Crear widget con scroll para el formulario."""
+        # Crear contenedor del formulario
+        form_container = QWidget()
+        form_layout = self._crear_seccion_formulario()
+        form_container.setLayout(form_layout)
+
+        # Envolver en QScrollArea
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)  # CRÍTICO: permite que el widget se ajuste
+        scroll_area.setWidget(form_container)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        # Crear widget contenedor para el scroll
+        container = QWidget()
+        container_layout = QVBoxLayout()
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.addWidget(scroll_area)
+        container.setLayout(container_layout)
+
+        return container
 
     def _crear_seccion_tabla(self) -> QVBoxLayout:
         """Crear sección izquierda con tabla de profesores."""

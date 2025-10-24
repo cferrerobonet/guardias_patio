@@ -9,7 +9,7 @@ from datetime import datetime
 
 import ui_styles as styles
 from models.models import Configuracion, Profesor, Zona
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -18,8 +18,10 @@ from PyQt6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
@@ -48,7 +50,22 @@ class ImportExportForm(BaseForm):
 
     def setup_ui(self):
         """Construir la interfaz del formulario."""
+        # Layout principal que contendrá el scroll area
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Crear el contenedor con scroll
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)  # CRÍTICO para responsividad
+        scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        # Widget contenedor del contenido
+        content_widget = QWidget()
         layout = QVBoxLayout()
+        content_widget.setLayout(layout)
 
         # Título
         titulo = QLabel("Importar / Exportar Datos")
@@ -83,7 +100,14 @@ class ImportExportForm(BaseForm):
         layout.addWidget(self.resultado_text)
 
         layout.addStretch()
-        self.setLayout(layout)
+
+        # Agregar el widget al scroll area
+        scroll_area.setWidget(content_widget)
+
+        # Agregar el scroll area al layout principal
+        main_layout.addWidget(scroll_area)
+
+        self.setLayout(main_layout)
 
     def _crear_seccion_exportar(self) -> QVBoxLayout:
         """Crear sección de exportación a JSON."""

@@ -5,19 +5,6 @@ Form para gestionar la configuración del curso escolar.
 Sigue el patrón MVP usando Use Cases.
 """
 
-from PyQt6.QtCore import QDate, QTime
-from PyQt6.QtWidgets import (
-    QDateEdit,
-    QGroupBox,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QTimeEdit,
-    QVBoxLayout,
-)
-from sqlalchemy.orm import Session
-
 import ui_styles as styles
 from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
 from application.use_cases.configuracion import (
@@ -25,6 +12,21 @@ from application.use_cases.configuracion import (
     ObtenerConfiguracionUseCase,
 )
 from core.exceptions import NotFoundError
+from PyQt6.QtCore import QDate, Qt, QTime
+from PyQt6.QtWidgets import (
+    QDateEdit,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QTimeEdit,
+    QVBoxLayout,
+    QWidget,
+)
+from sqlalchemy.orm import Session
+
 from presentation.forms.base_form import BaseForm
 
 
@@ -64,47 +66,70 @@ class ConfiguracionForm(BaseForm):
         """Configura la interfaz de usuario."""
         self.setWindowTitle("Configuración del Curso")
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        # Layout principal que contendrá el scroll area
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Crear el contenedor con scroll
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)  # CRÍTICO para responsividad
+        scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        # Widget contenedor del contenido
+        content_widget = QWidget()
+        content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(20, 20, 20, 20)
+        content_layout.setSpacing(15)
 
         # Título principal
         titulo = QLabel("⚙️ CONFIGURACIÓN DEL CURSO ESCOLAR")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
-        layout.addWidget(titulo)
+        content_layout.addWidget(titulo)
 
         # ===== GRUPO: Fechas del Curso =====
         grupo_fechas = self._crear_grupo_fechas()
-        layout.addWidget(grupo_fechas)
+        content_layout.addWidget(grupo_fechas)
 
         # ===== GRUPO: Recreos de Mañana =====
         grupo_manana = self._crear_grupo_recreos_manana()
-        layout.addWidget(grupo_manana)
+        content_layout.addWidget(grupo_manana)
 
         # ===== GRUPO: Recreos de Tarde =====
         grupo_tarde = self._crear_grupo_recreos_tarde()
-        layout.addWidget(grupo_tarde)
+        content_layout.addWidget(grupo_tarde)
 
         # ===== GRUPO: Ajustes Adicionales =====
         grupo_ajustes = self._crear_grupo_ajustes()
-        layout.addWidget(grupo_ajustes)
+        content_layout.addWidget(grupo_ajustes)
 
         # ===== GRUPO: Festivos =====
         grupo_festivos = self._crear_grupo_festivos()
-        layout.addWidget(grupo_festivos)
+        content_layout.addWidget(grupo_festivos)
 
         # ===== GRUPO: Avanzado =====
         grupo_avanzado = self._crear_grupo_avanzado()
-        layout.addWidget(grupo_avanzado)
+        content_layout.addWidget(grupo_avanzado)
 
         # Botones
         btn_layout = self._crear_botones()
-        layout.addLayout(btn_layout)
+        content_layout.addLayout(btn_layout)
 
         # Espacio flexible
-        layout.addStretch()
+        content_layout.addStretch()
 
-        self.setLayout(layout)
+        # Establecer el layout en el widget contenedor
+        content_widget.setLayout(content_layout)
+
+        # Agregar el widget al scroll area
+        scroll_area.setWidget(content_widget)
+
+        # Agregar el scroll area al layout principal
+        main_layout.addWidget(scroll_area)
+
+        self.setLayout(main_layout)
 
     def _crear_grupo_fechas(self) -> QGroupBox:
         """Crea el grupo de fechas del curso."""
