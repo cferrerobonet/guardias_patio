@@ -9,6 +9,8 @@ from application.use_cases.asignacion_guardias import (
     GenerarGuardiasUseCase,
     ObtenerEstadisticasUseCase,
 )
+from application.use_cases.guardia import LimpiarGuardiasUseCase
+from infrastructure.repositories import SQLAlchemyGuardiaRepository
 from models.models import Guardia, Profesor
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -49,6 +51,10 @@ class AsignacionGuardiasForm(BaseForm):
         self.obtener_estadisticas_uc = ObtenerEstadisticasUseCase(session)
         self.calcular_distribucion_uc = CalcularDistribucionUseCase(session)
         self.generar_guardias_uc = GenerarGuardiasUseCase(session)
+
+        # Repositorio para limpiar guardias
+        guardia_repo = SQLAlchemyGuardiaRepository(session)
+        self.limpiar_guardias_uc = LimpiarGuardiasUseCase(guardia_repo)
 
         self.setWindowTitle("Asignación de Guardias")
         self.setup_ui()
@@ -102,6 +108,22 @@ class AsignacionGuardiasForm(BaseForm):
         self.generar_button.setEnabled(False)
         self.generar_button.clicked.connect(self.generar_guardias)
         layout.addWidget(self.generar_button)
+
+        # Botón para limpiar todas las guardias
+        self.limpiar_button = QPushButton("🗑️  Limpiar Todas las Guardias")
+        self.limpiar_button.setStyleSheet("""
+            QPushButton {
+                background-color: #d32f2f;
+                color: white;
+                font-weight: bold;
+                padding: 8px;
+            }
+            QPushButton:hover {
+                background-color: #b71c1c;
+            }
+        """)
+        self.limpiar_button.clicked.connect(self.limpiar_guardias)
+        layout.addWidget(self.limpiar_button)
 
         # Área de resultados de generación
         self.resultado_text = QTextEdit()
@@ -306,6 +328,52 @@ Número de profesores: {stats.num_profesores}
         self.resultado_text.clear()
         self.generar_button.setEnabled(False)
         self.cargar_estadisticas()
+
+    def limpiar_guardias(self):
+        """Eliminar todas las guardias del sistema"""
+        try:
+            # Contar guardias actuales
+            count_actual = self.session.query(Guardia).count()
+
+            if count_actual == 0:
+                self.mostrar_info(
+                    "Sin guardias",
+                    "No hay guardias en el sistema para eliminar."
+                )
+                return
+
+            # Confirmar con el usuario
+            confirmado = self.confirmar_accion(
+                "⚠️  LIMPIAR TODAS LAS GUARDIAS",
+                f"¿Estás seguro de que deseas eliminar TODAS las {count_actual} guardias?\n\n"
+                "Esta acción:\n"
+                "• Eliminará todas las asignaciones de guardias\n"
+                "• Liberará a todos los profesores\n"
+                "• Liberará todas las zonas\n"
+                "• NO se puede deshacer\n\n"
+                "¿Deseas continuar?"
+            )
+
+            if not confirmado:
+                return
+
+            # Ejecutar limpieza
+            count = self.limpiar_guardias_uc.execute()
+
+            # Actualizar UI
+            self.resultado_text.clear()
+            self.limpiar_formulario()
+
+            self.mostrar_exito(
+                "Limpieza completada",
+                f"Se han eliminado {count} guardias del sistema.\n\n"
+                "Ahora puedes:\n"
+                "• Eliminar zonas o profesores\n"
+                "• Generar nuevas guardias desde cero"
+            )
+
+        except Exception as e:
+            self.manejar_excepcion(e, "limpiar guardias")
 
     def validar_formulario(self) -> bool:
         """

@@ -199,3 +199,13 @@ class IGuardiaRepository(IBaseRepository[GuardiaEntity]):
             Lista de guardias de sustitución
         """
         pass
+
+    @abstractmethod
+    def delete_all(self) -> int:
+        """
+        Elimina todas las guardias del sistema.
+
+        Returns:
+            Número de guardias eliminadas
+        """
+        pass

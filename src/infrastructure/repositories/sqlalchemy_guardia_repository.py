@@ -419,3 +419,27 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
         except Exception as e:
             logger.error("Error al buscar sustituciones", error=str(e))
             raise DatabaseError(f"Error al buscar sustituciones: {e}") from e
+
+    @log_function_call()
+    def delete_all(self) -> int:
+        """
+        Elimina todas las guardias del sistema.
+
+        Returns:
+            Número de guardias eliminadas
+        """
+        try:
+            # Contar primero cuántas guardias hay
+            count = self.session.query(Guardia).count()
+
+            # Eliminar todas las guardias
+            self.session.query(Guardia).delete()
+            self.session.commit()
+
+            logger.info(f"Eliminadas {count} guardias del sistema")
+            return count
+
+        except Exception as e:
+            self.session.rollback()
+            logger.error("Error al eliminar todas las guardias", error=str(e))
+            raise DatabaseError(f"Error al eliminar todas las guardias: {e}") from e
