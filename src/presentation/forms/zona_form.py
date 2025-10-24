@@ -302,7 +302,10 @@ class ZonaForm(BaseForm):
         id_zona = int(texto.split("]")[0].replace("[", ""))
 
         # Confirmar eliminación
-        if not self.confirmar_accion(f"¿Eliminar zona con ID {id_zona}?"):
+        if not self.confirmar_accion(
+            "Confirmar eliminación",
+            f"¿Eliminar zona con ID {id_zona}?"
+        ):
             return
 
         try:
