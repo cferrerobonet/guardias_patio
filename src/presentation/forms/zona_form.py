@@ -322,11 +322,11 @@ class ZonaForm(BaseForm):
             self.datos_modificados.emit()
 
         except NotFoundError as e:
-            self.mostrar_error(str(e))
+            self.mostrar_error("Error", str(e))
 
         except BusinessLogicError as e:
             # Error por guardias asociadas
-            self.mostrar_error(str(e))
+            self.mostrar_error("Error al eliminar zona", str(e))
 
         except Exception as e:
             self.manejar_excepcion(e, "eliminar la zona")
