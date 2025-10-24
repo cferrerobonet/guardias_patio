@@ -238,6 +238,7 @@ class ZonaForm(BaseForm):
 
             # Mostrar mensaje de éxito
             self.mostrar_exito(
+                "Zona guardada",
                 f"Zona '{zona_creada.nombre_zona}' guardada correctamente."
             )
 
@@ -251,11 +252,11 @@ class ZonaForm(BaseForm):
         except ValidationError as e:
             # Errores de validación de Pydantic
             errores = "; ".join([error["msg"] for error in e.errors()])
-            self.mostrar_error(f"Datos inválidos: {errores}")
+            self.mostrar_error("Datos inválidos", errores)
 
         except BusinessLogicError as e:
             # Errores de lógica de negocio (zona duplicada, etc.)
-            self.mostrar_error(str(e))
+            self.mostrar_error("Error de lógica de negocio", str(e))
 
         except Exception as e:
             # Otros errores inesperados
