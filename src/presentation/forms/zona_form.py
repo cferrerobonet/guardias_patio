@@ -5,8 +5,9 @@ Permite realizar operaciones CRUD sobre las zonas usando patrón MVP.
 """
 
 import ui_styles as styles
-from application.dtos.zona_dto import CrearZonaDTO
+from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
 from application.use_cases.zona import (
+    ActualizarZonaUseCase,
     CrearZonaUseCase,
     EliminarZonaUseCase,
     ListarZonasUseCase,
@@ -51,8 +52,12 @@ class ZonaForm(BaseForm):
 
         # Inicializar Use Cases
         self.crear_zona_uc = CrearZonaUseCase(session)
+        self.actualizar_zona_uc = ActualizarZonaUseCase(session)
         self.listar_zonas_uc = ListarZonasUseCase(session)
         self.eliminar_zona_uc = EliminarZonaUseCase(session)
+
+        # Control de modo edición
+        self.zona_editando_id = None
 
         self.setWindowTitle("Gestión de Zonas")
         self.setup_ui()
@@ -145,6 +150,7 @@ class ZonaForm(BaseForm):
             }
         """
         )
+        self.lista_zonas.doubleClicked.connect(self.editar_zona)
         left_section.addWidget(self.lista_zonas)
 
         # Botones de gestión
@@ -155,11 +161,16 @@ class ZonaForm(BaseForm):
         self.refresh_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.refresh_btn.clicked.connect(self.cargar_zonas)
 
+        self.editar_btn = QPushButton("✏️ Editar")
+        self.editar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        self.editar_btn.clicked.connect(self.editar_zona)
+
         self.delete_btn = QPushButton("🗑️ Eliminar")
         self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.delete_btn.clicked.connect(self.eliminar_zona)
 
         btn_layout.addWidget(self.refresh_btn)
+        btn_layout.addWidget(self.editar_btn)
         btn_layout.addWidget(self.delete_btn)
         btn_layout.addStretch()
         left_section.addLayout(btn_layout)
@@ -178,9 +189,9 @@ class ZonaForm(BaseForm):
         right_section.setSpacing(12)
 
         # Título del formulario
-        titulo_form = QLabel("✏️ NUEVA ZONA")
-        titulo_form.setStyleSheet(styles.STYLE_TITLE_MAIN)
-        right_section.addWidget(titulo_form)
+        self.titulo_form = QLabel("✏️ NUEVA ZONA")
+        self.titulo_form.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        right_section.addWidget(self.titulo_form)
 
         # Grupo de datos
         grupo_datos = QGroupBox("📋 Datos de la Zona")
@@ -213,11 +224,22 @@ class ZonaForm(BaseForm):
         grupo_datos.setLayout(layout_datos)
         right_section.addWidget(grupo_datos)
 
-        # Botón de guardar
+        # Botones de acción
+        btn_action_layout = QHBoxLayout()
+        btn_action_layout.setSpacing(8)
+
         self.submit_btn = QPushButton("💾 Guardar Zona")
         self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.submit_btn.clicked.connect(self.guardar_zona)
-        right_section.addWidget(self.submit_btn)
+        btn_action_layout.addWidget(self.submit_btn)
+
+        self.cancelar_btn = QPushButton("❌ Cancelar")
+        self.cancelar_btn.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
+        self.cancelar_btn.clicked.connect(self.cancelar_edicion)
+        self.cancelar_btn.setVisible(False)  # Oculto por defecto
+        btn_action_layout.addWidget(self.cancelar_btn)
+
+        right_section.addLayout(btn_action_layout)
 
         # Espacio flexible
         right_section.addStretch()
@@ -225,25 +247,52 @@ class ZonaForm(BaseForm):
         return right_section
 
     def guardar_zona(self):
-        """Guardar una nueva zona usando el Use Case"""
+        """Guardar o actualizar una zona usando el Use Case correspondiente"""
         try:
-            # Crear DTO con los datos del formulario (incluye validación)
-            zona_dto = CrearZonaDTO(
-                nombre_zona=self.nombre_zona_input.text().strip(),
-                descripcion=self.descripcion_input.text().strip() or None,
-            )
+            nombre = self.nombre_zona_input.text().strip()
+            descripcion = self.descripcion_input.text().strip() or None
 
-            # Ejecutar Use Case
-            zona_creada = self.crear_zona_uc.execute(zona_dto)
+            if self.zona_editando_id is not None:
+                # Modo actualización
+                zona_dto = ActualizarZonaDTO(
+                    nombre_zona=nombre,
+                    descripcion=descripcion,
+                )
 
-            # Mostrar mensaje de éxito
-            self.mostrar_exito(
-                "Zona guardada",
-                f"Zona '{zona_creada.nombre_zona}' guardada correctamente."
-            )
+                # Ejecutar Use Case de actualización
+                zona_actualizada = self.actualizar_zona_uc.execute(
+                    self.zona_editando_id, zona_dto
+                )
 
-            # Limpiar formulario y recargar lista
-            self.limpiar_formulario()
+                # Mostrar mensaje de éxito
+                self.mostrar_exito(
+                    "Zona actualizada",
+                    f"Zona '{zona_actualizada.nombre_zona}' actualizada correctamente."
+                )
+
+                # Salir del modo edición
+                self.cancelar_edicion()
+
+            else:
+                # Modo creación
+                zona_dto = CrearZonaDTO(
+                    nombre_zona=nombre,
+                    descripcion=descripcion,
+                )
+
+                # Ejecutar Use Case de creación
+                zona_creada = self.crear_zona_uc.execute(zona_dto)
+
+                # Mostrar mensaje de éxito
+                self.mostrar_exito(
+                    "Zona guardada",
+                    f"Zona '{zona_creada.nombre_zona}' guardada correctamente."
+                )
+
+                # Limpiar formulario
+                self.limpiar_formulario()
+
+            # Recargar lista
             self.cargar_zonas()
 
             # Emitir señal de modificación de datos
@@ -261,6 +310,52 @@ class ZonaForm(BaseForm):
         except Exception as e:
             # Otros errores inesperados
             self.manejar_excepcion(e, "guardar la zona")
+
+    def editar_zona(self):
+        """Cargar zona seleccionada en formulario para edición."""
+        item_actual = self.lista_zonas.currentItem()
+        if not item_actual:
+            self.mostrar_advertencia(
+                "Selección requerida",
+                "Selecciona una zona para editar."
+            )
+            return
+
+        # Extraer ID del texto [ID] nombre...
+        texto = item_actual.text()
+        id_zona = int(texto.split("]")[0].replace("[", ""))
+
+        try:
+            from models.models import Zona
+
+            zona = self.session.query(Zona).filter(Zona.id == id_zona).first()
+            if not zona:
+                self.mostrar_advertencia(
+                    "Error de edición",
+                    "Zona no encontrada."
+                )
+                return
+
+            # Cargar datos en el formulario
+            self.nombre_zona_input.setText(zona.nombre_zona or "")
+            self.descripcion_input.setText(zona.descripcion or "")
+
+            # Activar modo edición
+            self.zona_editando_id = id_zona
+            self.titulo_form.setText(f"✏️ EDITAR ZONA [ID: {id_zona}]")
+            self.submit_btn.setText("💾 Actualizar Zona")
+            self.cancelar_btn.setVisible(True)
+
+        except Exception as e:
+            self.manejar_excepcion(e, "editar zona")
+
+    def cancelar_edicion(self):
+        """Cancelar el modo edición y volver al modo creación."""
+        self.zona_editando_id = None
+        self.titulo_form.setText("✏️ NUEVA ZONA")
+        self.submit_btn.setText("💾 Guardar Zona")
+        self.cancelar_btn.setVisible(False)
+        self.limpiar_formulario()
 
     def cargar_zonas(self):
         """Cargar la lista de zonas desde la base de datos usando el Use Case"""
