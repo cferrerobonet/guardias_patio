@@ -6,7 +6,7 @@ Permite eliminar todas las guardias del sistema.
 """
 
 from core.logging import get_logger
-from core.observability.decorators import observability
+from core.observability import with_metrics
 from domain.repositories import IGuardiaRepository
 
 logger = get_logger(__name__)
@@ -31,7 +31,7 @@ class LimpiarGuardiasUseCase:
         """
         self.guardia_repository = guardia_repository
 
-    @observability()
+    @with_metrics(operation="limpiar_guardias")
     def execute(self) -> int:
         """
         Elimina todas las guardias del sistema.
