@@ -4,7 +4,15 @@ Formulario de gestión de zonas de recreo.
 Permite realizar operaciones CRUD sobre las zonas usando patrón MVP.
 """
 
+import ui_styles as styles
+from application.dtos.zona_dto import CrearZonaDTO
+from application.use_cases.zona import (
+    CrearZonaUseCase,
+    EliminarZonaUseCase,
+    ListarZonasUseCase,
+)
 from pydantic import ValidationError
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -15,16 +23,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from sqlalchemy.orm import Session
-
-import ui_styles as styles
-from application.dtos.zona_dto import CrearZonaDTO
-from application.use_cases.zona import (
-    CrearZonaUseCase,
-    EliminarZonaUseCase,
-    ListarZonasUseCase,
-)
-from presentation.forms.base_form import BaseForm
 from utils.exceptions import BusinessLogicError, NotFoundError
+
+from presentation.forms.base_form import BaseForm
 
 
 class ZonaForm(BaseForm):
@@ -33,6 +34,9 @@ class ZonaForm(BaseForm):
 
     Permite crear, listar y eliminar zonas siguiendo el patrón MVP.
     """
+
+    # Señal que se emite cuando se modifican los datos de zonas
+    datos_modificados = pyqtSignal()
 
     def __init__(self, session: Session):
         """
@@ -205,6 +209,9 @@ class ZonaForm(BaseForm):
             self.limpiar_formulario()
             self.cargar_zonas()
 
+            # Emitir señal de modificación de datos
+            self.datos_modificados.emit()
+
         except ValidationError as e:
             # Errores de validación de Pydantic
             errores = "; ".join([error["msg"] for error in e.errors()])
@@ -221,7 +228,7 @@ class ZonaForm(BaseForm):
     def cargar_zonas(self):
         """Cargar la lista de zonas desde la base de datos usando el Use Case"""
         try:
-            # Ejecutar Use Case
+            # Ejecutar Use Case (ya viene ordenado por nombre_zona)
             zonas = self.listar_zonas_uc.execute()
 
             # Limpiar lista actual
@@ -231,11 +238,14 @@ class ZonaForm(BaseForm):
             total_zonas = len(zonas)
             self.titulo_lista_zonas.setText(f"🏫 ZONAS REGISTRADAS ({total_zonas})")
 
-            # Agregar zonas a la lista
+            # Agregar zonas a la lista (ya vienen ordenadas alfabéticamente)
             for zona in zonas:
                 desc = zona.descripcion if zona.descripcion else "Sin descripción"
                 texto = f"[{zona.id}] {zona.nombre_zona} - {desc}"
                 self.lista_zonas.addItem(texto)
+
+            # Ordenar la lista visualmente (por si acaso)
+            self.lista_zonas.sortItems()
 
         except Exception as e:
             self.manejar_excepcion(e, "cargar las zonas")
@@ -245,7 +255,10 @@ class ZonaForm(BaseForm):
         # Verificar que haya una zona seleccionada
         item_actual = self.lista_zonas.currentItem()
         if not item_actual:
-            self.mostrar_advertencia("Selecciona una zona para eliminar.")
+            self.mostrar_advertencia(
+                "Selección requerida",
+                "Selecciona una zona para eliminar."
+            )
             return
 
         # Extraer ID del texto [ID] nombre...
@@ -265,6 +278,9 @@ class ZonaForm(BaseForm):
 
             # Recargar lista
             self.cargar_zonas()
+
+            # Emitir señal de modificación de datos
+            self.datos_modificados.emit()
 
         except NotFoundError as e:
             self.mostrar_error(str(e))

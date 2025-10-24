@@ -41,6 +41,9 @@ class MainWindow(QWidget):
         self.setWindowTitle("Guardias de Patio - Sistema de Gestión")
         self.setMinimumSize(1200, 800)
 
+        # Abrir en pantalla completa (maximizada) por defecto
+        self.showMaximized()
+
         # Aplicar logo corporativo a la ventana principal
         from utils.ui_helpers import get_corporate_icon
         self.setWindowIcon(get_corporate_icon())
@@ -55,8 +58,14 @@ class MainWindow(QWidget):
 
         # Pestañas para profesores y zonas
         self.tabs = QTabWidget()
-        self.tabs.addTab(ProfesorForm(self.session), "👨‍🏫 Profesores")
-        self.tabs.addTab(ZonaForm(self.session), "🏫 Zonas")
+
+        # Crear formularios y guardar referencias
+        self.profesor_form = ProfesorForm(self.session)
+        self.zona_form = ZonaForm(self.session)
+        self.import_export_form = ImportExportForm(self.session)
+
+        self.tabs.addTab(self.profesor_form, "👨‍🏫 Profesores")
+        self.tabs.addTab(self.zona_form, "🏫 Zonas")
         self.tabs.addTab(ConfiguracionForm(self.session), "⚙️ Configuración")
         self.tabs.addTab(
             AsignacionGuardiasForm(self.session),
@@ -76,7 +85,10 @@ class MainWindow(QWidget):
         self.tabs.addTab(self.gestor_sustituciones, "🔄 Sustituciones")
 
         self.tabs.addTab(CalendarioGuardiasForm(self.session), "📆 Calendario")
-        self.tabs.addTab(ImportExportForm(self.session), "💾 Importar / Exportar")
+        self.tabs.addTab(self.import_export_form, "💾 Importar / Exportar")
+
+        # Conectar señales para actualización automática
+        self._conectar_senales_actualizacion()
 
         self.layout.addWidget(self.tabs)
 
@@ -95,6 +107,20 @@ class MainWindow(QWidget):
 
         # Conectar señal de cambio de pestaña para refrescar widgets
         self.tabs.currentChanged.connect(self.on_tab_changed)
+
+    def _conectar_senales_actualizacion(self):
+        """Conectar señales para actualización automática de listas."""
+        # Cuando se modifican profesores, actualizar lista de profesores
+        self.profesor_form.datos_modificados.connect(self.profesor_form.cargar_profesores)
+
+        # Cuando se modifican zonas, actualizar lista de zonas
+        self.zona_form.datos_modificados.connect(self.zona_form.cargar_zonas)
+
+        # Cuando se importan profesores, actualizar lista de profesores
+        self.import_export_form.profesores_importados.connect(self.profesor_form.cargar_profesores)
+
+        # Cuando se importan zonas, actualizar lista de zonas
+        self.import_export_form.zonas_importadas.connect(self.zona_form.cargar_zonas)
 
     def _configurar_atajos_globales(self):
         """Configurar atajos de teclado globales"""

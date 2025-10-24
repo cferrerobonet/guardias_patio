@@ -7,11 +7,11 @@ Permite buscar profesores filtrando por nombre o email corporativo.
 import json
 from typing import List
 
+from core.observability import with_metrics
+from models.models import Profesor
 from sqlalchemy.orm import Session
 
 from application.dtos.profesor_dto import ProfesorDTO
-from core.observability import with_metrics
-from models.models import Profesor
 
 
 class BuscarProfesoresUseCase:
@@ -62,6 +62,19 @@ class BuscarProfesoresUseCase:
 
     def _convertir_a_dto(self, profesor: Profesor) -> ProfesorDTO:
         """Convertir modelo a DTO parseando campos JSON"""
+        # Parsear recreos_permitidos y convertir dict a lista si es necesario
+        recreos_permitidos = [1, 2]  # Default
+        if profesor.recreos_permitidos:
+            parsed = json.loads(profesor.recreos_permitidos)
+            if isinstance(parsed, dict):
+                # Si es dict {"0": [1,2], "1": [2]}, extraer todos los recreos únicos
+                recreos_set = set()
+                for recreos_list in parsed.values():
+                    recreos_set.update(recreos_list)
+                recreos_permitidos = sorted(list(recreos_set))
+            elif isinstance(parsed, list):
+                recreos_permitidos = parsed
+
         return ProfesorDTO(
             id=profesor.id,
             nombre_completo=profesor.nombre_completo,
@@ -79,9 +92,5 @@ class BuscarProfesoresUseCase:
                 if profesor.dias_semana_permitidos
                 else list(range(7))
             ),
-            recreos_permitidos=(
-                json.loads(profesor.recreos_permitidos)
-                if profesor.recreos_permitidos
-                else [1, 2]
-            ),
+            recreos_permitidos=recreos_permitidos,
         )

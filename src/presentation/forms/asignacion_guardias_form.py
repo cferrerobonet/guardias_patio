@@ -12,7 +12,6 @@ from application.use_cases.asignacion_guardias import (
 from models.models import Guardia, Profesor
 from PyQt6.QtWidgets import (
     QLabel,
-    QMessageBox,
     QPushButton,
     QTextEdit,
     QVBoxLayout,
@@ -174,7 +173,9 @@ Número de profesores: {stats.num_profesores}
             eliminar_existentes = True  # Por defecto, eliminar
 
             if count_guardias > 0:
-                respuesta = QMessageBox.question(
+                from PyQt6.QtWidgets import QMessageBox
+                from utils.ui_helpers import show_question_with_cancel
+                respuesta = show_question_with_cancel(
                     self,
                     "⚠️ Guardias Existentes",
                     f"Ya existen {count_guardias} guardias en la base de datos.\n\n"
@@ -183,9 +184,7 @@ Número de profesores: {stats.num_profesores}
                     f"• SÍ: Eliminará todas y generará desde cero (recomendado)\n"
                     f"• NO: Agregará nuevas guardias a las existentes "
                     f"(puede crear duplicados)",
-                    QMessageBox.StandardButton.Yes
-                    | QMessageBox.StandardButton.No
-                    | QMessageBox.StandardButton.Cancel,
+                    default_button="Yes"
                 )
 
                 if respuesta == QMessageBox.StandardButton.Cancel:
@@ -203,21 +202,26 @@ Número de profesores: {stats.num_profesores}
             # Función para ejecutar con progreso
             def tarea_generacion(progress_callback):
                 """Ejecuta la generación de guardias con callback de progreso."""
+                # Adapter para convertir (mensaje, porcentaje) a formato esperado por ProgressDialog
+                def adapted_callback(mensaje: str, porcentaje: int):
+                    # El dialog espera (actual, total, detalle)
+                    # Convertimos porcentaje (0-100) a actual/total
+                    progress_callback(porcentaje, 100, mensaje)
+
                 return self.generar_guardias_uc.execute(
                     eliminar_existentes=eliminar_existentes,
-                    progress_callback=progress_callback,
+                    progress_callback=adapted_callback,
                 )
 
             # Ejecutar con indicador de progreso mejorado
-            resumen, cancelado = ejecutar_con_progreso(
+            resumen = ejecutar_con_progreso(
+                self,  # parent debe ser el primer argumento
                 tarea_generacion,
                 titulo="Generando Guardias",
                 mensaje="Preparando generación de calendario...",
-                padre=self,
-                cancelable=False,  # La generación no es cancelable
             )
 
-            if not cancelado and resumen:
+            if resumen:
                 # Mostrar resumen en el área de resultados
                 texto = self._formatear_resumen(resumen)
                 self.resultado_text.setText(texto)

@@ -8,7 +8,16 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 import json
 from typing import Dict, Optional
 
-from PyQt6.QtCore import QDate, Qt
+import ui_styles as styles
+from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
+from application.use_cases.profesor import (
+    ActualizarProfesorUseCase,
+    BuscarProfesoresUseCase,
+    CrearProfesorUseCase,
+    EliminarProfesorUseCase,
+    ListarProfesoresUseCase,
+)
+from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -27,22 +36,16 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-import ui_styles as styles
-from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
-from application.use_cases.profesor import (
-    ActualizarProfesorUseCase,
-    BuscarProfesoresUseCase,
-    CrearProfesorUseCase,
-    EliminarProfesorUseCase,
-    ListarProfesoresUseCase,
-)
-from presentation.forms.base_form import BaseForm
 from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
+
+from presentation.forms.base_form import BaseForm
 
 
 class ProfesorForm(BaseForm):
     """Formulario para gestión completa de profesores."""
+
+    # Señal que se emite cuando se modifican los datos de profesores
+    datos_modificados = pyqtSignal()
 
     def __init__(self, session):
         """
@@ -568,6 +571,7 @@ class ProfesorForm(BaseForm):
 
         Args:
             json_str: JSON string con formato {"0": [1, 2], "2": [1, 3, 4]}
+                     o lista simple [1, 2, 3, 4] (formato nuevo)
         """
         self._marcar_todos_matriz(False)
 
@@ -576,14 +580,66 @@ class ProfesorForm(BaseForm):
 
         try:
             datos = json.loads(json_str)
-            for dia_str, recreos in datos.items():
-                dia = int(dia_str)
-                if dia in self.matriz_checks:
-                    for recreo in recreos:
+
+            # Si es una lista simple (formato nuevo), marcar todos los días con esos recreos
+            if isinstance(datos, list):
+                # Formato nuevo: lista de recreos [1, 2, 3, 4]
+                # Marcar esos recreos en todos los días
+                for dia in self.matriz_checks:
+                    for recreo in datos:
                         if recreo in self.matriz_checks[dia]:
                             self.matriz_checks[dia][recreo].setChecked(True)
+
+            # Si es un diccionario (formato viejo), usar el método original
+            elif isinstance(datos, dict):
+                # Formato viejo: {"0": [1, 2], "1": [1]}
+                for dia_str, recreos in datos.items():
+                    dia = int(dia_str)
+                    if dia in self.matriz_checks:
+                        for recreo in recreos:
+                            if recreo in self.matriz_checks[dia]:
+                                self.matriz_checks[dia][recreo].setChecked(True)
         except (json.JSONDecodeError, ValueError, KeyError) as e:
-            self.mostrar_error(f"Error al cargar matriz de horario: {e}")
+            self.mostrar_error("Error al cargar matriz", f"Error al cargar matriz de horario: {e}")
+
+    def _extraer_listas_desde_matriz(self) -> tuple[list[int], list[int]]:
+        """
+        Extrae listas simples desde la matriz de checkboxes.
+
+        Si no hay restricciones personalizadas, retorna valores por defecto.
+
+        Returns:
+            tuple: (dias_permitidos, recreos_permitidos)
+                - dias_permitidos: lista de días (0-6) donde hay al menos un recreo marcado
+                - recreos_permitidos: lista de recreos (1-4) marcados en cualquier día
+        """
+        if not self.usar_restricciones_horario_checkbox.isChecked():
+            # Sin restricciones: todos los días y recreos
+            return list(range(7)), [1, 2, 3, 4]
+
+        dias_con_checkmarks = set()
+        recreos_con_checkmarks = set()
+
+        # Recorrer toda la matriz
+        for dia in self.matriz_checks:
+            for recreo in self.matriz_checks[dia]:
+                if self.matriz_checks[dia][recreo].isChecked():
+                    dias_con_checkmarks.add(dia)
+                    recreos_con_checkmarks.add(recreo)
+
+        # Convertir sets a listas ordenadas
+        dias_permitidos = (
+            sorted(list(dias_con_checkmarks))
+            if dias_con_checkmarks
+            else list(range(7))
+        )
+        recreos_permitidos = (
+            sorted(list(recreos_con_checkmarks))
+            if recreos_con_checkmarks
+            else [1, 2, 3, 4]
+        )
+
+        return dias_permitidos, recreos_permitidos
 
     def _limpiar_formulario(self):
         """Limpiar todos los campos del formulario."""
@@ -610,7 +666,7 @@ class ProfesorForm(BaseForm):
     def cancelar_edicion(self):
         """Cancelar edición y volver a modo creación."""
         self._limpiar_formulario()
-        QMessageBox.information(self, "Cancelado", "Edición cancelada.")
+        self.mostrar_exito("Cancelado", "Edición cancelada.")
 
     def guardar_profesor(self):
         """Crear o actualizar profesor según el modo actual."""
@@ -619,19 +675,22 @@ class ProfesorForm(BaseForm):
             nombre_completo = self.nombre_completo_input.text().strip()
             valido, error_msg = validar_nombre_completo(nombre_completo)
             if not valido:
-                self.mostrar_advertencia(error_msg)
+                self.mostrar_advertencia("Validación de nombre", error_msg)
                 return
 
             # Validar horas
             try:
                 horas = float(self.horas_input.text())
             except ValueError:
-                self.mostrar_advertencia("Las horas de contrato deben ser un número válido.")
+                self.mostrar_advertencia(
+                    "Validación de horas",
+                    "Las horas de contrato deben ser un número válido."
+                )
                 return
 
             valido, error_msg = validar_horas_contrato(horas)
             if not valido:
-                self.mostrar_advertencia(error_msg)
+                self.mostrar_advertencia("Validación de horas", error_msg)
                 return
 
             # Obtener turno
@@ -642,6 +701,7 @@ class ProfesorForm(BaseForm):
             if turno == "mixto":
                 if not self.horas_manana_input.text() or not self.horas_tarde_input.text():
                     self.mostrar_advertencia(
+                        "Validación de turno mixto",
                         "Debes indicar horas de mañana y tarde para turno mixto."
                     )
                     return
@@ -649,11 +709,15 @@ class ProfesorForm(BaseForm):
                     horas_manana = float(self.horas_manana_input.text())
                     horas_tarde = float(self.horas_tarde_input.text())
                 except ValueError:
-                    self.mostrar_advertencia("Horas de mañana y tarde deben ser numéricas.")
+                    self.mostrar_advertencia(
+                        "Validación de turno mixto",
+                        "Horas de mañana y tarde deben ser numéricas."
+                    )
                     return
 
                 if abs((horas_manana + horas_tarde) - horas) > 1e-6:
                     self.mostrar_advertencia(
+                        "Validación de turno mixto",
                         "La suma de horas de mañana y tarde debe coincidir con las horas totales."
                     )
                     return
@@ -663,7 +727,7 @@ class ProfesorForm(BaseForm):
             if email_corporativo:
                 valido, error_msg = validar_email(email_corporativo)
                 if not valido:
-                    self.mostrar_advertencia(error_msg)
+                    self.mostrar_advertencia("Validación de email", error_msg)
                     return
 
             # Obtener valores de fechas
@@ -678,12 +742,23 @@ class ProfesorForm(BaseForm):
                     fecha_fin_guardias = self.fecha_fin_guardias_input.date().toPyDate()
 
             # Obtener restricciones de horario
-            recreos_permitidos_horario = None
-            if self.usar_restricciones_horario_checkbox.isChecked():
-                recreos_permitidos_horario = self._matriz_a_json()
+            # Guardar la matriz completa como dict para que se serialice correctamente
+            dias_permitidos = None
+            recreos_dict = {}
 
-            # Ejecutar Use Case según modo
-            if self.profesor_editando_id is not None:
+            if self.usar_restricciones_horario_checkbox.isChecked():
+                # Obtener la matriz como JSON y convertir a dict
+                matriz_json = self._matriz_a_json()
+                if matriz_json:
+                    recreos_dict = json.loads(matriz_json)
+                    # Convertir keys de str a int
+                    recreos_dict = {int(k): v for k, v in recreos_dict.items()}
+                # También extraer las listas para días_semana_permitidos
+                dias_permitidos, _ = self._extraer_listas_desde_matriz()
+
+            # Guardar profesor
+            # NOTA: Actualizaremos directamente el modelo después para guardar el JSON
+            if self.profesor_editando_id:
                 # Modo edición
                 dto = ActualizarProfesorDTO(
                     nombre_completo=nombre_completo,
@@ -695,10 +770,20 @@ class ProfesorForm(BaseForm):
                     tutor=self.tutor_checkbox.isChecked(),
                     fecha_inicio_guardias=fecha_inicio_guardias,
                     fecha_fin_guardias=fecha_fin_guardias,
-                    recreos_permitidos=recreos_permitidos_horario,
-                    dias_semana_permitidos=None,
+                    recreos_permitidos=None,  # Lo actualizaremos después
+                    dias_semana_permitidos=dias_permitidos,
                 )
                 self.actualizar_use_case.execute(self.profesor_editando_id, dto)
+
+                # Actualizar el campo recreos_permitidos manualmente con el JSON
+                if recreos_dict:
+                    from models.models import Profesor
+                    profesor = self.session.query(Profesor).filter(
+                        Profesor.id == self.profesor_editando_id
+                    ).first()
+                    if profesor:
+                        profesor.recreos_permitidos = json.dumps(recreos_dict)
+                        self.session.commit()
             else:
                 # Modo creación
                 dto = CrearProfesorDTO(
@@ -711,14 +796,27 @@ class ProfesorForm(BaseForm):
                     tutor=self.tutor_checkbox.isChecked(),
                     fecha_inicio_guardias=fecha_inicio_guardias,
                     fecha_fin_guardias=fecha_fin_guardias,
-                    recreos_permitidos=recreos_permitidos_horario,
-                    dias_semana_permitidos=None,
+                    recreos_permitidos=None,  # Lo actualizaremos después
+                    dias_semana_permitidos=dias_permitidos,
                 )
-                self.crear_use_case.execute(dto)
+                profesor_creado = self.crear_use_case.execute(dto)
+
+                # Actualizar el campo recreos_permitidos manualmente con el JSON
+                if recreos_dict and profesor_creado:
+                    from models.models import Profesor
+                    profesor = self.session.query(Profesor).filter(
+                        Profesor.id == profesor_creado.id
+                    ).first()
+                    if profesor:
+                        profesor.recreos_permitidos = json.dumps(recreos_dict)
+                        self.session.commit()
 
             # Limpiar y recargar
             self._limpiar_formulario()
             self.cargar_profesores()
+
+            # Emitir señal de modificación de datos
+            self.datos_modificados.emit()
 
         except Exception as e:
             self.manejar_excepcion(e, "guardar profesor")
@@ -731,7 +829,10 @@ class ProfesorForm(BaseForm):
             self.tabla_profesores.setSortingEnabled(False)
             self.tabla_profesores.setRowCount(0)
 
-            profesores = self.session.query(Profesor).order_by(Profesor.id).all()
+            # Ordenar por nombre completo (alfabéticamente)
+            profesores = self.session.query(Profesor).order_by(
+                Profesor.nombre_completo
+            ).all()
             total_profesores = len(profesores)
             self.tabla_profesores.setRowCount(total_profesores)
 
@@ -764,7 +865,11 @@ class ProfesorForm(BaseForm):
                 tutor_text = "Sí" if prof.tutor else "No"
                 self.tabla_profesores.setItem(i, 4, QTableWidgetItem(tutor_text))
 
+            # Habilitar ordenación manual (el usuario puede hacer clic en las columnas)
             self.tabla_profesores.setSortingEnabled(True)
+
+            # Ordenar por columna de nombre (columna 0) ascendentemente
+            self.tabla_profesores.sortItems(0, Qt.SortOrder.AscendingOrder)
 
         except Exception as e:
             self.manejar_excepcion(e, "cargar profesores")
@@ -796,7 +901,10 @@ class ProfesorForm(BaseForm):
         """Cargar profesor seleccionado en formulario para edición."""
         fila_actual = self.tabla_profesores.currentRow()
         if fila_actual < 0:
-            self.mostrar_advertencia("Selecciona un profesor para editar.")
+            self.mostrar_advertencia(
+                "Selección requerida",
+                "Selecciona un profesor para editar."
+            )
             return
 
         id_item = self.tabla_profesores.item(fila_actual, 0)
@@ -812,7 +920,10 @@ class ProfesorForm(BaseForm):
                 Profesor.id == id_profesor
             ).first()
             if not profesor:
-                self.mostrar_advertencia("Profesor no encontrado.")
+                self.mostrar_advertencia(
+                    "Error de edición",
+                    "Profesor no encontrado."
+                )
                 return
 
             # Cargar datos básicos
@@ -885,7 +996,10 @@ class ProfesorForm(BaseForm):
         """Eliminar profesor seleccionado."""
         fila_actual = self.tabla_profesores.currentRow()
         if fila_actual < 0:
-            self.mostrar_advertencia("Selecciona un profesor para eliminar.")
+            self.mostrar_advertencia(
+                "Selección requerida",
+                "Selecciona un profesor para eliminar."
+            )
             return
 
         nombre_item = self.tabla_profesores.item(fila_actual, 0)
@@ -895,17 +1009,21 @@ class ProfesorForm(BaseForm):
         id_profesor = nombre_item.data(Qt.ItemDataRole.UserRole)
         nombre_profesor = nombre_item.text()
 
-        respuesta = QMessageBox.question(
-            self,
+        respuesta = self.mostrar_pregunta(
             "Confirmar eliminación",
-            f"¿Eliminar profesor '{nombre_profesor}' (ID {id_profesor})?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            f"¿Eliminar profesor '{nombre_profesor}' (ID {id_profesor})?"
         )
 
         if respuesta == QMessageBox.StandardButton.Yes:
             try:
                 self.eliminar_use_case.execute(id_profesor)
-                self.mostrar_info("Profesor eliminado correctamente.")
+                self.mostrar_exito(
+                    "Profesor eliminado",
+                    "Profesor eliminado correctamente."
+                )
                 self.cargar_profesores()
+
+                # Emitir señal de modificación de datos
+                self.datos_modificados.emit()
             except Exception as e:
                 self.manejar_excepcion(e, "eliminar profesor")

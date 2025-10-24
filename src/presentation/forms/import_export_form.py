@@ -9,6 +9,7 @@ from datetime import datetime
 
 import ui_styles as styles
 from models.models import Configuracion, Profesor, Zona
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -30,6 +31,10 @@ from presentation.widgets.progress_indicators import ejecutar_con_progreso
 
 class ImportExportForm(BaseForm):
     """Formulario para importar/exportar datos."""
+
+    # Señales que se emiten cuando se importan datos
+    profesores_importados = pyqtSignal()
+    zonas_importadas = pyqtSignal()
 
     def __init__(self, session):
         """
@@ -303,6 +308,12 @@ class ImportExportForm(BaseForm):
                 "Se recomienda reiniciar la aplicación para ver los cambios.",
             )
 
+            # Emitir señales de datos importados
+            if resultado.get('profesores', 0) > 0:
+                self.profesores_importados.emit()
+            if resultado.get('zonas', 0) > 0:
+                self.zonas_importadas.emit()
+
         except Exception as e:
             self.manejar_excepcion(e, "importar datos")
             self.resultado_text.setText(f"❌ Error al importar: {e}")
@@ -426,6 +437,8 @@ class ImportExportForm(BaseForm):
                     "Profesores importados",
                     f"Se importaron {resultados['importados']} profesores correctamente.",
                 )
+                # Emitir señal de profesores importados
+                self.profesores_importados.emit()
             elif resultados["existentes"] > 0:
                 self.mostrar_informacion(
                     "Sin cambios",

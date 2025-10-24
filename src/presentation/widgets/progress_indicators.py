@@ -24,13 +24,13 @@ from PyQt6.QtWidgets import (
 class ProgressDialog(QDialog):
     """
     Diálogo de progreso para operaciones largas con cancelación.
-    
+
     Muestra:
     - Título de la operación
     - Mensaje descriptivo
     - Barra de progreso (0-100%)
     - Botón de cancelación
-    
+
     Ejemplo:
         dialog = ProgressDialog(
             parent=self,
@@ -38,13 +38,13 @@ class ProgressDialog(QDialog):
             message="Procesando calendario escolar..."
         )
         dialog.show()
-        
+
         for i, item in enumerate(items):
             if dialog.fue_cancelado():
                 break
             # ... procesar item ...
             dialog.actualizar_progreso(i + 1, len(items))
-        
+
         dialog.close()
     """
 
@@ -59,7 +59,7 @@ class ProgressDialog(QDialog):
     ):
         """
         Inicializar diálogo de progreso.
-        
+
         Args:
             parent: Widget padre
             title: Título de la ventana
@@ -150,7 +150,7 @@ class ProgressDialog(QDialog):
     def actualizar_progreso(self, actual: int, total: int, detalle: str = ""):
         """
         Actualizar barra de progreso.
-        
+
         Args:
             actual: Valor actual (items procesados)
             total: Valor total (items totales)
@@ -169,7 +169,7 @@ class ProgressDialog(QDialog):
     def set_mensaje(self, mensaje: str):
         """
         Cambiar el mensaje principal.
-        
+
         Args:
             mensaje: Nuevo mensaje
         """
@@ -185,7 +185,7 @@ class ProgressDialog(QDialog):
     def fue_cancelado(self) -> bool:
         """
         Verificar si el usuario canceló la operación.
-        
+
         Returns:
             bool: True si fue cancelado, False si no
         """
@@ -194,7 +194,7 @@ class ProgressDialog(QDialog):
     def completar(self, mensaje_final: str = "✓ Operación completada"):
         """
         Marcar operación como completada.
-        
+
         Args:
             mensaje_final: Mensaje a mostrar al completar
         """
@@ -223,16 +223,16 @@ class ProgressDialog(QDialog):
 class WorkerThread(QThread):
     """
     Thread worker para ejecutar operaciones largas en background.
-    
+
     Emite señales de progreso y resultado para actualizar UI.
-    
+
     Ejemplo:
         def mi_operacion(actualizar_progreso):
             for i in range(100):
                 # ... trabajo ...
                 actualizar_progreso(i + 1, 100, f"Procesando item {i+1}")
             return resultado
-        
+
         worker = WorkerThread(mi_operacion)
         worker.progreso.connect(dialog.actualizar_progreso)
         worker.finalizado.connect(self.on_operacion_completada)
@@ -248,7 +248,7 @@ class WorkerThread(QThread):
     def __init__(self, funcion: Callable, *args, **kwargs):
         """
         Inicializar worker thread.
-        
+
         Args:
             funcion: Función a ejecutar en background
             *args: Argumentos posicionales para la función
@@ -300,7 +300,7 @@ def ejecutar_con_progreso(
 ) -> Optional[object]:
     """
     Helper para ejecutar función con diálogo de progreso automático.
-    
+
     Args:
         parent: Widget padre
         funcion: Función a ejecutar (debe aceptar callback_progreso como primer arg)
@@ -308,17 +308,17 @@ def ejecutar_con_progreso(
         mensaje: Mensaje del diálogo
         *args: Argumentos para la función
         **kwargs: Argumentos nombrados para la función
-    
+
     Returns:
         Resultado de la función, o None si fue cancelada/error
-    
+
     Ejemplo:
         def generar_guardias(callback_progreso, session):
             for i in range(total):
                 # ... procesar ...
                 callback_progreso(i+1, total, f"Día {i+1}")
             return guardias
-        
+
         resultado = ejecutar_con_progreso(
             self,
             generar_guardias,
@@ -327,7 +327,6 @@ def ejecutar_con_progreso(
             session=session
         )
     """
-    from PyQt6.QtWidgets import QMessageBox
 
     # Crear diálogo
     dialog = ProgressDialog(parent, titulo, mensaje)
@@ -375,13 +374,15 @@ def ejecutar_con_progreso(
     # Manejar error
     if error_final[0]:
         if isinstance(error_final[0], InterruptedError):
-            QMessageBox.information(
+            from utils.ui_helpers import show_info
+            show_info(
                 parent,
                 "Operación Cancelada",
                 "La operación fue cancelada por el usuario."
             )
         else:
-            QMessageBox.critical(
+            from utils.ui_helpers import show_error
+            show_error(
                 parent,
                 "Error",
                 f"Error durante la operación:\n\n{str(error_final[0])}"

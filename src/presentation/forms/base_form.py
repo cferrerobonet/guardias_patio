@@ -7,10 +7,9 @@ Proporciona funcionalidad común y establece el patrón MVP.
 
 from PyQt6.QtWidgets import QMessageBox, QWidget
 from sqlalchemy.orm import Session
-
 from utils.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
-from utils.ui_helpers import get_corporate_icon
+from utils.ui_helpers import get_corporate_icon, get_corporate_pixmap
 
 
 class BaseForm(QWidget):
@@ -49,8 +48,15 @@ class BaseForm(QWidget):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(titulo)
         msg_box.setText(mensaje)
-        msg_box.setIcon(QMessageBox.Icon.Information)
         msg_box.setWindowIcon(get_corporate_icon())
+
+        # Usar logo corporativo en lugar del icono estándar
+        pixmap = get_corporate_pixmap(64)
+        if pixmap:
+            msg_box.setIconPixmap(pixmap)
+        else:
+            msg_box.setIcon(QMessageBox.Icon.Information)
+
         msg_box.exec()
 
     def mostrar_error(self, titulo: str, mensaje: str) -> None:
@@ -65,8 +71,15 @@ class BaseForm(QWidget):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(titulo)
         msg_box.setText(mensaje)
-        msg_box.setIcon(QMessageBox.Icon.Critical)
         msg_box.setWindowIcon(get_corporate_icon())
+
+        # Usar logo corporativo en lugar del icono estándar
+        pixmap = get_corporate_pixmap(64)
+        if pixmap:
+            msg_box.setIconPixmap(pixmap)
+        else:
+            msg_box.setIcon(QMessageBox.Icon.Critical)
+
         msg_box.exec()
 
     def mostrar_advertencia(self, titulo: str, mensaje: str) -> None:
@@ -81,8 +94,15 @@ class BaseForm(QWidget):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(titulo)
         msg_box.setText(mensaje)
-        msg_box.setIcon(QMessageBox.Icon.Warning)
         msg_box.setWindowIcon(get_corporate_icon())
+
+        # Usar logo corporativo en lugar del icono estándar
+        pixmap = get_corporate_pixmap(64)
+        if pixmap:
+            msg_box.setIconPixmap(pixmap)
+        else:
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+
         msg_box.exec()
 
     def confirmar_accion(self, titulo: str, mensaje: str) -> bool:
@@ -99,8 +119,15 @@ class BaseForm(QWidget):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(titulo)
         msg_box.setText(mensaje)
-        msg_box.setIcon(QMessageBox.Icon.Question)
         msg_box.setWindowIcon(get_corporate_icon())
+
+        # Usar logo corporativo en lugar del icono estándar
+        pixmap = get_corporate_pixmap(64)
+        if pixmap:
+            msg_box.setIconPixmap(pixmap)
+        else:
+            msg_box.setIcon(QMessageBox.Icon.Question)
+
         msg_box.setStandardButtons(
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
@@ -109,6 +136,34 @@ class BaseForm(QWidget):
         confirmado = respuesta == QMessageBox.StandardButton.Yes.value
         self.logger.info(f"Confirmación solicitada: {titulo} - Confirmado: {confirmado}")
         return confirmado
+
+    def mostrar_pregunta(self, titulo: str, mensaje: str,
+                         botones=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No):
+        """
+        Muestra una pregunta al usuario con icono corporativo.
+
+        Args:
+            titulo: Título del diálogo
+            mensaje: Pregunta
+            botones: Botones a mostrar (por defecto Yes|No)
+
+        Returns:
+            StandardButton presionado por el usuario
+        """
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(titulo)
+        msg_box.setText(mensaje)
+        msg_box.setWindowIcon(get_corporate_icon())
+
+        # Usar logo corporativo en lugar del icono estándar
+        pixmap = get_corporate_pixmap(64)
+        if pixmap:
+            msg_box.setIconPixmap(pixmap)
+        else:
+            msg_box.setIcon(QMessageBox.Icon.Question)
+
+        msg_box.setStandardButtons(botones)
+        return msg_box.exec()
 
     def manejar_excepcion(self, exception: Exception, operacion: str) -> None:
         """

@@ -70,7 +70,15 @@ class ProfesorMapper:
         recreos_permitidos = [1, 2]  # Por defecto ambos
         if model.recreos_permitidos:
             try:
-                recreos_permitidos = json.loads(model.recreos_permitidos)
+                parsed = json.loads(model.recreos_permitidos)
+                if isinstance(parsed, dict):
+                    # Si es dict {"0": [1,2], "1": [2]}, extraer todos los recreos únicos
+                    recreos_set = set()
+                    for recreos_list in parsed.values():
+                        recreos_set.update(recreos_list)
+                    recreos_permitidos = sorted(list(recreos_set))
+                elif isinstance(parsed, list):
+                    recreos_permitidos = parsed
             except json.JSONDecodeError:
                 pass
 
