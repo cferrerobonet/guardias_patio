@@ -15,11 +15,11 @@ logger = get_logger(__name__)
 def cache_repository_query(ttl: int = 300, cache_key_prefix: str = ""):
     """
     Decorador para cachear queries de repositories con TTL configurable.
-    
+
     Args:
         ttl: Tiempo de vida del cache en segundos (default: 5 min)
         cache_key_prefix: Prefijo opcional para la clave de cache
-    
+
     Ejemplo:
         @cache_repository_query(ttl=600, cache_key_prefix="config")
         def obtener_configuracion(self):
@@ -38,19 +38,17 @@ def cache_repository_query(ttl: int = 300, cache_key_prefix: str = ""):
 def invalidate_repository_cache(pattern: str):
     """
     Invalida cache de repository por patrón.
-    
+
     Args:
         pattern: Patrón regex para invalidar claves de cache
-    
+
     Ejemplo:
         invalidate_repository_cache("configuracion")
         invalidate_repository_cache("zona.*")
     """
     count = invalidate_cache(pattern)
     logger.info(
-        "Cache invalidado para repository",
-        pattern=pattern,
-        entries_invalidated=count
+        f"Cache invalidado para repository - pattern: {pattern}, entries_invalidated: {count}"
     )
     return count
 
