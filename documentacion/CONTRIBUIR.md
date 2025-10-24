@@ -1,5 +1,8 @@
 # Guía de Contribución - Guardias de Patio
 
+**Versión del Proyecto:** 2.8.0  
+**Última actualización:** Octubre 2025
+
 ## 📋 Índice
 
 1. [Bienvenida](#bienvenida)
@@ -21,7 +24,8 @@
 ### Valores del Proyecto
 
 - ✅ **Calidad sobre velocidad**: Preferimos código bien testeado y documentado
-- ✅ **Clean Architecture**: Separación de responsabilidades
+- ✅ **Clean Architecture**: Separación de responsabilidades en 4 capas
+- ✅ **Type Safety**: Type hints y validación con Pydantic
 - ✅ **Testing exhaustivo**: Mínimo 70% de cobertura
 - ✅ **Comunicación clara**: Issues y PRs descriptivos
 
@@ -31,7 +35,7 @@
 
 ### Prerrequisitos
 
-- **Python**: 3.9 o superior
+- **Python**: **3.11 o superior** (obligatorio)
 - **Git**: 2.30 o superior
 - **Sistema Operativo**: macOS, Linux o Windows
 
@@ -40,24 +44,24 @@
 ```bash
 # 1. Haz fork del repositorio en GitHub
 # 2. Clona tu fork localmente
-git clone https://github.com/TU_USUARIO/guardias-patio.git
-cd guardias-patio
+git clone https://github.com/TU_USUARIO/guardias_patio.git
+cd guardias_patio
 
 # 3. Añade el repositorio original como "upstream"
-git remote add upstream https://github.com/REPO_ORIGINAL/guardias-patio.git
+git remote add upstream https://github.com/cferrerobonet/guardias_patio.git
 ```
 
 ### 2. Crear Entorno Virtual
 
 ```bash
-# Crear entorno virtual
-python3 -m venv .venv
+# Crear entorno virtual con Python 3.11+
+python3.11 -m venv venv
 
 # Activar entorno (macOS/Linux)
-source .venv/bin/activate
+source venv/bin/activate
 
 # Activar entorno (Windows)
-.venv\Scripts\activate
+venv\Scripts\activate
 ```
 
 ### 3. Instalar Dependencias
@@ -66,11 +70,11 @@ source .venv/bin/activate
 # Instalar dependencias principales
 pip install -r requirements.txt
 
-# Instalar dependencias de desarrollo
-pip install pytest pytest-cov pytest-qt pytest-mock
+# Instalar dependencias de desarrollo (incluye pytest, mypy, ruff)
+pip install pytest pytest-cov pytest-qt pytest-mock mypy ruff
 
-# Instalar herramientas de profiling (opcional)
-pip install snakeviz memory-profiler line-profiler
+# Verificar instalación
+pip list | grep -E 'PyQt6|SQLAlchemy|pydantic|pytest'
 ```
 
 ### 4. Configurar Base de Datos
@@ -87,10 +91,7 @@ ls -lh guardias_patio.db
 
 ```bash
 # Ejecutar tests
-pytest
-
-# Debe mostrar algo como:
-# ===== 94 passed in 5.23s =====
+pytest tests/ -v
 
 # Ejecutar aplicación
 python src/main.py

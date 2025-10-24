@@ -1,8 +1,12 @@
 # 📚 Documentación del Proyecto Guardias de Patio
 
-**Versión:** 2.7+  
-**Estado:** ✅ Producción (100% completado)  
-**Fecha:** Octubre 2025
+**Versión:** 2.8.0  
+**Estado:** ✅ Producción - Estable  
+**Fecha:** Octubre 2025  
+**Última Actualización:** 24 Octubre 2025
+
+> 🎉 **v2.8.0 Released** - Aplicación estable con 7 bugs corregidos y logo corporativo  
+> 📚 [Ver Release Notes](../RELEASE_NOTES_v2.8.0.md) | [Changelog v2.8](CHANGELOG_v2.8.md)
 
 ---
 
@@ -11,9 +15,10 @@
 ### 1. [Inicio Rápido](#inicio-rápido)
 ### 2. [Arquitectura](#arquitectura)
 ### 3. [Desarrollo](#desarrollo)
-### 4. [Sprints Completados](#sprints-completados)
-### 5. [Guías Técnicas](#guías-técnicas)
-### 6. [Referencias](#referencias)
+### 4. [Historial de Desarrollo](#historial-de-desarrollo)
+### 5. [Guías de Usuario](#guías-de-usuario)
+### 6. [Documentación Técnica](#documentación-técnica)
+### 7. [Referencias](#referencias)
 
 ---
 
@@ -21,32 +26,45 @@
 
 ### ¿Qué es Guardias de Patio?
 
-Sistema de gestión automatizada de guardias de recreo para centros educativos. Permite:
-- ✅ Generar guardias automáticamente
-- ✅ Gestionar profesores, zonas y configuración
-- ✅ Manejar ausencias y sustituciones
-- ✅ Exportar/importar datos (Excel, JSON, PDF)
-- ✅ Visualizar calendario y estadísticas
+Sistema de gestión automatizada de guardias de recreo para centros educativos con **Clean Architecture** y **Type Safety**.
 
-### Instalación y Uso
+**Características principales**:
+- ✅ **Asignación automática equitativa** de guardias
+- ✅ **Gestión de ausencias y sustituciones**
+- ✅ **Vista de calendario interactiva**
+- ✅ **Panel de estadísticas** en tiempo real
+- ✅ **Importar/Exportar** datos en JSON
+- ✅ **Dashboard de observabilidad**
+- ✅ **Logo corporativo** en todos los diálogos
+- ✅ **Validaciones robustas** con Pydantic
+
+### Instalación Rápida
 
 ```bash
 # Clonar repositorio
 git clone https://github.com/cferrerobonet/guardias_patio.git
 cd guardias_patio
 
+# Crear entorno virtual (Python 3.11+ requerido)
+python3.11 -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
+
 # Instalar dependencias
 pip install -r requirements.txt
 
+# Aplicar migraciones
+alembic upgrade head
+
 # Ejecutar aplicación
-python main.py
+python src/main.py
 ```
 
 ### Documentación Esencial
 
-- **Usuario Final**: `guias/ejemplos-uso.md` - Cómo usar la aplicación
-- **Desarrollador**: `ARCHITECTURE_PATTERNS.md` - Arquitectura del código
-- **Contribuidor**: `CONTRIBUIR.md` - Cómo contribuir al proyecto
+- **Usuario Final**: [Vista de Calendario](guias/vista_calendario.md) - Visualización de guardias
+- **Importar/Exportar**: [Guía de Portabilidad](guias/importar_exportar.md) - Backup y migración
+- **Desarrollador**: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md) - Patrones de arquitectura
+- **Contribuidor**: [CONTRIBUIR.md](CONTRIBUIR.md) - Cómo contribuir
 
 ---
 
@@ -137,184 +155,155 @@ python main.py
 
 ---
 
-## 📊 Sprints Completados
+## 📊 Historial de Desarrollo
 
-### Evolución del Proyecto (0% → 100%)
+### Evolución del Proyecto
 
-El proyecto se completó en **12 sprints principales** + **3 mini-sprints**:
+El proyecto se ha desarrollado a través de múltiples sprints, alcanzando actualmente la **versión 2.8.0** estable.
 
-| Sprint | Objetivo | Progreso | Documento |
-|--------|----------|----------|-----------|
-| **1-4** | Features core | 0% → 40% | `desarrollo/` |
-| **5** | Widgets avanzados | 40% → 50% | `SPRINT_5_WIDGETS.md` |
-| **6** | Testing inicial | 50% → 60% | `RESUMEN_FINAL_SPRINT_6.md` |
-| **7-8** | Observabilidad | 60% → 70% | `RESUMEN_SPRINT_7_Y_8.md` |
-| **9** | Clean Architecture | 70% → 80% | `RESUMEN_SPRINT_9.md` |
-| **10** | Testing consolidation | 80% → 85% | `RESUMEN_SPRINT_10.2_4.md` |
-| **11** | Cleanup & refactor | 85% → 87% | `RESUMEN_SPRINT_11_COMPLETO.md` |
-| **11.5** | Mini-sprints | 87% → 94% | `SPRINT_11_5_RESUMEN.md` |
-| **12** | Finalización | 94% → **100%** 🎉 | `SPRINT_12_FINALIZACION.md` |
+**Documentación de desarrollo**:
+- **[HISTORIA_SPRINTS.md](HISTORIA_SPRINTS.md)** - Historia completa de todos los sprints
+- **[CHANGELOG_v2.8.md](CHANGELOG_v2.8.md)** - Cambios y correcciones de v2.8.0
 
-### Mini-Sprints (Sprint 11.5)
+### Hitos Principales
 
-| Mini-Sprint | Foco | Tiempo | Logro |
-|-------------|------|--------|-------|
-| **A** | Type Safety | 2h | 789 líneas Pydantic schemas |
-| **B** | Services Testing | 1.5h | 857 líneas tests, 94.17% coverage |
-| **C** | Performance | 4h | -98.6% queries N+1 |
+| Versión | Fecha | Hitos |
+|---------|-------|-------|
+| **v2.8.0** | Oct 2025 | 7 bugs corregidos, logo corporativo, actualización automática |
+| **v2.7.x** | Sep 2025 | Dashboard observabilidad, sistema de cache |
+| **v2.6.x** | Ago 2025 | Clean Architecture, refactorización completa |
+| **v2.5.x** | Jul 2025 | Vista calendario, gestión ausencias |
+| **v2.0-2.4** | 2025 | Features core, CRUD, generación guardias |
 
-### Sprint 12 - Finalización (100%)
+### Estado Actual (v2.8.0)
 
-| Tarea | Resultado |
-|-------|-----------|
-| **12.1** Eager loading | -99% queries con joinedload |
-| **12.2** Caching | Sistema inteligente con TTL |
-| **12.3** Type Safety | Errores mypy corregidos |
-| **12.4** Documentación | 1,650+ líneas técnicas |
+✅ **Funcionalidades Implementadas**:
+- CRUD completo de Profesores y Zonas
+- Generación automática de guardias
+- Vista de calendario interactiva
+- Gestión de ausencias y sustituciones
+- Panel de estadísticas
+- Importar/Exportar JSON
+- Dashboard de observabilidad
+- Logo corporativo en todos los diálogos
+- Sistema de validaciones robusto
 
-**Ver detalles completos:** [SPRINT_12_FINALIZACION.md](SPRINT_12_FINALIZACION.md)
+🔄 **En Desarrollo** (Sprint 9):
+- Exportación a Excel
+- Exportación a PDF por profesor
+- Gráficos de estadísticas
+
+📋 **Planificado** (Sprint 10+):
+- Preferencias de zonas por profesor
+- Sistema de notificaciones
+- API REST
 
 ---
 
-## 📖 Guías Técnicas
+## 📚 Guías de Usuario
+
+### Gestión Básica
+
+- **[Importar/Exportar](guias/importar_exportar.md)** - Backup y migración de datos
+- **[Vista de Calendario](guias/vista_calendario.md)** - Visualización de guardias
+- **[Tutorial Importar/Exportar](guias/tutorial_importar_exportar.md)** - Paso a paso con capturas
+
+### Funcionalidades Avanzadas
+
+- **Gestión de Ausencias** - Registro de ausencias y sustituciones
+- **Panel de Estadísticas** - Métricas de carga y distribución
+- **Dashboard Observabilidad** - Monitoreo del sistema
+
+---
+
+## � Documentación Técnica
+
+## 🔧 Documentación Técnica
 
 ### Patrones de Arquitectura
 
-**[ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md)** (400 líneas)
+**[ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md)** (400+ líneas)
 
 Guía completa de patrones implementados:
-- Repository Pattern (interfaz + implementación)
-- Use Case Pattern (orquestación)
-- Mapper Pattern (Model ↔ Entity)
-- DTO Pattern (transferencia de datos)
-- Dependency Injection
-- Observabilidad con decoradores
+- **Repository Pattern** - Abstracción de persistencia
+- **Use Case Pattern** - Orquestación de lógica de negocio
+- **Mapper Pattern** - Conversión Model ↔ Entity
+- **DTO Pattern** - Transferencia segura de datos
+- **Dependency Injection** - Inyección de sesiones
+- **Observabilidad** - Sistema de logging y métricas
 
-**Incluye:**
-- ✅ 15 ejemplos de código completos
-- ✅ 2 diagramas arquitectónicos
-- ✅ Best practices (✅ BUENO / ❌ MALO)
+**Incluye**:
+- ✅ 15+ ejemplos de código completos
+- ✅ Diagramas arquitectónicos
+- ✅ Best practices con ejemplos ✅ BUENO / ❌ MALO
 
 ### Schemas con Pydantic
 
-**[SCHEMAS_USAGE_GUIDE.md](SCHEMAS_USAGE_GUIDE.md)** (450 líneas)
+**[SCHEMAS_USAGE_GUIDE.md](SCHEMAS_USAGE_GUIDE.md)** (450+ líneas)
 
-Todo sobre validación de datos con Pydantic:
-- Schemas vs DTOs vs Entities
+Todo sobre validación de datos con Pydantic 2.0:
+- Diferencias: Schemas vs DTOs vs Entities
 - Patrón de 4 schemas (Base/Create/Update/Response)
 - Validaciones (Field, field_validator, model_validator)
-- Conversiones (Entity ↔ Schema ↔ JSON)
+- Conversiones bidireccionales
 - Testing de schemas
 
-**Incluye:**
-- ✅ 20 ejemplos de validadores
+**Incluye**:
+- ✅ 20+ ejemplos de validadores
 - ✅ Patrón CRUD completo
-- ✅ Tests de ejemplo
+- ✅ Tests de ejemplo con pytest
 
-### Módulos del Sistema
+### Validaciones de Negocio
 
-#### Domain (Lógica de Negocio)
+**[validaciones/](validaciones/)**
 
-**[src/domain/README.md](../src/domain/README.md)** (350 líneas)
+- **[condiciones_generales_asignacion.md](validaciones/condiciones_generales_asignacion.md)** - Reglas globales
+- **[condiciones_particulares_profesores.md](validaciones/condiciones_particulares_profesores.md)** - Restricciones individuales
 
-- Entities (GuardiaEntity, ProfesorEntity, ZonaEntity)
-- Repository Interfaces (abstracciones)
-- Schemas Pydantic
-- Domain Services
-- Reglas de dependencias
+### Testing
 
-#### Infrastructure (Persistencia)
+**[tecnico/testing_guide.md](tecnico/testing_guide.md)**
 
-**[src/infrastructure/README.md](../src/infrastructure/README.md)** (450 líneas)
-
-- Repository Implementations (SQLAlchemy)
-- Mappers (Model ↔ Entity)
-- Optimizaciones de performance
-- Eager loading (evitar N+1)
-- Bulk operations
-
-### Otras Guías
-
-| Guía | Contenido |
-|------|-----------|
-| **guias/ejemplos-uso.md** | Uso de la aplicación (usuario final) |
-| **guias/atajos-teclado.md** | Atajos de teclado |
-| **CONTRIBUIR.md** | Guía para contribuir |
-| **tecnico/caracteristicas-sistema.md** | Características técnicas |
-| **validaciones/reglas-completas.md** | Reglas de negocio |
+- Estructura de tests
+- Fixtures compartidas
+- Mocking de base de datos
+- Coverage y reportes
 
 ---
 
-## 🎯 Referencias
+## 📌 Referencias
 
-### Estado Actual del Proyecto
+### Documentos Clave
 
-**Versión:** 2.7+  
-**Progreso:** 100% ✅  
-**Estado:** Listo para producción 🚀
+| Documento | Descripción | Ubicación |
+|-----------|-------------|-----------|
+| **README.md** | Documentación principal del proyecto | Raíz del repositorio |
+| **RELEASE_NOTES_v2.8.0.md** | Notas del release v2.8.0 | Raíz del repositorio |
+| **INDEX.md** | Este documento - Índice completo | documentacion/ |
+| **CHANGELOG_v2.8.md** | Changelog detallado v2.8.0 | documentacion/ |
+| **CONTRIBUIR.md** | Guía para contribuidores | documentacion/ |
+| **HISTORIA_SPRINTS.md** | Historia completa del desarrollo | documentacion/ |
 
-### Métricas Finales
+### Stack Tecnológico Completo
 
-| Métrica | Valor |
-|---------|-------|
-| **Tests** | 831 passing |
-| **Coverage Crítico** | 98% |
-| **Coverage Global** | 90.4% |
-| **Performance** | <0.1s response time |
-| **Queries Optimizadas** | -99% |
-| **Type Safety** | 80% |
-| **Documentación** | 5,150+ líneas |
-| **Líneas de Código** | ~15,000 |
+| Categoría | Tecnología | Versión | Uso |
+|-----------|------------|---------|-----|
+| **Lenguaje** | Python | 3.11+ | Backend y lógica |
+| **UI** | PyQt6 | 6.7.0 | Interfaz gráfica |
+| **ORM** | SQLAlchemy | 2.0+ | Persistencia |
+| **Validación** | Pydantic | 2.0+ | Schemas y DTOs |
+| **Migraciones** | Alembic | Latest | Versionado de BD |
+| **Testing** | pytest | Latest | Tests unitarios |
+| **Type Checking** | mypy | Latest | Verificación de tipos |
+| **Logging** | structlog | 24.4.0 | Logs estructurados |
+| **Linting** | ruff | Latest | Code quality |
 
-### Logros del Proyecto
+### Enlaces Externos
 
-✅ Clean Architecture implementada  
-✅ Performance optimizada (-99% queries)  
-✅ Testing exhaustivo (831 tests)  
-✅ Observabilidad completa (métricas + logs)  
-✅ Type Safety mejorado (mypy + Pydantic)  
-✅ Documentación exhaustiva (5,150+ líneas)  
-
-### Próximos Pasos
-
-El proyecto está **completo al 100%**. Los siguientes pasos son:
-
-1. **Mantenimiento continuo**
-   - Actualizar dependencias
-   - Monitorear performance
-   - Revisar logs y métricas
-
-2. **Evolución basada en feedback**
-   - Nuevas features según necesidades
-   - Mejoras de UX
-   - Optimizaciones adicionales
-
-3. **Integración con sistemas externos** (si aplica)
-   - APIs de otros sistemas
-   - Exportación a formatos adicionales
-   - Sincronización de datos
-
----
-
-## 📝 Changelog
-
-### Versión 2.7 (Octubre 2025) - ACTUAL
-
-- ✅ Sprint 12 completado (100%)
-- ✅ Eager loading en repositories
-- ✅ Sistema de caching inteligente
-- ✅ Type safety mejorado
-- ✅ Documentación técnica completa
-
-Ver detalles: [SPRINT_12_FINALIZACION.md](SPRINT_12_FINALIZACION.md)
-
-### Versión 2.6
-
-- ✅ Clean Architecture implementada
-- ✅ Testing consolidado (90%+ coverage)
-- ✅ Observabilidad completa
-
-Ver detalles: [CHANGELOG_v2.6.md](CHANGELOG_v2.6.md)
+- **GitHub**: https://github.com/cferrerobonet/guardias_patio
+- **Releases**: https://github.com/cferrerobonet/guardias_patio/releases
+- **Release v2.8.0**: https://github.com/cferrerobonet/guardias_patio/releases/tag/v2.8.0
+- **Issues**: https://github.com/cferrerobonet/guardias_patio/issues
 
 ---
 
@@ -322,30 +311,40 @@ Ver detalles: [CHANGELOG_v2.6.md](CHANGELOG_v2.6.md)
 
 ¿Quieres contribuir al proyecto? Lee la guía completa:
 
-**[CONTRIBUIR.md](CONTRIBUIR.md)**
+👉 **[CONTRIBUIR.md](CONTRIBUIR.md)**
 
-Incluye:
-- Guía de estilo de código
-- Proceso de pull requests
-- Convenciones de commits
-- Cómo reportar bugs
+### Áreas de Contribución
 
----
+- 🐛 **Bugs** - Reportar o corregir errores
+- ✨ **Features** - Proponer nuevas funcionalidades
+- 📚 **Documentación** - Mejorar guías y ejemplos
+- 🧪 **Tests** - Ampliar cobertura de tests
+- 🎨 **UI/UX** - Mejorar interfaz
 
-## 📄 Licencia
+### Proceso Rápido
 
-Este proyecto está bajo licencia MIT. Ver [LICENSE](../LICENSE)
-
----
-
-## 🎉 Celebración del 100%
-
-**¡El proyecto está completado al 100%!** 🎉
-
-Ver celebración completa: [PROYECTO_100_COMPLETADO.md](PROYECTO_100_COMPLETADO.md)
+1. Fork el repositorio
+2. Crea una rama (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -m 'feat: descripción'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abre un Pull Request
 
 ---
 
-**Última actualización:** 23 Octubre 2025  
-**Mantenedor:** @cferrerobonet  
-**Estado:** ✅ Producción
+## 📊 Estadísticas del Proyecto
+
+- **Líneas de código**: ~15,000+
+- **Tests**: 124+ unitarios
+- **Archivos Python**: 80+
+- **Documentación**: 1,650+ líneas técnicas
+- **Sprints completados**: 8
+- **Versión actual**: 2.8.0
+- **Estado**: ✅ Producción - Estable
+
+---
+
+<div align="center">
+
+**📚 Documentación actualizada el 24 de Octubre de 2025**
+
+Made with ❤️ by [Carlos Ferrero Bonet](https://github.com/cferrerobonet)
