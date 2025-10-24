@@ -313,7 +313,7 @@ class ZonaForm(BaseForm):
             self.eliminar_zona_uc.execute(id_zona)
 
             # Mostrar mensaje de éxito
-            self.mostrar_exito("Zona eliminada correctamente.")
+            self.mostrar_exito("Zona eliminada", "La zona ha sido eliminada correctamente.")
 
             # Recargar lista
             self.cargar_zonas()
