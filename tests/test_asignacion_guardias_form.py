@@ -336,16 +336,15 @@ class TestAsignacionGuardiasFormGeneracion:
 
             with patch.object(form, "mostrar_exito") as mock_exito:
                 with patch(
-                    "presentation.widgets.progress_indicators.ProgressDialog"
-                ) as mock_progress:
-                    # Mock del progress dialog
-                    mock_progress_instance = Mock()
-                    mock_progress.return_value = mock_progress_instance
+                    "presentation.forms.asignacion_guardias_form.ejecutar_con_progreso"
+                ) as mock_ejecutar:
+                    # Hacer que ejecutar_con_progreso devuelva el resumen
+                    mock_ejecutar.return_value = mock_resumen
 
                     form.generar_guardias()
 
-                    # Verificar que se llamó al use case
-                    mock_uc.execute.assert_called_once()
+                    # Verificar que se llamó al ejecutar_con_progreso
+                    mock_ejecutar.assert_called_once()
 
                     # Verificar que se mostró mensaje de éxito
                     mock_exito.assert_called_once()
@@ -372,12 +371,18 @@ class TestAsignacionGuardiasFormGeneracion:
 
             # Mock de QMessageBox para simular respuesta "Yes"
             with patch(
-                "presentation.forms.asignacion_guardias_form.QMessageBox.question",
+                "utils.ui_helpers.show_question_with_cancel",
                 return_value=QMessageBox.StandardButton.Yes,
             ):
                 with patch(
-                    "presentation.widgets.progress_indicators.ProgressDialog"
-                ):
+                    "presentation.forms.asignacion_guardias_form.ejecutar_con_progreso"
+                ) as mock_ejecutar:
+                    # Hacer que ejecutar_con_progreso ejecute la función pasada (segundo parámetro)
+                    # ejecutar_con_progreso(parent, funcion, titulo, mensaje, *args, **kwargs)
+                    def ejecutar_funcion(parent, funcion, *args, **kwargs):
+                        return funcion(lambda *_: None)  # callback_progreso dummy
+                    mock_ejecutar.side_effect = ejecutar_funcion
+
                     with patch.object(form, "mostrar_exito"):
                         form.generar_guardias()
 
@@ -404,12 +409,18 @@ class TestAsignacionGuardiasFormGeneracion:
 
             # Mock de QMessageBox para simular respuesta "No"
             with patch(
-                "presentation.forms.asignacion_guardias_form.QMessageBox.question",
+                "utils.ui_helpers.show_question_with_cancel",
                 return_value=QMessageBox.StandardButton.No,
             ):
                 with patch(
-                    "presentation.widgets.progress_indicators.ProgressDialog"
-                ):
+                    "presentation.forms.asignacion_guardias_form.ejecutar_con_progreso"
+                ) as mock_ejecutar:
+                    # Hacer que ejecutar_con_progreso ejecute la función pasada (segundo parámetro)
+                    # ejecutar_con_progreso(parent, funcion, titulo, mensaje, *args, **kwargs)
+                    def ejecutar_funcion(parent, funcion, *args, **kwargs):
+                        return funcion(lambda *_: None)  # callback_progreso dummy
+                    mock_ejecutar.side_effect = ejecutar_funcion
+
                     form.generar_guardias()
 
                     # Verificar que se llamó con eliminar_existentes=False
@@ -423,7 +434,7 @@ class TestAsignacionGuardiasFormGeneracion:
         with patch.object(form, "generar_guardias_uc") as mock_uc:
             # Mock de QMessageBox para simular respuesta "Cancel"
             with patch(
-                "presentation.forms.asignacion_guardias_form.QMessageBox.question",
+                "utils.ui_helpers.show_question_with_cancel",
                 return_value=QMessageBox.StandardButton.Cancel,
             ):
                 form.generar_guardias()
@@ -449,18 +460,20 @@ class TestAsignacionGuardiasFormGeneracion:
             mock_uc.execute.return_value = mock_resumen
 
             with patch(
-                "presentation.widgets.progress_indicators.ProgressDialog"
-            ) as mock_progress_cls:
-                mock_progress = Mock()
-                mock_progress_cls.return_value = mock_progress
+                "presentation.forms.asignacion_guardias_form.ejecutar_con_progreso"
+            ) as mock_ejecutar:
+                # Hacer que ejecutar_con_progreso devuelva el resumen
+                mock_ejecutar.return_value = mock_resumen
 
                 with patch.object(form, "mostrar_exito"):
                     form.generar_guardias()
 
-                    # Verificar que se llamó con progress_callback
-                    call_kwargs = mock_uc.execute.call_args[1]
-                    assert "progress_callback" in call_kwargs
-                    assert callable(call_kwargs["progress_callback"])
+                    # Verificar que se llamó ejecutar_con_progreso
+                    mock_ejecutar.assert_called_once()
+
+                    # El callback se pasa dentro de la función tarea_generacion
+                    # que se pasa a ejecutar_con_progreso
+                    assert mock_ejecutar.called
 
     def test_generar_guardias_error(self, qtbot, session):
         """Test error al generar guardias"""
@@ -472,8 +485,13 @@ class TestAsignacionGuardiasFormGeneracion:
             )
 
             with patch(
-                "presentation.widgets.progress_indicators.ProgressDialog"
-            ):
+                "presentation.forms.asignacion_guardias_form.ejecutar_con_progreso"
+            ) as mock_ejecutar:
+                # Hacer que ejecutar_con_progreso lance la excepción
+                mock_ejecutar.side_effect = BusinessLogicError(
+                    "No se pueden generar guardias"
+                )
+
                 with patch.object(form, "mostrar_error") as mock_error:
                     form.generar_guardias()
 
@@ -651,8 +669,11 @@ class TestAsignacionGuardiasFormIntegracion:
             mock_gen_uc.execute.return_value = mock_resumen
 
             with patch(
-                "presentation.widgets.progress_indicators.ProgressDialog"
-            ):
+                "presentation.forms.asignacion_guardias_form.ejecutar_con_progreso"
+            ) as mock_ejecutar:
+                # Hacer que ejecutar_con_progreso devuelva el resumen
+                mock_ejecutar.return_value = mock_resumen
+
                 with patch.object(form, "mostrar_exito"):
                     form.generar_guardias()
 
@@ -684,12 +705,17 @@ class TestAsignacionGuardiasFormIntegracion:
             mock_uc.execute.return_value = mock_resumen
 
             with patch(
-                "presentation.forms.asignacion_guardias_form.QMessageBox.question",
+                "utils.ui_helpers.show_question_with_cancel",
                 return_value=QMessageBox.StandardButton.Yes,
             ):
                 with patch(
-                    "presentation.widgets.progress_indicators.ProgressDialog"
-                ):
+                    "presentation.forms.asignacion_guardias_form.ejecutar_con_progreso"
+                ) as mock_ejecutar:
+                    # Hacer que ejecutar_con_progreso ejecute la función pasada
+                    def ejecutar_funcion(parent, funcion, *args, **kwargs):
+                        return funcion(lambda *_: None)  # callback_progreso dummy
+                    mock_ejecutar.side_effect = ejecutar_funcion
+
                     with patch.object(form, "mostrar_exito") as mock_exito:
                         form.generar_guardias()
 
