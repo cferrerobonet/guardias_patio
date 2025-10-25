@@ -59,6 +59,12 @@ htmlcov/
 logs/
 *.log
 
+# Build y distribución (PyInstaller, DMG)
+build/
+dist/
+*.dmg
+imagenes/*.iconset
+
 # ============================================================================
 # NOTA IMPORTANTE: 
 # Los siguientes archivos SÍ se suben a Git (NO están en .gitignore):
