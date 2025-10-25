@@ -59,11 +59,13 @@ htmlcov/
 logs/
 *.log
 
-# Build y distribución (PyInstaller, DMG)
+# Build y distribución (PyInstaller, DMG, EXE)
 build/
 dist/
 *.dmg
+*.exe
 imagenes/*.iconset
+Output/  # Directorio de salida de Inno Setup
 
 # ============================================================================
 # NOTA IMPORTANTE: 

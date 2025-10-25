@@ -1,0 +1,41 @@
+# UTF-8
+#
+# Información de versión para ejecutable de Windows
+# Este archivo define los metadatos que aparecen en Propiedades del archivo
+#
+
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    # filevers y prodvers deben ser tuplas de 4 enteros (major, minor, patch, build)
+    filevers=(2, 7, 0, 0),
+    prodvers=(2, 7, 0, 0),
+    # Máscara de bits que especifica atributos del archivo válidos
+    mask=0x3f,
+    # Máscara de bits que especifica atributos del archivo actuales
+    flags=0x0,
+    # DWORD que indica el sistema operativo
+    OS=0x40004,
+    # Tipo de archivo
+    fileType=0x1,
+    # Subtipo de archivo
+    subtype=0x0,
+    # Fecha de creación del archivo
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo(
+      [
+      StringTable(
+        u'040904B0',
+        [StringStruct(u'CompanyName', u'Guardias de Patio'),
+        StringStruct(u'FileDescription', u'Sistema de Gestión de Guardias de Recreo'),
+        StringStruct(u'FileVersion', u'2.7.0.0'),
+        StringStruct(u'InternalName', u'GuardiasDePatio'),
+        StringStruct(u'LegalCopyright', u'© 2025 Guardias de Patio. Todos los derechos reservados.'),
+        StringStruct(u'OriginalFilename', u'GuardiasDePatio.exe'),
+        StringStruct(u'ProductName', u'Guardias de Patio'),
+        StringStruct(u'ProductVersion', u'2.7.0.0')])
+      ]),
+    VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
+  ]
+)

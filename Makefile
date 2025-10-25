@@ -1,14 +1,24 @@
-.PHONY: help install icon app dmg clean test
+.PHONY: help install icon app dmg clean test windows
 
 help:
 	@echo "🛠️  Guardias de Patio - Comandos disponibles:"
 	@echo ""
-	@echo "  make install     - Instalar PyInstaller y dependencias"
-	@echo "  make icon        - Crear icono .icns para macOS"
+	@echo "  macOS:"
+	@echo "  ────────────────────────────────────────"
+	@echo "  make install     - Instalar PyInstaller"
+	@echo "  make icon        - Crear icono .icns"
 	@echo "  make app         - Crear aplicación .app"
-	@echo "  make dmg         - Crear instalador DMG completo"
+	@echo "  make dmg         - Crear instalador DMG"
+	@echo ""
+	@echo "  Windows (desde macOS con Wine/VM):"
+	@echo "  ────────────────────────────────────────"
+	@echo "  make windows     - Ver instrucciones para Windows"
+	@echo ""
+	@echo "  General:"
+	@echo "  ────────────────────────────────────────"
 	@echo "  make clean       - Limpiar archivos de build"
 	@echo "  make test        - Ejecutar tests"
+	@echo "  make run         - Ejecutar aplicación"
 	@echo ""
 
 install:
@@ -43,3 +53,22 @@ test:
 run:
 	@echo "🚀 Ejecutando aplicación..."
 	/opt/homebrew/bin/python3.11 src/main.py
+
+windows:
+	@echo "🪟 Construcción para Windows"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@echo "Para crear el instalador de Windows, necesitas:"
+	@echo ""
+	@echo "1️⃣  Un PC con Windows (o VM/Wine)"
+	@echo ""
+	@echo "2️⃣  Ejecutar uno de estos scripts:"
+	@echo "    • build_windows.bat  (simple - solo EXE)"
+	@echo "    • build_windows.ps1  (completo - EXE + Instalador)"
+	@echo ""
+	@echo "3️⃣  Opcionalmente, instalar Inno Setup:"
+	@echo "    https://jrsoftware.org/isdl.php"
+	@echo ""
+	@echo "📚 Documentación completa: BUILD_WINDOWS.md"
+	@echo ""
+
