@@ -22,7 +22,7 @@ DMG_NAME="GuardiasDePatio-${VERSION}-macOS"
 # Limpiar builds anteriores
 echo -e "${BLUE}📦 Limpiando builds anteriores...${NC}"
 rm -rf build dist
-rm -f *.spec
+rm -f "Guardias de Patio.spec"
 
 # Verificar que PyInstaller está instalado
 if ! command -v pyinstaller &> /dev/null; then
@@ -31,27 +31,37 @@ if ! command -v pyinstaller &> /dev/null; then
     pip install pyinstaller
 fi
 
-# Crear el .app con PyInstaller
+# Crear el .app con PyInstaller usando el spec file
 echo -e "${BLUE}🔨 Construyendo aplicación con PyInstaller...${NC}"
-pyinstaller --noconfirm \
-    --name="$APP_NAME" \
-    --windowed \
-    --onefile \
-    --clean \
-    --osx-bundle-identifier="$BUNDLE_ID" \
-    --icon="imagenes/icono.icns" \
-    --add-data="imagenes:imagenes" \
-    --add-data="alembic.ini:." \
-    --add-data="alembic:alembic" \
-    --hidden-import="sqlalchemy.sql.default_comparator" \
-    --hidden-import="PyQt6.QtCore" \
-    --hidden-import="PyQt6.QtGui" \
-    --hidden-import="PyQt6.QtWidgets" \
-    --hidden-import="pydantic" \
-    --hidden-import="alembic" \
-    --collect-all="sqlalchemy" \
-    --collect-all="alembic" \
-    src/main.py
+# Copiar el spec correcto si no existe
+if [ ! -f "guardias_patio_macos.spec" ]; then
+    cp "Guardias de Patio.spec" "guardias_patio_macos.spec" 2>/dev/null || true
+fi
+
+# Construir usando el spec file existente
+if [ -f "Guardias de Patio.spec" ]; then
+    pyinstaller --noconfirm --clean "Guardias de Patio.spec"
+else
+    # Fallback: construir sin spec
+    pyinstaller --noconfirm \
+        --name="$APP_NAME" \
+        --windowed \
+        --clean \
+        --osx-bundle-identifier="$BUNDLE_ID" \
+        --icon="imagenes/icono.icns" \
+        --add-data="imagenes:imagenes" \
+        --add-data="alembic.ini:." \
+        --add-data="alembic:alembic" \
+        --hidden-import="sqlalchemy.sql.default_comparator" \
+        --hidden-import="PyQt6.QtCore" \
+        --hidden-import="PyQt6.QtGui" \
+        --hidden-import="PyQt6.QtWidgets" \
+        --hidden-import="pydantic" \
+        --hidden-import="alembic" \
+        --collect-all="sqlalchemy" \
+        --collect-all="alembic" \
+        src/main.py
+fi
 
 # Verificar que se creó el .app
 if [ ! -d "dist/$APP_NAME.app" ]; then

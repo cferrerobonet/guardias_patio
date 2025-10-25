@@ -28,16 +28,13 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='Guardias de Patio',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -46,9 +43,33 @@ exe = EXE(
     entitlements_file=None,
     icon=['imagenes/icono.icns'],
 )
-app = BUNDLE(
+
+coll = COLLECT(
     exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='Guardias de Patio',
+)
+
+app = BUNDLE(
+    coll,
     name='Guardias de Patio.app',
     icon='imagenes/icono.icns',
     bundle_identifier='com.guardias-patio.app',
+    version='2.7.0',
+    info_plist={
+        'NSPrincipalClass': 'NSApplication',
+        'NSHighResolutionCapable': 'True',
+        'CFBundleName': 'Guardias de Patio',
+        'CFBundleDisplayName': 'Guardias de Patio',
+        'CFBundleGetInfoString': 'Gestión de guardias de recreo',
+        'CFBundleVersion': '2.7.0',
+        'CFBundleShortVersionString': '2.7.0',
+        'NSHumanReadableCopyright': '© 2025 Guardias de Patio',
+        'LSMinimumSystemVersion': '10.14.0',
+    },
 )
