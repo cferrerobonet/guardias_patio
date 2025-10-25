@@ -6,14 +6,13 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable, Dict, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
-
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
     calcular_guardias_por_profesor,
     listar_dias_lectivos,
 )
+from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -85,8 +84,19 @@ def _horario_permitido(
 
 
 def _turno_de_recreo(turno_prof: str, recreo_turno: str) -> bool:
-    if turno_prof == 'mixto':
+    """Verifica si un profesor puede hacer guardias en un turno de recreo.
+
+    Args:
+        turno_prof: Turno del profesor ('completo', 'mañana', 'tarde', 'mixto')
+        recreo_turno: Turno del recreo ('mañana' o 'tarde')
+
+    Returns:
+        True si el profesor puede hacer guardias en ese turno
+    """
+    # Profesores de turno completo o mixto pueden hacer guardias en cualquier turno
+    if turno_prof in ('completo', 'mixto'):
         return True
+    # Profesores de turno específico solo pueden hacer guardias en su turno
     return turno_prof == recreo_turno
 
 
@@ -129,12 +139,12 @@ def generar_calendario_guardias(
 ) -> Tuple[List[Guardia], Dict[int, int]]:
     """
     Genera el calendario de guardias para el curso.
-    
+
     Args:
         session: Sesión de SQLAlchemy
         progress_callback: Función opcional para reportar progreso.
                           Recibe (porcentaje, mensaje_detalle)
-    
+
     Returns:
         Tuple con (lista de guardias, diccionario de asignaciones por profesor)
     """

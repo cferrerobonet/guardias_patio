@@ -17,10 +17,9 @@ from datetime import date, datetime
 from pathlib import Path
 
 import pytest
-
 from database.db_manager import SessionLocal
 from models.models import Configuracion, Guardia, Profesor, Zona
-from services.asignador_guardias import generar_calendario_guardias
+from services.asignador_guardias import generar_calendario_guardias, guardar_guardias_en_bd
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
 from utils import get_logger
@@ -109,7 +108,7 @@ class TestFlujCompletoUsuario:
 
         zonas_creadas = []
         for datos in zonas_datos:
-            zona = Zona(nombre_zona=datos["nombre"])
+            zona = Zona(nombre_zona=datos["nombre"])  # Corregido: nombre_zona
             session_e2e.add(zona)
             zonas_creadas.append(zona)
 
@@ -119,25 +118,47 @@ class TestFlujCompletoUsuario:
         # Verificar zonas
         assert session_e2e.query(Zona).count() == 3
 
+        # FASE 2.5: Crear configuración del curso
+        from datetime import time
+        config = Configuracion(
+            fecha_inicio_curso=date(2024, 9, 1),
+            fecha_fin_curso=date(2024, 9, 30),  # Solo un mes para el test
+            hora_recreo1_manana=time(11, 0),
+            hora_recreo2_manana=time(11, 30),
+            hora_recreo1_tarde=time(16, 0),
+            hora_recreo2_tarde=time(16, 30),
+            dias_no_lectivos_personalizados="[]",
+            recreos_config="[]",
+            activar_festivos_automaticos=False,  # Desactivar festivos automáticos
+        )
+        session_e2e.add(config)
+        session_e2e.commit()
+        logger.info("✅ Fase 2.5: Configuración del curso creada")
+
         # FASE 3: Generar calendario de guardias (simula generación)
         # Nota: Los tests E2E usan la lógica real de asignador_guardias
         # que consulta la configuración desde la BD
-        mes = datetime.now().month
-        anio = datetime.now().year
+
+        # Obtener configuración para verificaciones posteriores
+        config = session_e2e.query(Configuracion).first()
+        assert config is not None, "Debe existir configuración"
 
         # Generar guardias
-        resultado = generar_calendario_guardias(
+        guardias_generadas, asignaciones = generar_calendario_guardias(
             session=session_e2e,
-            mes=mes,
-            anio=anio,
-            eliminar_existentes=True,
         )
 
-        logger.info(f"✅ Fase 3: Guardias generadas - {resultado}")
+        # Guardar guardias en la base de datos
+        guardar_guardias_en_bd(session_e2e, guardias_generadas)
+
+        logger.info(
+            f"✅ Fase 3: Guardias generadas - {len(guardias_generadas)} guardias, "
+            f"{len(asignaciones)} profesores con asignaciones"
+        )
 
         # Verificar que se generaron guardias
-        guardias_generadas = session_e2e.query(Guardia).count()
-        assert guardias_generadas > 0, "Deberían haberse generado guardias"
+        total_guardias = session_e2e.query(Guardia).count()
+        assert total_guardias > 0, "Deberían haberse generado guardias"
 
         # Verificar estructura de guardias
         guardias = session_e2e.query(Guardia).all()
@@ -146,8 +167,8 @@ class TestFlujCompletoUsuario:
             assert guardia.zona_id is not None
             assert guardia.turno in ["mañana", "tarde"]
             assert guardia.recreo in [1, 2]
-            assert guardia.fecha.month == mes
-            assert guardia.fecha.year == anio
+            # Verificar que la fecha está en el rango configurado
+            assert config.fecha_inicio_curso <= guardia.fecha <= config.fecha_fin_curso
 
         logger.info(f"✅ Verificación: {guardias_generadas} guardias validadas")
 
@@ -201,8 +222,17 @@ class TestFlujCompletoUsuario:
         zona2 = Zona(nombre_zona="Zona Test 2")
         session_e2e.add_all([zona1, zona2])
 
+        from datetime import time
         config = Configuracion(
-            clave="test_config", valor=json.dumps({"test": "value"})
+            fecha_inicio_curso=date(2024, 9, 1),
+            fecha_fin_curso=date(2024, 9, 30),
+            hora_recreo1_manana=time(11, 0),
+            hora_recreo2_manana=time(11, 30),
+            hora_recreo1_tarde=time(16, 0),
+            hora_recreo2_tarde=time(16, 30),
+            dias_no_lectivos_personalizados="[]",
+            recreos_config="[]",
+            activar_festivos_automaticos=False,
         )
         session_e2e.add(config)
 

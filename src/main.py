@@ -4,6 +4,7 @@ Guardias de Patio - Aplicación Principal.
 Entry point de la aplicación de gestión de guardias de patio.
 """
 
+import os
 import sys
 from typing import NoReturn
 
@@ -26,13 +27,18 @@ def main() -> NoReturn:
         sys.exit(1)
 
     # Validar resolución de pantalla ANTES de crear la ventana principal
-    if not ScreenValidator.validate_resolution():
-        ScreenValidator.show_resolution_warning()
-        sys.exit(1)
+    # Solo en modo normal (no en tests o CI/CD)
+    is_testing = os.environ.get('PYTEST_CURRENT_TEST') is not None
+    is_ci = os.environ.get('CI') is not None or os.environ.get('GITHUB_ACTIONS') is not None
 
-    # Mostrar advertencia si está por debajo de lo recomendado
-    if not ScreenValidator.show_resolution_warning():
-        sys.exit(0)
+    if not is_testing and not is_ci:
+        if not ScreenValidator.validate_resolution():
+            ScreenValidator.show_resolution_warning()
+            sys.exit(1)
+
+        # Mostrar advertencia si está por debajo de lo recomendado
+        if not ScreenValidator.show_resolution_warning():
+            sys.exit(0)
 
     # Crear y mostrar ventana principal
     window = MainWindow()
