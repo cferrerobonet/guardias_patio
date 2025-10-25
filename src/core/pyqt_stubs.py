@@ -96,6 +96,12 @@ class _Stub:
     def currentTextChanged(self, *a, **k):
         return _Stub()
 
+    def width(self):
+        return 1920
+
+    def height(self):
+        return 1080
+
 
 class QMessageBoxStub(_Stub):
     """Stub específico para QMessageBox."""
@@ -142,6 +148,14 @@ class QTimeStub:
         pass
 
 
+class QScreenStub(_Stub):
+    """Stub para QScreen."""
+
+    def geometry(self):
+        """Retorna un stub con width() y height()."""
+        return _Stub()
+
+
 def get_pyqt_stubs():
     """
     Retorna un diccionario con todos los stubs de PyQt6.
@@ -169,4 +183,5 @@ def get_pyqt_stubs():
         "QTime": QTimeStub,
         "QKeySequence": _Stub,
         "QShortcut": _Stub,
+        "QScreen": QScreenStub,
     }

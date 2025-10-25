@@ -9,6 +9,7 @@ from typing import NoReturn
 
 from core.app_initializer import initialize_application, initialize_logging, run_smoke_test
 from presentation.main_window import MainWindow
+from utils.screen_validator import ScreenValidator
 
 # Configurar logging al inicio
 initialize_logging()
@@ -23,6 +24,15 @@ def main() -> NoReturn:
     app = initialize_application()
     if not app:
         sys.exit(1)
+
+    # Validar resolución de pantalla ANTES de crear la ventana principal
+    if not ScreenValidator.validate_resolution():
+        ScreenValidator.show_resolution_warning()
+        sys.exit(1)
+
+    # Mostrar advertencia si está por debajo de lo recomendado
+    if not ScreenValidator.show_resolution_warning():
+        sys.exit(0)
 
     # Crear y mostrar ventana principal
     window = MainWindow()

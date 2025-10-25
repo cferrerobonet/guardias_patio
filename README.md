@@ -125,9 +125,23 @@ Forms   DTOs    Business    Mappers      Models
 
 ### Requisitos Previos
 
+> ⚠️ **IMPORTANTE:** Verifica que tu sistema cumple con los [**requisitos mínimos del sistema**](documentacion/REQUISITOS_SISTEMA.md) antes de instalar.
+
+**Requisitos de Hardware:**
+- **Resolución de pantalla:** 1280x720 píxeles (mínimo), 1920x1080 recomendado
+- **RAM:** 4 GB mínimo, 8 GB recomendado
+- **Espacio en disco:** 500 MB libres
+
+**Requisitos de Software:**
 - **Python 3.11+** (obligatorio)
 - **pip** actualizado
 - **Git**
+
+📋 Ver [**Requisitos Completos del Sistema**](documentacion/REQUISITOS_SISTEMA.md) para detalles sobre:
+- Sistemas operativos soportados (macOS, Windows, Linux)
+- Validación automática de resolución de pantalla
+- Solución de problemas comunes
+- Tabla comparativa de configuraciones
 
 ### Pasos de Instalación
 

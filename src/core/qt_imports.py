@@ -8,7 +8,7 @@ GUI_AVAILABLE = True
 
 try:
     from PyQt6.QtCore import QDate, QTime
-    from PyQt6.QtGui import QKeySequence, QShortcut
+    from PyQt6.QtGui import QKeySequence, QScreen, QShortcut
     from PyQt6.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -51,6 +51,7 @@ except ImportError:  # pragma: no cover
     QTime = _stubs["QTime"]
     QKeySequence = _stubs["QKeySequence"]
     QShortcut = _stubs["QShortcut"]
+    QScreen = _stubs["QScreen"]
 
 
 __all__ = [
@@ -74,4 +75,5 @@ __all__ = [
     "QTime",
     "QKeySequence",
     "QShortcut",
+    "QScreen",
 ]
