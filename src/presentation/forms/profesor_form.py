@@ -8,6 +8,15 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 import json
 from typing import Dict, Optional
 
+import ui_styles as styles
+from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
+from application.use_cases.profesor import (
+    ActualizarProfesorUseCase,
+    BuscarProfesoresUseCase,
+    CrearProfesorUseCase,
+    EliminarProfesorUseCase,
+    ListarProfesoresUseCase,
+)
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -29,16 +38,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
 
-import ui_styles as styles
-from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
-from application.use_cases.profesor import (
-    ActualizarProfesorUseCase,
-    BuscarProfesoresUseCase,
-    CrearProfesorUseCase,
-    EliminarProfesorUseCase,
-    ListarProfesoresUseCase,
-)
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import (
     CONTENT_BG_ALT,
@@ -49,7 +50,6 @@ from presentation.themes.ccleaner_theme import (
     SPACING_SM,
     TEXT_SECONDARY,
 )
-from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
 
 
 class ProfesorForm(BaseForm):
@@ -208,6 +208,11 @@ class ProfesorForm(BaseForm):
             QTableWidget.SelectionMode.ExtendedSelection
         )
         self.tabla_profesores.doubleClicked.connect(self.editar_profesor)
+
+        # Hacer la tabla de solo lectura (no editable directamente)
+        self.tabla_profesores.setEditTriggers(
+            QTableWidget.EditTrigger.NoEditTriggers
+        )
 
         layout.addWidget(self.tabla_profesores)
 
@@ -740,6 +745,12 @@ class ProfesorForm(BaseForm):
         self.submit_btn.setText("💾 Guardar nuevo profesor")
         self.cancelar_btn.setVisible(False)
 
+        # Re-habilitar interacción con la tabla después de cancelar/guardar
+        self.tabla_profesores.setEnabled(True)
+        self.editar_btn.setEnabled(True)
+        self.delete_btn.setEnabled(True)
+        self.busqueda_input.setEnabled(True)
+
     def cancelar_edicion(self):
         """Cancelar edición y volver a modo creación."""
         self._limpiar_formulario()
@@ -924,23 +935,21 @@ class ProfesorForm(BaseForm):
                 self.tabla_profesores.setItem(i, 0, nombre_item)
 
                 # Email
-                self.tabla_profesores.setItem(
-                    i, 1, QTableWidgetItem(prof.email_corporativo or "-")
-                )
+                email_item = QTableWidgetItem(prof.email_corporativo or "-")
+                self.tabla_profesores.setItem(i, 1, email_item)
 
                 # Horas
-                self.tabla_profesores.setItem(
-                    i, 2, QTableWidgetItem(f"{prof.horas_contrato:.1f}h")
-                )
+                horas_item = QTableWidgetItem(f"{prof.horas_contrato:.1f}h")
+                self.tabla_profesores.setItem(i, 2, horas_item)
 
                 # Turno
-                self.tabla_profesores.setItem(
-                    i, 3, QTableWidgetItem(prof.turno.capitalize())
-                )
+                turno_item = QTableWidgetItem(prof.turno.capitalize())
+                self.tabla_profesores.setItem(i, 3, turno_item)
 
                 # Tutor
                 tutor_text = "Sí" if prof.tutor else "No"
-                self.tabla_profesores.setItem(i, 4, QTableWidgetItem(tutor_text))
+                tutor_item = QTableWidgetItem(tutor_text)
+                self.tabla_profesores.setItem(i, 4, tutor_item)
 
             # Habilitar ordenación manual (el usuario puede hacer clic en las columnas)
             self.tabla_profesores.setSortingEnabled(True)
@@ -1066,6 +1075,12 @@ class ProfesorForm(BaseForm):
             self.submit_btn.setText("💾 Actualizar Profesor")
             self.cancelar_btn.setVisible(True)
 
+            # Deshabilitar interacción con la tabla mientras se edita
+            self.tabla_profesores.setEnabled(False)
+            self.editar_btn.setEnabled(False)
+            self.delete_btn.setEnabled(False)
+            self.busqueda_input.setEnabled(False)
+
         except Exception as e:
             self.manejar_excepcion(e, "editar profesor")
 
@@ -1097,12 +1112,19 @@ class ProfesorForm(BaseForm):
 
         # Confirmar eliminación
         if len(profesores_a_eliminar) == 1:
-            mensaje = f"¿Eliminar al profesor '{profesores_a_eliminar[0][1]}'?"
-        else:
-            nombres = "\n• ".join([nombre for _, nombre in profesores_a_eliminar])
+            nombre_profesor = profesores_a_eliminar[0][1]
             mensaje = (
-                f"¿Eliminar {len(profesores_a_eliminar)} profesores?\n\n"
-                f"• {nombres}"
+                f"¿Eliminar al profesor "
+                f"<span style='color: #007ACC; font-style: italic;'>{nombre_profesor}</span>?"
+            )
+        else:
+            nombres_html = "<br>• ".join([
+                f"<span style='color: #007ACC; font-style: italic;'>{nombre}</span>"
+                for _, nombre in profesores_a_eliminar
+            ])
+            mensaje = (
+                f"¿Eliminar <b>{len(profesores_a_eliminar)}</b> profesores?<br><br>"
+                f"• {nombres_html}"
             )
 
         respuesta = self.mostrar_pregunta(

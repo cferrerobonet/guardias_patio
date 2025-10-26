@@ -17,8 +17,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
 from sync.sync_manager import UserAuth
+from utils.ui_helpers import get_corporate_icon
 
 
 class ChangePasswordDialog(QDialog):
@@ -40,8 +40,17 @@ class ChangePasswordDialog(QDialog):
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
         self.setWindowTitle("🔒 Cambiar Contraseña")
+        self.setWindowIcon(get_corporate_icon())
         self.setModal(True)
         self.setFixedWidth(500)
+
+        # Configurar flags para quitar el botón de maximizar
+        self.setWindowFlags(
+            Qt.WindowType.Dialog |
+            Qt.WindowType.CustomizeWindowHint |
+            Qt.WindowType.WindowTitleHint |
+            Qt.WindowType.WindowCloseButtonHint
+        )
 
         layout = QVBoxLayout(self)
 
@@ -218,6 +227,30 @@ class ChangePasswordDialog(QDialog):
                 f"{self.username}</span> ha sido cambiada correctamente.<br><br>"
                 f"La próxima vez que inicies sesión, usa tu nueva contraseña."
             )
+
+            # Añadir botón OK con estilo visible
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            ok_button = msg.button(QMessageBox.StandardButton.Ok)
+            ok_button.setText("Entendido")
+            ok_button.setStyleSheet("""
+                QPushButton {
+                    min-width: 120px;
+                    min-height: 35px;
+                    padding: 5px 15px;
+                    font-size: 13px;
+                    background-color: #059669;
+                    color: white;
+                    border: 2px solid #047857;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #047857;
+                }
+                QPushButton:pressed {
+                    background-color: #065f46;
+                }
+            """)
+
             msg.exec()
 
             self.accept()

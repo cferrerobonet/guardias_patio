@@ -7,7 +7,6 @@ Proporciona funcionalidad común y establece el patrón MVP.
 
 from PyQt6.QtWidgets import QMessageBox, QWidget
 from sqlalchemy.orm import Session
-
 from utils.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
 from utils.ui_helpers import (
@@ -48,11 +47,14 @@ class BaseForm(QWidget):
 
         Args:
             titulo: Título del mensaje
-            mensaje: Contenido del mensaje
+            mensaje: Contenido del mensaje (puede contener HTML)
         """
+        from PyQt6.QtCore import Qt
+
         self.logger.info(f"Mensaje de éxito mostrado: {titulo} - {mensaje}")
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(titulo)
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.setText(mensaje)
         msg_box.setWindowIcon(get_corporate_icon())
 
@@ -70,11 +72,14 @@ class BaseForm(QWidget):
 
         Args:
             titulo: Título del error
-            mensaje: Descripción del error
+            mensaje: Descripción del error (puede contener HTML)
         """
+        from PyQt6.QtCore import Qt
+
         self.logger.error(f"Error mostrado al usuario: {titulo} - {mensaje}")
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(titulo)
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.setText(mensaje)
         msg_box.setWindowIcon(get_corporate_icon())
 
@@ -92,11 +97,14 @@ class BaseForm(QWidget):
 
         Args:
             titulo: Título de la advertencia
-            mensaje: Contenido de la advertencia
+            mensaje: Contenido de la advertencia (puede contener HTML)
         """
+        from PyQt6.QtCore import Qt
+
         self.logger.warning(f"Advertencia mostrada: {titulo} - {mensaje}")
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(titulo)
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.setText(mensaje)
         msg_box.setWindowIcon(get_corporate_icon())
 
@@ -114,13 +122,16 @@ class BaseForm(QWidget):
 
         Args:
             titulo: Título del diálogo
-            mensaje: Pregunta de confirmación
+            mensaje: Pregunta de confirmación (puede contener HTML)
 
         Returns:
             True si el usuario confirma, False en caso contrario
         """
+        from PyQt6.QtCore import Qt
+
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(titulo)
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.setText(mensaje)
         msg_box.setWindowIcon(get_corporate_icon())
 
@@ -146,14 +157,17 @@ class BaseForm(QWidget):
 
         Args:
             titulo: Título del diálogo
-            mensaje: Pregunta
+            mensaje: Pregunta (puede contener HTML)
             botones: Botones a mostrar (por defecto Yes|No)
 
         Returns:
             StandardButton presionado por el usuario
         """
+        from PyQt6.QtCore import Qt
+
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(titulo)
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.setText(mensaje)
         msg_box.setWindowIcon(get_corporate_icon())
 

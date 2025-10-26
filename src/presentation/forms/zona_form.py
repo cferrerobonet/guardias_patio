@@ -4,6 +4,14 @@ Formulario de gestión de zonas de recreo.
 Permite realizar operaciones CRUD sobre las zonas usando patrón MVP.
 """
 
+import ui_styles as styles
+from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
+from application.use_cases.zona import (
+    ActualizarZonaUseCase,
+    CrearZonaUseCase,
+    EliminarZonaUseCase,
+    ListarZonasUseCase,
+)
 from pydantic import ValidationError
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -23,17 +31,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
-
-import ui_styles as styles
-from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
-from application.use_cases.zona import (
-    ActualizarZonaUseCase,
-    CrearZonaUseCase,
-    EliminarZonaUseCase,
-    ListarZonasUseCase,
-)
-from presentation.forms.base_form import BaseForm
 from utils.exceptions import BusinessLogicError, NotFoundError
+
+from presentation.forms.base_form import BaseForm
 
 
 class ZonaForm(BaseForm):
@@ -179,6 +179,8 @@ class ZonaForm(BaseForm):
         self.tabla_zonas.setSelectionMode(
             QTableWidget.SelectionMode.ExtendedSelection
         )
+        # Impedir edición directa en la tabla - solo a través del formulario
+        self.tabla_zonas.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabla_zonas.doubleClicked.connect(self.editar_zona)
         left_section.addWidget(self.tabla_zonas)
 
@@ -472,6 +474,11 @@ class ZonaForm(BaseForm):
             self.submit_btn.setText("💾 Actualizar Zona")
             self.cancelar_btn.setVisible(True)
 
+            # Deshabilitar interacción con la tabla mientras se edita
+            self.tabla_zonas.setEnabled(False)
+            self.editar_btn.setEnabled(False)
+            self.delete_btn.setEnabled(False)
+
         except Exception as e:
             self.manejar_excepcion(e, "editar zona")
 
@@ -568,10 +575,20 @@ class ZonaForm(BaseForm):
         # Preparar mensaje de confirmación
         cantidad = len(zonas_a_eliminar)
         if cantidad == 1:
-            mensaje = f"¿Eliminar la zona '{zonas_a_eliminar[0][1]}'?"
+            nombre_zona = zonas_a_eliminar[0][1]
+            mensaje = (
+                f"¿Eliminar la zona "
+                f"<span style='color: #007ACC; font-style: italic;'>{nombre_zona}</span>?"
+            )
         else:
-            nombres = "\n• ".join([nombre for _, nombre in zonas_a_eliminar])
-            mensaje = f"¿Eliminar {cantidad} zonas?\n\n• {nombres}"
+            nombres_html = "<br>• ".join([
+                f"<span style='color: #007ACC; font-style: italic;'>{nombre}</span>"
+                for _, nombre in zonas_a_eliminar
+            ])
+            mensaje = (
+                f"¿Eliminar <b>{cantidad}</b> zonas?<br><br>"
+                f"• {nombres_html}"
+            )
 
         # Confirmar eliminación
         if not self.confirmar_accion("Confirmar eliminación", mensaje):
@@ -618,6 +635,11 @@ class ZonaForm(BaseForm):
         self.usar_fecha_fin_check.setChecked(False)
         self.fecha_inicio_input.setDate(QDate.currentDate())
         self.fecha_fin_input.setDate(QDate.currentDate())
+
+        # Re-habilitar interacción con la tabla después de cancelar/guardar
+        self.tabla_zonas.setEnabled(True)
+        self.editar_btn.setEnabled(True)
+        self.delete_btn.setEnabled(True)
 
     def validar_formulario(self) -> bool:
         """

@@ -11,12 +11,11 @@ from pathlib import Path
 # Añadir el directorio raíz al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from presentation.ccleaner_main_window import CCleanerMainWindow
+from presentation.forms.login_dialog import LoginDialog
 from PyQt6.QtCore import QLibraryInfo, QLocale, QTranslator
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
-
-from presentation.ccleaner_main_window import CCleanerMainWindow
-from presentation.forms.login_dialog import LoginDialog
 from sync import SyncManager, get_default_backend
 
 # Configurar logging
@@ -31,7 +30,10 @@ def main():
     # ==========================================
     # Configurar traducción al español
     # ==========================================
-    translator = QTranslator()
+
+    # Configurar el locale para toda la aplicación (calendarios, fechas, números)
+    spanish_locale = QLocale(QLocale.Language.Spanish, QLocale.Country.Spain)
+    QLocale.setDefault(spanish_locale)
 
     # Cargar traducciones de Qt (para botones estándar como Yes/No)
     qt_translator = QTranslator()

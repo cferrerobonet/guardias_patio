@@ -17,20 +17,28 @@ MESSAGEBOX_STYLE = """
         background-color: white;
     }
     QPushButton {
-        background-color: #007ACC;
+        background-color: #059669;
         color: white;
         font-weight: 600;
+        font-size: 13px;
         padding: 8px 24px;
-        border: none;
+        border: 2px solid #047857;
         border-radius: 6px;
-        min-width: 80px;
-        min-height: 32px;
+        min-width: 100px;
+        min-height: 35px;
     }
     QPushButton:hover {
-        background-color: #005A9E;
+        background-color: #047857;
     }
     QPushButton:pressed {
-        background-color: #004578;
+        background-color: #065f46;
+    }
+    QPushButton:default {
+        background-color: #0284c7;
+        border: 2px solid #0369a1;
+    }
+    QPushButton:default:hover {
+        background-color: #0369a1;
     }
 """
 

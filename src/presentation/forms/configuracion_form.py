@@ -5,6 +5,14 @@ Form para gestionar la configuración del curso escolar.
 Sigue el patrón MVP usando Use Cases.
 """
 
+import ui_styles as styles
+from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
+from application.use_cases.configuracion import (
+    ActualizarConfiguracionUseCase,
+    ObtenerConfiguracionUseCase,
+)
+from core.exceptions import NotFoundError
+from database.db_manager import get_current_user_id
 from PyQt6.QtCore import QDate, Qt, QTime
 from PyQt6.QtWidgets import (
     QDateEdit,
@@ -19,17 +27,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
-
-import ui_styles as styles
-from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
-from application.use_cases.configuracion import (
-    ActualizarConfiguracionUseCase,
-    ObtenerConfiguracionUseCase,
-)
-from core.exceptions import NotFoundError
-from database.db_manager import get_current_user_id
-from presentation.forms.base_form import BaseForm
 from sync.sync_manager import UserAuth
+
+from presentation.forms.base_form import BaseForm
 
 
 class ConfiguracionForm(BaseForm):
@@ -529,7 +529,7 @@ class ConfiguracionForm(BaseForm):
         Guarda la configuración usando el Use Case.
 
         Valida los datos y ejecuta ActualizarConfiguracionUseCase.
-        También guarda la configuración SMTP.
+        También guarda la configuración SMTP si fue modificada.
         """
         try:
             # Validar formulario
@@ -561,21 +561,33 @@ class ConfiguracionForm(BaseForm):
             # Guardar email del usuario
             email_guardado = self._guardar_email_interno()
 
-            # Guardar configuración SMTP también
-            smtp_guardado = self.guardar_smtp()
+            # Guardar configuración SMTP SOLO si los campos están desbloqueados
+            smtp_guardado = False
+            smtp_fue_modificado = not self.smtp_server_input.isReadOnly()
 
-            # Bloquear campos SMTP después de guardar
-            if smtp_guardado and not self.smtp_server_input.isReadOnly():
-                self.toggle_smtp_editable()  # Bloquear si estaban desbloqueados
+            if smtp_fue_modificado:
+                smtp_guardado = self.guardar_smtp()
+
+                # Bloquear campos SMTP después de guardar exitosamente
+                if smtp_guardado:
+                    self.toggle_smtp_editable()  # Bloquear
 
             # Mostrar éxito
+            # Extraer solo los años de las fechas
+            año_inicio = config.fecha_inicio_curso.year
+            año_fin = config.fecha_fin_curso.year
+
             mensaje_exito = (
-                f"La configuración del curso {config.fecha_inicio_curso} - "
-                f"{config.fecha_fin_curso} ha sido guardada correctamente.\n\n"
-                "La configuración SMTP también se ha guardado."
+                f"La configuración del curso "
+                f"<span style='color: #007ACC; font-style: italic;'>{año_inicio}-{año_fin}</span> "
+                f"ha sido guardada correctamente."
             )
+
+            if smtp_guardado:
+                mensaje_exito += "<br><br>La configuración SMTP también se ha guardado."
+
             if email_guardado:
-                mensaje_exito += "\n\nTu email ha sido actualizado."
+                mensaje_exito += "<br><br>Tu email ha sido actualizado."
 
             self.mostrar_exito("Configuración Guardada", mensaje_exito)
 
@@ -763,11 +775,48 @@ class ConfiguracionForm(BaseForm):
         )
         msg.setDefaultButton(QMessageBox.StandardButton.No)
 
-        # Personalizar textos de los botones
+        # Personalizar textos y estilos de los botones
         yes_button = msg.button(QMessageBox.StandardButton.Yes)
         yes_button.setText("Continuar")
+        yes_button.setStyleSheet("""
+            QPushButton {
+                min-width: 100px;
+                min-height: 35px;
+                padding: 5px 15px;
+                font-size: 13px;
+                background-color: #059669;
+                color: white;
+                border: 2px solid #047857;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #047857;
+            }
+            QPushButton:pressed {
+                background-color: #065f46;
+            }
+        """)
+
         no_button = msg.button(QMessageBox.StandardButton.No)
         no_button.setText("Cancelar")
+        no_button.setStyleSheet("""
+            QPushButton {
+                min-width: 100px;
+                min-height: 35px;
+                padding: 5px 15px;
+                font-size: 13px;
+                background-color: #dc2626;
+                color: white;
+                border: 2px solid #b91c1c;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #b91c1c;
+            }
+            QPushButton:pressed {
+                background-color: #991b1b;
+            }
+        """)
 
         resultado = msg.exec()
         return resultado == QMessageBox.StandardButton.Yes
@@ -1035,35 +1084,106 @@ class ConfiguracionForm(BaseForm):
             success_msg = QMessageBox(self)
             success_msg.setIcon(QMessageBox.Icon.Information)
             success_msg.setWindowTitle("✅ Email de Prueba Enviado")
+            success_msg.setTextFormat(Qt.TextFormat.RichText)
             success_msg.setWindowFlags(
                 Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
                 Qt.WindowType.WindowTitleHint
             )
             success_msg.setText(
-                f"La conexión SMTP se estableció correctamente y se envió un email de prueba.\n\n"
-                f"Servidor: {smtp_server}:{smtp_port}\n"
-                f"Usuario: {smtp_user}\n"
-                f"Email enviado a: {email_destino}\n\n"
+                f"La conexión SMTP se estableció correctamente y se envió un email de prueba.<br><br>"
+                f"<b>Servidor:</b> <span style='color: #007ACC; font-style: italic;'>{smtp_server}:{smtp_port}</span><br>"
+                f"<b>Usuario:</b> <span style='color: #007ACC; font-style: italic;'>{smtp_user}</span><br>"
+                f"<b>Email enviado a:</b> <span style='color: #007ACC; font-style: italic;'>{email_destino}</span><br><br>"
                 "Revisa tu bandeja de entrada (y spam) para verificar que llegó el email."
             )
+
+            # Añadir botón OK con estilo visible
+            success_msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            ok_button = success_msg.button(QMessageBox.StandardButton.Ok)
+            ok_button.setText("Entendido")
+            ok_button.setStyleSheet("""
+                QPushButton {
+                    min-width: 120px;
+                    min-height: 35px;
+                    padding: 5px 15px;
+                    font-size: 13px;
+                    background-color: #059669;
+                    color: white;
+                    border: 2px solid #047857;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #047857;
+                }
+                QPushButton:pressed {
+                    background-color: #065f46;
+                }
+            """)
+
             success_msg.exec()
             self.logger.info(f"Prueba de conexión SMTP exitosa - Email enviado a {email_destino}")
 
         except smtplib.SMTPAuthenticationError:
-            QMessageBox.critical(
-                self,
-                "❌ Error de Autenticación",
+            error_msg = QMessageBox(self)
+            error_msg.setIcon(QMessageBox.Icon.Critical)
+            error_msg.setWindowTitle("❌ Error de Autenticación")
+            error_msg.setText(
                 "No se pudo autenticar con el servidor SMTP.\n\n"
                 "Verifica tu usuario y contraseña.\n"
                 "Para Gmail, usa una App Password."
             )
+            error_msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            ok_button = error_msg.button(QMessageBox.StandardButton.Ok)
+            ok_button.setText("Entendido")
+            ok_button.setStyleSheet("""
+                QPushButton {
+                    min-width: 120px;
+                    min-height: 35px;
+                    padding: 5px 15px;
+                    font-size: 13px;
+                    background-color: #dc2626;
+                    color: white;
+                    border: 2px solid #b91c1c;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #b91c1c;
+                }
+                QPushButton:pressed {
+                    background-color: #991b1b;
+                }
+            """)
+            error_msg.exec()
             self.logger.error("Error de autenticación SMTP")
 
         except Exception as e:
-            QMessageBox.critical(
-                self,
-                "❌ Error de Conexión",
+            error_msg = QMessageBox(self)
+            error_msg.setIcon(QMessageBox.Icon.Critical)
+            error_msg.setWindowTitle("❌ Error de Conexión")
+            error_msg.setText(
                 f"No se pudo conectar al servidor SMTP:\n\n{str(e)}\n\n"
                 "Verifica el servidor, puerto y credenciales."
             )
+            error_msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            ok_button = error_msg.button(QMessageBox.StandardButton.Ok)
+            ok_button.setText("Entendido")
+            ok_button.setStyleSheet("""
+                QPushButton {
+                    min-width: 120px;
+                    min-height: 35px;
+                    padding: 5px 15px;
+                    font-size: 13px;
+                    background-color: #dc2626;
+                    color: white;
+                    border: 2px solid #b91c1c;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #b91c1c;
+                }
+                QPushButton:pressed {
+                    background-color: #991b1b;
+                }
+            """)
+            error_msg.exec()
             self.logger.error(f"Error al probar SMTP: {str(e)}")

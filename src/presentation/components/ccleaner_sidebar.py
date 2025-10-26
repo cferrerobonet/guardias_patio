@@ -6,6 +6,7 @@ Menú lateral oscuro con diseño profesional.
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from utils.icon_manager import get_icon
 
 from presentation.themes.ccleaner_theme import (
     SIDEBAR_BG,
@@ -56,31 +57,52 @@ class SidebarMenu(QWidget):
 
         # ========== GESTIÓN ==========
         self.add_category(menu_layout, "GESTIÓN")
-        self.add_menu_item(menu_layout, "profesores", "👥 Profesores", "profesores")
-        self.add_menu_item(menu_layout, "zonas", "📍 Zonas", "zonas")
-        self.add_menu_item(menu_layout, "configuracion", "⚙ Configuración", "configuracion")
+        self.add_menu_item(
+            menu_layout, "profesores", "Profesores", "profesores", "account-group"
+        )
+        self.add_menu_item(menu_layout, "zonas", "Zonas", "zonas", "map-marker")
+        self.add_menu_item(
+            menu_layout, "configuracion", "Configuración", "configuracion", "cog"
+        )
 
         menu_layout.addSpacing(SPACING_MD)
 
         # ========== GUARDIAS ==========
         self.add_category(menu_layout, "GUARDIAS")
-        self.add_menu_item(menu_layout, "asignacion", "✓ Asignación", "asignacion")
-        self.add_menu_item(menu_layout, "calendario", "📅 Calendario", "calendario")
+        self.add_menu_item(
+            menu_layout, "asignacion", "Asignación", "asignacion", "check-bold"
+        )
+        self.add_menu_item(
+            menu_layout, "calendario", "Calendario", "calendario", "calendar"
+        )
 
         menu_layout.addSpacing(SPACING_MD)
 
         # ========== PERSONAL ==========
         self.add_category(menu_layout, "PERSONAL")
-        self.add_menu_item(menu_layout, "ausencias", "🏥 Ausencias", "ausencias")
-        self.add_menu_item(menu_layout, "sustituciones", "🔄 Sustituciones", "sustituciones")
+        self.add_menu_item(
+            menu_layout, "ausencias", "Ausencias", "ausencias", "hospital-box"
+        )
+        self.add_menu_item(
+            menu_layout, "sustituciones", "Sustituciones",
+            "sustituciones", "swap-horizontal"
+        )
 
         menu_layout.addSpacing(SPACING_MD)
 
         # ========== HERRAMIENTAS ==========
         self.add_category(menu_layout, "HERRAMIENTAS")
-        self.add_menu_item(menu_layout, "importar", "💾 Importar/Exportar", "importar")
-        self.add_menu_item(menu_layout, "estadisticas", "📊 Estadísticas", "estadisticas")
-        self.add_menu_item(menu_layout, "observabilidad", "📈 Observabilidad", "observabilidad")
+        self.add_menu_item(
+            menu_layout, "importar", "Importar/Exportar",
+            "importar", "database-import-export"
+        )
+        self.add_menu_item(
+            menu_layout, "estadisticas", "Estadísticas", "estadisticas", "chart-bar"
+        )
+        self.add_menu_item(
+            menu_layout, "observabilidad", "Observabilidad",
+            "observabilidad", "chart-line"
+        )
 
         # Espaciador al final
         menu_layout.addStretch()
@@ -117,14 +139,29 @@ class SidebarMenu(QWidget):
         """)
         layout.addWidget(separator)
 
-    def add_menu_item(self, layout: QVBoxLayout, object_name: str, text: str, section: str):
-        """Añadir botón de menú"""
-        btn = QPushButton(text)
+    def add_menu_item(
+        self,
+        layout: QVBoxLayout,
+        object_name: str,
+        text: str,
+        section: str,
+        icon_name: str = None
+    ):
+        """Añadir botón de menú con icono SVG"""
+        btn = QPushButton(f" {text}")  # Espacio para separar icono del texto
         btn.setObjectName(object_name)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setProperty("section", section)
         btn.setProperty("active", "false")
-        btn.setMinimumHeight(42)
+        btn.setMinimumHeight(44)  # Altura moderada
+
+        # Añadir icono si se proporciona
+        if icon_name:
+            icon = get_icon(icon_name, "white", 20)  # Iconos de 20px
+            btn.setIcon(icon)
+            from PyQt6.QtCore import QSize
+            btn.setIconSize(QSize(20, 20))  # Tamaño fijo de 20x20
+
         btn.setStyleSheet("""
             QPushButton {
                 color: rgba(255, 255, 255, 0.95);

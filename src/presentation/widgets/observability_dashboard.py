@@ -4,6 +4,12 @@ Dashboard de Observabilidad
 Widget para visualizar métricas, health checks y performance en tiempo real.
 """
 
+from core.observability import (
+    HealthChecker,
+    get_metrics,
+    get_performance_monitor,
+)
+from database.db_manager import SessionLocal
 from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
@@ -17,13 +23,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from core.observability import (
-    HealthChecker,
-    get_metrics,
-    get_performance_monitor,
-)
-from database.db_manager import SessionLocal
+from utils.ui_helpers import get_corporate_icon
 
 
 class ObservabilityDashboard(QDialog):
@@ -43,6 +43,7 @@ class ObservabilityDashboard(QDialog):
         """Inicializa el dashboard."""
         super().__init__(parent)
         self.setWindowTitle("📊 Observabilidad del Sistema")
+        self.setWindowIcon(get_corporate_icon())
         self.resize(900, 700)
 
         self.metrics = get_metrics()

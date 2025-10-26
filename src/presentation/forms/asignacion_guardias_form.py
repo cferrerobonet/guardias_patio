@@ -4,6 +4,15 @@ Formulario de asignación de guardias.
 Permite calcular distribución y generar el calendario completo de guardias.
 """
 
+import ui_styles as styles
+from application.use_cases.asignacion_guardias import (
+    CalcularDistribucionUseCase,
+    GenerarGuardiasUseCase,
+    ObtenerEstadisticasUseCase,
+)
+from application.use_cases.guardia import LimpiarGuardiasUseCase
+from infrastructure.repositories import SQLAlchemyGuardiaRepository
+from models.models import Guardia, Profesor
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QGridLayout,
@@ -16,19 +25,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
+from utils.exceptions import BusinessLogicError
 
-import ui_styles as styles
-from application.use_cases.asignacion_guardias import (
-    CalcularDistribucionUseCase,
-    GenerarGuardiasUseCase,
-    ObtenerEstadisticasUseCase,
-)
-from application.use_cases.guardia import LimpiarGuardiasUseCase
-from infrastructure.repositories import SQLAlchemyGuardiaRepository
-from models.models import Guardia, Profesor
 from presentation.forms.base_form import BaseForm
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
-from utils.exceptions import BusinessLogicError
 
 
 class AsignacionGuardiasForm(BaseForm):
@@ -103,8 +103,7 @@ class AsignacionGuardiasForm(BaseForm):
 
         self.stats_text = QTextEdit()
         self.stats_text.setReadOnly(True)
-        self.stats_text.setMinimumHeight(160)
-        self.stats_text.setMaximumHeight(220)
+        self.stats_text.setMinimumHeight(280)
         self.stats_text.setStyleSheet(styles.STYLE_INPUT)
         grid_layout.addWidget(self.stats_text, 1, 0)
 
@@ -126,8 +125,7 @@ class AsignacionGuardiasForm(BaseForm):
 
         self.distribucion_text = QTextEdit()
         self.distribucion_text.setReadOnly(True)
-        self.distribucion_text.setMinimumHeight(200)
-        self.distribucion_text.setMaximumHeight(280)
+        self.distribucion_text.setMinimumHeight(280)
         self.distribucion_text.setStyleSheet(styles.STYLE_INPUT)
         grid_layout.addWidget(self.distribucion_text, 1, 1)
 
@@ -140,7 +138,7 @@ class AsignacionGuardiasForm(BaseForm):
         self.generar_button.clicked.connect(self.generar_guardias)
         grid_layout.addWidget(self.generar_button, 2, 1)
 
-        # ============ FILA INFERIOR (SPAN 2 COLUMNAS) ============
+        # ============ FILA INFERIOR - COLUMNA IZQUIERDA ============
 
         # Resultados de generación
         label_resultado = QLabel("📈 Resultados de Generación")
@@ -148,14 +146,39 @@ class AsignacionGuardiasForm(BaseForm):
             styles.STYLE_TITLE_SECTION + "margin-top: 12px;"
         )
         label_resultado.setMaximumHeight(20)
-        grid_layout.addWidget(label_resultado, 3, 0, 1, 2)
+        grid_layout.addWidget(label_resultado, 3, 0)
 
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
-        self.resultado_text.setMinimumHeight(220)
-        self.resultado_text.setMaximumHeight(320)
+        self.resultado_text.setMinimumHeight(320)
         self.resultado_text.setStyleSheet(styles.STYLE_INPUT)
-        grid_layout.addWidget(self.resultado_text, 4, 0, 1, 2)
+        grid_layout.addWidget(self.resultado_text, 4, 0)
+
+        # ============ FILA INFERIOR - COLUMNA DERECHA ============
+
+        # Análisis de Incidencias
+        label_incidencias = QLabel("⚠️ Análisis de Incidencias y Recomendaciones")
+        label_incidencias.setStyleSheet(
+            styles.STYLE_TITLE_SECTION + "margin-top: 12px;"
+        )
+        label_incidencias.setMaximumHeight(20)
+        grid_layout.addWidget(label_incidencias, 3, 1)
+
+        self.incidencias_text = QTextEdit()
+        self.incidencias_text.setReadOnly(True)
+        self.incidencias_text.setMinimumHeight(320)
+        self.incidencias_text.setStyleSheet(
+            styles.STYLE_INPUT + """
+            QTextEdit {
+                background-color: #FFF9E6;
+                border: 2px solid #FFA726;
+            }
+            """
+        )
+        self.incidencias_text.setPlaceholderText(
+            "Las incidencias y recomendaciones se mostrarán aquí después de generar guardias..."
+        )
+        grid_layout.addWidget(self.incidencias_text, 4, 1)
 
         # Botón limpiar (centrado, abajo)
         button_container = QWidget()
@@ -266,7 +289,6 @@ Número de profesores: {stats.num_profesores}
 
             if count_guardias > 0:
                 from PyQt6.QtWidgets import QMessageBox
-
                 from utils.ui_helpers import show_question_with_cancel
                 respuesta = show_question_with_cancel(
                     self,
@@ -318,6 +340,9 @@ Número de profesores: {stats.num_profesores}
                 # Mostrar resumen en el área de resultados
                 texto = self._formatear_resumen(resumen)
                 self.resultado_text.setText(texto)
+
+                # Analizar y mostrar incidencias
+                self._analizar_incidencias(resumen)
 
                 self.mostrar_exito(
                     "Asignación generada",
@@ -389,10 +414,120 @@ Número de profesores: {stats.num_profesores}
 
         return "\n".join(lineas)
 
+    def _analizar_incidencias(self, resumen):
+        """
+        Analizar incidencias de la generación y proporcionar recomendaciones.
+
+        Args:
+            resumen: ResumenGeneracionDTO con los resultados
+        """
+        incidencias = []
+
+        # Analizar cobertura
+        if resumen.cobertura_completa:
+            incidencias.append("✅ SIN INCIDENCIAS")
+            incidencias.append("")
+            incidencias.append("La generación se completó exitosamente:")
+            incidencias.append(f"• Todos los {resumen.slots_esperados} slots fueron cubiertos")
+            incidencias.append("• La distribución de guardias es óptima")
+            incidencias.append("")
+            incidencias.append("🎯 Recomendaciones:")
+            incidencias.append("• Revisa el calendario generado en la sección 'Calendario'")
+            incidencias.append("• Puedes exportar los resultados para compartir con el equipo")
+        else:
+            # Hay incidencias
+            slots_sin_cubrir = resumen.slots_sin_cubrir
+            porcentaje_sin_cubrir = (slots_sin_cubrir / resumen.slots_esperados * 100) if resumen.slots_esperados > 0 else 0
+
+            incidencias.append("⚠️ INCIDENCIAS DETECTADAS")
+            incidencias.append("")
+            incidencias.append("📊 Resumen:")
+            incidencias.append(f"• Slots sin cubrir: {slots_sin_cubrir} de {resumen.slots_esperados} ({porcentaje_sin_cubrir:.1f}%)")
+            incidencias.append(f"• Guardias generadas: {resumen.guardias_generadas}")
+            incidencias.append("")
+
+            # Analizar causas
+            incidencias.append("🔍 CAUSAS PRINCIPALES:")
+            incidencias.append("")
+
+            # 1. Falta de profesores elegibles
+            incidencias.append("1️⃣ FALTA DE ELEGIBILIDAD DE PROFESORES")
+            incidencias.append("")
+            incidencias.append("   Algunos slots no tienen profesores disponibles porque:")
+            incidencias.append("   • Restricciones de horario muy estrictas")
+            incidencias.append("   • Fechas de inicio/fin de guardias limitadas")
+            incidencias.append("   • Turnos incompatibles (profesores de mañana no cubren tarde y viceversa)")
+            incidencias.append("   • Profesores con jornada reducida ya asignados al máximo")
+            incidencias.append("")
+
+            # 2. Desequilibrio de recursos
+            from models.models import Zona
+            num_zonas = self.session.query(Zona).count()
+            num_profesores = self.session.query(Profesor).count()
+
+            incidencias.append("2️⃣ ANÁLISIS DE RECURSOS")
+            incidencias.append("")
+            incidencias.append(f"   • Profesores activos: {num_profesores}")
+            incidencias.append(f"   • Zonas configuradas: {num_zonas}")
+            incidencias.append(f"   • Ratio profesor/zona: {num_profesores/num_zonas:.2f}" if num_zonas > 0 else "   • Ratio: N/A (no hay zonas)")
+
+            if num_zonas > 0 and num_profesores / num_zonas < 3:
+                incidencias.append("")
+                incidencias.append("   ⚠️ El ratio profesor/zona es bajo. Recomendado: mínimo 3:1")
+            incidencias.append("")
+
+            # 3. Distribución desigual
+            if resumen.resumen_por_profesor:
+                guardias_por_prof = list(resumen.resumen_por_profesor.values())
+                if guardias_por_prof:
+                    max_guardias = max(guardias_por_prof)
+                    min_guardias = min(guardias_por_prof)
+                    diferencia = max_guardias - min_guardias
+
+                    incidencias.append("3️⃣ DISTRIBUCIÓN DE CARGA")
+                    incidencias.append("")
+                    incidencias.append(f"   • Máximo de guardias asignadas: {max_guardias}")
+                    incidencias.append(f"   • Mínimo de guardias asignadas: {min_guardias}")
+                    incidencias.append(f"   • Diferencia: {diferencia}")
+
+                    if diferencia > 20:
+                        incidencias.append("")
+                        incidencias.append("   ⚠️ Distribución muy desigual detectada")
+                    incidencias.append("")
+
+            # Recomendaciones
+            incidencias.append("")
+            incidencias.append("💡 SOLUCIONES RECOMENDADAS:")
+            incidencias.append("")
+            incidencias.append("1. Revisar restricciones de profesores:")
+            incidencias.append("   • Ve a 'Profesores' y revisa las restricciones de horario")
+            incidencias.append("   • Considera flexibilizar los recreos permitidos")
+            incidencias.append("   • Verifica fechas de inicio/fin de guardias")
+            incidencias.append("")
+            incidencias.append("2. Ajustar recursos:")
+            if num_zonas > 0 and num_profesores / num_zonas < 3:
+                incidencias.append("   • Añadir más profesores al sistema")
+                incidencias.append("   • O reducir el número de zonas a vigilar")
+            else:
+                incidencias.append("   • La cantidad de profesores parece adecuada")
+            incidencias.append("")
+            incidencias.append("3. Verificar configuración:")
+            incidencias.append("   • Revisa días lectivos en 'Configuración'")
+            incidencias.append("   • Verifica número de recreos por turno")
+            incidencias.append("   • Asegúrate de que las zonas estén bien configuradas")
+            incidencias.append("")
+            incidencias.append("4. Alternativas:")
+            incidencias.append("   • Permite que profesores de mañana cubran tarde (o viceversa)")
+            incidencias.append("   • Aumenta las horas de contrato de algunos profesores")
+            incidencias.append("   • Considera contratar profesores de apoyo")
+
+        self.incidencias_text.setText("\n".join(incidencias))
+
     def limpiar_formulario(self):
         """Limpiar todos los campos del formulario"""
         self.distribucion_text.clear()
         self.resultado_text.clear()
+        self.incidencias_text.clear()
         self.generar_button.setEnabled(False)
         self.cargar_estadisticas()
 

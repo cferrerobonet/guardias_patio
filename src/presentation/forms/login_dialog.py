@@ -17,8 +17,9 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
 from sync.sync_manager import UserAuth
+from utils.icon_manager import get_icon
+from utils.ui_helpers import get_corporate_icon
 
 
 class RegisterDialog(QDialog):
@@ -33,6 +34,7 @@ class RegisterDialog(QDialog):
     def setup_ui(self):
         """Configura la interfaz del diálogo de registro."""
         self.setWindowTitle("📝 Registrar Nuevo Usuario")
+        self.setWindowIcon(get_corporate_icon())
         self.setModal(True)
         self.setMinimumWidth(500)
         self.setMaximumWidth(500)
@@ -238,7 +240,8 @@ class LoginDialog(QDialog):
 
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
-        self.setWindowTitle("🔐 Iniciar Sesión - Guardias de Patio")
+        self.setWindowTitle("Iniciar Sesión - Guardias de Patio")
+        self.setWindowIcon(get_icon("login", "#007ACC", 32))
         self.setModal(True)
         self.setMinimumWidth(450)
 
@@ -261,7 +264,7 @@ class LoginDialog(QDialog):
             pixmap = QPixmap(str(logo_path))
             # Escalar el logo manteniendo la proporción
             scaled_pixmap = pixmap.scaled(
-                200, 200,
+                180, 180,
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation
             )
@@ -272,22 +275,35 @@ class LoginDialog(QDialog):
             logo_label.setStyleSheet("font-size: 64px;")
 
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        logo_label.setStyleSheet("padding: 20px; background-color: #f8f9fa;")
+        logo_label.setStyleSheet("padding: 10px; background-color: #f8f9fa;")
         layout.addWidget(logo_label)
 
         # Título
-        title = QLabel("Bienvenido a Guardias de Patio")
+        title = QLabel("Generador de\nGuardias de Patio")
         title.setStyleSheet("""
             QLabel {
-                font-size: 18px;
+                font-size: 34px;
                 font-weight: bold;
                 color: #007ACC;
-                padding: 20px;
+                padding: 10px 10px 5px 10px;
                 background-color: #f8f9fa;
             }
         """)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
+
+        # Créditos
+        credits = QLabel("(Created & Powered by CFB - Enero 2026)")
+        credits.setStyleSheet("""
+            QLabel {
+                font-size: 12px;
+                color: #6c757d;
+                padding: 0px 20px 20px 20px;
+                background-color: #f8f9fa;
+            }
+        """)
+        credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(credits)
 
         # Formulario
         form_layout = QFormLayout()
@@ -299,15 +315,25 @@ class LoginDialog(QDialog):
         self.username_combo.setEditable(True)
         self.username_combo.setPlaceholderText("Selecciona o escribe tu usuario")
         self.username_combo.setMinimumHeight(35)
+        self.username_combo.setMinimumWidth(240)
         self.username_combo.currentTextChanged.connect(self.on_user_selected)
-        form_layout.addRow("👤 Usuario:", self.username_combo)
+
+        # Label con icono para usuario
+        user_label = QLabel("👤 Usuario:")
+        user_label.setStyleSheet("color: #333; font-weight: 400;")
+        form_layout.addRow(user_label, self.username_combo)
 
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Introduce tu contraseña")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setMinimumHeight(35)
+        self.password_input.setMinimumWidth(240)
         self.password_input.returnPressed.connect(self.login)
-        form_layout.addRow("🔑 Contraseña:", self.password_input)
+
+        # Label con icono para contraseña
+        password_label = QLabel("🔑 Contraseña:")
+        password_label.setStyleSheet("color: #333; font-weight: 400;")
+        form_layout.addRow(password_label, self.password_input)
 
         layout.addLayout(form_layout)
 
@@ -316,7 +342,8 @@ class LoginDialog(QDialog):
         buttons_layout.setSpacing(10)
         buttons_layout.setContentsMargins(40, 10, 40, 20)
 
-        self.delete_user_btn = QPushButton("🗑️ Eliminar")
+        self.delete_user_btn = QPushButton(" Eliminar")
+        self.delete_user_btn.setIcon(get_icon("close", "white", 18))
         self.delete_user_btn.setMinimumHeight(40)
         self.delete_user_btn.clicked.connect(self.open_delete_user_dialog)
         self.delete_user_btn.setStyleSheet("""
@@ -334,7 +361,8 @@ class LoginDialog(QDialog):
         """)
         buttons_layout.addWidget(self.delete_user_btn)
 
-        self.register_btn = QPushButton("📝 Nuevo Usuario")
+        self.register_btn = QPushButton(" Nuevo Usuario")
+        self.register_btn.setIcon(get_icon("account-plus", "white", 18))
         self.register_btn.setMinimumHeight(40)
         self.register_btn.clicked.connect(self.open_register_dialog)
         self.register_btn.setStyleSheet("""
@@ -352,7 +380,8 @@ class LoginDialog(QDialog):
         """)
         buttons_layout.addWidget(self.register_btn)
 
-        self.login_btn = QPushButton("✓ Iniciar Sesión")
+        self.login_btn = QPushButton(" Iniciar Sesión")
+        self.login_btn.setIcon(get_icon("login", "white", 18))
         self.login_btn.setMinimumHeight(40)
         self.login_btn.clicked.connect(self.login)
         self.login_btn.setDefault(True)
@@ -374,7 +403,9 @@ class LoginDialog(QDialog):
         layout.addLayout(buttons_layout)
 
         # Link de recuperación de contraseña
-        forgot_password_label = QLabel('<a href="#" style="color: #007ACC;">¿Olvidaste tu contraseña?</a>')
+        forgot_password_label = QLabel(
+            '<a href="#" style="color: #007ACC;">¿Olvidaste tu contraseña?</a>'
+        )
         forgot_password_label.setStyleSheet("padding: 10px; font-size: 12px;")
         forgot_password_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         forgot_password_label.setTextFormat(Qt.TextFormat.RichText)
@@ -383,7 +414,7 @@ class LoginDialog(QDialog):
         layout.addWidget(forgot_password_label)
 
         # Información
-        info_label = QLabel("💡 Primera vez? Haz clic en Nuevo Usuario")
+        info_label = QLabel("ℹ️ Primera vez? Haz clic en Nuevo Usuario")
         info_label.setStyleSheet("color: #6B7280; font-size: 12px; padding: 10px;")
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(info_label)

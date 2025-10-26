@@ -10,7 +10,7 @@ Migrado a presentation/widgets en Sprint 11 - Task 11.1.2
 
 from typing import Callable, Optional
 
-from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
     QLabel,
@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from utils.ui_helpers import get_corporate_icon
 
 
 class ProgressDialog(QDialog):
@@ -71,8 +72,17 @@ class ProgressDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle(title)
+        self.setWindowIcon(get_corporate_icon())
         self.setModal(True)  # Bloquear interacción con ventana padre
         self.setMinimumWidth(400)
+
+        # Deshabilitar botón de maximizar (solo permitir cerrar y minimizar)
+        self.setWindowFlags(
+            Qt.WindowType.Dialog |
+            Qt.WindowType.WindowTitleHint |
+            Qt.WindowType.WindowCloseButtonHint |
+            Qt.WindowType.CustomizeWindowHint
+        )
 
         self._cancelado = False
         self._cancelable = cancelable

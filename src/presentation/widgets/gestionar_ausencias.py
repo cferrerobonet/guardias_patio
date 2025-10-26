@@ -6,6 +6,8 @@ Permite registrar, editar, eliminar y visualizar ausencias.
 
 from datetime import date
 
+import ui_styles as styles
+from models.models import Ausencia, Profesor
 from PyQt6.QtCore import QDate, Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -22,10 +24,6 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
-
-import ui_styles as styles
-from models.models import Ausencia, Profesor
-from presentation.forms.base_form import BaseForm
 from services.gestor_ausencias import (
     desactivar_ausencia,
     editar_ausencia,
@@ -37,6 +35,9 @@ from services.gestor_ausencias import (
     reasignar_guardias_automaticamente,
     registrar_ausencia,
 )
+from utils.ui_helpers import get_corporate_icon
+
+from presentation.forms.base_form import BaseForm
 
 
 class GestionarAusenciasForm(BaseForm):
@@ -606,6 +607,7 @@ class DialogoReasignacion(QDialog):
         self.ausencia_id = ausencia_id
         self.session = session
         self.setWindowTitle("Reasignación de Guardias")
+        self.setWindowIcon(get_corporate_icon())
         self.setMinimumWidth(800)
         self.setMinimumHeight(600)
         self.init_ui()
@@ -773,7 +775,11 @@ class DialogoReasignacion(QDialog):
                     Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
                     Qt.WindowType.WindowTitleHint
                 )
-                msg.setText(f"Guardia reasignada a {nuevo_profesor.nombre_completo}")
+                msg.setTextFormat(Qt.TextFormat.RichText)
+                msg.setText(
+                    f"Guardia reasignada a "
+                    f"<span style='color: #007ACC; font-style: italic;'>{nuevo_profesor.nombre_completo}</span>"
+                )
                 msg.exec()
 
                 self.close()
