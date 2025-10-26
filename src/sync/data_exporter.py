@@ -10,7 +10,7 @@ import json
 import logging
 from datetime import date, datetime, time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
 
@@ -28,7 +28,7 @@ class DataExporter:
         if isinstance(obj, (date, datetime)):
             return obj.isoformat()
         return str(obj)
-    
+
     @staticmethod
     def _parse_date(date_str: Optional[str]) -> Optional[date]:
         """Convierte string ISO a objeto date."""
@@ -41,7 +41,7 @@ class DataExporter:
         except (ValueError, AttributeError):
             logger.warning(f"No se pudo parsear fecha: {date_str}")
             return None
-    
+
     @staticmethod
     def _parse_time(time_str: Optional[str]) -> Optional[time]:
         """Convierte string ISO a objeto time."""
@@ -66,6 +66,7 @@ class DataExporter:
             Dict con configuración SMTP o None si no existe
         """
         import os
+
         from dotenv import load_dotenv
 
         load_dotenv()
@@ -455,7 +456,7 @@ class DataExporter:
             session.commit()
             logger.info(f"✓ {ausencias_importadas} ausencias importadas/actualizadas")
 
-            logger.info(f"✅ Importación completada exitosamente")
+            logger.info("✅ Importación completada exitosamente")
             return True
 
         except Exception as e:

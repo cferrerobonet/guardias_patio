@@ -40,7 +40,7 @@ class CrearZonaDTO(BaseModel):
         if len(v_stripped) < 2:
             raise ValueError("El nombre de la zona debe tener al menos 2 caracteres")
         return v_stripped
-    
+
     @field_validator("fecha_fin")
     @classmethod
     def validar_fechas(cls, v: Optional[date], info) -> Optional[date]:
@@ -71,7 +71,7 @@ class ActualizarZonaDTO(BaseModel):
         if len(v_stripped) < 2:
             raise ValueError("El nombre de la zona debe tener al menos 2 caracteres")
         return v_stripped
-    
+
     @field_validator("fecha_fin")
     @classmethod
     def validar_fechas(cls, v: Optional[date], info) -> Optional[date]:

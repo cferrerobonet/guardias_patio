@@ -11,10 +11,10 @@ from sqlalchemy.orm import Session
 from utils.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
 from utils.ui_helpers import (
+    MESSAGEBOX_STYLE,
+    apply_corporate_icon_to_messagebox,
     get_corporate_icon,
     get_corporate_pixmap,
-    MESSAGEBOX_STYLE,
-    apply_corporate_icon_to_messagebox
 )
 
 
@@ -58,7 +58,7 @@ class BaseForm(QWidget):
 
         # Aplicar icono corporativo
         apply_corporate_icon_to_messagebox(msg_box)
-        
+
         # Aplicar estilos directamente
         msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
@@ -80,7 +80,7 @@ class BaseForm(QWidget):
 
         # Aplicar icono corporativo
         apply_corporate_icon_to_messagebox(msg_box)
-        
+
         # Aplicar estilos directamente
         msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
@@ -102,7 +102,7 @@ class BaseForm(QWidget):
 
         # Aplicar icono corporativo
         apply_corporate_icon_to_messagebox(msg_box)
-        
+
         # Aplicar estilos directamente
         msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
@@ -131,7 +131,7 @@ class BaseForm(QWidget):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-        
+
         # Aplicar estilos directamente a los botones
         msg_box.setStyleSheet(MESSAGEBOX_STYLE)
         respuesta = msg_box.exec()
@@ -165,10 +165,10 @@ class BaseForm(QWidget):
             msg_box.setIcon(QMessageBox.Icon.Question)
 
         msg_box.setStandardButtons(botones)
-        
+
         # Aplicar estilo corporativo a los botones
         msg_box.setStyleSheet(MESSAGEBOX_STYLE)
-        
+
         return msg_box.exec()
 
     def manejar_excepcion(self, exception: Exception, operacion: str) -> None:

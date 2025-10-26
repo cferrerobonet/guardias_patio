@@ -104,7 +104,7 @@ class SidebarMenu(QWidget):
             }
         """)
         layout.addWidget(label)
-        
+
         # Línea separadora debajo de categoría
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)

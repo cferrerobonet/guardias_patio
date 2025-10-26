@@ -17,6 +17,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 import pytest
+
 from database.db_manager import SessionLocal
 from models.models import Configuracion, Guardia, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias, guardar_guardias_en_bd

@@ -6,15 +6,15 @@ Permite modificar los datos de un profesor registrado en el sistema.
 
 import json
 
+from sqlalchemy.orm import Session
+
+from application.dtos.profesor_dto import ActualizarProfesorDTO, ProfesorDTO
 from core.exceptions import NotFoundError
 from core.observability import with_metrics
 from models.models import Profesor
-from sqlalchemy.orm import Session
 from utils.exceptions import BusinessLogicError
 from utils.logger import get_logger
 from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
-
-from application.dtos.profesor_dto import ActualizarProfesorDTO, ProfesorDTO
 
 logger = get_logger(__name__)
 

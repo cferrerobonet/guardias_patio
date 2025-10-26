@@ -474,17 +474,17 @@ class ConfiguracionForm(BaseForm):
         # Botones SMTP
         smtp_btn_layout = QHBoxLayout()
         smtp_btn_layout.setSpacing(10)
-        
+
         self.modify_smtp_btn = QPushButton("🔓 Modificar Configuración SMTP")
         self.modify_smtp_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
         self.modify_smtp_btn.clicked.connect(self.toggle_smtp_editable)
         smtp_btn_layout.addWidget(self.modify_smtp_btn)
-        
+
         self.test_smtp_btn = QPushButton("✉️ Probar Conexión SMTP")
         self.test_smtp_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.test_smtp_btn.clicked.connect(self.probar_smtp)
         smtp_btn_layout.addWidget(self.test_smtp_btn)
-        
+
         smtp_btn_layout.addStretch()
         layout.addLayout(smtp_btn_layout)
 
@@ -575,7 +575,7 @@ class ConfiguracionForm(BaseForm):
                 "La configuración SMTP también se ha guardado."
             )
             if email_guardado:
-                mensaje_exito += f"\n\nTu email ha sido actualizado."
+                mensaje_exito += "\n\nTu email ha sido actualizado."
 
             self.mostrar_exito("Configuración Guardada", mensaje_exito)
 
@@ -670,7 +670,7 @@ class ConfiguracionForm(BaseForm):
             # Verificar si el email cambió
             user_data = self.user_auth.users.get(self.current_username, {})
             email_actual = user_data.get("email", "")
-            
+
             if nuevo_email == email_actual:
                 return False  # No hubo cambios
 
@@ -740,7 +740,7 @@ class ConfiguracionForm(BaseForm):
             bool: True si el usuario acepta los riesgos, False si cancela.
         """
         from PyQt6.QtWidgets import QMessageBox
-        
+
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Icon.Warning)
         msg.setWindowTitle("⚠️ Configuración SMTP Global")
@@ -762,13 +762,13 @@ class ConfiguracionForm(BaseForm):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         msg.setDefaultButton(QMessageBox.StandardButton.No)
-        
+
         # Personalizar textos de los botones
         yes_button = msg.button(QMessageBox.StandardButton.Yes)
-        yes_button.setText("Entiendo los riesgos, continuar")
+        yes_button.setText("Continuar")
         no_button = msg.button(QMessageBox.StandardButton.No)
         no_button.setText("Cancelar")
-        
+
         resultado = msg.exec()
         return resultado == QMessageBox.StandardButton.Yes
 
@@ -821,6 +821,7 @@ class ConfiguracionForm(BaseForm):
     def cargar_smtp(self) -> None:
         """Carga la configuración SMTP desde el archivo .env."""
         import os
+
         from dotenv import load_dotenv
 
         # Cargar variables de entorno
@@ -830,7 +831,7 @@ class ConfiguracionForm(BaseForm):
         self.smtp_server_input.setText(os.getenv("SMTP_SERVER", ""))
         self.smtp_port_input.setText(os.getenv("SMTP_PORT", "587"))
         self.smtp_user_input.setText(os.getenv("SMTP_USER", ""))
-        
+
         # Solo cargar contraseña si existe (por seguridad no la mostramos completa)
         smtp_password = os.getenv("SMTP_PASSWORD", "")
         if smtp_password:
@@ -907,7 +908,7 @@ class ConfiguracionForm(BaseForm):
 
             # Recargar para mostrar la contraseña enmascarada
             self.cargar_smtp()
-            
+
             return True
 
         except Exception as e:
@@ -917,8 +918,9 @@ class ConfiguracionForm(BaseForm):
     def probar_smtp(self) -> None:
         """Prueba la conexión SMTP enviando un email de prueba al usuario actual."""
         import smtplib
-        from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
         from PyQt6.QtWidgets import QMessageBox
 
         try:
@@ -938,6 +940,7 @@ class ConfiguracionForm(BaseForm):
             # Si la contraseña son asteriscos, cargar la real
             if smtp_password == "••••••••":
                 import os
+
                 from dotenv import load_dotenv
                 load_dotenv()
                 smtp_password = os.getenv("SMTP_PASSWORD", "")
@@ -952,10 +955,10 @@ class ConfiguracionForm(BaseForm):
             # Obtener email del usuario actual para enviar la prueba
             user_data = self.user_auth.users.get(self.current_username, {})
             email_destino = user_data.get("email", "")
-            
+
             if not email_destino or "@" not in email_destino:
                 email_destino = self.email_input.text().strip()
-                
+
             if not email_destino or "@" not in email_destino:
                 self.mostrar_advertencia(
                     "Email no configurado",
@@ -965,17 +968,17 @@ class ConfiguracionForm(BaseForm):
 
             # Intentar conectar y enviar email de prueba
             self.logger.info(f"Probando conexión SMTP a {smtp_server}:{smtp_port}")
-            
+
             with smtplib.SMTP(smtp_server, int(smtp_port), timeout=10) as server:
                 server.starttls()
                 server.login(smtp_user, smtp_password)
-                
+
                 # Crear email de prueba
                 msg = MIMEMultipart("alternative")
                 msg["Subject"] = "✅ Prueba de Configuración SMTP - Guardias de Patio"
                 msg["From"] = smtp_user
                 msg["To"] = email_destino
-                
+
                 # Contenido del email
                 texto = f"""
                 Hola {self.current_username},
@@ -990,7 +993,7 @@ class ConfiguracionForm(BaseForm):
                 ---
                 Sistema de Gestión de Guardias de Patio
                 """
-                
+
                 html = f"""
                 <html>
                   <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -1019,12 +1022,12 @@ class ConfiguracionForm(BaseForm):
                   </body>
                 </html>
                 """
-                
+
                 part1 = MIMEText(texto, "plain")
                 part2 = MIMEText(html, "html")
                 msg.attach(part1)
                 msg.attach(part2)
-                
+
                 # Enviar email
                 server.send_message(msg)
 

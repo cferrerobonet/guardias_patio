@@ -30,7 +30,7 @@ def create_sync_backend(backend_type: str = "sftp") -> SyncBackend:
         local_path = Path("cloud_storage_local")
         logger.info(f"Creando LocalSyncBackend en: {local_path}")
         return LocalSyncBackend(local_path)
-    
+
     elif backend_type == "sftp":
         # Backend SFTP para producción
         if not validate_sftp_config():
@@ -38,7 +38,7 @@ def create_sync_backend(backend_type: str = "sftp") -> SyncBackend:
                 "Configuración SFTP incompleta. "
                 "Verifica que exista el archivo .env con las credenciales."
             )
-        
+
         try:
             import paramiko
         except ImportError:
@@ -46,10 +46,10 @@ def create_sync_backend(backend_type: str = "sftp") -> SyncBackend:
                 "Paramiko no está instalado. "
                 "Ejecuta: pip install paramiko"
             )
-        
+
         config = get_sftp_config()
         logger.info(f"Creando SFTPSyncBackend para {config['host']}")
-        
+
         return SFTPSyncBackend(
             host=config["host"],
             port=config["port"],
@@ -57,7 +57,7 @@ def create_sync_backend(backend_type: str = "sftp") -> SyncBackend:
             password=config["password"],
             base_dir=config["base_dir"],
         )
-    
+
     else:
         raise ValueError(f"Backend desconocido: {backend_type}")
 
@@ -78,7 +78,7 @@ def get_default_backend() -> SyncBackend:
             logger.warning("⚠ Configuración SFTP no válida")
     except Exception as e:
         logger.error(f"❌ Error al crear backend SFTP: {e}", exc_info=True)
-    
+
     # Fallback a local
     logger.warning("⚠ Usando backend local como fallback (NO se sincronizará con la nube)")
     return create_sync_backend("local")

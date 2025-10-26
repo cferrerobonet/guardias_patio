@@ -10,6 +10,7 @@ Tests unitarios para SQLAlchemy repositories:
 from datetime import date
 
 import pytest
+
 from database.db_manager import SessionLocal
 from domain.entities import ProfesorEntity, ZonaEntity
 from domain.value_objects import (

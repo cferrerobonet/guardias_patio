@@ -7,11 +7,11 @@ Permite buscar profesores filtrando por nombre o email corporativo.
 import json
 from typing import List
 
-from core.observability import with_metrics
-from models.models import Profesor
 from sqlalchemy.orm import Session
 
 from application.dtos.profesor_dto import ProfesorDTO
+from core.observability import with_metrics
+from models.models import Profesor
 
 
 class BuscarProfesoresUseCase:

@@ -11,7 +11,6 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QMessageBox, QWidget
 
-
 # Estilos consistentes para todos los QMessageBox
 MESSAGEBOX_STYLE = """
     QMessageBox {
@@ -106,7 +105,7 @@ def apply_corporate_icon_to_messagebox(msg_box: QMessageBox) -> None:
                 return
     except Exception as e:
         print(f"Error aplicando icono corporativo: {e}")
-    
+
     # Fallback: usar icono estándar de pregunta
     msg_box.setIcon(QMessageBox.Icon.Question)
 
@@ -127,7 +126,7 @@ def show_info(parent: Optional[QWidget], title: str, message: str) -> None:
 
     # Aplicar icono corporativo sin establecer icono estándar primero
     apply_corporate_icon_to_messagebox(msg_box)
-    
+
     # Aplicar estilos
     msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
@@ -150,7 +149,7 @@ def show_warning(parent: Optional[QWidget], title: str, message: str) -> None:
 
     # Aplicar icono corporativo
     apply_corporate_icon_to_messagebox(msg_box)
-    
+
     # Aplicar estilos
     msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
@@ -173,7 +172,7 @@ def show_error(parent: Optional[QWidget], title: str, message: str) -> None:
 
     # Aplicar icono corporativo
     apply_corporate_icon_to_messagebox(msg_box)
-    
+
     # Aplicar estilos
     msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
@@ -213,10 +212,10 @@ def show_question(
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
     else:
         msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
-    
+
     # Aplicar estilos
     msg_box.setStyleSheet(MESSAGEBOX_STYLE)
-    
+
     return msg_box.exec()
 
 
@@ -258,7 +257,7 @@ def show_question_with_cancel(
         msg_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
     else:
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-    
+
     # Aplicar estilos
     msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 

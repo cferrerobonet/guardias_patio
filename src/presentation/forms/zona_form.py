@@ -11,8 +11,8 @@ from PyQt6.QtWidgets import (
     QCheckBox,
     QDateEdit,
     QGroupBox,
-    QHeaderView,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QPushButton,
@@ -152,10 +152,10 @@ class ZonaForm(BaseForm):
         self.tabla_zonas.setHorizontalHeaderLabels([
             "ID", "Nombre", "Descripción", "Fecha Inicio", "Fecha Fin"
         ])
-        
+
         # Ocultar columna ID
         self.tabla_zonas.setColumnHidden(0, True)
-        
+
         # Configurar el ancho de las columnas
         self.tabla_zonas.horizontalHeader().setStretchLastSection(False)
         self.tabla_zonas.horizontalHeader().setSectionResizeMode(
@@ -170,7 +170,7 @@ class ZonaForm(BaseForm):
         self.tabla_zonas.horizontalHeader().setSectionResizeMode(
             4, QHeaderView.ResizeMode.ResizeToContents  # Fecha Fin
         )
-        
+
         self.tabla_zonas.setSortingEnabled(True)
         self.tabla_zonas.setSelectionBehavior(
             QTableWidget.SelectionBehavior.SelectRows
@@ -181,7 +181,7 @@ class ZonaForm(BaseForm):
         )
         self.tabla_zonas.doubleClicked.connect(self.editar_zona)
         left_section.addWidget(self.tabla_zonas)
-        
+
         # Label informativo de multiselección
         from presentation.themes.ccleaner_theme import (
             CONTENT_BG_ALT,
@@ -346,12 +346,12 @@ class ZonaForm(BaseForm):
         try:
             nombre = self.nombre_zona_input.text().strip()
             descripcion = self.descripcion_input.text().strip() or None
-            
+
             # Obtener fechas opcionales
             fecha_inicio = None
             if self.usar_fecha_inicio_check.isChecked():
                 fecha_inicio = self.fecha_inicio_input.date().toPyDate()
-            
+
             fecha_fin = None
             if self.usar_fecha_fin_check.isChecked():
                 fecha_fin = self.fecha_fin_input.date().toPyDate()
@@ -433,7 +433,7 @@ class ZonaForm(BaseForm):
         item_id = self.tabla_zonas.item(fila_actual, 0)
         if not item_id:
             return
-        
+
         id_zona = int(item_id.text())
 
         try:
@@ -450,7 +450,7 @@ class ZonaForm(BaseForm):
             # Cargar datos en el formulario
             self.nombre_zona_input.setText(zona.nombre_zona or "")
             self.descripcion_input.setText(zona.descripcion or "")
-            
+
             # Cargar fechas si existen
             if zona.fecha_inicio:
                 self.usar_fecha_inicio_check.setChecked(True)
@@ -458,7 +458,7 @@ class ZonaForm(BaseForm):
                 self.fecha_inicio_input.setDate(qdate_inicio)
             else:
                 self.usar_fecha_inicio_check.setChecked(False)
-            
+
             if zona.fecha_fin:
                 self.usar_fecha_fin_check.setChecked(True)
                 qdate_fin = QDate(zona.fecha_fin.year, zona.fecha_fin.month, zona.fecha_fin.day)
@@ -499,21 +499,21 @@ class ZonaForm(BaseForm):
             # Agregar zonas a la tabla
             for row, zona in enumerate(zonas):
                 self.tabla_zonas.insertRow(row)
-                
+
                 # ID
                 item_id = QTableWidgetItem(str(zona.id))
                 item_id.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_zonas.setItem(row, 0, item_id)
-                
+
                 # Nombre
                 item_nombre = QTableWidgetItem(zona.nombre_zona)
                 self.tabla_zonas.setItem(row, 1, item_nombre)
-                
+
                 # Descripción
                 desc = zona.descripcion if zona.descripcion else "Sin descripción"
                 item_desc = QTableWidgetItem(desc)
                 self.tabla_zonas.setItem(row, 2, item_desc)
-                
+
                 # Fecha Inicio
                 if zona.fecha_inicio:
                     fecha_inicio_texto = zona.fecha_inicio.strftime('%d/%m/%Y')
@@ -522,7 +522,7 @@ class ZonaForm(BaseForm):
                 item_fecha_inicio = QTableWidgetItem(fecha_inicio_texto)
                 item_fecha_inicio.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_zonas.setItem(row, 3, item_fecha_inicio)
-                
+
                 # Fecha Fin
                 if zona.fecha_fin:
                     fecha_fin_texto = zona.fecha_fin.strftime('%d/%m/%Y')
@@ -539,7 +539,7 @@ class ZonaForm(BaseForm):
         """Eliminar las zonas seleccionadas usando el Use Case"""
         # Obtener filas seleccionadas
         filas_seleccionadas = self.tabla_zonas.selectionModel().selectedRows()
-        
+
         if not filas_seleccionadas:
             self.mostrar_advertencia(
                 "Selección requerida",
@@ -556,15 +556,15 @@ class ZonaForm(BaseForm):
             fila = index.row()
             item_id = self.tabla_zonas.item(fila, 0)
             item_nombre = self.tabla_zonas.item(fila, 1)
-            
+
             if item_id:
                 id_zona = int(item_id.text())
                 nombre_zona = item_nombre.text() if item_nombre else f"ID {id_zona}"
                 zonas_a_eliminar.append((id_zona, nombre_zona))
-        
+
         if not zonas_a_eliminar:
             return
-        
+
         # Preparar mensaje de confirmación
         cantidad = len(zonas_a_eliminar)
         if cantidad == 1:
@@ -572,7 +572,7 @@ class ZonaForm(BaseForm):
         else:
             nombres = "\n• ".join([nombre for _, nombre in zonas_a_eliminar])
             mensaje = f"¿Eliminar {cantidad} zonas?\n\n• {nombres}"
-        
+
         # Confirmar eliminación
         if not self.confirmar_accion("Confirmar eliminación", mensaje):
             return
@@ -580,7 +580,7 @@ class ZonaForm(BaseForm):
         # Eliminar zonas
         eliminadas = 0
         errores = []
-        
+
         for id_zona, nombre_zona in zonas_a_eliminar:
             try:
                 self.eliminar_zona_uc.execute(id_zona)
@@ -591,14 +591,14 @@ class ZonaForm(BaseForm):
                 errores.append(f"{nombre_zona}: {str(e)}")
             except Exception as e:
                 errores.append(f"{nombre_zona}: Error inesperado - {str(e)}")
-        
+
         # Recargar lista
         self.cargar_zonas()
-        
+
         # Emitir señal de modificación de datos
         if eliminadas > 0:
             self.datos_modificados.emit()
-        
+
         # Mostrar resultado
         if eliminadas > 0 and not errores:
             mensaje_exito = f"Se {'eliminó' if eliminadas == 1 else 'eliminaron'} {eliminadas} zona(s) correctamente."

@@ -10,23 +10,25 @@ Este script verifica que:
 
 import json
 import os
+
 from dotenv import load_dotenv
+
 
 def verificar_json_export(json_path: str) -> None:
     """Verifica que un archivo JSON de exportación tenga todos los datos necesarios."""
-    
+
     print(f"🔍 Verificando archivo: {json_path}\n")
-    
+
     if not os.path.exists(json_path):
         print(f"❌ ERROR: El archivo {json_path} no existe")
         return
-    
+
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        
+
         print("✅ JSON válido\n")
-        
+
         # Verificar claves principales
         claves_requeridas = [
             "version",
@@ -37,11 +39,11 @@ def verificar_json_export(json_path: str) -> None:
             "guardias",
             "ausencias",
         ]
-        
+
         claves_opcionales = [
             "smtp_config",  # Opcional si no está configurado
         ]
-        
+
         print("📋 Verificando claves requeridas:")
         for clave in claves_requeridas:
             if clave in data:
@@ -51,7 +53,7 @@ def verificar_json_export(json_path: str) -> None:
                     print(f"  ✅ {clave}: {data[clave]}")
             else:
                 print(f"  ❌ {clave}: FALTA")
-        
+
         print("\n📋 Verificando claves opcionales:")
         for clave in claves_opcionales:
             if clave in data:
@@ -67,12 +69,12 @@ def verificar_json_export(json_path: str) -> None:
                     print(f"  ✅ {clave}: {data[clave]}")
             else:
                 print(f"  ⚠️  {clave}: No presente (puede ser normal si no está configurado)")
-        
+
         # Verificar estructura de smtp_config si existe
         if "smtp_config" in data:
             smtp_config = data["smtp_config"]
             smtp_campos_requeridos = ["smtp_server", "smtp_port", "smtp_user", "smtp_password"]
-            
+
             print("\n🔍 Verificando estructura SMTP:")
             for campo in smtp_campos_requeridos:
                 if campo in smtp_config:
@@ -85,22 +87,22 @@ def verificar_json_export(json_path: str) -> None:
                         print(f"  ⚠️  {campo}: Vacío")
                 else:
                     print(f"  ❌ {campo}: FALTA")
-        
+
         # Resumen final
         print("\n" + "="*60)
         total_items = sum(
-            len(data[k]) for k in claves_requeridas 
+            len(data[k]) for k in claves_requeridas
             if k in data and isinstance(data[k], list)
         )
         print(f"📊 RESUMEN: {total_items} elementos exportados en total")
-        
+
         if "smtp_config" in data:
             print("🔐 Configuración SMTP: ✅ Incluida")
         else:
             print("🔐 Configuración SMTP: ⚠️  No incluida (puede ser normal)")
-        
+
         print("="*60)
-        
+
     except json.JSONDecodeError as e:
         print(f"❌ ERROR: El archivo no es un JSON válido: {e}")
     except Exception as e:
@@ -109,18 +111,18 @@ def verificar_json_export(json_path: str) -> None:
 
 def verificar_smtp_en_env() -> None:
     """Verifica que la configuración SMTP esté en el archivo .env."""
-    
+
     print("\n🔍 Verificando configuración SMTP en .env\n")
-    
+
     load_dotenv()
-    
+
     smtp_vars = {
         "SMTP_SERVER": os.getenv("SMTP_SERVER", ""),
         "SMTP_PORT": os.getenv("SMTP_PORT", ""),
         "SMTP_USER": os.getenv("SMTP_USER", ""),
         "SMTP_PASSWORD": os.getenv("SMTP_PASSWORD", ""),
     }
-    
+
     all_present = True
     for var_name, var_value in smtp_vars.items():
         if var_value:
@@ -131,7 +133,7 @@ def verificar_smtp_en_env() -> None:
         else:
             print(f"  ❌ {var_name}: No configurado")
             all_present = False
-    
+
     if all_present:
         print("\n✅ Configuración SMTP completa en .env")
     else:
@@ -143,15 +145,15 @@ if __name__ == "__main__":
     print("="*60)
     print("🧪 VERIFICADOR DE EXPORTACIÓN COMPLETA DE DATOS")
     print("="*60)
-    
+
     # Verificar SMTP en .env
     verificar_smtp_en_env()
-    
+
     # Buscar archivos JSON de exportación
     print("\n" + "="*60)
     print("📁 Buscando archivos JSON de exportación...")
     print("="*60)
-    
+
     # Buscar en el directorio actual y subdirectorios comunes
     rutas_busqueda = [
         "export_data.json",
@@ -160,12 +162,12 @@ if __name__ == "__main__":
         "exports/export_data.json",
         "sftp/export_data.json",
     ]
-    
+
     archivos_encontrados = []
     for ruta in rutas_busqueda:
         if os.path.exists(ruta):
             archivos_encontrados.append(ruta)
-    
+
     if archivos_encontrados:
         print(f"\n✅ Encontrados {len(archivos_encontrados)} archivo(s) JSON\n")
         for archivo in archivos_encontrados:
@@ -177,7 +179,7 @@ if __name__ == "__main__":
         print("   python scripts/verificar_export_completo.py <ruta_al_json>")
         print("\n   O exportar datos desde la aplicación en:")
         print("   Menú → Import/Export → Exportar Datos")
-    
+
     print("\n" + "="*60)
     print("✅ Verificación completada")
     print("="*60)

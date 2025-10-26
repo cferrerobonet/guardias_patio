@@ -219,10 +219,10 @@ class SyncManager:
 
             # Descargar si no existe localmente o si el remoto es más nuevo
             if not local_modified or (remote_modified and remote_modified > local_modified):
-                logger.info(f"📥 Descargando datos actualizados desde la nube...")
+                logger.info("📥 Descargando datos actualizados desde la nube...")
                 if self.backend.download_file(remote_path, local_json_path):
                     logger.info(f"✓ Datos descargados a {local_json_path}")
-                    
+
                     # Importar JSON a la base de datos si se proporciona session
                     if session:
                         from sync.data_exporter import DataExporter
@@ -235,7 +235,7 @@ class SyncManager:
                 else:
                     success = False
             else:
-                logger.info(f"✓ Datos locales están actualizados")
+                logger.info("✓ Datos locales están actualizados")
         else:
             logger.info("ℹ️  No hay datos en la nube aún")
 
@@ -263,10 +263,10 @@ class SyncManager:
         if session:
             from sync.data_exporter import DataExporter
             logger.info("📤 Exportando base de datos a JSON...")
-            
+
             if progress_callback:
                 progress_callback("exporting", {"message": "Exportando datos de la base de datos"})
-            
+
             if not DataExporter.export_to_json(session, local_json_path):
                 logger.error("❌ Error al exportar datos a JSON")
                 if progress_callback:
@@ -289,21 +289,21 @@ class SyncManager:
         # Conectar al servidor
         if progress_callback:
             progress_callback("connecting", {"message": "Conectando al servidor SFTP"})
-        
+
         # Subir JSON a la nube
         success = True
         if local_json_path.exists():
             remote_path = self.get_remote_path(json_filename)
-            logger.info(f"☁️  Subiendo datos a la nube...")
-            
+            logger.info("☁️  Subiendo datos a la nube...")
+
             if progress_callback:
                 progress_callback("uploading", {
                     "message": "Subiendo archivo a la nube",
                     "file_size_kb": file_size_kb
                 })
-            
+
             if self.backend.upload_file(local_json_path, remote_path):
-                logger.info(f"✅ Datos sincronizados con la nube")
+                logger.info("✅ Datos sincronizados con la nube")
                 if progress_callback:
                     progress_callback("complete", {"message": "Sincronización completada"})
             else:
@@ -414,7 +414,7 @@ class UserAuth:
         if username not in self.users:
             logger.warning(f"Usuario {username} no existe")
             return False
-        
+
         del self.users[username]
         self._save_users()
         logger.info(f"Usuario eliminado del sistema de autenticación: {username}")

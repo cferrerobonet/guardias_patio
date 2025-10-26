@@ -7,15 +7,15 @@ Implementación del repositorio de Guardia usando SQLAlchemy.
 from datetime import date
 from typing import Optional
 
+from sqlalchemy import and_
+from sqlalchemy.orm import Session, joinedload
+
 from core.exceptions import DatabaseError, NotFoundError
 from core.logging import get_logger, log_function_call
 from domain.entities import GuardiaEntity
 from domain.repositories import IGuardiaRepository
-from models.models import Guardia
-from sqlalchemy import and_
-from sqlalchemy.orm import Session, joinedload
-
 from infrastructure.mappers import GuardiaMapper
+from models.models import Guardia
 
 logger = get_logger(__name__)
 

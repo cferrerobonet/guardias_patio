@@ -26,7 +26,6 @@ from presentation.forms.profesor_form import ProfesorForm
 from presentation.forms.zona_form import ZonaForm
 from presentation.themes.ccleaner_theme import (
     CONTENT_BG,
-    SPACING_LG,
     get_complete_stylesheet,
 )
 from presentation.widgets.gestionar_ausencias import GestionarAusenciasForm
@@ -55,7 +54,7 @@ class ContentWrapper(QWidget):
         container_layout.setContentsMargins(0, 6, 0, 0)
         container_layout.setSpacing(0)
         container_layout.addWidget(content_widget)
-        
+
         # Scroll area para el contenido
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -81,7 +80,7 @@ class CCleanerMainWindow(QMainWindow):
         """Configurar la interfaz principal"""
         self.setWindowTitle("Guardias de Patio")
         self.setMinimumSize(1400, 900)
-        
+
         # Abrir en pantalla completa (fullscreen)
         self.showFullScreen()
 

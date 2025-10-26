@@ -6,6 +6,7 @@ Tests completos: ActualizarConfiguracionUseCase, ObtenerConfiguracionUseCase.
 from datetime import date, time
 
 import pytest
+
 from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
 from application.use_cases.configuracion.actualizar_configuracion import (
     ActualizarConfiguracionUseCase,

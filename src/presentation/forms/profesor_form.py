@@ -210,7 +210,7 @@ class ProfesorForm(BaseForm):
         self.tabla_profesores.doubleClicked.connect(self.editar_profesor)
 
         layout.addWidget(self.tabla_profesores)
-        
+
         # Label informativo de multiselección
         info_label = QLabel("💡 <b>Selección múltiple:</b> Ctrl+clic (individual) | Shift+clic (rango) | Ctrl+A (todos) | Supr (eliminar)")
         info_label.setStyleSheet(f"""
@@ -568,7 +568,7 @@ class ProfesorForm(BaseForm):
         """Seleccionar todos los profesores de la tabla."""
         if self.tabla_profesores.rowCount() > 0:
             self.tabla_profesores.selectAll()
-            
+
     def _toggle_mixto_fields(self, visible: bool):
         """Mostrar/ocultar campos de turno mixto."""
         for w in [
@@ -1072,7 +1072,7 @@ class ProfesorForm(BaseForm):
     def eliminar_profesor(self):
         """Eliminar profesor(es) seleccionado(s)."""
         filas_seleccionadas = self.tabla_profesores.selectionModel().selectedRows()
-        
+
         if not filas_seleccionadas:
             self.mostrar_advertencia(
                 "Selección requerida",
@@ -1114,14 +1114,14 @@ class ProfesorForm(BaseForm):
             try:
                 eliminados = 0
                 errores = []
-                
+
                 for id_profesor, nombre_profesor in profesores_a_eliminar:
                     try:
                         self.eliminar_use_case.execute(id_profesor)
                         eliminados += 1
                     except Exception as e:
                         errores.append(f"{nombre_profesor}: {str(e)}")
-                
+
                 # Mostrar resultado
                 if eliminados > 0:
                     if errores:
@@ -1135,7 +1135,7 @@ class ProfesorForm(BaseForm):
                             "Profesores eliminados",
                             f"Se eliminaron {eliminados} profesor(es) correctamente."
                         )
-                    
+
                     self.cargar_profesores()
                     # Emitir señal de modificación de datos
                     self.datos_modificados.emit()
@@ -1144,7 +1144,7 @@ class ProfesorForm(BaseForm):
                         "Error",
                         "No se pudo eliminar ningún profesor:\n• " + "\n• ".join(errores)
                     )
-                    
+
             except Exception as e:
                 self.manejar_excepcion(e, "eliminar profesores")
 

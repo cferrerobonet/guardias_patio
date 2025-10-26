@@ -4,20 +4,20 @@ Punto de entrada para la aplicación con diseño CCleaner
 Ejecutar: python src/main_ccleaner.py
 """
 
-import sys
 import logging
+import sys
 from pathlib import Path
 
 # Añadir el directorio raíz al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from PyQt6.QtCore import QTranslator, QLocale, QLibraryInfo
+from PyQt6.QtCore import QLibraryInfo, QLocale, QTranslator
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
 from presentation.ccleaner_main_window import CCleanerMainWindow
 from presentation.forms.login_dialog import LoginDialog
-from sync import get_default_backend, SyncManager
+from sync import SyncManager, get_default_backend
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -32,12 +32,12 @@ def main():
     # Configurar traducción al español
     # ==========================================
     translator = QTranslator()
-    
+
     # Cargar traducciones de Qt (para botones estándar como Yes/No)
     qt_translator = QTranslator()
     translations_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
-    
-    if qt_translator.load(QLocale(QLocale.Language.Spanish, QLocale.Country.Spain), 
+
+    if qt_translator.load(QLocale(QLocale.Language.Spanish, QLocale.Country.Spain),
                           "qtbase", "_", translations_path):
         app.installTranslator(qt_translator)
         logger.info("✓ Traducción de Qt al español cargada")
@@ -80,13 +80,13 @@ def main():
     try:
         backend = get_default_backend()
         sync_manager = SyncManager(backend, username)
-        
+
         # Sistema de bloqueo de sesión única
         from sync.session_lock import SessionLock, SessionLockManager
         from ui.dialogs.session_locked_dialog import SessionLockedDialog
-        
+
         session_lock = SessionLock(backend, username, sync_manager.user_hash)
-        
+
         # Intentar adquirir el bloqueo de sesión
         max_retries = 3
         for attempt in range(max_retries):
@@ -99,7 +99,7 @@ def main():
                 if lock_info:
                     locked_dialog = SessionLockedDialog(lock_info)
                     result = locked_dialog.exec()
-                    
+
                     if result == SessionLockedDialog.DialogCode.Rejected:
                         # Usuario canceló
                         logger.info("Usuario canceló debido a sesión bloqueada")
@@ -119,17 +119,17 @@ def main():
             )
             session.close()
             sys.exit(1)
-        
+
         # Crear gestor de heartbeat
         session_lock_manager = SessionLockManager(session_lock)
-        
+
         # Sincronizar datos al iniciar (descargar desde la nube e importar a DB)
         logger.info("Iniciando sincronización al arranque...")
         if sync_manager.sync_on_startup(session=session):
             logger.info("✓ Sincronización inicial completada")
         else:
             logger.warning("⚠ La sincronización inicial tuvo problemas (continuar de todos modos)")
-            
+
     except Exception as e:
         logger.error(f"Error al inicializar sincronización: {e}")
         msg = QMessageBox()
@@ -139,7 +139,7 @@ def main():
         msg.setInformativeText("La aplicación funcionará en modo local.\n\n"
                               f"Detalles: {str(e)}")
         msg.exec()
-    
+
     # ==========================================
     # Ventana Principal
     # ==========================================
@@ -148,37 +148,37 @@ def main():
         # Crear y mostrar la ventana principal
         window = CCleanerMainWindow(session, sync_manager=sync_manager)
         window.show()
-        
+
         # Iniciar sistema de heartbeat para mantener el bloqueo activo
         if session_lock_manager:
             session_lock_manager.start_heartbeat(app)
 
         # Ejecutar la aplicación
         exit_code = app.exec()
-        
+
     finally:
         # Detener heartbeat
         if session_lock_manager:
             session_lock_manager.stop_heartbeat()
-        
+
         # Sincronizar datos al cerrar (exportar DB a JSON y subir a la nube)
         if sync_manager:
             logger.info("Cerrando aplicación. Sincronizando cambios...")
-            
+
             # Importar el diálogo de progreso
             from ui.widgets.sync_progress_dialog import SyncProgressDialog
-            
+
             # Crear diálogo de progreso
             progress_dialog = SyncProgressDialog()
             progress_dialog.show()
-            
+
             # Callback de progreso
             def on_progress(step: str, details: dict):
                 """Actualiza el diálogo según el paso de sincronización."""
                 if step == "exporting":
                     # Contar registros (aproximado)
-                    from models.models import Profesor, Zona, Guardia, Ausencia
-                    
+                    from models.models import Ausencia, Guardia, Profesor, Zona
+
                     try:
                         total = (
                             session.query(Profesor).count() +
@@ -190,54 +190,54 @@ def main():
                     except Exception as e:
                         logger.error(f"Error contando registros: {e}")
                         progress_dialog.set_step_exporting(0)
-                    
+
                 elif step == "connecting":
                     progress_dialog.set_step_connecting()
-                    
+
                 elif step == "uploading":
                     file_size_kb = details.get("file_size_kb", 0)
                     progress_dialog.set_step_uploading(file_size_kb)
-                    
+
                 elif step == "complete":
                     progress_dialog.set_step_complete(success=True)
-                    
+
                 elif step == "error":
                     error_msg = details.get("message", "Error desconocido")
                     progress_dialog.set_step_error(error_msg)
-            
+
             try:
                 # Ejecutar sincronización con callback de progreso
                 success = sync_manager.sync_on_shutdown(
                     session=session,
                     progress_callback=on_progress
                 )
-                
+
                 if success:
                     logger.info("✓ Sincronización final completada")
                 else:
                     logger.warning("⚠ La sincronización final tuvo problemas")
-                    
+
             except Exception as e:
                 logger.error(f"Error en sincronización final: {e}")
                 progress_dialog.set_step_error(str(e))
-            
+
             # Esperar a que el usuario cierre el diálogo
             progress_dialog.exec()
-        
+
         # Liberar bloqueo de sesión
         if session_lock_manager:
             session_lock_manager.cleanup()
-        
+
         # Cerrar sesión de base de datos
         session.close()
-        
+
         # Cerrar backend de sincronización si existe
         if sync_manager and hasattr(sync_manager.backend, 'close'):
             try:
                 sync_manager.backend.close()
             except Exception as e:
                 logger.error(f"Error al cerrar backend de sincronización: {e}")
-        
+
         sys.exit(exit_code)
 
 

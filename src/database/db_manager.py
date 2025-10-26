@@ -48,21 +48,21 @@ def initialize_user_database(user_id: str):
         tuple: (engine, SessionLocal) para el usuario
     """
     global _current_user_id, _current_engine, _current_session_factory
-    
+
     # Crear hash del usuario
     user_hash = _hash_user_id(user_id)
-    
+
     # Crear directorio del usuario
     user_dir = USER_DATA_DIR / user_hash
     user_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Path de la base de datos del usuario
     db_path = user_dir / "guardias_patio.db"
     database_url = f"sqlite:///{db_path}"
-    
+
     logger.info(f"Inicializando BD para usuario: {user_id} (hash: {user_hash})")
     logger.info(f"Database path: {db_path}")
-    
+
     # Crear engine específico para este usuario
     engine = create_engine(
         database_url,
@@ -74,7 +74,7 @@ def initialize_user_database(user_id: str):
             'timeout': TIMEOUT_DB,
         }
     )
-    
+
     # Pragmas de optimización para SQLite
     @event.listens_for(engine, "connect")
     def set_sqlite_pragma(dbapi_conn, connection_record):
@@ -86,11 +86,11 @@ def initialize_user_database(user_id: str):
         cursor.execute("PRAGMA cache_size=10000")
         cursor.execute("PRAGMA temp_store=MEMORY")
         cursor.close()
-    
+
     # Crear tablas si no existen
     from models.models import Base
     Base.metadata.create_all(bind=engine)
-    
+
     # Session factory para este usuario
     session_factory = sessionmaker(
         autocommit=False,
@@ -98,14 +98,14 @@ def initialize_user_database(user_id: str):
         bind=engine,
         expire_on_commit=False
     )
-    
+
     # Guardar referencias globales
     _current_user_id = user_id
     _current_engine = engine
     _current_session_factory = session_factory
-    
+
     logger.info(f"Base de datos inicializada para usuario: {user_id}")
-    
+
     return engine, session_factory
 
 
@@ -139,7 +139,7 @@ def delete_user_database(user_id: str) -> bool:
     try:
         user_hash = _hash_user_id(user_id)
         user_dir = USER_DATA_DIR / user_hash
-        
+
         if user_dir.exists():
             import shutil
             shutil.rmtree(user_dir)
@@ -246,7 +246,7 @@ def get_session():
     """
     # Usar session factory del usuario activo si existe
     session_factory = _current_session_factory if _current_session_factory else SessionLocal
-    
+
     db = session_factory()
     try:
         yield db
@@ -279,7 +279,7 @@ def get_db_session():
     """
     # Usar session factory del usuario activo si existe
     session_factory = _current_session_factory if _current_session_factory else SessionLocal
-    
+
     session = session_factory()
     try:
         yield session

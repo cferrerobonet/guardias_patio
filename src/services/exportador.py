@@ -8,8 +8,9 @@ from datetime import date, time
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from models.models import Configuracion, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session, joinedload
+
+from models.models import Configuracion, Guardia, Profesor, Zona
 
 
 class ExportadorDatos:
@@ -130,17 +131,18 @@ class ExportadorDatos:
             ruta_archivo: Ruta donde guardar el archivo JSON
         """
         import os
+
         from dotenv import load_dotenv
-        
+
         load_dotenv()
-        
+
         # Exportar configuración SMTP GLOBAL (compartida entre todos los usuarios)
         smtp_config = None
         smtp_server = os.getenv("SMTP_SERVER", "")
         smtp_port = os.getenv("SMTP_PORT", "")
         smtp_user = os.getenv("SMTP_USER", "")
         smtp_password = os.getenv("SMTP_PASSWORD", "")
-        
+
         if smtp_server and smtp_port and smtp_user and smtp_password:
             smtp_config = {
                 "smtp_server": smtp_server,
@@ -148,7 +150,7 @@ class ExportadorDatos:
                 "smtp_user": smtp_user,
                 "smtp_password": smtp_password,
             }
-        
+
         datos_completos = {
             "version": "1.0",
             "fecha_exportacion": date.today().isoformat(),

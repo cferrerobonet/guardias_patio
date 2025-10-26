@@ -94,7 +94,7 @@ class AsignacionGuardiasForm(BaseForm):
         content_widget.setLayout(grid_layout)
 
         # ============ COLUMNA IZQUIERDA ============
-        
+
         # Estadísticas del curso
         label_stats = QLabel("📊 Estadísticas del Curso")
         label_stats.setStyleSheet(styles.STYLE_TITLE_SECTION)
@@ -117,7 +117,7 @@ class AsignacionGuardiasForm(BaseForm):
         grid_layout.addWidget(calc_button, 2, 0)
 
         # ============ COLUMNA DERECHA ============
-        
+
         # Distribución por profesor
         label_dist = QLabel("📋 Distribución por Profesor")
         label_dist.setStyleSheet(styles.STYLE_TITLE_SECTION)
@@ -162,7 +162,7 @@ class AsignacionGuardiasForm(BaseForm):
         button_layout = QHBoxLayout()
         button_layout.setContentsMargins(0, 4, 0, 0)
         button_container.setLayout(button_layout)
-        
+
         button_layout.addStretch()
         self.limpiar_button = QPushButton("🗑️  Limpiar Todas las Guardias")
         self.limpiar_button.setStyleSheet(styles.STYLE_BUTTON_DANGER)
@@ -172,7 +172,7 @@ class AsignacionGuardiasForm(BaseForm):
         self.limpiar_button.clicked.connect(self.limpiar_guardias)
         button_layout.addWidget(self.limpiar_button)
         button_layout.addStretch()
-        
+
         grid_layout.addWidget(button_container, 5, 0, 1, 2)
 
         # Configurar proporciones de columnas
@@ -328,7 +328,8 @@ Número de profesores: {stats.num_profesores}
                 # Sincronizar con la nube si está disponible
                 if self.sync_manager:
                     try:
-                        from utils.logger import logger
+                        from utils.logger import get_logger
+                        logger = get_logger(__name__)
                         logger.info("Sincronizando guardias generadas con la nube...")
                         if self.sync_manager.sync_on_shutdown(session=self.session):
                             logger.info("✓ Guardias sincronizadas con la nube")
@@ -339,7 +340,8 @@ Número de profesores: {stats.num_profesores}
                         else:
                             logger.warning("⚠ Problemas al sincronizar con la nube")
                     except Exception as e:
-                        from utils.logger import logger
+                        from utils.logger import get_logger
+                        logger = get_logger(__name__)
                         logger.error(f"Error al sincronizar: {e}")
                         # No mostrar error al usuario, solo logging
 

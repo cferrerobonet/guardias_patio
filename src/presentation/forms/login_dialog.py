@@ -241,7 +241,7 @@ class LoginDialog(QDialog):
         self.setWindowTitle("🔐 Iniciar Sesión - Guardias de Patio")
         self.setModal(True)
         self.setMinimumWidth(450)
-        
+
         # Eliminar botón de maximizar - solo mostrar cerrar
         self.setWindowFlags(
             Qt.WindowType.Dialog |
@@ -391,7 +391,7 @@ class LoginDialog(QDialog):
     def load_existing_users(self):
         """Carga la lista de usuarios existentes en el ComboBox."""
         users = list(self.user_auth.users.keys())
-        
+
         if users:
             self.username_combo.addItems(sorted(users))
             # Si hay usuarios, seleccionar el primero
@@ -416,7 +416,7 @@ class LoginDialog(QDialog):
             if registered_user:
                 # IMPORTANTE: Recargar usuarios desde archivo (se actualizó en RegisterDialog)
                 self.user_auth.users = self.user_auth._load_users()
-                
+
                 # Limpiar y recargar la lista de usuarios
                 self.username_combo.clear()
                 users = list(self.user_auth.users.keys())
@@ -449,7 +449,7 @@ class LoginDialog(QDialog):
             if deleted_user:
                 # IMPORTANTE: Recargar usuarios desde archivo (se actualizó en DeleteUserDialog)
                 self.user_auth.users = self.user_auth._load_users()
-                
+
                 # Recargar la lista de usuarios
                 self.username_combo.clear()
                 users = list(self.user_auth.users.keys())

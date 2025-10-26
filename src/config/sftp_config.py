@@ -42,7 +42,7 @@ def get_sftp_config() -> dict:
             "Falta configuración SFTP. "
             "Asegúrate de tener un archivo .env con SFTP_PASSWORD configurado."
         )
-    
+
     return SFTP_CONFIG.copy()
 
 

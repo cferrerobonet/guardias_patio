@@ -7,10 +7,11 @@ from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
-from models.models import Ausencia
-from presentation.widgets.gestionar_ausencias import DialogoReasignacion, GestionarAusenciasForm
 from PyQt6.QtCore import QDate
 from PyQt6.QtWidgets import QMessageBox
+
+from models.models import Ausencia
+from presentation.widgets.gestionar_ausencias import DialogoReasignacion, GestionarAusenciasForm
 
 # ============================================================================
 # FIXTURES

@@ -73,11 +73,11 @@ class ActualizarZonaUseCase:
 
         if data.descripcion is not None:
             zona.descripcion = data.descripcion or None
-        
+
         # Actualizar fechas (pueden ser None para eliminar restricciones temporales)
         if hasattr(data, 'fecha_inicio'):
             zona.fecha_inicio = data.fecha_inicio
-        
+
         if hasattr(data, 'fecha_fin'):
             zona.fecha_fin = data.fecha_fin
 

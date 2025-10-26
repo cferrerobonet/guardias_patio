@@ -9,9 +9,10 @@ from datetime import date, time
 from unittest.mock import Mock, patch
 
 import pytest
+from sqlalchemy.orm import Session
+
 from models.models import Configuracion, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias
-from sqlalchemy.orm import Session
 
 # ============================================================================
 # FIXTURES

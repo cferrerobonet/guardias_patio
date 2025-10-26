@@ -20,7 +20,7 @@ class EmailService:
     # Los usuarios pueden modificar esto según su proveedor
     DEFAULT_SMTP_SERVER = "smtp.gmail.com"
     DEFAULT_SMTP_PORT = 587
-    
+
     def __init__(
         self,
         smtp_server: Optional[str] = None,
@@ -186,7 +186,7 @@ Sistema de Gestión de Guardias
 
             # Enviar email
             logger.info(f"Enviando código de recuperación a {to_email}")
-            
+
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()  # Seguridad TLS
                 server.login(self.smtp_user, self.smtp_password)
@@ -223,6 +223,7 @@ def get_email_service() -> Optional[EmailService]:
         EmailService configurado o None si no hay configuración
     """
     import os
+
     from dotenv import load_dotenv
 
     # Cargar variables de entorno desde .env

@@ -2,10 +2,11 @@
 Diálogo para informar al usuario que la sesión está bloqueada.
 """
 
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont, QIcon
 import logging
+
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class SessionLockedDialog(QDialog):
     Diálogo que informa al usuario que su sesión está bloqueada
     por otro dispositivo/ubicación.
     """
-    
+
     def __init__(self, lock_info: dict, parent=None):
         super().__init__(parent)
         self.lock_info = lock_info
@@ -27,15 +28,15 @@ class SessionLockedDialog(QDialog):
             Qt.WindowType.CustomizeWindowHint |
             Qt.WindowType.WindowTitleHint
         )
-        
+
         self._setup_ui()
-    
+
     def _setup_ui(self):
         """Configura la interfaz del diálogo."""
         layout = QVBoxLayout(self)
         layout.setSpacing(20)
         layout.setContentsMargins(30, 30, 30, 30)
-        
+
         # Icono y título
         title_label = QLabel("🔒 Sesión Bloqueada")
         title_font = QFont()
@@ -44,7 +45,7 @@ class SessionLockedDialog(QDialog):
         title_label.setFont(title_font)
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title_label)
-        
+
         # Mensaje principal
         main_message = QLabel(
             "Este usuario ya tiene una sesión activa en otro dispositivo o ubicación."
@@ -53,7 +54,7 @@ class SessionLockedDialog(QDialog):
         main_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_message.setStyleSheet("font-size: 12px; color: #333;")
         layout.addWidget(main_message)
-        
+
         # Información de la sesión activa
         info_container = QLabel()
         info_container.setStyleSheet("""
@@ -66,7 +67,7 @@ class SessionLockedDialog(QDialog):
             }
         """)
         info_container.setWordWrap(True)
-        
+
         info_text = (
             f"<b>Usuario:</b> {self.lock_info.get('user_id', 'Desconocido')}<br>"
             f"<b>Equipo:</b> {self.lock_info.get('hostname', 'Desconocido')}<br>"
@@ -76,7 +77,7 @@ class SessionLockedDialog(QDialog):
         )
         info_container.setText(info_text)
         layout.addWidget(info_container)
-        
+
         # Mensaje explicativo
         explanation = QLabel(
             "⚠️ Para evitar conflictos y pérdida de datos, solo se permite una sesión "
@@ -88,11 +89,11 @@ class SessionLockedDialog(QDialog):
         explanation.setAlignment(Qt.AlignmentFlag.AlignCenter)
         explanation.setStyleSheet("font-size: 11px; color: #666; margin-top: 10px;")
         layout.addWidget(explanation)
-        
+
         # Botones
         button_layout = QHBoxLayout()
         button_layout.addStretch()
-        
+
         retry_button = QPushButton("🔄 Reintentar")
         retry_button.clicked.connect(self.accept)
         retry_button.setStyleSheet("""
@@ -109,7 +110,7 @@ class SessionLockedDialog(QDialog):
             }
         """)
         button_layout.addWidget(retry_button)
-        
+
         cancel_button = QPushButton("❌ Cancelar")
         cancel_button.clicked.connect(self.reject)
         cancel_button.setStyleSheet("""
@@ -126,15 +127,15 @@ class SessionLockedDialog(QDialog):
             }
         """)
         button_layout.addWidget(cancel_button)
-        
+
         button_layout.addStretch()
         layout.addLayout(button_layout)
-    
+
     def _format_datetime(self, iso_string: str) -> str:
         """Formatea un datetime ISO a formato legible."""
         if not iso_string:
             return "Desconocido"
-        
+
         try:
             from datetime import datetime
             dt = datetime.fromisoformat(iso_string)
