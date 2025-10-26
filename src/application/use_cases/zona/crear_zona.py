@@ -61,6 +61,8 @@ class CrearZonaUseCase:
         nueva_zona = Zona(
             nombre_zona=data.nombre_zona,
             descripcion=data.descripcion or None,
+            fecha_inicio=data.fecha_inicio,
+            fecha_fin=data.fecha_fin,
         )
 
         try:

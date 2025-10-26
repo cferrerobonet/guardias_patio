@@ -7,8 +7,6 @@ y generar calendarios PDF para profesores.
 
 from datetime import datetime
 
-import ui_styles as styles
-from models.models import Configuracion, Profesor, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -23,12 +21,14 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+import ui_styles as styles
+from models.models import Configuracion, Profesor, Zona
+from presentation.forms.base_form import BaseForm
+from presentation.widgets.progress_indicators import ejecutar_con_progreso
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
 from services.importador_profesores import importar_profesores_desde_excel
-
-from presentation.forms.base_form import BaseForm
-from presentation.widgets.progress_indicators import ejecutar_con_progreso
 
 
 class ImportExportForm(BaseForm):
@@ -325,12 +325,19 @@ class ImportExportForm(BaseForm):
             )
 
             self.resultado_text.setText(mensaje)
-            QMessageBox.information(
-                self,
-                "Éxito",
-                "Datos importados correctamente.\n\n"
-                "Se recomienda reiniciar la aplicación para ver los cambios.",
+
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Information)
+            msg.setWindowTitle("Éxito")
+            msg.setWindowFlags(
+                Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
+                Qt.WindowType.WindowTitleHint
             )
+            msg.setText(
+                "Datos importados correctamente.\n\n"
+                "Se recomienda reiniciar la aplicación para ver los cambios."
+            )
+            msg.exec()
 
             # Emitir señales de datos importados
             if resultado.get('profesores', 0) > 0:

@@ -35,7 +35,7 @@ Uso:
     )
 """
 
-from typing import Any, Optional
+from typing import Any, Dict, Optional, Type
 
 
 class GuardiasBaseException(Exception):
@@ -56,7 +56,7 @@ class GuardiasBaseException(Exception):
         self,
         message: Optional[str] = None,
         code: Optional[str] = None,
-        context: Optional[dict[str, Any]] = None,
+        context: Optional[Dict[str, Any]] = None,
         original_error: Optional[Exception] = None,
         **kwargs,
     ):
@@ -87,7 +87,7 @@ class GuardiasBaseException(Exception):
             f"context={self.context})"
         )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convierte la excepción a diccionario (útil para APIs/logging)."""
         return {
             "error_type": self.__class__.__name__,
@@ -407,7 +407,7 @@ class FileSystemError(InfrastructureError):
 
 
 def wrap_exception(
-    original_error: Exception, new_exception_class: type[GuardiasBaseException], **kwargs
+    original_error: Exception, new_exception_class: Type[GuardiasBaseException], **kwargs
 ) -> GuardiasBaseException:
     """
     Envuelve una excepción externa en una excepción de la aplicación.

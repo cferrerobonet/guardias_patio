@@ -8,15 +8,6 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 import json
 from typing import Dict, Optional
 
-import ui_styles as styles
-from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
-from application.use_cases.profesor import (
-    ActualizarProfesorUseCase,
-    BuscarProfesoresUseCase,
-    CrearProfesorUseCase,
-    EliminarProfesorUseCase,
-    ListarProfesoresUseCase,
-)
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -38,9 +29,27 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
 
+import ui_styles as styles
+from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
+from application.use_cases.profesor import (
+    ActualizarProfesorUseCase,
+    BuscarProfesoresUseCase,
+    CrearProfesorUseCase,
+    EliminarProfesorUseCase,
+    ListarProfesoresUseCase,
+)
 from presentation.forms.base_form import BaseForm
+from presentation.themes.ccleaner_theme import (
+    CONTENT_BG_ALT,
+    FONT_SIZE_SMALL,
+    PRIMARY_BLUE,
+    RADIUS_SMALL,
+    SPACING_MD,
+    SPACING_SM,
+    TEXT_SECONDARY,
+)
+from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
 
 
 class ProfesorForm(BaseForm):
@@ -194,12 +203,28 @@ class ProfesorForm(BaseForm):
         self.tabla_profesores.setSelectionBehavior(
             QTableWidget.SelectionBehavior.SelectRows
         )
+        # Permitir selección múltiple (Ctrl+clic o Shift+clic)
         self.tabla_profesores.setSelectionMode(
-            QTableWidget.SelectionMode.SingleSelection
+            QTableWidget.SelectionMode.ExtendedSelection
         )
         self.tabla_profesores.doubleClicked.connect(self.editar_profesor)
 
         layout.addWidget(self.tabla_profesores)
+        
+        # Label informativo de multiselección
+        info_label = QLabel("💡 <b>Selección múltiple:</b> Ctrl+clic (individual) | Shift+clic (rango) | Ctrl+A (todos) | Supr (eliminar)")
+        info_label.setStyleSheet(f"""
+            QLabel {{
+                background-color: {CONTENT_BG_ALT};
+                color: {TEXT_SECONDARY};
+                font-size: {FONT_SIZE_SMALL}px;
+                padding: {SPACING_SM}px {SPACING_MD}px;
+                border-left: 3px solid {PRIMARY_BLUE};
+                border-radius: {RADIUS_SMALL}px;
+            }}
+        """)
+        info_label.setWordWrap(True)
+        layout.addWidget(info_label)
 
         # Botones de gestión
         btn_layout = QHBoxLayout()
@@ -218,7 +243,11 @@ class ProfesorForm(BaseForm):
         self.delete_btn = QPushButton("🗑️ Eliminar")
         self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.delete_btn.clicked.connect(self.eliminar_profesor)
-        self.delete_btn.setToolTip("Eliminar el profesor seleccionado (Del)")
+        self.delete_btn.setToolTip(
+            "Eliminar profesor(es) seleccionado(s)\n"
+            "💡 Ctrl+clic: selección múltiple\n"
+            "💡 Shift+clic: rango de selección"
+        )
 
         btn_layout.addWidget(self.refresh_btn)
         btn_layout.addWidget(self.editar_btn)
@@ -231,7 +260,7 @@ class ProfesorForm(BaseForm):
     def _crear_seccion_formulario(self) -> QVBoxLayout:
         """Crear sección derecha con formulario de alta/edición."""
         layout = QVBoxLayout()
-        layout.setContentsMargins(10, 0, 10, 10)
+        layout.setContentsMargins(10, 10, 10, 10)  # Cambiado de (10, 0, 10, 10) a (10, 10, 10, 10)
         layout.setSpacing(12)
 
         self.titulo_seccion = QLabel("✏️ ALTA DE PROFESOR")
@@ -533,7 +562,13 @@ class ProfesorForm(BaseForm):
         QShortcut(QKeySequence("F5"), self).activated.connect(self.cargar_profesores)
         QShortcut(QKeySequence("Esc"), self).activated.connect(self.cancelar_edicion)
         QShortcut(QKeySequence("Del"), self).activated.connect(self.eliminar_profesor)
+        QShortcut(QKeySequence("Ctrl+A"), self).activated.connect(self.seleccionar_todos)
 
+    def seleccionar_todos(self):
+        """Seleccionar todos los profesores de la tabla."""
+        if self.tabla_profesores.rowCount() > 0:
+            self.tabla_profesores.selectAll()
+            
     def _toggle_mixto_fields(self, visible: bool):
         """Mostrar/ocultar campos de turno mixto."""
         for w in [
@@ -1035,37 +1070,81 @@ class ProfesorForm(BaseForm):
             self.manejar_excepcion(e, "editar profesor")
 
     def eliminar_profesor(self):
-        """Eliminar profesor seleccionado."""
-        fila_actual = self.tabla_profesores.currentRow()
-        if fila_actual < 0:
+        """Eliminar profesor(es) seleccionado(s)."""
+        filas_seleccionadas = self.tabla_profesores.selectionModel().selectedRows()
+        
+        if not filas_seleccionadas:
             self.mostrar_advertencia(
                 "Selección requerida",
-                "Selecciona un profesor para eliminar."
+                "Selecciona uno o más profesores para eliminar.\n\n"
+                "💡 Usa Ctrl+clic para seleccionar múltiples profesores\n"
+                "💡 Usa Shift+clic para seleccionar un rango"
             )
             return
 
-        nombre_item = self.tabla_profesores.item(fila_actual, 0)
-        if not nombre_item:
+        # Recopilar información de los profesores seleccionados
+        profesores_a_eliminar = []
+        for index in filas_seleccionadas:
+            fila = index.row()
+            nombre_item = self.tabla_profesores.item(fila, 0)
+            if nombre_item:
+                id_profesor = nombre_item.data(Qt.ItemDataRole.UserRole)
+                nombre_profesor = nombre_item.text()
+                profesores_a_eliminar.append((id_profesor, nombre_profesor))
+
+        if not profesores_a_eliminar:
             return
 
-        id_profesor = nombre_item.data(Qt.ItemDataRole.UserRole)
-        nombre_profesor = nombre_item.text()
+        # Confirmar eliminación
+        if len(profesores_a_eliminar) == 1:
+            mensaje = f"¿Eliminar al profesor '{profesores_a_eliminar[0][1]}'?"
+        else:
+            nombres = "\n• ".join([nombre for _, nombre in profesores_a_eliminar])
+            mensaje = (
+                f"¿Eliminar {len(profesores_a_eliminar)} profesores?\n\n"
+                f"• {nombres}"
+            )
 
         respuesta = self.mostrar_pregunta(
             "Confirmar eliminación",
-            f"¿Eliminar profesor '{nombre_profesor}' (ID {id_profesor})?"
+            mensaje
         )
 
         if respuesta == QMessageBox.StandardButton.Yes:
             try:
-                self.eliminar_use_case.execute(id_profesor)
-                self.mostrar_exito(
-                    "Profesor eliminado",
-                    "Profesor eliminado correctamente."
-                )
-                self.cargar_profesores()
-
-                # Emitir señal de modificación de datos
-                self.datos_modificados.emit()
+                eliminados = 0
+                errores = []
+                
+                for id_profesor, nombre_profesor in profesores_a_eliminar:
+                    try:
+                        self.eliminar_use_case.execute(id_profesor)
+                        eliminados += 1
+                    except Exception as e:
+                        errores.append(f"{nombre_profesor}: {str(e)}")
+                
+                # Mostrar resultado
+                if eliminados > 0:
+                    if errores:
+                        self.mostrar_advertencia(
+                            "Eliminación parcial",
+                            f"Se eliminaron {eliminados} profesor(es).\n\n"
+                            f"Errores:\n• " + "\n• ".join(errores)
+                        )
+                    else:
+                        self.mostrar_exito(
+                            "Profesores eliminados",
+                            f"Se eliminaron {eliminados} profesor(es) correctamente."
+                        )
+                    
+                    self.cargar_profesores()
+                    # Emitir señal de modificación de datos
+                    self.datos_modificados.emit()
+                else:
+                    self.mostrar_error(
+                        "Error",
+                        "No se pudo eliminar ningún profesor:\n• " + "\n• ".join(errores)
+                    )
+                    
             except Exception as e:
-                self.manejar_excepcion(e, "eliminar profesor")
+                self.manejar_excepcion(e, "eliminar profesores")
+

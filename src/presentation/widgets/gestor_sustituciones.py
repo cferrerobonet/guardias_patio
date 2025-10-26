@@ -294,7 +294,15 @@ class GestorSustituciones(BaseForm):
                 if len(disponibles) > 10:
                     mensaje += f"\n... y {len(disponibles) - 10} más"
 
-                QMessageBox.information(self, "Profesores Disponibles", mensaje)
+                msg = QMessageBox(self)
+                msg.setIcon(QMessageBox.Icon.Information)
+                msg.setWindowTitle("Profesores Disponibles")
+                msg.setWindowFlags(
+                    Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
+                    Qt.WindowType.WindowTitleHint
+                )
+                msg.setText(mensaje)
+                msg.exec()
             else:
                 self.mostrar_advertencia(
                     "Sin Disponibles",

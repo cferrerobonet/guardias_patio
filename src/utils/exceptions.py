@@ -5,11 +5,13 @@ Define excepciones específicas del dominio para facilitar el manejo
 de errores y proporcionar mensajes más claros.
 """
 
+from typing import Optional
+
 
 class GuardiasBaseException(Exception):
     """Excepción base para todas las excepciones de la aplicación."""
 
-    def __init__(self, message: str, detalles: str | None = None):
+    def __init__(self, message: str, detalles: Optional[str] = None):
         self.message = message
         self.detalles = detalles
         super().__init__(self.message)

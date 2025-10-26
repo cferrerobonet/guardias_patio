@@ -38,6 +38,8 @@ class Zona(Base):
     id = Column(Integer, primary_key=True)
     nombre_zona = Column(String, nullable=False)
     descripcion = Column(String)
+    fecha_inicio = Column(Date, nullable=True)  # Fecha inicio operativa (opcional)
+    fecha_fin = Column(Date, nullable=True)  # Fecha fin operativa (opcional)
     guardias = relationship('Guardia', back_populates='zona')
 
 class Configuracion(Base):

@@ -12,7 +12,7 @@
 **Aplicación de escritorio profesional** para la gestión integral de guardias de patio en centros educativos. Asignación automática equitativa, gestión de ausencias y sustituciones, exportación de calendarios, y sistema completo de observabilidad.
 
 > 🎉 **v2.8.0 Released** - Aplicación estable, lista para producción con 7 bugs corregidos y logo corporativo implementado  
-> 📚 [Ver Release Notes](RELEASE_NOTES_v2.8.0.md) | [Changelog v2.8](documentacion/CHANGELOG_v2.8.md)
+> 📚 [Ver Release Notes](documentacion/versiones/RELEASE_NOTES_v2.8.0.md) | [Changelog v2.8](documentacion/CHANGELOG_v2.8.md)
 
 ---
 
@@ -242,37 +242,39 @@ pip list | grep -E 'PyQt6|SQLAlchemy|pydantic'
 
 ### Documentación Principal
 
-- **[INDEX.md](documentacion/INDEX.md)** - Índice completo con navegación rápida
+- **[README de Documentación](documentacion/README.md)** - Índice completo de toda la documentación
 - **[CHANGELOG_v2.8.md](documentacion/CHANGELOG_v2.8.md)** - Cambios de la versión 2.8.0
-- **[ARQUITECTURA.md](documentacion/ARQUITECTURA.md)** - Arquitectura detallada del sistema
+- **[Requisitos del Sistema](documentacion/REQUISITOS_SISTEMA.md)** - Requisitos mínimos y recomendados
 
-### Guías de Usuario
+### Guías Específicas
 
-- [Vista de Calendario](documentacion/guias/vista_calendario.md) - Visualización de guardias
-- [Importar/Exportar](documentacion/guias/importar_exportar.md) - Gestión de datos
+- **[Configuración SMTP](documentacion/CONFIGURACION_EMAIL.md)** - Configurar recuperación de contraseña por email
+- **[Sincronización SFTP](documentacion/sftp/)** - Documentación completa de sincronización cloud
+- **[Build y Distribución](documentacion/build/)** - Guías para crear ejecutables
 
 ### Documentación Técnica
 
-- [ARCHITECTURE_PATTERNS.md](documentacion/ARCHITECTURE_PATTERNS.md) - Patrones de arquitectura
-- [SCHEMAS_USAGE_GUIDE.md](documentacion/SCHEMAS_USAGE_GUIDE.md) - Guía de Pydantic schemas
-- [HISTORIA_SPRINTS.md](documentacion/HISTORIA_SPRINTS.md) - Historia completa del proyecto
+- **[Patrones de Arquitectura](documentacion/ARCHITECTURE_PATTERNS.md)** - Patrones utilizados
+- **[Schemas Pydantic](documentacion/SCHEMAS_USAGE_GUIDE.md)** - Guía de validación de datos
+- **[Historia de Sprints](documentacion/HISTORIA_SPRINTS.md)** - Evolución del proyecto
 
 ---
 
 ## 🗺️ Roadmap
 
-### ✅ Implementado (v2.8.0)
+### ✅ Características Principales (v2.8+)
 
-- ✅ CRUD completo de Profesores y Zonas
-- ✅ Configuración del curso
-- ✅ Generación automática de guardias
-- ✅ Vista de calendario interactiva
-- ✅ Gestión de ausencias y sustituciones
-- ✅ Panel de estadísticas
-- ✅ Importar/Exportar JSON
-- ✅ Dashboard de observabilidad
-- ✅ Logo corporativo
-- ✅ Sistema de validaciones robusto
+- ✅ **Sistema Multi-usuario**: Gestión de múltiples usuarios con recuperación de contraseña por email
+- ✅ **Sincronización Cloud**: Soporte SFTP para sincronización entre dispositivos
+- ✅ **CRUD completo**: Profesores, Zonas, Guardias, Configuración
+- ✅ **Generación automática de guardias**: Asignación equitativa según % jornada
+- ✅ **Vista de calendario interactiva**: Visualización mensual con filtros
+- ✅ **Gestión de ausencias y sustituciones**: Sistema completo
+- ✅ **Panel de estadísticas**: Métricas en tiempo real
+- ✅ **Importar/Exportar JSON**: Portabilidad completa
+- ✅ **Dashboard de observabilidad**: Métricas, health checks y logs
+- ✅ **Logo corporativo**: Branding consistente
+- ✅ **Validaciones robustas**: Mensajes claros y contextuales
 
 ### 🔄 En Desarrollo (Sprint 9)
 

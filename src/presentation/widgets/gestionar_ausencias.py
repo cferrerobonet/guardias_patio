@@ -704,7 +704,15 @@ class DialogoReasignacion(QDialog):
                 if resultados["fallidas"] > 0:
                     mensaje += "\n\nVer detalles en el log para más información."
 
-                QMessageBox.information(self, "Resultado", mensaje)
+                msg = QMessageBox(self)
+                msg.setIcon(QMessageBox.Icon.Information)
+                msg.setWindowTitle("Resultado")
+                msg.setWindowFlags(
+                    Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
+                    Qt.WindowType.WindowTitleHint
+                )
+                msg.setText(mensaje)
+                msg.exec()
 
                 if resultados["reasignadas"] > 0:
                     self.close()
@@ -757,11 +765,17 @@ class DialogoReasignacion(QDialog):
                 nuevo_profesor, _ = disponibles[index]
 
                 reasignar_guardia(self.session, guardia_id, nuevo_profesor.id)
-                QMessageBox.information(
-                    self,
-                    "Éxito",
-                    f"Guardia reasignada a {nuevo_profesor.nombre_completo}",
+
+                msg = QMessageBox(self)
+                msg.setIcon(QMessageBox.Icon.Information)
+                msg.setWindowTitle("Éxito")
+                msg.setWindowFlags(
+                    Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
+                    Qt.WindowType.WindowTitleHint
                 )
+                msg.setText(f"Guardia reasignada a {nuevo_profesor.nombre_completo}")
+                msg.exec()
+
                 self.close()
 
         except Exception as e:

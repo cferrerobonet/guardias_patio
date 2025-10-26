@@ -19,26 +19,26 @@ COLOR_TEXT_MEDIUM = "#757575"  # Texto medio
 
 STYLE_TITLE_MAIN = f"""
     QLabel {{
-        font-size: 16px;
+        font-size: 15px;
         font-weight: bold;
         color: {COLOR_PRIMARY};
         background-color: {COLOR_BG_LIGHT};
-        padding: 10px;
+        padding: 6px 10px;
         border-left: 4px solid {COLOR_PRIMARY};
         border-radius: 4px;
-        margin-bottom: 10px;
+        margin-bottom: 4px;
     }}
 """
 
 STYLE_TITLE_SECTION = f"""
     QLabel {{
-        font-size: 14px;
+        font-size: 13px;
         font-weight: bold;
         color: {COLOR_TEXT_DARK};
-        background-color: {COLOR_BG_MEDIUM};
-        padding: 8px;
-        border-radius: 4px;
-        margin: 8px 0px;
+        background-color: transparent;
+        padding: 0px 8px;
+        border-left: 3px solid {COLOR_PRIMARY};
+        margin: 0px;
     }}
 """
 

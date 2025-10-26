@@ -7,19 +7,23 @@ Proporciona imports de PyQt6 con fallback a stubs si no está disponible.
 GUI_AVAILABLE = True
 
 try:
-    from PyQt6.QtCore import QDate, QTime
+    from PyQt6.QtCore import QDate, QTime, pyqtSignal
     from PyQt6.QtGui import QKeySequence, QScreen, QShortcut
     from PyQt6.QtWidgets import (
         QApplication,
         QCheckBox,
         QComboBox,
         QDateEdit,
+        QFrame,
         QHBoxLayout,
         QLabel,
         QLineEdit,
         QListWidget,
         QMessageBox,
         QPushButton,
+        QScrollArea,
+        QSizePolicy,
+        QStackedWidget,
         QTabWidget,
         QTextEdit,
         QTimeEdit,
@@ -52,6 +56,11 @@ except ImportError:  # pragma: no cover
     QKeySequence = _stubs["QKeySequence"]
     QShortcut = _stubs["QShortcut"]
     QScreen = _stubs["QScreen"]
+    QFrame = _stubs["QWidget"]
+    QScrollArea = _stubs["QWidget"]
+    QSizePolicy = _stubs["QWidget"]
+    QStackedWidget = _stubs["QWidget"]
+    pyqtSignal = lambda: None
 
 
 __all__ = [
@@ -76,4 +85,9 @@ __all__ = [
     "QKeySequence",
     "QShortcut",
     "QScreen",
+    "QFrame",
+    "QScrollArea",
+    "QSizePolicy",
+    "QStackedWidget",
+    "pyqtSignal",
 ]

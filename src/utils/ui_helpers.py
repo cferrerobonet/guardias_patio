@@ -7,8 +7,33 @@ Funciones helper para aplicar marca corporativa de forma discreta.
 from pathlib import Path
 from typing import Optional
 
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QMessageBox, QWidget
+
+
+# Estilos consistentes para todos los QMessageBox
+MESSAGEBOX_STYLE = """
+    QMessageBox {
+        background-color: white;
+    }
+    QPushButton {
+        background-color: #007ACC;
+        color: white;
+        font-weight: 600;
+        padding: 8px 24px;
+        border: none;
+        border-radius: 6px;
+        min-width: 80px;
+        min-height: 32px;
+    }
+    QPushButton:hover {
+        background-color: #005A9E;
+    }
+    QPushButton:pressed {
+        background-color: #004578;
+    }
+"""
 
 
 def get_corporate_icon() -> QIcon:
@@ -45,12 +70,45 @@ def get_corporate_pixmap(size: int = 64) -> Optional[QPixmap]:
             if not pixmap.isNull():
                 return pixmap.scaled(
                     size, size,
-                    aspectRatioMode=1,  # Qt.KeepAspectRatio
-                    transformMode=1     # Qt.SmoothTransformation
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
                 )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Error cargando logo corporativo: {e}")
     return None
+
+
+def apply_corporate_icon_to_messagebox(msg_box: QMessageBox) -> None:
+    """
+    Aplica el icono corporativo a un QMessageBox de forma confiable.
+    
+    En macOS, setIconPixmap() no siempre funciona, así que este método
+    intenta múltiples enfoques.
+    
+    Args:
+        msg_box: El QMessageBox al que aplicar el icono
+    """
+    try:
+        icon_path = Path(__file__).parent.parent.parent / "imagenes" / "logo.png"
+        if icon_path.exists():
+            # Cargar el pixmap original
+            pixmap = QPixmap(str(icon_path))
+            if not pixmap.isNull():
+                # Escalar el pixmap
+                scaled_pixmap = pixmap.scaled(
+                    64, 64,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+                # Forzar el uso del pixmap personalizado
+                msg_box.setIconPixmap(scaled_pixmap)
+                # No establecer un icono estándar, solo el pixmap
+                return
+    except Exception as e:
+        print(f"Error aplicando icono corporativo: {e}")
+    
+    # Fallback: usar icono estándar de pregunta
+    msg_box.setIcon(QMessageBox.Icon.Question)
 
 
 def show_info(parent: Optional[QWidget], title: str, message: str) -> None:
@@ -67,12 +125,11 @@ def show_info(parent: Optional[QWidget], title: str, message: str) -> None:
     msg_box.setText(message)
     msg_box.setWindowIcon(get_corporate_icon())
 
-    # Usar logo corporativo en lugar del icono estándar
-    pixmap = get_corporate_pixmap(64)
-    if pixmap:
-        msg_box.setIconPixmap(pixmap)
-    else:
-        msg_box.setIcon(QMessageBox.Icon.Information)
+    # Aplicar icono corporativo sin establecer icono estándar primero
+    apply_corporate_icon_to_messagebox(msg_box)
+    
+    # Aplicar estilos
+    msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
     msg_box.exec()
 
@@ -91,12 +148,11 @@ def show_warning(parent: Optional[QWidget], title: str, message: str) -> None:
     msg_box.setText(message)
     msg_box.setWindowIcon(get_corporate_icon())
 
-    # Usar logo corporativo en lugar del icono estándar
-    pixmap = get_corporate_pixmap(64)
-    if pixmap:
-        msg_box.setIconPixmap(pixmap)
-    else:
-        msg_box.setIcon(QMessageBox.Icon.Warning)
+    # Aplicar icono corporativo
+    apply_corporate_icon_to_messagebox(msg_box)
+    
+    # Aplicar estilos
+    msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
     msg_box.exec()
 
@@ -115,12 +171,11 @@ def show_error(parent: Optional[QWidget], title: str, message: str) -> None:
     msg_box.setText(message)
     msg_box.setWindowIcon(get_corporate_icon())
 
-    # Usar logo corporativo en lugar del icono estándar
-    pixmap = get_corporate_pixmap(64)
-    if pixmap:
-        msg_box.setIconPixmap(pixmap)
-    else:
-        msg_box.setIcon(QMessageBox.Icon.Critical)
+    # Aplicar icono corporativo
+    apply_corporate_icon_to_messagebox(msg_box)
+    
+    # Aplicar estilos
+    msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
     msg_box.exec()
 
@@ -148,12 +203,8 @@ def show_question(
     msg_box.setText(message)
     msg_box.setWindowIcon(get_corporate_icon())
 
-    # Usar logo corporativo en lugar del icono estándar
-    pixmap = get_corporate_pixmap(64)
-    if pixmap:
-        msg_box.setIconPixmap(pixmap)
-    else:
-        msg_box.setIcon(QMessageBox.Icon.Question)
+    # Aplicar icono corporativo
+    apply_corporate_icon_to_messagebox(msg_box)
 
     msg_box.setStandardButtons(
         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
@@ -162,6 +213,10 @@ def show_question(
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
     else:
         msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
+    
+    # Aplicar estilos
+    msg_box.setStyleSheet(MESSAGEBOX_STYLE)
+    
     return msg_box.exec()
 
 
@@ -188,12 +243,8 @@ def show_question_with_cancel(
     msg_box.setText(message)
     msg_box.setWindowIcon(get_corporate_icon())
 
-    # Usar logo corporativo en lugar del icono estándar
-    pixmap = get_corporate_pixmap(64)
-    if pixmap:
-        msg_box.setIconPixmap(pixmap)
-    else:
-        msg_box.setIcon(QMessageBox.Icon.Question)
+    # Aplicar icono corporativo
+    apply_corporate_icon_to_messagebox(msg_box)
 
     msg_box.setStandardButtons(
         QMessageBox.StandardButton.Yes
@@ -207,5 +258,8 @@ def show_question_with_cancel(
         msg_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
     else:
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+    
+    # Aplicar estilos
+    msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
     return msg_box.exec()

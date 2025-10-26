@@ -14,7 +14,6 @@ from core.qt_imports import (
     QWidget,
 )
 from database.db_manager import SessionLocal
-
 from presentation.forms import (
     AsignacionGuardiasForm,
     CalendarioGuardiasForm,

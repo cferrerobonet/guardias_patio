@@ -1,13 +1,40 @@
 # 📁 Scripts de Utilidad
 
-Este directorio contiene scripts auxiliares para mantenimiento y gestión de datos.
+Este directorio contiene scripts auxiliares para mantenimiento, análisis y gestión del proyecto.
 
 ---
 
-## 📊 `importar_profesores_desde_excel.py`
+## � Índice de Scripts
 
-### Descripción
-Script para importar profesores masivamente desde archivos Excel ubicados en `documentacion/datos ejemplo/`.
+### �📊 Importación y Gestión de Datos
+- [`importar_profesores_desde_excel.py`](#-importar_profesores_desde_excelpy) - Importación masiva de profesores desde Excel
+- [`cleanup_test_data.py`](#-cleanup_test_datapy) - Limpieza de datos de prueba
+
+### 🔍 Análisis y Performance
+- [`analyze_indices.py`](#-analyze_indicespy) - Análisis de índices de base de datos
+- [`audit_n_plus_1.py`](#-audit_n_plus_1py) - Auditoría de problemas N+1
+- [`audit_queries_n1.py`](#-audit_queries_n1py) - Auditoría de queries N+1
+- [`benchmark_performance.py`](#-benchmark_performancepy) - Benchmarks de rendimiento
+- [`profile_app.py`](#-profile_apppy) - Profiling de la aplicación
+- [`profile_performance.py`](#-profile_performancepy) - Profiling de performance
+
+### 📈 Observabilidad y Métricas
+- [`demo_observability.py`](#-demo_observabilitypy) - Demo del sistema de observabilidad
+- [`ver_metricas.py`](#-ver_metricaspy) - Visualización de métricas
+
+### 🧪 Testing y Desarrollo
+- [`test_branding.py`](#-test_brandingpy) - Tests del sistema de branding
+
+### 🔧 Integración de Formularios
+- [`integrar_asignacion_guardias_form.py`](#-integrar_asignacion_guardias_formpy) - Integración de formulario de asignación
+- [`integrar_configuracion_form.py`](#-integrar_configuracion_formpy) - Integración de formulario de configuración
+- [`integrar_zona_form.py`](#-integrar_zona_formpy) - Integración de formulario de zonas
+
+---
+
+## 📊 Importar Profesores desde Excel
+
+### `importar_profesores_desde_excel.py`
 
 ### Funcionalidad
 - Lee archivos `.xlsx` con datos de profesores
@@ -94,9 +121,112 @@ pip install pandas openpyxl
 
 ---
 
-## 🔮 Scripts Futuros
+## � Análisis de Performance
 
-Aquí se añadirán más scripts de utilidad:
+### `analyze_indices.py`
+Analiza los índices de la base de datos SQLite para optimización de queries.
+
+### `audit_n_plus_1.py` y `audit_queries_n1.py`
+Detectan problemas de N+1 queries en el código mediante análisis estático y logging.
+
+### `benchmark_performance.py`
+Ejecuta benchmarks de operaciones críticas para medir rendimiento.
+
+### `profile_app.py` y `profile_performance.py`
+Herramientas de profiling para identificar cuellos de botella en la aplicación.
+
+**Uso típico:**
+```bash
+python scripts/profile_app.py
+python scripts/benchmark_performance.py
+```
+
+---
+
+## 📈 Observabilidad
+
+### `demo_observability.py`
+Demostración del sistema de observabilidad con métricas y health checks.
+
+### `ver_metricas.py`
+Visualiza métricas actuales del sistema desde la base de datos.
+
+**Uso:**
+```bash
+python scripts/ver_metricas.py
+```
+
+---
+
+## 🧹 Limpieza de Datos
+
+### `cleanup_test_data.py`
+Limpia datos de prueba de la base de datos.
+
+**Uso:**
+```bash
+python scripts/cleanup_test_data.py
+```
+
+**⚠️ Precaución**: Este script elimina datos. Asegúrate de tener un backup antes de ejecutarlo.
+
+---
+
+## 🧪 Testing
+
+### `test_branding.py`
+Tests para verificar la correcta implementación del sistema de branding corporativo.
+
+**Uso:**
+```bash
+python scripts/test_branding.py
+```
+
+---
+
+## 🔧 Scripts de Integración
+
+### `integrar_asignacion_guardias_form.py`
+Script helper para integrar el formulario de asignación de guardias.
+
+### `integrar_configuracion_form.py`
+Script helper para integrar el formulario de configuración.
+
+### `integrar_zona_form.py`
+Script helper para integrar el formulario de gestión de zonas.
+
+> **Nota**: Estos scripts son principalmente para desarrollo y testing de la integración de formularios.
+
+---
+
+## 📝 Notas Generales
+
+### Ejecutar Scripts
+
+Todos los scripts deben ejecutarse desde la raíz del proyecto:
+
+```bash
+# Desde la raíz del proyecto
+python scripts/nombre_script.py
+```
+
+### Dependencias
+
+La mayoría de scripts usan las mismas dependencias del proyecto principal. Algunos scripts de análisis pueden requerir:
+
+```bash
+pip install pandas openpyxl  # Para importar_profesores_desde_excel.py
+```
+
+### Logs
+
+Los scripts registran su actividad en:
+- **Consola**: Salida estándar con formato legible
+- **Archivo**: `logs/application.log` (si aplica)
+
+---
+
+## 🚀 Scripts Futuros Planeados
 - `migrar_guardias.py` - Migración de datos históricos
 - `backup_database.py` - Copias de seguridad automáticas
 - `generar_reportes.py` - Reportes estadísticos

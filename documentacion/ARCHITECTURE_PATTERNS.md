@@ -14,10 +14,11 @@
 4. [Use Case Pattern](#use-case-pattern)
 5. [Mapper Pattern](#mapper-pattern)
 6. [DTO Pattern](#dto-pattern)
-7. [Dependency Injection](#dependency-injection)
-8. [Patrones de Observabilidad](#patrones-de-observabilidad)
-9. [Ejemplos Completos](#ejemplos-completos)
-10. [Best Practices](#best-practices)
+7. [Pydantic Schemas](#pydantic-schemas)
+8. [Dependency Injection](#dependency-injection)
+9. [Patrones de Observabilidad](#patrones-de-observabilidad)
+10. [Ejemplos Completos](#ejemplos-completos)
+11. [Best Practices](#best-practices)
 
 ---
 
@@ -518,7 +519,321 @@ class GuardiaDTO(BaseModel):
 
 ---
 
-## 💉 Dependency Injection
+## � Pydantic Schemas
+
+### Concepto
+
+Los **Pydantic Schemas** son clases especializadas que definen la **estructura y validación automática** de datos. En nuestro proyecto, los DTOs **SON** schemas de Pydantic, combinando transferencia de datos con validación robusta.
+
+### Schemas vs DTOs vs Entities
+
+| Aspecto | Schema (Pydantic) | DTO | Entity (Domain) |
+|---------|-------------------|-----|-----------------|
+| **Propósito** | Validación + Serialización | Transferir datos | Lógica de negocio |
+| **Capa** | Application | Application | Domain |
+| **Validación** | Automática (Pydantic) | Manual o Schema | Reglas de negocio |
+| **Mutabilidad** | Inmutable | Inmutable | Mutable |
+| **Serialización** | JSON nativo | Manual | No directa |
+| **Ejemplo** | `ProfesorCreateSchema` | `CrearProfesorInputDTO` | `ProfesorEntity` |
+
+**En este proyecto:** DTOs implementan schemas Pydantic para validación automática.
+
+### Patrón de 4 Schemas
+
+Para cada recurso principal, creamos 4 schemas especializados:
+
+```python
+# src/domain/schemas/profesor_schema.py
+from pydantic import BaseModel, Field, field_validator
+from typing import Optional
+
+
+class ProfesorBaseSchema(BaseModel):
+    """
+    Schema base con campos comunes.
+    Usado como base para Create/Update/Response schemas.
+    """
+    nombre: str = Field(..., min_length=2, max_length=50)
+    apellidos: str = Field(..., min_length=2, max_length=100)
+    email: str = Field(..., pattern=r'^[^@]+@[^@]+\.[^@]+$')
+
+
+class ProfesorCreateSchema(ProfesorBaseSchema):
+    """Schema para CREAR un profesor (POST)."""
+    activo: bool = Field(default=True)
+    
+    @field_validator('email')
+    @classmethod
+    def email_lowercase(cls, v: str) -> str:
+        """Normaliza email a minúsculas."""
+        return v.lower().strip()
+
+
+class ProfesorUpdateSchema(BaseModel):
+    """
+    Schema para ACTUALIZAR un profesor (PUT/PATCH).
+    Todos los campos opcionales (partial update).
+    """
+    nombre: Optional[str] = Field(None, min_length=2, max_length=50)
+    apellidos: Optional[str] = Field(None, min_length=2, max_length=100)
+    email: Optional[str] = None
+    activo: Optional[bool] = None
+
+
+class ProfesorResponseSchema(ProfesorBaseSchema):
+    """
+    Schema para RESPUESTA (GET).
+    Incluye ID y campos calculados.
+    """
+    id: int
+    activo: bool
+    nombre_completo: str  # Campo calculado
+    numero_guardias: int = Field(default=0)
+    
+    model_config = {
+        'from_attributes': True  # Para SQLAlchemy models
+    }
+```
+
+### Validaciones con Pydantic
+
+#### 1. Validaciones de Campo (Field)
+
+```python
+from datetime import date
+from pydantic import BaseModel, Field
+
+
+class GuardiaCreateSchema(BaseModel):
+    """Validaciones usando Field constraints."""
+    
+    fecha: date = Field(..., description="Fecha de la guardia")
+    
+    turno: str = Field(
+        ...,
+        pattern="^(MAÑANA|TARDE)$",
+        description="Turno: MAÑANA o TARDE"
+    )
+    
+    recreo: int = Field(
+        ...,
+        ge=1,  # Greater or Equal
+        le=3,  # Less or Equal
+        description="Número de recreo (1-3)"
+    )
+    
+    profesor_id: int = Field(..., gt=0)
+    zona_id: int = Field(..., gt=0)
+```
+
+#### 2. Validadores Personalizados (field_validator)
+
+```python
+from pydantic import field_validator
+from datetime import date as date_type
+
+
+class GuardiaCreateSchema(BaseModel):
+    fecha: date_type
+    turno: str
+    
+    @field_validator('fecha')
+    @classmethod
+    def fecha_no_pasada(cls, v: date_type) -> date_type:
+        """Valida que la fecha no sea del pasado."""
+        from datetime import date as today
+        if v < today.today():
+            raise ValueError('No se pueden crear guardias en fechas pasadas')
+        return v
+    
+    @field_validator('turno')
+    @classmethod
+    def turno_uppercase(cls, v: str) -> str:
+        """Normaliza turno a mayúsculas."""
+        return v.upper().strip()
+```
+
+#### 3. Validación de Modelo Completo (model_validator)
+
+```python
+from pydantic import model_validator
+
+
+class GuardiaCreateSchema(BaseModel):
+    fecha: date_type
+    turno: str
+    recreo: int
+    
+    @model_validator(mode='after')
+    def validar_coherencia(self) -> 'GuardiaCreateSchema':
+        """Valida coherencia entre campos."""
+        if self.turno == 'TARDE' and self.recreo > 2:
+            raise ValueError('Turno TARDE solo tiene 2 recreos')
+        return self
+```
+
+### Conversiones
+
+#### Entity → Schema
+
+```python
+class GuardiaResponseSchema(BaseModel):
+    id: int
+    fecha: date
+    turno: str
+    profesor_nombre: str
+    
+    @classmethod
+    def from_entity(cls, entity: GuardiaEntity) -> "GuardiaResponseSchema":
+        """Factory method: Entity → Schema."""
+        return cls(
+            id=entity.id,
+            fecha=entity.fecha,
+            turno=entity.turno,
+            profesor_nombre=entity.profesor.nombre_completo
+        )
+```
+
+#### Schema → JSON
+
+```python
+# Serialización
+schema = GuardiaResponseSchema(...)
+json_str = schema.model_dump_json()  # → JSON string
+dict_data = schema.model_dump()      # → Python dict
+
+# Deserialización
+json_data = '{"id": 1, "fecha": "2025-10-23", ...}'
+schema = GuardiaResponseSchema.model_validate_json(json_data)
+```
+
+### Patrones de Uso en Use Cases
+
+#### Input Validation (UI → Application)
+
+```python
+# En UI (PyQt6)
+def on_crear_clicked(self):
+    """Handler del botón Crear."""
+    try:
+        # Schema valida automáticamente
+        input_dto = GuardiaCreateSchema(
+            fecha=self.fecha_edit.date().toPyDate(),
+            turno=self.turno_combo.currentText(),
+            recreo=self.recreo_spinbox.value(),
+            profesor_id=self.profesor_combo.currentData(),
+            zona_id=self.zona_combo.currentData()
+        )
+        
+        # Si llegamos aquí, datos válidos
+        result = self.use_case.execute(input_dto)
+        QMessageBox.information(self, "Éxito", "Guardia creada")
+        
+    except ValidationError as e:
+        # Error de validación Pydantic
+        errors = "\n".join([f"- {err['loc'][0]}: {err['msg']}" for err in e.errors()])
+        QMessageBox.warning(self, "Datos inválidos", errors)
+```
+
+#### Partial Update
+
+```python
+class ActualizarProfesorUseCase:
+    def execute(
+        self,
+        profesor_id: int,
+        update_dto: ProfesorUpdateSchema
+    ) -> ProfesorResponseSchema:
+        """Actualiza solo campos proporcionados."""
+        
+        # Obtener entity existente
+        entity = self.repo.get_by_id(profesor_id)
+        
+        # Actualizar solo campos no-None
+        update_data = update_dto.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(entity, field, value)
+        
+        # Persistir y retornar
+        updated = self.repo.save(entity)
+        return ProfesorResponseSchema.from_entity(updated)
+```
+
+### Validaciones Simples vs Complejas
+
+**✅ BUENO: Validaciones simples en schema**
+```python
+@field_validator('email')
+@classmethod
+def email_lowercase(cls, v: str) -> str:
+    return v.lower()
+```
+
+**❌ MALO: Validaciones con BD en schema**
+```python
+@field_validator('profesor_id')
+@classmethod
+def profesor_existe(cls, v: int) -> int:
+    # ❌ NO acceder a BD desde validator
+    if not db.query(Profesor).filter_by(id=v).first():
+        raise ValueError("Profesor no existe")
+    return v
+```
+
+**✅ BUENO: Validaciones con BD en use case**
+```python
+class CrearGuardiaUseCase:
+    def execute(self, dto: GuardiaCreateSchema):
+        # Validación simple ya ejecutada por Pydantic
+        
+        # Validaciones con BD aquí
+        if not self.profesor_repo.exists(dto.profesor_id):
+            raise NotFoundError("Profesor no existe")
+```
+
+### Testing con Schemas
+
+```python
+import pytest
+from pydantic import ValidationError
+
+
+def test_profesor_schema_valido():
+    """Schema válido debe pasar validación."""
+    schema = ProfesorCreateSchema(
+        nombre="Juan",
+        apellidos="Pérez García",
+        email="juan@example.com"
+    )
+    
+    assert schema.nombre == "Juan"
+    assert schema.email == "juan@example.com"
+
+
+def test_profesor_schema_email_invalido():
+    """Email inválido debe lanzar ValidationError."""
+    with pytest.raises(ValidationError) as exc_info:
+        ProfesorCreateSchema(
+            nombre="Juan",
+            apellidos="Pérez",
+            email="email-sin-arroba"
+        )
+    
+    errors = exc_info.value.errors()
+    assert any(err['loc'] == ('email',) for err in errors)
+```
+
+### Best Practices
+
+1. **Organización**: Herencia para reutilizar código (BaseSchema)
+2. **Validaciones**: Simples en schema, complejas en use case
+3. **Documentación**: Usar `Field(description=...)` y docstrings
+4. **Naming**: Sufijos claros (`CreateSchema`, `UpdateSchema`, `ResponseSchema`)
+5. **Type Safety**: Usar `model_config = {'from_attributes': True}` para ORM
+
+---
+
+## �💉 Dependency Injection
 
 ### Concepto
 

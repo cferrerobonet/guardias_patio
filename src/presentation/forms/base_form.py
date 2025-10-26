@@ -7,9 +7,15 @@ Proporciona funcionalidad común y establece el patrón MVP.
 
 from PyQt6.QtWidgets import QMessageBox, QWidget
 from sqlalchemy.orm import Session
+
 from utils.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
-from utils.ui_helpers import get_corporate_icon, get_corporate_pixmap
+from utils.ui_helpers import (
+    get_corporate_icon,
+    get_corporate_pixmap,
+    MESSAGEBOX_STYLE,
+    apply_corporate_icon_to_messagebox
+)
 
 
 class BaseForm(QWidget):
@@ -50,12 +56,11 @@ class BaseForm(QWidget):
         msg_box.setText(mensaje)
         msg_box.setWindowIcon(get_corporate_icon())
 
-        # Usar logo corporativo en lugar del icono estándar
-        pixmap = get_corporate_pixmap(64)
-        if pixmap:
-            msg_box.setIconPixmap(pixmap)
-        else:
-            msg_box.setIcon(QMessageBox.Icon.Information)
+        # Aplicar icono corporativo
+        apply_corporate_icon_to_messagebox(msg_box)
+        
+        # Aplicar estilos directamente
+        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
         msg_box.exec()
 
@@ -73,12 +78,11 @@ class BaseForm(QWidget):
         msg_box.setText(mensaje)
         msg_box.setWindowIcon(get_corporate_icon())
 
-        # Usar logo corporativo en lugar del icono estándar
-        pixmap = get_corporate_pixmap(64)
-        if pixmap:
-            msg_box.setIconPixmap(pixmap)
-        else:
-            msg_box.setIcon(QMessageBox.Icon.Critical)
+        # Aplicar icono corporativo
+        apply_corporate_icon_to_messagebox(msg_box)
+        
+        # Aplicar estilos directamente
+        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
         msg_box.exec()
 
@@ -96,12 +100,11 @@ class BaseForm(QWidget):
         msg_box.setText(mensaje)
         msg_box.setWindowIcon(get_corporate_icon())
 
-        # Usar logo corporativo en lugar del icono estándar
-        pixmap = get_corporate_pixmap(64)
-        if pixmap:
-            msg_box.setIconPixmap(pixmap)
-        else:
-            msg_box.setIcon(QMessageBox.Icon.Warning)
+        # Aplicar icono corporativo
+        apply_corporate_icon_to_messagebox(msg_box)
+        
+        # Aplicar estilos directamente
+        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
         msg_box.exec()
 
@@ -121,17 +124,16 @@ class BaseForm(QWidget):
         msg_box.setText(mensaje)
         msg_box.setWindowIcon(get_corporate_icon())
 
-        # Usar logo corporativo en lugar del icono estándar
-        pixmap = get_corporate_pixmap(64)
-        if pixmap:
-            msg_box.setIconPixmap(pixmap)
-        else:
-            msg_box.setIcon(QMessageBox.Icon.Question)
+        # Aplicar icono corporativo
+        apply_corporate_icon_to_messagebox(msg_box)
 
         msg_box.setStandardButtons(
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        
+        # Aplicar estilos directamente a los botones
+        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
         respuesta = msg_box.exec()
         confirmado = respuesta == QMessageBox.StandardButton.Yes.value
         self.logger.info(f"Confirmación solicitada: {titulo} - Confirmado: {confirmado}")
@@ -163,6 +165,10 @@ class BaseForm(QWidget):
             msg_box.setIcon(QMessageBox.Icon.Question)
 
         msg_box.setStandardButtons(botones)
+        
+        # Aplicar estilo corporativo a los botones
+        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
+        
         return msg_box.exec()
 
     def manejar_excepcion(self, exception: Exception, operacion: str) -> None:

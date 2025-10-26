@@ -129,9 +129,30 @@ class ExportadorDatos:
             session: Sesión de SQLAlchemy
             ruta_archivo: Ruta donde guardar el archivo JSON
         """
+        import os
+        from dotenv import load_dotenv
+        
+        load_dotenv()
+        
+        # Exportar configuración SMTP GLOBAL (compartida entre todos los usuarios)
+        smtp_config = None
+        smtp_server = os.getenv("SMTP_SERVER", "")
+        smtp_port = os.getenv("SMTP_PORT", "")
+        smtp_user = os.getenv("SMTP_USER", "")
+        smtp_password = os.getenv("SMTP_PASSWORD", "")
+        
+        if smtp_server and smtp_port and smtp_user and smtp_password:
+            smtp_config = {
+                "smtp_server": smtp_server,
+                "smtp_port": smtp_port,
+                "smtp_user": smtp_user,
+                "smtp_password": smtp_password,
+            }
+        
         datos_completos = {
             "version": "1.0",
             "fecha_exportacion": date.today().isoformat(),
+            "smtp_config": smtp_config,  # Configuración SMTP global
             "profesores": ExportadorDatos.exportar_profesores(session),
             "zonas": ExportadorDatos.exportar_zonas(session),
             "configuracion": ExportadorDatos.exportar_configuracion(session),

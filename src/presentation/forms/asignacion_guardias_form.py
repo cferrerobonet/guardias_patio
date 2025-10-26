@@ -4,16 +4,10 @@ Formulario de asignación de guardias.
 Permite calcular distribución y generar el calendario completo de guardias.
 """
 
-from application.use_cases.asignacion_guardias import (
-    CalcularDistribucionUseCase,
-    GenerarGuardiasUseCase,
-    ObtenerEstadisticasUseCase,
-)
-from application.use_cases.guardia import LimpiarGuardiasUseCase
-from infrastructure.repositories import SQLAlchemyGuardiaRepository
-from models.models import Guardia, Profesor
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
+    QGridLayout,
+    QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
@@ -22,10 +16,19 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
-from utils.exceptions import BusinessLogicError
 
+import ui_styles as styles
+from application.use_cases.asignacion_guardias import (
+    CalcularDistribucionUseCase,
+    GenerarGuardiasUseCase,
+    ObtenerEstadisticasUseCase,
+)
+from application.use_cases.guardia import LimpiarGuardiasUseCase
+from infrastructure.repositories import SQLAlchemyGuardiaRepository
+from models.models import Guardia, Profesor
 from presentation.forms.base_form import BaseForm
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
+from utils.exceptions import BusinessLogicError
 
 
 class AsignacionGuardiasForm(BaseForm):
@@ -38,14 +41,18 @@ class AsignacionGuardiasForm(BaseForm):
     - Generar el calendario completo de guardias
     """
 
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, sync_manager=None):
         """
         Inicializar el formulario de asignación de guardias.
 
         Args:
             session: Sesión de SQLAlchemy para acceso a base de datos
+            sync_manager: Gestor de sincronización con la nube (opcional)
         """
         super().__init__(session)
+
+        # Guardar sync_manager
+        self.sync_manager = sync_manager
 
         # Inicializar Use Cases
         self.obtener_estadisticas_uc = ObtenerEstadisticasUseCase(session)
@@ -62,79 +69,118 @@ class AsignacionGuardiasForm(BaseForm):
 
     def setup_ui(self):
         """Configurar la interfaz de usuario del formulario"""
-        # Layout principal que contendrá el scroll area
+        # Layout principal
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(8, 6, 8, 6)
+        main_layout.setSpacing(4)
+
+        # Título principal
+        titulo = QLabel("🎯 ASIGNACIÓN DE GUARDIAS")
+        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        main_layout.addWidget(titulo)
 
         # Crear el contenedor con scroll
         scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)  # CRÍTICO para responsividad
-        scroll_area.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
-        )
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         # Widget contenedor del contenido
         content_widget = QWidget()
-        layout = QVBoxLayout()
-        content_widget.setLayout(layout)
+        grid_layout = QGridLayout()
+        grid_layout.setSpacing(6)
+        grid_layout.setVerticalSpacing(8)
+        grid_layout.setContentsMargins(6, 4, 6, 4)
+        content_widget.setLayout(grid_layout)
 
-        # Título
-        titulo = QLabel("=== CÁLCULO Y ASIGNACIÓN DE GUARDIAS ===")
-        titulo.setStyleSheet("font-size: 14px; font-weight: bold;")
-        layout.addWidget(titulo)
+        # ============ COLUMNA IZQUIERDA ============
+        
+        # Estadísticas del curso
+        label_stats = QLabel("📊 Estadísticas del Curso")
+        label_stats.setStyleSheet(styles.STYLE_TITLE_SECTION)
+        label_stats.setMaximumHeight(20)
+        grid_layout.addWidget(label_stats, 0, 0)
 
-        # Área de estadísticas
-        layout.addWidget(QLabel("\n📊 ESTADÍSTICAS DEL CURSO:"))
         self.stats_text = QTextEdit()
         self.stats_text.setReadOnly(True)
-        self.stats_text.setMaximumHeight(200)
-        layout.addWidget(self.stats_text)
+        self.stats_text.setMinimumHeight(160)
+        self.stats_text.setMaximumHeight(220)
+        self.stats_text.setStyleSheet(styles.STYLE_INPUT)
+        grid_layout.addWidget(self.stats_text, 1, 0)
 
-        # Botón para calcular distribución
+        # Botón calcular
         calc_button = QPushButton("📊 Calcular Distribución")
+        calc_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
+        calc_button.setMinimumHeight(34)
+        calc_button.setMaximumHeight(34)
         calc_button.clicked.connect(self.calcular_distribucion)
-        layout.addWidget(calc_button)
+        grid_layout.addWidget(calc_button, 2, 0)
 
-        # Área de resultados de distribución
-        layout.addWidget(QLabel("\n📋 DISTRIBUCIÓN DE GUARDIAS POR PROFESOR:"))
+        # ============ COLUMNA DERECHA ============
+        
+        # Distribución por profesor
+        label_dist = QLabel("📋 Distribución por Profesor")
+        label_dist.setStyleSheet(styles.STYLE_TITLE_SECTION)
+        label_dist.setMaximumHeight(20)
+        grid_layout.addWidget(label_dist, 0, 1)
+
         self.distribucion_text = QTextEdit()
         self.distribucion_text.setReadOnly(True)
-        self.distribucion_text.setMaximumHeight(250)
-        layout.addWidget(self.distribucion_text)
+        self.distribucion_text.setMinimumHeight(200)
+        self.distribucion_text.setMaximumHeight(280)
+        self.distribucion_text.setStyleSheet(styles.STYLE_INPUT)
+        grid_layout.addWidget(self.distribucion_text, 1, 1)
 
-        # Botón para generar guardias (deshabilitado inicialmente)
-        self.generar_button = QPushButton("🎯 Generar Asignación de Guardias")
+        # Botón generar
+        self.generar_button = QPushButton("🎯 Generar Asignación")
+        self.generar_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
+        self.generar_button.setMinimumHeight(34)
+        self.generar_button.setMaximumHeight(34)
         self.generar_button.setEnabled(False)
         self.generar_button.clicked.connect(self.generar_guardias)
-        layout.addWidget(self.generar_button)
+        grid_layout.addWidget(self.generar_button, 2, 1)
 
-        # Botón para limpiar todas las guardias
-        self.limpiar_button = QPushButton("🗑️  Limpiar Todas las Guardias")
-        self.limpiar_button.setStyleSheet("""
-            QPushButton {
-                background-color: #d32f2f;
-                color: white;
-                font-weight: bold;
-                padding: 8px;
-            }
-            QPushButton:hover {
-                background-color: #b71c1c;
-            }
-        """)
-        self.limpiar_button.clicked.connect(self.limpiar_guardias)
-        layout.addWidget(self.limpiar_button)
+        # ============ FILA INFERIOR (SPAN 2 COLUMNAS) ============
 
-        # Área de resultados de generación
+        # Resultados de generación
+        label_resultado = QLabel("📈 Resultados de Generación")
+        label_resultado.setStyleSheet(
+            styles.STYLE_TITLE_SECTION + "margin-top: 12px;"
+        )
+        label_resultado.setMaximumHeight(20)
+        grid_layout.addWidget(label_resultado, 3, 0, 1, 2)
+
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
-        self.resultado_text.setMaximumHeight(150)
-        layout.addWidget(self.resultado_text)
+        self.resultado_text.setMinimumHeight(220)
+        self.resultado_text.setMaximumHeight(320)
+        self.resultado_text.setStyleSheet(styles.STYLE_INPUT)
+        grid_layout.addWidget(self.resultado_text, 4, 0, 1, 2)
+
+        # Botón limpiar (centrado, abajo)
+        button_container = QWidget()
+        button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(0, 4, 0, 0)
+        button_container.setLayout(button_layout)
+        
+        button_layout.addStretch()
+        self.limpiar_button = QPushButton("🗑️  Limpiar Todas las Guardias")
+        self.limpiar_button.setStyleSheet(styles.STYLE_BUTTON_DANGER)
+        self.limpiar_button.setMinimumWidth(280)
+        self.limpiar_button.setMinimumHeight(34)
+        self.limpiar_button.setMaximumHeight(34)
+        self.limpiar_button.clicked.connect(self.limpiar_guardias)
+        button_layout.addWidget(self.limpiar_button)
+        button_layout.addStretch()
+        
+        grid_layout.addWidget(button_container, 5, 0, 1, 2)
+
+        # Configurar proporciones de columnas
+        grid_layout.setColumnStretch(0, 1)
+        grid_layout.setColumnStretch(1, 1)
 
         # Agregar el widget al scroll area
         scroll_area.setWidget(content_widget)
-
-        # Agregar el scroll area al layout principal
         main_layout.addWidget(scroll_area)
 
         self.setLayout(main_layout)
@@ -220,6 +266,7 @@ Número de profesores: {stats.num_profesores}
 
             if count_guardias > 0:
                 from PyQt6.QtWidgets import QMessageBox
+
                 from utils.ui_helpers import show_question_with_cancel
                 respuesta = show_question_with_cancel(
                     self,
@@ -277,6 +324,24 @@ Número de profesores: {stats.num_profesores}
                     resumen.mensaje
                     or "Guardias generadas y guardadas en la base de datos.",
                 )
+
+                # Sincronizar con la nube si está disponible
+                if self.sync_manager:
+                    try:
+                        from utils.logger import logger
+                        logger.info("Sincronizando guardias generadas con la nube...")
+                        if self.sync_manager.sync_on_shutdown(session=self.session):
+                            logger.info("✓ Guardias sincronizadas con la nube")
+                            self.mostrar_info(
+                                "Sincronización completada",
+                                "Las guardias generadas se han guardado en la nube correctamente."
+                            )
+                        else:
+                            logger.warning("⚠ Problemas al sincronizar con la nube")
+                    except Exception as e:
+                        from utils.logger import logger
+                        logger.error(f"Error al sincronizar: {e}")
+                        # No mostrar error al usuario, solo logging
 
         except BusinessLogicError as e:
             self.mostrar_error("Error en Generación", str(e))

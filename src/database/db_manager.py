@@ -6,10 +6,13 @@ Características:
 - Configuración optimizada para SQLite y PostgreSQL
 - Control de timeout y reintentos
 - Logging de conexiones
+- Soporte multi-usuario con bases de datos aisladas
 """
 
+import hashlib
 import os
 from contextlib import contextmanager
+from pathlib import Path
 
 from sqlalchemy import create_engine, event, pool
 from sqlalchemy.orm import sessionmaker
@@ -19,52 +22,180 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# URL de la base de datos
+# Directorio base para bases de datos de usuarios
+USER_DATA_DIR = Path("data/users")
+USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# Variable global para el usuario activo
+_current_user_id = None
+_current_engine = None
+_current_session_factory = None
+
+
+def _hash_user_id(user_id: str) -> str:
+    """Genera un hash del user_id para usar como nombre de carpeta."""
+    return hashlib.sha256(user_id.encode()).hexdigest()[:16]
+
+
+def initialize_user_database(user_id: str):
+    """
+    Inicializa la base de datos para un usuario específico.
+    
+    Args:
+        user_id: Identificador único del usuario
+        
+    Returns:
+        tuple: (engine, SessionLocal) para el usuario
+    """
+    global _current_user_id, _current_engine, _current_session_factory
+    
+    # Crear hash del usuario
+    user_hash = _hash_user_id(user_id)
+    
+    # Crear directorio del usuario
+    user_dir = USER_DATA_DIR / user_hash
+    user_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Path de la base de datos del usuario
+    db_path = user_dir / "guardias_patio.db"
+    database_url = f"sqlite:///{db_path}"
+    
+    logger.info(f"Inicializando BD para usuario: {user_id} (hash: {user_hash})")
+    logger.info(f"Database path: {db_path}")
+    
+    # Crear engine específico para este usuario
+    engine = create_engine(
+        database_url,
+        echo=False,
+        future=True,
+        poolclass=pool.NullPool,
+        connect_args={
+            'check_same_thread': False,
+            'timeout': TIMEOUT_DB,
+        }
+    )
+    
+    # Pragmas de optimización para SQLite
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_conn, connection_record):
+        """Configura pragmas de optimización para SQLite."""
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA cache_size=10000")
+        cursor.execute("PRAGMA temp_store=MEMORY")
+        cursor.close()
+    
+    # Crear tablas si no existen
+    from models.models import Base
+    Base.metadata.create_all(bind=engine)
+    
+    # Session factory para este usuario
+    session_factory = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine,
+        expire_on_commit=False
+    )
+    
+    # Guardar referencias globales
+    _current_user_id = user_id
+    _current_engine = engine
+    _current_session_factory = session_factory
+    
+    logger.info(f"Base de datos inicializada para usuario: {user_id}")
+    
+    return engine, session_factory
+
+
+def get_current_user_id() -> str:
+    """Obtiene el ID del usuario activo."""
+    return _current_user_id
+
+
+def get_user_database_path(user_id: str) -> Path:
+    """Obtiene el path de la base de datos de un usuario."""
+    user_hash = _hash_user_id(user_id)
+    return USER_DATA_DIR / user_hash / "guardias_patio.db"
+
+
+def user_has_database(user_id: str) -> bool:
+    """Verifica si un usuario tiene una base de datos creada."""
+    db_path = get_user_database_path(user_id)
+    return db_path.exists()
+
+
+def delete_user_database(user_id: str) -> bool:
+    """
+    Elimina completamente la base de datos y archivos de un usuario.
+    
+    Args:
+        user_id: Identificador del usuario
+        
+    Returns:
+        bool: True si se eliminó correctamente
+    """
+    try:
+        user_hash = _hash_user_id(user_id)
+        user_dir = USER_DATA_DIR / user_hash
+        
+        if user_dir.exists():
+            import shutil
+            shutil.rmtree(user_dir)
+            logger.info(f"Base de datos eliminada para usuario: {user_id}")
+            return True
+        else:
+            logger.warning(f"No existe base de datos para usuario: {user_id}")
+            return False
+    except Exception as e:
+        logger.error(f"Error eliminando base de datos de usuario {user_id}: {e}")
+        return False
+
+
+# URL de la base de datos (fallback para compatibilidad)
 DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///guardias_patio.db')
 
 # Detectar tipo de base de datos
 IS_SQLITE = DATABASE_URL.startswith('sqlite')
 IS_POSTGRESQL = DATABASE_URL.startswith('postgresql')
 
-# Configuración del engine según el tipo de BD
+# Engine y SessionLocal por defecto (se sobrescribirán al iniciar sesión)
 if IS_SQLITE:
-    # SQLite: NullPool (no usa pool) + optimizaciones para SQLite
     engine = create_engine(
         DATABASE_URL,
-        echo=False,  # Cambiar a True solo para debug
+        echo=False,
         future=True,
-        poolclass=pool.NullPool,  # SQLite no soporta pool bien
+        poolclass=pool.NullPool,
         connect_args={
-            'check_same_thread': False,  # Permite uso desde múltiples threads
-            'timeout': TIMEOUT_DB,  # Timeout de 30 segundos
+            'check_same_thread': False,
+            'timeout': TIMEOUT_DB,
         }
     )
 
-    # Pragmas de optimización para SQLite
     @event.listens_for(engine, "connect")
     def set_sqlite_pragma(dbapi_conn, connection_record):
         """Configura pragmas de optimización para SQLite."""
         cursor = dbapi_conn.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")  # Activar FK
-        cursor.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging
-        cursor.execute("PRAGMA synchronous=NORMAL")  # Balance rendimiento/seguridad
-        cursor.execute("PRAGMA cache_size=10000")  # 10000 páginas (~40MB)
-        cursor.execute("PRAGMA temp_store=MEMORY")  # Tablas temp en RAM
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA cache_size=10000")
+        cursor.execute("PRAGMA temp_store=MEMORY")
         cursor.close()
         logger.debug("SQLite pragmas configurados")
 
 elif IS_POSTGRESQL:
-    # PostgreSQL: QueuePool con configuración robusta
     engine = create_engine(
         DATABASE_URL,
         echo=False,
         future=True,
         poolclass=pool.QueuePool,
-        pool_size=10,  # Conexiones permanentes
-        max_overflow=20,  # Conexiones adicionales bajo carga
-        pool_timeout=30,  # Timeout para obtener conexión del pool
-        pool_recycle=3600,  # Reciclar conexiones cada hora
-        pool_pre_ping=True,  # Verificar conexión antes de usar
+        pool_size=10,
+        max_overflow=20,
+        pool_timeout=30,
+        pool_recycle=3600,
+        pool_pre_ping=True,
     )
 
     logger.info(
@@ -73,7 +204,6 @@ elif IS_POSTGRESQL:
     )
 
 else:
-    # Otras BD: configuración genérica
     engine = create_engine(
         DATABASE_URL,
         echo=False,
@@ -91,7 +221,7 @@ SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine,
-    expire_on_commit=False  # No refrescar objetos tras commit (mejor rendimiento)
+    expire_on_commit=False
 )
 
 logger.info(f"Database manager inicializado: {DATABASE_URL[:50]}")
@@ -100,6 +230,7 @@ logger.info(f"Database manager inicializado: {DATABASE_URL[:50]}")
 def get_session():
     """
     Generador de sesión de base de datos.
+    Usa la base de datos del usuario activo si está configurada.
 
     Uso en FastAPI/generadores:
         for session in get_session():
@@ -113,7 +244,10 @@ def get_session():
         for db in get_session():
             profesores = db.query(Profesor).all()
     """
-    db = SessionLocal()
+    # Usar session factory del usuario activo si existe
+    session_factory = _current_session_factory if _current_session_factory else SessionLocal
+    
+    db = session_factory()
     try:
         yield db
     except Exception as e:
@@ -128,6 +262,7 @@ def get_session():
 def get_db_session():
     """
     Context manager para sesiones de base de datos.
+    Usa la base de datos del usuario activo si está configurada.
 
     Uso recomendado para scripts y servicios:
         with get_db_session() as session:
@@ -142,7 +277,10 @@ def get_db_session():
             db.add(profesor)
             db.commit()
     """
-    session = SessionLocal()
+    # Usar session factory del usuario activo si existe
+    session_factory = _current_session_factory if _current_session_factory else SessionLocal
+    
+    session = session_factory()
     try:
         yield session
         session.commit()

@@ -86,3 +86,6 @@ Output/  # Directorio de salida de Inno Setup
 # ❌ htmlcov/, coverage.xml     - Reportes de cobertura (se regeneran)
 # ❌ __pycache__/, *.pyc        - Archivos compilados (se regeneran)
 # ============================================================================
+.env
+*.pyc
+__pycache__/
