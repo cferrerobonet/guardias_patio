@@ -15,6 +15,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from core.paths import get_data_directory
+
 # Configurar logger
 logger = logging.getLogger(__name__)
 
@@ -179,7 +181,7 @@ class SyncManager:
         self.backend = backend
         self.user_id = user_id
         self.user_hash = self._hash_user_id(user_id)
-        self.local_data_dir = Path("data") / self.user_hash
+        self.local_data_dir = get_data_directory() / self.user_hash
         self.local_data_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"SyncManager inicializado para usuario: {user_id}")
@@ -196,7 +198,7 @@ class SyncManager:
         """
         Sincroniza datos al iniciar la aplicación.
         Descarga el JSON de la nube y lo importa a la base de datos.
-        
+
         Args:
             session: Sesión de SQLAlchemy (opcional, para importar datos)
         """
@@ -248,7 +250,7 @@ class SyncManager:
         """
         Sincroniza datos al cerrar la aplicación.
         Exporta la base de datos a JSON y la sube a la nube.
-        
+
         Args:
             session: Sesión de SQLAlchemy (obligatorio, para exportar datos)
             progress_callback: Función callback para reportar progreso
@@ -404,10 +406,10 @@ class UserAuth:
     def unregister_user(self, username: str) -> bool:
         """
         Elimina un usuario del sistema de autenticación.
-        
+
         Args:
             username: Nombre del usuario a eliminar
-            
+
         Returns:
             bool: True si se eliminó correctamente, False si no existe
         """

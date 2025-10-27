@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
 from services.email_service import get_email_service
 from sync.sync_manager import UserAuth
 from utils.ui_helpers import get_corporate_icon

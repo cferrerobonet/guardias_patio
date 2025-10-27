@@ -12,13 +12,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
+from core.paths import get_data_directory
+
 logger = logging.getLogger(__name__)
 
 
 class SessionLock:
     """
     Gestiona el bloqueo de sesión única para un usuario.
-    
+
     Utiliza un archivo de bloqueo en el servidor SFTP para coordinar
     el acceso exclusivo entre múltiples clientes.
     """
@@ -26,7 +28,7 @@ class SessionLock:
     def __init__(self, backend, user_id: str, user_hash: str):
         """
         Inicializa el sistema de bloqueo de sesión.
-        
+
         Args:
             backend: Backend de sincronización (SFTP o Local)
             user_id: Identificador del usuario (email)
@@ -67,12 +69,12 @@ class SessionLock:
 
     def _get_local_lock_path(self) -> Path:
         """Obtiene la ruta local del archivo de bloqueo."""
-        return Path("data") / self.user_hash / self.lock_filename
+        return get_data_directory() / self.user_hash / self.lock_filename
 
     def acquire_lock(self) -> bool:
         """
         Intenta adquirir el bloqueo de sesión.
-        
+
         Returns:
             True si se adquirió el bloqueo, False si ya está bloqueado
         """
@@ -134,7 +136,7 @@ class SessionLock:
     def update_heartbeat(self) -> bool:
         """
         Actualiza el heartbeat del bloqueo para indicar que la sesión sigue activa.
-        
+
         Returns:
             True si se actualizó correctamente
         """
@@ -163,11 +165,11 @@ class SessionLock:
     def release_lock(self) -> bool:
         """
         Libera el bloqueo de sesión al cerrar la aplicación.
-        
+
         Returns:
             True si se liberó correctamente
         """
-        remote_path = self._get_remote_lock_path()
+        self._get_remote_lock_path()
         local_path = self._get_local_lock_path()
 
         # Eliminar archivo local
@@ -188,7 +190,7 @@ class SessionLock:
     def get_lock_info(self) -> Optional[Dict]:
         """
         Obtiene información del bloqueo actual (si existe).
-        
+
         Returns:
             Dict con info del bloqueo o None si no existe
         """
@@ -209,7 +211,7 @@ class SessionLock:
 class SessionLockManager:
     """
     Gestor de alto nivel para el sistema de bloqueo de sesión.
-    
+
     Se integra con QTimer para mantener heartbeats automáticos.
     """
 
@@ -220,7 +222,7 @@ class SessionLockManager:
     def start_heartbeat(self, app):
         """
         Inicia el sistema de heartbeat automático usando QTimer.
-        
+
         Args:
             app: Instancia de QApplication para crear el timer
         """

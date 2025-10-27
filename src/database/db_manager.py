@@ -17,14 +17,14 @@ from pathlib import Path
 from sqlalchemy import create_engine, event, pool
 from sqlalchemy.orm import sessionmaker
 
+from core.paths import get_user_data_directory
 from utils.constants import TIMEOUT_DB
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 # Directorio base para bases de datos de usuarios
-USER_DATA_DIR = Path("data/users")
-USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
+USER_DATA_DIR = get_user_data_directory()
 
 # Variable global para el usuario activo
 _current_user_id = None
@@ -37,13 +37,71 @@ def _hash_user_id(user_id: str) -> str:
     return hashlib.sha256(user_id.encode()).hexdigest()[:16]
 
 
+def _run_alembic_migrations(engine, db_path: Path):
+    """
+    Ejecuta migraciones de Alembic para inicializar/actualizar el esquema.
+
+    Args:
+        engine: SQLAlchemy engine
+        db_path: Ruta al archivo de base de datos
+    """
+    try:
+        from alembic.config import Config
+        from sqlalchemy import inspect
+
+        from alembic import command
+
+        # Verificar si la base de datos ya tiene tablas
+        inspector = inspect(engine)
+        existing_tables = inspector.get_table_names()
+
+        if not existing_tables:
+            logger.info("Base de datos nueva detectada. Inicializando esquema...")
+
+            # Configurar Alembic
+            import sys
+            from pathlib import Path
+
+            # Obtener ruta al alembic.ini
+            if getattr(sys, 'frozen', False):
+                # Aplicación empaquetada
+                if hasattr(sys, '_MEIPASS'):
+                    alembic_ini_path = Path(sys._MEIPASS) / 'alembic.ini'
+                else:
+                    alembic_ini_path = Path(sys.executable).parent / 'alembic.ini'
+            else:
+                # Modo desarrollo
+                alembic_ini_path = Path(__file__).parent.parent.parent / 'alembic.ini'
+
+            if not alembic_ini_path.exists():
+                logger.warning(f"alembic.ini no encontrado en {alembic_ini_path}")
+                logger.info("Usando create_all() para inicializar esquema")
+                return
+
+            # Configurar Alembic
+            alembic_cfg = Config(str(alembic_ini_path))
+            alembic_cfg.set_main_option('sqlalchemy.url', str(engine.url))
+
+            # Ejecutar upgrade a head
+            command.upgrade(alembic_cfg, 'head')
+            logger.info("✓ Migraciones de Alembic aplicadas correctamente")
+
+        else:
+            logger.info(f"Base de datos existente con {len(existing_tables)} tablas")
+
+    except Exception as e:
+        logger.warning(f"No se pudieron ejecutar migraciones de Alembic: {e}")
+        logger.info("La aplicación continuará usando el esquema actual")
+
+
+
 def initialize_user_database(user_id: str):
     """
     Inicializa la base de datos para un usuario específico.
-    
+
     Args:
         user_id: Identificador único del usuario
-        
+
     Returns:
         tuple: (engine, SessionLocal) para el usuario
     """
@@ -91,6 +149,9 @@ def initialize_user_database(user_id: str):
     from models.models import Base
     Base.metadata.create_all(bind=engine)
 
+    # Ejecutar migraciones de Alembic si es necesario
+    _run_alembic_migrations(engine, db_path)
+
     # Session factory para este usuario
     session_factory = sessionmaker(
         autocommit=False,
@@ -129,10 +190,10 @@ def user_has_database(user_id: str) -> bool:
 def delete_user_database(user_id: str) -> bool:
     """
     Elimina completamente la base de datos y archivos de un usuario.
-    
+
     Args:
         user_id: Identificador del usuario
-        
+
     Returns:
         bool: True si se eliminó correctamente
     """

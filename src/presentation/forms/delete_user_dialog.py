@@ -2,7 +2,6 @@
 Diálogo para eliminar usuarios con confirmación de contraseña
 """
 
-from database.db_manager import delete_user_database
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -14,6 +13,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
+from database.db_manager import delete_user_database
 from sync.backend_factory import get_default_backend
 from sync.sync_manager import UserAuth
 from utils.ui_helpers import get_corporate_icon

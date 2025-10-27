@@ -8,15 +8,6 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 import json
 from typing import Dict, Optional
 
-import ui_styles as styles
-from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
-from application.use_cases.profesor import (
-    ActualizarProfesorUseCase,
-    BuscarProfesoresUseCase,
-    CrearProfesorUseCase,
-    EliminarProfesorUseCase,
-    ListarProfesoresUseCase,
-)
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -38,8 +29,16 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
 
+import ui_styles as styles
+from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
+from application.use_cases.profesor import (
+    ActualizarProfesorUseCase,
+    BuscarProfesoresUseCase,
+    CrearProfesorUseCase,
+    EliminarProfesorUseCase,
+    ListarProfesoresUseCase,
+)
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import (
     CONTENT_BG_ALT,
@@ -50,6 +49,7 @@ from presentation.themes.ccleaner_theme import (
     SPACING_SM,
     TEXT_SECONDARY,
 )
+from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
 
 
 class ProfesorForm(BaseForm):
@@ -1062,7 +1062,29 @@ class ProfesorForm(BaseForm):
                 )
 
             # Cargar matriz horario
+            # Solo activar restricciones si tiene valores diferentes a los por defecto
+            tiene_restricciones_personalizadas = False
+
             if profesor.recreos_permitidos:
+                try:
+                    recreos_actuales = json.loads(profesor.recreos_permitidos)
+                    # Verificar si es diferente a los valores por defecto
+                    # Por defecto: [1, 2] para recreos
+                    if not (isinstance(recreos_actuales, list) and set(recreos_actuales) == {1, 2}):
+                        tiene_restricciones_personalizadas = True
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+            if profesor.dias_semana_permitidos and not tiene_restricciones_personalizadas:
+                try:
+                    dias_actuales = json.loads(profesor.dias_semana_permitidos)
+                    # Por defecto: [0, 1, 2, 3, 4, 5, 6] para días
+                    if not (isinstance(dias_actuales, list) and set(dias_actuales) == set(range(7))):
+                        tiene_restricciones_personalizadas = True
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+            if tiene_restricciones_personalizadas:
                 self.usar_restricciones_horario_checkbox.setChecked(True)
                 self._json_a_matriz(profesor.recreos_permitidos)
             else:

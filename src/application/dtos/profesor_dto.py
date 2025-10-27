@@ -52,18 +52,26 @@ class CrearProfesorDTO(BaseModel):
     dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(7)))
     recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2])
 
-    @field_validator("dias_semana_permitidos")
+    @field_validator("dias_semana_permitidos", mode='before')
     @classmethod
-    def validar_dias_semana(cls, v: list[int]) -> list[int]:
+    def validar_dias_semana(cls, v) -> list[int]:
         """Valida que los días de la semana estén entre 0 y 6."""
+        # Si es None, usar valor por defecto
+        if v is None:
+            return list(range(7))
+        # Validar que todos los días estén en rango
         if not all(0 <= dia <= 6 for dia in v):
             raise ValueError("Los días de la semana deben estar entre 0 (lunes) y 6 (domingo)")
         return v
 
-    @field_validator("recreos_permitidos")
+    @field_validator("recreos_permitidos", mode='before')
     @classmethod
-    def validar_recreos(cls, v: list[int]) -> list[int]:
+    def validar_recreos(cls, v) -> list[int]:
         """Valida que los recreos sean números positivos."""
+        # Si es None, usar valor por defecto
+        if v is None:
+            return [1, 2]
+        # Validar que todos los recreos sean positivos
         if not all(recreo >= 1 for recreo in v):
             raise ValueError("Los números de recreo deben ser positivos")
         return v

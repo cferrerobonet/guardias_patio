@@ -3,5 +3,10 @@
     "password_hash": "31e684871572c03419bce18fc6b0abeea0a0daf96d7d07a30473fc06ce716d78",
     "email": "cferrerobonet@epla.es",
     "created_at": "2025-10-25T21:16:11.908147"
+  },
+  "Jefatura_FpBach": {
+    "password_hash": "31e684871572c03419bce18fc6b0abeea0a0daf96d7d07a30473fc06ce716d78",
+    "email": "cferrerobonet@epla.es",
+    "created_at": "2025-10-27T10:09:37.157654"
   }
 }

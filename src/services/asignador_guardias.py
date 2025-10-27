@@ -7,13 +7,14 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable, Dict, List, Optional, Tuple
 
+from sqlalchemy.orm import Session
+
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
     calcular_guardias_por_profesor,
     listar_dias_lectivos,
 )
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)

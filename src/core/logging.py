@@ -38,8 +38,9 @@ import logging.handlers
 import sys
 import time
 from contextlib import contextmanager
-from pathlib import Path
 from typing import Any, Callable, Optional
+
+from core.paths import get_logs_directory
 
 try:
     import structlog
@@ -58,28 +59,51 @@ except ImportError:
 class LogConfig:
     """Configuración de logging."""
 
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self):
+        if self._initialized:
+            return
+
         # Intentar importar settings, sino usar valores por defecto
         try:
             from config import settings
 
             self.log_level = settings.log_level
-            self.log_file = settings.log_file
+            # Usar el directorio apropiado del sistema
+            logs_dir = get_logs_directory()
+            self.log_file = str(logs_dir / "guardias_patio.log")
             self.log_to_console = settings.log_to_console
             self.log_to_file = settings.log_to_file
             self.structured_logging = settings.structured_logging and STRUCTLOG_AVAILABLE
         except ImportError:
             self.log_level = "INFO"
-            self.log_file = "logs/guardias_patio.log"
+            # Usar el directorio apropiado del sistema
+            logs_dir = get_logs_directory()
+            self.log_file = str(logs_dir / "guardias_patio.log")
             self.log_to_console = True
             self.log_to_file = True
             self.structured_logging = STRUCTLOG_AVAILABLE
 
-        # Crear directorio de logs
-        Path(self.log_file).parent.mkdir(parents=True, exist_ok=True)
+        self._initialized = True
 
 
-config = LogConfig()
+# Singleton - se inicializa solo cuando se accede
+_config_instance = None
+
+
+def get_config():
+    """Obtiene la instancia de configuración (singleton lazy)."""
+    global _config_instance
+    if _config_instance is None:
+        _config_instance = LogConfig()
+    return _config_instance
 
 
 # ============================================================================
@@ -92,6 +116,7 @@ def configure_structlog():
     if not STRUCTLOG_AVAILABLE:
         return
 
+    config = get_config()
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
@@ -123,6 +148,8 @@ def configure_structlog():
 
 def setup_standard_logging():
     """Configura logging estándar de Python."""
+    config = get_config()
+
     # Formato
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
@@ -163,6 +190,7 @@ def setup_logging():
 
     Debe llamarse al inicio de la aplicación.
     """
+    config = get_config()
     if config.structured_logging:
         configure_structlog()
     else:
@@ -188,6 +216,7 @@ def get_logger(name: str):
         logger = get_logger(__name__)
         logger.info("mensaje", key="value")
     """
+    config = get_config()
     if config.structured_logging:
         return structlog.get_logger(name)
     else:
@@ -211,6 +240,7 @@ def log_context(**context):
         with log_context(user_id=123, operation="create"):
             logger.info("processing")  # Incluirá user_id y operation
     """
+    config = get_config()
     if config.structured_logging and STRUCTLOG_AVAILABLE:
         with structlog.contextvars.bound_contextvars(**context):
             yield

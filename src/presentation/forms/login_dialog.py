@@ -2,7 +2,6 @@
 Diálogo de Login para Sistema Multi-Usuario
 """
 
-from pathlib import Path
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
@@ -17,6 +16,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
+from core.paths import get_resources_directory
 from sync.sync_manager import UserAuth
 from utils.icon_manager import get_icon
 from utils.ui_helpers import get_corporate_icon
@@ -258,7 +259,7 @@ class LoginDialog(QDialog):
 
         # Logo corporativo
         logo_label = QLabel()
-        logo_path = Path("imagenes/logo.png")
+        logo_path = get_resources_directory() / "logo.png"
 
         if logo_path.exists():
             pixmap = QPixmap(str(logo_path))

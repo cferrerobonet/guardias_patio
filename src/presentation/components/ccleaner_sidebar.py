@@ -6,7 +6,6 @@ Menú lateral oscuro con diseño profesional.
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
-from utils.icon_manager import get_icon
 
 from presentation.themes.ccleaner_theme import (
     SIDEBAR_BG,
@@ -15,6 +14,7 @@ from presentation.themes.ccleaner_theme import (
     SPACING_SM,
     get_sidebar_style,
 )
+from utils.icon_manager import get_icon
 
 
 class SidebarMenu(QWidget):

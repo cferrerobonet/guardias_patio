@@ -7,6 +7,7 @@ Proporciona funcionalidad común y establece el patrón MVP.
 
 from PyQt6.QtWidgets import QMessageBox, QWidget
 from sqlalchemy.orm import Session
+
 from utils.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
 from utils.ui_helpers import (
