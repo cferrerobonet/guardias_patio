@@ -182,6 +182,26 @@ def generar_calendario_guardias(
     """
     Genera el calendario de guardias para el curso con algoritmo mejorado.
 
+    IMPORTANTE - Sobre la distribución calculada vs generada:
+    =========================================================
+    La distribución calculada (mostrada antes de generar) es un OBJETIVO IDEAL
+    basado en porcentajes de jornada, turnos y tutoría de cada profesor.
+
+    Sin embargo, este algoritmo usa MÚLTIPLES PASADAS con relajación progresiva
+    de restricciones para garantizar que TODOS los slots se cubran. Por tanto:
+
+    - En las primeras pasadas (1-2): se respetan las cuotas calculadas
+    - En pasadas posteriores (3-6): se IGNORAN cuotas para cubrir slots vacíos
+    - Resultado: algunos profesores pueden recibir MÁS guardias de las calculadas
+
+    ¿Por qué no se respetan las cuotas exactamente?
+    - Prioridad #1: Cubrir TODOS los slots (ningún recreo sin guardia)
+    - Prioridad #2: Respetar restricciones de elegibilidad (turno, fechas, etc.)
+    - Prioridad #3: Distribuir equitativamente (pero secundario a #1 y #2)
+
+    Si los resultados difieren significativamente de la distribución calculada,
+    verifica que la configuración de turnos, recreos_permitidos y fechas sea correcta.
+
     Mejoras implementadas:
     - Múltiples pasadas para cubrir slots vacíos
     - Relajación progresiva de restricciones
@@ -191,8 +211,8 @@ def generar_calendario_guardias(
 
     Pasadas del algoritmo:
     1. Asignación normal con restricciones estándar (30-70%)
-    2. Extender cuotas para cubrir más slots (70-85%)
-    3. Ignorar cuotas completamente (85-90%)
+    2. Extender cuotas +20% para cubrir más slots (70-85%)
+    3. IGNORAR cuotas completamente para cubrir vacíos (85-90%)
     4. Optimización por swapping inteligente (90-92%)
     5. Búsqueda exhaustiva con backtracking (92-96%)
     6. Garantizar al menos una guardia por profesor (96-98%)

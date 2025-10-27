@@ -9,8 +9,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from database.db_manager import get_session
 from models.models import Configuracion, Zona
-from services.calculador_guardias import calcular_slots_reales, _parse_recreos_config
 from services.asignador_guardias import _build_slots
+from services.calculador_guardias import _parse_recreos_config, calcular_slots_reales
 
 
 def main():

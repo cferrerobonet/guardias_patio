@@ -264,7 +264,9 @@ Número de profesores: {stats.num_profesores}
             distribucion_dto = self.calcular_distribucion_uc.execute()
 
             # Formatear texto con nombres de profesores
-            texto = "Distribución calculada:\n\n"
+            texto = "📊 Distribución OBJETIVO (estimada):\n\n"
+            texto += "ℹ️  Esta distribución es el objetivo ideal basado en porcentajes.\n"
+            texto += "El algoritmo puede ajustar ligeramente para cubrir todos los slots.\n\n"
 
             # Ordenar por número de guardias (descendente)
             profesores_ordenados = sorted(
@@ -289,6 +291,8 @@ Número de profesores: {stats.num_profesores}
                 texto += "\n\n✅ La distribución es exacta"
             else:
                 texto += f"\n\n⚠️  Diferencia: {abs(distribucion_dto.diferencia)}"
+
+            texto += "\n\n💡 Tras generar, verifica el reparto real en 'Resultados'"
 
             self.distribucion_text.setText(texto)
 
