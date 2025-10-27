@@ -91,7 +91,7 @@ def get_sidebar_style() -> str:
             background-color: {SIDEBAR_BG};
             border-right: 1px solid {SIDEBAR_BORDER};
         }}
-        
+
         /* Título del sidebar */
         QLabel#sidebarTitle {{
             color: white;
@@ -100,7 +100,7 @@ def get_sidebar_style() -> str:
             font-weight: {FONT_WEIGHT_BOLD};
             padding: {SPACING_MD}px;
         }}
-        
+
         /* Categorías del menú - más grandes y limpias */
         QLabel#menuCategory {{
             color: rgba(255, 255, 255, 0.75);
@@ -115,12 +115,12 @@ def get_sidebar_style() -> str:
             margin-bottom: {SPACING_XS}px;
             border: none;
         }}
-        
+
         /* Primera categoría sin margen superior */
         QLabel#menuCategory:first {{
             margin-top: 0;
         }}
-        
+
         /* Botones de menú - iconos blancos y texto claro */
         QPushButton#menuButton {{
             background-color: transparent;
@@ -134,12 +134,12 @@ def get_sidebar_style() -> str:
             border-radius: {RADIUS_MEDIUM}px;
             margin: 2px {SPACING_MD}px;
         }}
-        
+
         QPushButton#menuButton:hover {{
             background-color: rgba(255, 255, 255, 0.10);
             color: white;
         }}
-        
+
         /* Botón activo con fondo azul */
         QPushButton#menuButtonActive {{
             background-color: {PRIMARY_BLUE};
@@ -153,11 +153,11 @@ def get_sidebar_style() -> str:
             border-radius: {RADIUS_MEDIUM}px;
             margin: 2px {SPACING_MD}px;
         }}
-        
+
         QPushButton#menuButtonActive:hover {{
             background-color: {PRIMARY_BLUE_HOVER};
         }}
-        
+
         /* Botón de colapsar */
         QPushButton#collapseButton {{
             background-color: transparent;
@@ -166,12 +166,12 @@ def get_sidebar_style() -> str:
             border: none;
             border-radius: {RADIUS_SMALL}px;
         }}
-        
+
         QPushButton#collapseButton:hover {{
             background-color: rgba(255, 255, 255, 0.1);
             color: white;
         }}
-        
+
         /* Separadores */
         QFrame[frameShape="4"] {{
             background-color: rgba(255, 255, 255, 0.08);
@@ -189,7 +189,7 @@ def get_topbar_style() -> str:
             border-bottom: 1px solid {BORDER_LIGHT};
             padding: 0 {SPACING_LG}px;
         }}
-        
+
         /* Título de la sección actual */
         QLabel#breadcrumb {{
             color: {TEXT_PRIMARY};
@@ -197,7 +197,7 @@ def get_topbar_style() -> str:
             font-size: {FONT_SIZE_LARGE}px;
             font-weight: {FONT_WEIGHT_SEMIBOLD};
         }}
-        
+
         /* Botones de acción rápida */
         QPushButton {{
             background-color: transparent;
@@ -208,7 +208,7 @@ def get_topbar_style() -> str:
             border: none;
             border-radius: {RADIUS_SMALL}px;
         }}
-        
+
         QPushButton:hover {{
             background-color: {CONTENT_BG_ALT};
             color: {TEXT_PRIMARY};
@@ -293,16 +293,16 @@ def get_button_primary_style() -> str:
             border: none;
             border-radius: {RADIUS_MEDIUM}px;
         }}
-        
+
         QPushButton:hover {{
             background-color: {PRIMARY_BLUE_HOVER};
         }}
-        
+
         QPushButton:pressed {{
             background-color: {PRIMARY_BLUE_HOVER};
             transform: translateY(1px);
         }}
-        
+
         QPushButton:disabled {{
             background-color: {BORDER_MEDIUM};
             color: {TEXT_DISABLED};
@@ -323,16 +323,16 @@ def get_button_secondary_style() -> str:
             border: 1px solid {BORDER_MEDIUM};
             border-radius: {RADIUS_MEDIUM}px;
         }}
-        
+
         QPushButton:hover {{
             background-color: {CONTENT_BG_ALT};
             border-color: {TEXT_SECONDARY};
         }}
-        
+
         QPushButton:pressed {{
             background-color: {BORDER_LIGHT};
         }}
-        
+
         QPushButton:disabled {{
             color: {TEXT_DISABLED};
             border-color: {BORDER_LIGHT};
@@ -352,12 +352,12 @@ def get_input_style() -> str:
             border: 1px solid {BORDER_MEDIUM};
             border-radius: {RADIUS_MEDIUM}px;
         }}
-        
+
         QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
             border-color: {PRIMARY_BLUE};
             outline: none;
         }}
-        
+
         QLineEdit:disabled, QTextEdit:disabled, QPlainTextEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled {{
             background-color: {CONTENT_BG_ALT};
             color: {TEXT_DISABLED};
@@ -378,20 +378,20 @@ def get_combobox_style() -> str:
             border: 1px solid {BORDER_MEDIUM};
             border-radius: {RADIUS_MEDIUM}px;
         }}
-        
+
         QComboBox:hover {{
             border-color: {TEXT_SECONDARY};
         }}
-        
+
         QComboBox:focus {{
             border-color: {PRIMARY_BLUE};
         }}
-        
+
         QComboBox::drop-down {{
             border: none;
             width: 20px;
         }}
-        
+
         QComboBox::down-arrow {{
             image: none;
             border-left: 4px solid transparent;
@@ -399,7 +399,7 @@ def get_combobox_style() -> str:
             border-top: 4px solid {TEXT_SECONDARY};
             margin-right: 8px;
         }}
-        
+
         QComboBox QAbstractItemView {{
             background-color: {CONTENT_BG};
             color: {TEXT_PRIMARY};
@@ -423,16 +423,16 @@ def get_table_style() -> str:
             border: 1px solid {BORDER_LIGHT};
             border-radius: {RADIUS_MEDIUM}px;
         }}
-        
+
         QTableWidget::item, QTableView::item {{
             padding: {SPACING_SM}px;
         }}
-        
+
         QTableWidget::item:selected, QTableView::item:selected {{
             background-color: {PRIMARY_BLUE_LIGHT};
             color: {TEXT_PRIMARY};
         }}
-        
+
         QHeaderView::section {{
             background-color: {CONTENT_BG_ALT};
             color: {TEXT_PRIMARY};
@@ -467,7 +467,7 @@ def get_complete_stylesheet() -> str:
             font-size: {FONT_SIZE_NORMAL}px;
             color: {TEXT_PRIMARY};
         }}
-        
+
         /* ========== BOTONES GENERALES (sin objectName) ========== */
         QPushButton {{
             background-color: {PRIMARY_BLUE};
@@ -480,20 +480,20 @@ def get_complete_stylesheet() -> str:
             border-radius: {RADIUS_MEDIUM}px;
             min-height: 32px;
         }}
-        
+
         QPushButton:hover {{
             background-color: {PRIMARY_BLUE_HOVER};
         }}
-        
+
         QPushButton:pressed {{
             background-color: {PRIMARY_BLUE_HOVER};
         }}
-        
+
         QPushButton:disabled {{
             background-color: {BORDER_MEDIUM};
             color: {TEXT_DISABLED};
         }}
-        
+
         /* ========== BOTONES EN DIÁLOGOS (QMessageBox, QDialogButtonBox, QDialog) ========== */
         QMessageBox QPushButton,
         QDialogButtonBox QPushButton,
@@ -509,20 +509,20 @@ def get_complete_stylesheet() -> str:
             min-width: 80px;
             min-height: 32px;
         }}
-        
+
         QMessageBox QPushButton:hover,
         QDialogButtonBox QPushButton:hover,
         QDialog QPushButton:hover {{
             background-color: {PRIMARY_BLUE_HOVER} !important;
             border: 1px solid {PRIMARY_BLUE_HOVER} !important;
         }}
-        
+
         QMessageBox QPushButton:pressed,
         QDialogButtonBox QPushButton:pressed,
         QDialog QPushButton:pressed {{
             background-color: #005999 !important;
         }}
-        
+
         /* Asegurar visibilidad de botones secundarios en diálogos */
         QMessageBox QPushButton[text="No"],
         QMessageBox QPushButton[text="Cancelar"],
@@ -534,7 +534,7 @@ def get_complete_stylesheet() -> str:
             color: {TEXT_PRIMARY} !important;
             border: 1px solid {BORDER_MEDIUM} !important;
         }}
-        
+
         QMessageBox QPushButton[text="No"]:hover,
         QMessageBox QPushButton[text="Cancelar"]:hover,
         QDialogButtonBox QPushButton[text="No"]:hover,
@@ -544,7 +544,7 @@ def get_complete_stylesheet() -> str:
             background-color: {BORDER_LIGHT} !important;
             border: 1px solid {TEXT_SECONDARY} !important;
         }}
-        
+
         /* ========== BOTONES PRIMARIOS ========== */
         QPushButton#primaryButton {{
             background-color: {PRIMARY_BLUE};
@@ -554,11 +554,11 @@ def get_complete_stylesheet() -> str:
             border: none;
             border-radius: {RADIUS_MEDIUM}px;
         }}
-        
+
         QPushButton#primaryButton:hover {{
             background-color: {PRIMARY_BLUE_HOVER};
         }}
-        
+
         /* ========== BOTONES SECUNDARIOS ========== */
         QPushButton#secondaryButton {{
             background-color: transparent;
@@ -568,32 +568,32 @@ def get_complete_stylesheet() -> str:
             border: 1px solid {BORDER_MEDIUM};
             border-radius: {RADIUS_MEDIUM}px;
         }}
-        
+
         QPushButton#secondaryButton:hover {{
             background-color: {CONTENT_BG_ALT};
             border-color: {TEXT_SECONDARY};
         }}
-        
+
         /* ========== BOTONES DE ÉXITO (VERDE) ========== */
         QPushButton[success="true"] {{
             background-color: {SUCCESS_GREEN};
             color: white;
         }}
-        
+
         QPushButton[success="true"]:hover {{
             background-color: #218838;
         }}
-        
+
         /* ========== BOTONES DE PELIGRO (ROJO) ========== */
         QPushButton[danger="true"] {{
             background-color: {ERROR_RED};
             color: white;
         }}
-        
+
         QPushButton[danger="true"]:hover {{
             background-color: #C82333;
         }}
-        
+
         /* ========== INPUTS ========== */
         QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {{
             background-color: {CONTENT_BG};
@@ -603,11 +603,11 @@ def get_complete_stylesheet() -> str:
             border-radius: {RADIUS_MEDIUM}px;
             min-height: 28px;
         }}
-        
+
         QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
             border-color: {PRIMARY_BLUE};
         }}
-        
+
         /* ========== COMBOBOX ========== */
         QComboBox {{
             background-color: {CONTENT_BG};
@@ -616,15 +616,15 @@ def get_complete_stylesheet() -> str:
             border: 1px solid {BORDER_MEDIUM};
             border-radius: {RADIUS_MEDIUM}px;
         }}
-        
+
         QComboBox:hover {{
             border-color: {TEXT_SECONDARY};
         }}
-        
+
         QComboBox:focus {{
             border-color: {PRIMARY_BLUE};
         }}
-        
+
         QComboBox QAbstractItemView {{
             background-color: {CONTENT_BG};
             color: {TEXT_PRIMARY};
@@ -632,7 +632,7 @@ def get_complete_stylesheet() -> str:
             selection-background-color: {PRIMARY_BLUE_LIGHT};
             selection-color: {TEXT_PRIMARY};
         }}
-        
+
         /* ========== TABLAS ========== */
         QTableWidget, QTableView {{
             background-color: {CONTENT_BG};
@@ -642,12 +642,12 @@ def get_complete_stylesheet() -> str:
             border: 1px solid {BORDER_LIGHT};
             border-radius: {RADIUS_MEDIUM}px;
         }}
-        
+
         QTableWidget::item:selected, QTableView::item:selected {{
             background-color: {PRIMARY_BLUE_LIGHT};
             color: {TEXT_PRIMARY};
         }}
-        
+
         QHeaderView::section {{
             background-color: {CONTENT_BG_ALT};
             color: {TEXT_PRIMARY};
@@ -656,59 +656,59 @@ def get_complete_stylesheet() -> str:
             border: none;
             border-bottom: 2px solid {BORDER_LIGHT};
         }}
-        
+
         /* ========== SCROLLBARS ========== */
         QScrollBar:vertical {{
             background: {CONTENT_BG_ALT};
             width: 12px;
             border-radius: 6px;
         }}
-        
+
         QScrollBar::handle:vertical {{
             background: {BORDER_MEDIUM};
             border-radius: 6px;
             min-height: 20px;
         }}
-        
+
         QScrollBar::handle:vertical:hover {{
             background: {TEXT_SECONDARY};
         }}
-        
+
         QScrollBar:horizontal {{
             background: {CONTENT_BG_ALT};
             height: 12px;
             border-radius: 6px;
         }}
-        
+
         QScrollBar::handle:horizontal {{
             background: {BORDER_MEDIUM};
             border-radius: 6px;
             min-width: 20px;
         }}
-        
+
         QScrollBar::handle:horizontal:hover {{
             background: {TEXT_SECONDARY};
         }}
-        
+
         /* ========== LABELS CON ROLES ========== */
         QLabel#heading1 {{
             color: {TEXT_PRIMARY};
             font-size: {FONT_SIZE_XXLARGE}px;
             font-weight: {FONT_WEIGHT_BOLD};
         }}
-        
+
         QLabel#heading2 {{
             color: {TEXT_PRIMARY};
             font-size: {FONT_SIZE_XLARGE}px;
             font-weight: {FONT_WEIGHT_SEMIBOLD};
         }}
-        
+
         QLabel#heading3 {{
             color: {TEXT_PRIMARY};
             font-size: {FONT_SIZE_LARGE}px;
             font-weight: {FONT_WEIGHT_SEMIBOLD};
         }}
-        
+
         QLabel#secondary {{
             color: {TEXT_SECONDARY};
             font-size: {FONT_SIZE_SMALL}px;

@@ -6,6 +6,7 @@ Convierte toda la base de datos SQLite a formato JSON para sincronización.
 Incluye: Profesores, Zonas, Configuración, Guardias y Ausencias.
 """
 
+import base64
 import json
 import logging
 from datetime import date, datetime, time
@@ -21,6 +22,40 @@ logger = logging.getLogger(__name__)
 
 class DataExporter:
     """Exporta e importa datos de la base de datos a/desde JSON."""
+
+    @staticmethod
+    def _encriptar_password(password: str) -> str:
+        """
+        Encripta una contraseña usando base64.
+
+        Args:
+            password: Contraseña en texto plano
+
+        Returns:
+            Contraseña encriptada en base64
+        """
+        if not password:
+            return ""
+        return base64.b64encode(password.encode('utf-8')).decode('utf-8')
+
+    @staticmethod
+    def _desencriptar_password(encrypted_password: str) -> str:
+        """
+        Desencripta una contraseña desde base64.
+
+        Args:
+            encrypted_password: Contraseña encriptada en base64
+
+        Returns:
+            Contraseña en texto plano
+        """
+        if not encrypted_password:
+            return ""
+        try:
+            return base64.b64decode(encrypted_password.encode('utf-8')).decode('utf-8')
+        except Exception as e:
+            logger.warning(f"Error al desencriptar contraseña: {e}. Usando valor original.")
+            return encrypted_password  # Si falla, asumir que ya está desencriptada
 
     @staticmethod
     def _serialize_date(obj: Any) -> str:
@@ -82,7 +117,7 @@ class DataExporter:
                 "smtp_server": smtp_server,
                 "smtp_port": smtp_port,
                 "smtp_user": smtp_user,
-                "smtp_password": smtp_password,  # Se exporta cifrada en producción
+                "smtp_password": DataExporter._encriptar_password(smtp_password),  # Encriptada
             }
         return None
 
@@ -106,18 +141,21 @@ class DataExporter:
             smtp_server = smtp_data.get("smtp_server", "")
             smtp_port = smtp_data.get("smtp_port", "")
             smtp_user = smtp_data.get("smtp_user", "")
-            smtp_password = smtp_data.get("smtp_password", "")
+            smtp_password_encrypted = smtp_data.get("smtp_password", "")
 
-            if not smtp_server or not smtp_port or not smtp_user or not smtp_password:
+            if not smtp_server or not smtp_port or not smtp_user or not smtp_password_encrypted:
                 logger.warning("Configuración SMTP incompleta en JSON")
                 return False
+
+            # Desencriptar contraseña
+            smtp_password = DataExporter._desencriptar_password(smtp_password_encrypted)
 
             # Leer el archivo .env actual
             env_path = ".env"
             env_lines = []
 
             if os.path.exists(env_path):
-                with open(env_path, 'r') as f:
+                with open(env_path, "r") as f:
                     env_lines = f.readlines()
 
             # Actualizar o agregar variables SMTP
@@ -125,7 +163,7 @@ class DataExporter:
                 "SMTP_SERVER": smtp_server,
                 "SMTP_PORT": smtp_port,
                 "SMTP_USER": smtp_user,
-                "SMTP_PASSWORD": smtp_password,
+                "SMTP_PASSWORD": smtp_password,  # Guardamos desencriptada
             }
 
             updated_vars = set()
@@ -141,7 +179,7 @@ class DataExporter:
                     env_lines.append(f"{var_name}={var_value}\n")
 
             # Guardar archivo .env
-            with open(env_path, 'w') as f:
+            with open(env_path, "w") as f:
                 f.writelines(env_lines)
 
             logger.info("Configuración SMTP GLOBAL actualizada desde JSON")
@@ -149,6 +187,109 @@ class DataExporter:
 
         except Exception as e:
             logger.error(f"Error al importar configuración SMTP: {e}")
+            return False
+
+    @staticmethod
+    def _export_sftp_config() -> Optional[Dict[str, str]]:
+        """
+        Exporta la configuración SFTP desde el archivo .env.
+
+        Esta configuración es GLOBAL y compartida entre todos los usuarios.
+
+        Returns:
+            Dict con configuración SFTP o None si no existe
+        """
+        import os
+
+        from dotenv import load_dotenv
+
+        load_dotenv()
+
+        sftp_host = os.getenv("SFTP_HOST", "")
+        sftp_port = os.getenv("SFTP_PORT", "")
+        sftp_basedir = os.getenv("SFTP_BASE_DIR", "")
+        sftp_user = os.getenv("SFTP_USERNAME", "")
+        sftp_password = os.getenv("SFTP_PASSWORD", "")
+
+        # Solo exportar si hay configuración completa
+        if sftp_host and sftp_port and sftp_user and sftp_password:
+            return {
+                "sftp_host": sftp_host,
+                "sftp_port": sftp_port,
+                "sftp_base_dir": sftp_basedir,
+                "sftp_username": sftp_user,
+                "sftp_password": DataExporter._encriptar_password(sftp_password),  # Encriptada
+            }
+        return None
+
+    @staticmethod
+    def _import_sftp_config(sftp_data: Dict[str, str]) -> bool:
+        """
+        Importa la configuración SFTP GLOBAL al archivo .env.
+
+        Esta configuración es compartida entre todos los usuarios.
+        Si se modifica, afectará a todos los usuarios del sistema.
+
+        Args:
+            sftp_data: Dict con configuración SFTP
+
+        Returns:
+            True si se importó correctamente
+        """
+        import os
+
+        try:
+            sftp_host = sftp_data.get("sftp_host", "")
+            sftp_port = sftp_data.get("sftp_port", "")
+            sftp_basedir = sftp_data.get("sftp_base_dir", "")
+            sftp_user = sftp_data.get("sftp_username", "")
+            sftp_password_encrypted = sftp_data.get("sftp_password", "")
+
+            if not sftp_host or not sftp_port or not sftp_user or not sftp_password_encrypted:
+                logger.warning("Configuración SFTP incompleta en JSON")
+                return False
+
+            # Desencriptar contraseña
+            sftp_password = DataExporter._desencriptar_password(sftp_password_encrypted)
+
+            # Leer el archivo .env actual
+            env_path = ".env"
+            env_lines = []
+
+            if os.path.exists(env_path):
+                with open(env_path, "r") as f:
+                    env_lines = f.readlines()
+
+            # Actualizar o agregar variables SFTP
+            sftp_vars = {
+                "SFTP_HOST": sftp_host,
+                "SFTP_PORT": sftp_port,
+                "SFTP_BASE_DIR": sftp_basedir,
+                "SFTP_USERNAME": sftp_user,
+                "SFTP_PASSWORD": sftp_password,  # Guardamos desencriptada
+            }
+
+            updated_vars = set()
+            for i, line in enumerate(env_lines):
+                for var_name, var_value in sftp_vars.items():
+                    if line.startswith(f"{var_name}="):
+                        env_lines[i] = f"{var_name}={var_value}\n"
+                        updated_vars.add(var_name)
+
+            # Agregar variables que no existían
+            for var_name, var_value in sftp_vars.items():
+                if var_name not in updated_vars:
+                    env_lines.append(f"{var_name}={var_value}\n")
+
+            # Guardar archivo .env
+            with open(env_path, "w") as f:
+                f.writelines(env_lines)
+
+            logger.info("Configuración SFTP GLOBAL actualizada desde JSON")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error al importar configuración SFTP: {e}")
             return False
 
     @staticmethod
@@ -168,6 +309,7 @@ class DataExporter:
                 "export_date": datetime.now().isoformat(),
                 "version": "1.0",
                 "smtp_config": DataExporter._export_smtp_config(),  # Config global SMTP
+                "sftp_config": DataExporter._export_sftp_config(),  # Config global SFTP
                 "profesores": [],
                 "zonas": [],
                 "configuracion": [],
@@ -298,6 +440,11 @@ class DataExporter:
             if "smtp_config" in data and data["smtp_config"]:
                 DataExporter._import_smtp_config(data["smtp_config"])
                 logger.info("✓ Configuración SMTP global importada")
+
+            # Importar configuración SFTP GLOBAL si existe en el JSON
+            if "sftp_config" in data and data["sftp_config"]:
+                DataExporter._import_sftp_config(data["sftp_config"])
+                logger.info("✓ Configuración SFTP global importada")
 
             # Limpiar datos existentes si se solicita
             if clear_existing:

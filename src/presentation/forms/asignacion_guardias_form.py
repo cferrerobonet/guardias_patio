@@ -214,6 +214,13 @@ class AsignacionGuardiasForm(BaseForm):
             # Ejecutar Use Case
             stats = self.obtener_estadisticas_uc.execute()
 
+            # Calcular slots teóricos (sin considerar fechas de zonas)
+            slots_teoricos = (
+                stats.dias_lectivos *
+                (stats.recreos_manana + stats.recreos_tarde) *
+                stats.num_zonas
+            )
+
             # Formatear texto
             texto = f"""
 Días lectivos: {stats.dias_lectivos} días (L-V)
@@ -224,9 +231,25 @@ Número de zonas: {stats.num_zonas}
 Número de profesores: {stats.num_profesores}
 
 📌 SLOTS TOTALES: {stats.slots_totales} guardias
-   (días × recreos × zonas = {stats.dias_lectivos} ×
-   {stats.recreos_manana + stats.recreos_tarde} × {stats.num_zonas})
-            """
+"""
+
+            # Añadir explicación de la diferencia si hay zonas con fechas límite
+            if stats.slots_totales < slots_teoricos:
+                diferencia = slots_teoricos - stats.slots_totales
+                porcentaje = (diferencia / slots_teoricos * 100) if slots_teoricos > 0 else 0
+                texto += f"""
+   • Slots teóricos: {slots_teoricos}
+     (sin fechas de zonas: {stats.dias_lectivos} × {stats.recreos_manana + stats.recreos_tarde} × {stats.num_zonas})
+   • Slots reales: {stats.slots_totales}
+   • Reducción: {diferencia} slots ({porcentaje:.1f}%)
+
+   ℹ️  Hay zonas con fechas de inicio/fin que reducen
+   el número total de slots disponibles.
+"""
+            else:
+                texto += f"""   (días × recreos × zonas = {stats.dias_lectivos} × {stats.recreos_manana + stats.recreos_tarde} × {stats.num_zonas})
+"""
+
             self.stats_text.setText(texto.strip())
 
         except BusinessLogicError as e:
@@ -359,7 +382,7 @@ Número de profesores: {stats.num_profesores}
                         logger.info("Sincronizando guardias generadas con la nube...")
                         if self.sync_manager.sync_on_shutdown(session=self.session):
                             logger.info("✓ Guardias sincronizadas con la nube")
-                            self.mostrar_info(
+                            self.mostrar_exito(
                                 "Sincronización completada",
                                 "Las guardias generadas se han guardado en la nube correctamente."
                             )
@@ -539,7 +562,7 @@ Número de profesores: {stats.num_profesores}
             count_actual = self.session.query(Guardia).count()
 
             if count_actual == 0:
-                self.mostrar_info(
+                self.mostrar_advertencia(
                     "Sin guardias",
                     "No hay guardias en el sistema para eliminar."
                 )

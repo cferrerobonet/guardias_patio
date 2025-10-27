@@ -12,17 +12,15 @@ from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QMessageBox,
     QPushButton,
-    QScrollArea,
     QTextEdit,
     QVBoxLayout,
-    QWidget,
 )
 
-import ui_styles as styles
 from models.models import Configuracion, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
@@ -50,204 +48,405 @@ class ImportExportForm(BaseForm):
 
     def setup_ui(self):
         """Construir la interfaz del formulario."""
-        # Layout principal que contendrá el scroll area
+        # Layout principal
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)
-
-        # Crear el contenedor con scroll
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)  # CRÍTICO para responsividad
-        scroll_area.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
-        )
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-
-        # Widget contenedor del contenido
-        content_widget = QWidget()
-        layout = QVBoxLayout()
-        content_widget.setLayout(layout)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(15)
 
         # Título
-        titulo = QLabel("Importar / Exportar Datos")
-        titulo.setStyleSheet("font-size: 16px; font-weight: bold;")
-        layout.addWidget(titulo)
+        titulo = QLabel("💾 Importar / Exportar Datos")
+        titulo.setStyleSheet("""
+            QLabel {
+                font-size: 20px;
+                font-weight: bold;
+                color: #2c3e50;
+                padding: 15px;
+                background-color: #ecf0f1;
+                border-radius: 8px;
+            }
+        """)
+        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(titulo)
 
         # Descripción
         desc = QLabel(
-            "Exporta todos los datos de la aplicación (profesores, zonas, "
-            "configuración, guardias)\n"
-            "a un archivo JSON para copiar a otro equipo o hacer respaldo.\n\n"
-            "También puedes importar datos desde un archivo JSON exportado previamente."
+            "Gestiona la importación y exportación de datos de la aplicación. "
+            "Puedes exportar/importar datos en JSON, importar profesores desde Excel "
+            "o generar calendarios PDF individuales."
         )
-        layout.addWidget(desc)
+        desc.setWordWrap(True)
+        desc.setStyleSheet("color: #7f8c8d; padding: 10px; font-size: 12px;")
+        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(desc)
 
-        # Sección de exportación
-        layout.addLayout(self._crear_seccion_exportar())
+        # Layout en 2 columnas para las secciones principales
+        layout_columnas = QHBoxLayout()
+        layout_columnas.setSpacing(15)
 
-        # Sección de importación
-        layout.addLayout(self._crear_seccion_importar())
+        # Columna izquierda: Exportar e Importar JSON
+        columna_izq = QVBoxLayout()
+        columna_izq.addWidget(self._crear_seccion_exportar())
+        columna_izq.addWidget(self._crear_seccion_importar())
+        columna_izq.addStretch()
+        layout_columnas.addLayout(columna_izq, 1)
 
-        # Sección de importación de profesores desde Excel
-        layout.addLayout(self._crear_seccion_importar_profesores())
+        # Columna derecha: Importar profesores y PDF
+        columna_der = QVBoxLayout()
+        columna_der.addWidget(self._crear_seccion_importar_profesores())
+        columna_der.addWidget(self._crear_seccion_pdf())
+        columna_der.addStretch()
+        layout_columnas.addLayout(columna_der, 1)
 
-        # Sección de exportación a PDF
-        layout.addLayout(self._crear_seccion_pdf())
+        main_layout.addLayout(layout_columnas)
 
-        # Resultado
+        # Resultado (ancho completo)
+        resultado_group = QGroupBox("📋 Resultados")
+        resultado_group.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                border: 2px solid #bdc3c7;
+                border-radius: 8px;
+                margin-top: 10px;
+                padding-top: 15px;
+                background-color: white;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 15px;
+                padding: 0 5px;
+                color: #2c3e50;
+            }
+        """)
+        resultado_layout = QVBoxLayout()
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
-        self.resultado_text.setMaximumHeight(200)
-        layout.addWidget(self.resultado_text)
-
-        layout.addStretch()
-
-        # Agregar el widget al scroll area
-        scroll_area.setWidget(content_widget)
-
-        # Agregar el scroll area al layout principal
-        main_layout.addWidget(scroll_area)
+        self.resultado_text.setMaximumHeight(180)
+        self.resultado_text.setStyleSheet("""
+            QTextEdit {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                padding: 10px;
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+            }
+        """)
+        self.resultado_text.setPlaceholderText("Los resultados de las operaciones aparecerán aquí...")
+        resultado_layout.addWidget(self.resultado_text)
+        resultado_group.setLayout(resultado_layout)
+        main_layout.addWidget(resultado_group)
 
         self.setLayout(main_layout)
 
-    def _crear_seccion_exportar(self) -> QVBoxLayout:
+    def _crear_seccion_exportar(self) -> QGroupBox:
         """Crear sección de exportación a JSON."""
-        seccion = QVBoxLayout()
+        grupo = QGroupBox("📤 EXPORTAR DATOS A JSON")
+        grupo.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                font-size: 13px;
+                border: 2px solid #3498db;
+                border-radius: 8px;
+                margin-top: 10px;
+                padding-top: 15px;
+                background-color: #ebf5fb;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 15px;
+                padding: 0 5px;
+                color: #2980b9;
+            }
+        """)
 
-        export_label = QLabel("EXPORTAR DATOS")
-        export_label.setStyleSheet("font-weight: bold; margin-top: 20px;")
-        seccion.addWidget(export_label)
+        layout = QVBoxLayout()
+        layout.setSpacing(10)
+        layout.setContentsMargins(15, 20, 15, 15)
 
-        export_info = QLabel(
-            "Exporta todos los datos actuales de la base de datos a un archivo JSON."
+        info = QLabel(
+            "Exporta todos los datos actuales a un archivo JSON para respaldo "
+            "o transferencia a otro equipo."
         )
-        seccion.addWidget(export_info)
+        info.setWordWrap(True)
+        info.setStyleSheet("color: #34495e; font-size: 11px; font-weight: normal;")
+        layout.addWidget(info)
 
-        self.exportar_btn = QPushButton("Exportar a JSON...")
+        self.exportar_btn = QPushButton("💾 Exportar a JSON...")
         self.exportar_btn.clicked.connect(self.exportar_datos)
-        seccion.addWidget(self.exportar_btn)
+        self.exportar_btn.setMinimumHeight(40)
+        self.exportar_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                padding: 10px 15px;
+                border: none;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+            QPushButton:pressed {
+                background-color: #21618c;
+            }
+        """)
+        layout.addWidget(self.exportar_btn)
 
-        return seccion
+        grupo.setLayout(layout)
+        return grupo
 
-    def _crear_seccion_importar(self) -> QVBoxLayout:
+    def _crear_seccion_importar(self) -> QGroupBox:
         """Crear sección de importación desde JSON."""
-        seccion = QVBoxLayout()
+        grupo = QGroupBox("📥 IMPORTAR DATOS DESDE JSON")
+        grupo.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                font-size: 13px;
+                border: 2px solid #e67e22;
+                border-radius: 8px;
+                margin-top: 10px;
+                padding-top: 15px;
+                background-color: #fef5e7;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 15px;
+                padding: 0 5px;
+                color: #d68910;
+            }
+        """)
 
-        import_label = QLabel("IMPORTAR DATOS")
-        import_label.setStyleSheet("font-weight: bold; margin-top: 20px;")
-        seccion.addWidget(import_label)
+        layout = QVBoxLayout()
+        layout.setSpacing(10)
+        layout.setContentsMargins(15, 20, 15, 15)
 
-        import_info = QLabel(
-            "Importa datos desde un archivo JSON.\n"
-            "⚠️ ATENCIÓN: Esto ELIMINARÁ todos los datos actuales y los reemplazará "
-            "con los del archivo."
+        info = QLabel(
+            "⚠️ ATENCIÓN: Esto puede ELIMINAR los datos actuales si activas la opción."
         )
-        import_info.setStyleSheet("color: #d63031;")
-        seccion.addWidget(import_info)
+        info.setWordWrap(True)
+        info.setStyleSheet("color: #d63031; font-size: 11px; font-weight: bold; padding: 5px;")
+        layout.addWidget(info)
 
         self.limpiar_checkbox = QCheckBox(
-            "Eliminar datos existentes antes de importar (recomendado)"
+            "Eliminar datos existentes antes de importar"
         )
         self.limpiar_checkbox.setChecked(True)
-        seccion.addWidget(self.limpiar_checkbox)
+        self.limpiar_checkbox.setStyleSheet("""
+            QCheckBox {
+                font-size: 12px;
+                font-weight: normal;
+                color: #34495e;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+            }
+        """)
+        layout.addWidget(self.limpiar_checkbox)
 
-        self.importar_btn = QPushButton("Importar desde JSON...")
+        self.importar_btn = QPushButton("📂 Importar desde JSON...")
         self.importar_btn.clicked.connect(self.importar_datos)
-        seccion.addWidget(self.importar_btn)
+        self.importar_btn.setMinimumHeight(40)
+        self.importar_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e67e22;
+                color: white;
+                padding: 10px 15px;
+                border: none;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #d68910;
+            }
+            QPushButton:pressed {
+                background-color: #b9770e;
+            }
+        """)
+        layout.addWidget(self.importar_btn)
 
-        return seccion
+        grupo.setLayout(layout)
+        return grupo
 
-    def _crear_seccion_importar_profesores(self) -> QVBoxLayout:
+    def _crear_seccion_importar_profesores(self) -> QGroupBox:
         """Crear sección de importación de profesores desde Excel."""
-        seccion = QVBoxLayout()
+        grupo = QGroupBox("📊 IMPORTAR PROFESORES DESDE EXCEL")
+        grupo.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                font-size: 13px;
+                border: 2px solid #27ae60;
+                border-radius: 8px;
+                margin-top: 10px;
+                padding-top: 15px;
+                background-color: #eafaf1;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 15px;
+                padding: 0 5px;
+                color: #229954;
+            }
+        """)
 
-        import_prof_label = QLabel("IMPORTAR PROFESORES DESDE EXCEL")
-        import_prof_label.setStyleSheet("font-weight: bold; margin-top: 20px;")
-        seccion.addWidget(import_prof_label)
+        layout = QVBoxLayout()
+        layout.setSpacing(10)
+        layout.setContentsMargins(15, 20, 15, 15)
 
-        import_prof_info = QLabel(
-            "Importa profesores desde un archivo Excel (.xlsx).\n"
-            "Los profesores nuevos se añadirán, los existentes se omitirán."
+        info = QLabel(
+            "Importa profesores desde un archivo Excel (.xlsx). "
+            "Los nuevos se añadirán, los existentes se omitirán."
         )
-        seccion.addWidget(import_prof_info)
+        info.setWordWrap(True)
+        info.setStyleSheet("color: #34495e; font-size: 11px; font-weight: normal;")
+        layout.addWidget(info)
 
-        self.importar_profesores_btn = QPushButton("Importar Profesores desde Excel...")
+        self.importar_profesores_btn = QPushButton("👥 Importar Profesores...")
         self.importar_profesores_btn.clicked.connect(self.importar_profesores)
-        seccion.addWidget(self.importar_profesores_btn)
+        self.importar_profesores_btn.setMinimumHeight(40)
+        self.importar_profesores_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #27ae60;
+                color: white;
+                padding: 10px 15px;
+                border: none;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #229954;
+            }
+            QPushButton:pressed {
+                background-color: #1e8449;
+            }
+        """)
+        layout.addWidget(self.importar_profesores_btn)
 
-        return seccion
+        grupo.setLayout(layout)
+        return grupo
 
-    def _crear_seccion_pdf(self) -> QVBoxLayout:
+    def _crear_seccion_pdf(self) -> QGroupBox:
         """Crear sección de exportación a PDF."""
-        seccion = QVBoxLayout()
+        grupo = QGroupBox("📄 GENERAR CALENDARIOS PDF")
+        grupo.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                font-size: 13px;
+                border: 2px solid #e74c3c;
+                border-radius: 8px;
+                margin-top: 10px;
+                padding-top: 15px;
+                background-color: #fadbd8;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 15px;
+                padding: 0 5px;
+                color: #c0392b;
+            }
+        """)
 
-        pdf_label = QLabel("EXPORTAR A PDF")
-        pdf_label.setStyleSheet("font-weight: bold; margin-top: 20px;")
-        seccion.addWidget(pdf_label)
+        layout = QVBoxLayout()
+        layout.setSpacing(12)
+        layout.setContentsMargins(15, 20, 15, 15)
 
-        pdf_info = QLabel(
-            "Genera calendarios individuales en PDF para cada profesor con sus guardias."
+        info = QLabel(
+            "Genera calendarios individuales en PDF para cada profesor con sus guardias asignadas."
         )
-        seccion.addWidget(pdf_info)
+        info.setWordWrap(True)
+        info.setStyleSheet("color: #34495e; font-size: 11px; font-weight: normal;")
+        layout.addWidget(info)
 
-        # Controles de mes/año
-        pdf_form_layout = QHBoxLayout()
+        # Controles de mes/año en layout horizontal
+        fecha_layout = QHBoxLayout()
+        fecha_layout.setSpacing(10)
 
-        pdf_mes_label = QLabel("Mes:")
-        pdf_mes_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        pdf_form_layout.addWidget(pdf_mes_label)
+        # Mes
+        mes_container = QVBoxLayout()
+        mes_container.setSpacing(5)
+        mes_label = QLabel("📅 Mes:")
+        mes_label.setStyleSheet("font-weight: bold; color: #2c3e50; font-size: 12px;")
+        mes_container.addWidget(mes_label)
 
         self.pdf_mes_combo = QComboBox()
         meses = [
-            "Enero",
-            "Febrero",
-            "Marzo",
-            "Abril",
-            "Mayo",
-            "Junio",
-            "Julio",
-            "Agosto",
-            "Septiembre",
-            "Octubre",
-            "Noviembre",
-            "Diciembre",
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
         ]
         self.pdf_mes_combo.addItems(meses)
         self.pdf_mes_combo.setCurrentIndex(datetime.now().month - 1)
-        pdf_form_layout.addWidget(self.pdf_mes_combo)
+        self.pdf_mes_combo.setStyleSheet("""
+            QComboBox {
+                padding: 6px;
+                border: 1px solid #bdc3c7;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 12px;
+            }
+            QComboBox:focus {
+                border: 2px solid #e74c3c;
+            }
+        """)
+        mes_container.addWidget(self.pdf_mes_combo)
+        fecha_layout.addLayout(mes_container, 2)
 
-        pdf_anio_label = QLabel("Año:")
-        pdf_anio_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        pdf_form_layout.addWidget(pdf_anio_label)
+        # Año
+        anio_container = QVBoxLayout()
+        anio_container.setSpacing(5)
+        anio_label = QLabel("📆 Año:")
+        anio_label.setStyleSheet("font-weight: bold; color: #2c3e50; font-size: 12px;")
+        anio_container.addWidget(anio_label)
 
         self.pdf_anio_combo = QComboBox()
         anio_actual = datetime.now().year
         for anio in range(anio_actual - 1, anio_actual + 3):
             self.pdf_anio_combo.addItem(str(anio))
         self.pdf_anio_combo.setCurrentIndex(1)  # Año actual
-        pdf_form_layout.addWidget(self.pdf_anio_combo)
+        self.pdf_anio_combo.setStyleSheet("""
+            QComboBox {
+                padding: 6px;
+                border: 1px solid #bdc3c7;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 12px;
+            }
+            QComboBox:focus {
+                border: 2px solid #e74c3c;
+            }
+        """)
+        anio_container.addWidget(self.pdf_anio_combo)
+        fecha_layout.addLayout(anio_container, 1)
 
-        seccion.addLayout(pdf_form_layout)
+        layout.addLayout(fecha_layout)
 
         # Botón de exportación
-        self.exportar_pdf_btn = QPushButton("📄 Generar PDFs para todos los profesores...")
+        self.exportar_pdf_btn = QPushButton("📄 Generar PDFs para Todos")
         self.exportar_pdf_btn.clicked.connect(self.exportar_pdfs)
-        self.exportar_pdf_btn.setStyleSheet(
-            """
+        self.exportar_pdf_btn.setMinimumHeight(40)
+        self.exportar_pdf_btn.setStyleSheet("""
             QPushButton {
                 background-color: #e74c3c;
                 color: white;
-                padding: 8px;
-                border-radius: 4px;
+                padding: 10px 15px;
+                border: none;
+                border-radius: 6px;
                 font-weight: bold;
+                font-size: 13px;
             }
             QPushButton:hover {
                 background-color: #c0392b;
             }
-            """
-        )
-        seccion.addWidget(self.exportar_pdf_btn)
+            QPushButton:pressed {
+                background-color: #a93226;
+            }
+        """)
+        layout.addWidget(self.exportar_pdf_btn)
 
-        return seccion
+        grupo.setLayout(layout)
+        return grupo
 
     def exportar_datos(self):
         """Exportar todos los datos a archivo JSON."""
@@ -323,6 +522,12 @@ class ImportExportForm(BaseForm):
                 f"• Configuración: {resultado['configuracion']}\n"
                 f"• Guardias: {resultado['guardias']}\n"
             )
+
+            # Añadir info de SMTP y SFTP si se importaron
+            if resultado.get('smtp_config', 0) > 0:
+                mensaje += "• Configuración SMTP: ✅ Actualizada\n"
+            if resultado.get('sftp_config', 0) > 0:
+                mensaje += "• Configuración SFTP: ✅ Actualizada\n"
 
             self.resultado_text.setText(mensaje)
 

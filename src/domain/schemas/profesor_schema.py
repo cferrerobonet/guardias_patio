@@ -98,8 +98,8 @@ class ProfesorSchema(BaseModel):
         description="ID de la zona preferida (0 = sin preferencia)"
     )
     dias_semana_permitidos: list[int] = Field(
-        default_factory=lambda: list(range(7)),
-        description="Lista de días permitidos (0=Lunes, 6=Domingo)"
+        default_factory=lambda: list(range(5)),  # Solo días laborables (0-4: Lun-Vie)
+        description="Lista de días permitidos (0=Lunes, 4=Viernes)"
     )
     recreos_permitidos: list[int] = Field(
         default_factory=lambda: [1, 2],
@@ -110,9 +110,9 @@ class ProfesorSchema(BaseModel):
     @classmethod
     def validar_dias_semana(cls, v) -> list[int]:
         """Valida que los días estén en rango 0-6."""
-        # Si es None, usar valor por defecto
+        # Si es None, usar valor por defecto (solo días laborables)
         if v is None:
-            return list(range(7))
+            return list(range(5))
         # Validar que todos los días estén en rango
         if not all(0 <= dia <= 6 for dia in v):
             raise ValueError("Los días de la semana deben estar entre 0 (Lunes) y 6 (Domingo)")
@@ -198,16 +198,17 @@ class ProfesorCreateSchema(BaseModel):
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
     zona_preferida_id: Optional[int] = Field(None, ge=0)
-    dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(7)))
+    # Solo días laborables por defecto (0-4: Lun-Vie)
+    dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))
     recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2])
 
     @field_validator("dias_semana_permitidos", mode='before')
     @classmethod
     def validar_dias_semana(cls, v) -> list[int]:
         """Valida que los días estén en rango 0-6."""
-        # Si es None, usar valor por defecto
+        # Si es None, usar valor por defecto (solo días laborables)
         if v is None:
-            return list(range(7))
+            return list(range(5))
         # Validar que todos los días estén en rango
         if not all(0 <= dia <= 6 for dia in v):
             raise ValueError("Los días de la semana deben estar entre 0 (Lunes) y 6 (Domingo)")

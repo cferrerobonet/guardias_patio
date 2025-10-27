@@ -38,7 +38,7 @@ from services.exportador_pdf import ExportadorPDF
 def profile_operation(operation_name: str, output_file: str = None):
     """
     Context manager para hacer profiling de una operación.
-    
+
     Args:
         operation_name: Nombre de la operación para el reporte
         output_file: Archivo de salida para stats (.prof)
@@ -180,7 +180,7 @@ def profile_query_patterns():
         # 2. SELECT con filtro activo
         start = time.time()
         from models.models import Profesor
-        activos = session.query(Profesor).filter(Profesor.activo == True).all()
+        activos = session.query(Profesor).filter(Profesor.activo).all()
         elapsed = time.time() - start
         print("2️⃣  SELECT * FROM profesores WHERE activo = True")
         print(f"   Registros: {len(activos)}")

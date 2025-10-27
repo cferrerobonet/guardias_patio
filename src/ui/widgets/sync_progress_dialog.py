@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class SyncProgressDialog(QDialog):
     """
     Diálogo modal que muestra el progreso de sincronización.
-    
+
     Muestra cada paso del proceso:
     1. Exportando datos de la base de datos
     2. Conectando al servidor SFTP
@@ -91,7 +91,7 @@ class SyncProgressDialog(QDialog):
     def update_progress(self, step: int, message: str, details: str = ""):
         """
         Actualiza el progreso de la sincronización.
-        
+
         Args:
             step: Número de paso actual (1-4)
             message: Mensaje principal a mostrar

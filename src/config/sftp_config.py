@@ -30,10 +30,10 @@ SFTP_CONFIG = {
 def get_sftp_config() -> dict:
     """
     Obtiene la configuración SFTP.
-    
+
     Returns:
         dict: Configuración con host, port, username, password, base_dir
-        
+
     Raises:
         ValueError: Si falta la contraseña
     """
@@ -49,7 +49,7 @@ def get_sftp_config() -> dict:
 def validate_sftp_config() -> bool:
     """
     Valida que la configuración SFTP esté completa.
-    
+
     Returns:
         bool: True si la configuración es válida
     """

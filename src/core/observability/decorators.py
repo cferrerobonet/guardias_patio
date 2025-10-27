@@ -118,7 +118,6 @@ def count_calls(metric_name: Optional[str] = None):
     """
 
     def decorator(func: Callable) -> Callable:
-        m_name = metric_name or f"{func.__name__}_calls"
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):

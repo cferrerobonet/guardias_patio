@@ -25,7 +25,8 @@ class ProfesorDTO(BaseModel):
     tutor: bool  # Nombre del campo en el modelo
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
-    dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(7)))
+    # Solo días laborables por defecto (0-4: Lun-Vie)
+    dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))
     recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2])
 
     # Campos calculados
@@ -49,16 +50,16 @@ class CrearProfesorDTO(BaseModel):
     tutor: bool = False  # Nombre del campo en el modelo
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
-    dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(7)))
+    dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))  # 0-4: Lun-Vie
     recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2])
 
     @field_validator("dias_semana_permitidos", mode='before')
     @classmethod
     def validar_dias_semana(cls, v) -> list[int]:
-        """Valida que los días de la semana estén entre 0 y 6."""
-        # Si es None, usar valor por defecto
+        """Valida que los días de la semana estén entre 0 y 4 (solo días laborables)."""
+        # Si es None, usar valor por defecto (Lun-Vie)
         if v is None:
-            return list(range(7))
+            return list(range(5))
         # Validar que todos los días estén en rango
         if not all(0 <= dia <= 6 for dia in v):
             raise ValueError("Los días de la semana deben estar entre 0 (lunes) y 6 (domingo)")

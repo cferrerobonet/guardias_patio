@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 def create_sync_backend(backend_type: str = "sftp") -> SyncBackend:
     """
     Crea un backend de sincronización según el tipo especificado.
-    
+
     Args:
         backend_type: Tipo de backend ('local' o 'sftp')
-        
+
     Returns:
         SyncBackend configurado
-        
+
     Raises:
         ValueError: Si la configuración es inválida
         ImportError: Si faltan dependencias
@@ -65,7 +65,7 @@ def create_sync_backend(backend_type: str = "sftp") -> SyncBackend:
 def get_default_backend() -> SyncBackend:
     """
     Obtiene el backend por defecto (SFTP si está configurado, sino Local).
-    
+
     Returns:
         SyncBackend configurado
     """

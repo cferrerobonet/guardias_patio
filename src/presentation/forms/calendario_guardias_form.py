@@ -301,12 +301,16 @@ class CalendarioGuardiasForm(BaseForm):
 
         # Layout horizontal para calendario y filtros
         main_horizontal = QHBoxLayout()
+        main_horizontal.setSpacing(20)
+        main_horizontal.setContentsMargins(10, 10, 10, 10)
 
         # Panel izquierdo: Calendario
-        main_horizontal.addLayout(self._crear_panel_calendario())
+        calendario_layout = self._crear_panel_calendario()
+        main_horizontal.addLayout(calendario_layout, stretch=2)
 
         # Panel derecho: Filtros y detalles
-        main_horizontal.addLayout(self._crear_panel_filtros())
+        filtros_layout = self._crear_panel_filtros()
+        main_horizontal.addLayout(filtros_layout, stretch=1)
 
         layout.addLayout(main_horizontal)
         self.setLayout(layout)
@@ -489,45 +493,135 @@ class CalendarioGuardiasForm(BaseForm):
     def _crear_panel_filtros(self) -> QVBoxLayout:
         """Crear panel con filtros y detalles."""
         panel = QVBoxLayout()
+        panel.setSpacing(10)
+        panel.setContentsMargins(0, 0, 0, 0)
 
-        # Filtros
-        filtros_label = QLabel("Filtros:")
-        filtros_label.setStyleSheet(styles.STYLE_LABEL_FIELD + " margin-top: 10px;")
-        panel.addWidget(filtros_label)
-
-        # Filtro por profesor
-        label_profesor_filtro = QLabel("Profesor:")
-        label_profesor_filtro.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        # Filtros - con fondo visible
+        filtros_label = QLabel("🔍 Filtros")
+        filtros_label.setStyleSheet("""
+            font-size: 14px;
+            font-weight: bold;
+            color: #1976D2;
+            background-color: #E3F2FD;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+        """)
+        panel.addWidget(filtros_label)        # Filtro por profesor
+        label_profesor_filtro = QLabel("👤 Profesor:")
+        label_profesor_filtro.setStyleSheet("""
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            padding: 4px 0px;
+        """)
         panel.addWidget(label_profesor_filtro)
 
         self.filtro_profesor = QComboBox()
         self.filtro_profesor.addItem("Todos los profesores", None)
         self.filtro_profesor.currentIndexChanged.connect(self.aplicar_filtros)
+        self.filtro_profesor.setStyleSheet("""
+            QComboBox {
+                padding: 6px;
+                border: 2px solid #BDBDBD;
+                border-radius: 4px;
+                background-color: white;
+                min-height: 25px;
+            }
+            QComboBox:hover {
+                border: 2px solid #2196F3;
+            }
+            QComboBox:focus {
+                border: 2px solid #1976D2;
+            }
+        """)
         panel.addWidget(self.filtro_profesor)
 
         # Filtro por zona
-        label_zona_filtro = QLabel("Zona:")
-        label_zona_filtro.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_zona_filtro = QLabel("📍 Zona:")
+        label_zona_filtro.setStyleSheet("""
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            padding: 4px 0px;
+        """)
         panel.addWidget(label_zona_filtro)
 
         self.filtro_zona = QComboBox()
         self.filtro_zona.addItem("Todas las zonas", None)
         self.filtro_zona.currentIndexChanged.connect(self.aplicar_filtros)
+        self.filtro_zona.setStyleSheet("""
+            QComboBox {
+                padding: 6px;
+                border: 2px solid #BDBDBD;
+                border-radius: 4px;
+                background-color: white;
+                min-height: 25px;
+            }
+            QComboBox:hover {
+                border: 2px solid #2196F3;
+            }
+            QComboBox:focus {
+                border: 2px solid #1976D2;
+            }
+        """)
         panel.addWidget(self.filtro_zona)
 
         # Filtro por turno
-        label_turno_filtro = QLabel("Turno:")
-        label_turno_filtro.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_turno_filtro = QLabel("🕐 Turno:")
+        label_turno_filtro.setStyleSheet("""
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            padding: 4px 0px;
+        """)
         panel.addWidget(label_turno_filtro)
 
         self.filtro_turno = QComboBox()
-        self.filtro_turno.addItems(["Todos", "mañana", "tarde"])
+        self.filtro_turno.addItem("📋 Todos los turnos", "Todos")
+        self.filtro_turno.addItem("☀️ Mañana (máx 8 guardias/día)", "mañana")
+        self.filtro_turno.addItem("🌙 Tarde (máx 8 guardias/día)", "tarde")
         self.filtro_turno.currentIndexChanged.connect(self.aplicar_filtros)
+        self.filtro_turno.setStyleSheet("""
+            QComboBox {
+                padding: 6px;
+                border: 2px solid #BDBDBD;
+                border-radius: 4px;
+                background-color: white;
+                min-height: 25px;
+                min-width: 240px;
+            }
+            QComboBox:hover {
+                border: 2px solid #2196F3;
+            }
+            QComboBox:focus {
+                border: 2px solid #1976D2;
+            }
+        """)
         panel.addWidget(self.filtro_turno)
 
         # Botón para limpiar filtros
-        self.limpiar_filtros_btn = QPushButton("Limpiar filtros")
+        self.limpiar_filtros_btn = QPushButton("🗑️ Limpiar filtros")
         self.limpiar_filtros_btn.clicked.connect(self.limpiar_filtros)
+        self.limpiar_filtros_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FF9800;
+                color: white;
+                border: 2px solid #F57C00;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+                padding: 8px;
+                min-height: 30px;
+            }
+            QPushButton:hover {
+                background-color: #F57C00;
+                border: 2px solid #E65100;
+            }
+            QPushButton:pressed {
+                background-color: #E65100;
+            }
+        """)
         panel.addWidget(self.limpiar_filtros_btn)
 
         # Detalles del día seleccionado
@@ -605,8 +699,8 @@ class CalendarioGuardiasForm(BaseForm):
             if zona_id is not None:
                 query = query.filter(Guardia.zona_id == zona_id)
 
-            turno_filtro = self.filtro_turno.currentText()
-            if turno_filtro != "Todos":
+            turno_filtro = self.filtro_turno.currentData()
+            if turno_filtro and turno_filtro != "Todos":
                 query = query.filter(Guardia.turno == turno_filtro)
 
             guardias = query.all()
@@ -658,8 +752,8 @@ class CalendarioGuardiasForm(BaseForm):
             if zona_id is not None:
                 query = query.filter(Guardia.zona_id == zona_id)
 
-            turno_filtro = self.filtro_turno.currentText()
-            if turno_filtro != "Todos":
+            turno_filtro = self.filtro_turno.currentData()
+            if turno_filtro and turno_filtro != "Todos":
                 query = query.filter(Guardia.turno == turno_filtro)
 
             total_guardias = query.count()
@@ -667,12 +761,12 @@ class CalendarioGuardiasForm(BaseForm):
             # Contar por turno
             guardias_manana = (
                 query.filter(Guardia.turno == "mañana").count()
-                if turno_filtro == "Todos"
+                if (not turno_filtro or turno_filtro == "Todos")
                 else (total_guardias if turno_filtro == "mañana" else 0)
             )
             guardias_tarde = (
                 query.filter(Guardia.turno == "tarde").count()
-                if turno_filtro == "Todos"
+                if (not turno_filtro or turno_filtro == "Todos")
                 else (total_guardias if turno_filtro == "tarde" else 0)
             )
 

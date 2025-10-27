@@ -88,10 +88,10 @@ def get_corporate_pixmap(size: int = 64) -> Optional[QPixmap]:
 def apply_corporate_icon_to_messagebox(msg_box: QMessageBox) -> None:
     """
     Aplica el icono corporativo a un QMessageBox de forma confiable.
-    
+
     En macOS, setIconPixmap() no siempre funciona, así que este método
     intenta múltiples enfoques.
-    
+
     Args:
         msg_box: El QMessageBox al que aplicar el icono
     """

@@ -58,8 +58,10 @@ def _horario_permitido(
 ) -> bool:
     """
     Valida si un día+recreo está permitido según la matriz JSON.
-    Formato esperado: '{"0": [1, 2], "2": [1, 3, 4]}'
-    donde clave = día de semana (0-6) y valor = lista de IDs de recreos.
+
+    Soporta DOS formatos:
+    1. Matriz completa: '{"0": [1, 2], "1": [1, 2], ...}' (día: recreos)
+    2. Lista simple: '[1, 2]' (mismos recreos todos los días L-V)
 
     Si no hay restricciones definidas, permite L-V y todos los recreos.
     """
@@ -70,17 +72,32 @@ def _horario_permitido(
     try:
         import json
         datos = json.loads(horario_json)
-        dia_str = str(fecha.weekday())
 
-        # Si el día no está en el JSON, no está permitido
-        if dia_str not in datos:
-            return False
+        # FORMATO 1: Matriz completa {"0": [1, 2], ...}
+        if isinstance(datos, dict):
+            dia_str = str(fecha.weekday())
 
-        # Verificar si el recreo está en la lista de recreos del día
-        recreos_permitidos = datos[dia_str]
-        return recreo_id in recreos_permitidos
+            # Si el día no está en el JSON, no está permitido
+            if dia_str not in datos:
+                return False
 
-    except (json.JSONDecodeError, ValueError, KeyError):
+            # Verificar si el recreo está en la lista de recreos del día
+            recreos_permitidos = datos[dia_str]
+            return recreo_id in recreos_permitidos
+
+        # FORMATO 2: Lista simple [1, 2] - mismos recreos todos los días
+        elif isinstance(datos, list):
+            # Solo días lectivos (L-V)
+            if fecha.weekday() >= 5:
+                return False
+            # Verificar si el recreo está en la lista
+            return recreo_id in datos
+
+        else:
+            # Formato desconocido, permitir L-V por defecto
+            return fecha.weekday() < 5
+
+    except (json.JSONDecodeError, ValueError, KeyError, TypeError):
         # En caso de error, permitir L-V por defecto
         return fecha.weekday() < 5
 
@@ -106,10 +123,15 @@ def _build_slots(session: Session, config: Configuracion) -> List[Slot]:
     zonas = session.query(Zona).all()
     if not zonas:
         return []
+
+    # Crear diccionario de zonas para acceso rápido
+    zonas_dict = {z.id: z for z in zonas}
     zonas_ids = [z.id for z in zonas]
+
     dias = listar_dias_lectivos(config)
     recreos = _parse_recreos_config(config)
     slots: List[Slot] = []
+
     if not recreos:
         # Fallback: deducir recreos de horas y construir ids 1..N por turno
         tmp = []
@@ -131,8 +153,27 @@ def _build_slots(session: Session, config: Configuracion) -> List[Slot]:
     for f in dias:
         for r in recreos:
             for i in range(min(r.get('zonas', 1), len(zonas_ids))):
-                slots.append(Slot(f, int(r['id']), r.get('turno', 'mañana'), zonas_ids[i]))
+                zona_id = zonas_ids[i]
+                zona = zonas_dict[zona_id]
+
+                # Verificar si la zona está activa en esta fecha
+                zona_activa = True
+                if zona.fecha_inicio and f < zona.fecha_inicio:
+                    zona_activa = False
+                if zona.fecha_fin and f > zona.fecha_fin:
+                    zona_activa = False
+
+                # Solo crear slot si la zona está activa en esta fecha
+                if zona_activa:
+                    slots.append(Slot(f, int(r['id']), r.get('turno', 'mañana'), zona_id))
+
+    logger.info(f"Slots creados: {len(slots)} (considerando fechas de zonas)")
     return slots
+
+
+# Diccionario global para acumular estadísticas de rechazos (diagnóstico)
+_rechazos_globales = defaultdict(int)
+_total_evaluaciones = 0
 
 
 def generar_calendario_guardias(
@@ -165,6 +206,10 @@ def generar_calendario_guardias(
     Returns:
         Tuple con (lista de guardias, diccionario de asignaciones por profesor)
     """
+    global _rechazos_globales, _total_evaluaciones
+    _rechazos_globales.clear()
+    _total_evaluaciones = 0
+
     logger.info("Iniciando generación de calendario de guardias (algoritmo mejorado)")
 
     def reportar_progreso(porcentaje: int, mensaje: str = ""):
@@ -685,6 +730,18 @@ def generar_calendario_guardias(
 
     logger.debug(f"Distribución por profesor: {dict(asignadas)}")
 
+    # Resumen de rechazos globales (diagnóstico)
+    if _total_evaluaciones > 0:
+        logger.info("=" * 80)
+        logger.info("RESUMEN DE FILTROS DE ELEGIBILIDAD")
+        logger.info(f"Total de evaluaciones profesor-slot: {_total_evaluaciones}")
+        logger.info(f"Total de rechazos: {sum(_rechazos_globales.values())}")
+        logger.info("-" * 80)
+        for razon, count in sorted(_rechazos_globales.items(), key=lambda x: x[1], reverse=True):
+            porcentaje = (count / _total_evaluaciones) * 100
+            logger.info(f"  {razon:20s}: {count:6d} ({porcentaje:5.1f}%)")
+        logger.info("=" * 80)
+
     reportar_progreso(100, "Calendario completado")
 
     return (calendario, dict(asignadas))
@@ -718,23 +775,48 @@ def _obtener_profesores_elegibles(
     Returns:
         Lista de profesores elegibles
     """
+    global _rechazos_globales, _total_evaluaciones
+
     elegibles: List[Profesor] = []
 
+    # DEBUG: Contadores de razones de rechazo
+    rechazados = {
+        'cuotas': 0,
+        'turno': 0,
+        'fecha_inicio': 0,
+        'fecha_fin': 0,
+        'dias_semana': 0,
+        'horario': 0,
+        'ausencias': 0,
+        'slot_ocupado': 0,
+        'dia_ocupado': 0
+    }
+
     for p in profesores:
+        _total_evaluaciones += 1
+
         # Validar cuotas (si se debe respetar)
         if respetar_cuotas and asignadas[p.id] >= cuotas.get(p.id, 0):
+            rechazados['cuotas'] += 1
+            _rechazos_globales['cuotas'] += 1
             continue
 
         # Validar turno
         if not _turno_de_recreo(p.turno, slot.turno):
+            rechazados['turno'] += 1
+            _rechazos_globales['turno'] += 1
             continue
 
         # Validar fecha de inicio
         if p.fecha_inicio_guardias and slot.fecha < p.fecha_inicio_guardias:
+            rechazados['fecha_inicio'] += 1
+            _rechazos_globales['fecha_inicio'] += 1
             continue
 
         # Validar fecha de fin
         if p.fecha_fin_guardias and slot.fecha > p.fecha_fin_guardias:
+            rechazados['fecha_fin'] += 1
+            _rechazos_globales['fecha_fin'] += 1
             continue
 
         # Validar días de la semana permitidos
@@ -742,28 +824,53 @@ def _obtener_profesores_elegibles(
             try:
                 dias_permitidos = [int(d.strip()) for d in p.dias_semana_permitidos.split(",")]
                 if slot.fecha.weekday() not in dias_permitidos:
+                    rechazados['dias_semana'] += 1
+                    _rechazos_globales['dias_semana'] += 1
                     continue
             except (ValueError, AttributeError):
                 pass
 
         # Validar matriz de horario
         if not _horario_permitido(slot.fecha, slot.recreo_id, p.recreos_permitidos):
+            rechazados['horario'] += 1
+            _rechazos_globales['horario'] += 1
             continue
 
         # Validar ausencias
         if profesor_ausente(session, p.id, slot.fecha):
+            rechazados['ausencias'] += 1
+            _rechazos_globales['ausencias'] += 1
             continue
 
         # CRÍTICO: No puede estar en dos zonas al mismo tiempo
         if (p.id, slot.fecha, slot.turno, slot.recreo_id) in guardias_por_slot_prof:
+            rechazados['slot_ocupado'] += 1
+            _rechazos_globales['slot_ocupado'] += 1
             continue
 
         # Validar múltiples guardias por día (si se debe respetar)
         if not permitir_multiples_guardias_dia:
             if (p.id, slot.fecha) in guardias_por_dia_prof:
+                rechazados['dia_ocupado'] += 1
+                _rechazos_globales['dia_ocupado'] += 1
                 continue
 
         elegibles.append(p)
+
+    # DEBUG: Log cuando hay muy pocos elegibles
+    if len(elegibles) <= 5:
+        logger.debug(
+            f"ELEGIBILIDAD BAJA para slot {slot.fecha} {slot.turno} R{slot.recreo_id}: "
+            f"{len(elegibles)}/{len(profesores)} elegibles. "
+            f"Rechazados: cuotas={rechazados['cuotas']}, turno={rechazados['turno']}, "
+            f"fecha_inicio={rechazados['fecha_inicio']}, fecha_fin={rechazados['fecha_fin']}, "
+            f"dias_semana={rechazados['dias_semana']}, horario={rechazados['horario']}, "
+            f"ausencias={rechazados['ausencias']}, slot_ocupado={rechazados['slot_ocupado']}, "
+            f"dia_ocupado={rechazados['dia_ocupado']}"
+        )
+        if elegibles:
+            nombres = [f"{p.nombre_completo} (turno={p.turno})" for p in elegibles]
+            logger.debug(f"  → Elegibles: {', '.join(nombres)}")
 
     return elegibles
 

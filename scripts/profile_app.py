@@ -22,7 +22,7 @@ from services.exportador_pdf import ExportadorPDF
 def profile_data_loading(session: Session) -> dict:
     """
     Perfilar carga de datos inicial (similar a startup de la app).
-    
+
     Returns:
         dict: Métricas de rendimiento
     """
@@ -64,7 +64,7 @@ def profile_data_loading(session: Session) -> dict:
 def profile_calendar_rendering(session: Session) -> dict:
     """
     Perfilar renderizado de vista de calendario mensual.
-    
+
     Returns:
         dict: Métricas de rendimiento
     """
@@ -110,7 +110,7 @@ def profile_calendar_rendering(session: Session) -> dict:
 def profile_pdf_export(session: Session, output_dir: Path) -> dict:
     """
     Perfilar exportación de PDFs.
-    
+
     Returns:
         dict: Métricas de rendimiento
     """

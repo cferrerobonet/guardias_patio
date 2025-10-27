@@ -52,7 +52,7 @@ def _wrap_exec(original_exec):
 def apply_corporate_branding():
     """
     Aplica el branding corporativo a todos los QMessageBox.
-    
+
     Debe llamarse una sola vez al inicio de la aplicación.
     """
     global _original_methods
@@ -73,7 +73,7 @@ def apply_corporate_branding():
 def restore_original_methods():
     """
     Restaura los métodos originales de QMessageBox.
-    
+
     Útil para testing o cleanup.
     """
     global _original_methods

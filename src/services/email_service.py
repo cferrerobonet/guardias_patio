@@ -156,16 +156,16 @@ Sistema de Gestión de Guardias
         </div>
         <div class="content">
             <p>Hola <strong>{username}</strong>,</p>
-            
+
             <p>Has solicitado recuperar tu contraseña para la aplicación <strong>Guardias de Patio</strong>.</p>
-            
+
             <div class="code-box">
                 <p style="margin: 0 0 10px 0; color: #6b7280;">Tu código de recuperación es:</p>
                 <div class="code">{recovery_code}</div>
             </div>
-            
+
             <p>Este código es válido para <strong>un solo uso</strong>. Cópialo y pégalo en la ventana de recuperación de contraseña.</p>
-            
+
             <div class="warning">
                 ⚠️ Si no has solicitado este código, puedes ignorar este mensaje. Tu contraseña permanecerá sin cambios.
             </div>

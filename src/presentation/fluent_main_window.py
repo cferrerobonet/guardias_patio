@@ -37,7 +37,7 @@ class FluentMainWindow(QWidget):
 
     def __init__(self, sync_manager=None):
         """Inicializa la ventana principal moderna.
-        
+
         Args:
             sync_manager: Instancia de SyncManager para sincronización con la nube
         """

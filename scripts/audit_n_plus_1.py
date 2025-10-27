@@ -101,7 +101,7 @@ def audit_flujo_carga_inicial(session: Session, auditor: QueryAuditor):
     print("\n🔍 AUDITANDO: Flujo de carga inicial...")
 
     # Cargar configuración
-    config = session.query(Configuracion).first()
+    session.query(Configuracion).first()
 
     # Cargar todos los profesores (típico en pantalla inicial)
     profesores = session.query(Profesor).order_by(Profesor.nombre_completo).all()
@@ -138,7 +138,7 @@ def audit_flujo_asignacion_guardias(session: Session, auditor: QueryAuditor):
     print("\n🔍 AUDITANDO: Flujo de asignación de guardias...")
 
     # Obtener configuración
-    config = session.query(Configuracion).first()
+    session.query(Configuracion).first()
 
     # Obtener profesores disponibles (típico al asignar)
     profesores = session.query(Profesor).all()
@@ -147,7 +147,7 @@ def audit_flujo_asignacion_guardias(session: Session, auditor: QueryAuditor):
     # Por cada profesor, verificar guardias existentes (N+1 potencial)
     fecha_ejemplo = date.today()
     for profesor in profesores[:5]:  # Solo primeros 5
-        guardias_profesor = (
+        (
             session.query(Guardia)
             .filter(
                 Guardia.profesor_id == profesor.id,
@@ -165,7 +165,7 @@ def audit_flujo_gestion_ausencias(session: Session, auditor: QueryAuditor):
     print("\n🔍 AUDITANDO: Flujo de gestión de ausencias...")
 
     # Obtener ausencias activas
-    ausencias = session.query(Ausencia).filter(Ausencia.activa == True).all()
+    ausencias = session.query(Ausencia).filter(Ausencia.activa).all()
     print(f"  ✅ Cargadas {len(ausencias)} ausencias activas")
 
     # Por cada ausencia, obtener profesor (N+1 potencial)

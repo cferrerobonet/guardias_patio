@@ -21,7 +21,7 @@ RESET = "\033[0m"
 def find_n1_patterns(file_path: Path) -> List[Tuple[int, str, str]]:
     """
     Busca patrones N+1 en un archivo.
-    
+
     Returns:
         Lista de (línea, patrón, contexto)
     """

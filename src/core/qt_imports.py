@@ -60,7 +60,8 @@ except ImportError:  # pragma: no cover
     QScrollArea = _stubs["QWidget"]
     QSizePolicy = _stubs["QWidget"]
     QStackedWidget = _stubs["QWidget"]
-    pyqtSignal = lambda: None
+    def pyqtSignal():
+        return None
 
 
 __all__ = [

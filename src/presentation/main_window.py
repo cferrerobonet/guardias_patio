@@ -5,9 +5,7 @@ Módulo que define la clase MainWindow de la aplicación de gestión de guardias
 """
 
 from core.qt_imports import (
-    QHBoxLayout,
     QKeySequence,
-    QPushButton,
     QShortcut,
     QTabWidget,
     QVBoxLayout,
@@ -28,7 +26,6 @@ from presentation.widgets import (
     PanelEstadisticas,
     VistaCalendario,
 )
-from presentation.widgets.observability_dashboard import ObservabilityDashboard
 
 
 class MainWindow(QWidget):
@@ -91,17 +88,6 @@ class MainWindow(QWidget):
 
         self.layout.addWidget(self.tabs)
 
-        # Botón para abrir Dashboard de Observabilidad (Sprint 7)
-        btn_observability = QPushButton("📊 Observabilidad")
-        btn_observability.setToolTip("Ver métricas, health checks y performance del sistema")
-        btn_observability.clicked.connect(self._abrir_observabilidad)
-        btn_observability.setMaximumWidth(200)
-
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
-        btn_layout.addWidget(btn_observability)
-        self.layout.addLayout(btn_layout)
-
         self.setLayout(self.layout)
 
         # Conectar señal de cambio de pestaña para refrescar widgets
@@ -146,11 +132,6 @@ class MainWindow(QWidget):
         index_actual = self.tabs.currentIndex()
         anterior = (index_actual - 1) % self.tabs.count()
         self.tabs.setCurrentIndex(anterior)
-
-    def _abrir_observabilidad(self):
-        """Abre el dashboard de observabilidad."""
-        dashboard = ObservabilityDashboard(self)
-        dashboard.exec()
 
     def on_tab_changed(self, index):
         """Refresca los widgets cuando se cambia de pestaña."""

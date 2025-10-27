@@ -230,7 +230,11 @@ def calcular_factor_participacion(
     recreos_tarde: int
 ) -> float:
     """
-    Calcula el factor de participación de un profesor según su turno.
+    Calcula el factor de participación de un profesor según su turno y horas.
+
+    Para profesores mixtos, calcula la proporción según las horas en cada turno.
+    Ejemplo: Si tiene 15h mañana y 15h tarde → factor = 1.0 (puede cubrir todo)
+             Si tiene 20h mañana y 10h tarde → factor proporcional a cada turno
 
     Args:
         profesor: Instancia de Profesor
@@ -238,18 +242,95 @@ def calcular_factor_participacion(
         recreos_tarde: Número de recreos de tarde
 
     Returns:
-        Factor de participación (0.0 a 2.0 si hay recreos en ambos turnos)
+        Factor de participación (proporción de recreos que puede cubrir)
     """
     recreos_totales = recreos_manana + recreos_tarde
     if recreos_totales == 0:
         return 0.0
 
     if profesor.turno == "mañana":
+        # Solo puede cubrir recreos de mañana
         return recreos_manana / recreos_totales
     elif profesor.turno == "tarde":
+        # Solo puede cubrir recreos de tarde
         return recreos_tarde / recreos_totales
     else:  # mixto
-        return 1.0
+        # Calcular proporción según horas en cada turno
+        horas_manana = getattr(profesor, 'horas_manana', 0) or 0
+        horas_tarde = getattr(profesor, 'horas_tarde', 0) or 0
+        horas_totales = horas_manana + horas_tarde
+
+        if horas_totales == 0:
+            # Si no tiene horas especificadas, asumir distribución equitativa
+            return 1.0
+
+        # Calcular factor ponderado por horas en cada turno
+        # Factor = (horas_mañana/total × recreos_mañana + horas_tarde/total × recreos_tarde) / recreos_totales
+        factor_manana = (horas_manana / horas_totales) * (recreos_manana / recreos_totales)
+        factor_tarde = (horas_tarde / horas_totales) * (recreos_tarde / recreos_totales)
+
+        return factor_manana + factor_tarde
+
+
+def calcular_slots_reales(session: Session, config: Configuracion) -> int:
+    """
+    Calcula el número real de slots considerando las fechas de disponibilidad de las zonas.
+
+    Args:
+        session: Sesión de base de datos
+        config: Configuración del curso
+
+    Returns:
+        int: Número total de slots disponibles
+    """
+    zonas = session.query(Zona).all()
+    if not zonas:
+        return 0
+
+    dias_list = listar_dias_lectivos(config)
+    lista_recreos = _parse_recreos_config(config)
+
+    if not lista_recreos:
+        # Fallback: calcular recreos del config
+        recreos_manana, recreos_tarde = calcular_recreos_activos(session)
+        recreos_totales = recreos_manana + recreos_tarde
+        if recreos_totales == 0:
+            return 0
+
+        # Contar slots considerando fechas de zonas
+        slots_count = 0
+        for dia in dias_list:
+            for zona in zonas:
+                # Verificar si la zona está activa en este día
+                zona_activa = True
+                if zona.fecha_inicio and dia < zona.fecha_inicio:
+                    zona_activa = False
+                if zona.fecha_fin and dia > zona.fecha_fin:
+                    zona_activa = False
+
+                if zona_activa:
+                    slots_count += recreos_totales
+
+        return slots_count
+    else:
+        # Contar slots por recreo considerando fechas de zonas
+        slots_count = 0
+        for dia in dias_list:
+            for recreo in lista_recreos:
+                zonas_en_recreo = min(recreo.get('zonas', 1), len(zonas))
+                for i in range(zonas_en_recreo):
+                    zona = zonas[i]
+                    # Verificar si la zona está activa en este día
+                    zona_activa = True
+                    if zona.fecha_inicio and dia < zona.fecha_inicio:
+                        zona_activa = False
+                    if zona.fecha_fin and dia > zona.fecha_fin:
+                        zona_activa = False
+
+                    if zona_activa:
+                        slots_count += 1
+
+        return slots_count
 
 
 def calcular_distribucion_cruda(
@@ -298,33 +379,38 @@ def calcular_distribucion_cruda(
     if recreos_totales_dia == 0:
         raise ValueError("No hay recreos configurados")
 
-    # Calcular slots totales
-    num_zonas = len(zonas)
-    lista_recreos = _parse_recreos_config(config)
-    if lista_recreos:
-        # Sumar zonas por recreo, pero no exceder zonas reales disponibles
-        zonas_por_dia = sum(min(r.get('zonas', 1), num_zonas) for r in lista_recreos)
-        slots_totales = dias_lectivos * zonas_por_dia
-    else:
-        slots_totales = dias_lectivos * recreos_totales_dia * num_zonas
+    # Calcular slots totales considerando fechas de disponibilidad de las zonas
+    slots_totales = calcular_slots_reales(session, config)
+
+    if slots_totales == 0:
+        raise ValueError("No hay slots disponibles (verificar fechas de zonas)")
+
+    logger.info(f"Slots totales disponibles (con fechas de zonas): {slots_totales}")
 
     # Calcular factor de participación y porcentaje total
     profesores_con_factor = []
     suma_ponderada = 0.0
 
     for profesor in profesores:
-        factor = calcular_factor_participacion(
+        # 1. Factor por turno (proporción de recreos disponibles)
+        factor_turno = calcular_factor_participacion(
             profesor,
             recreos_manana,
             recreos_tarde
         )
-        # El factor pondera el porcentaje según turnos disponibles y tutoría
-        ajuste_tutoria = (
+
+        # 2. Factor por horas contratadas (proporción respecto a 30h)
+        # Si tiene 30h -> 100%, si tiene 15h -> 50%, si tiene 22.5h -> 75%
+        horas_jornada_completa = 30.0
+        factor_horas = min(profesor.horas_contrato / horas_jornada_completa, 1.0)
+
+        # 3. Factor de multiplicación según tutoría (de configuración)
+        factor_tutoria = (
             getattr(config, 'ajuste_tutores', 1.0) if getattr(profesor, 'tutor', False)
             else getattr(config, 'ajuste_no_tutores', 1.0)
         )
 
-        # Calcular proporción de días disponibles si tiene fechas límite
+        # 4. Proporción de días disponibles si tiene fechas límite
         proporcion_tiempo = 1.0
         if profesor.fecha_inicio_guardias or profesor.fecha_fin_guardias:
             # Determinar rango efectivo del profesor
@@ -357,9 +443,18 @@ def calcular_distribucion_cruda(
                     f"sin días disponibles en el rango configurado"
                 )
 
+        # Participación total = turno × horas × tutoría × tiempo
         participacion = (
-            profesor.porcentaje_jornada * factor * ajuste_tutoria * proporcion_tiempo
+            factor_turno * factor_horas * factor_tutoria * proporcion_tiempo
         )
+
+        logger.debug(
+            f"Profesor {profesor.nombre_completo}: "
+            f"turno={factor_turno:.2f}, horas={factor_horas:.2f} "
+            f"({profesor.horas_contrato}h), tutoría={factor_tutoria:.2f}, "
+            f"tiempo={proporcion_tiempo:.2f} → participación={participacion:.4f}"
+        )
+
         profesores_con_factor.append((profesor.id, participacion))
         suma_ponderada += participacion
 
@@ -465,12 +560,8 @@ def obtener_estadisticas(session: Session) -> Dict:
     num_zonas = session.query(Zona).count()
     num_profesores = session.query(Profesor).count()
 
-    lista_recreos = _parse_recreos_config(config)
-    if lista_recreos:
-        zonas_por_dia = sum(min(r.get('zonas', 1), num_zonas) for r in lista_recreos)
-        slots_totales = dias_lectivos * zonas_por_dia
-    else:
-        slots_totales = dias_lectivos * (recreos_manana + recreos_tarde) * num_zonas
+    # Calcular slots totales considerando fechas de disponibilidad de las zonas
+    slots_totales = calcular_slots_reales(session, config)
 
     return {
         "dias_lectivos": dias_lectivos,

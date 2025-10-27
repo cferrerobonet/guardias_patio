@@ -3,6 +3,7 @@ Servicio de exportación e importación de datos de la aplicación.
 Permite exportar/importar todos los datos (profesores, zonas, configuración, guardias)
 en formato JSON para portabilidad entre equipos.
 """
+import base64
 import json
 from datetime import date, time
 from pathlib import Path
@@ -15,6 +16,40 @@ from models.models import Configuracion, Guardia, Profesor, Zona
 
 class ExportadorDatos:
     """Servicio para exportar e importar datos de la aplicación."""
+
+    @staticmethod
+    def _encriptar_password(password: str) -> str:
+        """
+        Encripta una contraseña usando base64.
+
+        Args:
+            password: Contraseña en texto plano
+
+        Returns:
+            Contraseña encriptada en base64
+        """
+        if not password:
+            return ""
+        return base64.b64encode(password.encode('utf-8')).decode('utf-8')
+
+    @staticmethod
+    def _desencriptar_password(encrypted_password: str) -> str:
+        """
+        Desencripta una contraseña desde base64.
+
+        Args:
+            encrypted_password: Contraseña encriptada en base64
+
+        Returns:
+            Contraseña en texto plano
+        """
+        if not encrypted_password:
+            return ""
+        try:
+            return base64.b64decode(encrypted_password.encode('utf-8')).decode('utf-8')
+        except Exception:
+            # Si falla, asumir que ya está desencriptada (compatibilidad con exports antiguos)
+            return encrypted_password
 
     @staticmethod
     def _serializar_fecha(obj: date) -> Optional[str]:
@@ -148,13 +183,31 @@ class ExportadorDatos:
                 "smtp_server": smtp_server,
                 "smtp_port": smtp_port,
                 "smtp_user": smtp_user,
-                "smtp_password": smtp_password,
+                "smtp_password": ExportadorDatos._encriptar_password(smtp_password),  # Encriptada
+            }
+
+        # Exportar configuración SFTP GLOBAL (compartida entre todos los usuarios)
+        sftp_config = None
+        sftp_host = os.getenv("SFTP_HOST", "")
+        sftp_port = os.getenv("SFTP_PORT", "")
+        sftp_basedir = os.getenv("SFTP_BASE_DIR", "")
+        sftp_user = os.getenv("SFTP_USERNAME", "")
+        sftp_password = os.getenv("SFTP_PASSWORD", "")
+
+        if sftp_host and sftp_port and sftp_user and sftp_password:
+            sftp_config = {
+                "sftp_host": sftp_host,
+                "sftp_port": sftp_port,
+                "sftp_base_dir": sftp_basedir,
+                "sftp_username": sftp_user,
+                "sftp_password": ExportadorDatos._encriptar_password(sftp_password),  # Encriptada
             }
 
         datos_completos = {
             "version": "1.0",
             "fecha_exportacion": date.today().isoformat(),
             "smtp_config": smtp_config,  # Configuración SMTP global
+            "sftp_config": sftp_config,  # Configuración SFTP global
             "profesores": ExportadorDatos.exportar_profesores(session),
             "zonas": ExportadorDatos.exportar_zonas(session),
             "configuracion": ExportadorDatos.exportar_configuracion(session),
@@ -368,6 +421,140 @@ class ExportadorDatos:
         return count
 
     @staticmethod
+    def _importar_smtp_config(smtp_data: dict[str, str]) -> bool:
+        """
+        Importa la configuración SMTP GLOBAL al archivo .env.
+
+        Esta configuración es compartida entre todos los usuarios.
+        Si se modifica, afectará a todos los usuarios del sistema.
+
+        Args:
+            smtp_data: Dict con configuración SMTP
+
+        Returns:
+            True si se importó correctamente
+        """
+        import os
+
+        try:
+            smtp_server = smtp_data.get("smtp_server", "")
+            smtp_port = smtp_data.get("smtp_port", "")
+            smtp_user = smtp_data.get("smtp_user", "")
+            smtp_password_encrypted = smtp_data.get("smtp_password", "")
+
+            if not smtp_server or not smtp_port or not smtp_user or not smtp_password_encrypted:
+                return False
+
+            # Desencriptar contraseña
+            smtp_password = ExportadorDatos._desencriptar_password(smtp_password_encrypted)
+
+            # Leer el archivo .env actual
+            env_path = ".env"
+            env_lines = []
+
+            if os.path.exists(env_path):
+                with open(env_path, "r") as f:
+                    env_lines = f.readlines()
+
+            # Actualizar o agregar variables SMTP
+            smtp_vars = {
+                "SMTP_SERVER": smtp_server,
+                "SMTP_PORT": smtp_port,
+                "SMTP_USER": smtp_user,
+                "SMTP_PASSWORD": smtp_password,  # Guardamos desencriptada
+            }
+
+            updated_vars = set()
+            for i, line in enumerate(env_lines):
+                for var_name, var_value in smtp_vars.items():
+                    if line.startswith(f"{var_name}="):
+                        env_lines[i] = f"{var_name}={var_value}\n"
+                        updated_vars.add(var_name)
+
+            # Agregar variables que no existían
+            for var_name, var_value in smtp_vars.items():
+                if var_name not in updated_vars:
+                    env_lines.append(f"{var_name}={var_value}\n")
+
+            # Guardar archivo .env
+            with open(env_path, "w") as f:
+                f.writelines(env_lines)
+
+            return True
+
+        except Exception as e:
+            print(f"Error al importar configuración SMTP: {e}")
+            return False
+
+    @staticmethod
+    def _importar_sftp_config(sftp_data: dict[str, str]) -> bool:
+        """
+        Importa la configuración SFTP GLOBAL al archivo .env.
+
+        Esta configuración es compartida entre todos los usuarios.
+        Si se modifica, afectará a todos los usuarios del sistema.
+
+        Args:
+            sftp_data: Dict con configuración SFTP
+
+        Returns:
+            True si se importó correctamente
+        """
+        import os
+
+        try:
+            sftp_host = sftp_data.get("sftp_host", "")
+            sftp_port = sftp_data.get("sftp_port", "")
+            sftp_basedir = sftp_data.get("sftp_base_dir", "")
+            sftp_user = sftp_data.get("sftp_username", "")
+            sftp_password_encrypted = sftp_data.get("sftp_password", "")
+
+            if not sftp_host or not sftp_port or not sftp_user or not sftp_password_encrypted:
+                return False
+
+            # Desencriptar contraseña
+            sftp_password = ExportadorDatos._desencriptar_password(sftp_password_encrypted)
+
+            # Leer el archivo .env actual
+            env_path = ".env"
+            env_lines = []
+
+            if os.path.exists(env_path):
+                with open(env_path, "r") as f:
+                    env_lines = f.readlines()
+
+            # Actualizar o agregar variables SFTP
+            sftp_vars = {
+                "SFTP_HOST": sftp_host,
+                "SFTP_PORT": sftp_port,
+                "SFTP_BASE_DIR": sftp_basedir,
+                "SFTP_USERNAME": sftp_user,
+                "SFTP_PASSWORD": sftp_password,  # Guardamos desencriptada
+            }
+
+            updated_vars = set()
+            for i, line in enumerate(env_lines):
+                for var_name, var_value in sftp_vars.items():
+                    if line.startswith(f"{var_name}="):
+                        env_lines[i] = f"{var_name}={var_value}\n"
+                        updated_vars.add(var_name)
+
+            # Agregar variables que no existían
+            for var_name, var_value in sftp_vars.items():
+                if var_name not in updated_vars:
+                    env_lines.append(f"{var_name}={var_value}\n")
+
+            # Guardar archivo .env
+            with open(env_path, "w") as f:
+                f.writelines(env_lines)
+
+            return True
+
+        except Exception as e:
+            print(f"Error al importar configuración SFTP: {e}")
+            return False
+
+    @staticmethod
     def importar_todo(
         session: Session, ruta_archivo: Union[str, Path], limpiar: bool = False
     ) -> dict[str, int]:
@@ -391,7 +578,19 @@ class ExportadorDatos:
             "zonas": 0,
             "configuracion": 0,
             "guardias": 0,
+            "smtp_config": 0,
+            "sftp_config": 0,
         }
+
+        # Importar configuración SMTP GLOBAL si existe en el JSON
+        if "smtp_config" in datos and datos["smtp_config"]:
+            if ExportadorDatos._importar_smtp_config(datos["smtp_config"]):
+                resultado["smtp_config"] = 1
+
+        # Importar configuración SFTP GLOBAL si existe en el JSON
+        if "sftp_config" in datos and datos["sftp_config"]:
+            if ExportadorDatos._importar_sftp_config(datos["sftp_config"]):
+                resultado["sftp_config"] = 1
 
         # Orden importante: primero profesores y zonas (para claves foráneas)
         if "profesores" in datos:
