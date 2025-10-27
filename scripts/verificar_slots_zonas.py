@@ -16,9 +16,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from config.database import get_db_path
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from models.models import Configuracion, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
@@ -26,6 +23,8 @@ from services.calculador_guardias import (
     calcular_slots_reales,
     listar_dias_lectivos,
 )
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 def main():

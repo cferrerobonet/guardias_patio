@@ -14,9 +14,8 @@ import math
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
-
 from models.models import Configuracion, Profesor, Zona
+from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -276,6 +275,9 @@ def calcular_slots_reales(session: Session, config: Configuracion) -> int:
     """
     Calcula el número real de slots considerando las fechas de disponibilidad de las zonas.
 
+    IMPORTANTE: Usa la misma lógica que _build_slots() del asignador para garantizar
+    consistencia entre la distribución calculada y las guardias generadas.
+
     Args:
         session: Sesión de base de datos
         config: Configuración del curso
@@ -283,54 +285,15 @@ def calcular_slots_reales(session: Session, config: Configuracion) -> int:
     Returns:
         int: Número total de slots disponibles
     """
-    zonas = session.query(Zona).all()
-    if not zonas:
+    from services.asignador_guardias import _build_slots
+
+    # Usar el mismo método que el generador de guardias
+    try:
+        slots_list = _build_slots(session, config)
+        return len(slots_list)
+    except Exception as e:
+        logger.error(f"Error al calcular slots reales: {e}")
         return 0
-
-    dias_list = listar_dias_lectivos(config)
-    lista_recreos = _parse_recreos_config(config)
-
-    if not lista_recreos:
-        # Fallback: calcular recreos del config
-        recreos_manana, recreos_tarde = calcular_recreos_activos(session)
-        recreos_totales = recreos_manana + recreos_tarde
-        if recreos_totales == 0:
-            return 0
-
-        # Contar slots considerando fechas de zonas
-        slots_count = 0
-        for dia in dias_list:
-            for zona in zonas:
-                # Verificar si la zona está activa en este día
-                zona_activa = True
-                if zona.fecha_inicio and dia < zona.fecha_inicio:
-                    zona_activa = False
-                if zona.fecha_fin and dia > zona.fecha_fin:
-                    zona_activa = False
-
-                if zona_activa:
-                    slots_count += recreos_totales
-
-        return slots_count
-    else:
-        # Contar slots por recreo considerando fechas de zonas
-        slots_count = 0
-        for dia in dias_list:
-            for recreo in lista_recreos:
-                zonas_en_recreo = min(recreo.get('zonas', 1), len(zonas))
-                for i in range(zonas_en_recreo):
-                    zona = zonas[i]
-                    # Verificar si la zona está activa en este día
-                    zona_activa = True
-                    if zona.fecha_inicio and dia < zona.fecha_inicio:
-                        zona_activa = False
-                    if zona.fecha_fin and dia > zona.fecha_fin:
-                        zona_activa = False
-
-                    if zona_activa:
-                        slots_count += 1
-
-        return slots_count
 
 
 def calcular_distribucion_cruda(
