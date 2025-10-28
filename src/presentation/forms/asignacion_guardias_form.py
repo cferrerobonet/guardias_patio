@@ -25,6 +25,17 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
+from ui_styles import (
+    format_terminal_error,
+    format_terminal_info,
+    format_terminal_label,
+    format_terminal_number,
+    format_terminal_profesor,
+    format_terminal_success,
+    format_terminal_value,
+    format_terminal_warning,
+    wrap_terminal_html,
+)
 from utils.exceptions import BusinessLogicError
 
 from presentation.forms.base_form import BaseForm
@@ -104,7 +115,8 @@ class AsignacionGuardiasForm(BaseForm):
         self.stats_text = QTextEdit()
         self.stats_text.setReadOnly(True)
         self.stats_text.setMinimumHeight(280)
-        self.stats_text.setStyleSheet(styles.STYLE_INPUT)
+        self.stats_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.stats_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         grid_layout.addWidget(self.stats_text, 1, 0)
 
         # Botón calcular
@@ -126,7 +138,8 @@ class AsignacionGuardiasForm(BaseForm):
         self.distribucion_text = QTextEdit()
         self.distribucion_text.setReadOnly(True)
         self.distribucion_text.setMinimumHeight(280)
-        self.distribucion_text.setStyleSheet(styles.STYLE_INPUT)
+        self.distribucion_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.distribucion_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         grid_layout.addWidget(self.distribucion_text, 1, 1)
 
         # Botón generar
@@ -151,7 +164,8 @@ class AsignacionGuardiasForm(BaseForm):
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
         self.resultado_text.setMinimumHeight(320)
-        self.resultado_text.setStyleSheet(styles.STYLE_INPUT)
+        self.resultado_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.resultado_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         grid_layout.addWidget(self.resultado_text, 4, 0)
 
         # ============ FILA INFERIOR - COLUMNA DERECHA ============
@@ -167,14 +181,8 @@ class AsignacionGuardiasForm(BaseForm):
         self.incidencias_text = QTextEdit()
         self.incidencias_text.setReadOnly(True)
         self.incidencias_text.setMinimumHeight(320)
-        self.incidencias_text.setStyleSheet(
-            styles.STYLE_INPUT + """
-            QTextEdit {
-                background-color: #FFF9E6;
-                border: 2px solid #FFA726;
-            }
-            """
-        )
+        self.incidencias_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.incidencias_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         self.incidencias_text.setPlaceholderText(
             "Las incidencias y recomendaciones se mostrarán aquí después de generar guardias..."
         )
@@ -216,44 +224,54 @@ class AsignacionGuardiasForm(BaseForm):
 
             # Calcular slots teóricos (sin considerar fechas de zonas)
             slots_teoricos = (
-                stats.dias_lectivos *
-                (stats.recreos_manana + stats.recreos_tarde) *
-                stats.num_zonas
+                stats.dias_lectivos
+                * (stats.recreos_manana + stats.recreos_tarde)
+                * stats.num_zonas
             )
 
-            # Formatear texto
+            # Formatear texto con colores tipo terminal
+            dias_val = format_terminal_value(f'{stats.dias_lectivos} días (L-V)')
+            total_recreos = stats.recreos_manana + stats.recreos_tarde
             texto = f"""
-Días lectivos: {stats.dias_lectivos} días (L-V)
-Recreos mañana: {stats.recreos_manana}
-Recreos tarde: {stats.recreos_tarde}
-Total recreos/día: {stats.recreos_manana + stats.recreos_tarde}
-Número de zonas: {stats.num_zonas}
-Número de profesores: {stats.num_profesores}
+{format_terminal_label('Días lectivos:')} {dias_val}
+{format_terminal_label('Recreos mañana:')} {format_terminal_number(stats.recreos_manana)}
+{format_terminal_label('Recreos tarde:')} {format_terminal_number(stats.recreos_tarde)}
+{format_terminal_label('Total recreos/día:')} {format_terminal_number(total_recreos)}
+{format_terminal_label('Número de zonas:')} {format_terminal_number(stats.num_zonas)}
+{format_terminal_label('Número de profesores:')} {format_terminal_number(stats.num_profesores)}
 
-📌 SLOTS TOTALES: {stats.slots_totales} guardias
+{format_terminal_success(f'📌 SLOTS TOTALES: {stats.slots_totales} guardias')}
 """
 
             # Añadir explicación de la diferencia si hay zonas con fechas límite
             if stats.slots_totales < slots_teoricos:
                 diferencia = slots_teoricos - stats.slots_totales
-                porcentaje = (diferencia / slots_teoricos * 100) if slots_teoricos > 0 else 0
+                porcentaje = (
+                    (diferencia / slots_teoricos * 100) if slots_teoricos > 0 else 0
+                )
+                info_sin_fechas = (
+                    f'(sin fechas: {stats.dias_lectivos} × '
+                    f'{total_recreos} × {stats.num_zonas})'
+                )
+                reduccion_msg = f'{diferencia} slots ({porcentaje:.1f}%)'
                 texto += f"""
-   • Slots teóricos: {slots_teoricos}
-     (sin fechas de zonas: {stats.dias_lectivos} × {stats.recreos_manana + stats.recreos_tarde} × {stats.num_zonas})
-   • Slots reales: {stats.slots_totales}
-   • Reducción: {diferencia} slots ({porcentaje:.1f}%)
+   {format_terminal_label('• Slots teóricos:')} {format_terminal_number(slots_teoricos)}
+     {format_terminal_info(info_sin_fechas)}
+   {format_terminal_label('• Slots reales:')} {format_terminal_number(stats.slots_totales)}
+   {format_terminal_label('• Reducción:')} {format_terminal_warning(reduccion_msg)}
 
-   ℹ️  Hay zonas con fechas de inicio/fin que reducen
-   el número total de slots disponibles.
+   {format_terminal_info('ℹ️  Hay zonas con fechas de inicio/fin que reducen')}
+   {format_terminal_info('el número total de slots disponibles.')}
 """
             else:
-                texto += f"""   (días × recreos × zonas = {stats.dias_lectivos} × {stats.recreos_manana + stats.recreos_tarde} × {stats.num_zonas})
+                formula = f"{stats.dias_lectivos} × {total_recreos} × {stats.num_zonas}"
+                texto += f"""   {format_terminal_info(f'(días × recreos × zonas = {formula})')}
 """
 
-            self.stats_text.setText(texto.strip())
+            self.stats_text.setHtml(wrap_terminal_html(texto.strip()))
 
         except BusinessLogicError as e:
-            self.stats_text.setText(f"⚠️  {str(e)}")
+            self.stats_text.setHtml(wrap_terminal_html(format_terminal_error(f"⚠️  {str(e)}")))
         except Exception as e:
             self.manejar_excepcion(e, "cargar estadísticas")
 
@@ -263,10 +281,18 @@ Número de profesores: {stats.num_profesores}
             # Ejecutar Use Case
             distribucion_dto = self.calcular_distribucion_uc.execute()
 
-            # Formatear texto con nombres de profesores
-            texto = "📊 Distribución OBJETIVO (estimada):\n\n"
-            texto += "ℹ️  Esta distribución es el objetivo ideal basado en porcentajes.\n"
-            texto += "El algoritmo puede ajustar ligeramente para cubrir todos los slots.\n\n"
+            # Formatear texto con colores tipo terminal
+            texto = (
+                f"{format_terminal_success('📊 Distribución OBJETIVO (estimada):')}\n\n"
+            )
+            info_msg1 = 'ℹ️  Esta distribución es el objetivo ideal basado en porcentajes.'
+            info_msg2 = 'El algoritmo puede ajustar ligeramente para cubrir todos los slots.'
+            texto += (
+                f"{format_terminal_info(info_msg1)}\n"
+            )
+            texto += (
+                f"{format_terminal_info(info_msg2)}\n\n"
+            )
 
             # Ordenar por número de guardias (descendente)
             profesores_ordenados = sorted(
@@ -278,30 +304,45 @@ Número de profesores: {stats.num_profesores}
             for profesor_id, guardias in profesores_ordenados:
                 profesor = self.session.query(Profesor).get(profesor_id)
                 if profesor:
+                    porcentaje_jornada = f'{profesor.porcentaje_jornada*100:.0f}%'
+                    info_prof = f'({profesor.turno}, {porcentaje_jornada})'
                     texto += (
-                        f"• {profesor.nombre_completo} "
-                        f"({profesor.turno}, {profesor.porcentaje_jornada*100:.0f}%): "
-                        f"{guardias} guardias\n"
+                        f"• {format_terminal_profesor(profesor.nombre_completo)} "
+                        f"{format_terminal_info(info_prof)}: "
+                        f"{format_terminal_number(f'{guardias} guardias')}\n"
                     )
 
-            texto += f"\n✅ TOTAL: {distribucion_dto.total_guardias} guardias"
-            texto += f"\n📌 Slots disponibles: {distribucion_dto.slots_totales}"
+            total_msg = f'✅ TOTAL: {distribucion_dto.total_guardias} guardias'
+            texto += (
+                f"\n{format_terminal_success(total_msg)}"
+            )
+            slots_label = format_terminal_label('📌 Slots disponibles:')
+            slots_num = format_terminal_number(distribucion_dto.slots_totales)
+            texto += (
+                f"\n{slots_label} {slots_num}"
+            )
 
             if distribucion_dto.es_exacta:
-                texto += "\n\n✅ La distribución es exacta"
+                texto += f"\n\n{format_terminal_success('✅ La distribución es exacta')}"
             else:
-                texto += f"\n\n⚠️  Diferencia: {abs(distribucion_dto.diferencia)}"
+                diferencia_abs = abs(distribucion_dto.diferencia)
+                dif_msg = f'⚠️  Diferencia: {diferencia_abs}'
+                texto += (
+                    f"\n\n{format_terminal_warning(dif_msg)}"
+                )
 
-            texto += "\n\n💡 Tras generar, verifica el reparto real en 'Resultados'"
+            msg_resultados = '💡 Tras generar, verifica el reparto real en "Resultados"'
+            texto += f"\n\n{format_terminal_info(msg_resultados)}"
 
-            self.distribucion_text.setText(texto)
+            self.distribucion_text.setHtml(wrap_terminal_html(texto))
 
             # Habilitar botón de generación
             self.generar_button.setEnabled(True)
 
         except BusinessLogicError as e:
             self.mostrar_error("Error en Cálculo", str(e))
-            self.distribucion_text.setText(f"❌ Error: {str(e)}")
+            error_msg = format_terminal_error(f"❌ Error: {str(e)}")
+            self.distribucion_text.setHtml(wrap_terminal_html(error_msg))
 
         except Exception as e:
             self.manejar_excepcion(e, "calcular distribución")
@@ -366,7 +407,7 @@ Número de profesores: {stats.num_profesores}
             if resumen:
                 # Mostrar resumen en el área de resultados
                 texto = self._formatear_resumen(resumen)
-                self.resultado_text.setText(texto)
+                self.resultado_text.setHtml(wrap_terminal_html(texto))
 
                 # Analizar y mostrar incidencias
                 self._analizar_incidencias(resumen)
@@ -411,20 +452,26 @@ Número de profesores: {stats.num_profesores}
             resumen: ResumenGeneracionDTO con los resultados
 
         Returns:
-            Texto formateado con el resumen
+            Texto formateado con el resumen (HTML con colores terminal)
         """
+        guardias_label = format_terminal_label('Guardias generadas:')
+        guardias_num = format_terminal_number(resumen.guardias_generadas)
+        slots_label = format_terminal_label('Slots esperados:')
+        slots_num = format_terminal_number(resumen.slots_esperados)
+
         lineas = [
-            f"Guardias generadas: {resumen.guardias_generadas}",
-            f"Slots esperados: {resumen.slots_esperados}",
+            f"{guardias_label} {guardias_num}",
+            f"{slots_label} {slots_num}",
         ]
 
         if resumen.cobertura_completa:
-            lineas.append("✅ Cobertura completa")
+            lineas.append(format_terminal_success("✅ Cobertura completa"))
         elif resumen.slots_sin_cubrir > 0:
-            lineas.append(
+            warning_msg = (
                 f"⚠️ {resumen.slots_sin_cubrir} slots sin cubrir "
                 f"(falta elegibilidad)"
             )
+            lineas.append(format_terminal_warning(warning_msg))
 
         # Top profesores (máximo 10)
         if resumen.resumen_por_profesor:
@@ -433,11 +480,15 @@ Número de profesores: {stats.num_profesores}
                 key=lambda x: x[1],
                 reverse=True,
             )[:10]
-            lineas.append("\nPor profesor (top 10):")
+            lineas.append(f"\n{format_terminal_info('Por profesor (top 10):')}")
             for pid, cnt in top:
                 prof = self.session.query(Profesor).get(pid)
                 if prof:
-                    lineas.append(f"• {prof.nombre_completo}: {cnt}")
+                    prof_name = format_terminal_profesor(prof.nombre_completo)
+                    cnt_num = format_terminal_number(cnt)
+                    lineas.append(f"• {prof_name}: {cnt_num}")
+
+        return "\n".join(lineas)
 
         return "\n".join(lineas)
 
@@ -452,55 +503,122 @@ Número de profesores: {stats.num_profesores}
 
         # Analizar cobertura
         if resumen.cobertura_completa:
-            incidencias.append("✅ SIN INCIDENCIAS")
+            incidencias.append(format_terminal_success("✅ SIN INCIDENCIAS"))
             incidencias.append("")
-            incidencias.append("La generación se completó exitosamente:")
-            incidencias.append(f"• Todos los {resumen.slots_esperados} slots fueron cubiertos")
-            incidencias.append("• La distribución de guardias es óptima")
+            incidencias.append(
+                format_terminal_info("La generación se completó exitosamente:")
+            )
+            success_msg1 = f'Todos los {resumen.slots_esperados} slots fueron cubiertos'
+            incidencias.append(
+                f"• {format_terminal_success(success_msg1)}"
+            )
+            incidencias.append(
+                f"• {format_terminal_success('La distribución de guardias es óptima')}"
+            )
             incidencias.append("")
-            incidencias.append("🎯 Recomendaciones:")
-            incidencias.append("• Revisa el calendario generado en la sección 'Calendario'")
-            incidencias.append("• Puedes exportar los resultados para compartir con el equipo")
+            incidencias.append(format_terminal_info("🎯 Recomendaciones:"))
+            msg_calendario = 'Revisa el calendario generado en la sección "Calendario"'
+            incidencias.append(f"• {format_terminal_info(msg_calendario)}")
+            msg_exportar = 'Puedes exportar los resultados para compartir con el equipo'
+            incidencias.append(
+                f"• {format_terminal_info(msg_exportar)}"
+            )
         else:
             # Hay incidencias
             slots_sin_cubrir = resumen.slots_sin_cubrir
-            porcentaje_sin_cubrir = (slots_sin_cubrir / resumen.slots_esperados * 100) if resumen.slots_esperados > 0 else 0
+            porcentaje_sin_cubrir = (
+                (slots_sin_cubrir / resumen.slots_esperados * 100)
+                if resumen.slots_esperados > 0
+                else 0
+            )
 
-            incidencias.append("⚠️ INCIDENCIAS DETECTADAS")
+            incidencias.append(format_terminal_error("⚠️ INCIDENCIAS DETECTADAS"))
             incidencias.append("")
-            incidencias.append("📊 Resumen:")
-            incidencias.append(f"• Slots sin cubrir: {slots_sin_cubrir} de {resumen.slots_esperados} ({porcentaje_sin_cubrir:.1f}%)")
-            incidencias.append(f"• Guardias generadas: {resumen.guardias_generadas}")
+            incidencias.append(format_terminal_label("📊 Resumen:"))
+            warning_msg = (
+                f'{slots_sin_cubrir} de {resumen.slots_esperados} '
+                f'({porcentaje_sin_cubrir:.1f}%)'
+            )
+            slots_label = format_terminal_label('Slots sin cubrir:')
+            warning_val = format_terminal_warning(warning_msg)
+            incidencias.append(
+                f"• {slots_label} {warning_val}"
+            )
+            guardias_label = format_terminal_label('Guardias generadas:')
+            guardias_num = format_terminal_number(resumen.guardias_generadas)
+            incidencias.append(
+                f"• {guardias_label} {guardias_num}"
+            )
             incidencias.append("")
 
             # Analizar causas
-            incidencias.append("🔍 CAUSAS PRINCIPALES:")
+            incidencias.append(format_terminal_warning("🔍 CAUSAS PRINCIPALES:"))
             incidencias.append("")
 
             # 1. Falta de profesores elegibles
-            incidencias.append("1️⃣ FALTA DE ELEGIBILIDAD DE PROFESORES")
+            incidencias.append(
+                format_terminal_label("1️⃣ FALTA DE ELEGIBILIDAD DE PROFESORES")
+            )
             incidencias.append("")
-            incidencias.append("   Algunos slots no tienen profesores disponibles porque:")
-            incidencias.append("   • Restricciones de horario muy estrictas")
-            incidencias.append("   • Fechas de inicio/fin de guardias limitadas")
-            incidencias.append("   • Turnos incompatibles (profesores de mañana no cubren tarde y viceversa)")
-            incidencias.append("   • Profesores con jornada reducida ya asignados al máximo")
+            incidencias.append(
+                format_terminal_info(
+                    "   Algunos slots no tienen profesores disponibles porque:"
+                )
+            )
+            incidencias.append(
+                format_terminal_info("   • Restricciones de horario muy estrictas")
+            )
+            incidencias.append(
+                format_terminal_info("   • Fechas de inicio/fin de guardias limitadas")
+            )
+            incidencias.append(
+                format_terminal_info(
+                    "   • Turnos incompatibles (profesores de mañana no cubren tarde)"
+                )
+            )
+            incidencias.append(
+                format_terminal_info(
+                    "   • Profesores con jornada reducida ya asignados al máximo"
+                )
+            )
             incidencias.append("")
 
             # 2. Desequilibrio de recursos
             from models.models import Zona
+
             num_zonas = self.session.query(Zona).count()
             num_profesores = self.session.query(Profesor).count()
 
-            incidencias.append("2️⃣ ANÁLISIS DE RECURSOS")
+            incidencias.append(format_terminal_label("2️⃣ ANÁLISIS DE RECURSOS"))
             incidencias.append("")
-            incidencias.append(f"   • Profesores activos: {num_profesores}")
-            incidencias.append(f"   • Zonas configuradas: {num_zonas}")
-            incidencias.append(f"   • Ratio profesor/zona: {num_profesores/num_zonas:.2f}" if num_zonas > 0 else "   • Ratio: N/A (no hay zonas)")
+            prof_label = format_terminal_label('Profesores activos:')
+            prof_num = format_terminal_number(num_profesores)
+            incidencias.append(
+                f"   • {prof_label} {prof_num}"
+            )
+            zonas_label = format_terminal_label('Zonas configuradas:')
+            zonas_num = format_terminal_number(num_zonas)
+            incidencias.append(
+                f"   • {zonas_label} {zonas_num}"
+            )
+            if num_zonas > 0:
+                ratio = num_profesores / num_zonas
+                ratio_label = format_terminal_label('Ratio profesor/zona:')
+                ratio_num = format_terminal_number(f'{ratio:.2f}')
+                incidencias.append(
+                    f"   • {ratio_label} {ratio_num}"
+                )
+            else:
+                incidencias.append(
+                    f"   • {format_terminal_warning('Ratio: N/A (no hay zonas)')}"
+                )
 
             if num_zonas > 0 and num_profesores / num_zonas < 3:
                 incidencias.append("")
-                incidencias.append("   ⚠️ El ratio profesor/zona es bajo. Recomendado: mínimo 3:1")
+                warning_msg = "   ⚠️ El ratio profesor/zona es bajo. Recomendado: mínimo 3:1"
+                incidencias.append(
+                    format_terminal_warning(warning_msg)
+                )
             incidencias.append("")
 
             # 3. Distribución desigual
@@ -511,44 +629,106 @@ Número de profesores: {stats.num_profesores}
                     min_guardias = min(guardias_por_prof)
                     diferencia = max_guardias - min_guardias
 
-                    incidencias.append("3️⃣ DISTRIBUCIÓN DE CARGA")
+                    incidencias.append(
+                        format_terminal_label("3️⃣ DISTRIBUCIÓN DE CARGA")
+                    )
                     incidencias.append("")
-                    incidencias.append(f"   • Máximo de guardias asignadas: {max_guardias}")
-                    incidencias.append(f"   • Mínimo de guardias asignadas: {min_guardias}")
-                    incidencias.append(f"   • Diferencia: {diferencia}")
+                    max_label = format_terminal_label('Máximo de guardias asignadas:')
+                    max_num = format_terminal_number(max_guardias)
+                    incidencias.append(
+                        f"   • {max_label} {max_num}"
+                    )
+                    min_label = format_terminal_label('Mínimo de guardias asignadas:')
+                    min_num = format_terminal_number(min_guardias)
+                    incidencias.append(
+                        f"   • {min_label} {min_num}"
+                    )
+                    dif_label = format_terminal_label('Diferencia:')
+                    dif_num = format_terminal_number(diferencia)
+                    incidencias.append(
+                        f"   • {dif_label} {dif_num}"
+                    )
 
                     if diferencia > 20:
                         incidencias.append("")
-                        incidencias.append("   ⚠️ Distribución muy desigual detectada")
+                        incidencias.append(
+                            format_terminal_warning(
+                                "   ⚠️ Distribución muy desigual detectada"
+                            )
+                        )
                     incidencias.append("")
 
             # Recomendaciones
             incidencias.append("")
-            incidencias.append("💡 SOLUCIONES RECOMENDADAS:")
+            incidencias.append(
+                format_terminal_success("💡 SOLUCIONES RECOMENDADAS:")
+            )
             incidencias.append("")
-            incidencias.append("1. Revisar restricciones de profesores:")
-            incidencias.append("   • Ve a 'Profesores' y revisa las restricciones de horario")
-            incidencias.append("   • Considera flexibilizar los recreos permitidos")
-            incidencias.append("   • Verifica fechas de inicio/fin de guardias")
+            incidencias.append(
+                format_terminal_info("1. Revisar restricciones de profesores:")
+            )
+            incidencias.append(
+                format_terminal_info(
+                    "   • Ve a 'Profesores' y revisa las restricciones de horario"
+                )
+            )
+            incidencias.append(
+                format_terminal_info(
+                    "   • Considera flexibilizar los recreos permitidos"
+                )
+            )
+            incidencias.append(
+                format_terminal_info("   • Verifica fechas de inicio/fin de guardias")
+            )
             incidencias.append("")
-            incidencias.append("2. Ajustar recursos:")
+            incidencias.append(format_terminal_info("2. Ajustar recursos:"))
             if num_zonas > 0 and num_profesores / num_zonas < 3:
-                incidencias.append("   • Añadir más profesores al sistema")
-                incidencias.append("   • O reducir el número de zonas a vigilar")
+                incidencias.append(
+                    format_terminal_info("   • Añadir más profesores al sistema")
+                )
+                incidencias.append(
+                    format_terminal_info("   • O reducir el número de zonas a vigilar")
+                )
             else:
-                incidencias.append("   • La cantidad de profesores parece adecuada")
+                incidencias.append(
+                    format_terminal_info(
+                        "   • La cantidad de profesores parece adecuada"
+                    )
+                )
             incidencias.append("")
-            incidencias.append("3. Verificar configuración:")
-            incidencias.append("   • Revisa días lectivos en 'Configuración'")
-            incidencias.append("   • Verifica número de recreos por turno")
-            incidencias.append("   • Asegúrate de que las zonas estén bien configuradas")
+            incidencias.append(format_terminal_info("3. Verificar configuración:"))
+            incidencias.append(
+                format_terminal_info(
+                    "   • Revisa días lectivos en 'Configuración'"
+                )
+            )
+            incidencias.append(
+                format_terminal_info("   • Verifica número de recreos por turno")
+            )
+            incidencias.append(
+                format_terminal_info(
+                    "   • Asegúrate de que las zonas estén bien configuradas"
+                )
+            )
             incidencias.append("")
-            incidencias.append("4. Alternativas:")
-            incidencias.append("   • Permite que profesores de mañana cubran tarde (o viceversa)")
-            incidencias.append("   • Aumenta las horas de contrato de algunos profesores")
-            incidencias.append("   • Considera contratar profesores de apoyo")
+            incidencias.append(format_terminal_info("4. Alternativas:"))
+            incidencias.append(
+                format_terminal_info(
+                    "   • Permite que profesores de mañana cubran tarde (o viceversa)"
+                )
+            )
+            incidencias.append(
+                format_terminal_info(
+                    "   • Aumenta las horas de contrato de algunos profesores"
+                )
+            )
+            incidencias.append(
+                format_terminal_info(
+                    "   • Considera contratar profesores de apoyo"
+                )
+            )
 
-        self.incidencias_text.setText("\n".join(incidencias))
+        self.incidencias_text.setHtml(wrap_terminal_html("\n".join(incidencias)))
 
     def limpiar_formulario(self):
         """Limpiar todos los campos del formulario"""

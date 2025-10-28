@@ -6,9 +6,9 @@ Permite registrar ausencias y reasignar guardias automáticamente.
 
 from datetime import date
 
+import ui_styles as styles
 from models.models import Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
 )
 
 from presentation.forms.base_form import BaseForm
+from presentation.themes.ccleaner_theme import TEXT_SECONDARY, get_table_style
 
 
 class GestorSustituciones(BaseForm):
@@ -47,26 +48,22 @@ class GestorSustituciones(BaseForm):
         layout_principal.setSpacing(15)
 
         # Título
-        titulo = QLabel("🔄 Gestión de Sustituciones")
-        titulo.setFont(QFont("Arial", 18, QFont.Weight.Bold))
+        titulo = QLabel("🔄 GESTIÓN DE SUSTITUCIONES")
+        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        titulo.setStyleSheet("""
-            QLabel {
-                color: #2c3e50;
-                padding: 15px;
-                background-color: #ecf0f1;
-                border-radius: 8px;
-                margin-bottom: 10px;
-            }
-        """)
         layout_principal.addWidget(titulo)
 
         # Descripción
         descripcion = QLabel(
-            "Busca una guardia asignada a un profesor y reasígnala a otro profesor disponible"
+            "Busca una guardia asignada a un profesor y "
+            "reasígnala a otro profesor disponible"
         )
         descripcion.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        descripcion.setStyleSheet("color: #7f8c8d; font-size: 12px; margin-bottom: 10px;")
+        descripcion.setStyleSheet(f"""
+            color: {TEXT_SECONDARY};
+            font-size: 12px;
+            margin-bottom: 10px;
+        """)
         layout_principal.addWidget(descripcion)
 
         # Layout en 2 columnas para las secciones principales
@@ -89,22 +86,7 @@ class GestorSustituciones(BaseForm):
 
         # Tabla de guardias encontradas (ancho completo)
         tabla_group = QGroupBox("📋 Guardias Encontradas")
-        tabla_group.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                border: 2px solid #bdc3c7;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 15px;
-                background-color: white;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 15px;
-                padding: 0 5px;
-                color: #2c3e50;
-            }
-        """)
+        tabla_group.setStyleSheet(styles.STYLE_GROUPBOX)
         tabla_layout = QVBoxLayout()
         self.tabla_guardias = self._crear_tabla_guardias()
         tabla_layout.addWidget(self.tabla_guardias)
@@ -122,95 +104,36 @@ class GestorSustituciones(BaseForm):
     def _crear_seccion_buscar(self) -> QGroupBox:
         """Crear sección de búsqueda de guardia."""
         grupo_buscar = QGroupBox("1️⃣ Buscar Guardia")
-        grupo_buscar.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                font-size: 14px;
-                border: 2px solid #3498db;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 15px;
-                background-color: #ebf5fb;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 15px;
-                padding: 0 5px;
-                color: #2980b9;
-            }
-        """)
+        grupo_buscar.setStyleSheet(styles.STYLE_GROUPBOX)
         layout_buscar = QVBoxLayout()
         layout_buscar.setSpacing(12)
         layout_buscar.setContentsMargins(15, 20, 15, 15)
 
         # Fecha
         fecha_label = QLabel("📅 Fecha de la guardia:")
-        fecha_label.setStyleSheet("font-weight: bold; color: #2c3e50; font-size: 12px;")
+        fecha_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_buscar.addWidget(fecha_label)
 
         self.fecha_buscar = QDateEdit()
         self.fecha_buscar.setDate(date.today())
         self.fecha_buscar.setCalendarPopup(True)
-        self.fecha_buscar.setStyleSheet("""
-            QDateEdit {
-                padding: 8px;
-                border: 1px solid #bdc3c7;
-                border-radius: 4px;
-                background-color: white;
-                font-size: 13px;
-            }
-            QDateEdit:focus {
-                border: 2px solid #3498db;
-            }
-        """)
+        self.fecha_buscar.setStyleSheet(styles.STYLE_INPUT)
         layout_buscar.addWidget(self.fecha_buscar)
 
         # Profesor
         profesor_label = QLabel("👨‍🏫 Profesor original:")
-        profesor_label.setStyleSheet("font-weight: bold; color: #2c3e50; font-size: 12px; margin-top: 5px;")
+        profesor_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_buscar.addWidget(profesor_label)
 
         self.combo_profesor_original = QComboBox()
-        self.combo_profesor_original.setStyleSheet("""
-            QComboBox {
-                padding: 8px;
-                border: 1px solid #bdc3c7;
-                border-radius: 4px;
-                background-color: white;
-                font-size: 13px;
-            }
-            QComboBox:focus {
-                border: 2px solid #3498db;
-            }
-            QComboBox::drop-down {
-                border: none;
-                width: 30px;
-            }
-        """)
+        self.combo_profesor_original.setStyleSheet(styles.STYLE_INPUT)
         layout_buscar.addWidget(self.combo_profesor_original)
 
         # Botón buscar
         self.btn_buscar = QPushButton("🔍 Buscar Guardias")
         self.btn_buscar.clicked.connect(self.buscar_guardias)
         self.btn_buscar.setMinimumHeight(40)
-        self.btn_buscar.setStyleSheet("""
-            QPushButton {
-                background-color: #3498db;
-                color: white;
-                padding: 10px 15px;
-                border: none;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 13px;
-                margin-top: 10px;
-            }
-            QPushButton:hover {
-                background-color: #2980b9;
-            }
-            QPushButton:pressed {
-                background-color: #21618c;
-            }
-        """)
+        self.btn_buscar.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         layout_buscar.addWidget(self.btn_buscar)
 
         grupo_buscar.setLayout(layout_buscar)
@@ -224,28 +147,7 @@ class GestorSustituciones(BaseForm):
         tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         tabla.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         tabla.setAlternatingRowColors(True)
-        tabla.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                gridline-color: #bdc3c7;
-                border: 1px solid #bdc3c7;
-                border-radius: 4px;
-            }
-            QTableWidget::item {
-                padding: 8px;
-            }
-            QTableWidget::item:selected {
-                background-color: #3498db;
-                color: white;
-            }
-            QHeaderView::section {
-                background-color: #34495e;
-                color: white;
-                padding: 10px;
-                border: none;
-                font-weight: bold;
-            }
-        """)
+        tabla.setStyleSheet(get_table_style())
         tabla.horizontalHeader().setStretchLastSection(True)
         tabla.setMinimumHeight(150)
         tabla.selectionModel().selectionChanged.connect(
@@ -256,75 +158,30 @@ class GestorSustituciones(BaseForm):
     def _crear_seccion_sustituir(self) -> QGroupBox:
         """Crear sección de asignación de sustituto."""
         grupo_sustituir = QGroupBox("2️⃣ Asignar Sustituto")
-        grupo_sustituir.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                font-size: 14px;
-                border: 2px solid #27ae60;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 15px;
-                background-color: #eafaf1;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 15px;
-                padding: 0 5px;
-                color: #229954;
-            }
-        """)
+        grupo_sustituir.setStyleSheet(styles.STYLE_GROUPBOX)
         layout_sustituir = QVBoxLayout()
         layout_sustituir.setSpacing(12)
         layout_sustituir.setContentsMargins(15, 20, 15, 15)
 
         # Profesor sustituto
         sustituto_label = QLabel("👥 Profesor sustituto:")
-        sustituto_label.setStyleSheet("font-weight: bold; color: #2c3e50; font-size: 12px;")
+        sustituto_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_sustituir.addWidget(sustituto_label)
 
         self.combo_profesor_sustituto = QComboBox()
-        self.combo_profesor_sustituto.setStyleSheet("""
-            QComboBox {
-                padding: 8px;
-                border: 1px solid #bdc3c7;
-                border-radius: 4px;
-                background-color: white;
-                font-size: 13px;
-            }
-            QComboBox:focus {
-                border: 2px solid #27ae60;
-            }
-            QComboBox::drop-down {
-                border: none;
-                width: 30px;
-            }
-        """)
+        self.combo_profesor_sustituto.setStyleSheet(styles.STYLE_INPUT)
         layout_sustituir.addWidget(self.combo_profesor_sustituto)
 
         # Botón ver disponibles
-        self.btn_buscar_disponibles = QPushButton("�️ Ver Profesores Disponibles")
+        self.btn_buscar_disponibles = QPushButton("🔍 Ver Profesores Disponibles")
         self.btn_buscar_disponibles.clicked.connect(self.buscar_profesores_disponibles)
         self.btn_buscar_disponibles.setMinimumHeight(35)
-        self.btn_buscar_disponibles.setStyleSheet("""
-            QPushButton {
-                background-color: #95a5a6;
-                color: white;
-                padding: 8px 12px;
-                border: none;
-                border-radius: 4px;
-                font-weight: normal;
-                font-size: 12px;
-                margin-top: 5px;
-            }
-            QPushButton:hover {
-                background-color: #7f8c8d;
-            }
-        """)
+        self.btn_buscar_disponibles.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
         layout_sustituir.addWidget(self.btn_buscar_disponibles)
 
         # Observaciones
         obs_label = QLabel("📝 Observaciones (opcional):")
-        obs_label.setStyleSheet("font-weight: bold; color: #2c3e50; font-size: 12px; margin-top: 10px;")
+        obs_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_sustituir.addWidget(obs_label)
 
         self.text_observaciones = QTextEdit()
@@ -332,18 +189,7 @@ class GestorSustituciones(BaseForm):
         self.text_observaciones.setPlaceholderText(
             "Añade observaciones sobre la sustitución..."
         )
-        self.text_observaciones.setStyleSheet("""
-            QTextEdit {
-                padding: 8px;
-                border: 1px solid #bdc3c7;
-                border-radius: 4px;
-                background-color: white;
-                font-size: 12px;
-            }
-            QTextEdit:focus {
-                border: 2px solid #27ae60;
-            }
-        """)
+        self.text_observaciones.setStyleSheet(styles.STYLE_INPUT)
         layout_sustituir.addWidget(self.text_observaciones)
 
         # Botones de acción
@@ -362,50 +208,14 @@ class GestorSustituciones(BaseForm):
         self.btn_confirmar_sustitucion = QPushButton("✅ Confirmar Sustitución")
         self.btn_confirmar_sustitucion.clicked.connect(self.confirmar_sustitucion)
         self.btn_confirmar_sustitucion.setMinimumHeight(45)
-        self.btn_confirmar_sustitucion.setStyleSheet("""
-            QPushButton {
-                background-color: #27ae60;
-                color: white;
-                padding: 12px 20px;
-                border: none;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #229954;
-            }
-            QPushButton:pressed {
-                background-color: #1e8449;
-            }
-            QPushButton:disabled {
-                background-color: #bdc3c7;
-                color: #7f8c8d;
-            }
-        """)
+        self.btn_confirmar_sustitucion.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.btn_confirmar_sustitucion.setEnabled(False)
         botones_layout.addWidget(self.btn_confirmar_sustitucion, 2)
 
         self.btn_cancelar = QPushButton("❌ Limpiar")
         self.btn_cancelar.clicked.connect(self.limpiar_formulario)
         self.btn_cancelar.setMinimumHeight(45)
-        self.btn_cancelar.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
-                color: white;
-                padding: 12px 20px;
-                border: none;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #c0392b;
-            }
-            QPushButton:pressed {
-                background-color: #a93226;
-            }
-        """)
+        self.btn_cancelar.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         botones_layout.addWidget(self.btn_cancelar, 1)
 
         return botones_layout
@@ -413,22 +223,7 @@ class GestorSustituciones(BaseForm):
     def _crear_seccion_historial(self) -> QGroupBox:
         """Crear sección de historial."""
         grupo_historial = QGroupBox("📜 Historial Reciente de Sustituciones")
-        grupo_historial.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                border: 2px solid #bdc3c7;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 15px;
-                background-color: #fdfefe;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 15px;
-                padding: 0 5px;
-                color: #34495e;
-            }
-        """)
+        grupo_historial.setStyleSheet(styles.STYLE_GROUPBOX)
         layout_historial = QVBoxLayout()
         layout_historial.setContentsMargins(15, 20, 15, 15)
 
@@ -439,26 +234,7 @@ class GestorSustituciones(BaseForm):
         )
         self.tabla_historial.setMaximumHeight(180)
         self.tabla_historial.setAlternatingRowColors(True)
-        self.tabla_historial.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                gridline-color: #ecf0f1;
-                border: 1px solid #bdc3c7;
-                border-radius: 4px;
-            }
-            QTableWidget::item {
-                padding: 6px;
-                font-size: 12px;
-            }
-            QHeaderView::section {
-                background-color: #95a5a6;
-                color: white;
-                padding: 8px;
-                border: none;
-                font-weight: bold;
-                font-size: 11px;
-            }
-        """)
+        self.tabla_historial.setStyleSheet(get_table_style())
         self.tabla_historial.horizontalHeader().setStretchLastSection(True)
         layout_historial.addWidget(self.tabla_historial)
 

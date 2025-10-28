@@ -221,6 +221,25 @@ STYLE_LABEL_FIELD = f"""
     }}
 """
 
+# ========== ESTILO TERMINAL RETRO ==========
+
+STYLE_TERMINAL_RETRO = """
+    QTextEdit {
+        background-color: #3C3C3C;
+        color: #00FF00;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 12px;
+        padding: 12px;
+        border: 2px solid #555555;
+        border-radius: 4px;
+        selection-background-color: #2A4A2A;
+        selection-color: #00FF00;
+    }
+    QTextEdit[readOnly="true"] {
+        background-color: #3C3C3C;
+    }
+"""
+
 # ========== FUNCIONES DE UTILIDAD ==========
 
 def create_title_label(text: str, level: str = "main") -> str:
@@ -262,3 +281,70 @@ def apply_compact_layout(layout):
     """
     layout.setContentsMargins(10, 10, 10, 10)
     layout.setSpacing(8)
+
+
+# ========== FUNCIONES DE FORMATEO TERMINAL ==========
+
+def wrap_terminal_html(content: str) -> str:
+    """
+    Envuelve el contenido HTML en un div con word-wrap para terminales.
+
+    Args:
+        content: Contenido HTML a envolver
+
+    Returns:
+        HTML envuelto con estilos de word-wrap
+    """
+    styles = "white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;"
+    return f'<div style="{styles}">{content}</div>'
+
+
+def format_terminal_header(text: str) -> str:
+    """Formatea un encabezado en estilo terminal (verde brillante)."""
+    return f'<span style="color: #00FF00; font-weight: bold;">{text}</span>'
+
+
+def format_terminal_label(text: str) -> str:
+    """Formatea una etiqueta/label (cyan claro)."""
+    return f'<span style="color: #00FFFF;">{text}</span>'
+
+
+def format_terminal_value(text: str) -> str:
+    """Formatea un valor numérico (amarillo)."""
+    return f'<span style="color: #FFFF00;">{text}</span>'
+
+
+def format_terminal_success(text: str) -> str:
+    """Formatea un mensaje de éxito (verde)."""
+    return f'<span style="color: #00FF00;">{text}</span>'
+
+
+def format_terminal_warning(text: str) -> str:
+    """Formatea una advertencia (naranja/ámbar)."""
+    return f'<span style="color: #FFA500;">{text}</span>'
+
+
+def format_terminal_error(text: str) -> str:
+    """Formatea un error (rojo)."""
+    return f'<span style="color: #FF4444;">{text}</span>'
+
+
+def format_terminal_info(text: str) -> str:
+    """Formatea información secundaria (gris claro)."""
+    return f'<span style="color: #AAAAAA;">{text}</span>'
+
+
+def format_terminal_profesor(text: str) -> str:
+    """Formatea nombre de profesor (azul brillante)."""
+    return f'<span style="color: #00BFFF;">{text}</span>'
+
+
+def format_terminal_number(text: str) -> str:
+    """Formatea números importantes (amarillo brillante)."""
+    return f'<span style="color: #FFFF00; font-weight: bold;">{text}</span>'
+
+
+def format_terminal_prompt(text: str) -> str:
+    """Formatea un prompt de terminal (verde oscuro)."""
+    return f'<span style="color: #00AA00;">$</span> <span style="color: #00FF00;">{text}</span>'
+

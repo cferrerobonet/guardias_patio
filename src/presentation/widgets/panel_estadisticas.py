@@ -9,10 +9,11 @@ from collections import defaultdict
 import matplotlib
 
 matplotlib.use("QtAgg")
+import ui_styles as styles
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
+from models.models import Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QLabel,
     QPushButton,
@@ -25,8 +26,14 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy import func
 
-from models.models import Guardia, Profesor, Zona
 from presentation.forms.base_form import BaseForm
+from presentation.themes.ccleaner_theme import (
+    CONTENT_BG_ALT,
+    PRIMARY_BLUE,
+    SUCCESS_GREEN,
+    TEXT_PRIMARY,
+    get_table_style,
+)
 
 
 class PanelEstadisticas(BaseForm):
@@ -48,28 +55,15 @@ class PanelEstadisticas(BaseForm):
         layout_principal = QVBoxLayout()
 
         # Título
-        titulo = QLabel("📊 Estadísticas de Guardias")
-        titulo.setFont(QFont("Arial", 16, QFont.Weight.Bold))
+        titulo = QLabel("📊 ESTADÍSTICAS DE GUARDIAS")
+        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_principal.addWidget(titulo)
 
         # Botón refrescar
         btn_refrescar = QPushButton("🔄 Actualizar Estadísticas")
         btn_refrescar.clicked.connect(self.actualizar_estadisticas)
-        btn_refrescar.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                padding: 10px;
-                border-radius: 5px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            """
-        )
+        btn_refrescar.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         layout_principal.addWidget(btn_refrescar)
 
         # Pestañas
@@ -96,11 +90,16 @@ class PanelEstadisticas(BaseForm):
         self.label_total_zonas = QLabel("Zonas Configuradas: 0")
         self.label_cobertura = QLabel("Cobertura: 0%")
 
-        estilo_metrica = """
-            background-color: #e3f2fd;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #90caf9;
+        estilo_metrica = f"""
+            QLabel {{
+                background-color: {CONTENT_BG_ALT};
+                padding: 15px;
+                border-radius: 8px;
+                border: 2px solid {PRIMARY_BLUE};
+                font-size: 13px;
+                font-weight: bold;
+                color: {TEXT_PRIMARY};
+            }}
         """
 
         for label in [
@@ -109,7 +108,6 @@ class PanelEstadisticas(BaseForm):
             self.label_total_zonas,
             self.label_cobertura,
         ]:
-            label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
             label.setStyleSheet(estilo_metrica)
             layout.addWidget(label)
 
@@ -134,6 +132,7 @@ class PanelEstadisticas(BaseForm):
             ["Profesor", "Total", "Mañana", "Tarde", "% Total", "Estado"]
         )
         self.tabla_profesores.horizontalHeader().setStretchLastSection(True)
+        self.tabla_profesores.setStyleSheet(get_table_style())
 
         layout.addWidget(self.tabla_profesores)
         widget.setLayout(layout)
@@ -150,6 +149,7 @@ class PanelEstadisticas(BaseForm):
             ["Zona", "Total Guardias", "Profesores Diferentes", "% Cobertura"]
         )
         self.tabla_zonas.horizontalHeader().setStretchLastSection(True)
+        self.tabla_zonas.setStyleSheet(get_table_style())
 
         layout.addWidget(self.tabla_zonas)
         widget.setLayout(layout)
@@ -337,7 +337,7 @@ class PanelEstadisticas(BaseForm):
 
             # Dibujar gráfico de barras
             self.canvas_profesores.axes.clear()
-            self.canvas_profesores.axes.bar(nombres, cantidades, color="#4CAF50")
+            self.canvas_profesores.axes.bar(nombres, cantidades, color=SUCCESS_GREEN)
             self.canvas_profesores.axes.set_xlabel("Profesor")
             self.canvas_profesores.axes.set_ylabel("Guardias")
             self.canvas_profesores.axes.set_title(
