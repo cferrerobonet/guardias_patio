@@ -217,7 +217,7 @@ with open("file.txt") as f:  # ¡Depende de CWD!
 rm -rf dist build
 
 # 2. Compilar
-./build_simple.sh
+./scripts/build/build_simple.sh
 
 # 3. Probar con open
 open "dist/Guardias de Patio.app"
@@ -234,7 +234,7 @@ sleep 5 && ps aux | grep Guardias | grep -v grep
 
 ## 🆘 En Caso de Problemas
 
-1. **Lee primero:** [`documentacion/SOLUCION_COMPILACION.md`](./documentacion/SOLUCION_COMPILACION.md)
+1. **Lee primero:** [`SOLUCION_COMPILACION.md`](SOLUCION_COMPILACION.md)
 2. **Verifica:** Este checklist completo
 3. **Logs del sistema:** `log show --predicate 'process == "Guardias de Patio"' --last 5m`
 4. **Ejecuta pruebas:** Sección 5 de este checklist
@@ -243,10 +243,10 @@ sleep 5 && ps aux | grep Guardias | grep -v grep
 
 ## 📚 Recursos
 
-- **Documentación completa:** `documentacion/COMPILACION_Y_DISTRIBUCION.md`
-- **Solución de problemas:** `documentacion/SOLUCION_COMPILACION.md`
-- **Guía rápida:** `COMPILACION_RAPIDA.md`
-- **Sistema de rutas:** `src/core/paths.py` (leer docstring)
+- **Solución de problemas:** [`SOLUCION_COMPILACION.md`](SOLUCION_COMPILACION.md)
+- **Guía rápida:** [`COMPILACION_RAPIDA.md`](COMPILACION_RAPIDA.md)
+- **Sistema de rutas:** `../../src/core/paths.py` (leer docstring)
+- **Build DMG:** [`BUILD_DMG.md`](BUILD_DMG.md)
 
 ---
 

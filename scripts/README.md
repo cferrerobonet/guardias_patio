@@ -1,12 +1,65 @@
-# 📁 Scripts de Utilidad
+# Scripts del Proyecto
 
-Este directorio contiene scripts auxiliares para mantenimiento, análisis y gestión del proyecto.
+Este directorio contiene todos los scripts del proyecto **Guardias de Patio**.
 
 ---
 
-## � Índice de Scripts
+## 📁 Estructura
 
-### �📊 Importación y Gestión de Datos
+```
+scripts/
+├── build/          # Scripts de compilación y distribución
+├── dev/            # Scripts de desarrollo
+└── *.py            # Scripts de análisis y utilidades
+```
+
+---
+
+## 🔨 Build Scripts (`/scripts/build/`)
+
+### `build_simple.sh`
+**Propósito:** Compilación principal de la aplicación para macOS
+
+**Uso:**
+```bash
+./scripts/build/build_simple.sh
+```
+
+### `create_dmg.sh`
+**Propósito:** Creación del instalador DMG
+
+**Uso:**
+```bash
+./scripts/build/create_dmg.sh
+```
+
+### `create_icon.sh`
+**Propósito:** Generación de iconos
+
+**Uso:**
+```bash
+./scripts/build/create_icon.sh
+```
+
+Ver `documentacion/build/` para documentación detallada de compilación.
+
+---
+
+## 💻 Development Scripts (`/scripts/dev/`)
+
+### `run_app.sh`
+**Propósito:** Ejecutar la aplicación en modo desarrollo
+
+**Uso:**
+```bash
+./scripts/dev/run_app.sh
+```
+
+---
+
+## 🛠️ Utility Scripts (Python)
+
+### 📊 Importación y Gestión de Datos
 - [`importar_profesores_desde_excel.py`](#-importar_profesores_desde_excelpy) - Importación masiva de profesores desde Excel
 - [`cleanup_test_data.py`](#-cleanup_test_datapy) - Limpieza de datos de prueba
 

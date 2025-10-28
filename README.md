@@ -36,14 +36,21 @@
 Para compilar la aplicación en macOS:
 
 ```bash
-./build_simple.sh
+./scripts/build/build_simple.sh
 ```
 
-**¿Problemas al compilar?** → Lee [`COMPILACION_RAPIDA.md`](./COMPILACION_RAPIDA.md)
+Para crear el instalador DMG:
+
+```bash
+./scripts/build/create_dmg.sh
+```
+
+**¿Problemas al compilar?** → Lee [`documentacion/build/COMPILACION_RAPIDA.md`](./documentacion/build/COMPILACION_RAPIDA.md)
 
 **Documentación completa de compilación:**
-- [`documentacion/SOLUCION_COMPILACION.md`](./documentacion/SOLUCION_COMPILACION.md) - Solución de todos los problemas conocidos
-- [`documentacion/COMPILACION_Y_DISTRIBUCION.md`](./documentacion/COMPILACION_Y_DISTRIBUCION.md) - Guía completa
+- [`documentacion/build/SOLUCION_COMPILACION.md`](./documentacion/build/SOLUCION_COMPILACION.md) - Solución de todos los problemas conocidos
+- [`documentacion/build/CHECKLIST_COMPILACION.md`](./documentacion/build/CHECKLIST_COMPILACION.md) - Checklist pre-compilación
+- [`documentacion/build/BUILD_DMG.md`](./documentacion/build/BUILD_DMG.md) - Crear instalador DMG
 
 ---
 

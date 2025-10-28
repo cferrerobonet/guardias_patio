@@ -5,13 +5,13 @@
 ### 1. Compilar la aplicación:
 
 ```bash
-./build_simple.sh
+./scripts/build/build_simple.sh
 ```
 
 ### 2. Crear el instalador DMG:
 
 ```bash
-./create_dmg.sh
+./scripts/build/create_dmg.sh
 ```
 
 ### 3. Probar el DMG:
@@ -28,7 +28,7 @@ open "dist/GuardiasDePatio-2.9.0-macOS.dmg"
 
 ## ⚠️ Si hay problemas
 
-**Consulta primero:** [`documentacion/SOLUCION_COMPILACION.md`](./documentacion/SOLUCION_COMPILACION.md)
+**Consulta primero:** [`SOLUCION_COMPILACION.md`](SOLUCION_COMPILACION.md)
 
 Este documento contiene:
 - ✅ Todos los problemas conocidos y sus soluciones
@@ -62,23 +62,25 @@ Antes de compilar, verifica:
 
 ### La app no abre con `open`:
 - **Causa**: Rutas relativas en lugar de absolutas
-- **Solución**: Ver `documentacion/SOLUCION_COMPILACION.md` → Sección 2
+- **Solución**: Ver `SOLUCION_COMPILACION.md` → Sección 2
 
 ### Iconos no se ven:
 - **Causa**: `icon_manager.py` no usa `get_resources_directory()`
-- **Solución**: Ver `documentacion/SOLUCION_COMPILACION.md` → Sección 1
+- **Solución**: Ver `SOLUCION_COMPILACION.md` → Sección 1
 
 ### Compilación se cuelga en "Building PKG":
 - **Causa**: Usando archivo `.spec` con PyQt6
-- **Solución**: Usar `build_simple.sh` en su lugar
+- **Solución**: Usar `scripts/build/build_simple.sh` en su lugar
 
 ---
 
 ## 📚 Documentación Completa
 
-- **Compilación y distribución**: [`documentacion/COMPILACION_Y_DISTRIBUCION.md`](./documentacion/COMPILACION_Y_DISTRIBUCION.md)
-- **Solución de problemas**: [`documentacion/SOLUCION_COMPILACION.md`](./documentacion/SOLUCION_COMPILACION.md)
-- **Arquitectura**: [`documentacion/ARCHITECTURE_PATTERNS.md`](./documentacion/ARCHITECTURE_PATTERNS.md)
+- **Solución de problemas**: [`SOLUCION_COMPILACION.md`](SOLUCION_COMPILACION.md)
+- **Checklist de compilación**: [`CHECKLIST_COMPILACION.md`](CHECKLIST_COMPILACION.md)
+- **Build DMG**: [`BUILD_DMG.md`](BUILD_DMG.md)
+- **Build Windows**: [`BUILD_WINDOWS.md`](BUILD_WINDOWS.md)
+- **Arquitectura**: [`../tecnico/ARCHITECTURE_PATTERNS.md`](../tecnico/ARCHITECTURE_PATTERNS.md)
 
 ---
 
