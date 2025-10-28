@@ -13,8 +13,9 @@ from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session
+
+from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 
 logger = logging.getLogger(__name__)
 

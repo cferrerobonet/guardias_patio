@@ -358,7 +358,11 @@ class UserAuth:
     En producción, usar bcrypt/argon2 para passwords.
     """
 
-    def __init__(self, users_file: Path = Path("users.json")):
+    def __init__(self, users_file: Path = None):
+        # Si no se especifica, usar el directorio de datos de la aplicación
+        if users_file is None:
+            from core.paths import get_data_directory
+            users_file = get_data_directory() / "users.json"
         self.users_file = users_file
         self.users = self._load_users()
 

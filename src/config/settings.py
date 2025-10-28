@@ -4,6 +4,13 @@ Configuración centralizada de la aplicación usando Pydantic Settings.
 Proporciona tipado fuerte, validación automática y soporte para variables
 de entorno. Reemplaza al antiguo constants.py con un enfoque más moderno.
 
+IMPORTANTE - Rutas de Archivos:
+    Este módulo NO debe crear directorios usando rutas relativas en los
+    validadores. La creación de directorios del sistema (logs, data, etc.)
+    se maneja en core/paths.py y core/logging.py usando rutas absolutas.
+
+    Ver: documentacion/SOLUCION_COMPILACION.md para más detalles.
+
 Ejemplo de uso:
     from config import settings
 
@@ -162,9 +169,12 @@ class Settings(BaseSettings):
     @field_validator("log_file")
     @classmethod
     def create_log_dir(cls, v: str) -> str:
-        """Crea el directorio de logs si no existe."""
-        log_path = Path(v)
-        log_path.parent.mkdir(parents=True, exist_ok=True)
+        """Valida la ruta del archivo de log.
+
+        NOTA: No se crea el directorio aquí porque el sistema de logging
+        en core/logging.py usa get_logs_directory() para determinar la
+        ruta correcta según el entorno (desarrollo vs producción).
+        """
         return v
 
     @field_validator("max_guardias_por_profesor_dia")

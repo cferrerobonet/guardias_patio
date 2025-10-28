@@ -19,7 +19,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['tkinter'],
     noarchive=False,
     optimize=0,
 )
@@ -56,5 +56,5 @@ app = BUNDLE(
     coll,
     name='Guardias de Patio.app',
     icon='imagenes/icono.icns',
-    bundle_identifier='com.guardias-patio.app',
+    bundle_identifier=None,
 )

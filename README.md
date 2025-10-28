@@ -1,6 +1,6 @@
 # Guardias de Patio
 
-![Version](https://img.shields.io/badge/Version-2.8.0-blue.svg)
+![Version](https://img.shields.io/badge/Version-2.9.0-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.7.0-orange.svg)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-red.svg)
@@ -11,12 +11,43 @@
 
 **Aplicación de escritorio profesional** para la gestión integral de guardias de patio en centros educativos. Asignación automática equitativa, gestión de ausencias y sustituciones, exportación de calendarios, y sistema completo de observabilidad.
 
-> 🎉 **v2.8.0 Released** - Aplicación estable, lista para producción con 7 bugs corregidos y logo corporativo implementado  
-> 📚 [Ver Release Notes](documentacion/versiones/RELEASE_NOTES_v2.8.0.md) | [Changelog v2.8](documentacion/CHANGELOG_v2.8.md)
+> 🎉 **v2.9.0 Released** - Fix crítico de compilación: app ahora funciona perfectamente compilada con DMG instalable  
+> 📚 [Ver Changelog v2.9](documentacion/CHANGELOG_v2.9.md) | [Changelog v2.8](documentacion/CHANGELOG_v2.8.md)
 
 ---
 
 ## 📋 Tabla de Contenidos
+
+- [Características Principales](#-características-principales)
+- [Stack Tecnológico](#️-stack-tecnológico)
+- [Arquitectura](#️-arquitectura)
+- [Instalación](#-instalación)
+- [Uso](#-uso)
+- [Compilación](#-compilación)
+- [Documentación](#-documentación)
+- [Roadmap](#️-roadmap)
+- [Contribución](#-contribución)
+- [Licencia](#-licencia)
+
+---
+
+## 🚀 Compilación Rápida
+
+Para compilar la aplicación en macOS:
+
+```bash
+./build_simple.sh
+```
+
+**¿Problemas al compilar?** → Lee [`COMPILACION_RAPIDA.md`](./COMPILACION_RAPIDA.md)
+
+**Documentación completa de compilación:**
+- [`documentacion/SOLUCION_COMPILACION.md`](./documentacion/SOLUCION_COMPILACION.md) - Solución de todos los problemas conocidos
+- [`documentacion/COMPILACION_Y_DISTRIBUCION.md`](./documentacion/COMPILACION_Y_DISTRIBUCION.md) - Guía completa
+
+---
+
+## 📋 Tabla de Contenidos (Original)
 
 - [Características Principales](#-características-principales)
 - [Stack Tecnológico](#️-stack-tecnológico)
@@ -354,7 +385,7 @@ Este proyecto está bajo la **Licencia MIT**. Ver archivo [LICENSE](LICENSE) par
 - **Tests**: 124+ unitarios
 - **Archivos Python**: 80+
 - **Sprints completados**: 8
-- **Versión actual**: 2.8.0
+- **Versión actual**: 2.9.0
 
 ---
 

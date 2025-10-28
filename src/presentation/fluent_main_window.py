@@ -12,7 +12,6 @@ from core.qt_imports import (
     QWidget,
 )
 from database.db_manager import SessionLocal
-
 from presentation.components.sidebar_menu import MenuCategory, MenuItem, SidebarMenu
 from presentation.components.top_bar import TopBar
 from presentation.forms import (

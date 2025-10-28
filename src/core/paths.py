@@ -3,6 +3,22 @@ Gestión centralizada de rutas del sistema.
 
 Proporciona funciones para obtener directorios apropiados según el sistema operativo,
 compatibles con aplicaciones empaquetadas y en desarrollo.
+
+⚠️ CRÍTICO: Este módulo es ESENCIAL para que la aplicación funcione correctamente
+cuando se compila con PyInstaller.
+
+REGLA DE ORO:
+    SIEMPRE usar las funciones de este módulo para obtener rutas de archivos.
+    NUNCA usar rutas relativas hardcodeadas como "logs/", "data/", "imagenes/".
+
+Funciones disponibles:
+    - get_base_directory()       → Directorio base de la app
+    - get_data_directory()       → Datos (bases de datos, users.json)
+    - get_logs_directory()       → Logs del sistema
+    - get_resources_directory()  → Recursos (imágenes, iconos)
+    - get_user_data_directory()  → Datos específicos por usuario
+
+Documentación completa: documentacion/SOLUCION_COMPILACION.md
 """
 
 import os

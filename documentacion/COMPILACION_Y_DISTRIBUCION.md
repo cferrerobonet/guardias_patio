@@ -1,5 +1,7 @@
 # Compilación y Distribución - Guardias de Patio
 
+> **⚠️ IMPORTANTE**: Si tienes problemas de compilación, consulta primero [SOLUCION_COMPILACION.md](./SOLUCION_COMPILACION.md) que documenta todos los problemas conocidos y sus soluciones.
+
 ## 📋 Índice
 
 1. [Configuración del Entorno](#configuración-del-entorno)
