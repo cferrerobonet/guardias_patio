@@ -12,11 +12,10 @@ Ver: documentacion/SOLUCION_COMPILACION.md para más detalles.
 from pathlib import Path
 from typing import Optional
 
+from core.paths import get_resources_directory
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
-
-from core.paths import get_resources_directory
 
 
 class IconManager:

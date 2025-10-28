@@ -8,6 +8,15 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 import json
 from typing import Dict, Optional
 
+import ui_styles as styles
+from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
+from application.use_cases.profesor import (
+    ActualizarProfesorUseCase,
+    BuscarProfesoresUseCase,
+    CrearProfesorUseCase,
+    EliminarProfesorUseCase,
+    ListarProfesoresUseCase,
+)
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -29,16 +38,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
 
-import ui_styles as styles
-from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
-from application.use_cases.profesor import (
-    ActualizarProfesorUseCase,
-    BuscarProfesoresUseCase,
-    CrearProfesorUseCase,
-    EliminarProfesorUseCase,
-    ListarProfesoresUseCase,
-)
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import (
     CONTENT_BG_ALT,
@@ -49,7 +50,6 @@ from presentation.themes.ccleaner_theme import (
     SPACING_SM,
     TEXT_SECONDARY,
 )
-from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
 
 
 class ProfesorForm(BaseForm):
