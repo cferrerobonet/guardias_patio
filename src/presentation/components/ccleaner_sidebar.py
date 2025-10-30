@@ -6,6 +6,7 @@ Menú lateral oscuro con diseño profesional.
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from utils.icon_manager import get_icon
 
 from presentation.themes.ccleaner_theme import (
     SIDEBAR_BG,
@@ -14,7 +15,6 @@ from presentation.themes.ccleaner_theme import (
     SPACING_SM,
     get_sidebar_style,
 )
-from utils.icon_manager import get_icon
 
 
 class SidebarMenu(QWidget):
@@ -54,6 +54,21 @@ class SidebarMenu(QWidget):
         menu_layout = QVBoxLayout(menu_widget)
         menu_layout.setContentsMargins(0, SPACING_LG, 0, SPACING_SM)
         menu_layout.setSpacing(2)
+
+        # ========== INICIO ==========
+        self.add_category(menu_layout, "INICIO")
+        self.add_menu_item(
+            menu_layout, "dashboard", "Dashboard", "dashboard", "view-dashboard"
+        )
+        self.add_menu_item(
+            menu_layout,
+            "notificaciones",
+            "Notificaciones",
+            "notificaciones",
+            "bell"
+        )
+
+        menu_layout.addSpacing(SPACING_MD)
 
         # ========== GESTIÓN ==========
         self.add_category(menu_layout, "GESTIÓN")
@@ -97,11 +112,10 @@ class SidebarMenu(QWidget):
             "importar", "database-import-export"
         )
         self.add_menu_item(
-            menu_layout, "estadisticas", "Estadísticas", "estadisticas", "chart-bar"
+            menu_layout, "reportes", "Reportes", "reportes", "file-chart"
         )
         self.add_menu_item(
-            menu_layout, "observabilidad", "Observabilidad",
-            "observabilidad", "chart-line"
+            menu_layout, "estadisticas", "Estadísticas", "estadisticas", "chart-bar"
         )
 
         # Espaciador al final

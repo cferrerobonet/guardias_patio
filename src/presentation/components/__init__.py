@@ -1,16 +1,11 @@
 """
-Componentes de UI reutilizables con diseño Fluent.
+Componentes de UI reutilizables.
 
-Este módulo contiene widgets y componentes modernos para construir
-interfaces con Microsoft Fluent Design System.
+Este módulo contiene widgets y componentes para la interfaz.
 """
 
-from presentation.components.sidebar_menu import MenuCategory, MenuItem, SidebarMenu
-from presentation.components.top_bar import TopBar
+from presentation.components.ccleaner_sidebar import SidebarMenu
 
 __all__ = [
     'SidebarMenu',
-    'MenuItem',
-    'MenuCategory',
-    'TopBar',
 ]

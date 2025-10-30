@@ -111,9 +111,10 @@ def _festivos_automaticos_en_rango(
         for day_ in range(1, 7):
             add_if_in_range(date(y + 1, 1, day_))
 
-        # 16–19 de marzo
-        for day_ in range(16, 20):
-            add_if_in_range(date(y, 3, day_))
+        # 16–19 de marzo - COMENTADO: estos días SON lectivos
+        # Solo se excluyen si caen en fin de semana (ya filtrado más abajo)
+        # for day_ in range(16, 20):
+        #     add_if_in_range(date(y, 3, day_))
 
         # Jueves Santo a +12 días
         easter = _easter_sunday(y)

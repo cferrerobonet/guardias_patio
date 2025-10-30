@@ -27,7 +27,7 @@ class ProfesorDTO(BaseModel):
     fecha_fin_guardias: Optional[date] = None
     # Solo días laborables por defecto (0-4: Lun-Vie)
     dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))
-    recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2])
+    recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2, 3, 4])  # Todos
 
     # Campos calculados
     ajuste_guardias: Optional[float] = None
@@ -51,7 +51,7 @@ class CrearProfesorDTO(BaseModel):
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
     dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))  # 0-4: Lun-Vie
-    recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2])
+    recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2, 3, 4])  # Todos los recreos por defecto
 
     @field_validator("dias_semana_permitidos", mode='before')
     @classmethod

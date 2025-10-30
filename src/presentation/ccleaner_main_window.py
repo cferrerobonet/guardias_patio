@@ -7,7 +7,6 @@ Layout profesional con sidebar oscuro y contenido blanco.
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
-    QLabel,
     QMainWindow,
     QScrollArea,
     QStackedWidget,
@@ -28,10 +27,15 @@ from presentation.themes.ccleaner_theme import (
     CONTENT_BG,
     get_complete_stylesheet,
 )
-from presentation.widgets.gestionar_ausencias import GestionarAusenciasForm
-from presentation.widgets.gestor_sustituciones import GestorSustituciones
-from presentation.widgets.panel_estadisticas import PanelEstadisticas
-from presentation.widgets.vista_calendario import VistaCalendario
+from presentation.widgets import (
+    DashboardResumen,
+    GestionarAusenciasForm,
+    GestorSustituciones,
+    NotificacionesPanel,
+    PanelEstadisticas,
+    ReportesForm,
+    VistaCalendario,
+)
 
 
 class ContentWrapper(QWidget):
@@ -116,14 +120,29 @@ class CCleanerMainWindow(QMainWindow):
         # Crear todas las vistas
         self.create_views()
 
-        # Activar la primera sección (Profesores)
-        self.sidebar.set_active_section("profesores")
+        # Conectar señales de los widgets
+        self.connect_signals()
+
+        # Activar la primera sección (Dashboard)
+        self.sidebar.set_active_section("dashboard")
 
     def create_views(self):
         """Crear todas las vistas/páginas de la aplicación"""
 
+        # INICIO
+        self.add_view("dashboard", "Dashboard", DashboardResumen())
+        self.add_view(
+            "notificaciones",
+            "Notificaciones",
+            NotificacionesPanel()
+        )
+
         # GESTIÓN
-        self.add_view("profesores", "Gestión de Profesores", ProfesorForm(self.session))
+        self.add_view(
+            "profesores",
+            "Gestión de Profesores",
+            ProfesorForm(self.session)
+        )
         self.add_view("zonas", "Gestión de Zonas", ZonaForm(self.session))
         self.add_view(
             "configuracion",
@@ -137,7 +156,11 @@ class CCleanerMainWindow(QMainWindow):
             "Asignación de Guardias",
             AsignacionGuardiasForm(self.session, sync_manager=self.sync_manager),
         )
-        self.add_view("calendario", "Calendario de Guardias", VistaCalendario(self.session))
+        self.add_view(
+            "calendario",
+            "Calendario de Guardias",
+            VistaCalendario(self.session)
+        )
 
         # PERSONAL
         self.add_view(
@@ -157,11 +180,15 @@ class CCleanerMainWindow(QMainWindow):
             "Importar / Exportar Datos",
             ImportExportForm(self.session),
         )
-        self.add_view("estadisticas", "Estadísticas", PanelEstadisticas(self.session))
         self.add_view(
-            "observabilidad",
-            "Panel de Observabilidad",
-            self.create_observabilidad_view(),
+            "reportes",
+            "Generador de Reportes",
+            ReportesForm()
+        )
+        self.add_view(
+            "estadisticas",
+            "Estadísticas",
+            PanelEstadisticas(self.session)
         )
 
     def add_view(self, section: str, title: str, content_widget: QWidget):
@@ -175,17 +202,65 @@ class CCleanerMainWindow(QMainWindow):
         if section in self.widgets:
             self.content_stack.setCurrentWidget(self.widgets[section])
 
-    def create_observabilidad_view(self) -> QWidget:
-        """Vista de observabilidad"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
+    def connect_signals(self):
+        """Conectar señales de los widgets"""
+        # Dashboard - conectar botones de acceso rápido
+        dashboard_widget = None
+        notificaciones_widget = None
 
-        label = QLabel("Panel de Observabilidad - Próximamente")
-        label.setObjectName("heading2")
-        layout.addWidget(label)
+        # Buscar los widgets dentro de los wrappers
+        for key, wrapper in self.widgets.items():
+            if key == "dashboard":
+                # El ContentWrapper tiene un scroll con un container
+                scroll = wrapper.findChild(QScrollArea)
+                if scroll and scroll.widget():
+                    container = scroll.widget()
+                    dashboard_widget = container.findChild(DashboardResumen)
+            elif key == "notificaciones":
+                scroll = wrapper.findChild(QScrollArea)
+                if scroll and scroll.widget():
+                    container = scroll.widget()
+                    notificaciones_widget = container.findChild(
+                        NotificacionesPanel
+                    )
 
-        info = QLabel("Aquí se mostrarán:\n" "• Logs del sistema\n" "• Métricas de uso")
-        layout.addWidget(info)
-        layout.addStretch()
+        if dashboard_widget:
+            dashboard_widget.btn_generar.clicked.connect(
+                lambda: self.sidebar.set_active_section("asignacion")
+            )
+            dashboard_widget.btn_calendario.clicked.connect(
+                lambda: self.sidebar.set_active_section("calendario")
+            )
+            dashboard_widget.btn_ausencias.clicked.connect(
+                lambda: self.sidebar.set_active_section("ausencias")
+            )
+            dashboard_widget.btn_profesores.clicked.connect(
+                lambda: self.sidebar.set_active_section("profesores")
+            )
+            dashboard_widget.btn_exportar.clicked.connect(
+                lambda: self.sidebar.set_active_section("importar")
+            )
+            dashboard_widget.btn_reportes.clicked.connect(
+                lambda: self.sidebar.set_active_section("reportes")
+            )
 
-        return widget
+        if notificaciones_widget:
+            notificaciones_widget.accion_notificacion.connect(
+                self.manejar_accion_notificacion
+            )
+
+    def manejar_accion_notificacion(self, tipo: str):
+        """
+        Maneja acciones desde notificaciones.
+
+        Args:
+            tipo: Tipo de notificación que emitió la acción
+        """
+        if tipo == "profesor_sin_guardias":
+            self.sidebar.set_active_section("profesores")
+        elif tipo == "exceso_carga":
+            self.sidebar.set_active_section("calendario")
+        elif tipo == "ausencias_activas":
+            self.sidebar.set_active_section("ausencias")
+        elif tipo in ["slots_sin_cubrir", "baja_cobertura"]:
+            self.sidebar.set_active_section("asignacion")
