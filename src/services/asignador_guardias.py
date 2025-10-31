@@ -1121,137 +1121,146 @@ def generar_calendario_guardias(
     swaps_fase5b = 0
     total_slots_restantes = len(slots_restantes)
 
-    for idx_f5, slot in enumerate(slots_restantes):
-        # Reporte de progreso cada 10 slots
-        if idx_f5 % 10 == 0 and total_slots_restantes > 0:
-            progreso_f5 = 85 + int((idx_f5 / total_slots_restantes) * 10)
-            reportar_progreso(
-                progreso_f5,
-                f"Fase 5: Procesando slot {idx_f5 + 1}/{total_slots_restantes}..."
-            )
+    # ALGORITMO v2.9: Solo procesar si hay slots pendientes Y no se alcanzó 100%
+    if len(calendario) >= total_slots:
+        logger.info("  ✓ Todos los slots cubiertos (100%), saltando Fase 5B")
+        slots_sin_cubrir_fase5 = []
+    elif total_slots_restantes > 0:
+        for idx_f5, slot in enumerate(slots_restantes):
+            # Reporte de progreso cada 10 slots
+            if idx_f5 % 10 == 0 and total_slots_restantes > 0:
+                progreso_f5 = 85 + int((idx_f5 / total_slots_restantes) * 10)
+                reportar_progreso(
+                    progreso_f5,
+                    f"Fase 5: Procesando slot {idx_f5 + 1}/{total_slots_restantes}..."
+                )
 
-        # ESTRATEGIA 1: Asignación directa con cuotas relajadas
-        elegibles = _obtener_profesores_elegibles(
-            profesores=profesores,
-            slot=slot,
-            asignadas=asignadas,
-            cuotas={p.id: 999 for p in profesores},  # Cuotas muy altas
-            guardias_por_slot_prof=guardias_por_slot_prof,
-            guardias_por_dia_prof=guardias_por_dia_prof,
-            session=session,
-            respetar_cuotas=False,  # IGNORAR cuotas (soft constraint)
-            permitir_multiples_guardias_dia=False  # RESPETAR día único (HARD constraint)
-        )
-
-        if elegibles:
-            elegido = _seleccionar_profesor_optimizado(
-                elegibles=elegibles,
+            # ESTRATEGIA 1: Asignación directa con cuotas relajadas
+            elegibles = _obtener_profesores_elegibles(
+                profesores=profesores,
                 slot=slot,
                 asignadas=asignadas,
-                cuotas=cuotas_dinamicas,
-                cuotas_ideales=cuotas_ideales,
-                ultimo_dia_prof=ultimo_dia_prof,
-                ultimo_recreo_prof=ultimo_recreo_prof,
-                zona_preferida_prof=zona_preferida_prof,
-                total_slots=total_slots
+                cuotas={p.id: 999 for p in profesores},  # Cuotas muy altas
+                guardias_por_slot_prof=guardias_por_slot_prof,
+                guardias_por_dia_prof=guardias_por_dia_prof,
+                session=session,
+                respetar_cuotas=False,  # IGNORAR cuotas (soft constraint)
+                permitir_multiples_guardias_dia=False  # RESPETAR día único (HARD constraint)
             )
 
-            _registrar_guardia(
-                calendario, elegido, slot, asignadas,
-                ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
-                zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-            )
-            continue
-
-        # ESTRATEGIA 2: SWAP - Buscar profesor con guardia en otro día que pueda hacer swap
-        swap_exitoso = False
-        for prof in profesores:
-            # Verificar si prof puede hacer este slot (ignorando temporalmente día ocupado)
-            if prof.turno not in ("completo", slot.turno):
-                continue
-
-            # Verificar que no tenga ya este slot específico
-            if (prof.id, slot.fecha, slot.turno, slot.recreo_id, slot.zona_id) in guardias_por_slot_prof:
-                continue
-
-            # Buscar una guardia existente de este profesor en OTRA fecha
-            guardias_prof = [g for g in calendario if g.profesor_id == prof.id and g.fecha != slot.fecha]
-
-            for guardia_existente in guardias_prof:
-                # Verificar que otra persona pueda tomar la guardia existente
-                slot_existente = Slot(
-                    fecha=guardia_existente.fecha,
-                    turno=guardia_existente.turno,
-                    recreo_id=guardia_existente.recreo,
-                    zona_id=guardia_existente.zona_id
-                )
-
-                # Buscar reemplazo para slot_existente (que NO sea prof)
-                otros_profesores = [p for p in profesores if p.id != prof.id]
-
-                # Temporalmente liberar los slots para verificación
-                guardias_por_slot_prof_temp = guardias_por_slot_prof.copy()
-                guardias_por_dia_prof_temp = guardias_por_dia_prof.copy()
-
-                # Liberar slot existente
-                key_existente = (prof.id, slot_existente.fecha, slot_existente.turno,
-                                slot_existente.recreo_id, slot_existente.zona_id)
-                if key_existente in guardias_por_slot_prof_temp:
-                    del guardias_por_slot_prof_temp[key_existente]
-
-                key_dia_existente = (prof.id, slot_existente.fecha)
-                if key_dia_existente in guardias_por_dia_prof_temp:
-                    del guardias_por_dia_prof_temp[key_dia_existente]
-
-                reemplazos = _obtener_profesores_elegibles(
-                    profesores=otros_profesores,
-                    slot=slot_existente,
+            if elegibles:
+                elegido = _seleccionar_profesor_optimizado(
+                    elegibles=elegibles,
+                    slot=slot,
                     asignadas=asignadas,
-                    cuotas={p.id: 999 for p in profesores},
-                    guardias_por_slot_prof=guardias_por_slot_prof_temp,
-                    guardias_por_dia_prof=guardias_por_dia_prof_temp,
-                    session=session,
-                    respetar_cuotas=False,
-                    permitir_multiples_guardias_dia=False
+                    cuotas=cuotas_dinamicas,
+                    cuotas_ideales=cuotas_ideales,
+                    ultimo_dia_prof=ultimo_dia_prof,
+                    ultimo_recreo_prof=ultimo_recreo_prof,
+                    zona_preferida_prof=zona_preferida_prof,
+                    total_slots=total_slots
                 )
 
-                if reemplazos:
-                    # SWAP exitoso: reemplazar guardia_existente con reemplazo
-                    reemplazo = reemplazos[0]
+                _registrar_guardia(
+                    calendario, elegido, slot, asignadas,
+                    ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
+                    zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
+                )
+                continue
 
-                    # Actualizar la guardia existente
-                    guardia_existente.profesor_id = reemplazo.id
+            # ESTRATEGIA 2: SWAP - Buscar profesor con guardia en otro día que pueda hacer swap
+            swap_exitoso = False
+            for prof in profesores:
+                # Verificar si prof puede hacer este slot (ignorando temporalmente día ocupado)
+                if prof.turno not in ("completo", slot.turno):
+                    continue
 
-                    # Actualizar diccionarios: eliminar prof, agregar reemplazo
-                    if key_existente in guardias_por_slot_prof:
-                        del guardias_por_slot_prof[key_existente]
-                    if key_dia_existente in guardias_por_dia_prof:
-                        del guardias_por_dia_prof[key_dia_existente]
+                # Verificar que no tenga ya este slot específico
+                if (prof.id, slot.fecha, slot.turno, slot.recreo_id,
+                        slot.zona_id) in guardias_por_slot_prof:
+                    continue
 
-                    guardias_por_slot_prof[(reemplazo.id, slot_existente.fecha,
-                                          slot_existente.turno, slot_existente.recreo_id,
-                                          slot_existente.zona_id)] = True
-                    guardias_por_dia_prof[(reemplazo.id, slot_existente.fecha)] = True
+                # Buscar una guardia existente de este profesor en OTRA fecha
+                guardias_prof = [
+                    g for g in calendario
+                    if g.profesor_id == prof.id and g.fecha != slot.fecha
+                ]
 
-                    asignadas[prof.id] -= 1
-                    asignadas[reemplazo.id] += 1
-
-                    # Ahora asignar prof al slot original
-                    _registrar_guardia(
-                        calendario, prof, slot, asignadas,
-                        ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
-                        zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
+                for guardia_existente in guardias_prof:
+                    # Verificar que otra persona pueda tomar la guardia existente
+                    slot_existente = Slot(
+                        fecha=guardia_existente.fecha,
+                        turno=guardia_existente.turno,
+                        recreo_id=guardia_existente.recreo,
+                        zona_id=guardia_existente.zona_id
                     )
 
-                    swap_exitoso = True
-                    swaps_fase5b += 1
+                    # Buscar reemplazo para slot_existente (que NO sea prof)
+                    otros_profesores = [p for p in profesores if p.id != prof.id]
+
+                    # Temporalmente liberar los slots para verificación
+                    guardias_por_slot_prof_temp = guardias_por_slot_prof.copy()
+                    guardias_por_dia_prof_temp = guardias_por_dia_prof.copy()
+
+                    # Liberar slot existente
+                    key_existente = (prof.id, slot_existente.fecha, slot_existente.turno,
+                                    slot_existente.recreo_id, slot_existente.zona_id)
+                    if key_existente in guardias_por_slot_prof_temp:
+                        del guardias_por_slot_prof_temp[key_existente]
+
+                    key_dia_existente = (prof.id, slot_existente.fecha)
+                    if key_dia_existente in guardias_por_dia_prof_temp:
+                        del guardias_por_dia_prof_temp[key_dia_existente]
+
+                    reemplazos = _obtener_profesores_elegibles(
+                        profesores=otros_profesores,
+                        slot=slot_existente,
+                        asignadas=asignadas,
+                        cuotas={p.id: 999 for p in profesores},
+                        guardias_por_slot_prof=guardias_por_slot_prof_temp,
+                        guardias_por_dia_prof=guardias_por_dia_prof_temp,
+                        session=session,
+                        respetar_cuotas=False,
+                        permitir_multiples_guardias_dia=False
+                    )
+
+                    if reemplazos:
+                        # SWAP exitoso: reemplazar guardia_existente con reemplazo
+                        reemplazo = reemplazos[0]
+
+                        # Actualizar la guardia existente
+                        guardia_existente.profesor_id = reemplazo.id
+
+                        # Actualizar diccionarios: eliminar prof, agregar reemplazo
+                        if key_existente in guardias_por_slot_prof:
+                            del guardias_por_slot_prof[key_existente]
+                        if key_dia_existente in guardias_por_dia_prof:
+                            del guardias_por_dia_prof[key_dia_existente]
+
+                        guardias_por_slot_prof[(reemplazo.id, slot_existente.fecha,
+                                              slot_existente.turno, slot_existente.recreo_id,
+                                              slot_existente.zona_id)] = True
+                        guardias_por_dia_prof[(reemplazo.id, slot_existente.fecha)] = True
+
+                        asignadas[prof.id] -= 1
+                        asignadas[reemplazo.id] += 1
+
+                        # Ahora asignar prof al slot original
+                        _registrar_guardia(
+                            calendario, prof, slot, asignadas,
+                            ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
+                            zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
+                        )
+
+                        swap_exitoso = True
+                        swaps_fase5b += 1
+                        break
+
+                if swap_exitoso:
                     break
 
-            if swap_exitoso:
-                break
-
-        if not swap_exitoso:
-            slots_sin_cubrir_fase5.append(slot)
+            if not swap_exitoso:
+                slots_sin_cubrir_fase5.append(slot)
 
     guardias_fase5 = len(calendario)
     cobertura_fase5 = (guardias_fase5 / total_slots * 100) if total_slots > 0 else 0
@@ -1420,14 +1429,20 @@ def generar_calendario_guardias(
     logger.info("-" * 80)
     reportar_progreso(97, "Fase 7: Completando slots restantes...")
 
-    # Obtener slots aún sin cubrir
-    slots_cubiertos_fase6 = {(g.fecha, g.turno, g.recreo, g.zona_id) for g in calendario}
-    slots_pendientes = [
-        s for s in slots_ordenados
-        if (s.fecha, s.turno, s.recreo_id, s.zona_id) not in slots_cubiertos_fase6
-    ]
+    # ALGORITMO v2.9: Verificar si ya se alcanzó 100% de cobertura
+    if len(calendario) >= total_slots:
+        logger.info("  ✓ Todos los slots cubiertos (100%), saltando Fase 7")
+        slots_pendientes = []
+        total_asignados_fase7 = 0
+    else:
+        # Obtener slots aún sin cubrir
+        slots_cubiertos_fase6 = {(g.fecha, g.turno, g.recreo, g.zona_id) for g in calendario}
+        slots_pendientes = [
+            s for s in slots_ordenados
+            if (s.fecha, s.turno, s.recreo_id, s.zona_id) not in slots_cubiertos_fase6
+        ]
 
-    logger.info(f"Slots pendientes: {len(slots_pendientes)}/{total_slots}")
+        logger.info(f"Slots pendientes: {len(slots_pendientes)}/{total_slots}")
 
     if slots_pendientes:
         # PASADA 1: Priorizar profesores con 0 guardias
