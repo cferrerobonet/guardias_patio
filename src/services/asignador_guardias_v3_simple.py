@@ -261,11 +261,11 @@ def generar_guardias_v3_simple(
     logger.info("-" * 80)
     reportar_progreso(0, "Paso 1: Calculando cuotas...")
 
-    profesores = (
-        session.query(Profesor).filter(Profesor.configuracion_id == configuracion_id).all()
-    )
+    # Obtener todos los profesores (no hay filtro por configuracion_id en Profesor)
+    profesores = session.query(Profesor).all()
 
-    cuotas = calcular_guardias_por_profesor(session, configuracion_id)
+    # Calcular cuotas (la función no recibe configuracion_id, usa la config actual)
+    cuotas = calcular_guardias_por_profesor(session)
     logger.info(f"  ✓ {len(profesores)} profesores")
     logger.info(f"  ✓ Cuotas calculadas: {sum(cuotas.values())} guardias totales")
 
