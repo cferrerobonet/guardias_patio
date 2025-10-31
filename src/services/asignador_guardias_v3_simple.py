@@ -121,7 +121,8 @@ def _generar_todos_slots(config: Configuracion, session: Session) -> List[SlotV3
     """Genera todos los slots posibles del calendario."""
     # listar_dias_lectivos solo recibe config como parámetro
     dias_lectivos = listar_dias_lectivos(config)
-    zonas = session.query(Zona).filter(Zona.configuracion_id == config.id).all()
+    # Zona no tiene configuracion_id, obtener todas
+    zonas = session.query(Zona).all()
 
     # Parse recreos config
     import json
