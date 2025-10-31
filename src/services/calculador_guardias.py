@@ -74,7 +74,7 @@ def _festivos_automaticos_en_rango(
 ) -> set:
     """Genera el conjunto de fechas no lectivas automáticas dentro del rango.
 
-    Incluye: 9/10, 12/10, 1/11, 6/12, 8/12, 22/12–6/01, 16–19/03, Jueves Santo–+12, 1/05.
+    Incluye: 9/10, 12/10, 1/11, 6/12, 8/12, 22/12–6/01, 16–19/03, Jueves Santo–+11, 1/05.
     """
     no_lectivos = set()
     if inicio > fin:
@@ -116,10 +116,10 @@ def _festivos_automaticos_en_rango(
         # for day_ in range(16, 20):
         #     add_if_in_range(date(y, 3, day_))
 
-        # Jueves Santo a +12 días
+        # Jueves Santo a +11 días
         easter = _easter_sunday(y)
         jueves_santo = easter - timedelta(days=3)
-        for delta in range(0, 13):
+        for delta in range(0, 12):
             add_if_in_range(jueves_santo + timedelta(days=delta))
 
     return no_lectivos
@@ -265,7 +265,8 @@ def calcular_factor_participacion(
             return 1.0
 
         # Calcular factor ponderado por horas en cada turno
-        # Factor = (horas_mañana/total × recreos_mañana + horas_tarde/total × recreos_tarde) / recreos_totales
+        # Factor = (horas_mañana/total × recreos_mañana +
+        #           horas_tarde/total × recreos_tarde) / recreos_totales
         factor_manana = (horas_manana / horas_totales) * (recreos_manana / recreos_totales)
         factor_tarde = (horas_tarde / horas_totales) * (recreos_tarde / recreos_totales)
 
