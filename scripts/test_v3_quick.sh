@@ -2,8 +2,8 @@
 # Test rápido del algoritmo v3.0
 # Ejecuta solo la generación de slots para detectar errores
 
-# Ruta a la BD de 75 profesores
-DB_PATH="../data/users/66f06c9433d74e80/guardias_patio.db"
+# Ruta a la BD de Jefatura_FpBach (67 profesores)
+DB_PATH="../data/users/0db13e2857239ed8/guardias_patio.db"
 
 cd "$(dirname "$0")/../src" || exit 1
 
