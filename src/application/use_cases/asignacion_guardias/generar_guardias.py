@@ -6,9 +6,6 @@ Genera todas las guardias del curso y las guarda en la base de datos.
 
 from typing import Callable, Optional
 
-from sqlalchemy.orm import Session
-
-from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
 from core.observability import with_metrics
 from models.models import Configuracion, Guardia
 from services.asignador_guardias import (
@@ -17,8 +14,11 @@ from services.asignador_guardias import (
 )
 from services.asignador_guardias_v3_simple import generar_guardias_v3_simple
 from services.calculador_guardias import obtener_estadisticas
+from sqlalchemy.orm import Session
 from utils.exceptions import BusinessLogicError
 from utils.logger import get_logger
+
+from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
 
 logger = get_logger(__name__)
 

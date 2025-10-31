@@ -25,6 +25,7 @@ class ConfiguracionDTO(BaseModel):
     activar_festivos_automaticos: bool = True
     dias_no_lectivos_personalizados: Optional[str] = None
     recreos_config: Optional[str] = None
+    algoritmo_asignacion: str = "v2.9"  # Nuevo en v3.0
 
     class Config:
         """Configuración de Pydantic."""
@@ -45,6 +46,7 @@ class ActualizarConfiguracionDTO(BaseModel):
     activar_festivos_automaticos: Optional[bool] = None
     dias_no_lectivos_personalizados: Optional[str] = None
     recreos_config: Optional[str] = None
+    algoritmo_asignacion: Optional[str] = None  # Nuevo en v3.0
 
     class Config:
         """Configuración de Pydantic."""

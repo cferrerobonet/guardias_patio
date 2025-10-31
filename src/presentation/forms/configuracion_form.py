@@ -15,6 +15,7 @@ from core.exceptions import NotFoundError
 from database.db_manager import get_current_user_id
 from PyQt6.QtCore import QDate, Qt, QTime
 from PyQt6.QtWidgets import (
+    QComboBox,
     QDateEdit,
     QGroupBox,
     QHBoxLayout,
@@ -298,6 +299,25 @@ class ConfiguracionForm(BaseForm):
         self.ajuste_no_tutores_input.setPlaceholderText("1.00")
         self.ajuste_no_tutores_input.setStyleSheet(styles.STYLE_INPUT)
         layout.addWidget(self.ajuste_no_tutores_input)
+
+        # Selector de algoritmo
+        label_algoritmo = QLabel("Algoritmo de asignación:")
+        label_algoritmo.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        layout.addWidget(label_algoritmo)
+
+        self.algoritmo_combo = QComboBox()
+        self.algoritmo_combo.addItem(
+            "v2.9 - Clásico (7 fases)", "v2.9"
+        )
+        self.algoritmo_combo.addItem(
+            "v3.0 - Simple Determinista ⚡", "v3.0"
+        )
+        self.algoritmo_combo.setStyleSheet(styles.STYLE_INPUT)
+        self.algoritmo_combo.setToolTip(
+            "v2.9: Algoritmo clásico de 7 fases (CSP, Simulated Annealing)\n"
+            "v3.0: Algoritmo simple determinista que garantiza 100% cobertura"
+        )
+        layout.addWidget(self.algoritmo_combo)
 
         grupo.setLayout(layout)
         return grupo
@@ -736,7 +756,8 @@ class ConfiguracionForm(BaseForm):
                     (self.festivos_auto_input.text() or "1").strip() in ("1", "true", "True")
                 ),
                 dias_no_lectivos_personalizados=(self.no_lectivos_input.text() or "").strip(),
-                recreos_config=""
+                recreos_config="",
+                algoritmo_asignacion=self.algoritmo_combo.currentData()  # Nuevo en v3.0
             )
 
             # Ejecutar Use Case
@@ -817,6 +838,12 @@ class ConfiguracionForm(BaseForm):
             self.ajuste_no_tutores_input.setText(str(config.ajuste_no_tutores))
             self.festivos_auto_input.setText("1" if config.activar_festivos_automaticos else "0")
             self.no_lectivos_input.setText(config.dias_no_lectivos_personalizados or "")
+
+            # Cargar selector de algoritmo (nuevo en v3.0)
+            algoritmo = getattr(config, 'algoritmo_asignacion', 'v2.9')
+            index = self.algoritmo_combo.findData(algoritmo)
+            if index >= 0:
+                self.algoritmo_combo.setCurrentIndex(index)
 
             self.logger.info("Configuración cargada correctamente")
 

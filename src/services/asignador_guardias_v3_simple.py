@@ -319,7 +319,7 @@ def generar_guardias_v3_simple(
     if len(profesores_ordenados) > 10:
         logger.info(f"    ... ({len(profesores_ordenados) - 10} más)")
 
-    reportar_progreso(30, f"Paso 3: Profesores ordenados")
+    reportar_progreso(30, "Paso 3: Profesores ordenados")
 
     # PASO 4: ASIGNAR GUARDIAS (30% - 90%)
     logger.info("")
