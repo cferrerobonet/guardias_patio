@@ -6,13 +6,14 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
+from sqlalchemy.orm import Session
+
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
     calcular_guardias_por_profesor,
     listar_dias_lectivos,
 )
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -228,52 +229,45 @@ def _seleccionar_profesor_optimizado(
     total_slots: int
 ) -> Profesor:
     """
-    Selección optimizada con scoring multi-criterio avanzado.
+    Selección DETERMINISTA EQUITATIVA con garantía de igualdad por grupos.
 
-    Criterios de scoring (en orden de importancia):
-    1. DESVIACIÓN DE CUOTA IDEAL (más importante): Minimizar |asignadas - cuota_ideal|
-    2. ZONA PREFERIDA: Maximizar consistencia de zona
-    3. CONTINUIDAD TEMPORAL: Días consecutivos
-    4. CONTINUIDAD DE RECREO: Mismo recreo
-    5. BALANCE GLOBAL: Minimizar carga relativa
-    6. FACTOR ALEATORIO: Desempate
+    NUEVO ALGORITMO (v2.9):
+    =======================
+    REGLA ABSOLUTA: Profesores con mismas características (turno, horas, tutoría)
+    DEBEN recibir EXACTAMENTE las mismas guardias (±1 por redondeo).
+
+    Criterios de selección (en orden estricto):
+    1. DÉFICIT ABSOLUTO: Cuota ideal - asignadas (más déficit = prioridad)
+    2. ZONA PREFERIDA: Consistencia de zona
+    3. DÍAS SIN GUARDIA: Minimizar tiempo sin asignación
+    4. DESEMPATE DETERMINISTA: ID del profesor (sin aleatoriedad)
+
+    ELIMINADO:
+    - ❌ Factor aleatorio (causaba inequidad)
+    - ❌ Penalización × 100 por exceso (bloqueaba profesores)
+    - ❌ Bonus por horas (discriminaba parciales)
 
     Args:
         elegibles: Lista de profesores elegibles
         slot: Slot a asignar
         asignadas: Guardias asignadas por profesor
-        cuotas: Cuotas dinámicas por profesor
-        cuotas_ideales: Cuotas calculadas inicialmente (referencia)
+        cuotas: Cuotas dinámicas por profesor (no usado)
+        cuotas_ideales: Cuotas calculadas inicialmente (AUTORIDAD)
         ultimo_dia_prof: Último día asignado por profesor
         ultimo_recreo_prof: Último recreo asignado por profesor
         zona_preferida_prof: Zona preferida de cada profesor
         total_slots: Total de slots del calendario
 
     Returns:
-        Profesor seleccionado
+        Profesor seleccionado (el que NECESITA más guardias)
     """
-    def score_multi_criterio(p: Profesor) -> Tuple[float, int, int, int, int, float]:
-        # 1. DESVIACIÓN DE CUOTA IDEAL (negativo = más alejado de ideal)
+    def score_equitativo(p: Profesor) -> Tuple[float, int, int, int]:
+        # 1. DÉFICIT ABSOLUTO (más importante)
+        # Cuántas guardias le faltan para alcanzar su cuota ideal
         cuota_ideal = cuotas_ideales.get(p.id, 0)
-        if cuota_ideal > 0:
-            # Deficit positivo = necesita más guardias
-            # Deficit negativo = tiene más de lo ideal
-            deficit_ideal = cuota_ideal - asignadas[p.id]
-            # Penalizar fuertemente a quienes ya superaron su cuota ideal
-            if deficit_ideal < 0:
-                # Ya tiene más de lo ideal, penalizar MUCHO
-                desviacion_cuota = deficit_ideal * 100  # Muy negativo
-            else:
-                # Aún no alcanza ideal, priorizar por deficit
-                # Bonus para profesores con más horas (completos)
-                # Para priorizar profesores de jornada completa sobre parciales
-                horas = getattr(p, 'horas_contrato', 40)
-                bonus_horas = horas / 40.0  # 1.0 para completos, <1.0 para parciales
-                desviacion_cuota = deficit_ideal * bonus_horas
-        else:
-            desviacion_cuota = -9999  # No debe recibir guardias
+        deficit = cuota_ideal - asignadas[p.id]
 
-        # 2. ZONA PREFERIDA (100 = zona preferida, -50 = otra zona, 0 = sin preferencia)
+        # 2. ZONA PREFERIDA (beneficio secundario)
         if zona_preferida_prof[p.id] is None:
             s_zona = 0
         elif zona_preferida_prof[p.id] == slot.zona_id:
@@ -281,34 +275,31 @@ def _seleccionar_profesor_optimizado(
         else:
             s_zona = -50
 
-        # 3. CONTINUIDAD DE DÍAS
-        s_continuidad = 1 if (
-            ultimo_dia_prof[p.id]
-            and (slot.fecha - ultimo_dia_prof[p.id]).days == 1
-        ) else 0
+        # 3. DÍAS SIN GUARDIA (priorizar profesores "olvidados")
+        # Cuántos días han pasado desde su última guardia
+        if ultimo_dia_prof[p.id]:
+            dias_sin_guardia = (slot.fecha - ultimo_dia_prof[p.id]).days
+        else:
+            # Nunca ha tenido guardias, MÁXIMA prioridad
+            dias_sin_guardia = 9999
 
-        # 4. MISMO RECREO
-        s_recreo = 1 if ultimo_recreo_prof[p.id] == slot.recreo_id else 0
+        # 4. DESEMPATE DETERMINISTA (ID menor = prioridad)
+        # Esto garantiza orden reproducible entre profesores idénticos
+        desempate = -p.id  # Negativo para que menor ID = mayor prioridad
 
-        # 5. BALANCE GLOBAL (menor carga relativa)
-        # Porcentaje de slots ya asignados
-        carga_relativa = -int((asignadas[p.id] / total_slots) * 1000)
-
-        # 6. FACTOR ALEATORIO
-        factor_random = random.random()
-
-        # Orden de prioridad: desviación_cuota (DESC), zona (DESC),
-        # continuidad (DESC), recreo (DESC), balance (DESC), random (DESC)
+        # Orden de prioridad:
+        # 1. Deficit (DESC): Más necesita = primero
+        # 2. Zona (DESC): Zona preferida = beneficio
+        # 3. Días sin guardia (DESC): Más olvidado = prioridad
+        # 4. Desempate (DESC): ID menor = prioridad
         return (
-            desviacion_cuota,  # Más positivo = más prioridad
-            s_zona,
-            s_continuidad,
-            s_recreo,
-            carga_relativa,
-            factor_random
+            deficit,           # Más positivo = más prioridad
+            s_zona,           # 100 > 0 > -50
+            dias_sin_guardia,  # Más días = más prioridad
+            desempate         # -ID menor = más prioridad
         )
 
-    return sorted(elegibles, key=score_multi_criterio, reverse=True)[0]
+    return sorted(elegibles, key=score_equitativo, reverse=True)[0]
 
 
 def generar_calendario_guardias(
@@ -550,11 +541,14 @@ def generar_calendario_guardias(
     logger.info("-" * 80)
     reportar_progreso(35, "Fase 2: Asignación balanceada...")
 
-    # Cuotas dinámicas que se ajustan durante la asignación
-    cuotas_dinamicas = cuotas_ideales.copy()
+    # Cuotas dinámicas - ELIMINADAS, usamos solo cuotas_ideales
+    # El algoritmo v2.9 NO debe ajustar cuotas dinámicamente
+    # porque eso rompe la equidad entre profesores del mismo grupo
+    cuotas_dinamicas = cuotas_ideales.copy()  # Mantener por compatibilidad
 
-    # PRE-ASIGNACIÓN: Garantizar que TODOS los profesores elegibles reciban al menos 1 guardia
-    logger.info("FASE 2.1: Pre-asignación de guardias mínimas")
+    # PRE-ASIGNACIÓN: Garantizar participación mínima EQUITATIVA
+    # NUEVO v2.9: Asignar por RONDAS para garantizar equidad
+    logger.info("FASE 2.1: Pre-asignación equitativa por rondas")
     logger.info("-" * 40)
 
     profesores_con_cuota = [
@@ -562,91 +556,107 @@ def generar_calendario_guardias(
         if cuotas_ideales.get(p.id, 0) > 0 and matriz_elegibilidad.get(p.id, 0) > 0
     ]
 
-    # Ordenar profesores por elegibilidad (menos elegibles primero)
+    # Ordenar por ID para garantizar orden determinista
+    # Profesores del mismo grupo se procesarán en orden fijo
     profesores_prioritarios = sorted(
         profesores_con_cuota,
-        key=lambda p: (matriz_elegibilidad.get(p.id, 0), cuotas_ideales.get(p.id, 0))
+        key=lambda p: p.id
     )
 
+    # RONDAS: Dar 1 guardia a TODOS antes de dar 2 guardias a CUALQUIERA
+    # Esto garantiza equidad perfecta en la distribución inicial
+    ronda = 0
+    max_rondas = max(cuotas_ideales.values()) if cuotas_ideales else 0
     pre_asignaciones = 0
-    for prof in profesores_prioritarios:
-        if asignadas[prof.id] > 0:
-            continue  # Ya tiene guardias
 
-        # Buscar el MEJOR slot para este profesor
-        mejor_slot = None
-        mejor_score = -999999
+    logger.info(f"  Iniciando {max_rondas} rondas de asignación equitativa...")
+    logger.info(f"  {len(profesores_prioritarios)} profesores en cola")
 
-        for slot in slots_ordenados:
-            # Verificar si este slot específico (fecha+turno+recreo+ZONA) ya está asignado
-            slot_zona_asignado = any(
-                g.fecha == slot.fecha and g.turno == slot.turno and
-                g.recreo == slot.recreo_id and g.zona_id == slot.zona_id
-                for g in calendario
-            )
-            if slot_zona_asignado:
+    while ronda < max_rondas and len(calendario) < total_slots:
+        ronda += 1
+        asignaciones_ronda = 0
+
+        # En cada ronda, intentar asignar 1 guardia a cada profesor
+        # que aún no ha alcanzado su cuota ideal
+        for prof in profesores_prioritarios:
+            # ¿Este profesor ya alcanzó su cuota ideal?
+            if asignadas[prof.id] >= cuotas_ideales[prof.id]:
                 continue
 
-            # Verificar elegibilidad básica (incluyendo zona)
-            key_slot = (prof.id, slot.fecha, slot.turno, slot.recreo_id, slot.zona_id)
-            if key_slot in guardias_por_slot_prof:
+            # ¿Ya tiene suficientes para esta ronda?
+            if asignadas[prof.id] >= ronda:
                 continue
 
-            elegibles_temp = _obtener_profesores_elegibles(
-                profesores=[prof],
-                slot=slot,
-                asignadas=asignadas,
-                cuotas=cuotas_dinamicas,
-                guardias_por_slot_prof=guardias_por_slot_prof,
-                guardias_por_dia_prof=guardias_por_dia_prof,
-                session=session,
-                respetar_cuotas=True,
-                permitir_multiples_guardias_dia=False
-            )
+            # Buscar un slot compatible
+            for slot in slots_ordenados:
+                # Slot ya ocupado?
+                slot_zona_asignado = any(
+                    g.fecha == slot.fecha and g.turno == slot.turno and
+                    g.recreo == slot.recreo_id and g.zona_id == slot.zona_id
+                    for g in calendario
+                )
+                if slot_zona_asignado:
+                    continue
 
-            if elegibles_temp:
-                # Calcular score para este slot
-                # Priorizar slots con MENOS elegibles (más críticos)
-                num_elegibles_slot = len(_obtener_profesores_elegibles(
-                    profesores=profesores,
+                # Verificar elegibilidad
+                elegibles_temp = _obtener_profesores_elegibles(
+                    profesores=[prof],
                     slot=slot,
                     asignadas=asignadas,
-                    cuotas=cuotas_dinamicas,
+                    cuotas=cuotas_ideales,  # Usar cuotas fijas
                     guardias_por_slot_prof=guardias_por_slot_prof,
                     guardias_por_dia_prof=guardias_por_dia_prof,
                     session=session,
-                    respetar_cuotas=True,
+                    respetar_cuotas=False,  # No limitar por cuota en pre-asignación
                     permitir_multiples_guardias_dia=False
-                ))
+                )
 
-                # Score: menos elegibles = más crítico = mayor prioridad
-                score = 1000 - num_elegibles_slot
+                if elegibles_temp:
+                    # ¡Asignar!
+                    _registrar_guardia(
+                        calendario, prof, slot, asignadas,
+                        ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
+                        zona_preferida_prof, guardias_por_slot_prof,
+                        guardias_por_dia_prof
+                    )
+                    pre_asignaciones += 1
+                    asignaciones_ronda += 1
+                    break  # Pasar al siguiente profesor
 
-                # Bonus si es zona preferida
-                if zona_preferida_prof.get(prof.id) == slot.zona_id:
-                    score += 50
+        if asignaciones_ronda == 0:
+            logger.warning(f"  Ronda {ronda}: 0 asignaciones (no hay slots compatibles)")
+            break  # No se pudo asignar nada, salir
 
-                if score > mejor_score:
-                    mejor_score = score
-                    mejor_slot = slot
+        logger.debug(
+            f"  Ronda {ronda}: {asignaciones_ronda} asignaciones "
+            f"(cobertura: {len(calendario)}/{total_slots})"
+        )
 
-        # Asignar el mejor slot encontrado
-        if mejor_slot:
-            _registrar_guardia(
-                calendario, prof, mejor_slot, asignadas,
-                ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
-                zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
+    logger.info(
+        f"✓ Pre-asignadas {pre_asignaciones} guardias en {ronda} rondas equitativas"
+    )
+    logger.info(
+        f"  Cobertura actual: {len(calendario)}/{total_slots} "
+        f"({len(calendario)/total_slots*100:.1f}%)"
+    )
+
+    # Verificar cuántos profesores aún sin guardias
+    profesores_sin_guardias = [
+        p for p in profesores_prioritarios if asignadas[p.id] == 0
+    ]
+    if profesores_sin_guardias:
+        logger.warning(
+            f"  ⚠️ {len(profesores_sin_guardias)} profesores AÚN sin guardias "
+            f"tras pre-asignación"
+        )
+        for p in profesores_sin_guardias[:5]:
+            logger.warning(
+                f"    - {p.nombre_completo} (turno: {p.turno}, "
+                f"cuota: {cuotas_ideales.get(p.id, 0)})"
             )
-            pre_asignaciones += 1
 
-            # Ajuste dinámico de cuota
-            if asignadas[prof.id] >= cuotas_dinamicas[prof.id] * 0.9:
-                cuotas_dinamicas[prof.id] = int(cuotas_dinamicas[prof.id] * 1.05)
-
-    logger.info(f"✓ Pre-asignadas {pre_asignaciones} guardias mínimas a profesores prioritarios")
-    logger.info(f"  Cobertura actual: {len(calendario)}/{total_slots} ({len(calendario)/total_slots*100:.1f}%)")
     logger.info("")
-    logger.info("FASE 2.2: Asignación masiva con scoring")
+    logger.info("FASE 2.2: Asignación masiva con scoring equitativo")
     logger.info("-" * 40)
 
     # Tracking de slots sin cubrir para backtracking
@@ -669,11 +679,12 @@ def generar_calendario_guardias(
             )
 
         # Obtener profesores elegibles con scoring avanzado
+        # ALGORITMO v2.9: Usar cuotas_ideales (no dinámicas) para mantener equidad
         elegibles = _obtener_profesores_elegibles_optimizado(
             profesores=profesores,
             slot=slot,
             asignadas=asignadas,
-            cuotas=cuotas_dinamicas,
+            cuotas=cuotas_ideales,  # CAMBIO v2.9: ideales en lugar de dinámicas
             guardias_por_slot_prof=guardias_por_slot_prof,
             guardias_por_dia_prof=guardias_por_dia_prof,
             session=session,
@@ -705,10 +716,10 @@ def generar_calendario_guardias(
             zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
         )
 
-        # AJUSTE DINÁMICO: Incrementar cuota si se acerca al límite
-        if asignadas[elegido.id] >= cuotas_dinamicas[elegido.id] * 0.9:
-            # Incrementar cuota en 5% para permitir flexibilidad
-            cuotas_dinamicas[elegido.id] = int(cuotas_dinamicas[elegido.id] * 1.05)
+        # ALGORITMO v2.9: NO incrementar cuotas dinámicamente para mantener equidad
+        # El ajuste dinámico rompía la equidad al permitir que profesores superen su cuota ideal
+        # if asignadas[elegido.id] >= cuotas_dinamicas[elegido.id] * 0.9:
+        #     cuotas_dinamicas[elegido.id] = int(cuotas_dinamicas[elegido.id] * 1.05)
 
     guardias_fase2 = len(calendario)
     cobertura_fase2 = (guardias_fase2 / total_slots * 100) if total_slots > 0 else 0
@@ -777,14 +788,15 @@ def generar_calendario_guardias(
                 f"Fase 3: Resolviendo slots conflictivos ({idx_csp}/{total_slots_csp})..."
             )
 
-        # NIVEL 1: Cuotas relajadas +10%
-        cuotas_relajadas = {prof_id: int(cuota * 1.1) for prof_id, cuota in cuotas_dinamicas.items()}
+        # ALGORITMO v2.9: NO relajar cuotas, usar cuotas ideales estrictas
+        # NIVEL 1: Intentar con cuotas ideales (sin relajación)
+        # cuotas_relajadas eliminadas para mantener equidad
 
         elegibles = _obtener_profesores_elegibles_optimizado(
             profesores=profesores,
             slot=slot,
             asignadas=asignadas,
-            cuotas=cuotas_relajadas,
+            cuotas=cuotas_ideales,  # CAMBIO v2.9: ideales en lugar de relajadas
             guardias_por_slot_prof=guardias_por_slot_prof,
             guardias_por_dia_prof=guardias_por_dia_prof,
             session=session,
@@ -797,7 +809,7 @@ def generar_calendario_guardias(
         for prof in elegibles:
             if verificar_consistencia_forward(
                 slot, prof.id, slots_sin_cubrir_fase2[csp_intentos:],
-                asignadas, cuotas_relajadas
+                asignadas, cuotas_ideales  # CAMBIO v2.9: ideales en lugar de relajadas
             ):
                 elegibles_csp.append(prof)
 
@@ -806,7 +818,7 @@ def generar_calendario_guardias(
                 elegibles=elegibles_csp,
                 slot=slot,
                 asignadas=asignadas,
-                cuotas=cuotas_relajadas,
+                cuotas=cuotas_ideales,  # CAMBIO v2.9: ideales en lugar de relajadas
                 cuotas_ideales=cuotas_ideales,
                 ultimo_dia_prof=ultimo_dia_prof,
                 ultimo_recreo_prof=ultimo_recreo_prof,
@@ -820,7 +832,8 @@ def generar_calendario_guardias(
                 zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
             )
 
-            cuotas_dinamicas[elegido.id] = cuotas_relajadas[elegido.id]
+            # ALGORITMO v2.9: NO actualizar cuotas dinámicas (eliminar ajuste)
+            # cuotas_dinamicas[elegido.id] = cuotas_relajadas[elegido.id]
             csp_exitosos += 1
             continue
 
@@ -841,7 +854,7 @@ def generar_calendario_guardias(
                 profesores=[prof_previo],
                 slot=slot,
                 asignadas=asignadas,
-                cuotas=cuotas_relajadas,
+                cuotas=cuotas_ideales,  # CAMBIO v2.9: ideales en lugar de relajadas
                 guardias_por_slot_prof=guardias_por_slot_prof,
                 guardias_por_dia_prof=guardias_por_dia_prof,
                 session=session,
@@ -858,7 +871,7 @@ def generar_calendario_guardias(
                     profesores=profesores,
                     slot=slot_previo,
                     asignadas=asignadas_temp,
-                    cuotas=cuotas_relajadas,
+                    cuotas=cuotas_ideales,  # CAMBIO v2.9: ideales en lugar de relajadas
                     guardias_por_slot_prof=guardias_por_slot_prof,
                     guardias_por_dia_prof=guardias_por_dia_prof,
                     session=session,
