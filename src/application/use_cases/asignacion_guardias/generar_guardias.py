@@ -10,11 +10,12 @@ from sqlalchemy.orm import Session
 
 from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
 from core.observability import with_metrics
-from models.models import Guardia
+from models.models import Configuracion, Guardia
 from services.asignador_guardias import (
     generar_calendario_guardias,
     guardar_guardias_en_bd,
 )
+from services.asignador_guardias_v3_simple import generar_guardias_v3_simple
 from services.calculador_guardias import obtener_estadisticas
 from utils.exceptions import BusinessLogicError
 from utils.logger import get_logger
@@ -78,9 +79,17 @@ class GenerarGuardiasUseCase:
             stats = obtener_estadisticas(self.session) or {}
             esperado = stats.get("slots_totales", 0)
 
+            # Obtener configuración para determinar algoritmo a usar
+            config = self.session.query(Configuracion).first()
+            if not config:
+                raise BusinessLogicError("No existe configuración del curso")
+
+            algoritmo = getattr(config, 'algoritmo_asignacion', 'v2.9')  # Default v2.9
+            logger.info(f"🔧 Algoritmo seleccionado: {algoritmo}")
+
             # Generar calendario
             if progress_callback:
-                progress_callback("Generando calendario de guardias...", 50)
+                progress_callback(f"Generando guardias (algoritmo {algoritmo})...", 50)
 
             # Crear wrapper para adaptar callback (porcentaje, mensaje) -> (mensaje, porcentaje)
             def adapter_callback(porcentaje: int, mensaje: str = ""):
@@ -89,7 +98,20 @@ class GenerarGuardiasUseCase:
                     porcentaje_escalado = 50 + int(porcentaje * 0.30)
                     progress_callback(mensaje or "Generando guardias...", porcentaje_escalado)
 
-            calendario, resumen = generar_calendario_guardias(self.session, adapter_callback)
+            # SELECTOR DE ALGORITMO
+            if algoritmo == "v3.0":
+                logger.info("✨ Usando algoritmo v3.0 Simple Determinista")
+                calendario, resumen = generar_guardias_v3_simple(
+                    self.session,
+                    config.id,
+                    adapter_callback
+                )
+            else:
+                logger.info("🔄 Usando algoritmo v2.9 Clásico (7 fases)")
+                calendario, resumen = generar_calendario_guardias(
+                    self.session,
+                    adapter_callback
+                )
 
             # Guardar en base de datos
             if progress_callback:

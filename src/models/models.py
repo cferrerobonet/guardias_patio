@@ -56,6 +56,7 @@ class Configuracion(Base):
     recreos_config = Column(Text, nullable=True)  # JSON: [{id, etiqueta, turno, hora, zonas}]
     ajuste_tutores = Column(Float, default=1.0, nullable=False)
     ajuste_no_tutores = Column(Float, default=1.0, nullable=False)
+    algoritmo_asignacion = Column(String, default="v2.9", nullable=False)  # "v2.9" o "v3.0"
 
 class Guardia(Base):
     __tablename__ = 'guardias'

@@ -14,8 +14,6 @@ from services.calculador_guardias import (
 )
 from services.optimizaciones_asignador import (
     IndiceSlots,
-    FiltroProfesores,
-    ordenar_profesores_equitativamente,
     estadisticas_rendimiento,
 )
 from sqlalchemy.orm import Session
@@ -626,12 +624,12 @@ def generar_calendario_guardias(
                         zona_preferida_prof, guardias_por_slot_prof,
                         guardias_por_dia_prof
                     )
-                    
+
                     # CRÍTICO: Actualizar índice de slots
                     indice_slots.marcar_ocupado(
                         slot.fecha, slot.turno, slot.recreo_id, slot.zona_id
                     )
-                    
+
                     pre_asignaciones += 1
                     asignaciones_ronda += 1
                     break  # Pasar al siguiente profesor
@@ -654,7 +652,7 @@ def generar_calendario_guardias(
         f"  Cobertura actual: {len(calendario)}/{total_slots} "
         f"({len(calendario)/total_slots*100:.1f}%)"
     )
-    
+
     # Mostrar estadísticas de rendimiento de optimizaciones
     stats = estadisticas_rendimiento(
         indice_slots=indice_slots,
