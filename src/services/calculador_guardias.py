@@ -74,7 +74,8 @@ def _festivos_automaticos_en_rango(
 ) -> set:
     """Genera el conjunto de fechas no lectivas automáticas dentro del rango.
 
-    Incluye: 9/10, 12/10, 1/11, 6/12, 8/12, 22/12–6/01, 16–19/03, Jueves Santo–+11, 1/05.
+    Incluye: 9/10, 12/10, 1/11, 6/12, 8/12, 23/12–6/01, 17–19/03, Jueves Santo–+11, 1/05.
+    Lectivos fijos: 22/12, 16/03.
     """
     no_lectivos = set()
     if inicio > fin:
@@ -105,16 +106,15 @@ def _festivos_automaticos_en_rango(
             for d in days:
                 add_if_in_range(date(y, month, d))
 
-        # 22/12 a 06/01 (puede cruzar de y a y+1)
-        for day_ in range(22, 32):
+        # 23/12 a 06/01 (puede cruzar de y a y+1) - 22/12 es LECTIVO
+        for day_ in range(23, 32):
             add_if_in_range(date(y, 12, day_))
         for day_ in range(1, 7):
             add_if_in_range(date(y + 1, 1, day_))
 
-        # 16–19 de marzo - COMENTADO: estos días SON lectivos
-        # Solo se excluyen si caen en fin de semana (ya filtrado más abajo)
-        # for day_ in range(16, 20):
-        #     add_if_in_range(date(y, 3, day_))
+        # 17–19 de marzo NO LECTIVOS (Fallas) - 16/03 es LECTIVO
+        for day_ in range(17, 20):
+            add_if_in_range(date(y, 3, day_))
 
         # Jueves Santo a +11 días
         easter = _easter_sunday(y)
