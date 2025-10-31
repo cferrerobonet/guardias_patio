@@ -21,6 +21,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
+    _parse_recreos_config,
     calcular_guardias_por_profesor,
     listar_dias_lectivos,
 )
@@ -124,23 +125,22 @@ def _generar_todos_slots(config: Configuracion, session: Session) -> List[SlotV3
     # Zona no tiene configuracion_id, obtener todas
     zonas = session.query(Zona).all()
 
-    # Parse recreos config
-    import json
-
-    recreos_config = json.loads(config.recreos_config)
+    # Parse recreos config con validación
+    recreos_list = _parse_recreos_config(config)
 
     slots = []
     for dia in dias_lectivos:
-        for turno_nombre, recreos_ids in recreos_config.items():
-            for recreo_id in recreos_ids:
-                for zona in zonas:
-                    slot = SlotV3(
-                        fecha=dia,
-                        recreo_id=recreo_id,
-                        turno=turno_nombre,
-                        zona_id=zona.id,
-                    )
-                    slots.append(slot)
+        for recreo_data in recreos_list:
+            recreo_id = recreo_data['id']
+            turno = recreo_data['turno']
+            for zona in zonas:
+                slot = SlotV3(
+                    fecha=dia,
+                    recreo_id=recreo_id,
+                    turno=turno,
+                    zona_id=zona.id,
+                )
+                slots.append(slot)
 
     logger.info(f"  ✓ Generados {len(slots)} slots totales")
     return slots
