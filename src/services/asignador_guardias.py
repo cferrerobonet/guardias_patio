@@ -6,14 +6,19 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from sqlalchemy.orm import Session
-
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
     calcular_guardias_por_profesor,
     listar_dias_lectivos,
 )
+from services.optimizaciones_asignador import (
+    IndiceSlots,
+    FiltroProfesores,
+    ordenar_profesores_equitativamente,
+    estadisticas_rendimiento,
+)
+from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -548,8 +553,13 @@ def generar_calendario_guardias(
 
     # PRE-ASIGNACIÓN: Garantizar participación mínima EQUITATIVA
     # NUEVO v2.9: Asignar por RONDAS para garantizar equidad
-    logger.info("FASE 2.1: Pre-asignación equitativa por rondas")
+    # OPTIMIZADO v2.9.1: Usar IndiceSlots para búsquedas O(1)
+    logger.info("FASE 2.1: Pre-asignación equitativa por rondas (OPTIMIZADA)")
     logger.info("-" * 40)
+
+    # Inicializar índice de slots ocupados para búsquedas O(1)
+    indice_slots = IndiceSlots.desde_calendario(calendario)
+    logger.info(f"  Índice de slots inicializado: {indice_slots.total_ocupados()} slots ocupados")
 
     profesores_con_cuota = [
         p for p in profesores
@@ -589,14 +599,11 @@ def generar_calendario_guardias(
 
             # Buscar un slot compatible
             for slot in slots_ordenados:
-                # Slot ya ocupado?
-                slot_zona_asignado = any(
-                    g.fecha == slot.fecha and g.turno == slot.turno and
-                    g.recreo == slot.recreo_id and g.zona_id == slot.zona_id
-                    for g in calendario
-                )
-                if slot_zona_asignado:
-                    continue
+                # OPTIMIZACIÓN: Usar índice O(1) en lugar de any() O(n)
+                if indice_slots.esta_ocupado(
+                    slot.fecha, slot.turno, slot.recreo_id, slot.zona_id
+                ):
+                    continue  # Slot ocupado
 
                 # Verificar elegibilidad
                 elegibles_temp = _obtener_profesores_elegibles(
@@ -619,12 +626,20 @@ def generar_calendario_guardias(
                         zona_preferida_prof, guardias_por_slot_prof,
                         guardias_por_dia_prof
                     )
+                    
+                    # CRÍTICO: Actualizar índice de slots
+                    indice_slots.marcar_ocupado(
+                        slot.fecha, slot.turno, slot.recreo_id, slot.zona_id
+                    )
+                    
                     pre_asignaciones += 1
                     asignaciones_ronda += 1
                     break  # Pasar al siguiente profesor
 
         if asignaciones_ronda == 0:
-            logger.warning(f"  Ronda {ronda}: 0 asignaciones (no hay slots compatibles)")
+            logger.warning(
+                f"  Ronda {ronda}: 0 asignaciones (no hay slots compatibles)"
+            )
             break  # No se pudo asignar nada, salir
 
         logger.debug(
@@ -639,6 +654,13 @@ def generar_calendario_guardias(
         f"  Cobertura actual: {len(calendario)}/{total_slots} "
         f"({len(calendario)/total_slots*100:.1f}%)"
     )
+    
+    # Mostrar estadísticas de rendimiento de optimizaciones
+    stats = estadisticas_rendimiento(
+        indice_slots=indice_slots,
+        total_slots=total_slots
+    )
+    logger.info(f"  Slots ocupados: {stats['slots_ocupados']} ({stats['cobertura']:.1f}%)")
 
     # Verificar cuántos profesores aún sin guardias
     profesores_sin_guardias = [
