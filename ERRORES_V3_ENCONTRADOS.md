@@ -26,16 +26,35 @@
 
 ### Errores Detectados Pendientes ❌
 
-6. **Modelo Zona con campos inexistentes en BD**
+6. **Modelo Zona con campos inexistentes en BD** ✅ RESUELTO
    - Error: `no such column: zonas.fecha_inicio`
    - Modelo define: `fecha_inicio` y `fecha_fin`
-   - BD NO tiene estas columnas
-   - **Solución**: Hacer los campos opcionales en el modelo o migrar la BD
+   - **Solución aplicada**: 
+     - Verificar BDs: 4/6 ya tenían las columnas
+     - Migración Alembic creada: `5642dea8340e_add_zona_fecha_campos.py`
+     - Script: `migrar_zonas_fecha_campos.py`
+   - Estado: ✅ **RESUELTO**
 
-7. **recreos_config vacío (0 recreos)**
-   - La BD no tiene recreos configurados
-   - El algoritmo v3.0 no generará guardias sin recreos
-   - **Solución**: Configurar recreos en la aplicación
+7. **recreos_config vacío (0 recreos)** ❌ BLOQUEANTE
+   - La BD NO tiene recreos configurados
+   - Sin recreos, el algoritmo v3.0 no puede generar guardias
+   - Verificado en BD de 75 profesores:
+     - ✓ 75 profesores
+     - ✓ 173 días lectivos
+     - ✓ 4 zonas (Z1, Z2, Z3, Z4)
+     - ❌ 0 recreos configurados
+   - **Solución**: Configurar recreos desde la aplicación antes de probar v3.0
+
+### Estado de las BDs
+
+| BD | Profesores | algoritmo_asignacion | fecha_inicio/fin | Recreos | Zonas |
+|---|---|---|---|---|---|
+| `data/users/66f06c9433d74e80/guardias_patio.db` | 75 | ✅ | ✅ | ❌ 0 | ✅ 4 |
+| `data/users/0db13e2857239ed8/guardias_patio.db` | 67 | ✅ | ✅ | ? | ? |
+| `guardias_patio.db` | 28 | ✅ | ✅ | ? | ? |
+| `src/guardias_patio.db` | 0 | ✅ | ✅ | ❌ 0 | ❌ 0 |
+| `data/66f06c9433d74e80/guardias.db` | - | - | No tabla | - | - |
+| `data/users/0db13e2857239ed8/guardias.db` | - | - | No tabla | - | - |
 
 ### Test Colgado 🔄
 
@@ -66,7 +85,19 @@ El test completo se colgó, probablemente por:
 
 ### Próximos Pasos
 
-1. Verificar/corregir modelo Zona
-2. Configurar recreos en la BD de prueba
-3. Ejecutar test completo del algoritmo v3.0
-4. Comparar resultados v2.9 vs v3.0
+**BLOQUEANTE**: Configurar recreos en la BD antes de poder probar el algoritmo v3.0
+
+1. **CRÍTICO**: Abrir la aplicación y configurar recreos:
+   - Ir a Configuración → Recreos
+   - Añadir al menos 1 recreo (ej: Recreo 1 - Mañana)
+   - Guardar configuración
+
+2. Después de configurar recreos:
+   - Ejecutar `bash scripts/test_v3_quick.sh` para verificar
+   - Intentar generar guardias con algoritmo v3.0
+   - Comparar resultados v2.9 vs v3.0
+
+3. Si funciona:
+   - Documentar resultados
+   - Hacer testing completo
+   - Actualizar documentación de usuario
