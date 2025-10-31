@@ -74,6 +74,8 @@ class ActualizarConfiguracionUseCase:
                     config.dias_no_lectivos_personalizados = dto.dias_no_lectivos_personalizados
                 if dto.recreos_config is not None:
                     config.recreos_config = dto.recreos_config
+                if dto.algoritmo_asignacion is not None:
+                    config.algoritmo_asignacion = dto.algoritmo_asignacion
 
                 accion = "actualizada"
             else:
@@ -91,7 +93,8 @@ class ActualizarConfiguracionUseCase:
                     ajuste_no_tutores=dto.ajuste_no_tutores or 1.0,
                     activar_festivos_automaticos=dto.activar_festivos_automaticos or True,
                     dias_no_lectivos_personalizados=dto.dias_no_lectivos_personalizados or "",
-                    recreos_config=dto.recreos_config or ""
+                    recreos_config=dto.recreos_config or "",
+                    algoritmo_asignacion=dto.algoritmo_asignacion or "v2.9"
                 )
                 self.session.add(config)
                 accion = "creada"
@@ -123,7 +126,8 @@ class ActualizarConfiguracionUseCase:
                 ajuste_no_tutores=config.ajuste_no_tutores,
                 activar_festivos_automaticos=config.activar_festivos_automaticos,
                 dias_no_lectivos_personalizados=config.dias_no_lectivos_personalizados,
-                recreos_config=config.recreos_config
+                recreos_config=config.recreos_config,
+                algoritmo_asignacion=getattr(config, 'algoritmo_asignacion', 'v2.9')
             )
 
         except Exception as e:

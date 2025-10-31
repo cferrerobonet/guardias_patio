@@ -65,7 +65,8 @@ class ObtenerConfiguracionUseCase:
             ajuste_no_tutores=config.ajuste_no_tutores,
             activar_festivos_automaticos=config.activar_festivos_automaticos,
             dias_no_lectivos_personalizados=config.dias_no_lectivos_personalizados,
-            recreos_config=config.recreos_config
+            recreos_config=config.recreos_config,
+            algoritmo_asignacion=getattr(config, 'algoritmo_asignacion', 'v2.9')
         )
 
         logger.info(
