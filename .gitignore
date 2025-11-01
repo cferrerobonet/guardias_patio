@@ -47,6 +47,11 @@ guardias_patio.db
 *.db-shm
 *.db-wal
 
+# Archivos de sincronización y sesión
+session.lock
+last_sync.json
+guardias_patio_data.json
+
 # Archivos de demostración y testing (obsoletos tras Sprint 12)
 demo_*.py
 
