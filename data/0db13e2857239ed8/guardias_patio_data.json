@@ -20,7 +20,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 2,
@@ -33,7 +34,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 3,
@@ -46,7 +48,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 4,
@@ -59,7 +62,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 5,
@@ -72,7 +76,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 6,
@@ -85,7 +90,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 7,
@@ -98,7 +104,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 8,
@@ -111,7 +118,8 @@
       "horas_tarde": 20.0,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2, 3, 4], \"1\": [1, 2, 3, 4], \"2\": [1, 2, 3, 4], \"3\": [1, 2, 3, 4], \"4\": [1, 2, 3, 4], \"5\": [1, 2, 3, 4], \"6\": [1, 2, 3, 4]}"
     },
     {
       "id": 9,
@@ -124,7 +132,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 10,
@@ -137,7 +146,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 11,
@@ -150,7 +160,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 12,
@@ -163,7 +174,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 13,
@@ -176,7 +188,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 14,
@@ -189,7 +202,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 15,
@@ -202,7 +216,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 16,
@@ -215,7 +230,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 17,
@@ -228,7 +244,8 @@
       "horas_tarde": 20.0,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2, 3, 4], \"1\": [1, 2, 3, 4], \"2\": [1, 2, 3, 4], \"3\": [1, 2, 3, 4], \"4\": [1, 2, 3, 4], \"5\": [1, 2, 3, 4], \"6\": [1, 2, 3, 4]}"
     },
     {
       "id": 18,
@@ -241,7 +258,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 19,
@@ -254,7 +272,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 20,
@@ -267,7 +286,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 21,
@@ -280,7 +300,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 22,
@@ -293,7 +314,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 23,
@@ -306,7 +328,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 24,
@@ -319,7 +342,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 25,
@@ -332,7 +356,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 26,
@@ -345,7 +370,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 27,
@@ -358,7 +384,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 28,
@@ -371,7 +398,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 29,
@@ -384,7 +412,8 @@
       "horas_tarde": 20.0,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2, 3, 4], \"1\": [1, 2, 3, 4], \"2\": [1, 2, 3, 4], \"3\": [1, 2, 3, 4], \"4\": [1, 2, 3, 4], \"5\": [1, 2, 3, 4], \"6\": [1, 2, 3, 4]}"
     },
     {
       "id": 30,
@@ -397,7 +426,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 31,
@@ -410,7 +440,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 32,
@@ -423,7 +454,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 33,
@@ -436,7 +468,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 34,
@@ -449,7 +482,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 35,
@@ -462,7 +496,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 36,
@@ -475,7 +510,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 37,
@@ -488,7 +524,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 38,
@@ -501,7 +538,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 39,
@@ -514,7 +552,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 40,
@@ -527,7 +566,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 41,
@@ -540,7 +580,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 42,
@@ -553,7 +594,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 43,
@@ -566,7 +608,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 44,
@@ -579,7 +622,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 45,
@@ -592,7 +636,8 @@
       "horas_tarde": 12.5,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2, 3, 4], \"1\": [1, 2, 3, 4], \"2\": [1, 2, 3, 4], \"3\": [1, 2, 3, 4], \"4\": [1, 2, 3, 4], \"5\": [1, 2, 3, 4], \"6\": [1, 2, 3, 4]}"
     },
     {
       "id": 46,
@@ -605,7 +650,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 47,
@@ -618,7 +664,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 48,
@@ -631,7 +678,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 49,
@@ -644,7 +692,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 50,
@@ -657,7 +706,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 51,
@@ -670,7 +720,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 52,
@@ -683,7 +734,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 53,
@@ -696,7 +748,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 54,
@@ -709,7 +762,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 55,
@@ -722,7 +776,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 56,
@@ -735,7 +790,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 57,
@@ -748,7 +804,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 58,
@@ -761,7 +818,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 59,
@@ -774,7 +832,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 60,
@@ -787,7 +846,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [1, 2], \"5\": [1, 2], \"6\": [1, 2]}"
     },
     {
       "id": 61,
@@ -800,7 +860,8 @@
       "horas_tarde": 21.0,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2, 3, 4], \"1\": [1, 2, 3, 4], \"2\": [1, 2, 3, 4], \"3\": [1, 2, 3, 4], \"4\": [1, 2, 3, 4], \"5\": [1, 2, 3, 4], \"6\": [1, 2, 3, 4]}"
     },
     {
       "id": 62,
@@ -813,7 +874,8 @@
       "horas_tarde": null,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 63,
@@ -826,7 +888,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 64,
@@ -839,7 +902,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 65,
@@ -852,7 +916,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 66,
@@ -865,7 +930,8 @@
       "horas_tarde": null,
       "tutor": true,
       "fecha_inicio_guardias": "2025-09-08",
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [3, 4], \"1\": [3, 4], \"2\": [3, 4], \"3\": [3, 4], \"4\": [3, 4], \"5\": [3, 4], \"6\": [3, 4]}"
     },
     {
       "id": 67,
@@ -878,7 +944,8 @@
       "horas_tarde": 18.0,
       "tutor": false,
       "fecha_inicio_guardias": null,
-      "fecha_fin_guardias": null
+      "fecha_fin_guardias": null,
+      "recreos_permitidos": "{\"0\": [1, 2, 3, 4], \"1\": [1, 2, 3, 4], \"2\": [1, 2, 3, 4], \"3\": [1, 2, 3, 4], \"4\": [1, 2, 3, 4], \"5\": [1, 2, 3, 4], \"6\": [1, 2, 3, 4]}"
     }
   ],
   "zonas": [
