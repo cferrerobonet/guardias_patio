@@ -13,7 +13,6 @@ no reimplementan la lógica compleja.
 from datetime import date, time
 
 import pytest
-
 from application.use_cases.asignacion_guardias.calcular_distribucion import (
     CalcularDistribucionUseCase,
 )
@@ -23,8 +22,8 @@ from application.use_cases.asignacion_guardias.generar_guardias import (
 from application.use_cases.asignacion_guardias.obtener_estadisticas import (
     ObtenerEstadisticasUseCase,
 )
+from core.exceptions import BusinessLogicError
 from models.models import Configuracion, Guardia
-from utils.exceptions import BusinessLogicError
 
 # ============================================================================
 # TEST: OBTENER ESTADÍSTICAS

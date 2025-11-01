@@ -2,19 +2,20 @@
 Use Case: Actualizar un profesor existente.
 
 Permite modificar los datos de un profesor registrado en el sistema.
+Invalida cache de profesores tras actualizar.
 """
 
 import json
 
-from sqlalchemy.orm import Session
-
-from application.dtos.profesor_dto import ActualizarProfesorDTO, ProfesorDTO
-from core.exceptions import NotFoundError
+from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
 from models.models import Profesor
-from utils.exceptions import BusinessLogicError
+from sqlalchemy.orm import Session
 from utils.logger import get_logger
+from utils.repository_cache import invalidate_profesores_cache
 from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
+
+from application.dtos.profesor_dto import ActualizarProfesorDTO, ProfesorDTO
 
 logger = get_logger(__name__)
 
@@ -130,8 +131,11 @@ class ActualizarProfesorUseCase:
             self.session.commit()
             self.session.refresh(profesor)
 
+            # Invalidar cache de profesores
+            invalidate_profesores_cache()
             logger.info(
-                f"Profesor actualizado: {profesor.nombre_completo} (ID: {profesor.id})"
+                f"Profesor actualizado y cache invalidado: "
+                f"{profesor.nombre_completo} (ID: {profesor.id})"
             )
 
             return self._convertir_a_dto(profesor)

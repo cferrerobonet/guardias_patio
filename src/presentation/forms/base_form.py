@@ -5,10 +5,9 @@ Clase base para todos los formularios de la aplicación.
 Proporciona funcionalidad común y establece el patrón MVP.
 """
 
+from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from PyQt6.QtWidgets import QMessageBox, QWidget
 from sqlalchemy.orm import Session
-
-from utils.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
 from utils.ui_helpers import (
     MESSAGEBOX_STYLE,

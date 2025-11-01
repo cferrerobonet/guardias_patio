@@ -4,13 +4,14 @@ Use Case: Actualizar una zona existente.
 Permite modificar los datos de una zona registrada en el sistema.
 """
 
-from sqlalchemy.orm import Session
-
-from application.dtos.zona_dto import ActualizarZonaDTO, ZonaDTO
+from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
 from models.models import Zona
-from utils.exceptions import BusinessLogicError, NotFoundError
+from sqlalchemy.orm import Session
 from utils.logger import get_logger
+from utils.repository_cache import invalidate_zonas_cache
+
+from application.dtos.zona_dto import ActualizarZonaDTO, ZonaDTO
 
 logger = get_logger(__name__)
 
@@ -63,9 +64,7 @@ class ActualizarZonaUseCase:
             )
 
             if zona_existente:
-                raise BusinessLogicError(
-                    f"Ya existe otra zona con el nombre '{data.nombre_zona}'"
-                )
+                raise BusinessLogicError(f"Ya existe otra zona con el nombre '{data.nombre_zona}'")
 
         # Actualizar campos si se proporcionan
         if data.nombre_zona is not None:
@@ -75,17 +74,19 @@ class ActualizarZonaUseCase:
             zona.descripcion = data.descripcion or None
 
         # Actualizar fechas (pueden ser None para eliminar restricciones temporales)
-        if hasattr(data, 'fecha_inicio'):
+        if hasattr(data, "fecha_inicio"):
             zona.fecha_inicio = data.fecha_inicio
 
-        if hasattr(data, 'fecha_fin'):
+        if hasattr(data, "fecha_fin"):
             zona.fecha_fin = data.fecha_fin
 
         try:
             self.session.commit()
             self.session.refresh(zona)
 
-            logger.info(f"Zona actualizada: {zona.nombre_zona} (ID: {zona.id})")
+            # Invalidar cache de zonas
+            invalidate_zonas_cache()
+            logger.info(f"Zona actualizada y cache invalidado: {zona.nombre_zona} (ID: {zona.id})")
 
             return ZonaDTO.model_validate(zona)
 

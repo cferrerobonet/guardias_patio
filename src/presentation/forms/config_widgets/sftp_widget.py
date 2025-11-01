@@ -1,0 +1,621 @@
+"""
+Widget para configuración SFTP.
+
+Encapsula toda la lógica de configuración del servidor SFTP para
+sincronización de copias de seguridad entre diferentes dispositivos.
+"""
+
+import os
+
+import paramiko
+import ui_styles as styles
+from dotenv import load_dotenv
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import (
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+)
+from utils import get_logger
+
+
+class SFTPConfigWidget(QGroupBox):
+    """
+    Widget de configuración SFTP.
+
+    Gestiona la configuración del servidor SFTP utilizado para
+    sincronizar copias de seguridad entre dispositivos.
+    """
+
+    # Señales
+    config_changed = pyqtSignal()
+    test_requested = pyqtSignal()
+
+    def __init__(self, parent=None):
+        """
+        Inicializa el widget SFTP.
+
+        Args:
+            parent: Widget padre
+        """
+        super().__init__("☁️ Config SFTP", parent)
+        self.logger = get_logger(self.__class__.__name__)
+        self.setStyleSheet(styles.STYLE_GROUPBOX)
+        self._actual_password = ""
+        self._setup_ui()
+        self.load_config()
+
+    def _setup_ui(self) -> None:
+        """Configura la interfaz del widget SFTP."""
+        layout = QVBoxLayout()
+
+        # FILA 1: Host + Port
+        fila1 = QHBoxLayout()
+
+        # Host (campo largo)
+        host_label = QLabel("Servidor SFTP:")
+        host_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.sftp_host_input = QLineEdit()
+        self.sftp_host_input.setPlaceholderText("ejemplo: home491590459.1and1-data.host")
+        self.sftp_host_input.setStyleSheet(styles.STYLE_INPUT)
+        self.sftp_host_input.setReadOnly(True)
+
+        # Port (campo corto)
+        port_label = QLabel("Puerto:")
+        port_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.sftp_port_input = QLineEdit()
+        self.sftp_port_input.setPlaceholderText("22")
+        self.sftp_port_input.setStyleSheet(styles.STYLE_INPUT)
+        self.sftp_port_input.setMaximumWidth(80)
+        self.sftp_port_input.setReadOnly(True)
+
+        fila1.addWidget(host_label)
+        fila1.addWidget(self.sftp_host_input)
+        fila1.addWidget(port_label)
+        fila1.addWidget(self.sftp_port_input)
+
+        layout.addLayout(fila1)
+
+        # FILA 2: User + Password
+        fila2 = QHBoxLayout()
+
+        # User
+        user_label = QLabel("Usuario:")
+        user_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.sftp_user_input = QLineEdit()
+        self.sftp_user_input.setPlaceholderText("ejemplo: u123456789")
+        self.sftp_user_input.setStyleSheet(styles.STYLE_INPUT)
+        self.sftp_user_input.setReadOnly(True)
+
+        # Password
+        password_label = QLabel("Contraseña:")
+        password_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.sftp_password_input = QLineEdit()
+        self.sftp_password_input.setPlaceholderText("Contraseña del servidor SFTP")
+        self.sftp_password_input.setStyleSheet(styles.STYLE_INPUT)
+        self.sftp_password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.sftp_password_input.setReadOnly(True)
+
+        fila2.addWidget(user_label)
+        fila2.addWidget(self.sftp_user_input)
+        fila2.addWidget(password_label)
+        fila2.addWidget(self.sftp_password_input)
+
+        layout.addLayout(fila2)
+
+        # FILA 3: Base Directory
+        fila3 = QHBoxLayout()
+
+        basedir_label = QLabel("Directorio Base:")
+        basedir_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.sftp_basedir_input = QLineEdit()
+        self.sftp_basedir_input.setPlaceholderText("ejemplo: /aplicaciones/guardias_patio")
+        self.sftp_basedir_input.setStyleSheet(styles.STYLE_INPUT)
+        self.sftp_basedir_input.setReadOnly(True)
+
+        fila3.addWidget(basedir_label)
+        fila3.addWidget(self.sftp_basedir_input)
+
+        layout.addLayout(fila3)
+
+        # Botones de acción
+        botones_layout = QHBoxLayout()
+
+        self.modify_sftp_btn = QPushButton("🔓 Modificar Configuración SFTP")
+        self.modify_sftp_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        self.modify_sftp_btn.clicked.connect(self._toggle_editable)
+
+        self.test_sftp_btn = QPushButton("☁️ Probar Conexión SFTP")
+        self.test_sftp_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
+        self.test_sftp_btn.clicked.connect(self._test_connection)
+
+        botones_layout.addWidget(self.modify_sftp_btn)
+        botones_layout.addWidget(self.test_sftp_btn)
+
+        layout.addLayout(botones_layout)
+
+        # Nota informativa
+        info_label = QLabel(
+            "💡 El SFTP se usa para sincronizar copias de seguridad entre "
+            "dispositivos de forma automática."
+        )
+        info_label.setStyleSheet(
+            """
+            QLabel {
+                padding: 10px;
+                background-color: #eff6ff;
+                border-left: 4px solid #3b82f6;
+                color: #1e40af;
+                font-size: 12px;
+                margin-top: 10px;
+            }
+        """
+        )
+        info_label.setWordWrap(True)
+        layout.addWidget(info_label)
+
+        # Aplicar estilo readonly inicial
+        self._apply_readonly_style(True)
+
+        self.setLayout(layout)
+
+    def _apply_readonly_style(self, readonly: bool) -> None:
+        """
+        Aplica estilos según el estado readonly.
+
+        Args:
+            readonly: True para readonly, False para editable
+        """
+        if readonly:
+            readonly_style = """
+                QLineEdit {
+                    background-color: #e5e7eb;
+                    color: #4b5563;
+                    border: 1px solid #d1d5db;
+                    padding: 5px;
+                }
+            """
+            self.sftp_host_input.setStyleSheet(readonly_style)
+            self.sftp_port_input.setStyleSheet(readonly_style)
+            self.sftp_basedir_input.setStyleSheet(readonly_style)
+            self.sftp_user_input.setStyleSheet(readonly_style)
+            self.sftp_password_input.setStyleSheet(readonly_style)
+        else:
+            self.sftp_host_input.setStyleSheet(styles.STYLE_INPUT)
+            self.sftp_port_input.setStyleSheet(styles.STYLE_INPUT)
+            self.sftp_basedir_input.setStyleSheet(styles.STYLE_INPUT)
+            self.sftp_user_input.setStyleSheet(styles.STYLE_INPUT)
+            self.sftp_password_input.setStyleSheet(styles.STYLE_INPUT)
+
+    def _toggle_editable(self) -> None:
+        """Alterna entre modo solo lectura y editable para los campos SFTP."""
+        is_readonly = self.sftp_host_input.isReadOnly()
+
+        if is_readonly:
+            # Intentar desbloquear - mostrar advertencia
+            if not self._show_global_warning():
+                # Usuario canceló, no desbloquear
+                return
+
+        # Alternar estado de todos los campos SFTP
+        new_state = not is_readonly
+        self.sftp_host_input.setReadOnly(new_state)
+        self.sftp_port_input.setReadOnly(new_state)
+        self.sftp_basedir_input.setReadOnly(new_state)
+        self.sftp_user_input.setReadOnly(new_state)
+        self.sftp_password_input.setReadOnly(new_state)
+
+        # Actualizar estilos
+        self._apply_readonly_style(new_state)
+
+        # Actualizar botón
+        if new_state:  # Bloqueado (readonly)
+            self.modify_sftp_btn.setText("🔓 Modificar Configuración SFTP")
+        else:  # Editable
+            self.modify_sftp_btn.setText("🔒 Bloquear Configuración SFTP")
+
+        self.config_changed.emit()
+
+    def _show_global_warning(self) -> bool:
+        """
+        Muestra una advertencia sobre la configuración SFTP global.
+
+        Returns:
+            bool: True si el usuario acepta continuar, False si cancela.
+        """
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setWindowTitle("⚠️ Configuración SFTP Global")
+        msg.setWindowFlags(
+            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
+        )
+        msg.setText(
+            "<h3>⚠️ Advertencia: Configuración SFTP Global</h3>"
+            "<p style='margin-top: 10px;'>"
+            "Estás a punto de modificar la configuración SFTP que afecta a "
+            "<b>todos los usuarios de este sistema</b>.</p>"
+            "<p style='margin-top: 10px; color: #b91c1c;'>"
+            "<b>IMPORTANTE:</b> Este servidor SFTP se usa para sincronizar "
+            "copias de seguridad entre diferentes dispositivos.<br>"
+            "Los cambios se guardarán en el archivo <code>.env</code> del sistema."
+            "</p>"
+            "<p style='margin-top: 10px;'>"
+            "¿Estás seguro de que quieres continuar?</p>"
+        )
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg.setDefaultButton(QMessageBox.StandardButton.No)
+
+        # Personalizar botones con estilos
+        yes_button = msg.button(QMessageBox.StandardButton.Yes)
+        yes_button.setText("Sí, modificar configuración SFTP")
+        yes_button.setStyleSheet(
+            """
+            QPushButton {
+                min-width: 180px;
+                min-height: 35px;
+                padding: 5px 15px;
+                font-size: 13px;
+                background-color: #059669;
+                color: white;
+                border: 2px solid #047857;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #047857;
+            }
+            QPushButton:pressed {
+                background-color: #065f46;
+            }
+        """
+        )
+
+        no_button = msg.button(QMessageBox.StandardButton.No)
+        no_button.setText("Cancelar")
+        no_button.setStyleSheet(
+            """
+            QPushButton {
+                min-width: 100px;
+                min-height: 35px;
+                padding: 5px 15px;
+                font-size: 13px;
+                background-color: #dc2626;
+                color: white;
+                border: 2px solid #b91c1c;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #b91c1c;
+            }
+            QPushButton:pressed {
+                background-color: #991b1b;
+            }
+        """
+        )
+
+        result = msg.exec()
+        return result == QMessageBox.StandardButton.Yes
+
+    def load_config(self) -> None:
+        """Carga la configuración SFTP desde el archivo .env."""
+        # Cargar variables de entorno
+        load_dotenv()
+
+        # Cargar valores en los campos
+        self.sftp_host_input.setText(os.getenv("SFTP_HOST", ""))
+        self.sftp_port_input.setText(os.getenv("SFTP_PORT", "22"))
+        self.sftp_basedir_input.setText(os.getenv("SFTP_BASE_DIR", "/backups"))
+        self.sftp_user_input.setText(os.getenv("SFTP_USERNAME", ""))
+
+        # Solo cargar contraseña si existe (por seguridad no la mostramos completa)
+        sftp_password = os.getenv("SFTP_PASSWORD", "")
+        if sftp_password:
+            self._actual_password = sftp_password
+            self.sftp_password_input.setText("••••••••")
+            self.sftp_password_input.setPlaceholderText("Contraseña configurada")
+        else:
+            self._actual_password = ""
+
+    def save_config(self) -> bool:
+        """
+        Guarda la configuración SFTP en el archivo .env.
+
+        Returns:
+            bool: True si se guardó correctamente, False en caso contrario.
+        """
+        # Mostrar advertencia antes de guardar
+        if not self._show_global_warning():
+            # Usuario canceló, no guardar
+            self.logger.info("Usuario canceló la modificación de configuración SFTP")
+            return False
+
+        try:
+            sftp_host = self.sftp_host_input.text().strip()
+            sftp_port = self.sftp_port_input.text().strip()
+            sftp_basedir = self.sftp_basedir_input.text().strip()
+            sftp_user = self.sftp_user_input.text().strip()
+            sftp_password = self.sftp_password_input.text().strip()
+
+            # Si la contraseña son asteriscos, no la cambiamos
+            if sftp_password and sftp_password != "••••••••":
+                password_to_save = sftp_password
+                self._actual_password = sftp_password
+            else:
+                # Mantener la contraseña actual si no se cambió
+                password_to_save = self._actual_password
+
+            # Solo guardar si hay datos completos
+            if not sftp_host or not sftp_port or not sftp_user or not password_to_save:
+                # No hay configuración SFTP completa, no guardamos
+                self.logger.warning("Configuración SFTP incompleta, no se guarda")
+                return False
+
+            # Leer el archivo .env actual
+            env_path = ".env"
+            env_lines = []
+
+            if os.path.exists(env_path):
+                with open(env_path, "r") as f:
+                    env_lines = f.readlines()
+
+            # Actualizar o agregar variables SFTP
+            sftp_vars = {
+                "SFTP_HOST": sftp_host,
+                "SFTP_PORT": sftp_port,
+                "SFTP_BASE_DIR": sftp_basedir,
+                "SFTP_USERNAME": sftp_user,
+                "SFTP_PASSWORD": password_to_save,
+            }
+
+            updated_vars = set()
+            for i, line in enumerate(env_lines):
+                for var_name, var_value in sftp_vars.items():
+                    if line.startswith(f"{var_name}="):
+                        env_lines[i] = f"{var_name}={var_value}\n"
+                        updated_vars.add(var_name)
+
+            # Agregar variables que no existían
+            for var_name, var_value in sftp_vars.items():
+                if var_name not in updated_vars:
+                    env_lines.append(f"{var_name}={var_value}\n")
+
+            # Guardar archivo .env
+            with open(env_path, "w") as f:
+                f.writelines(env_lines)
+
+            self.logger.info("Configuración SFTP guardada correctamente")
+
+            # Recargar para mostrar la contraseña enmascarada
+            self.load_config()
+
+            self.config_changed.emit()
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error al guardar SFTP: {str(e)}")
+            return False
+
+    def _test_connection(self) -> None:
+        """
+        Prueba la conexión SFTP intentando conectar al servidor
+        y listar el directorio base.
+        """
+        try:
+            sftp_host = self.sftp_host_input.text().strip()
+            sftp_port = self.sftp_port_input.text().strip()
+            sftp_basedir = self.sftp_basedir_input.text().strip()
+            sftp_user = self.sftp_user_input.text().strip()
+            sftp_password = self.sftp_password_input.text().strip()
+
+            # Validaciones básicas
+            if not sftp_host or not sftp_port or not sftp_user:
+                self._show_error(
+                    "Campos incompletos",
+                    "Completa host, puerto y usuario antes de probar la conexión",
+                )
+                return
+
+            # Si la contraseña son asteriscos, usar la real
+            if sftp_password == "••••••••":
+                sftp_password = self._actual_password
+
+            if not sftp_password:
+                self._show_error(
+                    "Contraseña vacía",
+                    "La contraseña SFTP es necesaria para probar la conexión",
+                )
+                return
+
+            # Intentar conectar al servidor SFTP
+            self.logger.info(f"Probando conexión SFTP a {sftp_host}:{sftp_port}")
+
+            transport = paramiko.Transport((sftp_host, int(sftp_port)))
+            transport.connect(username=sftp_user, password=sftp_password)
+
+            sftp = paramiko.SFTPClient.from_transport(transport)
+
+            # Intentar acceder al directorio base
+            try:
+                files = sftp.listdir(sftp_basedir)
+                file_count = len(files)
+            except Exception:
+                # Si no existe el directorio, intentar crearlo
+                sftp.mkdir(sftp_basedir)
+                file_count = 0
+
+            sftp.close()
+            transport.close()
+
+            # Mostrar mensaje de éxito
+            self._show_success(sftp_host, sftp_port, sftp_user, sftp_basedir, file_count)
+
+            self.logger.info(
+                f"Prueba de conexión SFTP exitosa - {file_count} archivos en {sftp_basedir}"
+            )
+            self.test_requested.emit()
+
+        except ImportError:
+            self._show_error(
+                "❌ Dependencia Faltante",
+                "La librería 'paramiko' no está instalada.\n\nInstálala con: pip install paramiko",
+            )
+            self.logger.error("Librería paramiko no instalada")
+
+        except paramiko.AuthenticationException:
+            self._show_error(
+                "❌ Error de Autenticación",
+                "No se pudo autenticar con el servidor SFTP.\n\nVerifica tu usuario y contraseña.",
+            )
+            self.logger.error("Error de autenticación SFTP")
+
+        except Exception as e:
+            self._show_error(
+                "❌ Error de Conexión",
+                f"No se pudo conectar al servidor SFTP:\n\n{str(e)}\n\n"
+                "Verifica el servidor, puerto y credenciales.",
+            )
+            self.logger.error(f"Error al probar SFTP: {str(e)}")
+
+    def _show_success(
+        self,
+        sftp_host: str,
+        sftp_port: str,
+        sftp_user: str,
+        sftp_basedir: str,
+        file_count: int,
+    ) -> None:
+        """
+        Muestra mensaje de éxito de conexión SFTP.
+
+        Args:
+            sftp_host: Host del servidor
+            sftp_port: Puerto del servidor
+            sftp_user: Usuario SFTP
+            sftp_basedir: Directorio base
+            file_count: Número de archivos encontrados
+        """
+        success_msg = QMessageBox(self)
+        success_msg.setIcon(QMessageBox.Icon.Information)
+        success_msg.setWindowTitle("✅ Conexión SFTP Exitosa")
+        success_msg.setWindowFlags(
+            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
+        )
+        success_msg.setText(
+            f"La conexión SFTP se estableció correctamente.<br><br>"
+            f"<b>Servidor:</b> <span style='color: #007ACC; "
+            f"font-style: italic;'>{sftp_host}:{sftp_port}</span><br>"
+            f"<b>Usuario:</b> <span style='color: #007ACC; "
+            f"font-style: italic;'>{sftp_user}</span><br>"
+            f"<b>Directorio:</b> <span style='color: #007ACC; "
+            f"font-style: italic;'>{sftp_basedir}</span><br>"
+            f"<b>Archivos encontrados:</b> <span style='color: #059669; "
+            f"font-weight: bold;'>{file_count}</span><br><br>"
+            "El servidor está listo para sincronizar copias de seguridad."
+        )
+
+        # Añadir botón OK con estilo visible
+        success_msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = success_msg.button(QMessageBox.StandardButton.Ok)
+        ok_button.setText("Entendido")
+        ok_button.setStyleSheet(
+            """
+            QPushButton {
+                min-width: 120px;
+                min-height: 35px;
+                padding: 5px 15px;
+                font-size: 13px;
+                background-color: #059669;
+                color: white;
+                border: 2px solid #047857;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #047857;
+            }
+            QPushButton:pressed {
+                background-color: #065f46;
+            }
+        """
+        )
+
+        success_msg.exec()
+
+    def _show_error(self, title: str, message: str) -> None:
+        """
+        Muestra un diálogo de error.
+
+        Args:
+            title: Título del diálogo
+            message: Mensaje de error
+        """
+        error_msg = QMessageBox(self)
+        error_msg.setIcon(QMessageBox.Icon.Critical)
+        error_msg.setWindowTitle(title)
+        error_msg.setText(message)
+        error_msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = error_msg.button(QMessageBox.StandardButton.Ok)
+        ok_button.setText("Entendido")
+        ok_button.setStyleSheet(
+            """
+            QPushButton {
+                min-width: 120px;
+                min-height: 35px;
+                padding: 5px 15px;
+                font-size: 13px;
+                background-color: #dc2626;
+                color: white;
+                border: 2px solid #b91c1c;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #b91c1c;
+            }
+            QPushButton:pressed {
+                background-color: #991b1b;
+            }
+        """
+        )
+        error_msg.exec()
+
+    def get_config_dict(self) -> dict:
+        """
+        Obtiene la configuración SFTP como diccionario.
+
+        Returns:
+            dict: Configuración SFTP
+        """
+        return {
+            "host": self.sftp_host_input.text().strip(),
+            "port": self.sftp_port_input.text().strip(),
+            "base_dir": self.sftp_basedir_input.text().strip(),
+            "username": self.sftp_user_input.text().strip(),
+            "password": self._actual_password,
+        }
+
+    def set_config_dict(self, config: dict) -> None:
+        """
+        Establece la configuración SFTP desde un diccionario.
+
+        Args:
+            config: Configuración SFTP
+        """
+        self.sftp_host_input.setText(config.get("host", ""))
+        self.sftp_port_input.setText(config.get("port", "22"))
+        self.sftp_basedir_input.setText(config.get("base_dir", "/backups"))
+        self.sftp_user_input.setText(config.get("username", ""))
+
+        password = config.get("password", "")
+        if password:
+            self._actual_password = password
+            self.sftp_password_input.setText("••••••••")
+        else:
+            self._actual_password = ""
+            self.sftp_password_input.setText("")
+
+    def test_connection(self) -> None:
+        """Método público para probar la conexión SFTP."""
+        self._test_connection()

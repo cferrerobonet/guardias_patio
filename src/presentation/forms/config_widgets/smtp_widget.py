@@ -1,0 +1,613 @@
+"""
+Widget para configuración SMTP.
+
+Este widget encapsula toda la lógica de configuración del servidor SMTP,
+incluyendo validación, conexión de prueba y guardado en .env.
+
+Author: Sistema de Guardias de Patio
+Version: 3.0
+"""
+
+import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Optional
+
+import ui_styles as styles
+from dotenv import load_dotenv
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import (
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+)
+from utils import get_logger
+
+
+class SMTPConfigWidget(QGroupBox):
+    """
+    Widget de configuración SMTP.
+
+    Este widget gestiona la configuración del servidor SMTP para el envío
+    de emails de recuperación de contraseña y notificaciones del sistema.
+
+    Signals:
+        config_changed: Emitido cuando se modifica la configuración
+        test_requested: Emitido cuando se solicita prueba de conexión
+    """
+
+    # Señales
+    config_changed = pyqtSignal()
+    test_requested = pyqtSignal()
+
+    def __init__(self, parent=None):
+        """
+        Inicializa el widget de configuración SMTP.
+
+        Args:
+            parent: Widget padre (opcional)
+        """
+        super().__init__("📧 Config SMTP", parent)
+        self.logger = get_logger(self.__class__.__name__)
+        self.setStyleSheet(styles.STYLE_GROUPBOX)
+
+        # Almacenar contraseña real internamente
+        self._actual_password = ""
+
+        self._setup_ui()
+        self.load_config()
+
+    def _setup_ui(self) -> None:
+        """Configura la interfaz de usuario del widget."""
+        layout = QVBoxLayout()
+        layout.setSpacing(8)
+        layout.setContentsMargins(8, 8, 8, 8)
+
+        # FILA 1: Servidor y Puerto
+        fila1_layout = QHBoxLayout()
+        fila1_layout.setSpacing(10)
+
+        # Servidor (campo largo)
+        servidor_container = QVBoxLayout()
+        servidor_container.setSpacing(3)
+        label_server = QLabel("Servidor SMTP:")
+        label_server.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        servidor_container.addWidget(label_server)
+
+        self.smtp_server_input = QLineEdit()
+        self.smtp_server_input.setPlaceholderText("smtp.ionos.es")
+        self.smtp_server_input.setReadOnly(True)
+        self.smtp_server_input.textChanged.connect(self.config_changed.emit)
+        servidor_container.addWidget(self.smtp_server_input)
+        fila1_layout.addLayout(servidor_container, 3)
+
+        # Puerto (campo corto)
+        puerto_container = QVBoxLayout()
+        puerto_container.setSpacing(3)
+        label_port = QLabel("Puerto:")
+        label_port.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        puerto_container.addWidget(label_port)
+
+        self.smtp_port_input = QLineEdit()
+        self.smtp_port_input.setPlaceholderText("587")
+        self.smtp_port_input.setMaximumWidth(80)
+        self.smtp_port_input.setReadOnly(True)
+        self.smtp_port_input.textChanged.connect(self.config_changed.emit)
+        puerto_container.addWidget(self.smtp_port_input)
+        fila1_layout.addLayout(puerto_container, 1)
+
+        layout.addLayout(fila1_layout)
+
+        # FILA 2: Usuario y Contraseña
+        fila2_layout = QHBoxLayout()
+        fila2_layout.setSpacing(10)
+
+        # Usuario
+        usuario_container = QVBoxLayout()
+        usuario_container.setSpacing(3)
+        label_user = QLabel("Usuario:")
+        label_user.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        usuario_container.addWidget(label_user)
+
+        self.smtp_user_input = QLineEdit()
+        self.smtp_user_input.setPlaceholderText("correo@ejemplo.com")
+        self.smtp_user_input.setReadOnly(True)
+        self.smtp_user_input.textChanged.connect(self.config_changed.emit)
+        usuario_container.addWidget(self.smtp_user_input)
+        fila2_layout.addLayout(usuario_container, 1)
+
+        # Contraseña
+        password_container = QVBoxLayout()
+        password_container.setSpacing(3)
+        label_password = QLabel("Contraseña:")
+        label_password.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        password_container.addWidget(label_password)
+
+        self.smtp_password_input = QLineEdit()
+        self.smtp_password_input.setPlaceholderText("••••••••")
+        self.smtp_password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.smtp_password_input.setReadOnly(True)
+        self.smtp_password_input.textChanged.connect(self.config_changed.emit)
+        password_container.addWidget(self.smtp_password_input)
+        fila2_layout.addLayout(password_container, 1)
+
+        layout.addLayout(fila2_layout)
+
+        # Botones SMTP
+        smtp_btn_layout = QHBoxLayout()
+        smtp_btn_layout.setSpacing(8)
+
+        self.modify_smtp_btn = QPushButton("🔓 Modificar Configuración SMTP")
+        self.modify_smtp_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        self.modify_smtp_btn.clicked.connect(self._toggle_editable)
+        smtp_btn_layout.addWidget(self.modify_smtp_btn, 1)
+
+        self.test_smtp_btn = QPushButton("✉️ Probar Conexión SMTP")
+        self.test_smtp_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
+        self.test_smtp_btn.clicked.connect(self._test_connection)
+        smtp_btn_layout.addWidget(self.test_smtp_btn, 1)
+
+        layout.addLayout(smtp_btn_layout)
+
+        # Nota informativa
+        nota = QLabel("💡 Para Gmail, usa una App Password en lugar de tu contraseña normal.")
+        nota.setStyleSheet("""
+            QLabel {
+                color: #6b7280;
+                font-size: 11px;
+                padding: 5px;
+                background-color: #f3f4f6;
+                border-radius: 3px;
+            }
+        """)
+        nota.setWordWrap(True)
+        layout.addWidget(nota)
+
+        self.setLayout(layout)
+        self._apply_readonly_style(True)
+
+    def _apply_readonly_style(self, readonly: bool) -> None:
+        """
+        Aplica el estilo apropiado según el estado readonly.
+
+        Args:
+            readonly: True para modo solo lectura, False para editable
+        """
+        if readonly:
+            readonly_style = """
+                QLineEdit[readOnly="true"] {
+                    background-color: #e5e7eb;
+                    color: #4b5563;
+                    border: 1px solid #d1d5db;
+                    padding: 5px;
+                }
+            """
+            self.smtp_server_input.setStyleSheet(readonly_style)
+            self.smtp_port_input.setStyleSheet(readonly_style)
+            self.smtp_user_input.setStyleSheet(readonly_style)
+            self.smtp_password_input.setStyleSheet(readonly_style)
+        else:
+            self.smtp_server_input.setStyleSheet(styles.STYLE_INPUT)
+            self.smtp_port_input.setStyleSheet(styles.STYLE_INPUT)
+            self.smtp_user_input.setStyleSheet(styles.STYLE_INPUT)
+            self.smtp_password_input.setStyleSheet(styles.STYLE_INPUT)
+
+    def _toggle_editable(self) -> None:
+        """Alterna entre bloquear y desbloquear los campos SMTP."""
+        is_readonly = self.smtp_server_input.isReadOnly()
+
+        # Si se va a habilitar la edición, mostrar advertencia
+        if is_readonly:
+            if not self._show_global_warning():
+                return
+
+        # Alternar estado
+        new_state = not is_readonly
+
+        self.smtp_server_input.setReadOnly(new_state)
+        self.smtp_port_input.setReadOnly(new_state)
+        self.smtp_user_input.setReadOnly(new_state)
+        self.smtp_password_input.setReadOnly(new_state)
+
+        # Cambiar estilos y texto del botón
+        self._apply_readonly_style(new_state)
+
+        if new_state:  # Bloqueado
+            self.modify_smtp_btn.setText("🔓 Modificar Configuración SMTP")
+        else:  # Editable
+            self.modify_smtp_btn.setText("🔒 Bloquear Configuración SMTP")
+
+    def _show_global_warning(self) -> bool:
+        """
+        Muestra advertencia sobre la configuración SMTP global.
+
+        Returns:
+            True si el usuario acepta, False si cancela
+        """
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setWindowTitle("⚠️ Configuración SMTP Global")
+        msg.setText("<h3>⚠️ ADVERTENCIA: Configuración SMTP Global</h3>")
+        msg.setInformativeText(
+            "<p><b>La configuración SMTP es compartida por TODOS los usuarios del sistema.</b></p>"
+            "<p>Modificar estos valores puede:</p>"
+            "<ul>"
+            "<li>Impedir que otros usuarios recuperen sus contraseñas por email</li>"
+            "<li>Afectar a todas las notificaciones del sistema</li>"
+            "<li>Causar errores en el envío de emails para todos los usuarios</li>"
+            "</ul>"
+            "<p><b>Estos cambios afectarán a TODOS los usuarios inmediatamente.</b></p>"
+            "<p>¿Estás seguro de que deseas continuar?</p>"
+        )
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg.setDefaultButton(QMessageBox.StandardButton.No)
+
+        # Personalizar botones
+        yes_button = msg.button(QMessageBox.StandardButton.Yes)
+        yes_button.setText("Continuar")
+        yes_button.setStyleSheet("""
+            QPushButton {
+                min-width: 100px;
+                min-height: 35px;
+                padding: 5px 15px;
+                font-size: 13px;
+                background-color: #059669;
+                color: white;
+                border: 2px solid #047857;
+                border-radius: 4px;
+            }
+            QPushButton:hover { background-color: #047857; }
+            QPushButton:pressed { background-color: #065f46; }
+        """)
+
+        no_button = msg.button(QMessageBox.StandardButton.No)
+        no_button.setText("Cancelar")
+        no_button.setStyleSheet("""
+            QPushButton {
+                min-width: 100px;
+                min-height: 35px;
+                padding: 5px 15px;
+                font-size: 13px;
+                background-color: #dc2626;
+                color: white;
+                border: 2px solid #b91c1c;
+                border-radius: 4px;
+            }
+            QPushButton:hover { background-color: #b91c1c; }
+            QPushButton:pressed { background-color: #991b1b; }
+        """)
+
+        return msg.exec() == QMessageBox.StandardButton.Yes
+
+    def load_config(self) -> None:
+        """Carga la configuración SMTP desde el archivo .env."""
+        load_dotenv()
+
+        self.smtp_server_input.setText(os.getenv("SMTP_SERVER", ""))
+        self.smtp_port_input.setText(os.getenv("SMTP_PORT", "587"))
+        self.smtp_user_input.setText(os.getenv("SMTP_USER", ""))
+
+        # Almacenar la contraseña real internamente
+        self._actual_password = os.getenv("SMTP_PASSWORD", "")
+
+        # Mostrar contraseña enmascarada si existe
+        if self._actual_password:
+            self.smtp_password_input.setText("••••••••")
+            self.smtp_password_input.setPlaceholderText("Contraseña configurada")
+
+    def save_config(self) -> bool:
+        """
+        Guarda la configuración SMTP en el archivo .env.
+
+        Returns:
+            True si se guardó correctamente, False en caso contrario
+        """
+        # Mostrar advertencia antes de guardar
+        if not self._show_global_warning():
+            self.logger.info("Usuario canceló la modificación de configuración SMTP")
+            return False
+
+        try:
+            smtp_server = self.smtp_server_input.text().strip()
+            smtp_port = self.smtp_port_input.text().strip()
+            smtp_user = self.smtp_user_input.text().strip()
+            smtp_password = self.smtp_password_input.text().strip()
+
+            # Si la contraseña son asteriscos, usar la almacenada
+            if smtp_password == "••••••••":
+                password_to_save = self._actual_password
+            else:
+                password_to_save = smtp_password
+                self._actual_password = smtp_password
+
+            # Validar que haya datos completos
+            if not smtp_server or not smtp_port or not smtp_user or not password_to_save:
+                self.logger.warning("Configuración SMTP incompleta, no se guardó")
+                return False
+
+            # Leer archivo .env actual
+            env_path = ".env"
+            env_lines = []
+
+            if os.path.exists(env_path):
+                with open(env_path, "r") as f:
+                    env_lines = f.readlines()
+
+            # Actualizar o agregar variables SMTP
+            smtp_vars = {
+                "SMTP_SERVER": smtp_server,
+                "SMTP_PORT": smtp_port,
+                "SMTP_USER": smtp_user,
+                "SMTP_PASSWORD": password_to_save,
+            }
+
+            updated_vars = set()
+            for i, line in enumerate(env_lines):
+                for var_name, var_value in smtp_vars.items():
+                    if line.startswith(f"{var_name}="):
+                        env_lines[i] = f"{var_name}={var_value}\n"
+                        updated_vars.add(var_name)
+
+            # Agregar variables que no existían
+            for var_name, var_value in smtp_vars.items():
+                if var_name not in updated_vars:
+                    env_lines.append(f"{var_name}={var_value}\n")
+
+            # Guardar archivo .env
+            with open(env_path, "w") as f:
+                f.writelines(env_lines)
+
+            self.logger.info("Configuración SMTP guardada correctamente")
+
+            # Recargar para mostrar la contraseña enmascarada
+            self.load_config()
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error al guardar SMTP: {str(e)}")
+            return False
+
+    def _test_connection(self, destination_email: Optional[str] = None) -> None:
+        """
+        Prueba la conexión SMTP enviando un email de prueba.
+
+        Args:
+            destination_email: Email de destino. Si es None, solicita al usuario.
+        """
+        try:
+            smtp_server = self.smtp_server_input.text().strip()
+            smtp_port = self.smtp_port_input.text().strip()
+            smtp_user = self.smtp_user_input.text().strip()
+            smtp_password = self.smtp_password_input.text().strip()
+
+            # Validaciones básicas
+            if not smtp_server or not smtp_port or not smtp_user:
+                self._show_error(
+                    "Campos incompletos", "Completa todos los campos antes de probar la conexión"
+                )
+                return
+
+            # Si la contraseña son asteriscos, usar la almacenada
+            if smtp_password == "••••••••":
+                smtp_password = self._actual_password
+
+            if not smtp_password:
+                self._show_error(
+                    "Contraseña vacía", "La contraseña SMTP es necesaria para probar la conexión"
+                )
+                return
+
+            # Si no se proporciona email de destino, pedir uno
+            if not destination_email:
+                from PyQt6.QtWidgets import QInputDialog
+
+                destination_email, ok = QInputDialog.getText(
+                    self,
+                    "Email de Prueba",
+                    "Introduce el email donde recibir la prueba:",
+                    QLineEdit.EchoMode.Normal,
+                    smtp_user,
+                )
+                if not ok or not destination_email or "@" not in destination_email:
+                    return
+
+            # Intentar conectar y enviar email de prueba
+            self.logger.info(f"Probando conexión SMTP a {smtp_server}:{smtp_port}")
+
+            with smtplib.SMTP(smtp_server, int(smtp_port), timeout=10) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_password)
+
+                # Crear email de prueba
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = "✅ Prueba de Configuración SMTP - Guardias de Patio"
+                msg["From"] = smtp_user
+                msg["To"] = destination_email
+
+                # Contenido del email
+                texto = f"""
+                Hola,
+
+                Este es un email de prueba para verificar que la configuración SMTP está funcionando correctamente.
+
+                Servidor: {smtp_server}:{smtp_port}
+                Usuario: {smtp_user}
+
+                Si estás recibiendo este email, significa que el sistema puede enviar emails de recuperación de contraseña sin problemas.
+
+                ---
+                Sistema de Gestión de Guardias de Patio
+                """
+
+                html = f"""
+                <html>
+                  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                      <h2 style="color: #059669; margin-bottom: 20px;">✅ Prueba de Configuración SMTP</h2>
+
+                      <p>Hola,</p>
+
+                      <p>Este es un email de prueba para verificar que la configuración SMTP está funcionando correctamente.</p>
+
+                      <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                        <p style="margin: 5px 0;"><strong>Servidor:</strong> {smtp_server}:{smtp_port}</p>
+                        <p style="margin: 5px 0;"><strong>Usuario:</strong> {smtp_user}</p>
+                      </div>
+
+                      <p style="color: #059669; font-weight: bold;">
+                        Si estás recibiendo este email, significa que el sistema puede enviar emails de recuperación de contraseña sin problemas.
+                      </p>
+
+                      <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+                      <p style="font-size: 12px; color: #6b7280;">
+                        Sistema de Gestión de Guardias de Patio
+                      </p>
+                    </div>
+                  </body>
+                </html>
+                """
+
+                part1 = MIMEText(texto, "plain")
+                part2 = MIMEText(html, "html")
+                msg.attach(part1)
+                msg.attach(part2)
+
+                # Enviar email
+                server.send_message(msg)
+
+            # Éxito
+            self._show_success(
+                "✅ Email de Prueba Enviado",
+                f"La conexión SMTP se estableció correctamente y se envió un email de prueba.<br><br>"
+                f"<b>Servidor:</b> <span style='color: #007ACC; font-style: italic;'>{smtp_server}:{smtp_port}</span><br>"
+                f"<b>Usuario:</b> <span style='color: #007ACC; font-style: italic;'>{smtp_user}</span><br>"
+                f"<b>Email enviado a:</b> <span style='color: #007ACC; font-style: italic;'>{destination_email}</span><br><br>"
+                "Revisa tu bandeja de entrada (y spam) para verificar que llegó el email.",
+            )
+            self.logger.info(
+                f"Prueba de conexión SMTP exitosa - Email enviado a {destination_email}"
+            )
+
+        except smtplib.SMTPAuthenticationError:
+            self._show_error(
+                "❌ Error de Autenticación",
+                "No se pudo autenticar con el servidor SMTP.\n\n"
+                "Verifica tu usuario y contraseña.\n"
+                "Para Gmail, usa una App Password.",
+            )
+            self.logger.error("Error de autenticación SMTP")
+
+        except Exception as e:
+            self._show_error(
+                "❌ Error de Conexión",
+                f"No se pudo conectar al servidor SMTP:\n\n{str(e)}\n\n"
+                "Verifica el servidor, puerto y credenciales.",
+            )
+            self.logger.error(f"Error al probar SMTP: {str(e)}")
+
+    def _show_error(self, title: str, message: str) -> None:
+        """Muestra un mensaje de error."""
+        error_msg = QMessageBox(self)
+        error_msg.setIcon(QMessageBox.Icon.Critical)
+        error_msg.setWindowTitle(title)
+        error_msg.setText(message)
+        error_msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = error_msg.button(QMessageBox.StandardButton.Ok)
+        ok_button.setText("Entendido")
+        ok_button.setStyleSheet("""
+            QPushButton {
+                min-width: 120px;
+                min-height: 35px;
+                padding: 5px 15px;
+                font-size: 13px;
+                background-color: #dc2626;
+                color: white;
+                border: 2px solid #b91c1c;
+                border-radius: 4px;
+            }
+            QPushButton:hover { background-color: #b91c1c; }
+            QPushButton:pressed { background-color: #991b1b; }
+        """)
+        error_msg.exec()
+
+    def _show_success(self, title: str, message: str) -> None:
+        """Muestra un mensaje de éxito."""
+        success_msg = QMessageBox(self)
+        success_msg.setIcon(QMessageBox.Icon.Information)
+        success_msg.setWindowTitle(title)
+        success_msg.setTextFormat(Qt.TextFormat.RichText)
+        success_msg.setWindowFlags(
+            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
+        )
+        success_msg.setText(message)
+        success_msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = success_msg.button(QMessageBox.StandardButton.Ok)
+        ok_button.setText("Entendido")
+        ok_button.setStyleSheet("""
+            QPushButton {
+                min-width: 120px;
+                min-height: 35px;
+                padding: 5px 15px;
+                font-size: 13px;
+                background-color: #059669;
+                color: white;
+                border: 2px solid #047857;
+                border-radius: 4px;
+            }
+            QPushButton:hover { background-color: #047857; }
+            QPushButton:pressed { background-color: #065f46; }
+        """)
+        success_msg.exec()
+
+    def get_config_dict(self) -> dict:
+        """
+        Obtiene la configuración actual como diccionario.
+
+        Returns:
+            Diccionario con la configuración SMTP
+        """
+        smtp_password = self.smtp_password_input.text().strip()
+        if smtp_password == "••••••••":
+            smtp_password = self._actual_password
+
+        return {
+            "smtp_server": self.smtp_server_input.text().strip(),
+            "smtp_port": self.smtp_port_input.text().strip(),
+            "smtp_user": self.smtp_user_input.text().strip(),
+            "smtp_password": smtp_password,
+        }
+
+    def set_config_dict(self, config: dict) -> None:
+        """
+        Establece la configuración desde un diccionario.
+
+        Args:
+            config: Diccionario con smtp_server, smtp_port, smtp_user, smtp_password
+        """
+        self.smtp_server_input.setText(config.get("smtp_server", ""))
+        self.smtp_port_input.setText(config.get("smtp_port", "587"))
+        self.smtp_user_input.setText(config.get("smtp_user", ""))
+
+        password = config.get("smtp_password", "")
+        if password:
+            self._actual_password = password
+            self.smtp_password_input.setText("••••••••")
+        else:
+            self._actual_password = ""
+            self.smtp_password_input.setText("")
+
+    def test_connection_with_email(self, email: str) -> None:
+        """
+        Prueba la conexión enviando email a una dirección específica.
+
+        Args:
+            email: Dirección de email de destino
+        """
+        self._test_connection(destination_email=email)

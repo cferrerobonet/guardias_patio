@@ -2,15 +2,15 @@
 Use Case: Eliminar un profesor.
 
 Permite eliminar un profesor del sistema, verificando que no tenga guardias asignadas.
+Invalida cache de profesores tras eliminar.
 """
 
-from sqlalchemy.orm import Session
-
-from core.exceptions import NotFoundError
+from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
 from models.models import Guardia, Profesor
-from utils.exceptions import BusinessLogicError
+from sqlalchemy.orm import Session
 from utils.logger import get_logger
+from utils.repository_cache import invalidate_profesores_cache
 
 logger = get_logger(__name__)
 
@@ -66,7 +66,11 @@ class EliminarProfesorUseCase:
             self.session.delete(profesor)
             self.session.commit()
 
-            logger.info(f"Profesor eliminado: {nombre_profesor} (ID: {profesor_id})")
+            # Invalidar cache de profesores
+            invalidate_profesores_cache()
+            logger.info(
+                f"Profesor eliminado y cache invalidado: {nombre_profesor} (ID: {profesor_id})"
+            )
 
         except Exception as e:
             self.session.rollback()

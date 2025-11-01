@@ -2,15 +2,17 @@
 Use Case: Listar todas las zonas.
 
 Permite obtener el listado completo de zonas registradas en el sistema.
+Con caching para optimizar lecturas frecuentes.
 """
 
 from typing import List
 
-from sqlalchemy.orm import Session
-
-from application.dtos.zona_dto import ZonaDTO
 from core.observability import with_metrics
 from models.models import Zona
+from sqlalchemy.orm import Session
+from utils.repository_cache import cache_zonas
+
+from application.dtos.zona_dto import ZonaDTO
 
 
 class ListarZonasUseCase:
@@ -30,9 +32,10 @@ class ListarZonasUseCase:
         self.session = session
 
     @with_metrics("listar_zonas")
+    @cache_zonas(ttl=300)  # Cache por 5 minutos
     def execute(self) -> List[ZonaDTO]:
         """
-        Ejecutar el listado de zonas.
+        Ejecutar el listado de zonas (con caching).
 
         Returns:
             Lista de ZonaDTO con todas las zonas del sistema,

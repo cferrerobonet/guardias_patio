@@ -311,6 +311,34 @@ class GuardiaInvalidaError(BusinessLogicError):
         super().__init__(**kwargs)
 
 
+class InsufficientProfesoresError(BusinessLogicError):
+    """Insuficientes profesores disponibles."""
+
+    default_message = "No hay suficientes profesores disponibles"
+    default_code = "INSUFFICIENT_PROFESORES"
+
+
+class MaxGuardiasExceededError(BusinessLogicError):
+    """Excedido el máximo de guardias."""
+
+    default_message = "Se ha excedido el máximo de guardias"
+    default_code = "MAX_GUARDIAS_EXCEEDED"
+
+
+class DuplicateGuardiaError(BusinessLogicError):
+    """Guardia duplicada."""
+
+    default_message = "La guardia ya existe"
+    default_code = "DUPLICATE_GUARDIA"
+
+
+class ConfiguracionError(GuardiasBaseException):
+    """Error en la configuración de la aplicación."""
+
+    default_message = "Error de configuración"
+    default_code = "CONFIGURATION_ERROR"
+
+
 # ============================================================================
 # EXCEPCIONES DE BASE DE DATOS
 # ============================================================================
@@ -501,6 +529,13 @@ __all__ = [
     "NoDisponibilidadError",
     "GuardiaDuplicadaError",
     "AsignacionImpossibleError",
+    "GuardiaConflictError",
+    "GuardiaInvalidaError",
+    "InsufficientProfesoresError",
+    "MaxGuardiasExceededError",
+    "DuplicateGuardiaError",
+    # Configuration
+    "ConfiguracionError",
     # Database
     "DatabaseError",
     "ConnectionError",

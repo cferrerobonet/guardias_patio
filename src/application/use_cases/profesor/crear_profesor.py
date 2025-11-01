@@ -2,11 +2,9 @@
 Use Case: Crear Profesor
 
 Caso de uso para crear un nuevo profesor en el sistema.
+Invalida cache de profesores tras crear.
 """
 
-from sqlalchemy.orm import Session
-
-from application.dtos import CrearProfesorDTO, ProfesorDTO
 from core.exceptions import ValidationError
 from core.logging import get_logger
 from core.observability import with_metrics
@@ -15,6 +13,10 @@ from domain.repositories import IProfesorRepository
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
 from infrastructure.mappers import ProfesorMapper
 from infrastructure.repositories import SQLAlchemyProfesorRepository
+from sqlalchemy.orm import Session
+from utils.repository_cache import invalidate_profesores_cache
+
+from application.dtos import CrearProfesorDTO, ProfesorDTO
 
 logger = get_logger(__name__)
 
@@ -86,14 +88,19 @@ class CrearProfesorUseCase:
                 recreos_permitidos=dto.recreos_permitidos,
             )
 
-            # 4. Guardar en repositorio
+            # 7. Guardar en repositorio
             entidad_guardada = self.repository.save(entidad)
-            self.session.commit()
+
+            # 8. Invalidar cache de profesores
+            invalidate_profesores_cache()
+            logger.info(f"Cache invalidado tras crear: {entidad_guardada.nombre_completo}")
+
+            return self._entidad_to_dto(entidad_guardada)
 
             logger.info(
                 "Profesor creado exitosamente",
                 profesor_id=entidad_guardada.id,
-                nombre=entidad_guardada.nombre_completo
+                nombre=entidad_guardada.nombre_completo,
             )
 
             # 5. Convertir a DTO de salida

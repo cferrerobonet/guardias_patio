@@ -5,32 +5,29 @@ Este módulo implementa la UI para exportar/importar datos en JSON
 y generar calendarios PDF para profesores.
 """
 
-from datetime import datetime
-
 import ui_styles as styles
 from models.models import Configuracion, Profesor, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QCheckBox,
-    QComboBox,
     QFileDialog,
-    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QMessageBox,
     QPushButton,
-    QScrollArea,
     QTextEdit,
     QVBoxLayout,
-    QWidget,
 )
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
 from services.importador_profesores import importar_profesores_desde_excel
 
 from presentation.forms.base_form import BaseForm
-from presentation.themes.ccleaner_theme import ERROR_RED, TEXT_SECONDARY
+from presentation.forms.import_export_widgets import (
+    JsonOperationsWidget,
+    PdfExportWidget,
+)
+from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
 
 
@@ -50,6 +47,43 @@ class ImportExportForm(BaseForm):
         """
         super().__init__(session)
         self.setup_ui()
+
+    # ========== PROPIEDADES DE COMPATIBILIDAD ==========
+
+    @property
+    def limpiar_checkbox(self):
+        """Compatibilidad: acceso al checkbox de limpiar datos."""
+        return self.json_widget.limpiar_checkbox
+
+    @property
+    def pdf_tipo_combo(self):
+        """Compatibilidad: acceso al combo de tipo PDF."""
+        return self.pdf_widget.pdf_tipo_combo
+
+    @property
+    def pdf_mes_combo(self):
+        """Compatibilidad: acceso al combo de mes PDF."""
+        return self.pdf_widget.pdf_mes_combo
+
+    @property
+    def pdf_anio_combo(self):
+        """Compatibilidad: acceso al combo de año PDF."""
+        return self.pdf_widget.pdf_anio_combo
+
+    @property
+    def pdf_curso_combo(self):
+        """Compatibilidad: acceso al combo de curso PDF."""
+        return self.pdf_widget.pdf_curso_combo
+
+    @property
+    def profesor_checkboxes(self):
+        """Compatibilidad: acceso a la lista de checkboxes de profesores."""
+        return self.pdf_widget.profesor_checkboxes
+
+    @property
+    def seleccionar_todos_check(self):
+        """Compatibilidad: acceso al checkbox de seleccionar todos."""
+        return self.pdf_widget.seleccionar_todos_check
 
     def setup_ui(self):
         """Construir la interfaz del formulario."""
@@ -71,11 +105,13 @@ class ImportExportForm(BaseForm):
             "o generar calendarios PDF individuales."
         )
         desc.setWordWrap(True)
-        desc.setStyleSheet(f"""
+        desc.setStyleSheet(
+            f"""
             color: {TEXT_SECONDARY};
             padding: 10px;
             font-size: 12px;
-        """)
+        """
+        )
         desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(desc)
 
@@ -83,17 +119,21 @@ class ImportExportForm(BaseForm):
         layout_columnas = QHBoxLayout()
         layout_columnas.setSpacing(15)
 
-        # Columna izquierda: Exportar e Importar JSON
+        # Columna izquierda: JSON Operations Widget
         columna_izq = QVBoxLayout()
-        columna_izq.addWidget(self._crear_seccion_exportar())
-        columna_izq.addWidget(self._crear_seccion_importar())
+        self.json_widget = JsonOperationsWidget(self)
+        self.json_widget.exportar_solicitado.connect(self.exportar_datos)
+        self.json_widget.importar_solicitado.connect(self.importar_datos)
+        columna_izq.addWidget(self.json_widget)
         columna_izq.addStretch()
         layout_columnas.addLayout(columna_izq, 1)
 
         # Columna derecha: Importar profesores y PDF
         columna_der = QVBoxLayout()
         columna_der.addWidget(self._crear_seccion_importar_profesores())
-        columna_der.addWidget(self._crear_seccion_pdf())
+        self.pdf_widget = PdfExportWidget(self.session, self)
+        self.pdf_widget.generar_pdfs_solicitado.connect(self.exportar_pdfs)
+        columna_der.addWidget(self.pdf_widget)
         columna_der.addStretch()
         layout_columnas.addLayout(columna_der, 1)
 
@@ -116,83 +156,6 @@ class ImportExportForm(BaseForm):
 
         self.setLayout(main_layout)
 
-    def _crear_seccion_exportar(self) -> QGroupBox:
-        """Crear sección de exportación a JSON."""
-        grupo = QGroupBox("📤 EXPORTAR DATOS A JSON")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
-
-        layout = QVBoxLayout()
-        layout.setSpacing(10)
-        layout.setContentsMargins(15, 20, 15, 15)
-
-        info = QLabel(
-            "Exporta todos los datos actuales a un archivo JSON para respaldo "
-            "o transferencia a otro equipo."
-        )
-        info.setWordWrap(True)
-        info.setStyleSheet(f"""
-            color: {TEXT_SECONDARY};
-            font-size: 11px;
-            font-weight: normal;
-        """)
-        layout.addWidget(info)
-
-        self.exportar_btn = QPushButton("💾 Exportar a JSON...")
-        self.exportar_btn.clicked.connect(self.exportar_datos)
-        self.exportar_btn.setMinimumHeight(40)
-        self.exportar_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
-        layout.addWidget(self.exportar_btn)
-
-        grupo.setLayout(layout)
-        return grupo
-
-    def _crear_seccion_importar(self) -> QGroupBox:
-        """Crear sección de importación desde JSON."""
-        grupo = QGroupBox("📥 IMPORTAR DATOS DESDE JSON")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
-
-        layout = QVBoxLayout()
-        layout.setSpacing(10)
-        layout.setContentsMargins(15, 20, 15, 15)
-
-        info = QLabel(
-            "⚠️ ATENCIÓN: Esto puede ELIMINAR los datos actuales si activas la opción."
-        )
-        info.setWordWrap(True)
-        info.setStyleSheet(f"""
-            color: {ERROR_RED};
-            font-size: 11px;
-            font-weight: bold;
-            padding: 5px;
-        """)
-        layout.addWidget(info)
-
-        self.limpiar_checkbox = QCheckBox(
-            "Eliminar datos existentes antes de importar"
-        )
-        self.limpiar_checkbox.setChecked(True)
-        self.limpiar_checkbox.setStyleSheet(f"""
-            QCheckBox {{
-                font-size: 12px;
-                font-weight: normal;
-                color: {TEXT_SECONDARY};
-            }}
-            QCheckBox::indicator {{
-                width: 18px;
-                height: 18px;
-            }}
-        """)
-        layout.addWidget(self.limpiar_checkbox)
-
-        self.importar_btn = QPushButton("📂 Importar desde JSON...")
-        self.importar_btn.clicked.connect(self.importar_datos)
-        self.importar_btn.setMinimumHeight(40)
-        self.importar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
-        layout.addWidget(self.importar_btn)
-
-        grupo.setLayout(layout)
-        return grupo
-
     def _crear_seccion_importar_profesores(self) -> QGroupBox:
         """Crear sección de importación de profesores desde Excel."""
         grupo = QGroupBox("📊 IMPORTAR PROFESORES DESDE EXCEL")
@@ -207,14 +170,16 @@ class ImportExportForm(BaseForm):
             "Los nuevos se añadirán, los existentes se omitirán."
         )
         info.setWordWrap(True)
-        info.setStyleSheet(f"""
+        info.setStyleSheet(
+            f"""
             color: {TEXT_SECONDARY};
             font-size: 11px;
             font-weight: normal;
-        """)
+        """
+        )
         layout.addWidget(info)
 
-        self.importar_profesores_btn = QPushButton("👥 Importar Profesores...")
+        self.importar_profesores_btn = QPushButton("� Importar Profesores...")
         self.importar_profesores_btn.clicked.connect(self.importar_profesores)
         self.importar_profesores_btn.setMinimumHeight(40)
         self.importar_profesores_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
@@ -222,268 +187,6 @@ class ImportExportForm(BaseForm):
 
         grupo.setLayout(layout)
         return grupo
-
-    def _crear_seccion_pdf(self) -> QGroupBox:
-        """Crear sección de exportación a PDF con opciones avanzadas."""
-        grupo = QGroupBox("📄 GENERAR CALENDARIOS PDF")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
-
-        layout = QVBoxLayout()
-        layout.setSpacing(12)
-        layout.setContentsMargins(15, 20, 15, 15)
-
-        info = QLabel(
-            "Genera calendarios individuales en PDF para profesores "
-            "con sus guardias asignadas."
-        )
-        info.setWordWrap(True)
-        info.setStyleSheet(f"""
-            color: {TEXT_SECONDARY};
-            font-size: 11px;
-            font-weight: normal;
-        """)
-        layout.addWidget(info)
-
-        # Tipo de exportación
-        tipo_layout = QVBoxLayout()
-        tipo_layout.setSpacing(5)
-        tipo_label = QLabel("📋 Tipo de exportación:")
-        tipo_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        tipo_layout.addWidget(tipo_label)
-
-        self.pdf_tipo_combo = QComboBox()
-        self.pdf_tipo_combo.addItem(
-            "📅 Mes específico - Todos los profesores", "mes_todos"
-        )
-        self.pdf_tipo_combo.addItem(
-            "👤 Mes específico - Profesores seleccionados", "mes_seleccionados"
-        )
-        self.pdf_tipo_combo.addItem(
-            "📚 Curso completo - Todos los profesores", "curso_todos"
-        )
-        self.pdf_tipo_combo.addItem(
-            "📚 Curso completo - Profesores seleccionados", "curso_seleccionados"
-        )
-        self.pdf_tipo_combo.currentIndexChanged.connect(self._on_tipo_pdf_changed)
-        self.pdf_tipo_combo.setStyleSheet(styles.STYLE_INPUT)
-        tipo_layout.addWidget(self.pdf_tipo_combo)
-        layout.addLayout(tipo_layout)
-
-        # Controles de mes/año (para opciones mensuales)
-        self.fecha_container = QWidget()
-        fecha_layout = QHBoxLayout(self.fecha_container)
-        fecha_layout.setContentsMargins(0, 0, 0, 0)
-        fecha_layout.setSpacing(10)
-
-        # Mes
-        mes_container = QVBoxLayout()
-        mes_container.setSpacing(5)
-        mes_label = QLabel("📅 Mes:")
-        mes_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        mes_container.addWidget(mes_label)
-
-        self.pdf_mes_combo = QComboBox()
-        meses = [
-            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-        ]
-        self.pdf_mes_combo.addItems(meses)
-        self.pdf_mes_combo.setCurrentIndex(datetime.now().month - 1)
-        self.pdf_mes_combo.setStyleSheet(styles.STYLE_INPUT)
-        mes_container.addWidget(self.pdf_mes_combo)
-        fecha_layout.addLayout(mes_container, 2)
-
-        # Año
-        anio_container = QVBoxLayout()
-        anio_container.setSpacing(5)
-        anio_label = QLabel("📆 Año:")
-        anio_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        anio_container.addWidget(anio_label)
-
-        self.pdf_anio_combo = QComboBox()
-        anio_actual = datetime.now().year
-        for anio in range(anio_actual - 1, anio_actual + 3):
-            self.pdf_anio_combo.addItem(str(anio))
-        self.pdf_anio_combo.setCurrentIndex(1)  # Año actual
-        self.pdf_anio_combo.setStyleSheet(styles.STYLE_INPUT)
-        anio_container.addWidget(self.pdf_anio_combo)
-        fecha_layout.addLayout(anio_container, 1)
-
-        layout.addWidget(self.fecha_container)
-
-        # Año de inicio del curso (para opciones de curso completo)
-        self.curso_container = QWidget()
-        curso_layout = QVBoxLayout(self.curso_container)
-        curso_layout.setContentsMargins(0, 0, 0, 0)
-        curso_layout.setSpacing(5)
-
-        curso_label = QLabel("📚 Año de inicio del curso:")
-        curso_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        curso_layout.addWidget(curso_label)
-
-        self.pdf_curso_combo = QComboBox()
-        for anio in range(anio_actual - 1, anio_actual + 3):
-            self.pdf_curso_combo.addItem(f"{anio}/{anio + 1}", anio)
-        self.pdf_curso_combo.setCurrentIndex(1)
-        self.pdf_curso_combo.setStyleSheet(styles.STYLE_INPUT)
-        curso_layout.addWidget(self.pdf_curso_combo)
-
-        curso_info = QLabel(
-            "ℹ️ Se generarán PDFs de Septiembre a Junio"
-        )
-        curso_info.setStyleSheet(f"""
-            color: {TEXT_SECONDARY};
-            font-size: 10px;
-            font-style: italic;
-        """)
-        curso_layout.addWidget(curso_info)
-
-        layout.addWidget(self.curso_container)
-        self.curso_container.hide()  # Oculto por defecto
-
-        # Lista de selección de profesores (para opciones con selección)
-        self.profesores_container = QWidget()
-        profesores_layout = QVBoxLayout(self.profesores_container)
-        profesores_layout.setContentsMargins(0, 0, 0, 0)
-        profesores_layout.setSpacing(5)
-
-        prof_label = QLabel("👥 Seleccionar profesores:")
-        prof_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        profesores_layout.addWidget(prof_label)
-
-        # Scroll area para checkboxes de profesores
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setMaximumHeight(200)
-        scroll_area.setStyleSheet("""
-            QScrollArea {
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                background-color: white;
-            }
-        """)
-
-        scroll_widget = QWidget()
-        self.profesores_checks_layout = QVBoxLayout(scroll_widget)
-        self.profesores_checks_layout.setSpacing(5)
-        self.profesores_checks_layout.setContentsMargins(10, 10, 10, 10)
-
-        # Checkbox "Seleccionar todos"
-        self.seleccionar_todos_check = QCheckBox("✅ Seleccionar todos")
-        self.seleccionar_todos_check.setChecked(True)
-        self.seleccionar_todos_check.stateChanged.connect(self._on_seleccionar_todos_changed)
-        self.seleccionar_todos_check.setStyleSheet("""
-            QCheckBox {
-                font-weight: bold;
-                color: #1976D2;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-            }
-        """)
-        self.profesores_checks_layout.addWidget(self.seleccionar_todos_check)
-
-        # Separator
-        separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background-color: #ccc; max-height: 1px;")
-        self.profesores_checks_layout.addWidget(separator)
-
-        # Lista dinámica de checkboxes de profesores
-        self.profesor_checkboxes = []
-        self._cargar_profesores_checkboxes()
-
-        scroll_area.setWidget(scroll_widget)
-        profesores_layout.addWidget(scroll_area)
-
-        layout.addWidget(self.profesores_container)
-        self.profesores_container.hide()  # Oculto por defecto
-
-        # Botón de exportación
-        self.exportar_pdf_btn = QPushButton("📄 Generar PDFs")
-        self.exportar_pdf_btn.clicked.connect(self.exportar_pdfs)
-        self.exportar_pdf_btn.setMinimumHeight(40)
-        self.exportar_pdf_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
-        layout.addWidget(self.exportar_pdf_btn)
-
-        grupo.setLayout(layout)
-        return grupo
-
-    def _cargar_profesores_checkboxes(self):
-        """Cargar checkboxes de profesores desde la base de datos."""
-        try:
-            # Limpiar checkboxes anteriores
-            for checkbox in self.profesor_checkboxes:
-                checkbox.deleteLater()
-            self.profesor_checkboxes.clear()
-
-            # Obtener profesores
-            profesores = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
-
-            for profesor in profesores:
-                checkbox = QCheckBox(f"{profesor.nombre_completo} ({profesor.turno})")
-                checkbox.setChecked(True)  # Seleccionados por defecto
-                checkbox.setProperty("profesor_id", profesor.id)
-                checkbox.setStyleSheet("""
-                    QCheckBox {
-                        font-size: 11px;
-                    }
-                    QCheckBox::indicator {
-                        width: 16px;
-                        height: 16px;
-                    }
-                """)
-                checkbox.stateChanged.connect(self._on_profesor_checkbox_changed)
-                self.profesores_checks_layout.addWidget(checkbox)
-                self.profesor_checkboxes.append(checkbox)
-
-        except Exception as e:
-            self.manejar_excepcion(e, "cargar lista de profesores")
-
-    def _on_tipo_pdf_changed(self):
-        """Manejar cambio en el tipo de exportación PDF."""
-        tipo = self.pdf_tipo_combo.currentData()
-
-        # Mostrar/ocultar controles según el tipo
-        if tipo in ["mes_todos", "mes_seleccionados"]:
-            self.fecha_container.show()
-            self.curso_container.hide()
-        else:  # curso_todos, curso_seleccionados
-            self.fecha_container.hide()
-            self.curso_container.show()
-
-        if tipo in ["mes_seleccionados", "curso_seleccionados"]:
-            self.profesores_container.show()
-        else:
-            self.profesores_container.hide()
-
-        # Actualizar texto del botón
-        if tipo == "mes_todos":
-            self.exportar_pdf_btn.setText("📄 Generar PDFs para Todos (Mes)")
-        elif tipo == "mes_seleccionados":
-            self.exportar_pdf_btn.setText("📄 Generar PDFs Seleccionados (Mes)")
-        elif tipo == "curso_todos":
-            self.exportar_pdf_btn.setText("📚 Generar PDF Curso Completo (Todos)")
-        else:  # curso_seleccionados
-            self.exportar_pdf_btn.setText("📚 Generar PDF Curso Completo (Seleccionados)")
-
-    def _on_seleccionar_todos_changed(self, state):
-        """Manejar cambio en el checkbox de seleccionar todos."""
-        seleccionado = (state == Qt.CheckState.Checked)
-        for checkbox in self.profesor_checkboxes:
-            checkbox.setChecked(seleccionado)
-
-    def _on_profesor_checkbox_changed(self):
-        """Manejar cambio en checkbox individual de profesor."""
-        # Actualizar estado de "Seleccionar todos"
-        todos_seleccionados = all(cb.isChecked() for cb in self.profesor_checkboxes)
-        alguno_deseleccionado = any(not cb.isChecked() for cb in self.profesor_checkboxes)
-
-        if todos_seleccionados:
-            self.seleccionar_todos_check.setCheckState(Qt.CheckState.Checked)
-        elif alguno_deseleccionado:
-            self.seleccionar_todos_check.setCheckState(Qt.CheckState.PartiallyChecked)
 
     def exportar_datos(self):
         """Exportar todos los datos a archivo JSON."""
@@ -561,9 +264,9 @@ class ImportExportForm(BaseForm):
             )
 
             # Añadir info de SMTP y SFTP si se importaron
-            if resultado.get('smtp_config', 0) > 0:
+            if resultado.get("smtp_config", 0) > 0:
                 mensaje += "• Configuración SMTP: ✅ Actualizada\n"
-            if resultado.get('sftp_config', 0) > 0:
+            if resultado.get("sftp_config", 0) > 0:
                 mensaje += "• Configuración SFTP: ✅ Actualizada\n"
 
             self.resultado_text.setText(mensaje)
@@ -572,8 +275,9 @@ class ImportExportForm(BaseForm):
             msg.setIcon(QMessageBox.Icon.Information)
             msg.setWindowTitle("Éxito")
             msg.setWindowFlags(
-                Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
-                Qt.WindowType.WindowTitleHint
+                Qt.WindowType.Dialog
+                | Qt.WindowType.CustomizeWindowHint
+                | Qt.WindowType.WindowTitleHint
             )
             msg.setText(
                 "Datos importados correctamente.\n\n"
@@ -582,9 +286,9 @@ class ImportExportForm(BaseForm):
             msg.exec()
 
             # Emitir señales de datos importados
-            if resultado.get('profesores', 0) > 0:
+            if resultado.get("profesores", 0) > 0:
                 self.profesores_importados.emit()
-            if resultado.get('zonas', 0) > 0:
+            if resultado.get("zonas", 0) > 0:
                 self.zonas_importadas.emit()
 
         except Exception as e:
@@ -611,15 +315,12 @@ class ImportExportForm(BaseForm):
             profesor_ids_seleccionados = None
             if tipo in ["mes_seleccionados", "curso_seleccionados"]:
                 profesor_ids_seleccionados = [
-                    cb.property("profesor_id")
-                    for cb in self.profesor_checkboxes
-                    if cb.isChecked()
+                    cb.property("profesor_id") for cb in self.profesor_checkboxes if cb.isChecked()
                 ]
 
                 if not profesor_ids_seleccionados:
                     self.mostrar_advertencia(
-                        "Sin selección",
-                        "Debes seleccionar al menos un profesor para exportar."
+                        "Sin selección", "Debes seleccionar al menos un profesor para exportar."
                     )
                     return
 
@@ -657,8 +358,19 @@ class ImportExportForm(BaseForm):
 
         if not cancelado:
             meses_nombres = [
-                "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                "",
+                "Enero",
+                "Febrero",
+                "Marzo",
+                "Abril",
+                "Mayo",
+                "Junio",
+                "Julio",
+                "Agosto",
+                "Septiembre",
+                "Octubre",
+                "Noviembre",
+                "Diciembre",
             ]
 
             mensaje = (
@@ -671,8 +383,7 @@ class ImportExportForm(BaseForm):
 
             self.resultado_text.setText(mensaje)
             self.mostrar_exito(
-                "PDFs generados",
-                f"Se generaron {exitos} calendarios PDF correctamente."
+                "PDFs generados", f"Se generaron {exitos} calendarios PDF correctamente."
             )
 
     def _exportar_mes_seleccionados(self, carpeta: str, profesor_ids: list[int]):
@@ -682,8 +393,7 @@ class ImportExportForm(BaseForm):
 
         def tarea_exportacion(progress_callback):
             return ExportadorPDF.exportar_profesores_seleccionados(
-                self.session, profesor_ids, mes, anio, carpeta,
-                progress_callback=progress_callback
+                self.session, profesor_ids, mes, anio, carpeta, progress_callback=progress_callback
             )
 
         exitos, cancelado = ejecutar_con_progreso(
@@ -696,8 +406,19 @@ class ImportExportForm(BaseForm):
 
         if not cancelado:
             meses_nombres = [
-                "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                "",
+                "Enero",
+                "Febrero",
+                "Marzo",
+                "Abril",
+                "Mayo",
+                "Junio",
+                "Julio",
+                "Agosto",
+                "Septiembre",
+                "Octubre",
+                "Noviembre",
+                "Diciembre",
             ]
 
             mensaje = (
@@ -711,8 +432,7 @@ class ImportExportForm(BaseForm):
 
             self.resultado_text.setText(mensaje)
             self.mostrar_exito(
-                "PDFs generados",
-                f"Se generaron {exitos} calendarios PDF correctamente."
+                "PDFs generados", f"Se generaron {exitos} calendarios PDF correctamente."
             )
 
     def _exportar_curso_todos(self, carpeta: str):
@@ -721,9 +441,11 @@ class ImportExportForm(BaseForm):
 
         def tarea_exportacion(progress_callback):
             return ExportadorPDF.exportar_curso_completo(
-                self.session, anio_inicio, carpeta,
+                self.session,
+                anio_inicio,
+                carpeta,
                 profesor_ids=None,  # Todos los profesores
-                progress_callback=progress_callback
+                progress_callback=progress_callback,
             )
 
         exito, cancelado = ejecutar_con_progreso(
@@ -746,7 +468,7 @@ class ImportExportForm(BaseForm):
             self.resultado_text.setText(mensaje)
             self.mostrar_exito(
                 "PDF generado",
-                f"Se generó el calendario del curso {anio_inicio}/{anio_inicio + 1} correctamente."
+                f"Se generó el calendario del curso {anio_inicio}/{anio_inicio + 1} correctamente.",
             )
 
     def _exportar_curso_seleccionados(self, carpeta: str, profesor_ids: list[int]):
@@ -755,9 +477,11 @@ class ImportExportForm(BaseForm):
 
         def tarea_exportacion(progress_callback):
             return ExportadorPDF.exportar_curso_completo(
-                self.session, anio_inicio, carpeta,
+                self.session,
+                anio_inicio,
+                carpeta,
                 profesor_ids=profesor_ids,
-                progress_callback=progress_callback
+                progress_callback=progress_callback,
             )
 
         exito, cancelado = ejecutar_con_progreso(
@@ -781,7 +505,7 @@ class ImportExportForm(BaseForm):
             self.resultado_text.setText(mensaje)
             self.mostrar_exito(
                 "PDF generado",
-                f"Se generó el calendario del curso {anio_inicio}/{anio_inicio + 1} correctamente."
+                f"Se generó el calendario del curso {anio_inicio}/{anio_inicio + 1} correctamente.",
             )
 
     def importar_profesores(self):

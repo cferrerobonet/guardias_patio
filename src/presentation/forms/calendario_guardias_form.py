@@ -5,23 +5,24 @@ Este módulo implementa la UI para visualizar guardias asignadas
 por fecha, con filtros por profesor, zona y turno.
 """
 
-import ui_styles as styles
-from models.models import Guardia, Profesor, Zona
+from models.models import Guardia
 from PyQt6.QtCore import QDate, Qt
 from PyQt6.QtGui import QColor, QFont
 from PyQt6.QtWidgets import (
     QCalendarWidget,
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QTableView,
-    QTextEdit,
     QVBoxLayout,
 )
 from utils.icon_manager import IconManager
 
 from presentation.forms.base_form import BaseForm
+from presentation.forms.calendario_widgets import (
+    DetallesDiaWidget,
+    FiltrosGuardiasWidget,
+)
 
 
 class CalendarioGuardiasWidget(QCalendarWidget):
@@ -113,9 +114,12 @@ class CalendarioGuardiasWidget(QCalendarWidget):
             font.setPixelSize(11)
             painter.setFont(font)
             painter.drawText(
-                circulo_x, circulo_y, circulo_size, circulo_size,
+                circulo_x,
+                circulo_y,
+                circulo_size,
+                circulo_size,
                 Qt.AlignmentFlag.AlignCenter,
-                str(num_guardias)
+                str(num_guardias),
             )
 
             painter.restore()
@@ -143,11 +147,7 @@ class CalendarioGuardiasWidget(QCalendarWidget):
                     col = index.column()
 
                     # Obtener el primer día del mes visible
-                    first_day = QDate(
-                        self.yearShown(),
-                        self.monthShown(),
-                        1
-                    )
+                    first_day = QDate(self.yearShown(), self.monthShown(), 1)
 
                     # Calcular el offset del primer día de la semana
                     day_of_week = first_day.dayOfWeek()
@@ -162,11 +162,7 @@ class CalendarioGuardiasWidget(QCalendarWidget):
 
                     # Validar que el día está en el rango del mes
                     if 1 <= day_number <= first_day.daysInMonth():
-                        fecha_qdate = QDate(
-                            self.yearShown(),
-                            self.monthShown(),
-                            day_number
-                        )
+                        fecha_qdate = QDate(self.yearShown(), self.monthShown(), day_number)
                         fecha_py = fecha_qdate.toPyDate()
 
                         # Solo actualizar tooltip si cambió la fecha
@@ -176,17 +172,15 @@ class CalendarioGuardiasWidget(QCalendarWidget):
 
                             if num_guardias > 0:
                                 try:
-                                    guardias = self.session.query(Guardia).filter(
-                                        Guardia.fecha == fecha_py
-                                    ).all()
+                                    guardias = (
+                                        self.session.query(Guardia)
+                                        .filter(Guardia.fecha == fecha_py)
+                                        .all()
+                                    )
 
                                     if guardias:
-                                        tooltip_lines = [
-                                            f"📅 {fecha_py.strftime('%d/%m/%Y')}"
-                                        ]
-                                        tooltip_lines.append(
-                                            f"Total: {num_guardias} guardia(s)"
-                                        )
+                                        tooltip_lines = [f"📅 {fecha_py.strftime('%d/%m/%Y')}"]
+                                        tooltip_lines.append(f"Total: {num_guardias} guardia(s)")
 
                                         # Agrupar por turno
                                         guardias_por_turno = {}
@@ -201,8 +195,7 @@ class CalendarioGuardiasWidget(QCalendarWidget):
                                         ):
                                             tooltip_lines.append("")
                                             tooltip_lines.append(
-                                                f"🕐 {turno.upper()}: "
-                                                f"{len(guardias_grupo)}"
+                                                f"🕐 {turno.upper()}: {len(guardias_grupo)}"
                                             )
                                             # Mostrar primeros 3 profesores
                                             for guardia in guardias_grupo[:3]:
@@ -217,10 +210,7 @@ class CalendarioGuardiasWidget(QCalendarWidget):
 
                                         # Mostrar tooltip
                                         global_pos = self._table_view.viewport().mapToGlobal(pos)
-                                        QToolTip.showText(
-                                            global_pos,
-                                            "\n".join(tooltip_lines)
-                                        )
+                                        QToolTip.showText(global_pos, "\n".join(tooltip_lines))
                                         if e.type() == QEvent.Type.ToolTip:
                                             return True
                                 except Exception as ex:
@@ -249,9 +239,7 @@ class CalendarioGuardiasWidget(QCalendarWidget):
         # Usar cache para evitar consultas repetidas
         if fecha not in self._guardias_cache:
             try:
-                count = self.session.query(Guardia).filter(
-                    Guardia.fecha == fecha
-                ).count()
+                count = self.session.query(Guardia).filter(Guardia.fecha == fecha).count()
                 self._guardias_cache[fecha] = count
             except Exception:
                 self._guardias_cache[fecha] = 0
@@ -279,7 +267,7 @@ class CalendarioGuardiasForm(BaseForm):
         self.setup_ui()
 
         # Cargar datos iniciales
-        self.cargar_filtros()
+        self.filtros_widget.cargar_datos()
         self.actualizar_estadisticas()
         self.actualizar_guardias_dia(self.calendario.selectedDate())
 
@@ -327,9 +315,7 @@ class CalendarioGuardiasForm(BaseForm):
         # Botón mes anterior
         self.btn_mes_anterior = QPushButton("  ◀  Anterior")
         icon_manager = IconManager()
-        self.btn_mes_anterior.setIcon(
-            icon_manager.get_icon("chevron-left", "white", 20)
-        )
+        self.btn_mes_anterior.setIcon(icon_manager.get_icon("chevron-left", "white", 20))
         self.btn_mes_anterior.setFixedSize(120, 40)
         self.btn_mes_anterior.setToolTip("Mes anterior")
         self.btn_mes_anterior.clicked.connect(self._mes_anterior)
@@ -368,9 +354,7 @@ class CalendarioGuardiasForm(BaseForm):
 
         # Botón mes siguiente
         self.btn_mes_siguiente = QPushButton("Siguiente  ▶")
-        self.btn_mes_siguiente.setIcon(
-            icon_manager.get_icon("chevron-right", "white", 20)
-        )
+        self.btn_mes_siguiente.setIcon(icon_manager.get_icon("chevron-right", "white", 20))
         self.btn_mes_siguiente.setFixedSize(120, 40)
         self.btn_mes_siguiente.setToolTip("Mes siguiente")
         self.btn_mes_siguiente.clicked.connect(self._mes_siguiente)
@@ -396,9 +380,7 @@ class CalendarioGuardiasForm(BaseForm):
 
         # Botón hoy
         self.btn_hoy = QPushButton("📅 Hoy")
-        self.btn_hoy.setIcon(
-            icon_manager.get_icon("calendar-month", "white", 20)
-        )
+        self.btn_hoy.setIcon(icon_manager.get_icon("calendar-month", "white", 20))
         self.btn_hoy.setFixedSize(100, 40)
         self.btn_hoy.setToolTip("Ir a la fecha de hoy")
         self.btn_hoy.clicked.connect(self._ir_a_hoy)
@@ -480,8 +462,18 @@ class CalendarioGuardiasForm(BaseForm):
         """Actualizar el label con el mes y año actual del calendario."""
         fecha = self.calendario.selectedDate()
         meses_es = [
-            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+            "Enero",
+            "Febrero",
+            "Marzo",
+            "Abril",
+            "Mayo",
+            "Junio",
+            "Julio",
+            "Agosto",
+            "Septiembre",
+            "Octubre",
+            "Noviembre",
+            "Diciembre",
         ]
         mes_nombre = meses_es[fecha.month() - 1]
         self.label_mes_anio.setText(f"{mes_nombre} {fecha.year()}")
@@ -496,181 +488,20 @@ class CalendarioGuardiasForm(BaseForm):
         panel.setSpacing(10)
         panel.setContentsMargins(0, 0, 0, 0)
 
-        # Filtros - con fondo visible
-        filtros_label = QLabel("🔍 Filtros")
-        filtros_label.setStyleSheet("""
-            font-size: 14px;
-            font-weight: bold;
-            color: #1976D2;
-            background-color: #E3F2FD;
-            padding: 8px;
-            border-radius: 4px;
-            margin-top: 10px;
-        """)
-        panel.addWidget(filtros_label)        # Filtro por profesor
-        label_profesor_filtro = QLabel("👤 Profesor:")
-        label_profesor_filtro.setStyleSheet("""
-            font-size: 12px;
-            font-weight: bold;
-            color: #333;
-            padding: 4px 0px;
-        """)
-        panel.addWidget(label_profesor_filtro)
+        # Widget de filtros
+        self.filtros_widget = FiltrosGuardiasWidget(self.session)
+        self.filtros_widget.filtros_cambiados.connect(self.aplicar_filtros)
+        panel.addWidget(self.filtros_widget)
 
-        self.filtro_profesor = QComboBox()
-        self.filtro_profesor.addItem("Todos los profesores", None)
-        self.filtro_profesor.currentIndexChanged.connect(self.aplicar_filtros)
-        self.filtro_profesor.setStyleSheet("""
-            QComboBox {
-                padding: 6px;
-                border: 2px solid #BDBDBD;
-                border-radius: 4px;
-                background-color: white;
-                min-height: 25px;
-            }
-            QComboBox:hover {
-                border: 2px solid #2196F3;
-            }
-            QComboBox:focus {
-                border: 2px solid #1976D2;
-            }
-        """)
-        panel.addWidget(self.filtro_profesor)
-
-        # Filtro por zona
-        label_zona_filtro = QLabel("📍 Zona:")
-        label_zona_filtro.setStyleSheet("""
-            font-size: 12px;
-            font-weight: bold;
-            color: #333;
-            padding: 4px 0px;
-        """)
-        panel.addWidget(label_zona_filtro)
-
-        self.filtro_zona = QComboBox()
-        self.filtro_zona.addItem("Todas las zonas", None)
-        self.filtro_zona.currentIndexChanged.connect(self.aplicar_filtros)
-        self.filtro_zona.setStyleSheet("""
-            QComboBox {
-                padding: 6px;
-                border: 2px solid #BDBDBD;
-                border-radius: 4px;
-                background-color: white;
-                min-height: 25px;
-            }
-            QComboBox:hover {
-                border: 2px solid #2196F3;
-            }
-            QComboBox:focus {
-                border: 2px solid #1976D2;
-            }
-        """)
-        panel.addWidget(self.filtro_zona)
-
-        # Filtro por turno
-        label_turno_filtro = QLabel("🕐 Turno:")
-        label_turno_filtro.setStyleSheet("""
-            font-size: 12px;
-            font-weight: bold;
-            color: #333;
-            padding: 4px 0px;
-        """)
-        panel.addWidget(label_turno_filtro)
-
-        self.filtro_turno = QComboBox()
-        self.filtro_turno.addItem("📋 Todos los turnos", "Todos")
-        self.filtro_turno.addItem("☀️ Mañana (máx 8 guardias/día)", "mañana")
-        self.filtro_turno.addItem("🌙 Tarde (máx 8 guardias/día)", "tarde")
-        self.filtro_turno.currentIndexChanged.connect(self.aplicar_filtros)
-        self.filtro_turno.setStyleSheet("""
-            QComboBox {
-                padding: 6px;
-                border: 2px solid #BDBDBD;
-                border-radius: 4px;
-                background-color: white;
-                min-height: 25px;
-                min-width: 240px;
-            }
-            QComboBox:hover {
-                border: 2px solid #2196F3;
-            }
-            QComboBox:focus {
-                border: 2px solid #1976D2;
-            }
-        """)
-        panel.addWidget(self.filtro_turno)
-
-        # Botón para limpiar filtros
-        self.limpiar_filtros_btn = QPushButton("🗑️ Limpiar filtros")
-        self.limpiar_filtros_btn.clicked.connect(self.limpiar_filtros)
-        self.limpiar_filtros_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #FF9800;
-                color: white;
-                border: 2px solid #F57C00;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 12px;
-                padding: 8px;
-                min-height: 30px;
-            }
-            QPushButton:hover {
-                background-color: #F57C00;
-                border: 2px solid #E65100;
-            }
-            QPushButton:pressed {
-                background-color: #E65100;
-            }
-        """)
-        panel.addWidget(self.limpiar_filtros_btn)
-
-        # Detalles del día seleccionado
-        detalles_label = QLabel("Guardias del día seleccionado:")
-        detalles_label.setStyleSheet(styles.STYLE_LABEL_FIELD + " margin-top: 20px;")
-        panel.addWidget(detalles_label)
-
-        self.guardias_dia_text = QTextEdit()
-        self.guardias_dia_text.setReadOnly(True)
-        self.guardias_dia_text.setMaximumHeight(400)
-        panel.addWidget(self.guardias_dia_text)
-
-        # Estadísticas
-        stats_label = QLabel("Estadísticas:")
-        stats_label.setStyleSheet(styles.STYLE_LABEL_FIELD + " margin-top: 10px;")
-        panel.addWidget(stats_label)
-
-        self.stats_text = QTextEdit()
-        self.stats_text.setReadOnly(True)
-        self.stats_text.setMaximumHeight(150)
-        panel.addWidget(self.stats_text)
+        # Widget de detalles del día y estadísticas
+        self.detalles_widget = DetallesDiaWidget(self.session)
+        panel.addWidget(self.detalles_widget)
 
         return panel
 
-    def cargar_filtros(self):
-        """Cargar opciones de filtros desde la base de datos."""
-        try:
-            # Cargar profesores
-            profesores = self.session.query(Profesor).all()
-            self.filtro_profesor.clear()
-            self.filtro_profesor.addItem("Todos los profesores", None)
-            for prof in profesores:
-                self.filtro_profesor.addItem(prof.nombre_completo, prof.id)
-
-            # Cargar zonas
-            zonas = self.session.query(Zona).all()
-            self.filtro_zona.clear()
-            self.filtro_zona.addItem("Todas las zonas", None)
-            for zona in zonas:
-                self.filtro_zona.addItem(zona.nombre_zona, zona.id)
-
-        except Exception as e:
-            self.manejar_excepcion(e, "cargar filtros")
-
     def limpiar_filtros(self):
         """Limpiar todos los filtros."""
-        self.filtro_profesor.setCurrentIndex(0)
-        self.filtro_zona.setCurrentIndex(0)
-        self.filtro_turno.setCurrentIndex(0)
+        self.filtros_widget.limpiar()
 
     def aplicar_filtros(self):
         """Aplicar filtros y actualizar visualización."""
@@ -685,106 +516,11 @@ class CalendarioGuardiasForm(BaseForm):
         Args:
             qdate: Fecha seleccionada (QDate)
         """
-        try:
-            fecha = qdate.toPyDate()
-
-            # Construir query con filtros
-            query = self.session.query(Guardia).filter(Guardia.fecha == fecha)
-
-            profesor_id = self.filtro_profesor.currentData()
-            if profesor_id is not None:
-                query = query.filter(Guardia.profesor_id == profesor_id)
-
-            zona_id = self.filtro_zona.currentData()
-            if zona_id is not None:
-                query = query.filter(Guardia.zona_id == zona_id)
-
-            turno_filtro = self.filtro_turno.currentData()
-            if turno_filtro and turno_filtro != "Todos":
-                query = query.filter(Guardia.turno == turno_filtro)
-
-            guardias = query.all()
-
-            # Formatear y mostrar
-            if not guardias:
-                self.guardias_dia_text.setText(
-                    f"📅 {fecha.strftime('%d/%m/%Y')}\n\n"
-                    "No hay guardias asignadas para este día con los filtros aplicados."
-                )
-            else:
-                lineas = [f"📅 {fecha.strftime('%d/%m/%Y')} - {len(guardias)} guardia(s)\n"]
-
-                # Agrupar por turno y recreo
-                guardias_por_turno = {}
-                for g in guardias:
-                    key = (g.turno, g.recreo)
-                    if key not in guardias_por_turno:
-                        guardias_por_turno[key] = []
-                    guardias_por_turno[key].append(g)
-
-                # Mostrar organizadas
-                for (turno, recreo), guardias_grupo in sorted(guardias_por_turno.items()):
-                    lineas.append(f"\n🕐 {turno.upper()} - Recreo {recreo}")
-                    lineas.append("─" * 40)
-                    for g in guardias_grupo:
-                        prof_nombre = (
-                            g.profesor.nombre_completo if g.profesor else "Sin profesor"
-                        )
-                        zona_nombre = g.zona.nombre_zona if g.zona else "Sin zona"
-                        lineas.append(f"  • {prof_nombre} → {zona_nombre}")
-
-                self.guardias_dia_text.setText("\n".join(lineas))
-
-        except Exception as e:
-            self.manejar_excepcion(e, "actualizar guardias del día")
+        fecha = qdate.toPyDate()
+        filtros = self.filtros_widget.get_datos()
+        self.detalles_widget.actualizar_guardias_dia(fecha, filtros)
 
     def actualizar_estadisticas(self):
         """Actualizar estadísticas generales."""
-        try:
-            # Construir query con filtros
-            query = self.session.query(Guardia)
-
-            profesor_id = self.filtro_profesor.currentData()
-            if profesor_id is not None:
-                query = query.filter(Guardia.profesor_id == profesor_id)
-
-            zona_id = self.filtro_zona.currentData()
-            if zona_id is not None:
-                query = query.filter(Guardia.zona_id == zona_id)
-
-            turno_filtro = self.filtro_turno.currentData()
-            if turno_filtro and turno_filtro != "Todos":
-                query = query.filter(Guardia.turno == turno_filtro)
-
-            total_guardias = query.count()
-
-            # Contar por turno
-            guardias_manana = (
-                query.filter(Guardia.turno == "mañana").count()
-                if (not turno_filtro or turno_filtro == "Todos")
-                else (total_guardias if turno_filtro == "mañana" else 0)
-            )
-            guardias_tarde = (
-                query.filter(Guardia.turno == "tarde").count()
-                if (not turno_filtro or turno_filtro == "Todos")
-                else (total_guardias if turno_filtro == "tarde" else 0)
-            )
-
-            lineas = [
-                f"📊 Total guardias: {total_guardias}",
-                f"🌅 Mañana: {guardias_manana}",
-                f"🌆 Tarde: {guardias_tarde}",
-            ]
-
-            # Si hay filtro de profesor, mostrar estadísticas personales
-            if profesor_id is not None:
-                profesor = self.session.query(Profesor).get(profesor_id)
-                if profesor:
-                    lineas.append(f"\n👤 {profesor.nombre_completo}")
-                    lineas.append(f"   Turno: {profesor.turno}")
-                    lineas.append(f"   Tutor: {'Sí' if profesor.tutor else 'No'}")
-
-            self.stats_text.setText("\n".join(lineas))
-
-        except Exception as e:
-            self.manejar_excepcion(e, "actualizar estadísticas")
+        filtros = self.filtros_widget.get_datos()
+        self.detalles_widget.actualizar_estadisticas(filtros)

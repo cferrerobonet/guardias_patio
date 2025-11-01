@@ -31,7 +31,6 @@ from presentation.widgets import (
     DashboardResumen,
     GestionarAusenciasForm,
     GestorSustituciones,
-    NotificacionesPanel,
     PanelEstadisticas,
     ReportesForm,
     VistaCalendario,
@@ -131,18 +130,9 @@ class CCleanerMainWindow(QMainWindow):
 
         # INICIO
         self.add_view("dashboard", "Dashboard", DashboardResumen())
-        self.add_view(
-            "notificaciones",
-            "Notificaciones",
-            NotificacionesPanel()
-        )
 
         # GESTIÓN
-        self.add_view(
-            "profesores",
-            "Gestión de Profesores",
-            ProfesorForm(self.session)
-        )
+        self.add_view("profesores", "Gestión de Profesores", ProfesorForm(self.session))
         self.add_view("zonas", "Gestión de Zonas", ZonaForm(self.session))
         self.add_view(
             "configuracion",
@@ -156,11 +146,7 @@ class CCleanerMainWindow(QMainWindow):
             "Asignación de Guardias",
             AsignacionGuardiasForm(self.session, sync_manager=self.sync_manager),
         )
-        self.add_view(
-            "calendario",
-            "Calendario de Guardias",
-            VistaCalendario(self.session)
-        )
+        self.add_view("calendario", "Calendario de Guardias", VistaCalendario(self.session))
 
         # PERSONAL
         self.add_view(
@@ -180,16 +166,8 @@ class CCleanerMainWindow(QMainWindow):
             "Importar / Exportar Datos",
             ImportExportForm(self.session),
         )
-        self.add_view(
-            "reportes",
-            "Generador de Reportes",
-            ReportesForm()
-        )
-        self.add_view(
-            "estadisticas",
-            "Estadísticas",
-            PanelEstadisticas(self.session)
-        )
+        self.add_view("reportes", "Generador de Reportes", ReportesForm())
+        self.add_view("estadisticas", "Estadísticas", PanelEstadisticas(self.session))
 
     def add_view(self, section: str, title: str, content_widget: QWidget):
         """Añadir una vista al stack"""
@@ -206,7 +184,6 @@ class CCleanerMainWindow(QMainWindow):
         """Conectar señales de los widgets"""
         # Dashboard - conectar botones de acceso rápido
         dashboard_widget = None
-        notificaciones_widget = None
 
         # Buscar los widgets dentro de los wrappers
         for key, wrapper in self.widgets.items():
@@ -216,13 +193,6 @@ class CCleanerMainWindow(QMainWindow):
                 if scroll and scroll.widget():
                     container = scroll.widget()
                     dashboard_widget = container.findChild(DashboardResumen)
-            elif key == "notificaciones":
-                scroll = wrapper.findChild(QScrollArea)
-                if scroll and scroll.widget():
-                    container = scroll.widget()
-                    notificaciones_widget = container.findChild(
-                        NotificacionesPanel
-                    )
 
         if dashboard_widget:
             dashboard_widget.btn_generar.clicked.connect(
@@ -243,24 +213,3 @@ class CCleanerMainWindow(QMainWindow):
             dashboard_widget.btn_reportes.clicked.connect(
                 lambda: self.sidebar.set_active_section("reportes")
             )
-
-        if notificaciones_widget:
-            notificaciones_widget.accion_notificacion.connect(
-                self.manejar_accion_notificacion
-            )
-
-    def manejar_accion_notificacion(self, tipo: str):
-        """
-        Maneja acciones desde notificaciones.
-
-        Args:
-            tipo: Tipo de notificación que emitió la acción
-        """
-        if tipo == "profesor_sin_guardias":
-            self.sidebar.set_active_section("profesores")
-        elif tipo == "exceso_carga":
-            self.sidebar.set_active_section("calendario")
-        elif tipo == "ausencias_activas":
-            self.sidebar.set_active_section("ausencias")
-        elif tipo in ["slots_sin_cubrir", "baja_cobertura"]:
-            self.sidebar.set_active_section("asignacion")

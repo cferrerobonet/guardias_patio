@@ -4,9 +4,6 @@ Use Case: Obtener Guardias
 Caso de uso para obtener guardias con filtros opcionales.
 """
 
-from sqlalchemy.orm import Session
-
-from application.dtos import FiltroGuardiasDTO, GuardiaDTO
 from core.logging import get_logger
 from core.observability import with_metrics
 from domain.entities import GuardiaEntity
@@ -16,6 +13,9 @@ from infrastructure.repositories import (
     SQLAlchemyProfesorRepository,
     SQLAlchemyZonaRepository,
 )
+from sqlalchemy.orm import Session
+
+from application.dtos import FiltroGuardiasDTO, GuardiaDTO
 
 logger = get_logger(__name__)
 
@@ -56,8 +56,7 @@ class ObtenerGuardiasUseCase:
         if filtros.fecha_inicio and filtros.fecha_fin:
             # Filtrar por rango de fechas
             guardias = self.guardia_repo.find_by_rango_fechas(
-                fecha_inicio=filtros.fecha_inicio,
-                fecha_fin=filtros.fecha_fin
+                fecha_inicio=filtros.fecha_inicio, fecha_fin=filtros.fecha_fin
             )
         elif filtros.profesor_id:
             # Filtrar por profesor

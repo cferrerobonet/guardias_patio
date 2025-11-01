@@ -6,6 +6,7 @@ Genera todas las guardias del curso y las guarda en la base de datos.
 
 from typing import Callable, Optional
 
+from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
 from models.models import Configuracion, Guardia
 from services.asignador_guardias import (
@@ -15,7 +16,6 @@ from services.asignador_guardias import (
 from services.asignador_guardias_v3_simple import generar_guardias_v3_simple
 from services.calculador_guardias import obtener_estadisticas
 from sqlalchemy.orm import Session
-from utils.exceptions import BusinessLogicError
 from utils.logger import get_logger
 
 from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
@@ -84,7 +84,7 @@ class GenerarGuardiasUseCase:
             if not config:
                 raise BusinessLogicError("No existe configuración del curso")
 
-            algoritmo = getattr(config, 'algoritmo_asignacion', 'v2.9')  # Default v2.9
+            algoritmo = getattr(config, "algoritmo_asignacion", "v2.9")  # Default v2.9
             logger.info(f"🔧 Algoritmo seleccionado: {algoritmo}")
 
             # Generar calendario
@@ -102,16 +102,11 @@ class GenerarGuardiasUseCase:
             if algoritmo == "v3.0":
                 logger.info("✨ Usando algoritmo v3.0 Simple Determinista")
                 calendario, resumen = generar_guardias_v3_simple(
-                    self.session,
-                    config.id,
-                    adapter_callback
+                    self.session, config.id, adapter_callback
                 )
             else:
                 logger.info("🔄 Usando algoritmo v2.9 Clásico (7 fases)")
-                calendario, resumen = generar_calendario_guardias(
-                    self.session,
-                    adapter_callback
-                )
+                calendario, resumen = generar_calendario_guardias(self.session, adapter_callback)
 
             # Guardar en base de datos
             if progress_callback:
@@ -142,9 +137,7 @@ class GenerarGuardiasUseCase:
             logger.error(f"Error al generar guardias: {str(e)}")
             raise BusinessLogicError(f"No se pudo generar: {str(e)}") from e
 
-    def _generar_mensaje(
-        self, total_generado: int, esperado: int, diff: int
-    ) -> str:
+    def _generar_mensaje(self, total_generado: int, esperado: int, diff: int) -> str:
         """
         Generar mensaje de resultado.
 
@@ -160,8 +153,7 @@ class GenerarGuardiasUseCase:
             return "✅ Cobertura completa - Todas las guardias asignadas"
         elif diff > 0:
             return (
-                f"⚠️ {diff} slots sin cubrir "
-                f"(puede deberse a falta de elegibilidad de profesores)"
+                f"⚠️ {diff} slots sin cubrir (puede deberse a falta de elegibilidad de profesores)"
             )
         else:
             return f"✅ {total_generado} guardias generadas de {esperado} esperados"

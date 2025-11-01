@@ -4,6 +4,22 @@ Contiene helpers, validadores, constantes y funciones comunes.
 """
 
 # Constantes
+# Excepciones (ahora desde core)
+from core.exceptions import (
+    ConfiguracionError,
+    DatabaseError,
+    DuplicateGuardiaError,
+    ExportError,
+    GuardiaConflictError,
+    GuardiasBaseException,
+    ImportError,
+    InsufficientProfesoresError,
+    MaxGuardiasExceededError,
+    ProfesorNotFoundError,
+    ValidationError,
+    ZonaNotFoundError,
+)
+
 from . import constants
 
 # Caché
@@ -17,22 +33,6 @@ from .cache import (
     invalidate_cache,
     print_cache_stats,
     reset_cache_stats,
-)
-
-# Excepciones
-from .exceptions import (
-    ConfiguracionError,
-    DatabaseError,
-    DuplicateGuardiaError,
-    ExportError,
-    GuardiaConflictError,
-    GuardiasBaseException,
-    ImportError,
-    InsufficientProfesoresError,
-    MaxGuardiasExceededError,
-    ProfesorNotFoundError,
-    ValidationError,
-    ZonaNotFoundError,
 )
 
 # Logging

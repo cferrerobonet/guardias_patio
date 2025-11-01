@@ -5,13 +5,13 @@ Crea o actualiza la configuración del curso escolar.
 Con invalidación de cache automática.
 """
 
-from sqlalchemy.orm import Session
-
-from application.dtos.configuracion_dto import ActualizarConfiguracionDTO, ConfiguracionDTO
 from core.logging import get_logger
 from core.observability import with_metrics
 from models.models import Configuracion
+from sqlalchemy.orm import Session
 from utils.repository_cache import invalidate_configuracion_cache
+
+from application.dtos.configuracion_dto import ActualizarConfiguracionDTO, ConfiguracionDTO
 
 logger = get_logger(__name__)
 
@@ -94,7 +94,7 @@ class ActualizarConfiguracionUseCase:
                     activar_festivos_automaticos=dto.activar_festivos_automaticos or True,
                     dias_no_lectivos_personalizados=dto.dias_no_lectivos_personalizados or "",
                     recreos_config=dto.recreos_config or "",
-                    algoritmo_asignacion=dto.algoritmo_asignacion or "v2.9"
+                    algoritmo_asignacion=dto.algoritmo_asignacion or "v2.9",
                 )
                 self.session.add(config)
                 accion = "creada"
@@ -127,7 +127,7 @@ class ActualizarConfiguracionUseCase:
                 activar_festivos_automaticos=config.activar_festivos_automaticos,
                 dias_no_lectivos_personalizados=config.dias_no_lectivos_personalizados,
                 recreos_config=config.recreos_config,
-                algoritmo_asignacion=getattr(config, 'algoritmo_asignacion', 'v2.9')
+                algoritmo_asignacion=getattr(config, "algoritmo_asignacion", "v2.9"),
             )
 
         except Exception as e:

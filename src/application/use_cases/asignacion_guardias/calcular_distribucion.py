@@ -4,9 +4,7 @@ Use Case: Calcular distribución de guardias por profesor.
 Calcula cuántas guardias debe hacer cada profesor según su jornada y otros factores.
 """
 
-from sqlalchemy.orm import Session
-
-from application.dtos.asignacion_guardias_dto import DistribucionDTO
+from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
 from services.calculador_guardias import (
     calcular_guardias_por_profesor as calcular_servicio,
@@ -14,7 +12,9 @@ from services.calculador_guardias import (
 from services.calculador_guardias import (
     obtener_estadisticas,
 )
-from utils.exceptions import BusinessLogicError
+from sqlalchemy.orm import Session
+
+from application.dtos.asignacion_guardias_dto import DistribucionDTO
 
 
 class CalcularDistribucionUseCase:
@@ -69,6 +69,4 @@ class CalcularDistribucionUseCase:
             )
 
         except ValueError as e:
-            raise BusinessLogicError(
-                f"Error al calcular la distribución: {str(e)}"
-            ) from e
+            raise BusinessLogicError(f"Error al calcular la distribución: {str(e)}") from e

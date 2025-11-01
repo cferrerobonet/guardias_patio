@@ -28,6 +28,8 @@ def create_sync_backend(backend_type: str = "sftp") -> SyncBackend:
     """
     if backend_type == "local":
         # Backend local para desarrollo/testing
+        # NOTA: Solo se usa si SFTP no está configurado
+        # El directorio se crea automáticamente si es necesario
         local_path = Path("cloud_storage_local")
         logger.info(f"Creando LocalSyncBackend en: {local_path}")
         return LocalSyncBackend(local_path)

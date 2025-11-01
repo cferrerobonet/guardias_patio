@@ -5,15 +5,14 @@ EliminarZonaUseCase, ObtenerZonaUseCase, ListarZonasUseCase.
 """
 
 import pytest
-
 from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
 from application.use_cases.zona.actualizar_zona import ActualizarZonaUseCase
 from application.use_cases.zona.crear_zona import CrearZonaUseCase
 from application.use_cases.zona.eliminar_zona import EliminarZonaUseCase
 from application.use_cases.zona.listar_zonas import ListarZonasUseCase
 from application.use_cases.zona.obtener_zona import ObtenerZonaUseCase
+from core.exceptions import BusinessLogicError, NotFoundError
 from models.models import Zona
-from utils.exceptions import BusinessLogicError, NotFoundError
 
 # ============================================================================
 # TEST: CREAR ZONA

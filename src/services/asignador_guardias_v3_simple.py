@@ -2,6 +2,18 @@
 Asignador de Guardias v3.0 - Algoritmo Simple Determinista
 ===========================================================
 
+⚠️ IMPORTANTE - DECISIÓN DE ARQUITECTURA:
+Este archivo NO es código duplicado. Es un algoritmo alternativo que
+coexiste con asignador_guardias.py (v2.9). Los usuarios pueden elegir
+qué algoritmo usar mediante el campo 'algoritmo_asignacion' en la
+configuración del sistema.
+
+Razón de mantener ambos algoritmos:
+- Diferentes estrategias de asignación (simple vs multi-fase)
+- Permite comparar resultados y elegir el óptimo
+- Backup en caso de problemas con uno u otro
+- Flexibilidad para diferentes casos de uso
+
 Enfoque: Asignación profesor por profesor hasta agotar cuotas y slots.
 
 Ventajas vs v2.9:
@@ -10,6 +22,11 @@ Ventajas vs v2.9:
 - Cada profesor recibe exactamente su cuota
 - Más rápido (una pasada vs múltiples iteraciones)
 - Fácil de debuggear y mantener
+
+Selección del algoritmo:
+- Se configura en: Configuración > algoritmo_asignacion
+- Valores posibles: "v2.9" (default) o "v3.0"
+- Ver: application/use_cases/asignacion_guardias/generar_guardias.py
 """
 
 from __future__ import annotations

@@ -2,14 +2,16 @@
 Use Case: Obtener una zona por su ID.
 
 Permite recuperar los datos de una zona específica del sistema.
+Con caching para optimizar lecturas frecuentes.
 """
 
-from sqlalchemy.orm import Session
-
-from application.dtos.zona_dto import ZonaDTO
+from core.exceptions import NotFoundError
 from core.observability import with_metrics
 from models.models import Zona
-from utils.exceptions import NotFoundError
+from sqlalchemy.orm import Session
+from utils.repository_cache import cache_zonas
+
+from application.dtos.zona_dto import ZonaDTO
 
 
 class ObtenerZonaUseCase:
@@ -29,9 +31,10 @@ class ObtenerZonaUseCase:
         self.session = session
 
     @with_metrics("obtener_zona")
+    @cache_zonas(ttl=300)  # Cache por 5 minutos
     def execute(self, zona_id: int) -> ZonaDTO:
         """
-        Ejecutar la obtención de una zona.
+        Ejecutar la obtención de una zona (con caching).
 
         Args:
             zona_id: ID de la zona a obtener

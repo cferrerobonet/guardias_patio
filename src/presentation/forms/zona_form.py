@@ -4,17 +4,22 @@ Formulario de gestión de zonas de recreo.
 Permite realizar operaciones CRUD sobre las zonas usando patrón MVP.
 """
 
+import ui_styles as styles
+from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
+from application.use_cases.zona import (
+    ActualizarZonaUseCase,
+    CrearZonaUseCase,
+    EliminarZonaUseCase,
+    ListarZonasUseCase,
+)
+from core.exceptions import BusinessLogicError, NotFoundError
 from pydantic import ValidationError
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
-    QCheckBox,
-    QDateEdit,
-    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QLineEdit,
     QPushButton,
     QSplitter,
     QTableWidget,
@@ -24,16 +29,9 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-import ui_styles as styles
-from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
-from application.use_cases.zona import (
-    ActualizarZonaUseCase,
-    CrearZonaUseCase,
-    EliminarZonaUseCase,
-    ListarZonasUseCase,
-)
 from presentation.forms.base_form import BaseForm
-from utils.exceptions import BusinessLogicError, NotFoundError
+from presentation.forms.zona_widgets import DatosZonaWidget
+from presentation.widgets import TableManager
 
 
 class ZonaForm(BaseForm):
@@ -67,7 +65,43 @@ class ZonaForm(BaseForm):
         self.setWindowTitle("Gestión de Zonas")
         self.setup_ui()
         self._setup_shortcuts()
+
+        # Inicializar gestor de tabla para mejorar UX
+        self.table_manager = None  # Se inicializará después de crear la tabla
+
         self.cargar_zonas()
+
+    # ========== PROPIEDADES DE COMPATIBILIDAD ==========
+
+    @property
+    def nombre_zona_input(self):
+        """Compatibilidad: acceso al campo nombre_zona del widget."""
+        return self.datos_zona_widget.nombre_zona_input
+
+    @property
+    def descripcion_input(self):
+        """Compatibilidad: acceso al campo descripcion del widget."""
+        return self.datos_zona_widget.descripcion_input
+
+    @property
+    def usar_fecha_inicio_check(self):
+        """Compatibilidad: acceso al checkbox fecha inicio."""
+        return self.datos_zona_widget.usar_fecha_inicio_check
+
+    @property
+    def fecha_inicio_input(self):
+        """Compatibilidad: acceso al campo fecha inicio."""
+        return self.datos_zona_widget.fecha_inicio_input
+
+    @property
+    def usar_fecha_fin_check(self):
+        """Compatibilidad: acceso al checkbox fecha fin."""
+        return self.datos_zona_widget.usar_fecha_fin_check
+
+    @property
+    def fecha_fin_input(self):
+        """Compatibilidad: acceso al campo fecha fin."""
+        return self.datos_zona_widget.fecha_fin_input
 
     def _setup_shortcuts(self):
         """Configurar atajos de teclado"""
@@ -149,9 +183,9 @@ class ZonaForm(BaseForm):
         # Tabla de zonas
         self.tabla_zonas = QTableWidget()
         self.tabla_zonas.setColumnCount(5)
-        self.tabla_zonas.setHorizontalHeaderLabels([
-            "ID", "Nombre", "Descripción", "Fecha Inicio", "Fecha Fin"
-        ])
+        self.tabla_zonas.setHorizontalHeaderLabels(
+            ["ID", "Nombre", "Descripción", "Fecha Inicio", "Fecha Fin"]
+        )
 
         # Ocultar columna ID
         self.tabla_zonas.setColumnHidden(0, True)
@@ -159,26 +193,26 @@ class ZonaForm(BaseForm):
         # Configurar el ancho de las columnas
         self.tabla_zonas.horizontalHeader().setStretchLastSection(False)
         self.tabla_zonas.horizontalHeader().setSectionResizeMode(
-            1, QHeaderView.ResizeMode.ResizeToContents  # Nombre (ajustado al contenido)
+            1,
+            QHeaderView.ResizeMode.ResizeToContents,  # Nombre (ajustado al contenido)
         )
         self.tabla_zonas.horizontalHeader().setSectionResizeMode(
-            2, QHeaderView.ResizeMode.Stretch  # Descripción (expandible)
+            2,
+            QHeaderView.ResizeMode.Stretch,  # Descripción (expandible)
         )
         self.tabla_zonas.horizontalHeader().setSectionResizeMode(
-            3, QHeaderView.ResizeMode.ResizeToContents  # Fecha Inicio
+            3,
+            QHeaderView.ResizeMode.ResizeToContents,  # Fecha Inicio
         )
         self.tabla_zonas.horizontalHeader().setSectionResizeMode(
-            4, QHeaderView.ResizeMode.ResizeToContents  # Fecha Fin
+            4,
+            QHeaderView.ResizeMode.ResizeToContents,  # Fecha Fin
         )
 
         self.tabla_zonas.setSortingEnabled(True)
-        self.tabla_zonas.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
+        self.tabla_zonas.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         # Permitir selección múltiple (Ctrl+clic o Shift+clic)
-        self.tabla_zonas.setSelectionMode(
-            QTableWidget.SelectionMode.ExtendedSelection
-        )
+        self.tabla_zonas.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
         # Impedir edición directa en la tabla - solo a través del formulario
         self.tabla_zonas.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         # Click simple: mostrar datos sin editar
@@ -197,7 +231,11 @@ class ZonaForm(BaseForm):
             SPACING_SM,
             TEXT_SECONDARY,
         )
-        info_label = QLabel("💡 <b>Selección múltiple:</b> Ctrl+clic (individual) | Shift+clic (rango) | Ctrl+A (todos) | Supr (eliminar)")
+
+        info_label = QLabel(
+            "💡 <b>Selección múltiple:</b> Ctrl+clic (individual) | "
+            "Shift+clic (rango) | Ctrl+A (todos) | Supr (eliminar)"
+        )
         info_label.setStyleSheet(f"""
             QLabel {{
                 background-color: {CONTENT_BG_ALT};
@@ -239,6 +277,11 @@ class ZonaForm(BaseForm):
         btn_layout.addStretch()
         left_section.addLayout(btn_layout)
 
+        # Inicializar TableManager para mejorar UX
+        self.table_manager = TableManager(
+            table=self.tabla_zonas, edit_btn=self.editar_btn, delete_btn=self.delete_btn
+        )
+
         return left_section
 
     def _crear_seccion_formulario(self) -> QVBoxLayout:
@@ -257,64 +300,9 @@ class ZonaForm(BaseForm):
         self.titulo_form.setStyleSheet(styles.STYLE_TITLE_MAIN)
         right_section.addWidget(self.titulo_form)
 
-        # Grupo de datos
-        grupo_datos = QGroupBox("📋 Datos de la Zona")
-        grupo_datos.setStyleSheet(styles.STYLE_GROUPBOX)
-        layout_datos = QVBoxLayout()
-        layout_datos.setSpacing(8)
-
-        # Campo: Nombre de la zona
-        label_nombre = QLabel("Nombre de la zona:")
-        label_nombre.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        layout_datos.addWidget(label_nombre)
-
-        self.nombre_zona_input = QLineEdit()
-        self.nombre_zona_input.setPlaceholderText("Ej: Patio Principal, Porche, etc.")
-        self.nombre_zona_input.setStyleSheet(styles.STYLE_INPUT)
-        self.nombre_zona_input.setMaximumWidth(350)
-        layout_datos.addWidget(self.nombre_zona_input)
-
-        # Campo: Descripción
-        label_desc = QLabel("Descripción (opcional):")
-        label_desc.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        layout_datos.addWidget(label_desc)
-
-        self.descripcion_input = QLineEdit()
-        self.descripcion_input.setPlaceholderText("Detalles adicionales sobre la zona")
-        self.descripcion_input.setStyleSheet(styles.STYLE_INPUT)
-        self.descripcion_input.setMaximumWidth(350)
-        layout_datos.addWidget(self.descripcion_input)
-
-        # Campo: Fecha de inicio (opcional)
-        self.usar_fecha_inicio_check = QCheckBox("Especificar fecha de inicio")
-        self.usar_fecha_inicio_check.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        self.usar_fecha_inicio_check.toggled.connect(self._toggle_fecha_inicio)
-        layout_datos.addWidget(self.usar_fecha_inicio_check)
-
-        self.fecha_inicio_input = QDateEdit()
-        self.fecha_inicio_input.setCalendarPopup(True)
-        self.fecha_inicio_input.setDate(QDate.currentDate())
-        self.fecha_inicio_input.setStyleSheet(styles.STYLE_INPUT)
-        self.fecha_inicio_input.setMaximumWidth(200)
-        self.fecha_inicio_input.setEnabled(False)
-        layout_datos.addWidget(self.fecha_inicio_input)
-
-        # Campo: Fecha de fin (opcional)
-        self.usar_fecha_fin_check = QCheckBox("Especificar fecha de fin")
-        self.usar_fecha_fin_check.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        self.usar_fecha_fin_check.toggled.connect(self._toggle_fecha_fin)
-        layout_datos.addWidget(self.usar_fecha_fin_check)
-
-        self.fecha_fin_input = QDateEdit()
-        self.fecha_fin_input.setCalendarPopup(True)
-        self.fecha_fin_input.setDate(QDate.currentDate())
-        self.fecha_fin_input.setStyleSheet(styles.STYLE_INPUT)
-        self.fecha_fin_input.setMaximumWidth(200)
-        self.fecha_fin_input.setEnabled(False)
-        layout_datos.addWidget(self.fecha_fin_input)
-
-        grupo_datos.setLayout(layout_datos)
-        right_section.addWidget(grupo_datos)
+        # Widget de datos de zona
+        self.datos_zona_widget = DatosZonaWidget(self)
+        right_section.addWidget(self.datos_zona_widget)
 
         # Botones de acción
         btn_action_layout = QHBoxLayout()
@@ -337,14 +325,6 @@ class ZonaForm(BaseForm):
         right_section.addStretch()
 
         return right_section
-
-    def _toggle_fecha_inicio(self, checked: bool):
-        """Habilitar/deshabilitar campo de fecha de inicio"""
-        self.fecha_inicio_input.setEnabled(checked)
-
-    def _toggle_fecha_fin(self, checked: bool):
-        """Habilitar/deshabilitar campo de fecha de fin"""
-        self.fecha_fin_input.setEnabled(checked)
 
     def guardar_zona(self):
         """Guardar o actualizar una zona usando el Use Case correspondiente"""
@@ -370,15 +350,16 @@ class ZonaForm(BaseForm):
                     fecha_fin=fecha_fin,
                 )
 
+                # Guardar ID para restaurar selección
+                self.table_manager._last_selected_id = str(self.zona_editando_id)
+
                 # Ejecutar Use Case de actualización
-                zona_actualizada = self.actualizar_zona_uc.execute(
-                    self.zona_editando_id, zona_dto
-                )
+                zona_actualizada = self.actualizar_zona_uc.execute(self.zona_editando_id, zona_dto)
 
                 # Mostrar mensaje de éxito
                 self.mostrar_exito(
                     "Zona actualizada",
-                    f"Zona '{zona_actualizada.nombre_zona}' actualizada correctamente."
+                    f"Zona '{zona_actualizada.nombre_zona}' actualizada correctamente.",
                 )
 
                 # Salir del modo edición
@@ -396,16 +377,19 @@ class ZonaForm(BaseForm):
                 # Ejecutar Use Case de creación
                 zona_creada = self.crear_zona_uc.execute(zona_dto)
 
+                # Guardar ID para restaurar selección
+                if zona_creada:
+                    self.table_manager._last_selected_id = str(zona_creada.id)
+
                 # Mostrar mensaje de éxito
                 self.mostrar_exito(
-                    "Zona guardada",
-                    f"Zona '{zona_creada.nombre_zona}' guardada correctamente."
+                    "Zona guardada", f"Zona '{zona_creada.nombre_zona}' guardada correctamente."
                 )
 
                 # Limpiar formulario
                 self.limpiar_formulario()
 
-            # Recargar lista
+            # Recargar lista (restaurará la selección automáticamente)
             self.cargar_zonas()
 
             # Emitir señal de modificación de datos
@@ -459,9 +443,7 @@ class ZonaForm(BaseForm):
             if zona.fecha_inicio:
                 self.usar_fecha_inicio_check.setChecked(True)
                 qdate_inicio = QDate(
-                    zona.fecha_inicio.year,
-                    zona.fecha_inicio.month,
-                    zona.fecha_inicio.day
+                    zona.fecha_inicio.year, zona.fecha_inicio.month, zona.fecha_inicio.day
                 )
                 self.fecha_inicio_input.setDate(qdate_inicio)
             else:
@@ -469,11 +451,7 @@ class ZonaForm(BaseForm):
 
             if zona.fecha_fin:
                 self.usar_fecha_fin_check.setChecked(True)
-                qdate_fin = QDate(
-                    zona.fecha_fin.year,
-                    zona.fecha_fin.month,
-                    zona.fecha_fin.day
-                )
+                qdate_fin = QDate(zona.fecha_fin.year, zona.fecha_fin.month, zona.fecha_fin.day)
                 self.fecha_fin_input.setDate(qdate_fin)
             else:
                 self.usar_fecha_fin_check.setChecked(False)
@@ -490,10 +468,7 @@ class ZonaForm(BaseForm):
         """Cargar zona seleccionada en formulario para edición."""
         fila_actual = self.tabla_zonas.currentRow()
         if fila_actual == -1:
-            self.mostrar_advertencia(
-                "Selección requerida",
-                "Selecciona una zona para editar."
-            )
+            self.mostrar_advertencia("Selección requerida", "Selecciona una zona para editar.")
             return
 
         # Obtener el ID de la primera columna
@@ -514,9 +489,7 @@ class ZonaForm(BaseForm):
         self.cancelar_btn.setVisible(True)
 
         # Deshabilitar interacción con la tabla mientras se edita
-        self.tabla_zonas.setEnabled(False)
-        self.editar_btn.setEnabled(False)
-        self.delete_btn.setEnabled(False)
+        self.table_manager.enable_table_interactions(False)
 
     def cancelar_edicion(self):
         """Cancelar la edición y volver al modo 'nueva zona'"""
@@ -560,7 +533,7 @@ class ZonaForm(BaseForm):
 
                 # Fecha Inicio
                 if zona.fecha_inicio:
-                    fecha_inicio_texto = zona.fecha_inicio.strftime('%d/%m/%Y')
+                    fecha_inicio_texto = zona.fecha_inicio.strftime("%d/%m/%Y")
                 else:
                     fecha_inicio_texto = "-"
                 item_fecha_inicio = QTableWidgetItem(fecha_inicio_texto)
@@ -569,12 +542,16 @@ class ZonaForm(BaseForm):
 
                 # Fecha Fin
                 if zona.fecha_fin:
-                    fecha_fin_texto = zona.fecha_fin.strftime('%d/%m/%Y')
+                    fecha_fin_texto = zona.fecha_fin.strftime("%d/%m/%Y")
                 else:
                     fecha_fin_texto = "-"
                 item_fecha_fin = QTableWidgetItem(fecha_fin_texto)
                 item_fecha_fin.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_zonas.setItem(row, 4, item_fecha_fin)
+
+            # Restaurar selección si existe
+            if self.table_manager:
+                self.table_manager.restore_selection()
 
         except Exception as e:
             self.manejar_excepcion(e, "cargar las zonas")
@@ -590,7 +567,7 @@ class ZonaForm(BaseForm):
                 "Selecciona una o más zonas para eliminar.\n\n"
                 "💡 Usa Ctrl+clic para seleccionar varias zonas individuales\n"
                 "💡 Usa Shift+clic para seleccionar un rango\n"
-                "💡 Usa Ctrl+A para seleccionar todas"
+                "💡 Usa Ctrl+A para seleccionar todas",
             )
             return
 
@@ -622,14 +599,13 @@ class ZonaForm(BaseForm):
                 f"<span style='color: #007ACC; font-style: italic;'>{nombre_zona}</span>?"
             )
         else:
-            nombres_html = "<br>• ".join([
-                f"<span style='color: #007ACC; font-style: italic;'>{nombre}</span>"
-                for _, nombre in zonas_a_eliminar
-            ])
-            mensaje = (
-                f"¿Eliminar <b>{cantidad}</b> zonas?<br><br>"
-                f"• {nombres_html}"
+            nombres_html = "<br>• ".join(
+                [
+                    f"<span style='color: #007ACC; font-style: italic;'>{nombre}</span>"
+                    for _, nombre in zonas_a_eliminar
+                ]
             )
+            mensaje = f"¿Eliminar <b>{cantidad}</b> zonas?<br><br>• {nombres_html}"
 
         # Confirmar eliminación
         if not self.confirmar_accion("Confirmar eliminación", mensaje):
@@ -663,10 +639,14 @@ class ZonaForm(BaseForm):
 
         # Mostrar resultado
         if eliminadas > 0 and not errores:
-            mensaje_exito = f"Se {'eliminó' if eliminadas == 1 else 'eliminaron'} {eliminadas} zona(s) correctamente."
+            accion = "eliminó" if eliminadas == 1 else "eliminaron"
+            mensaje_exito = f"Se {accion} {eliminadas} zona(s) correctamente."
             self.mostrar_exito("Zonas eliminadas", mensaje_exito)
         elif eliminadas > 0 and errores:
-            mensaje_parcial = f"Se eliminaron {eliminadas} zona(s).\n\nErrores en {len(errores)} zona(s):\n" + "\n".join(errores)
+            mensaje_parcial = (
+                f"Se eliminaron {eliminadas} zona(s).\n\n"
+                f"Errores en {len(errores)} zona(s):\n" + "\n".join(errores)
+            )
             self.mostrar_advertencia("Eliminación parcial", mensaje_parcial)
         else:
             mensaje_error = "No se pudo eliminar ninguna zona:\n\n" + "\n".join(errores)
@@ -682,9 +662,8 @@ class ZonaForm(BaseForm):
         self.fecha_fin_input.setDate(QDate.currentDate())
 
         # Re-habilitar interacción con la tabla después de cancelar/guardar
-        self.tabla_zonas.setEnabled(True)
-        self.editar_btn.setEnabled(True)
-        self.delete_btn.setEnabled(True)
+        if self.table_manager:
+            self.table_manager.enable_table_interactions(True)
 
     def validar_formulario(self) -> bool:
         """

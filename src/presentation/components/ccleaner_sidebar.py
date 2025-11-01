@@ -57,50 +57,30 @@ class SidebarMenu(QWidget):
 
         # ========== INICIO ==========
         self.add_category(menu_layout, "INICIO")
-        self.add_menu_item(
-            menu_layout, "dashboard", "Dashboard", "dashboard", "view-dashboard"
-        )
-        self.add_menu_item(
-            menu_layout,
-            "notificaciones",
-            "Notificaciones",
-            "notificaciones",
-            "bell"
-        )
+        self.add_menu_item(menu_layout, "dashboard", "Dashboard", "dashboard", "view-dashboard")
 
         menu_layout.addSpacing(SPACING_MD)
 
         # ========== GESTIÓN ==========
         self.add_category(menu_layout, "GESTIÓN")
-        self.add_menu_item(
-            menu_layout, "profesores", "Profesores", "profesores", "account-group"
-        )
+        self.add_menu_item(menu_layout, "profesores", "Profesores", "profesores", "account-group")
         self.add_menu_item(menu_layout, "zonas", "Zonas", "zonas", "map-marker")
-        self.add_menu_item(
-            menu_layout, "configuracion", "Configuración", "configuracion", "cog"
-        )
+        self.add_menu_item(menu_layout, "configuracion", "Configuración", "configuracion", "cog")
 
         menu_layout.addSpacing(SPACING_MD)
 
         # ========== GUARDIAS ==========
         self.add_category(menu_layout, "GUARDIAS")
-        self.add_menu_item(
-            menu_layout, "asignacion", "Asignación", "asignacion", "check-bold"
-        )
-        self.add_menu_item(
-            menu_layout, "calendario", "Calendario", "calendario", "calendar"
-        )
+        self.add_menu_item(menu_layout, "asignacion", "Asignación", "asignacion", "check-bold")
+        self.add_menu_item(menu_layout, "calendario", "Calendario", "calendario", "calendar")
 
         menu_layout.addSpacing(SPACING_MD)
 
         # ========== PERSONAL ==========
         self.add_category(menu_layout, "PERSONAL")
+        self.add_menu_item(menu_layout, "ausencias", "Ausencias", "ausencias", "hospital-box")
         self.add_menu_item(
-            menu_layout, "ausencias", "Ausencias", "ausencias", "hospital-box"
-        )
-        self.add_menu_item(
-            menu_layout, "sustituciones", "Sustituciones",
-            "sustituciones", "swap-horizontal"
+            menu_layout, "sustituciones", "Sustituciones", "sustituciones", "swap-horizontal"
         )
 
         menu_layout.addSpacing(SPACING_MD)
@@ -108,15 +88,10 @@ class SidebarMenu(QWidget):
         # ========== HERRAMIENTAS ==========
         self.add_category(menu_layout, "HERRAMIENTAS")
         self.add_menu_item(
-            menu_layout, "importar", "Importar/Exportar",
-            "importar", "database-import-export"
+            menu_layout, "importar", "Importar/Exportar", "importar", "database-import-export"
         )
-        self.add_menu_item(
-            menu_layout, "reportes", "Reportes", "reportes", "file-chart"
-        )
-        self.add_menu_item(
-            menu_layout, "estadisticas", "Estadísticas", "estadisticas", "chart-bar"
-        )
+        self.add_menu_item(menu_layout, "reportes", "Reportes", "reportes", "file-chart")
+        self.add_menu_item(menu_layout, "estadisticas", "Estadísticas", "estadisticas", "chart-bar")
 
         # Espaciador al final
         menu_layout.addStretch()
@@ -154,12 +129,7 @@ class SidebarMenu(QWidget):
         layout.addWidget(separator)
 
     def add_menu_item(
-        self,
-        layout: QVBoxLayout,
-        object_name: str,
-        text: str,
-        section: str,
-        icon_name: str = None
+        self, layout: QVBoxLayout, object_name: str, text: str, section: str, icon_name: str = None
     ):
         """Añadir botón de menú con icono SVG"""
         btn = QPushButton(f" {text}")  # Espacio para separar icono del texto
@@ -174,6 +144,7 @@ class SidebarMenu(QWidget):
             icon = get_icon(icon_name, "white", 20)  # Iconos de 20px
             btn.setIcon(icon)
             from PyQt6.QtCore import QSize
+
             btn.setIconSize(QSize(20, 20))  # Tamaño fijo de 20x20
 
         btn.setStyleSheet("""

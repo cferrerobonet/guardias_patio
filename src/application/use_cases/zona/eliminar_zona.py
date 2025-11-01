@@ -4,12 +4,12 @@ Use Case: Eliminar una zona.
 Permite eliminar una zona del sistema, verificando que no tenga guardias asignadas.
 """
 
-from sqlalchemy.orm import Session
-
+from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
 from models.models import Guardia, Zona
-from utils.exceptions import BusinessLogicError, NotFoundError
+from sqlalchemy.orm import Session
 from utils.logger import get_logger
+from utils.repository_cache import invalidate_zonas_cache
 
 logger = get_logger(__name__)
 
@@ -49,9 +49,7 @@ class EliminarZonaUseCase:
             raise NotFoundError(f"No se encontró la zona con ID {zona_id}")
 
         # Verificar que no tenga guardias asignadas
-        guardias_count = (
-            self.session.query(Guardia).filter(Guardia.zona_id == zona_id).count()
-        )
+        guardias_count = self.session.query(Guardia).filter(Guardia.zona_id == zona_id).count()
 
         if guardias_count > 0:
             raise BusinessLogicError(
@@ -65,7 +63,9 @@ class EliminarZonaUseCase:
             self.session.delete(zona)
             self.session.commit()
 
-            logger.info(f"Zona eliminada: {nombre_zona} (ID: {zona_id})")
+            # Invalidar cache de zonas
+            invalidate_zonas_cache()
+            logger.info(f"Zona eliminada y cache invalidado: {nombre_zona} (ID: {zona_id})")
 
         except Exception as e:
             self.session.rollback()

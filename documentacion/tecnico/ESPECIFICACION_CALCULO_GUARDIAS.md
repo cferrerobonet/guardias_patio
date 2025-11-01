@@ -1586,9 +1586,10 @@ score = (deficit, random.random())  # ← ROMPE EQUIDAD
    - Comparativa antes/después
    - Ejemplos de inequidad corregida
 
-3. **`documentacion/tecnico/ALGORITMO_PASADA_6.md`**
+3. **`documentacion/tecnico/ALGORITMO_ASIGNACION_GUARDIAS.md`** ✨
    - Detalles de Fases 3-7
    - Técnicas avanzadas (CSP, SA, Hungarian)
+   - **Nota**: Documento consolidado que reemplaza `ALGORITMO_PASADA_6.md`
 
 ---
 

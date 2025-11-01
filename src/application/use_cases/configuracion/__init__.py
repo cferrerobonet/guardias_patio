@@ -8,6 +8,6 @@ from .actualizar_configuracion import ActualizarConfiguracionUseCase
 from .obtener_configuracion import ObtenerConfiguracionUseCase
 
 __all__ = [
-    'ObtenerConfiguracionUseCase',
-    'ActualizarConfiguracionUseCase',
+    "ObtenerConfiguracionUseCase",
+    "ActualizarConfiguracionUseCase",
 ]
