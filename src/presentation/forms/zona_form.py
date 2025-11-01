@@ -181,6 +181,9 @@ class ZonaForm(BaseForm):
         )
         # Impedir edición directa en la tabla - solo a través del formulario
         self.tabla_zonas.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        # Click simple: mostrar datos sin editar
+        self.tabla_zonas.clicked.connect(self.mostrar_zona)
+        # Doble click: activar modo edición
         self.tabla_zonas.doubleClicked.connect(self.editar_zona)
         left_section.addWidget(self.tabla_zonas)
 
@@ -421,6 +424,68 @@ class ZonaForm(BaseForm):
             # Otros errores inesperados
             self.manejar_excepcion(e, "guardar la zona")
 
+    def mostrar_zona(self):
+        """Mostrar datos de la zona seleccionada sin activar modo edición."""
+        # Si ya está en modo edición, no hacer nada
+        if self.zona_editando_id is not None:
+            return
+
+        fila_actual = self.tabla_zonas.currentRow()
+        if fila_actual == -1:
+            return
+
+        # Obtener el ID de la primera columna
+        item_id = self.tabla_zonas.item(fila_actual, 0)
+        if not item_id:
+            return
+
+        id_zona = int(item_id.text())
+
+        try:
+            from models.models import Zona
+
+            zona = self.session.query(Zona).filter(Zona.id == id_zona).first()
+            if not zona:
+                return
+
+            # Limpiar formulario primero
+            self.limpiar_formulario()
+
+            # Cargar datos en el formulario
+            self.nombre_zona_input.setText(zona.nombre_zona or "")
+            self.descripcion_input.setText(zona.descripcion or "")
+
+            # Cargar fechas si existen
+            if zona.fecha_inicio:
+                self.usar_fecha_inicio_check.setChecked(True)
+                qdate_inicio = QDate(
+                    zona.fecha_inicio.year,
+                    zona.fecha_inicio.month,
+                    zona.fecha_inicio.day
+                )
+                self.fecha_inicio_input.setDate(qdate_inicio)
+            else:
+                self.usar_fecha_inicio_check.setChecked(False)
+
+            if zona.fecha_fin:
+                self.usar_fecha_fin_check.setChecked(True)
+                qdate_fin = QDate(
+                    zona.fecha_fin.year,
+                    zona.fecha_fin.month,
+                    zona.fecha_fin.day
+                )
+                self.fecha_fin_input.setDate(qdate_fin)
+            else:
+                self.usar_fecha_fin_check.setChecked(False)
+
+            # NO activar modo edición - mantener título normal
+            self.titulo_form.setText("📋 DATOS DE LA ZONA")
+            self.submit_btn.setText("💾 Guardar Zona")
+            self.cancelar_btn.setVisible(False)
+
+        except Exception as e:
+            self.mostrar_error("Error al cargar", f"Error: {str(e)}")
+
     def editar_zona(self):
         """Cargar zona seleccionada en formulario para edición."""
         fila_actual = self.tabla_zonas.currentRow()
@@ -438,49 +503,20 @@ class ZonaForm(BaseForm):
 
         id_zona = int(item_id.text())
 
-        try:
-            from models.models import Zona
+        # Si no está en modo edición, primero mostrar los datos
+        if self.zona_editando_id is None:
+            self.mostrar_zona()
 
-            zona = self.session.query(Zona).filter(Zona.id == id_zona).first()
-            if not zona:
-                self.mostrar_advertencia(
-                    "Error de edición",
-                    "Zona no encontrada."
-                )
-                return
+        # Ahora activar modo edición
+        self.zona_editando_id = id_zona
+        self.titulo_form.setText(f"✏️ EDITAR ZONA [ID: {id_zona}]")
+        self.submit_btn.setText("💾 Actualizar Zona")
+        self.cancelar_btn.setVisible(True)
 
-            # Cargar datos en el formulario
-            self.nombre_zona_input.setText(zona.nombre_zona or "")
-            self.descripcion_input.setText(zona.descripcion or "")
-
-            # Cargar fechas si existen
-            if zona.fecha_inicio:
-                self.usar_fecha_inicio_check.setChecked(True)
-                qdate_inicio = QDate(zona.fecha_inicio.year, zona.fecha_inicio.month, zona.fecha_inicio.day)
-                self.fecha_inicio_input.setDate(qdate_inicio)
-            else:
-                self.usar_fecha_inicio_check.setChecked(False)
-
-            if zona.fecha_fin:
-                self.usar_fecha_fin_check.setChecked(True)
-                qdate_fin = QDate(zona.fecha_fin.year, zona.fecha_fin.month, zona.fecha_fin.day)
-                self.fecha_fin_input.setDate(qdate_fin)
-            else:
-                self.usar_fecha_fin_check.setChecked(False)
-
-            # Activar modo edición
-            self.zona_editando_id = id_zona
-            self.titulo_form.setText(f"✏️ EDITAR ZONA [ID: {id_zona}]")
-            self.submit_btn.setText("💾 Actualizar Zona")
-            self.cancelar_btn.setVisible(True)
-
-            # Deshabilitar interacción con la tabla mientras se edita
-            self.tabla_zonas.setEnabled(False)
-            self.editar_btn.setEnabled(False)
-            self.delete_btn.setEnabled(False)
-
-        except Exception as e:
-            self.manejar_excepcion(e, "editar zona")
+        # Deshabilitar interacción con la tabla mientras se edita
+        self.tabla_zonas.setEnabled(False)
+        self.editar_btn.setEnabled(False)
+        self.delete_btn.setEnabled(False)
 
     def cancelar_edicion(self):
         """Cancelar el modo edición y volver al modo creación."""

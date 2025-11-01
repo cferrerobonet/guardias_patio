@@ -207,6 +207,9 @@ class ProfesorForm(BaseForm):
         self.tabla_profesores.setSelectionMode(
             QTableWidget.SelectionMode.ExtendedSelection
         )
+        # Click simple: mostrar datos sin editar
+        self.tabla_profesores.clicked.connect(self.mostrar_profesor)
+        # Doble click: activar modo edición
         self.tabla_profesores.doubleClicked.connect(self.editar_profesor)
 
         # Hacer la tabla de solo lectura (no editable directamente)
@@ -1092,14 +1095,14 @@ class ProfesorForm(BaseForm):
         """Limpiar campo de búsqueda."""
         self.busqueda_input.clear()
 
-    def editar_profesor(self):
-        """Cargar profesor seleccionado en formulario para edición."""
+    def mostrar_profesor(self):
+        """Mostrar datos del profesor seleccionado sin activar modo edición."""
+        # Si ya está en modo edición, no hacer nada
+        if self.profesor_editando_id is not None:
+            return
+
         fila_actual = self.tabla_profesores.currentRow()
         if fila_actual < 0:
-            self.mostrar_advertencia(
-                "Selección requerida",
-                "Selecciona un profesor para editar."
-            )
             return
 
         id_item = self.tabla_profesores.item(fila_actual, 0)
@@ -1115,18 +1118,19 @@ class ProfesorForm(BaseForm):
                 Profesor.id == id_profesor
             ).first()
             if not profesor:
-                self.mostrar_advertencia(
-                    "Error de edición",
-                    "Profesor no encontrado."
-                )
                 return
+
+            # Limpiar formulario primero
+            self._limpiar_formulario()
 
             # Cargar datos básicos
             self.nombre_completo_input.setText(profesor.nombre_completo or "")
             self.email_input.setText(profesor.email_corporativo or "")
+
+            # Horas
             self.horas_input.setText(str(profesor.horas_contrato))
 
-            # Seleccionar turno
+            # Turno
             index = self.turno_input.findText(profesor.turno.capitalize())
             if index >= 0:
                 self.turno_input.setCurrentIndex(index)
@@ -1171,8 +1175,6 @@ class ProfesorForm(BaseForm):
                 )
 
             # Cargar matriz horario
-            # SIEMPRE activar el checkbox de restricciones (nuevo comportamiento)
-            # Bloquear señales durante la carga para evitar disparar eventos
             self.usar_restricciones_horario_checkbox.blockSignals(True)
             self.usar_restricciones_horario_checkbox.setChecked(True)
 
@@ -1195,20 +1197,45 @@ class ProfesorForm(BaseForm):
                 for recreo in self.matriz_checks[dia]:
                     self.matriz_checks[dia][recreo].setEnabled(True)
 
-            # Activar modo edición
-            self.profesor_editando_id = id_profesor
-            self.titulo_seccion.setText(f"✏️ EDITAR PROFESOR [ID: {id_profesor}]")
-            self.submit_btn.setText("💾 Actualizar Profesor")
-            self.cancelar_btn.setVisible(True)
-
-            # Deshabilitar interacción con la tabla mientras se edita
-            self.tabla_profesores.setEnabled(False)
-            self.editar_btn.setEnabled(False)
-            self.delete_btn.setEnabled(False)
-            self.busqueda_input.setEnabled(False)
+            # NO activar modo edición - mantener título normal
+            self.titulo_seccion.setText("📋 DATOS DEL PROFESOR")
+            self.submit_btn.setText("💾 Guardar Profesor")
+            self.cancelar_btn.setVisible(False)
 
         except Exception as e:
-            self.manejar_excepcion(e, "editar profesor")
+            self.mostrar_error("Error al cargar", f"Error: {str(e)}")
+
+    def editar_profesor(self):
+        """Cargar profesor seleccionado en formulario para edición."""
+        fila_actual = self.tabla_profesores.currentRow()
+        if fila_actual < 0:
+            self.mostrar_advertencia(
+                "Selección requerida",
+                "Selecciona un profesor para editar."
+            )
+            return
+
+        id_item = self.tabla_profesores.item(fila_actual, 0)
+        if not id_item:
+            return
+
+        id_profesor = id_item.data(Qt.ItemDataRole.UserRole)
+
+        # Si no está en modo edición, primero mostrar los datos
+        if self.profesor_editando_id is None:
+            self.mostrar_profesor()
+
+        # Ahora activar modo edición
+        self.profesor_editando_id = id_profesor
+        self.titulo_seccion.setText(f"✏️ EDITAR PROFESOR [ID: {id_profesor}]")
+        self.submit_btn.setText("💾 Actualizar Profesor")
+        self.cancelar_btn.setVisible(True)
+
+        # Deshabilitar interacción con la tabla mientras se edita
+        self.tabla_profesores.setEnabled(False)
+        self.editar_btn.setEnabled(False)
+        self.delete_btn.setEnabled(False)
+        self.busqueda_input.setEnabled(False)
 
     def eliminar_profesor(self):
         """Eliminar profesor(es) seleccionado(s)."""
