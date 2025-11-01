@@ -1,5 +1,5 @@
 {
-  "export_date": "2025-11-01T12:18:52.808516",
+  "export_date": "2025-11-01T12:56:53.770969",
   "version": "1.0",
   "smtp_config": {
     "smtp_server": "smtp.ionos.es",
@@ -27,7 +27,7 @@
       "nombre_completo": "ALCÁCER LÓPEZ, MARTA",
       "email_corporativo": "marta.alcacer@epla.es",
       "horas_contrato": 30.0,
-      "porcentaje_jornada": 75.0,
+      "porcentaje_jornada": 1.2,
       "turno": "mañana",
       "horas_manana": null,
       "horas_tarde": null,
@@ -922,7 +922,7 @@
       "hora_recreo2_tarde": "18:30:00",
       "activar_festivos_automaticos": true,
       "dias_no_lectivos_personalizados": "2025-10-10",
-      "recreos_config": "[\n  {\"id\": 1, \"etiqueta\": \"Recreo 1 Mañana\", \"turno\": \"mañana\", \"hora\": \"10:40\", \"zonas\": 4},\n  {\"id\": 2, \"etiqueta\": \"Recreo 2 Mañana\", \"turno\": \"mañana\", \"hora\": \"11:40\", \"zonas\": 4},\n  {\"id\": 3, \"etiqueta\": \"Recreo 1 Tarde\", \"turno\": \"tarde\", \"hora\": \"16:30\", \"zonas\": 4},\n  {\"id\": 4, \"etiqueta\": \"Recreo 2 Tarde\", \"turno\": \"tarde\", \"hora\": \"18:30\", \"zonas\": 4}\n]",
+      "recreos_config": "[{\"id\": 1, \"etiqueta\": \"Recreo 1 Ma\\u00f1ana\", \"turno\": \"ma\\u00f1ana\", \"hora\": \"10:40\", \"zonas\": 4}, {\"id\": 2, \"etiqueta\": \"Recreo 2 Ma\\u00f1ana\", \"turno\": \"ma\\u00f1ana\", \"hora\": \"11:40\", \"zonas\": 4}, {\"id\": 3, \"etiqueta\": \"Recreo 1 Tarde\", \"turno\": \"tarde\", \"hora\": \"16:30\", \"zonas\": 4}, {\"id\": 4, \"etiqueta\": \"Recreo 2 Tarde\", \"turno\": \"tarde\", \"hora\": \"18:30\", \"zonas\": 4}]",
       "ajuste_tutores": 0.5,
       "ajuste_no_tutores": 1.0
     }

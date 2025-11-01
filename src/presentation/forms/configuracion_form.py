@@ -742,7 +742,7 @@ class ConfiguracionForm(BaseForm):
                 self.mostrar_advertencia("Validación", mensaje)
                 return
 
-            # Crear DTO (sin recreos_config ya que eliminamos ese campo)
+            # Crear DTO con recreos_config generado automáticamente
             dto = ActualizarConfiguracionDTO(
                 fecha_inicio_curso=self.fecha_inicio_input.date().toPyDate(),
                 fecha_fin_curso=self.fecha_fin_input.date().toPyDate(),
@@ -756,7 +756,7 @@ class ConfiguracionForm(BaseForm):
                     (self.festivos_auto_input.text() or "1").strip() in ("1", "true", "True")
                 ),
                 dias_no_lectivos_personalizados=(self.no_lectivos_input.text() or "").strip(),
-                recreos_config="",
+                recreos_config=self._generar_recreos_config_json(),
                 algoritmo_asignacion=self.algoritmo_combo.currentData()  # Nuevo en v3.0
             )
 
@@ -857,6 +857,75 @@ class ConfiguracionForm(BaseForm):
         """Limpia el formulario (no usado en configuración)."""
         # No aplica para configuración ya que solo hay un registro
         pass
+
+    def _generar_recreos_config_json(self) -> str:
+        """
+        Genera el JSON de configuración de recreos basado en los valores del formulario.
+        
+        El número de zonas se obtiene automáticamente contando las zonas en la tabla Zona.
+
+        Returns:
+            str: JSON con la configuración de recreos, o cadena vacía si no hay recreos.
+        """
+        import json
+        from datetime import time
+
+        from models.models import Zona
+
+        # Obtener número de zonas desde la tabla Zona
+        num_zonas = self.session.query(Zona).count()
+
+        # Si no hay zonas, usar 4 por defecto (compatibilidad)
+        if num_zonas == 0:
+            num_zonas = 4
+
+        recreos = []
+
+        # Recreo 1 Mañana
+        hora_r1_manana = self.recreo1_manana_input.time().toPyTime()
+        if hora_r1_manana != time(0, 0):  # Si no es 00:00 (valor por defecto)
+            recreos.append({
+                "id": 1,
+                "etiqueta": "Recreo 1 Mañana",
+                "turno": "mañana",
+                "hora": hora_r1_manana.strftime("%H:%M"),
+                "zonas": num_zonas
+            })
+
+        # Recreo 2 Mañana
+        hora_r2_manana = self.recreo2_manana_input.time().toPyTime()
+        if hora_r2_manana != time(0, 0):
+            recreos.append({
+                "id": 2,
+                "etiqueta": "Recreo 2 Mañana",
+                "turno": "mañana",
+                "hora": hora_r2_manana.strftime("%H:%M"),
+                "zonas": num_zonas
+            })
+
+        # Recreo 1 Tarde
+        hora_r1_tarde = self.recreo1_tarde_input.time().toPyTime()
+        if hora_r1_tarde != time(0, 0):
+            recreos.append({
+                "id": 3,
+                "etiqueta": "Recreo 1 Tarde",
+                "turno": "tarde",
+                "hora": hora_r1_tarde.strftime("%H:%M"),
+                "zonas": num_zonas
+            })
+
+        # Recreo 2 Tarde
+        hora_r2_tarde = self.recreo2_tarde_input.time().toPyTime()
+        if hora_r2_tarde != time(0, 0):
+            recreos.append({
+                "id": 4,
+                "etiqueta": "Recreo 2 Tarde",
+                "turno": "tarde",
+                "hora": hora_r2_tarde.strftime("%H:%M"),
+                "zonas": num_zonas
+            })
+
+        return json.dumps(recreos) if recreos else ""
 
     def validar_formulario(self) -> tuple[bool, str]:
         """

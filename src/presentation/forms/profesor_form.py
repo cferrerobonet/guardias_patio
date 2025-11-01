@@ -585,8 +585,23 @@ class ProfesorForm(BaseForm):
             w.setVisible(visible)
 
     def _on_turno_changed(self, value: str):
-        """Manejar cambio en selector de turno."""
-        self._toggle_mixto_fields(value.lower() == "mixto")
+        """
+        Manejar cambio en selector de turno.
+        
+        Habilita automáticamente el checkbox de restricciones y pre-selecciona
+        los recreos correspondientes según el turno.
+        """
+        turno_lower = value.lower()
+
+        # Mostrar/ocultar campos de turno mixto
+        self._toggle_mixto_fields(turno_lower == "mixto")
+
+        # Habilitar automáticamente el checkbox de restricciones
+        if not self.usar_restricciones_horario_checkbox.isChecked():
+            self.usar_restricciones_horario_checkbox.setChecked(True)
+
+        # Pre-seleccionar recreos según el turno
+        self._preseleccionar_segun_turno(turno_lower)
 
     def _toggle_fechas_guardias(self):
         """Controlar exclusividad mutua entre fecha inicio y fin."""
@@ -638,21 +653,32 @@ class ProfesorForm(BaseForm):
             # Solo pre-seleccionar si es la primera vez (matriz vacía)
             if not alguno_marcado:
                 turno = self.turno_input.currentText().lower()
+                self._preseleccionar_segun_turno(turno)
 
-                # Pre-seleccionar según turno
-                for dia in self.matriz_checks:  # Solo días laborables (0-4)
-                    if turno == "mañana":
-                        # R1 y R2
-                        self.matriz_checks[dia][1].setChecked(True)
-                        self.matriz_checks[dia][2].setChecked(True)
-                    elif turno == "tarde":
-                        # R3 y R4
-                        self.matriz_checks[dia][3].setChecked(True)
-                        self.matriz_checks[dia][4].setChecked(True)
-                    elif turno == "mixto":
-                        # Todos los recreos R1, R2, R3, R4
-                        for recreo in [1, 2, 3, 4]:
-                            self.matriz_checks[dia][recreo].setChecked(True)
+    def _preseleccionar_segun_turno(self, turno: str):
+        """
+        Pre-seleccionar recreos en la matriz según el turno del profesor.
+        
+        Args:
+            turno: Turno del profesor ("mañana", "tarde" o "mixto")
+        """
+        # Limpiar matriz primero
+        self._marcar_todos_matriz(False)
+
+        # Pre-seleccionar todos los días (0-6: Lun-Dom)
+        for dia in self.matriz_checks:
+            if turno == "mañana":
+                # R1 y R2 (recreos de mañana)
+                self.matriz_checks[dia][1].setChecked(True)
+                self.matriz_checks[dia][2].setChecked(True)
+            elif turno == "tarde":
+                # R3 y R4 (recreos de tarde)
+                self.matriz_checks[dia][3].setChecked(True)
+                self.matriz_checks[dia][4].setChecked(True)
+            elif turno == "mixto":
+                # Todos los recreos R1, R2, R3, R4
+                for recreo in [1, 2, 3, 4]:
+                    self.matriz_checks[dia][recreo].setChecked(True)
 
     def _marcar_todos_matriz(self, estado: bool):
         """Marcar/desmarcar todos los checkboxes de la matriz."""
@@ -873,18 +899,20 @@ class ProfesorForm(BaseForm):
                     fecha_fin_guardias = self.fecha_fin_guardias_input.date().toPyDate()
 
             # Obtener restricciones de horario
-            # Guardar la matriz completa como dict para que se serialice correctamente
+            # SIEMPRE guardar la matriz, independientemente del checkbox
+            # El checkbox solo controla si se muestra habilitada o no
             dias_permitidos = None
             recreos_dict = {}
 
+            # Obtener la matriz como JSON y convertir a dict
+            matriz_json = self._matriz_a_json()
+            if matriz_json:
+                recreos_dict = json.loads(matriz_json)
+                # Convertir keys de str a int
+                recreos_dict = {int(k): v for k, v in recreos_dict.items()}
+
+            # También extraer las listas para días_semana_permitidos si el checkbox está marcado
             if self.usar_restricciones_horario_checkbox.isChecked():
-                # Obtener la matriz como JSON y convertir a dict
-                matriz_json = self._matriz_a_json()
-                if matriz_json:
-                    recreos_dict = json.loads(matriz_json)
-                    # Convertir keys de str a int
-                    recreos_dict = {int(k): v for k, v in recreos_dict.items()}
-                # También extraer las listas para días_semana_permitidos
                 dias_permitidos, _ = self._extraer_listas_desde_matriz()
 
             # Guardar profesor
@@ -942,12 +970,50 @@ class ProfesorForm(BaseForm):
                         profesor.recreos_permitidos = json.dumps(recreos_dict)
                         self.session.commit()
 
-            # Limpiar y recargar
-            self._limpiar_formulario()
+            # Recargar tabla
             self.cargar_profesores()
 
             # Emitir señal de modificación de datos
             self.datos_modificados.emit()
+
+            # Si estábamos editando, salir del modo edición pero mantener datos visibles
+            if self.profesor_editando_id:
+                # Guardar ID para resaltar después
+                id_editado = self.profesor_editando_id
+
+                # Resetear modo edición
+                self.profesor_editando_id = None
+                self.titulo_seccion.setText("✏️ ALTA DE PROFESOR")
+                self.submit_btn.setText("💾 Guardar nuevo profesor")
+                self.cancelar_btn.setVisible(False)
+
+                # Re-habilitar tabla
+                self.tabla_profesores.setEnabled(True)
+                self.editar_btn.setEnabled(True)
+                self.delete_btn.setEnabled(True)
+                self.busqueda_input.setEnabled(True)
+
+                # Resaltar el profesor editado en la tabla
+                for fila in range(self.tabla_profesores.rowCount()):
+                    id_item = self.tabla_profesores.item(fila, 0)
+                    if id_item and id_item.data(Qt.ItemDataRole.UserRole) == id_editado:
+                        self.tabla_profesores.selectRow(fila)
+                        self.tabla_profesores.scrollToItem(id_item)
+                        break
+
+                # Mostrar mensaje de éxito
+                self.mostrar_exito(
+                    "✅ Profesor actualizado",
+                    "El profesor ha sido actualizado correctamente.\n\n"
+                    "Los datos permanecen visibles en el formulario."
+                )
+            else:
+                # Modo creación: limpiar formulario para crear otro
+                self._limpiar_formulario()
+                self.mostrar_exito(
+                    "✅ Profesor creado",
+                    "El profesor ha sido creado correctamente."
+                )
 
         except Exception as e:
             self.manejar_excepcion(e, "guardar profesor")
@@ -1105,53 +1171,29 @@ class ProfesorForm(BaseForm):
                 )
 
             # Cargar matriz horario
-            # Solo activar restricciones si tiene valores diferentes a los por defecto
-            tiene_restricciones_personalizadas = False
-
-            if profesor.recreos_permitidos:
-                try:
-                    recreos_actuales = json.loads(profesor.recreos_permitidos)
-                    # Verificar si es diferente a los valores por defecto
-                    # Por defecto: [1, 2] para recreos
-                    if not (isinstance(recreos_actuales, list) and set(recreos_actuales) == {1, 2}):
-                        tiene_restricciones_personalizadas = True
-                except (json.JSONDecodeError, ValueError):
-                    pass
-
-            if profesor.dias_semana_permitidos and not tiene_restricciones_personalizadas:
-                try:
-                    dias_actuales = json.loads(profesor.dias_semana_permitidos)
-                    # Por defecto puede ser: [0,1,2,3,4] (nuevo) o [0,1,2,3,4,5,6] (antiguo)
-                    # Solo consideramos restricciones personalizadas si NO es ninguno de estos
-                    dias_defecto_nuevo = set(range(5))  # Lun-Vie (nuevo formato)
-                    dias_defecto_antiguo = set(range(7))  # Lun-Dom (formato antiguo)
-                    if isinstance(dias_actuales, list):
-                        dias_set = set(dias_actuales)
-                        if dias_set != dias_defecto_nuevo and dias_set != dias_defecto_antiguo:
-                            tiene_restricciones_personalizadas = True
-                except (json.JSONDecodeError, ValueError):
-                    pass
-
-            # Bloquear señales durante la carga para evitar la pre-selección automática
+            # SIEMPRE activar el checkbox de restricciones (nuevo comportamiento)
+            # Bloquear señales durante la carga para evitar disparar eventos
             self.usar_restricciones_horario_checkbox.blockSignals(True)
+            self.usar_restricciones_horario_checkbox.setChecked(True)
 
-            if tiene_restricciones_personalizadas:
-                self.usar_restricciones_horario_checkbox.setChecked(True)
+            # Cargar la matriz desde recreos_permitidos si existe
+            if profesor.recreos_permitidos:
                 self._json_a_matriz(profesor.recreos_permitidos)
             else:
-                self.usar_restricciones_horario_checkbox.setChecked(False)
+                # Si no tiene recreos_permitidos, pre-seleccionar según turno
                 self._marcar_todos_matriz(False)
+                self._preseleccionar_segun_turno(profesor.turno.lower())
 
-            # Restaurar señales y activar/desactivar widgets manualmente
+            # Restaurar señales y activar widgets
             self.usar_restricciones_horario_checkbox.blockSignals(False)
-            # Llamar manualmente para activar/desactivar los widgets sin la lógica de pre-selección
-            is_checked = self.usar_restricciones_horario_checkbox.isChecked()
-            self.matriz_horario_widget.setEnabled(is_checked)
-            self.btn_marcar_todos.setEnabled(is_checked)
-            self.btn_desmarcar_todos.setEnabled(is_checked)
+
+            # Activar los widgets de la matriz
+            self.matriz_horario_widget.setEnabled(True)
+            self.btn_marcar_todos.setEnabled(True)
+            self.btn_desmarcar_todos.setEnabled(True)
             for dia in self.matriz_checks:
                 for recreo in self.matriz_checks[dia]:
-                    self.matriz_checks[dia][recreo].setEnabled(is_checked)
+                    self.matriz_checks[dia][recreo].setEnabled(True)
 
             # Activar modo edición
             self.profesor_editando_id = id_profesor
