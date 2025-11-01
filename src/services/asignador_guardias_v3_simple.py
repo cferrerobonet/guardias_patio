@@ -14,6 +14,7 @@ Ventajas vs v2.9:
 
 from __future__ import annotations
 
+import json
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date
@@ -103,12 +104,22 @@ def _cumple_restricciones(
     # 3. Horario permitido (días y recreos)
     if profesor.dias_semana_permitidos:
         dia_semana = slot.fecha.weekday()
-        if dia_semana not in profesor.dias_semana_permitidos:
-            return False
+        # dias_semana_permitidos es JSON string, parsear
+        try:
+            dias_permitidos = json.loads(profesor.dias_semana_permitidos)
+            if dia_semana not in dias_permitidos:
+                return False
+        except (json.JSONDecodeError, TypeError):
+            pass  # Si no es válido, no filtrar
 
     if profesor.recreos_permitidos:
-        if slot.recreo_id not in profesor.recreos_permitidos:
-            return False
+        # recreos_permitidos es JSON string, parsear
+        try:
+            recreos_perms = json.loads(profesor.recreos_permitidos)
+            if slot.recreo_id not in recreos_perms:
+                return False
+        except (json.JSONDecodeError, TypeError):
+            pass  # Si no es válido, no filtrar
 
     # 4. Turno
     if profesor.turno and profesor.turno != "ambos":
@@ -226,7 +237,7 @@ def generar_guardias_v3_simple(
     session: Session,
     configuracion_id: int,
     reportar_progreso: Optional[callable] = None,
-) -> Dict:
+) -> Tuple[List[Guardia], Dict[int, int]]:
     """
     Genera guardias usando el algoritmo simple determinista v3.0.
 
@@ -367,7 +378,6 @@ def generar_guardias_v3_simple(
                 recreo=slot.recreo_id,
                 turno=slot.turno,
                 zona_id=slot.zona_id,
-                configuracion_id=configuracion_id,
             )
             session.add(guardia)
 
@@ -433,11 +443,7 @@ def generar_guardias_v3_simple(
 
     # Calcular equidad
     guardias_por_profesor = defaultdict(int)
-    for guardia in (
-        session.query(Guardia)
-        .filter(Guardia.configuracion_id == configuracion_id)
-        .all()
-    ):
+    for guardia in session.query(Guardia).all():
         guardias_por_profesor[guardia.profesor_id] += 1
 
     # Agrupar por jornada
@@ -463,15 +469,11 @@ def generar_guardias_v3_simple(
     logger.info("✓ ALGORITMO V3.0 COMPLETADO")
     logger.info("=" * 80)
 
-    return {
-        "guardias_generadas": guardias_asignadas,
-        "total_slots": total_slots,
-        "cobertura": cobertura,
-        "slots_vacios": slots_vacios,
-        "profesores_sin_guardias": len(
-            [p for p in profesores if guardias_por_profesor.get(p.id, 0) == 0]
-        ),
-        "profesores_incompletos": len(profesores_incompletos),
-        "grupos_inequitativos": grupos_inequitativos,
-        "algoritmo": "v3.0_simple",
-    }
+    # Obtener lista de guardias de la BD (recién creadas en esta sesión)
+    guardias_generadas = session.query(Guardia).all()
+
+    # Crear diccionario resumen compatible con v2.9
+    resumen_dict = {p.id: guardias_por_profesor.get(p.id, 0) for p in profesores}
+
+    # Retornar como tupla (calendario, resumen) igual que v2.9
+    return (guardias_generadas, resumen_dict)

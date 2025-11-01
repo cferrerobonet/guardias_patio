@@ -15,6 +15,7 @@ from matplotlib.figure import Figure  # noqa: E402
 from models.models import Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
+    QHeaderView,
     QLabel,
     QPushButton,
     QScrollArea,
@@ -131,7 +132,10 @@ class PanelEstadisticas(BaseForm):
         self.tabla_profesores.setHorizontalHeaderLabels(
             ["Profesor", "Total", "Mañana", "Tarde", "% Total", "Estado"]
         )
-        self.tabla_profesores.horizontalHeader().setStretchLastSection(True)
+        # Ajustar ancho automático de columnas al contenido
+        self.tabla_profesores.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
         self.tabla_profesores.setStyleSheet(get_table_style())
 
         layout.addWidget(self.tabla_profesores)
@@ -148,7 +152,10 @@ class PanelEstadisticas(BaseForm):
         self.tabla_zonas.setHorizontalHeaderLabels(
             ["Zona", "Total Guardias", "Profesores Diferentes", "% Cobertura"]
         )
-        self.tabla_zonas.horizontalHeader().setStretchLastSection(True)
+        # Ajustar ancho automático de columnas al contenido
+        self.tabla_zonas.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
         self.tabla_zonas.setStyleSheet(get_table_style())
 
         layout.addWidget(self.tabla_zonas)
