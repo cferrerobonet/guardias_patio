@@ -58,12 +58,16 @@ htmlcov/
 # Logs de desarrollo
 logs/
 *.log
+regeneracion*.log
+test_v3_output.log
+benchmark_results.log
 
 # Build y distribución (PyInstaller, DMG, EXE)
 build/
 dist/
 *.dmg
 *.exe
+checksums*.txt
 imagenes/*.iconset
 Output/  # Directorio de salida de Inno Setup
 
