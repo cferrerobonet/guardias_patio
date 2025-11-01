@@ -683,6 +683,48 @@ class ProfesorForm(BaseForm):
                 for recreo in [1, 2, 3, 4]:
                     self.matriz_checks[dia][recreo].setChecked(True)
 
+    def _verificar_recreos_correctos(self, recreos_json: str, turno: str) -> bool:
+        """
+        Verificar si los recreos_permitidos son correctos para el turno.
+        
+        Args:
+            recreos_json: JSON con recreos permitidos
+            turno: Turno del profesor ("mañana", "tarde" o "mixto")
+            
+        Returns:
+            True si los recreos son correctos, False si necesitan corrección
+        """
+        try:
+            recreos_dict = json.loads(recreos_json)
+            
+            # Obtener recreos esperados según turno
+            if turno == "mañana":
+                recreos_esperados = [1, 2]
+            elif turno == "tarde":
+                recreos_esperados = [3, 4]
+            elif turno == "mixto":
+                recreos_esperados = [1, 2, 3, 4]
+            else:
+                return True  # Turno desconocido, no validar
+            
+            # Verificar al menos un día (día 0 - Lunes)
+            if isinstance(recreos_dict, dict) and "0" in recreos_dict:
+                recreos_actuales = set(recreos_dict["0"])
+                recreos_esperados_set = set(recreos_esperados)
+                
+                # Son correctos si coinciden exactamente
+                return recreos_actuales == recreos_esperados_set
+            elif isinstance(recreos_dict, list):
+                # Formato lista simple
+                recreos_actuales_set = set(recreos_dict)
+                recreos_esperados_set = set(recreos_esperados)
+                return recreos_actuales_set == recreos_esperados_set
+            
+            return False  # Formato desconocido
+            
+        except (json.JSONDecodeError, KeyError, ValueError):
+            return False  # Error al parsear, necesita corrección
+
     def _marcar_todos_matriz(self, estado: bool):
         """Marcar/desmarcar todos los checkboxes de la matriz."""
         for dia in self.matriz_checks:
@@ -1180,7 +1222,19 @@ class ProfesorForm(BaseForm):
 
             # Cargar la matriz desde recreos_permitidos si existe
             if profesor.recreos_permitidos:
-                self._json_a_matriz(profesor.recreos_permitidos)
+                # Verificar si los recreos son correctos para el turno
+                recreos_correctos = self._verificar_recreos_correctos(
+                    profesor.recreos_permitidos,
+                    profesor.turno.lower()
+                )
+                
+                if recreos_correctos:
+                    # Si son correctos, cargarlos
+                    self._json_a_matriz(profesor.recreos_permitidos)
+                else:
+                    # Si son incorrectos, pre-seleccionar según turno
+                    self._marcar_todos_matriz(False)
+                    self._preseleccionar_segun_turno(profesor.turno.lower())
             else:
                 # Si no tiene recreos_permitidos, pre-seleccionar según turno
                 self._marcar_todos_matriz(False)
