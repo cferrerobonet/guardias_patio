@@ -868,6 +868,8 @@ class ProfesorForm(BaseForm):
     def cancelar_edicion(self):
         """Cancelar edición y volver a modo creación."""
         self._limpiar_formulario()
+        # Recarga tabla por si hubo cambios
+        self.cargar_profesores()
         self.mostrar_exito("Cancelado", "Edición cancelada.")
 
     def guardar_profesor(self):
@@ -1343,6 +1345,10 @@ class ProfesorForm(BaseForm):
             try:
                 eliminados = 0
                 errores = []
+                
+                # Verificar si algún profesor eliminado está actualmente en edición
+                ids_a_eliminar = [id_prof for id_prof, _ in profesores_a_eliminar]
+                limpiar_form = self.profesor_editando_id in ids_a_eliminar
 
                 for id_profesor, nombre_profesor in profesores_a_eliminar:
                     try:
@@ -1365,6 +1371,10 @@ class ProfesorForm(BaseForm):
                             f"Se eliminaron {eliminados} profesor(es) correctamente."
                         )
 
+                    # Si el profesor eliminado estaba en edición, limpiar formulario
+                    if limpiar_form:
+                        self._limpiar_formulario()
+                    
                     self.cargar_profesores()
                     # Emitir señal de modificación de datos
                     self.datos_modificados.emit()

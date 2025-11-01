@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QProgressBar,
     QPushButton,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -31,13 +32,15 @@ class ProgressDialog(QDialog):
     - Título de la operación
     - Mensaje descriptivo
     - Barra de progreso (0-100%)
+    - Log detallado de la operación
     - Botón de cancelación
 
     Ejemplo:
         dialog = ProgressDialog(
             parent=self,
             title="Generando Guardias",
-            message="Procesando calendario escolar..."
+            message="Procesando calendario escolar...",
+            show_details=True
         )
         dialog.show()
 
@@ -57,7 +60,8 @@ class ProgressDialog(QDialog):
         message: str = "Por favor espere...",
         cancelable: bool = True,
         minimum: int = 0,
-        maximum: int = 100
+        maximum: int = 100,
+        show_details: bool = True
     ):
         """
         Inicializar diálogo de progreso.
@@ -69,13 +73,15 @@ class ProgressDialog(QDialog):
             cancelable: Si True, muestra botón de cancelar
             minimum: Valor mínimo de la barra (default 0)
             maximum: Valor máximo de la barra (default 100)
+            show_details: Si True, muestra área de detalles con log
         """
         super().__init__(parent)
 
         self.setWindowTitle(title)
         self.setWindowIcon(get_corporate_icon())
         self.setModal(True)  # Bloquear interacción con ventana padre
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(400 if show_details else 200)
 
         # Deshabilitar botón de maximizar (solo permitir cerrar y minimizar)
         self.setWindowFlags(
@@ -87,19 +93,21 @@ class ProgressDialog(QDialog):
 
         self._cancelado = False
         self._cancelable = cancelable
+        self._show_details = show_details
 
         # Layout principal
         layout = QVBoxLayout()
         layout.setSpacing(15)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        # Mensaje
+        # Mensaje principal
         self.label_mensaje = QLabel(message)
         self.label_mensaje.setWordWrap(True)
         self.label_mensaje.setStyleSheet("""
             QLabel {
-                font-size: 13px;
-                color: #333333;
+                font-size: 14px;
+                font-weight: bold;
+                color: #1976D2;
             }
         """)
         layout.addWidget(self.label_mensaje)
@@ -115,10 +123,13 @@ class ProgressDialog(QDialog):
                 border: 2px solid #CCCCCC;
                 border-radius: 5px;
                 text-align: center;
-                height: 25px;
+                height: 30px;
+                font-size: 13px;
+                font-weight: bold;
             }
             QProgressBar::chunk {
-                background-color: #4CAF50;
+                background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #4CAF50, stop:1 #66BB6A);
                 border-radius: 3px;
             }
         """)
@@ -128,11 +139,43 @@ class ProgressDialog(QDialog):
         self.label_detalle = QLabel("")
         self.label_detalle.setStyleSheet("""
             QLabel {
-                font-size: 11px;
-                color: #666666;
+                font-size: 12px;
+                color: #555555;
             }
         """)
         layout.addWidget(self.label_detalle)
+
+        # Área de detalles con log (si show_details=True)
+        if show_details:
+            # Label para el área de detalles
+            label_log = QLabel("📋 Detalles del proceso:")
+            label_log.setStyleSheet("""
+                QLabel {
+                    font-size: 11px;
+                    font-weight: bold;
+                    color: #666666;
+                    margin-top: 5px;
+                }
+            """)
+            layout.addWidget(label_log)
+
+            # TextEdit para el log
+            self.text_log = QTextEdit()
+            self.text_log.setReadOnly(True)
+            self.text_log.setStyleSheet("""
+                QTextEdit {
+                    background-color: #F5F5F5;
+                    border: 1px solid #DDDDDD;
+                    border-radius: 4px;
+                    font-family: 'Courier New', monospace;
+                    font-size: 10px;
+                    padding: 8px;
+                }
+            """)
+            self.text_log.setMaximumHeight(200)
+            layout.addWidget(self.text_log)
+        else:
+            self.text_log = None
 
         # Botón cancelar
         if cancelable:
@@ -174,8 +217,30 @@ class ProgressDialog(QDialog):
         # Actualizar label de detalle
         if detalle:
             self.label_detalle.setText(detalle)
+            # También añadir al log si está habilitado
+            if self.text_log is not None:
+                self.agregar_al_log(detalle)
         else:
             self.label_detalle.setText(f"{actual} / {total}")
+
+    def agregar_al_log(self, mensaje: str):
+        """
+        Añadir un mensaje al log detallado.
+
+        Args:
+            mensaje: Mensaje a añadir
+        """
+        if self.text_log is not None:
+            # Añadir con timestamp visual
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+            linea = f"[{timestamp}] {mensaje}"
+            
+            self.text_log.append(linea)
+            # Auto-scroll al final
+            self.text_log.verticalScrollBar().setValue(
+                self.text_log.verticalScrollBar().maximum()
+            )
 
     def set_mensaje(self, mensaje: str):
         """
@@ -185,6 +250,9 @@ class ProgressDialog(QDialog):
             mensaje: Nuevo mensaje
         """
         self.label_mensaje.setText(mensaje)
+        # También añadir al log
+        if self.text_log is not None:
+            self.agregar_al_log(f"📌 {mensaje}")
 
     def _cancelar(self):
         """Manejar click en botón cancelar."""
@@ -339,8 +407,14 @@ def ejecutar_con_progreso(
         )
     """
 
-    # Crear diálogo
-    dialog = ProgressDialog(parent, titulo, mensaje)
+    # Crear diálogo con detalles habilitados
+    dialog = ProgressDialog(
+        parent,
+        titulo,
+        mensaje,
+        cancelable=True,
+        show_details=True  # Habilitar área de log detallado
+    )
 
     # Crear worker
     worker = WorkerThread(funcion, *args, **kwargs)
@@ -356,7 +430,7 @@ def ejecutar_con_progreso(
 
     def on_finalizado(resultado):
         resultado_final[0] = resultado
-        dialog.completar()
+        dialog.completar("✅ Generación completada exitosamente")
 
     def on_error(error):
         error_final[0] = error

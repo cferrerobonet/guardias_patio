@@ -519,12 +519,13 @@ class ZonaForm(BaseForm):
         self.delete_btn.setEnabled(False)
 
     def cancelar_edicion(self):
-        """Cancelar el modo edición y volver al modo creación."""
+        """Cancelar la edición y volver al modo 'nueva zona'"""
         self.zona_editando_id = None
         self.titulo_form.setText("✏️ NUEVA ZONA")
         self.submit_btn.setText("💾 Guardar Zona")
         self.cancelar_btn.setVisible(False)
         self.limpiar_formulario()
+        self.cargar_zonas()  # Recargar tabla para asegurar sincronización
 
     def cargar_zonas(self):
         """Cargar la lista de zonas desde la base de datos usando el Use Case"""
@@ -608,6 +609,10 @@ class ZonaForm(BaseForm):
         if not zonas_a_eliminar:
             return
 
+        # Detectar si alguna zona a eliminar está siendo editada actualmente
+        ids_a_eliminar = [id_zona for id_zona, _ in zonas_a_eliminar]
+        limpiar_form = self.zona_editando_id in ids_a_eliminar
+
         # Preparar mensaje de confirmación
         cantidad = len(zonas_a_eliminar)
         if cantidad == 1:
@@ -644,6 +649,10 @@ class ZonaForm(BaseForm):
                 errores.append(f"{nombre_zona}: {str(e)}")
             except Exception as e:
                 errores.append(f"{nombre_zona}: Error inesperado - {str(e)}")
+
+        # Limpiar formulario si la zona eliminada estaba en modo edición
+        if eliminadas > 0 and limpiar_form:
+            self.limpiar_formulario()
 
         # Recargar lista
         self.cargar_zonas()

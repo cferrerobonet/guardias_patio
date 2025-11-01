@@ -282,39 +282,65 @@ def generar_guardias_v3_simple(
     if not config:
         raise ValueError(f"Configuración {configuracion_id} no encontrada")
 
-    # PASO 1: CALCULAR CUOTAS (0% - 10%)
-    logger.info("PASO 1: Calculando cuotas por profesor")
+    # PASO 1: VALIDAR Y CARGAR DATOS (0% - 10%)
+    logger.info("=" * 80)
+    logger.info("GENERANDO GUARDIAS - ALGORITMO V3 SIMPLE")
+    logger.info("=" * 80)
+    logger.info("")
+    logger.info("PASO 1: Cargando configuración y profesores")
     logger.info("-" * 80)
-    reportar_progreso(0, "Paso 1: Calculando cuotas...")
+    reportar_progreso(0, "Iniciando generación de guardias...")
+    reportar_progreso(2, "Paso 1: Cargando configuración...")
 
-    # Obtener todos los profesores (no hay filtro por configuracion_id en Profesor)
-    profesores = session.query(Profesor).all()
+    config = session.query(Configuracion).first()
+    if not config:
+        raise ValueError("No se encontró configuración activa")
 
-    # Calcular cuotas (la función no recibe configuracion_id, usa la config actual)
+    reportar_progreso(5, "Paso 1: Cargando profesores activos...")
+    profesores = session.query(Profesor).filter(Profesor.activo == True).all()  # noqa: E712
+    logger.info(f"  ✓ Configuración: {config.fecha_inicio} a {config.fecha_fin}")
+    logger.info(f"  ✓ Profesores activos: {len(profesores)}")
+    reportar_progreso(7, f"Paso 1: {len(profesores)} profesores cargados")
+
+    reportar_progreso(8, "Paso 1: Calculando cuotas...")
     cuotas = calcular_guardias_por_profesor(session)
-    logger.info(f"  ✓ {len(profesores)} profesores")
-    logger.info(f"  ✓ Cuotas calculadas: {sum(cuotas.values())} guardias totales")
+    total_cuota = sum(cuotas.values())
+    logger.info(f"  ✓ Cuota total a asignar: {total_cuota} guardias")
 
-    reportar_progreso(10, f"Paso 1: {len(profesores)} profesores")
+    reportar_progreso(10, f"Paso 1: Cuota total = {total_cuota} guardias")
 
     # PASO 2: GENERAR TODOS LOS SLOTS (10% - 20%)
     logger.info("")
     logger.info("PASO 2: Generando slots disponibles")
     logger.info("-" * 80)
-    reportar_progreso(10, "Paso 2: Generando slots...")
+    reportar_progreso(10, "Paso 2: Calculando días lectivos...")
+
+    # Obtener información de días y zonas
+    dias_lectivos = listar_dias_lectivos(config)
+    zonas = session.query(Zona).all()
+    recreos_list = _parse_recreos_config(config)
+
+    reportar_progreso(12, f"Paso 2: {len(dias_lectivos)} días lectivos encontrados")
+    reportar_progreso(14, f"Paso 2: {len(zonas)} zonas, {len(recreos_list)} recreos")
 
     todos_slots = _generar_todos_slots(config, session)
     total_slots = len(todos_slots)
 
-    reportar_progreso(20, f"Paso 2: {total_slots} slots generados")
+    logger.info(f"  ✓ Días lectivos: {len(dias_lectivos)}")
+    logger.info(f"  ✓ Zonas: {len(zonas)}")
+    logger.info(f"  ✓ Recreos configurados: {len(recreos_list)}")
+    logger.info(f"  ✓ Total slots generados: {total_slots}")
+
+    reportar_progreso(20, f"Paso 2: ✓ {total_slots} slots generados")
 
     # PASO 3: CALCULAR PRIORIDADES (20% - 30%)
     logger.info("")
     logger.info("PASO 3: Calculando prioridades de asignación")
     logger.info("-" * 80)
-    reportar_progreso(20, "Paso 3: Calculando prioridades...")
+    reportar_progreso(20, "Paso 3: Analizando restricciones de profesores...")
 
     profesores_cuotas = []
+    procesados = 0
     for profesor in profesores:
         cuota = cuotas.get(profesor.id, 0)
         slots_posibles = _calcular_slots_posibles(profesor, todos_slots, session)
@@ -332,7 +358,17 @@ def generar_guardias_v3_simple(
             f"cuota={cuota}, slots_posibles={slots_posibles}"
         )
 
+        # Reportar progreso cada 5 profesores
+        procesados += 1
+        if procesados % 5 == 0 or procesados == len(profesores):
+            progreso = 20 + int((procesados / len(profesores)) * 8)
+            reportar_progreso(
+                progreso,
+                f"Paso 3: Analizando profesor {procesados}/{len(profesores)}"
+            )
+
     # Ordenar por prioridad
+    reportar_progreso(28, "Paso 3: Ordenando profesores por prioridad...")
     profesores_ordenados = _ordenar_profesores_por_prioridad(profesores_cuotas)
 
     logger.info("")
@@ -345,12 +381,13 @@ def generar_guardias_v3_simple(
     if len(profesores_ordenados) > 10:
         logger.info(f"    ... ({len(profesores_ordenados) - 10} más)")
 
-    reportar_progreso(30, "Paso 3: Profesores ordenados")
+    reportar_progreso(30, "Paso 3: ✓ Profesores ordenados por prioridad")
 
     # PASO 4: ASIGNAR GUARDIAS (30% - 90%)
     logger.info("")
     logger.info("PASO 4: Asignando guardias profesor por profesor")
     logger.info("-" * 80)
+    reportar_progreso(30, "Paso 4: Iniciando asignación de guardias...")
 
     slots_ocupados: Set[SlotV3] = set()
     indice_slots = IndiceSlots()  # Para búsquedas O(1)
@@ -365,6 +402,10 @@ def generar_guardias_v3_simple(
             logger.info(
                 f"  [{idx}/{len(profesores_ordenados)}] "
                 f"{profesor.nombre_completo}: Sin cuota (0 guardias)"
+            )
+            reportar_progreso(
+                30 + int((idx / len(profesores_ordenados)) * 60),
+                f"Paso 4: Procesando {idx}/{len(profesores_ordenados)} profesores"
             )
             continue
 
@@ -412,31 +453,47 @@ def generar_guardias_v3_simple(
                 f"{profesor.nombre_completo}: ✓ {asignadas}/{cuota} guardias"
             )
 
-        # Reportar progreso
+        # Reportar progreso detallado
         progreso = 30 + int((idx / len(profesores_ordenados)) * 60)
-        reportar_progreso(
-            progreso,
-            f"Paso 4: {guardias_asignadas}/{total_slots} guardias asignadas",
+        slots_restantes = total_slots - guardias_asignadas
+        cobertura_actual = (guardias_asignadas / total_slots * 100) if total_slots > 0 else 0
+
+        # Mensaje más detallado
+        mensaje = (
+            f"Paso 4: {profesor.nombre_completo[:30]}... → "
+            f"{asignadas}/{cuota} guardias | "
+            f"Total: {guardias_asignadas}/{total_slots} ({cobertura_actual:.1f}%)"
         )
+        reportar_progreso(progreso, mensaje)
 
     session.commit()
 
-    reportar_progreso(90, f"Paso 4: {guardias_asignadas} guardias creadas")
+    reportar_progreso(
+        90,
+        f"Paso 4: ✓ {guardias_asignadas} guardias creadas ({guardias_asignadas}/{total_slots})"
+    )
 
     # PASO 5: VALIDACIÓN Y ESTADÍSTICAS (90% - 100%)
     logger.info("")
     logger.info("PASO 5: Validación y estadísticas")
     logger.info("-" * 80)
-    reportar_progreso(90, "Paso 5: Validando resultados...")
+    reportar_progreso(90, "Paso 5: Calculando estadísticas finales...")
 
     slots_vacios = total_slots - guardias_asignadas
     cobertura = (guardias_asignadas / total_slots * 100) if total_slots > 0 else 0
+
+    reportar_progreso(92, f"Paso 5: Cobertura alcanzada: {cobertura:.1f}%")
 
     logger.info(f"  ✓ Guardias asignadas: {guardias_asignadas}/{total_slots}")
     logger.info(f"  ✓ Cobertura: {cobertura:.2f}%")
     logger.info(f"  ✓ Slots vacíos: {slots_vacios}")
     logger.info(
         f"  ✓ Profesores con cuota incompleta: {len(profesores_incompletos)}"
+    )
+
+    reportar_progreso(
+        95,
+        f"Paso 5: ✓ {len(profesores_incompletos)} profesores con cuota incompleta"
     )
 
     if profesores_incompletos:
@@ -448,6 +505,12 @@ def generar_guardias_v3_simple(
                 f"    • {profesor.nombre_completo}: {asignadas}/{cuota} "
                 f"(faltan {faltantes})"
             )
+
+    reportar_progreso(98, "Paso 5: Generación completada, finalizando...")
+    reportar_progreso(
+        100,
+        f"✅ Completado: {guardias_asignadas}/{total_slots} guardias ({cobertura:.1f}% cobertura)"
+    )
 
     if slots_vacios > 0:
         logger.warning(f"  ⚠️  Quedan {slots_vacios} slots sin cubrir")
