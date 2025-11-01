@@ -64,8 +64,11 @@ Sistema de gestión de guardias de recreo para centros educativos.
 - [Resumen Corrección v2.9](versiones/RESUMEN_CORRECCION_v2.9.md) - Detalles técnicos
 - [Mejoras Calendario v2.9](versiones/MEJORAS_CALENDARIO_v2.9.md) - Features de calendario
 
-### � Archivo Histórico
-- [Sprints Anteriores](_archivo_sprints/) - Documentación archivada de sprints pasados
+### 📦 Archivo Histórico
+- [Información sobre Archivo Histórico](desarrollo/ARCHIVO_HISTORICO_INFO.md) - Sprints 1-12 comprimidos
+  - **Ubicación**: `ARCHIVO_HISTORICO_SPRINTS.tar.gz` (raíz del proyecto)
+  - **Contenido**: 57 documentos de sprints históricos (1 MB → 266 KB)
+  - **Razón**: Mantener documentación activa limpia y enfocada
 
 ---
 
@@ -83,8 +86,10 @@ documentacion/
 ├── validaciones/                # Sistema de validaciones
 ├── versiones/                   # Changelogs y releases
 ├── sftp/                        # Configuración SFTP (legacy)
-├── datos ejemplo/               # Datos de prueba
-└── _archivo_sprints/            # Histórico archivado
+└── datos ejemplo/               # Datos de prueba
+
+Archivo histórico (comprimido en raíz):
+└── ARCHIVO_HISTORICO_SPRINTS.tar.gz  # Sprints 1-12 (266 KB)
 ```
 
 ---
@@ -105,9 +110,10 @@ documentacion/
 
 ## 📝 Notas
 
-- Los archivos en `_archivo_sprints/` son históricos y pueden no estar actualizados
 - La documentación de SFTP en `sftp/` es legacy (sistema implementado en v2.8)
 - Para crear nuevos builds, consultar `build/COMPILACION_RAPIDA.md`
+- El historial de sprints está comprimido en `ARCHIVO_HISTORICO_SPRINTS.tar.gz` (raíz del proyecto)
+  - Ver `desarrollo/ARCHIVO_HISTORICO_INFO.md` para más información
 
 ### 📁 Datos de Ejemplo
 - Ver [datos ejemplo/](datos%20ejemplo/) - Datos para pruebas

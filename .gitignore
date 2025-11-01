@@ -76,6 +76,10 @@ checksums*.txt
 imagenes/*.iconset
 Output/  # Directorio de salida de Inno Setup
 
+# Archivos históricos comprimidos (muy grandes para git)
+ARCHIVO_HISTORICO_*.tar.gz
+ARCHIVO_HISTORICO_*.zip
+
 # ============================================================================
 # NOTA IMPORTANTE: 
 # Los siguientes archivos SÍ se suben a Git (NO están en .gitignore):
