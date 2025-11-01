@@ -113,10 +113,23 @@ def _cumple_restricciones(
             pass  # Si no es válido, no filtrar
 
     if profesor.recreos_permitidos:
-        # recreos_permitidos es JSON string, parsear
+        # recreos_permitidos puede ser JSON string con lista o diccionario
         try:
             recreos_perms = json.loads(profesor.recreos_permitidos)
-            if slot.recreo_id not in recreos_perms:
+
+            # Manejar dos formatos:
+            # 1. Lista: [1, 2]
+            # 2. Diccionario por día: {"0": [1, 2], "1": [1, 2], ...}
+            if isinstance(recreos_perms, dict):
+                # Formato diccionario: extraer todos los recreos únicos
+                recreos_unicos = set()
+                for recreos_dia in recreos_perms.values():
+                    if isinstance(recreos_dia, list):
+                        recreos_unicos.update(recreos_dia)
+                recreos_perms = list(recreos_unicos)
+
+            # Ahora recreos_perms es siempre una lista
+            if isinstance(recreos_perms, list) and slot.recreo_id not in recreos_perms:
                 return False
         except (json.JSONDecodeError, TypeError):
             pass  # Si no es válido, no filtrar
