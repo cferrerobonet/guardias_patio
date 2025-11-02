@@ -1,12 +1,12 @@
 {
-  "export_date": "2025-11-02T21:46:52.369584",
+  "export_date": "2025-11-02T21:48:38.487138",
   "version": "1.0",
   "smtp_config": {
     "smtp_server": "smtp.ionos.es",
     "smtp_port": "587",
     "smtp_user": "no_contestar@aplicaciones.epla.es",
     "smtp_password": "QDI1NDE1MTc1KFopLmFwbGljYWNpb25lcw==",
-    "smtp_from_name": "Guardias de Patio"
+    "smtp_from_name": "Generador de Guardias de Patio: JEFATURA DE ESTUDIOS DE FP"
   },
   "sftp_config": {
     "sftp_host": "home491590459.1and1-data.host",

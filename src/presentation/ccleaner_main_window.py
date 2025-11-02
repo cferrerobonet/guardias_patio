@@ -163,7 +163,7 @@ class CCleanerMainWindow(QMainWindow):
             "Importar / Exportar Datos",
             ImportExportForm(self.session),
         )
-        self.add_view("reportes", "Generador de Reportes", ReportesForm())
+        self.add_view("reportes", "Generador de Reportes", ReportesForm(self.session))
         self.add_view("estadisticas", "Estadísticas", PanelEstadisticas(self.session))
 
     def add_view(self, section: str, title: str, content_widget: QWidget):
