@@ -9,10 +9,8 @@ from collections import defaultdict
 import matplotlib
 
 matplotlib.use("QtAgg")
-import ui_styles as styles
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
-from models.models import Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHeaderView,
@@ -27,6 +25,8 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy import func
 
+import ui_styles as styles
+from models.models import Guardia, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import (
     CONTENT_BG_ALT,

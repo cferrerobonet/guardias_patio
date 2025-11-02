@@ -8,16 +8,6 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 import json
 from typing import Optional
 
-import ui_styles as styles
-from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
-from application.use_cases.profesor import (
-    ActualizarProfesorUseCase,
-    BuscarProfesoresUseCase,
-    CrearProfesorUseCase,
-    EliminarProfesorUseCase,
-    ListarProfesoresUseCase,
-    ObtenerProfesorUseCase,
-)
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -35,6 +25,16 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+import ui_styles as styles
+from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
+from application.use_cases.profesor import (
+    ActualizarProfesorUseCase,
+    BuscarProfesoresUseCase,
+    CrearProfesorUseCase,
+    EliminarProfesorUseCase,
+    ListarProfesoresUseCase,
+    ObtenerProfesorUseCase,
+)
 from presentation.forms.base_form import BaseForm
 from presentation.forms.profesor_widgets import (
     DatosBasicosWidget,

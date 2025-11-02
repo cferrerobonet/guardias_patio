@@ -1,5 +1,5 @@
 {
-  "export_date": "2025-11-02T20:08:19.599842",
+  "export_date": "2025-11-02T21:11:26.863428",
   "version": "1.0",
   "smtp_config": {
     "smtp_server": "smtp.ionos.es",
@@ -30,7 +30,7 @@
       "fecha_inicio_guardias": null,
       "fecha_fin_guardias": null,
       "dias_semana_permitidos": null,
-      "recreos_permitidos": null
+      "recreos_permitidos": "{\"0\": [2], \"1\": [1, 2], \"2\": [1, 2], \"3\": [1, 2], \"4\": [2]}"
     },
     {
       "id": 2,
@@ -2398,8 +2398,8 @@
       "profesor_id": 1,
       "fecha": "2025-09-22",
       "turno": "mañana",
-      "recreo": 1,
-      "zona_id": 2
+      "recreo": 2,
+      "zona_id": 1
     },
     {
       "id": 159,
@@ -2407,7 +2407,7 @@
       "fecha": "2025-09-22",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 2
     },
     {
       "id": 160,
@@ -2415,7 +2415,7 @@
       "fecha": "2025-09-22",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 161,
@@ -2438,8 +2438,8 @@
       "profesor_id": 7,
       "fecha": "2025-09-22",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 164,
@@ -2934,8 +2934,8 @@
       "profesor_id": 1,
       "fecha": "2025-09-26",
       "turno": "mañana",
-      "recreo": 1,
-      "zona_id": 3
+      "recreo": 2,
+      "zona_id": 1
     },
     {
       "id": 226,
@@ -2943,15 +2943,15 @@
       "fecha": "2025-09-26",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 227,
       "profesor_id": 3,
       "fecha": "2025-09-26",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 228,
@@ -4542,7 +4542,7 @@
       "profesor_id": 1,
       "fecha": "2025-10-17",
       "turno": "mañana",
-      "recreo": 1,
+      "recreo": 2,
       "zona_id": 1
     },
     {
@@ -4551,7 +4551,7 @@
       "fecha": "2025-10-17",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 2
+      "zona_id": 1
     },
     {
       "id": 428,
@@ -4559,7 +4559,7 @@
       "fecha": "2025-10-17",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 2
     },
     {
       "id": 429,
@@ -4583,15 +4583,15 @@
       "fecha": "2025-10-17",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 432,
       "profesor_id": 10,
       "fecha": "2025-10-17",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 433,
@@ -7222,7 +7222,7 @@
       "profesor_id": 1,
       "fecha": "2025-11-17",
       "turno": "mañana",
-      "recreo": 1,
+      "recreo": 2,
       "zona_id": 1
     },
     {
@@ -7231,7 +7231,7 @@
       "fecha": "2025-11-17",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 2
+      "zona_id": 1
     },
     {
       "id": 763,
@@ -7239,7 +7239,7 @@
       "fecha": "2025-11-17",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 2
     },
     {
       "id": 764,
@@ -7263,15 +7263,15 @@
       "fecha": "2025-11-17",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 767,
       "profesor_id": 10,
       "fecha": "2025-11-17",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 768,
@@ -7758,8 +7758,8 @@
       "profesor_id": 1,
       "fecha": "2025-11-21",
       "turno": "mañana",
-      "recreo": 1,
-      "zona_id": 2
+      "recreo": 2,
+      "zona_id": 1
     },
     {
       "id": 829,
@@ -7767,7 +7767,7 @@
       "fecha": "2025-11-21",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 2
     },
     {
       "id": 830,
@@ -7775,7 +7775,7 @@
       "fecha": "2025-11-21",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 831,
@@ -7798,8 +7798,8 @@
       "profesor_id": 7,
       "fecha": "2025-11-21",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 834,
@@ -11486,8 +11486,8 @@
       "profesor_id": 1,
       "fecha": "2026-01-19",
       "turno": "mañana",
-      "recreo": 1,
-      "zona_id": 3
+      "recreo": 2,
+      "zona_id": 1
     },
     {
       "id": 1295,
@@ -11495,15 +11495,15 @@
       "fecha": "2026-01-19",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 1296,
       "profesor_id": 3,
       "fecha": "2026-01-19",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 1297,
@@ -12014,16 +12014,16 @@
       "profesor_id": 1,
       "fecha": "2026-01-23",
       "turno": "mañana",
-      "recreo": 1,
-      "zona_id": 4
+      "recreo": 2,
+      "zona_id": 1
     },
     {
       "id": 1361,
       "profesor_id": 2,
       "fecha": "2026-01-23",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 1362,
@@ -14646,7 +14646,7 @@
       "profesor_id": 1,
       "fecha": "2026-02-23",
       "turno": "mañana",
-      "recreo": 1,
+      "recreo": 2,
       "zona_id": 1
     },
     {
@@ -14655,7 +14655,7 @@
       "fecha": "2026-02-23",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 2
+      "zona_id": 1
     },
     {
       "id": 1691,
@@ -14663,7 +14663,7 @@
       "fecha": "2026-02-23",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 2
     },
     {
       "id": 1692,
@@ -14687,15 +14687,15 @@
       "fecha": "2026-02-23",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 1695,
       "profesor_id": 10,
       "fecha": "2026-02-23",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 1696,
@@ -15166,7 +15166,7 @@
       "profesor_id": 1,
       "fecha": "2026-02-27",
       "turno": "mañana",
-      "recreo": 1,
+      "recreo": 2,
       "zona_id": 1
     },
     {
@@ -15175,7 +15175,7 @@
       "fecha": "2026-02-27",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 2
+      "zona_id": 1
     },
     {
       "id": 1756,
@@ -15183,7 +15183,7 @@
       "fecha": "2026-02-27",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 2
     },
     {
       "id": 1757,
@@ -15207,15 +15207,15 @@
       "fecha": "2026-02-27",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 1760,
       "profesor_id": 10,
       "fecha": "2026-02-27",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 1761,
@@ -16582,7 +16582,7 @@
       "profesor_id": 1,
       "fecha": "2026-03-16",
       "turno": "mañana",
-      "recreo": 1,
+      "recreo": 2,
       "zona_id": 1
     },
     {
@@ -16591,7 +16591,7 @@
       "fecha": "2026-03-16",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 2
+      "zona_id": 1
     },
     {
       "id": 1933,
@@ -16599,7 +16599,7 @@
       "fecha": "2026-03-16",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 2
     },
     {
       "id": 1934,
@@ -16623,15 +16623,15 @@
       "fecha": "2026-03-16",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 1937,
       "profesor_id": 12,
       "fecha": "2026-03-16",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 1938,
@@ -17902,7 +17902,7 @@
       "profesor_id": 1,
       "fecha": "2026-04-17",
       "turno": "mañana",
-      "recreo": 1,
+      "recreo": 2,
       "zona_id": 1
     },
     {
@@ -17911,7 +17911,7 @@
       "fecha": "2026-04-17",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 1
     },
     {
       "id": 2098,
@@ -17919,7 +17919,7 @@
       "fecha": "2026-04-17",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 2099,
@@ -17934,8 +17934,8 @@
       "profesor_id": 25,
       "fecha": "2026-04-17",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 2101,
@@ -18382,7 +18382,7 @@
       "profesor_id": 1,
       "fecha": "2026-04-24",
       "turno": "mañana",
-      "recreo": 1,
+      "recreo": 2,
       "zona_id": 1
     },
     {
@@ -18391,7 +18391,7 @@
       "fecha": "2026-04-24",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 1
     },
     {
       "id": 2158,
@@ -18399,7 +18399,7 @@
       "fecha": "2026-04-24",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 2159,
@@ -18414,8 +18414,8 @@
       "profesor_id": 25,
       "fecha": "2026-04-24",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 2161,
@@ -18862,7 +18862,7 @@
       "profesor_id": 1,
       "fecha": "2026-05-04",
       "turno": "mañana",
-      "recreo": 1,
+      "recreo": 2,
       "zona_id": 1
     },
     {
@@ -18871,7 +18871,7 @@
       "fecha": "2026-05-04",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 1
     },
     {
       "id": 2218,
@@ -18879,7 +18879,7 @@
       "fecha": "2026-05-04",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 2219,
@@ -18894,8 +18894,8 @@
       "profesor_id": 25,
       "fecha": "2026-05-04",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 2221,
@@ -20230,16 +20230,16 @@
       "profesor_id": 1,
       "fecha": "2026-05-22",
       "turno": "mañana",
-      "recreo": 1,
-      "zona_id": 4
+      "recreo": 2,
+      "zona_id": 1
     },
     {
       "id": 2388,
       "profesor_id": 12,
       "fecha": "2026-05-22",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 2389,
@@ -20686,7 +20686,7 @@
       "profesor_id": 1,
       "fecha": "2026-05-29",
       "turno": "mañana",
-      "recreo": 1,
+      "recreo": 2,
       "zona_id": 1
     },
     {
@@ -20695,7 +20695,7 @@
       "fecha": "2026-05-29",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 3
+      "zona_id": 1
     },
     {
       "id": 2446,
@@ -20703,7 +20703,7 @@
       "fecha": "2026-05-29",
       "turno": "mañana",
       "recreo": 1,
-      "zona_id": 4
+      "zona_id": 3
     },
     {
       "id": 2447,
@@ -20718,8 +20718,8 @@
       "profesor_id": 25,
       "fecha": "2026-05-29",
       "turno": "mañana",
-      "recreo": 2,
-      "zona_id": 1
+      "recreo": 1,
+      "zona_id": 4
     },
     {
       "id": 2449,

@@ -3,10 +3,11 @@
 Muestra el cálculo de distribución objetivo antes de generar guardias.
 """
 
-import ui_styles as styles
-from models.models import Profesor
 from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
 from sqlalchemy.orm import Session
+
+import ui_styles as styles
+from models.models import Profesor
 from ui_styles import (
     format_terminal_error,
     format_terminal_info,

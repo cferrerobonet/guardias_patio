@@ -7,7 +7,6 @@ Crea reportes detallados en PDF con estadísticas y gráficos.
 from datetime import datetime
 from typing import Optional
 
-from database.db_manager import SessionLocal
 from PyQt6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -21,6 +20,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
+
+from database.db_manager import SessionLocal
 
 
 class ReportesForm(QWidget):

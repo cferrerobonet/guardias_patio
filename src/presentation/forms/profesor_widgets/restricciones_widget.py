@@ -12,7 +12,6 @@ import json
 from datetime import date
 from typing import Dict, Optional, Tuple
 
-import ui_styles as styles
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -26,6 +25,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+import ui_styles as styles
 
 
 class RestriccionesWidget(QGroupBox):

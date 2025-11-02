@@ -6,9 +6,10 @@ Combina:
 - Días no lectivos personalizados (lista de fechas)
 """
 
-import ui_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QGroupBox, QLabel, QLineEdit, QVBoxLayout
+
+import ui_styles as styles
 
 
 class FestivosWidget(QGroupBox):

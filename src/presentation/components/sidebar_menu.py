@@ -7,6 +7,8 @@ y estados activos/hover.
 
 from typing import Callable, Optional
 
+from PyQt6.QtCore import Qt
+
 from core.qt_imports import (
     QFrame,
     QHBoxLayout,
@@ -18,8 +20,6 @@ from core.qt_imports import (
     QWidget,
     pyqtSignal,
 )
-from PyQt6.QtCore import Qt
-
 from presentation.themes.ccleaner_theme import (
     SPACING_M,
     SPACING_S,

@@ -235,7 +235,7 @@ class ProgressDialog(QDialog):
             import datetime
             timestamp = datetime.datetime.now().strftime("%H:%M:%S")
             linea = f"[{timestamp}] {mensaje}"
-            
+
             self.text_log.append(linea)
             # Auto-scroll al final
             self.text_log.verticalScrollBar().setValue(

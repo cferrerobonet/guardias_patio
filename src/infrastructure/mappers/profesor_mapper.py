@@ -175,7 +175,7 @@ class ProfesorMapper:
         model.activo = getattr(entity, 'activo', True)  # Manejar entidades antiguas sin el campo
         model.fecha_inicio_guardias = entity.fecha_inicio_guardias
         model.fecha_fin_guardias = entity.fecha_fin_guardias
-        
+
         # Zona preferida - guardar ID en BD
         if entity.zona_preferida and entity.zona_preferida.tiene_preferencia:
             model.zona_preferida_id = entity.zona_preferida.zona_id

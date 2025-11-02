@@ -9,7 +9,6 @@ from datetime import date
 from pathlib import Path
 from typing import Callable, Optional
 
-from models.models import Configuracion, Guardia, Profesor
 from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
@@ -23,8 +22,10 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-from services.pdf_styles import PDFStyles
 from sqlalchemy.orm import Session, joinedload
+
+from models.models import Configuracion, Guardia, Profesor
+from services.pdf_styles import PDFStyles
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -925,71 +926,17 @@ class ExportadorPDF:
             periodo_inicio = primera_guardia.strftime('%d/%m/%Y')
             periodo_fin = ultima_guardia.strftime('%d/%m/%Y')
 
-            # Turno en color secundario
-            x_pos = 3*cm
-            turno_label = String(
-                x_pos, altura_banner - 2.1*cm,
-                "Turno:",
+            # Tercera línea centrada con toda la información
+            linea_info = String(
+                ancho_pagina/2, altura_banner - 2.1*cm,
+                f"Turno: {turno_valor}     Tutor: {tutor_valor}     "
+                f"Periodo: {periodo_inicio} - {periodo_fin}",
                 fontSize=9,
                 fontName='Helvetica',
-                textAnchor='start',
-                fillColor=PDFStyles.AZUL_CLARO
+                textAnchor='middle',
+                fillColor=colors.whitesmoke
             )
-            banner.add(turno_label)
-
-            turno_dato = String(
-                x_pos + 1*cm, altura_banner - 2.1*cm,
-                turno_valor,
-                fontSize=9,
-                fontName='Helvetica-Bold',
-                textAnchor='start',
-                fillColor=PDFStyles.COLOR_DATO_SECUNDARIO  # Amarillo claro
-            )
-            banner.add(turno_dato)
-
-            # Tutor en color secundario
-            x_pos += 4*cm
-            tutor_label = String(
-                x_pos, altura_banner - 2.1*cm,
-                "Tutor:",
-                fontSize=9,
-                fontName='Helvetica',
-                textAnchor='start',
-                fillColor=PDFStyles.AZUL_CLARO
-            )
-            banner.add(tutor_label)
-
-            tutor_dato = String(
-                x_pos + 1*cm, altura_banner - 2.1*cm,
-                tutor_valor,
-                fontSize=9,
-                fontName='Helvetica-Bold',
-                textAnchor='start',
-                fillColor=PDFStyles.COLOR_DATO_SECUNDARIO  # Amarillo claro
-            )
-            banner.add(tutor_dato)
-
-            # Periodo en color terciario
-            x_pos += 3*cm
-            periodo_label = String(
-                x_pos, altura_banner - 2.1*cm,
-                "Periodo:",
-                fontSize=9,
-                fontName='Helvetica',
-                textAnchor='start',
-                fillColor=PDFStyles.AZUL_CLARO
-            )
-            banner.add(periodo_label)
-
-            periodo_dato = String(
-                x_pos + 1.3*cm, altura_banner - 2.1*cm,
-                f"{periodo_inicio} - {periodo_fin}",
-                fontSize=9,
-                fontName='Helvetica-Bold',
-                textAnchor='start',
-                fillColor=PDFStyles.COLOR_DATO_TERCIARIO  # Amarillo pastel
-            )
-            banner.add(periodo_dato)
+            banner.add(linea_info)
 
             elements.append(banner)
             elements.append(Spacer(1, 0.8*cm))

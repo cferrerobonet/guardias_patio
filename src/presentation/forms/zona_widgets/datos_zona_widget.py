@@ -11,7 +11,6 @@ Este widget encapsula los campos de información de la zona:
 from datetime import date
 from typing import Optional, Tuple
 
-import ui_styles as styles
 from PyQt6.QtCore import QDate, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -21,6 +20,8 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QVBoxLayout,
 )
+
+import ui_styles as styles
 
 
 class DatosZonaWidget(QGroupBox):

@@ -7,12 +7,12 @@ Con caching para optimizar lecturas frecuentes.
 
 from typing import List
 
-from core.observability import with_metrics
-from models.models import Zona
 from sqlalchemy.orm import Session
-from utils.repository_cache import cache_zonas
 
 from application.dtos.zona_dto import ZonaDTO
+from core.observability import with_metrics
+from models.models import Zona
+from utils.repository_cache import cache_zonas
 
 
 class ListarZonasUseCase:
