@@ -283,7 +283,10 @@ class ConfiguracionForm(BaseForm):
             # Guardar email del usuario
             email_guardado = self._guardar_email_interno()
 
-            # Guardar configuración SMTP SOLO si los campos están desbloqueados
+            # Guardar nombre del remitente SMTP (siempre, ya que es editable)
+            from_name_guardado = self.smtp_widget.save_from_name_only()
+
+            # Guardar configuración SMTP completa SOLO si los campos están desbloqueados
             smtp_guardado = False
             smtp_fue_modificado = not self.smtp_widget.smtp_server_input.isReadOnly()
 

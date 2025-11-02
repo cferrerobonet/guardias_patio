@@ -82,22 +82,36 @@ def generar_plantilla_email_html(
       </div>
 """
 
-    # Plantilla HTML completa
+    # Plantilla HTML completa con logo corporativo
     html = f"""
 <html>
-  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-      <h2 style="color: #007ACC; margin-bottom: 20px;">{titulo}</h2>
+  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      
+      <!-- Logo corporativo -->
+      <div style="background: linear-gradient(135deg, #007ACC 0%, #005A9E 100%); padding: 30px 20px; text-align: center;">
+        <div style="background-color: white; width: 80px; height: 80px; margin: 0 auto 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <span style="font-size: 40px;">🏫</span>
+        </div>
+        <h1 style="color: white; margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Guardias de Patio</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0; font-size: 13px;">Sistema de Gestión de Guardias</p>
+      </div>
+      
+      <!-- Contenido principal -->
+      <div style="padding: 30px 20px;">
+        <h2 style="color: #007ACC; margin: 0 0 20px 0; font-size: 22px;">{titulo}</h2>
 
-      {contenido_principal}
+        {contenido_principal}
 
-      {secciones_html}
-
-      <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-
-      <p style="font-size: 12px; color: #6b7280; text-align: center;">
-        {pie_texto}
-      </p>
+        {secciones_html}
+      </div>
+      
+      <!-- Footer -->
+      <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+        <p style="font-size: 12px; color: #6b7280; margin: 0;">
+          {pie_texto}
+        </p>
+      </div>
     </div>
   </body>
 </html>
@@ -165,13 +179,13 @@ class EmailService:
             # Crear mensaje
             msg = MIMEMultipart("alternative")
             msg["Subject"] = "🔑 Código de Recuperación - Guardias de Patio"
-            
+
             # Para servidores IONOS y similares, usar solo el email sin nombre
             if "ionos" in self.smtp_server.lower() or "1and1" in self.smtp_server.lower():
                 msg["From"] = self.from_email
             else:
                 msg["From"] = f"{self.from_name} <{self.from_email}>"
-            
+
             msg["To"] = to_email
 
             # Contenido del email (texto plano)
@@ -289,7 +303,7 @@ Sistema de Gestión de Guardias
             # Crear mensaje principal (mixed para adjuntos)
             msg = MIMEMultipart("mixed")
             msg["Subject"] = f"📅 Calendario de Guardias {curso_escolar} - Guardias de Patio"
-            
+
             # Para servidores IONOS y similares, usar solo el email sin nombre para evitar
             # rechazos por políticas de seguridad. El nombre puede causar rechazo si no
             # coincide exactamente con la configuración del dominio.
@@ -297,7 +311,7 @@ Sistema de Gestión de Guardias
                 msg["From"] = self.from_email
             else:
                 msg["From"] = f"{self.from_name} <{self.from_email}>"
-            
+
             msg["To"] = to_email
 
             # Contenido del email (texto plano)

@@ -138,11 +138,11 @@ class SMTPConfigWidget(QGroupBox):
 
         layout.addLayout(fila2_layout)
 
-        # FILA 3: Nombre del Remitente
+        # FILA 3: Nombre del Remitente (siempre editable)
         fila3_layout = QHBoxLayout()
         fila3_layout.setSpacing(10)
 
-        # Nombre del remitente (campo completo)
+        # Nombre del remitente (campo completo - siempre editable)
         nombre_container = QVBoxLayout()
         nombre_container.setSpacing(3)
         label_nombre = QLabel("Nombre del Remitente:")
@@ -151,7 +151,7 @@ class SMTPConfigWidget(QGroupBox):
 
         self.smtp_from_name_input = QLineEdit()
         self.smtp_from_name_input.setPlaceholderText("Guardias de Patio")
-        self.smtp_from_name_input.setReadOnly(True)
+        self.smtp_from_name_input.setStyleSheet(styles.STYLE_INPUT)  # Siempre editable
         self.smtp_from_name_input.textChanged.connect(self.config_changed.emit)
         nombre_container.addWidget(self.smtp_from_name_input)
         fila3_layout.addLayout(nombre_container, 1)
@@ -197,6 +197,8 @@ class SMTPConfigWidget(QGroupBox):
 
         Args:
             readonly: True para modo solo lectura, False para editable
+        
+        Nota: smtp_from_name_input siempre es editable y no se modifica aquí
         """
         if readonly:
             readonly_style = """
@@ -211,16 +213,18 @@ class SMTPConfigWidget(QGroupBox):
             self.smtp_port_input.setStyleSheet(readonly_style)
             self.smtp_user_input.setStyleSheet(readonly_style)
             self.smtp_password_input.setStyleSheet(readonly_style)
-            self.smtp_from_name_input.setStyleSheet(readonly_style)
         else:
             self.smtp_server_input.setStyleSheet(styles.STYLE_INPUT)
             self.smtp_port_input.setStyleSheet(styles.STYLE_INPUT)
             self.smtp_user_input.setStyleSheet(styles.STYLE_INPUT)
             self.smtp_password_input.setStyleSheet(styles.STYLE_INPUT)
-            self.smtp_from_name_input.setStyleSheet(styles.STYLE_INPUT)
 
     def _toggle_editable(self) -> None:
-        """Alterna entre bloquear y desbloquear los campos SMTP."""
+        """
+        Alterna entre bloquear y desbloquear los campos SMTP críticos.
+        
+        Nota: smtp_from_name_input siempre permanece editable
+        """
         is_readonly = self.smtp_server_input.isReadOnly()
 
         # Si se va a habilitar la edición, mostrar advertencia
@@ -228,14 +232,13 @@ class SMTPConfigWidget(QGroupBox):
             if not self._show_global_warning():
                 return
 
-        # Alternar estado
+        # Alternar estado (excepto nombre del remitente que siempre es editable)
         new_state = not is_readonly
 
         self.smtp_server_input.setReadOnly(new_state)
         self.smtp_port_input.setReadOnly(new_state)
         self.smtp_user_input.setReadOnly(new_state)
         self.smtp_password_input.setReadOnly(new_state)
-        self.smtp_from_name_input.setReadOnly(new_state)
 
         # Cambiar estilos y texto del botón
         self._apply_readonly_style(new_state)
@@ -403,6 +406,54 @@ class SMTPConfigWidget(QGroupBox):
             self.logger.error(f"Error al guardar SMTP: {str(e)}")
             return False
 
+    def save_from_name_only(self) -> bool:
+        """
+        Guarda solo el nombre del remitente SMTP en el archivo .env.
+        
+        Este método permite actualizar el nombre del remitente sin modificar
+        los otros campos críticos de configuración SMTP.
+
+        Returns:
+            True si se guardó correctamente, False en caso contrario
+        """
+        try:
+            smtp_from_name = self.smtp_from_name_input.text().strip()
+
+            # Usar valor por defecto si no se especifica nombre
+            if not smtp_from_name:
+                smtp_from_name = "Guardias de Patio"
+
+            # Leer archivo .env actual
+            env_path = ".env"
+            env_lines = []
+
+            if os.path.exists(env_path):
+                with open(env_path, "r") as f:
+                    env_lines = f.readlines()
+
+            # Buscar y actualizar SMTP_FROM_NAME
+            from_name_found = False
+            for i, line in enumerate(env_lines):
+                if line.startswith("SMTP_FROM_NAME="):
+                    env_lines[i] = f"SMTP_FROM_NAME={smtp_from_name}\n"
+                    from_name_found = True
+                    break
+
+            # Si no existe, agregarlo
+            if not from_name_found:
+                env_lines.append(f"SMTP_FROM_NAME={smtp_from_name}\n")
+
+            # Guardar archivo .env
+            with open(env_path, "w") as f:
+                f.writelines(env_lines)
+
+            self.logger.info(f"Nombre del remitente SMTP guardado: {smtp_from_name}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error al guardar nombre del remitente SMTP: {str(e)}")
+            return False
+
     def _test_connection(self, destination_email: Optional[str] = None) -> None:
         """
         Prueba la conexión SMTP enviando un email de prueba.
@@ -512,58 +563,70 @@ class SMTPConfigWidget(QGroupBox):
                 if not smtp_from_name:
                     smtp_from_name = "Guardias de Patio"
 
-                # Crear email de prueba
+                # Crear email de prueba usando la plantilla estándar
+                from services.email_service import generar_plantilla_email_html
+
                 msg = MIMEMultipart("alternative")
                 msg["Subject"] = "✅ Prueba de Configuración SMTP - Guardias de Patio"
-                msg["From"] = f"{smtp_from_name} <{smtp_user}>"
+
+                # Para servidores IONOS y similares, usar solo el email
+                if "ionos" in smtp_server.lower() or "1and1" in smtp_server.lower():
+                    msg["From"] = smtp_user
+                else:
+                    msg["From"] = f"{smtp_from_name} <{smtp_user}>"
+
                 msg["To"] = destination_email
 
-                # Contenido del email
+                # Contenido texto plano
                 texto = f"""
-                Hola,
+Hola,
 
-                Este es un email de prueba para verificar que la configuración SMTP está funcionando correctamente.
+Este es un email de prueba para verificar que la configuración SMTP está funcionando correctamente.
 
-                Servidor: {smtp_server}:{smtp_port}
-                Usuario: {smtp_user}
+Servidor: {smtp_server}:{smtp_port}
+Usuario: {smtp_user}
 
-                Si estás recibiendo este email, significa que el sistema puede enviar emails de recuperación de contraseña sin problemas.
+Si estás recibiendo este email, significa que el sistema puede enviar emails sin problemas.
 
-                ---
-                Sistema de Gestión de Guardias de Patio
+---
+Sistema de Gestión de Guardias de Patio
                 """
 
-                html = f"""
-                <html>
-                  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-                      <h2 style="color: #059669; margin-bottom: 20px;">✅ Prueba de Configuración SMTP</h2>
-
-                      <p>Hola,</p>
-
-                      <p>Este es un email de prueba para verificar que la configuración SMTP está funcionando correctamente.</p>
-
-                      <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                        <p style="margin: 5px 0;"><strong>Servidor:</strong> {smtp_server}:{smtp_port}</p>
-                        <p style="margin: 5px 0;"><strong>Usuario:</strong> {smtp_user}</p>
-                      </div>
-
-                      <p style="color: #059669; font-weight: bold;">
-                        Si estás recibiendo este email, significa que el sistema puede enviar emails de recuperación de contraseña sin problemas.
-                      </p>
-
-                      <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-
-                      <p style="font-size: 12px; color: #6b7280;">
-                        Sistema de Gestión de Guardias de Patio
-                      </p>
-                    </div>
-                  </body>
-                </html>
+                # Contenido HTML con la plantilla corporativa
+                contenido_principal = """
+      <p>Hola,</p>
+      <p>Este es un email de prueba para verificar que la configuración SMTP está funcionando correctamente.</p>
                 """
 
-                part1 = MIMEText(texto, "plain")
-                part2 = MIMEText(html, "html")
+                secciones = [
+                    {
+                        'tipo': 'info',
+                        'contenido': f"""
+        <p style="margin: 5px 0;"><strong>📡 Detalles de la Conexión:</strong></p>
+        <p style="margin: 5px 0;">• Servidor: <strong>{smtp_server}:{smtp_port}</strong></p>
+        <p style="margin: 5px 0;">• Usuario: <strong>{smtp_user}</strong></p>
+                        """
+                    },
+                    {
+                        'tipo': 'success',
+                        'contenido': """
+        <p style="margin: 5px 0;"><strong>✅ Configuración Correcta</strong></p>
+        <p style="margin: 8px 0;">Si estás recibiendo este email, significa que el sistema está correctamente configurado para:</p>
+        <p style="margin: 5px 0;">• Enviar códigos de recuperación de contraseña</p>
+        <p style="margin: 5px 0;">• Enviar calendarios PDF a profesores</p>
+        <p style="margin: 5px 0;">• Notificaciones del sistema</p>
+                        """
+                    }
+                ]
+
+                html = generar_plantilla_email_html(
+                    titulo="✅ Prueba de Configuración SMTP",
+                    contenido_principal=contenido_principal,
+                    secciones=secciones
+                )
+
+                part1 = MIMEText(texto, "plain", "utf-8")
+                part2 = MIMEText(html, "html", "utf-8")
                 msg.attach(part1)
                 msg.attach(part2)
 
