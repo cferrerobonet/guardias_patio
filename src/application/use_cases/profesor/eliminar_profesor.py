@@ -5,11 +5,10 @@ Permite eliminar un profesor del sistema, verificando que no tenga guardias asig
 Invalida cache de profesores tras eliminar.
 """
 
-from sqlalchemy.orm import Session
-
 from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
 from models.models import Guardia, Profesor
+from sqlalchemy.orm import Session
 from utils.logger import get_logger
 from utils.repository_cache import invalidate_profesores_cache
 

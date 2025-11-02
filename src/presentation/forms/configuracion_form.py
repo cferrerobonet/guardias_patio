@@ -5,6 +5,14 @@ Form para gestionar la configuración del curso escolar.
 Sigue el patrón MVP usando Use Cases.
 """
 
+import ui_styles as styles
+from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
+from application.use_cases.configuracion import (
+    ActualizarConfiguracionUseCase,
+    ObtenerConfiguracionUseCase,
+)
+from core.exceptions import NotFoundError
+from database.db_manager import get_current_user_id
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -15,15 +23,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
+from sync.sync_manager import UserAuth
 
-import ui_styles as styles
-from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
-from application.use_cases.configuracion import (
-    ActualizarConfiguracionUseCase,
-    ObtenerConfiguracionUseCase,
-)
-from core.exceptions import NotFoundError
-from database.db_manager import get_current_user_id
 from presentation.forms.base_form import BaseForm
 from presentation.forms.config_widgets import (
     AjustesWidget,
@@ -33,7 +34,6 @@ from presentation.forms.config_widgets import (
     SFTPConfigWidget,
     SMTPConfigWidget,
 )
-from sync.sync_manager import UserAuth
 
 
 class ConfiguracionForm(BaseForm):

@@ -3,9 +3,8 @@
 Muestra información sobre días lectivos, recreos, zonas y slots totales.
 """
 
-from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
-
 import ui_styles as styles
+from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
 from ui_styles import (
     format_terminal_error,
     format_terminal_info,

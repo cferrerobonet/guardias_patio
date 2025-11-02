@@ -4,12 +4,12 @@ Use Case: Obtener estadísticas del curso.
 Calcula y devuelve estadísticas sobre días lectivos, recreos, zonas y profesores.
 """
 
-from sqlalchemy.orm import Session
-
-from application.dtos.asignacion_guardias_dto import EstadisticasDTO
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
 from services.calculador_guardias import obtener_estadisticas as obtener_stats_servicio
+from sqlalchemy.orm import Session
+
+from application.dtos.asignacion_guardias_dto import EstadisticasDTO
 
 
 class ObtenerEstadisticasUseCase:

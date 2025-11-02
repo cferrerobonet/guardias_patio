@@ -38,8 +38,6 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List, Optional, Set, Tuple
 
-from sqlalchemy.orm import Session
-
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
@@ -47,6 +45,7 @@ from services.calculador_guardias import (
     listar_dias_lectivos,
 )
 from services.optimizaciones_asignador import IndiceSlots
+from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)

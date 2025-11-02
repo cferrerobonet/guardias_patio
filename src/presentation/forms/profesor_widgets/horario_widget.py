@@ -9,6 +9,7 @@ Este widget encapsula los campos de horario y turno:
 
 from typing import Optional, Tuple
 
+import ui_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -18,8 +19,6 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QVBoxLayout,
 )
-
-import ui_styles as styles
 from utils.validators import validar_horas_contrato
 
 

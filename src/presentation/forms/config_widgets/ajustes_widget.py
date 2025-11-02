@@ -7,10 +7,9 @@ Combina:
 - Selector de algoritmo de asignación
 """
 
+import ui_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QGroupBox, QLabel, QLineEdit, QVBoxLayout
-
-import ui_styles as styles
 
 
 class AjustesWidget(QGroupBox):

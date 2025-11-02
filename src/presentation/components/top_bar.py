@@ -10,6 +10,7 @@ from core.qt_imports import (
     QPushButton,
     QWidget,
 )
+
 from presentation.themes.ccleaner_theme import (
     SPACING_M,
     SPACING_S,

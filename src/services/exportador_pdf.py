@@ -9,6 +9,7 @@ from datetime import date
 from pathlib import Path
 from typing import Callable, Optional
 
+from models.models import Configuracion, Guardia, Profesor
 from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
@@ -22,10 +23,8 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-from sqlalchemy.orm import Session, joinedload
-
-from models.models import Configuracion, Guardia, Profesor
 from services.pdf_styles import PDFStyles
+from sqlalchemy.orm import Session, joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)

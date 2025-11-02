@@ -4,9 +4,6 @@ Use Case: Asignar Guardia
 Caso de uso para asignar una guardia a un profesor en una zona específica.
 """
 
-from sqlalchemy.orm import Session
-
-from application.dtos import CrearGuardiaDTO, GuardiaDTO
 from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from core.logging import get_logger
 from core.observability import with_metrics
@@ -17,6 +14,9 @@ from infrastructure.repositories import (
     SQLAlchemyProfesorRepository,
     SQLAlchemyZonaRepository,
 )
+from sqlalchemy.orm import Session
+
+from application.dtos import CrearGuardiaDTO, GuardiaDTO
 
 logger = get_logger(__name__)
 

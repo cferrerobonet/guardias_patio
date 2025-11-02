@@ -14,6 +14,7 @@ from core.exceptions import (
     MaxGuardiasDiaExceededError,
     ProfesorAusenteError,
 )
+
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
 
 

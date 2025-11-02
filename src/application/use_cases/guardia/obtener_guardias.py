@@ -4,9 +4,6 @@ Use Case: Obtener Guardias
 Caso de uso para obtener guardias con filtros opcionales.
 """
 
-from sqlalchemy.orm import Session
-
-from application.dtos import FiltroGuardiasDTO, GuardiaDTO
 from core.logging import get_logger
 from core.observability import with_metrics
 from domain.entities import GuardiaEntity
@@ -16,6 +13,9 @@ from infrastructure.repositories import (
     SQLAlchemyProfesorRepository,
     SQLAlchemyZonaRepository,
 )
+from sqlalchemy.orm import Session
+
+from application.dtos import FiltroGuardiasDTO, GuardiaDTO
 
 logger = get_logger(__name__)
 

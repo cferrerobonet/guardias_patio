@@ -9,9 +9,8 @@ from datetime import date, time
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from sqlalchemy.orm import Session, joinedload
-
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
+from sqlalchemy.orm import Session, joinedload
 
 
 class ExportadorDatos:

@@ -6,6 +6,8 @@ Permite registrar ausencias y reasignar guardias automáticamente.
 
 from datetime import date
 
+import ui_styles as styles
+from models.models import Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -21,8 +23,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-import ui_styles as styles
-from models.models import Guardia, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY, get_table_style
 

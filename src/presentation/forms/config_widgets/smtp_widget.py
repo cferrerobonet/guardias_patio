@@ -14,6 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 
+import ui_styles as styles
 from dotenv import load_dotenv
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -25,8 +26,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
-import ui_styles as styles
 from utils import get_logger
 
 

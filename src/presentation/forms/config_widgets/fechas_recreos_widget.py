@@ -7,6 +7,7 @@ Encapsula la lógica de configuración de:
 - Recreos de tarde (2 recreos opcionales)
 """
 
+import ui_styles as styles
 from PyQt6.QtCore import QDate, QTime, pyqtSignal
 from PyQt6.QtWidgets import (
     QDateEdit,
@@ -16,8 +17,6 @@ from PyQt6.QtWidgets import (
     QTimeEdit,
     QVBoxLayout,
 )
-
-import ui_styles as styles
 from utils import get_logger
 
 

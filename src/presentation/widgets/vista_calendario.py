@@ -14,6 +14,7 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from typing import List
 
+from models.models import Ausencia, Guardia
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -30,7 +31,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from models.models import Ausencia, Guardia
 from presentation.forms.base_form import BaseForm
 
 

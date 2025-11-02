@@ -9,10 +9,9 @@ Este widget encapsula los campos fundamentales del profesor:
 
 from typing import Tuple
 
+import ui_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QGroupBox, QLabel, QLineEdit, QVBoxLayout
-
-import ui_styles as styles
 from utils.validators import validar_email, validar_nombre_completo
 
 

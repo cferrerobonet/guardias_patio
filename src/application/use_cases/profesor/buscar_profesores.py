@@ -6,12 +6,12 @@ Buscar profesores por término de búsqueda en nombre o email.
 
 from typing import List
 
+from core.observability import with_metrics
+from models.models import Profesor
 from sqlalchemy.orm import Session
 
 from application.dtos.profesor_dto import ProfesorDTO
 from application.use_cases.profesor.parsers import parse_dias_semana, parse_recreos
-from core.observability import with_metrics
-from models.models import Profesor
 
 
 class BuscarProfesoresUseCase:
