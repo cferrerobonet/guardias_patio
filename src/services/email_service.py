@@ -51,20 +51,20 @@ def generar_plantilla_email_html(
     # Estilos según tipo de sección
     estilos_secciones = {
         'info': {
-            'bg_color': '#e0f2fe',
-            'border_color': '#007ACC'
+            'bg_color': '#e3f2fd',
+            'border_color': '#2196F3'
         },
         'warning': {
-            'bg_color': '#fef3c7',
-            'border_color': '#f59e0b'
+            'bg_color': '#fff3e0',
+            'border_color': '#FF9800'
         },
         'success': {
-            'bg_color': '#d1fae5',
-            'border_color': '#059669'
+            'bg_color': '#e8f5e9',
+            'border_color': '#4CAF50'
         },
         'neutral': {
-            'bg_color': '#f3f4f6',
-            'border_color': '#9ca3af'
+            'bg_color': '#f5f5f5',
+            'border_color': '#9e9e9e'
         }
     }
 
@@ -82,14 +82,14 @@ def generar_plantilla_email_html(
       </div>
 """
 
-    # Plantilla HTML completa con logo corporativo
+    # Plantilla HTML completa con logo corporativo verde
     html = f"""
 <html>
   <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 20px;">
     <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
       
-      <!-- Logo corporativo -->
-      <div style="background: linear-gradient(135deg, #007ACC 0%, #005A9E 100%); padding: 30px 20px; text-align: center;">
+      <!-- Logo corporativo con gradiente verde -->
+      <div style="background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%); padding: 30px 20px; text-align: center;">
         <div style="background-color: white; width: 80px; height: 80px; margin: 0 auto 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           <span style="font-size: 40px;">🏫</span>
         </div>
@@ -99,7 +99,7 @@ def generar_plantilla_email_html(
       
       <!-- Contenido principal -->
       <div style="padding: 30px 20px;">
-        <h2 style="color: #007ACC; margin: 0 0 20px 0; font-size: 22px;">{titulo}</h2>
+        <h2 style="color: #4CAF50; margin: 0 0 20px 0; font-size: 22px;">{titulo}</h2>
 
         {contenido_principal}
 
@@ -211,9 +211,9 @@ Sistema de Gestión de Guardias
                 {
                     'tipo': 'info',
                     'contenido': f"""
-        <div style="text-align: center; background-color: #f3f4f6; border: 2px solid #007ACC; border-radius: 6px; padding: 20px; margin: 20px 0;">
-          <p style="margin: 0 0 10px 0; color: #6b7280;">Tu código de recuperación es:</p>
-          <div style="font-size: 24px; font-weight: bold; color: #007ACC; letter-spacing: 2px; font-family: monospace;">
+        <div style="text-align: center; background-color: #e8f5e9; border: 2px solid #4CAF50; border-radius: 6px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0 0 10px 0; color: #2e7d32;">Tu código de recuperación es:</p>
+          <div style="font-size: 24px; font-weight: bold; color: #4CAF50; letter-spacing: 2px; font-family: monospace;">
             {recovery_code}
           </div>
         </div>
