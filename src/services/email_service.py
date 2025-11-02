@@ -179,13 +179,7 @@ class EmailService:
             # Crear mensaje
             msg = MIMEMultipart("alternative")
             msg["Subject"] = "🔑 Código de Recuperación - Guardias de Patio"
-
-            # Para servidores IONOS y similares, usar solo el email sin nombre
-            if "ionos" in self.smtp_server.lower() or "1and1" in self.smtp_server.lower():
-                msg["From"] = self.from_email
-            else:
-                msg["From"] = f"{self.from_name} <{self.from_email}>"
-
+            msg["From"] = f"{self.from_name} <{self.from_email}>"
             msg["To"] = to_email
 
             # Contenido del email (texto plano)
@@ -303,15 +297,7 @@ Sistema de Gestión de Guardias
             # Crear mensaje principal (mixed para adjuntos)
             msg = MIMEMultipart("mixed")
             msg["Subject"] = f"📅 Calendario de Guardias {curso_escolar} - Guardias de Patio"
-
-            # Para servidores IONOS y similares, usar solo el email sin nombre para evitar
-            # rechazos por políticas de seguridad. El nombre puede causar rechazo si no
-            # coincide exactamente con la configuración del dominio.
-            if "ionos" in self.smtp_server.lower() or "1and1" in self.smtp_server.lower():
-                msg["From"] = self.from_email
-            else:
-                msg["From"] = f"{self.from_name} <{self.from_email}>"
-
+            msg["From"] = f"{self.from_name} <{self.from_email}>"
             msg["To"] = to_email
 
             # Contenido del email (texto plano)
