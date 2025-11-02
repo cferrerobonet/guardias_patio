@@ -1,13 +1,17 @@
 """
-Generador de Reportes e Informes.
+Widget para configurar y generar informes estadísticos.
 
-Crea reportes detallados en PDF con estadísticas y gráficos.
+Genera reportes detallados con estadísticas y gráficos sobre:
+- Guardias del mes
+- Distribución de carga
+- Ausencias del periodo
+- Cobertura mensual
+- Resumen completo
 """
 
 from datetime import datetime
-from typing import Optional
 
-from database.db_manager import SessionLocal
+import ui_styles as styles
 from PyQt6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -18,37 +22,34 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QVBoxLayout,
-    QWidget,
 )
 from sqlalchemy.orm import Session
 
+from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
-class ReportesForm(QWidget):
-    """Formulario para generar reportes e informes."""
 
-    def __init__(self, parent: Optional[QWidget] = None):
+class InformesEstadisticosWidget(QGroupBox):
+    """Widget para generar informes estadísticos."""
+
+    def __init__(self, session: Session, parent=None):
         """
-        Inicializa formulario de reportes.
+        Inicializar el widget de informes estadísticos.
 
         Args:
+            session: Sesión de base de datos
             parent: Widget padre
         """
-        super().__init__(parent)
-        self.session: Optional[Session] = None
-        self._init_ui()
+        super().__init__("📊 INFORMES ESTADÍSTICOS", parent)
+        self.session = session
 
-    def _init_ui(self) -> None:
-        """Inicializa interfaz de usuario."""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        self.setStyleSheet(styles.STYLE_GROUPBOX)
+        self._setup_ui()
 
-        # Título
-        titulo = QLabel("📊 Generador de Reportes e Informes")
-        titulo.setStyleSheet(
-            "font-size: 24px; font-weight: bold; color: #2c3e50;"
-        )
-        layout.addWidget(titulo)
+    def _setup_ui(self):
+        """Construir la interfaz del widget."""
+        layout = QVBoxLayout()
+        layout.setSpacing(15)
+        layout.setContentsMargins(15, 20, 15, 15)
 
         # Descripción
         desc = QLabel(
@@ -56,28 +57,16 @@ class ReportesForm(QWidget):
             "sobre guardias, carga de trabajo, ausencias y cobertura."
         )
         desc.setWordWrap(True)
-        desc.setStyleSheet("font-size: 13px; color: #7f8c8d; margin-bottom: 10px;")
+        desc.setStyleSheet(
+            f"""
+            color: {TEXT_SECONDARY};
+            font-size: 11px;
+            font-weight: normal;
+        """
+        )
         layout.addWidget(desc)
 
         # Grupo: Configuración del Reporte
-        config_group = QGroupBox("⚙️ Configuración del Reporte")
-        config_group.setStyleSheet(
-            """
-            QGroupBox {
-                font-weight: bold;
-                font-size: 14px;
-                border: 2px solid #bdc3c7;
-                border-radius: 8px;
-                margin-top: 12px;
-                padding-top: 12px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """
-        )
         config_layout = QFormLayout()
         config_layout.setSpacing(12)
 
@@ -103,6 +92,7 @@ class ReportesForm(QWidget):
             "📊 Resumen Completo",
             "resumen_completo"
         )
+        self.tipo_combo.setStyleSheet(styles.STYLE_INPUT)
         config_layout.addRow("Tipo de Reporte:", self.tipo_combo)
 
         # Periodo: Desde
@@ -112,6 +102,7 @@ class ReportesForm(QWidget):
             datetime.now().date().replace(day=1)
         )
         self.fecha_desde.setDisplayFormat("dd/MM/yyyy")
+        self.fecha_desde.setStyleSheet(styles.STYLE_INPUT)
         config_layout.addRow("Desde:", self.fecha_desde)
 
         # Periodo: Hasta
@@ -119,6 +110,7 @@ class ReportesForm(QWidget):
         self.fecha_hasta.setCalendarPopup(True)
         self.fecha_hasta.setDate(datetime.now().date())
         self.fecha_hasta.setDisplayFormat("dd/MM/yyyy")
+        self.fecha_hasta.setStyleSheet(styles.STYLE_INPUT)
         config_layout.addRow("Hasta:", self.fecha_hasta)
 
         # Formato de salida
@@ -126,60 +118,25 @@ class ReportesForm(QWidget):
         self.formato_combo.addItem("📄 PDF", "pdf")
         self.formato_combo.addItem("📊 Excel (próximamente)", "excel")
         self.formato_combo.setCurrentIndex(0)
+        self.formato_combo.setStyleSheet(styles.STYLE_INPUT)
         # Deshabilitar Excel temporalmente
         self.formato_combo.model().item(1).setEnabled(False)
         config_layout.addRow("Formato:", self.formato_combo)
 
-        config_group.setLayout(config_layout)
-        layout.addWidget(config_group)
+        layout.addLayout(config_layout)
 
         # Botones de acción
         botones_layout = QHBoxLayout()
         botones_layout.addStretch()
 
         btn_vista_previa = QPushButton("👁️ Vista Previa")
-        btn_vista_previa.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #95a5a6;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 12px 24px;
-                font-size: 14px;
-                font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #7f8c8d;
-            }
-            QPushButton:pressed {
-                background-color: #6c7a89;
-            }
-        """
-        )
+        btn_vista_previa.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
         btn_vista_previa.clicked.connect(self._vista_previa)
         botones_layout.addWidget(btn_vista_previa)
 
         btn_generar = QPushButton("📊 Generar Reporte")
-        btn_generar.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #27ae60;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 12px 24px;
-                font-size: 14px;
-                font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #229954;
-            }
-            QPushButton:pressed {
-                background-color: #1e8449;
-            }
-        """
-        )
+        btn_generar.setMinimumHeight(40)
+        btn_generar.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         btn_generar.clicked.connect(self._generar_reporte)
         botones_layout.addWidget(btn_generar)
 
@@ -207,7 +164,7 @@ class ReportesForm(QWidget):
         )
         self._actualizar_descripcion()
 
-        layout.addStretch()
+        self.setLayout(layout)
 
     def _actualizar_descripcion(self) -> None:
         """Actualiza la descripción según el tipo de reporte seleccionado."""
@@ -262,7 +219,7 @@ class ReportesForm(QWidget):
 
     def _generar_reporte(self) -> None:
         """Genera el reporte según la configuración."""
-        tipo = self.tipo_combo.currentData()
+        # tipo = self.tipo_combo.currentData()
         formato = self.formato_combo.currentData()
         fecha_desde = self.fecha_desde.date().toPyDate()
         fecha_hasta = self.fecha_hasta.date().toPyDate()
@@ -299,148 +256,13 @@ class ReportesForm(QWidget):
         if not carpeta:
             return
 
-        try:
-            self.session = SessionLocal()
-
-            # Generar según tipo
-            if tipo == "guardias_mes":
-                exito = self._generar_guardias_mes(
-                    fecha_desde,
-                    fecha_hasta,
-                    carpeta
-                )
-            elif tipo == "distribucion_carga":
-                exito = self._generar_distribucion_carga(
-                    fecha_desde,
-                    fecha_hasta,
-                    carpeta
-                )
-            elif tipo == "ausencias":
-                exito = self._generar_ausencias(
-                    fecha_desde,
-                    fecha_hasta,
-                    carpeta
-                )
-            elif tipo == "cobertura":
-                exito = self._generar_cobertura(
-                    fecha_desde,
-                    fecha_hasta,
-                    carpeta
-                )
-            elif tipo == "resumen_completo":
-                exito = self._generar_resumen_completo(
-                    fecha_desde,
-                    fecha_hasta,
-                    carpeta
-                )
-            else:
-                exito = False
-
-            if exito:
-                QMessageBox.information(
-                    self,
-                    "Reporte Generado",
-                    f"El reporte se ha generado exitosamente en:\n{carpeta}"
-                )
-            else:
-                QMessageBox.warning(
-                    self,
-                    "Error",
-                    "Ocurrió un error al generar el reporte."
-                )
-
-        except Exception as e:
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Error generando reporte:\n{str(e)}"
-            )
-        finally:
-            if self.session:
-                self.session.close()
-
-    def _generar_guardias_mes(
-        self,
-        fecha_desde: datetime,
-        fecha_hasta: datetime,
-        carpeta: str
-    ) -> bool:
-        """
-        Genera reporte de guardias del mes.
-
-        Args:
-            fecha_desde: Fecha inicio
-            fecha_hasta: Fecha fin
-            carpeta: Carpeta destino
-
-        Returns:
-            True si fue exitoso
-        """
-        # Placeholder - implementación futura con reportlab + matplotlib
+        # Por ahora, todos los reportes son placeholder
         QMessageBox.information(
             self,
             "Próximamente",
-            "Este tipo de reporte estará disponible en una próxima versión.\n\n"
-            "Incluirá:\n"
-            "• Listado completo de guardias\n"
-            "• Gráfico de distribución por zona\n"
-            "• Gráfico de distribución por turno\n"
-            "• Estadísticas detalladas"
+            f"Los informes estadísticos estarán disponibles en una próxima versión.\n\n"
+            f"Reporte seleccionado: {self.tipo_combo.currentText()}\n"
+            f"Periodo: {fecha_desde.strftime('%d/%m/%Y')} - {fecha_hasta.strftime('%d/%m/%Y')}\n"
+            f"Formato: {formato.upper()}\n\n"
+            "Mientras tanto, puede usar la funcionalidad de Calendarios PDF."
         )
-        return False
-
-    def _generar_distribucion_carga(
-        self,
-        fecha_desde: datetime,
-        fecha_hasta: datetime,
-        carpeta: str
-    ) -> bool:
-        """Genera reporte de distribución de carga (placeholder)."""
-        QMessageBox.information(
-            self,
-            "Próximamente",
-            "Este reporte estará disponible en una próxima versión."
-        )
-        return False
-
-    def _generar_ausencias(
-        self,
-        fecha_desde: datetime,
-        fecha_hasta: datetime,
-        carpeta: str
-    ) -> bool:
-        """Genera reporte de ausencias (placeholder)."""
-        QMessageBox.information(
-            self,
-            "Próximamente",
-            "Este reporte estará disponible en una próxima versión."
-        )
-        return False
-
-    def _generar_cobertura(
-        self,
-        fecha_desde: datetime,
-        fecha_hasta: datetime,
-        carpeta: str
-    ) -> bool:
-        """Genera reporte de cobertura (placeholder)."""
-        QMessageBox.information(
-            self,
-            "Próximamente",
-            "Este reporte estará disponible en una próxima versión."
-        )
-        return False
-
-    def _generar_resumen_completo(
-        self,
-        fecha_desde: datetime,
-        fecha_hasta: datetime,
-        carpeta: str
-    ) -> bool:
-        """Genera reporte resumen completo (placeholder)."""
-        QMessageBox.information(
-            self,
-            "Próximamente",
-            "Este reporte estará disponible en una próxima versión."
-        )
-        return False

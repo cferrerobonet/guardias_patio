@@ -22,6 +22,7 @@ from presentation.forms.import_export_form import ImportExportForm
 
 # Importar formularios existentes (los vamos a wrapper)
 from presentation.forms.profesor_form import ProfesorForm
+from presentation.forms.reportes_form import ReportesForm
 from presentation.forms.zona_form import ZonaForm
 from presentation.themes.ccleaner_theme import (
     CONTENT_BG,
@@ -31,7 +32,6 @@ from presentation.widgets import (
     GestionarAusenciasForm,
     GestorSustituciones,
     PanelEstadisticas,
-    ReportesForm,
     VistaCalendario,
 )
 
