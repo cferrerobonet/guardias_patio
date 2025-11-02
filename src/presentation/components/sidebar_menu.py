@@ -1,5 +1,5 @@
 """
-Menú lateral (Sidebar) con navegación moderna estilo Microsoft Fluent.
+Menú lateral (Sidebar) con navegación moderna.
 
 Componente de navegación vertical con iconos, categorías colapsables,
 y estados activos/hover.
@@ -20,7 +20,7 @@ from core.qt_imports import (
 )
 from PyQt6.QtCore import Qt
 
-from presentation.themes.fluent_theme import (
+from presentation.themes.ccleaner_theme import (
     SPACING_M,
     SPACING_S,
     get_sidebar_style,

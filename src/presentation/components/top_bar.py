@@ -11,7 +11,7 @@ from core.qt_imports import (
     QWidget,
 )
 
-from presentation.themes.fluent_theme import (
+from presentation.themes.ccleaner_theme import (
     SPACING_M,
     SPACING_S,
     get_topbar_style,

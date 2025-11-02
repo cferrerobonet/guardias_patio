@@ -6,7 +6,7 @@ y generar calendarios PDF para profesores.
 """
 
 import ui_styles as styles
-from models.models import Configuracion, Profesor, Zona
+from models.models import Configuracion, Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFileDialog,
@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
 from services.importador_profesores import importar_profesores_desde_excel
+from utils import get_logger
 
 from presentation.forms.base_form import BaseForm
 from presentation.forms.import_export_widgets import (
@@ -29,6 +30,8 @@ from presentation.forms.import_export_widgets import (
 )
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
+
+logger = get_logger(__name__)
 
 
 class ImportExportForm(BaseForm):
@@ -298,7 +301,9 @@ class ImportExportForm(BaseForm):
     def exportar_pdfs(self):
         """Exportar calendarios PDF según el tipo seleccionado."""
         try:
-            tipo = self.pdf_tipo_combo.currentData()
+            # Obtener configuración del widget
+            config = self.pdf_widget.get_configuracion_pdf()
+            tipo = config["tipo"]
 
             # Diálogo para seleccionar carpeta de destino
             carpeta = QFileDialog.getExistingDirectory(
@@ -311,14 +316,11 @@ class ImportExportForm(BaseForm):
             if not carpeta:
                 return  # Usuario canceló
 
-            # Obtener profesores seleccionados si es necesario
-            profesor_ids_seleccionados = None
-            if tipo in ["mes_seleccionados", "curso_seleccionados"]:
-                profesor_ids_seleccionados = [
-                    cb.property("profesor_id") for cb in self.profesor_checkboxes if cb.isChecked()
-                ]
+            # Validar selección de profesores si es necesario
+            if tipo in ["mes_seleccionados", "curso_seleccionados", "individual_seleccionados"]:
+                profesor_ids = config.get("profesores_ids", [])
 
-                if not profesor_ids_seleccionados:
+                if not profesor_ids:
                     self.mostrar_advertencia(
                         "Sin selección", "Debes seleccionar al menos un profesor para exportar."
                     )
@@ -326,37 +328,38 @@ class ImportExportForm(BaseForm):
 
             # Ejecutar según el tipo
             if tipo == "mes_todos":
-                self._exportar_mes_todos(carpeta)
+                self._exportar_mes_todos(config, carpeta)
             elif tipo == "mes_seleccionados":
-                self._exportar_mes_seleccionados(carpeta, profesor_ids_seleccionados)
+                self._exportar_mes_seleccionados(config, carpeta)
             elif tipo == "curso_todos":
-                self._exportar_curso_todos(carpeta)
+                self._exportar_curso_todos(config, carpeta)
             elif tipo == "curso_seleccionados":
-                self._exportar_curso_seleccionados(carpeta, profesor_ids_seleccionados)
+                self._exportar_curso_seleccionados(config, carpeta)
+            elif tipo == "individual_seleccionados":
+                self._exportar_individual_seleccionados(config, carpeta)
 
         except Exception as e:
             self.manejar_excepcion(e, "generar PDFs")
             self.resultado_text.setText(f"❌ Error al generar PDFs: {e}")
 
-    def _exportar_mes_todos(self, carpeta: str):
+    def _exportar_mes_todos(self, config: dict, carpeta: str):
         """Exportar mes específico para todos los profesores."""
-        mes = self.pdf_mes_combo.currentIndex() + 1
-        anio = int(self.pdf_anio_combo.currentText())
+        mes = config["mes"]
+        anio = config["anio"]
 
         def tarea_exportacion(progress_callback):
             return ExportadorPDF.exportar_todos_los_profesores(
                 self.session, mes, anio, carpeta, progress_callback=progress_callback
             )
 
-        exitos, cancelado = ejecutar_con_progreso(
-            tarea_exportacion,
+        resultado = ejecutar_con_progreso(
+            self,  # parent
+            tarea_exportacion,  # funcion
             titulo="Exportando PDFs - Mes completo",
             mensaje="Preparando exportación...",
-            padre=self,
-            cancelable=False,
         )
 
-        if not cancelado:
+        if resultado is not None:
             meses_nombres = [
                 "",
                 "Enero",
@@ -378,33 +381,33 @@ class ImportExportForm(BaseForm):
                 f"Tipo: Mes completo (todos los profesores)\n"
                 f"Mes: {meses_nombres[mes]} {anio}\n"
                 f"Carpeta: {carpeta}\n"
-                f"PDFs generados: {exitos}\n"
+                f"PDFs generados: {resultado}\n"
             )
 
             self.resultado_text.setText(mensaje)
             self.mostrar_exito(
-                "PDFs generados", f"Se generaron {exitos} calendarios PDF correctamente."
+                "PDFs generados", f"Se generaron {resultado} calendarios PDF correctamente."
             )
 
-    def _exportar_mes_seleccionados(self, carpeta: str, profesor_ids: list[int]):
-        """Exportar mes específico solo para profesores seleccionados."""
-        mes = self.pdf_mes_combo.currentIndex() + 1
-        anio = int(self.pdf_anio_combo.currentText())
+    def _exportar_mes_seleccionados(self, config: dict, carpeta: str):
+        """Exportar mes específico para profesores seleccionados."""
+        mes = config["mes"]
+        anio = config["anio"]
+        profesor_ids = config["profesores_ids"]
 
         def tarea_exportacion(progress_callback):
             return ExportadorPDF.exportar_profesores_seleccionados(
                 self.session, profesor_ids, mes, anio, carpeta, progress_callback=progress_callback
             )
 
-        exitos, cancelado = ejecutar_con_progreso(
-            tarea_exportacion,
+        resultado = ejecutar_con_progreso(
+            self,  # parent
+            tarea_exportacion,  # funcion
             titulo="Exportando PDFs - Profesores seleccionados",
             mensaje="Preparando exportación...",
-            padre=self,
-            cancelable=False,
         )
 
-        if not cancelado:
+        if resultado is not None:
             meses_nombres = [
                 "",
                 "Enero",
@@ -427,17 +430,17 @@ class ImportExportForm(BaseForm):
                 f"Mes: {meses_nombres[mes]} {anio}\n"
                 f"Profesores: {len(profesor_ids)}\n"
                 f"Carpeta: {carpeta}\n"
-                f"PDFs generados: {exitos}\n"
+                f"PDFs generados: {resultado}\n"
             )
 
             self.resultado_text.setText(mensaje)
             self.mostrar_exito(
-                "PDFs generados", f"Se generaron {exitos} calendarios PDF correctamente."
+                "PDFs generados", f"Se generaron {resultado} calendarios PDF correctamente."
             )
 
-    def _exportar_curso_todos(self, carpeta: str):
+    def _exportar_curso_todos(self, config: dict, carpeta: str):
         """Exportar curso completo para todos los profesores."""
-        anio_inicio = self.pdf_curso_combo.currentData()
+        anio_inicio = config["anio_inicio_curso"]
 
         def tarea_exportacion(progress_callback):
             return ExportadorPDF.exportar_curso_completo(
@@ -448,15 +451,14 @@ class ImportExportForm(BaseForm):
                 progress_callback=progress_callback,
             )
 
-        exito, cancelado = ejecutar_con_progreso(
-            tarea_exportacion,
+        resultado = ejecutar_con_progreso(
+            self,  # parent
+            tarea_exportacion,  # funcion
             titulo="Exportando PDF - Curso completo",
             mensaje="Generando curso escolar completo...",
-            padre=self,
-            cancelable=False,
         )
 
-        if not cancelado:
+        if resultado is not None:
             mensaje = (
                 f"✅ PDF del curso completo generado exitosamente\n\n"
                 f"Tipo: Curso escolar completo (todos los profesores)\n"
@@ -471,9 +473,10 @@ class ImportExportForm(BaseForm):
                 f"Se generó el calendario del curso {anio_inicio}/{anio_inicio + 1} correctamente.",
             )
 
-    def _exportar_curso_seleccionados(self, carpeta: str, profesor_ids: list[int]):
-        """Exportar curso completo solo para profesores seleccionados."""
-        anio_inicio = self.pdf_curso_combo.currentData()
+    def _exportar_curso_seleccionados(self, config: dict, carpeta: str):
+        """Exportar curso completo para profesores seleccionados."""
+        anio_inicio = config["anio_inicio_curso"]
+        profesor_ids = config["profesores_ids"]
 
         def tarea_exportacion(progress_callback):
             return ExportadorPDF.exportar_curso_completo(
@@ -484,15 +487,14 @@ class ImportExportForm(BaseForm):
                 progress_callback=progress_callback,
             )
 
-        exito, cancelado = ejecutar_con_progreso(
-            tarea_exportacion,
+        resultado = ejecutar_con_progreso(
+            self,  # parent
+            tarea_exportacion,  # funcion
             titulo="Exportando PDF - Curso seleccionado",
             mensaje="Generando curso escolar para profesores seleccionados...",
-            padre=self,
-            cancelable=False,
         )
 
-        if not cancelado:
+        if resultado is not None:
             mensaje = (
                 f"✅ PDF del curso generado exitosamente\n\n"
                 f"Tipo: Curso escolar (profesores seleccionados)\n"
@@ -507,6 +509,156 @@ class ImportExportForm(BaseForm):
                 "PDF generado",
                 f"Se generó el calendario del curso {anio_inicio}/{anio_inicio + 1} correctamente.",
             )
+
+    def _exportar_individual_seleccionados(self, config: dict, carpeta: str):
+        """Exportar calendarios individuales para profesores seleccionados."""
+
+        profesor_ids = config["profesores_ids"]
+        enviar_email = config.get("enviar_email", False)
+
+        # Importar EmailService solo si es necesario
+        email_service = None
+        if enviar_email:
+            from services.email_service import get_email_service
+
+            email_service = get_email_service()
+            if not email_service:
+                QMessageBox.warning(
+                    self,
+                    "Email no configurado",
+                    "La configuración SMTP no está disponible.\n\n"
+                    "Los PDFs se generarán pero no se enviarán por email.\n\n"
+                    "Para configurar el email, ve a Configuración > SMTP.",
+                )
+                enviar_email = False
+
+        def tarea_exportacion(progress_callback):
+            """Generar PDFs individuales para cada profesor."""
+            exitos = 0
+            emails_enviados = 0
+            total = len(profesor_ids)
+
+            for idx, profesor_id in enumerate(profesor_ids):
+                # Obtener profesor
+                profesor = self.session.query(Profesor).get(profesor_id)
+                if not profesor:
+                    continue
+
+                # Reportar progreso
+                porcentaje = int((idx / total) * 100) if total > 0 else 0
+                mensaje = f"Generando PDF para {profesor.nombre_completo}..."
+                if progress_callback:
+                    progress_callback(porcentaje, mensaje)
+
+                # Obtener rango de fechas de guardias del profesor
+                guardias = (
+                    self.session.query(Guardia)
+                    .filter(Guardia.profesor_id == profesor_id)
+                    .all()
+                )
+
+                if not guardias:
+                    continue  # Profesor sin guardias
+
+                # Calcular rango real
+                fechas = [g.fecha for g in guardias]
+                fecha_inicio = min(fechas)
+                fecha_fin = max(fechas)
+
+                # Determinar curso escolar
+                anio_inicio = fecha_inicio.year if fecha_inicio.month >= 9 else fecha_inicio.year - 1
+                curso_escolar = f"{anio_inicio}/{anio_inicio + 1}"
+
+                # Generar nombre de archivo
+                nombre_archivo = f"Calendario_{profesor.nombre_completo.replace(' ', '_')}.pdf"
+                ruta_salida = f"{carpeta}/{nombre_archivo}"
+
+                # Exportar PDF individual
+                try:
+                    resultado = ExportadorPDF.exportar_profesor_individual_optimizado(
+                        self.session,
+                        profesor_id,
+                        fecha_inicio,
+                        fecha_fin,
+                        ruta_salida,
+                        progress_callback=None,  # Ya manejamos el progreso aquí
+                    )
+                    if resultado:
+                        exitos += 1
+
+                        # Enviar email si está habilitado
+                        if enviar_email and email_service and profesor.email:
+                            if progress_callback:
+                                progress_callback(
+                                    porcentaje,
+                                    f"Enviando email a {profesor.nombre_completo}...",
+                                )
+
+                            exito_email, mensaje_email = email_service.send_calendar_pdf(
+                                to_email=profesor.email,
+                                profesor_nombre=profesor.nombre_completo,
+                                pdf_path=ruta_salida,
+                                curso_escolar=curso_escolar,
+                            )
+
+                            if exito_email:
+                                emails_enviados += 1
+                                logger.info(f"Email enviado a {profesor.email}: {mensaje_email}")
+                            else:
+                                logger.warning(
+                                    f"No se pudo enviar email a {profesor.email}: {mensaje_email}"
+                                )
+
+                except Exception as e:
+                    logger.error(f"Error al exportar PDF para profesor {profesor_id}: {e}")
+
+            # Progreso final
+            if progress_callback:
+                progress_callback(100, "Exportación completada")
+
+            return {"exitos": exitos, "emails_enviados": emails_enviados}
+
+        resultado = ejecutar_con_progreso(
+            self,  # parent
+            tarea_exportacion,  # funcion
+            titulo="Exportando Calendarios Individuales",
+            mensaje="Preparando exportación...",
+        )
+
+        if resultado is not None:
+            exitos = resultado.get("exitos", 0)
+            emails_enviados = resultado.get("emails_enviados", 0)
+
+            mensaje = (
+                f"✅ Calendarios individuales generados exitosamente\n\n"
+                f"Tipo: Calendario individual optimizado\n"
+                f"Profesores seleccionados: {len(profesor_ids)}\n"
+                f"Carpeta: {carpeta}\n"
+                f"PDFs generados: {exitos}\n"
+            )
+
+            if enviar_email:
+                mensaje += f"Emails enviados: {emails_enviados}\n"
+
+            mensaje += (
+                "\nNota: Cada PDF muestra solo las fechas desde la primera hasta la última guardia del profesor."
+            )
+
+            self.resultado_text.setText(mensaje)
+
+            if enviar_email and emails_enviados < exitos:
+                self.mostrar_exito(
+                    "PDFs generados",
+                    f"Se generaron {exitos} calendarios individuales.\n\n"
+                    f"Emails enviados: {emails_enviados} de {exitos}\n\n"
+                    f"Algunos profesores pueden no tener email configurado.",
+                )
+            else:
+                self.mostrar_exito(
+                    "PDFs generados",
+                    f"Se generaron {exitos} calendarios individuales correctamente."
+                    + (f"\n\n{emails_enviados} emails enviados." if enviar_email else ""),
+                )
 
     def importar_profesores(self):
         """Importar profesores desde un archivo Excel."""
@@ -532,11 +684,10 @@ class ImportExportForm(BaseForm):
                 )
 
             resultados, cancelado = ejecutar_con_progreso(
-                tarea_importacion,
+                self,  # parent
+                tarea_importacion,  # funcion
                 titulo="Importando Profesores",
                 mensaje="Preparando importación...",
-                padre=self,
-                cancelable=True,  # Permitir cancelar si hay muchos registros
             )
 
             if cancelado:

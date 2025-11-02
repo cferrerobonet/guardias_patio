@@ -11,6 +11,7 @@ from application.use_cases.zona import (
     CrearZonaUseCase,
     EliminarZonaUseCase,
     ListarZonasUseCase,
+    ObtenerZonaUseCase,
 )
 from core.exceptions import BusinessLogicError, NotFoundError
 from pydantic import ValidationError
@@ -58,6 +59,7 @@ class ZonaForm(BaseForm):
         self.actualizar_zona_uc = ActualizarZonaUseCase(session)
         self.listar_zonas_uc = ListarZonasUseCase(session)
         self.eliminar_zona_uc = EliminarZonaUseCase(session)
+        self.obtener_zona_uc = ObtenerZonaUseCase(session)
 
         # Control de modo edición
         self.zona_editando_id = None
@@ -351,7 +353,8 @@ class ZonaForm(BaseForm):
                 )
 
                 # Guardar ID para restaurar selección
-                self.table_manager._last_selected_id = str(self.zona_editando_id)
+                if self.table_manager:
+                    self.table_manager._last_selected_id = str(self.zona_editando_id)
 
                 # Ejecutar Use Case de actualización
                 zona_actualizada = self.actualizar_zona_uc.execute(self.zona_editando_id, zona_dto)
@@ -378,7 +381,8 @@ class ZonaForm(BaseForm):
                 zona_creada = self.crear_zona_uc.execute(zona_dto)
 
                 # Guardar ID para restaurar selección
-                if zona_creada:
+                # Actualizar ID para restaurar selección después
+                if zona_creada and self.table_manager:
                     self.table_manager._last_selected_id = str(zona_creada.id)
 
                 # Mostrar mensaje de éxito
@@ -426,32 +430,33 @@ class ZonaForm(BaseForm):
         id_zona = int(item_id.text())
 
         try:
-            from models.models import Zona
-
-            zona = self.session.query(Zona).filter(Zona.id == id_zona).first()
-            if not zona:
-                return
+            # Usar Use Case para obtener la zona
+            zona_dto = self.obtener_zona_uc.execute(id_zona)
 
             # Limpiar formulario primero
             self.limpiar_formulario()
 
-            # Cargar datos en el formulario
-            self.nombre_zona_input.setText(zona.nombre_zona or "")
-            self.descripcion_input.setText(zona.descripcion or "")
+            # Cargar datos desde el DTO
+            self.nombre_zona_input.setText(zona_dto.nombre_zona or "")
+            self.descripcion_input.setText(zona_dto.descripcion or "")
 
             # Cargar fechas si existen
-            if zona.fecha_inicio:
+            if zona_dto.fecha_inicio:
                 self.usar_fecha_inicio_check.setChecked(True)
                 qdate_inicio = QDate(
-                    zona.fecha_inicio.year, zona.fecha_inicio.month, zona.fecha_inicio.day
+                    zona_dto.fecha_inicio.year,
+                    zona_dto.fecha_inicio.month,
+                    zona_dto.fecha_inicio.day,
                 )
                 self.fecha_inicio_input.setDate(qdate_inicio)
             else:
                 self.usar_fecha_inicio_check.setChecked(False)
 
-            if zona.fecha_fin:
+            if zona_dto.fecha_fin:
                 self.usar_fecha_fin_check.setChecked(True)
-                qdate_fin = QDate(zona.fecha_fin.year, zona.fecha_fin.month, zona.fecha_fin.day)
+                qdate_fin = QDate(
+                    zona_dto.fecha_fin.year, zona_dto.fecha_fin.month, zona_dto.fecha_fin.day
+                )
                 self.fecha_fin_input.setDate(qdate_fin)
             else:
                 self.usar_fecha_fin_check.setChecked(False)
@@ -462,34 +467,39 @@ class ZonaForm(BaseForm):
             self.cancelar_btn.setVisible(False)
 
         except Exception as e:
-            self.mostrar_error("Error al cargar", f"Error: {str(e)}")
+            self.manejar_excepcion(e, "cargar datos de la zona")
 
     def editar_zona(self):
         """Cargar zona seleccionada en formulario para edición."""
-        fila_actual = self.tabla_zonas.currentRow()
-        if fila_actual == -1:
-            self.mostrar_advertencia("Selección requerida", "Selecciona una zona para editar.")
-            return
+        try:
+            fila_actual = self.tabla_zonas.currentRow()
+            if fila_actual == -1:
+                self.mostrar_advertencia("Selección requerida", "Selecciona una zona para editar.")
+                return
 
-        # Obtener el ID de la primera columna
-        item_id = self.tabla_zonas.item(fila_actual, 0)
-        if not item_id:
-            return
+            # Obtener el ID de la primera columna
+            item_id = self.tabla_zonas.item(fila_actual, 0)
+            if not item_id:
+                return
 
-        id_zona = int(item_id.text())
+            id_zona = int(item_id.text())
 
-        # Si no está en modo edición, primero mostrar los datos
-        if self.zona_editando_id is None:
-            self.mostrar_zona()
+            # Si no está en modo edición, primero mostrar los datos
+            if self.zona_editando_id is None:
+                self.mostrar_zona()
 
-        # Ahora activar modo edición
-        self.zona_editando_id = id_zona
-        self.titulo_form.setText(f"✏️ EDITAR ZONA [ID: {id_zona}]")
-        self.submit_btn.setText("💾 Actualizar Zona")
-        self.cancelar_btn.setVisible(True)
+            # Ahora activar modo edición
+            self.zona_editando_id = id_zona
+            self.titulo_form.setText(f"✏️ EDITAR ZONA [ID: {id_zona}]")
+            self.submit_btn.setText("💾 Actualizar Zona")
+            self.cancelar_btn.setVisible(True)
+
+        except Exception as e:
+            self.manejar_excepcion(e, "editar zona")
 
         # Deshabilitar interacción con la tabla mientras se edita
-        self.table_manager.enable_table_interactions(False)
+        if self.table_manager:
+            self.table_manager.enable_table_interactions(False)
 
     def cancelar_edicion(self):
         """Cancelar la edición y volver al modo 'nueva zona'"""

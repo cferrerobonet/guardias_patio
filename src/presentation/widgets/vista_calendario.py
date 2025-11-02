@@ -1,36 +1,318 @@
 """
-Vista de calendario mensual para visualizar las guardias asignadas.
+Vista de calendario mejorada para visualizar guardias asignadas.
 
-Muestra un calendario interactivo con las guardias de cada día.
+Características:
+- Vistas: Mensual, Semanal, Anual
+- Navegación intuitiva con controles claros
+- Celdas con scroll para mostrar todas las guardias (hasta 16+)
+- Indicadores visuales de ausencias y sustituciones
+- Diseño optimizado para aprovechamiento de espacio
 """
 
 from calendar import monthrange
 from collections import defaultdict
 from datetime import date, datetime, timedelta
+from typing import List
 
-from PyQt6.QtCore import Qt
+from models.models import Ausencia, Guardia
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
+    QComboBox,
+    QFrame,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
+    QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
 
-from models.models import Ausencia, Guardia, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 
 
+class CeldaDia(QGroupBox):
+    """Celda individual para un día del calendario con scroll interno."""
+
+    dia_clicked = pyqtSignal(date)  # Señal cuando se hace click en el día
+
+    def __init__(self, fecha: date, guardias: List[Guardia], ausencias: List[Ausencia],
+                 sustituciones: List[Guardia], es_hoy: bool = False):
+        """
+        Inicializar celda de día.
+        
+        Args:
+            fecha: Fecha del día
+            guardias: Lista de guardias del día
+            ausencias: Lista de ausencias del día
+            sustituciones: Lista de sustituciones del día
+            es_hoy: Si es el día actual
+        """
+        super().__init__()
+        self.fecha = fecha
+        self.guardias = guardias
+        self.ausencias = ausencias
+        self.sustituciones = sustituciones
+        self.es_hoy = es_hoy
+
+        self.setup_ui()
+
+    def setup_ui(self):
+        """Construir interfaz de la celda."""
+        layout_principal = QVBoxLayout()
+        layout_principal.setContentsMargins(4, 4, 4, 4)
+        layout_principal.setSpacing(2)
+
+        # Encabezado con número del día e indicadores
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(4)
+
+        # Número del día
+        label_dia = QLabel(str(self.fecha.day))
+        font_dia = QFont()
+        font_dia.setBold(True)
+        font_dia.setPointSize(11)
+        label_dia.setFont(font_dia)
+        header_layout.addWidget(label_dia)
+
+        # Indicadores de estado
+        indicadores = []
+        if self.ausencias:
+            indicadores.append(f"🏥{len(self.ausencias)}")
+        if self.sustituciones:
+            indicadores.append(f"🔄{len(self.sustituciones)}")
+
+        if indicadores:
+            label_indicadores = QLabel(" ".join(indicadores))
+            label_indicadores.setStyleSheet("font-size: 9px; color: #666;")
+            header_layout.addWidget(label_indicadores)
+
+        header_layout.addStretch()
+        layout_principal.addLayout(header_layout)
+
+        # Separador
+        separador = QFrame()
+        separador.setFrameShape(QFrame.Shape.HLine)
+        separador.setStyleSheet("background-color: #ccc; max-height: 1px;")
+        layout_principal.addWidget(separador)
+
+        # Área de scroll para guardias
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setMinimumHeight(100)
+        scroll_area.setMaximumHeight(200)
+
+        # Contenedor de guardias
+        guardias_widget = QWidget()
+        guardias_layout = QVBoxLayout()
+        guardias_layout.setContentsMargins(2, 2, 2, 2)
+        guardias_layout.setSpacing(3)
+
+        # Mostrar todas las guardias agrupadas por turno y recreo
+        self._agregar_guardias_agrupadas(guardias_layout)
+
+        # Mostrar ausencias si hay
+        if self.ausencias:
+            self._agregar_ausencias(guardias_layout)
+
+        guardias_layout.addStretch()
+        guardias_widget.setLayout(guardias_layout)
+        scroll_area.setWidget(guardias_widget)
+
+        layout_principal.addWidget(scroll_area, 1)
+
+        # Contador total al final
+        total_guardias = len(self.guardias)
+        if total_guardias > 0:
+            label_total = QLabel(f"Total: {total_guardias} guardias")
+            label_total.setStyleSheet("font-size: 8px; color: #999; font-weight: bold;")
+            label_total.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout_principal.addWidget(label_total)
+
+        self.setLayout(layout_principal)
+
+        # Aplicar estilo según estado
+        self._aplicar_estilo()
+
+    def _agregar_guardias_agrupadas(self, layout: QVBoxLayout):
+        """Agregar guardias agrupadas por turno y recreo."""
+        # Agrupar guardias por turno y recreo
+        grupos = defaultdict(list)
+        for guardia in self.guardias:
+            clave = (guardia.turno, guardia.recreo)
+            grupos[clave].append(guardia)
+
+        # Ordenar por turno (mañana primero) y recreo
+        orden_turno = {"mañana": 0, "tarde": 1}
+        claves_ordenadas = sorted(
+            grupos.keys(),
+            key=lambda x: (orden_turno.get(x[0], 2), x[1])
+        )
+
+        for turno, recreo in claves_ordenadas:
+            guardias_grupo = grupos[(turno, recreo)]
+
+            # Encabezado del grupo
+            icono_turno = "☀️" if turno == "mañana" else "🌙"
+            label_grupo = QLabel(f"{icono_turno} {turno.title()} - Recreo {recreo}")
+            label_grupo.setStyleSheet(
+                "font-size: 9px; font-weight: bold; color: #2196F3; "
+                "background-color: #E3F2FD; padding: 2px; border-radius: 2px;"
+            )
+            layout.addWidget(label_grupo)
+
+            # Guardias del grupo
+            for guardia in guardias_grupo:
+                self._agregar_guardia_individual(layout, guardia)
+
+    def _agregar_guardia_individual(self, layout: QVBoxLayout, guardia: Guardia):
+        """Agregar una guardia individual."""
+        # Obtener información
+        profesor_nombre = guardia.profesor.nombre_completo if guardia.profesor else "Sin asignar"
+        zona_nombre = guardia.zona.nombre_zona if guardia.zona else "Sin zona"
+
+        # Abreviar nombre (apellido solo)
+        if "," in profesor_nombre:
+            apellido = profesor_nombre.split(",")[0].strip()
+        else:
+            partes = profesor_nombre.split()
+            apellido = partes[-1] if partes else profesor_nombre
+
+        # Determinar si es sustitución
+        es_sustitucion = guardia in self.sustituciones
+
+        # Crear label
+        texto = f"  • {apellido[:12]} - {zona_nombre[:8]}"
+        label = QLabel(texto)
+
+        if es_sustitucion:
+            # Estilo para sustituciones
+            label.setStyleSheet(
+                "font-size: 8px; padding: 1px 3px; margin-left: 5px; "
+                "background-color: #FFF3E0; border-left: 3px solid #FF9800; "
+                "color: #E65100; font-weight: bold;"
+            )
+            label.setToolTip(f"SUSTITUCIÓN: {profesor_nombre} en {zona_nombre}")
+        else:
+            # Estilo normal
+            label.setStyleSheet(
+                "font-size: 8px; padding: 1px 3px; margin-left: 5px; "
+                "background-color: white; border-left: 2px solid #4CAF50;"
+            )
+            label.setToolTip(f"{profesor_nombre} en {zona_nombre}")
+
+        layout.addWidget(label)
+
+    def _agregar_ausencias(self, layout: QVBoxLayout):
+        """Agregar información de ausencias."""
+        label_titulo = QLabel("🏥 Ausencias:")
+        label_titulo.setStyleSheet(
+            "font-size: 9px; font-weight: bold; color: #C62828; "
+            "background-color: #FFEBEE; padding: 2px; border-radius: 2px; margin-top: 4px;"
+        )
+        layout.addWidget(label_titulo)
+
+        for ausencia in self.ausencias[:5]:  # Máximo 5 ausencias mostradas
+            profesor = ausencia.profesor.nombre_completo if ausencia.profesor else "Desconocido"
+            if "," in profesor:
+                apellido = profesor.split(",")[0].strip()
+            else:
+                partes = profesor.split()
+                apellido = partes[-1] if partes else profesor
+
+            motivo = ausencia.motivo[:15] if ausencia.motivo else "Sin motivo"
+            texto = f"  • {apellido}: {motivo}"
+
+            label = QLabel(texto)
+            label.setStyleSheet(
+                "font-size: 8px; padding: 1px 3px; margin-left: 5px; "
+                "background-color: #FFCDD2; border-left: 2px solid #F44336; color: #B71C1C;"
+            )
+            label.setToolTip(f"Ausencia: {profesor} - {ausencia.motivo}")
+            layout.addWidget(label)
+
+        if len(self.ausencias) > 5:
+            label_mas = QLabel(f"  ... y {len(self.ausencias) - 5} más")
+            label_mas.setStyleSheet("font-size: 7px; color: #999; font-style: italic;")
+            layout.addWidget(label_mas)
+
+    def _aplicar_estilo(self):
+        """Aplicar estilo CSS a la celda según su estado."""
+        tiene_guardias = len(self.guardias) > 0
+        tiene_ausencias = len(self.ausencias) > 0
+        tiene_sustituciones = len(self.sustituciones) > 0
+
+        if self.es_hoy:
+            # Estilo para hoy
+            estilo = """
+                QGroupBox {
+                    background-color: #FFF9C4;
+                    border: 3px solid #FBC02D;
+                    border-radius: 6px;
+                }
+            """
+        elif tiene_sustituciones:
+            # Estilo para días con sustituciones
+            estilo = """
+                QGroupBox {
+                    background-color: #FFF3E0;
+                    border: 2px solid #FF9800;
+                    border-radius: 6px;
+                }
+            """
+        elif tiene_ausencias and tiene_guardias:
+            # Estilo para días con ausencias y guardias
+            estilo = """
+                QGroupBox {
+                    background-color: #FCE4EC;
+                    border: 2px solid #E91E63;
+                    border-radius: 6px;
+                }
+            """
+        elif tiene_guardias:
+            # Estilo para días con guardias
+            estilo = """
+                QGroupBox {
+                    background-color: #E3F2FD;
+                    border: 1px solid #90CAF9;
+                    border-radius: 6px;
+                }
+            """
+        else:
+            # Estilo para días sin actividad
+            estilo = """
+                QGroupBox {
+                    background-color: #FAFAFA;
+                    border: 1px solid #E0E0E0;
+                    border-radius: 6px;
+                }
+            """
+
+        self.setStyleSheet(estilo)
+
+    def mousePressEvent(self, event):
+        """Emitir señal cuando se hace click en el día."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.dia_clicked.emit(self.fecha)
+        super().mousePressEvent(event)
+
+
 class VistaCalendario(BaseForm):
-    """Widget para mostrar el calendario mensual de guardias."""
+    """Vista de calendario mejorada con múltiples vistas y controles."""
+
+    VISTA_MENSUAL = "Mensual"
+    VISTA_SEMANAL = "Semanal"
+    VISTA_ANUAL = "Anual"
 
     def __init__(self, session):
         """
         Inicializar vista de calendario.
-
+        
         Args:
             session: Sesión de base de datos
         """
@@ -38,341 +320,624 @@ class VistaCalendario(BaseForm):
         self.fecha_actual = datetime.now().date()
         self.mes_mostrado = self.fecha_actual.month
         self.anio_mostrado = self.fecha_actual.year
-        self.setWindowTitle("Vista Calendario")
+        self.semana_mostrada = self.fecha_actual.isocalendar()[1]
+        self.vista_actual = self.VISTA_MENSUAL
+
+        self.setWindowTitle("📅 Calendario de Guardias")
+        self.resize(1400, 900)
         self.setup_ui()
 
     def setup_ui(self):
         """Construir la interfaz del widget."""
         layout_principal = QVBoxLayout()
+        layout_principal.setSpacing(10)
 
-        # Selector de mes/año
-        layout_principal.addLayout(self._crear_selector_mes())
+        # Barra de controles superior
+        layout_principal.addLayout(self._crear_barra_controles())
 
-        # Área de calendario
+        # Separador
+        separador = QFrame()
+        separador.setFrameShape(QFrame.Shape.HLine)
+        separador.setStyleSheet("background-color: #2196F3; max-height: 2px;")
+        layout_principal.addWidget(separador)
+
+        # Área de calendario (scroll)
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
-        )
+        self.scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: white;
+            }
+        """)
 
-        from PyQt6.QtWidgets import QWidget as QtWidget
-
-        self.calendario_widget = QtWidget()
-        self.calendario_layout = QGridLayout()
+        self.calendario_widget = QWidget()
+        self.calendario_layout = QVBoxLayout()
         self.calendario_widget.setLayout(self.calendario_layout)
         self.scroll_area.setWidget(self.calendario_widget)
 
-        layout_principal.addWidget(self.scroll_area)
+        layout_principal.addWidget(self.scroll_area, 1)
 
-        # Leyenda
+        # Leyenda inferior
         layout_principal.addLayout(self._crear_leyenda())
 
         self.setLayout(layout_principal)
         self.actualizar_calendario()
 
-    def _crear_selector_mes(self) -> QHBoxLayout:
-        """Crear selector de mes/año."""
-        selector_layout = QHBoxLayout()
+    def _crear_barra_controles(self) -> QHBoxLayout:
+        """Crear barra de controles de navegación y vista."""
+        barra_layout = QHBoxLayout()
+        barra_layout.setSpacing(10)
 
-        self.btn_mes_anterior = QPushButton("◀ Mes Anterior")
-        self.btn_mes_anterior.clicked.connect(self.mes_anterior)
+        # Grupo: Selector de vista
+        label_vista = QLabel("Vista:")
+        label_vista.setStyleSheet("font-weight: bold; font-size: 11px;")
+        barra_layout.addWidget(label_vista)
 
-        self.label_mes_anio = QLabel()
-        self.label_mes_anio.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        font = QFont()
-        font.setPointSize(14)
-        font.setBold(True)
-        self.label_mes_anio.setFont(font)
+        self.combo_vista = QComboBox()
+        self.combo_vista.addItems([self.VISTA_MENSUAL, self.VISTA_SEMANAL, self.VISTA_ANUAL])
+        self.combo_vista.setCurrentText(self.vista_actual)
+        self.combo_vista.currentTextChanged.connect(self.cambiar_vista)
+        self.combo_vista.setMinimumWidth(120)
+        self.combo_vista.setStyleSheet("""
+            QComboBox {
+                padding: 5px 10px;
+                border: 2px solid #2196F3;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 11px;
+            }
+            QComboBox:hover {
+                background-color: #E3F2FD;
+            }
+        """)
+        barra_layout.addWidget(self.combo_vista)
 
-        self.btn_mes_siguiente = QPushButton("Mes Siguiente ▶")
-        self.btn_mes_siguiente.clicked.connect(self.mes_siguiente)
+        barra_layout.addSpacing(20)
 
+        # Grupo: Navegación
+        self.btn_anterior = QPushButton("◀ Anterior")
+        self.btn_anterior.clicked.connect(self.periodo_anterior)
+        self.btn_anterior.setStyleSheet(self._estilo_boton_navegacion())
+        barra_layout.addWidget(self.btn_anterior)
+
+        # Etiqueta de periodo actual
+        self.label_periodo = QLabel()
+        self.label_periodo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label_periodo.setMinimumWidth(250)
+        font_periodo = QFont()
+        font_periodo.setPointSize(14)
+        font_periodo.setBold(True)
+        self.label_periodo.setFont(font_periodo)
+        self.label_periodo.setStyleSheet("""
+            QLabel {
+                color: #1976D2;
+                padding: 8px 16px;
+                background-color: #E3F2FD;
+                border-radius: 6px;
+            }
+        """)
+        barra_layout.addWidget(self.label_periodo)
+
+        self.btn_siguiente = QPushButton("Siguiente ▶")
+        self.btn_siguiente.clicked.connect(self.periodo_siguiente)
+        self.btn_siguiente.setStyleSheet(self._estilo_boton_navegacion())
+        barra_layout.addWidget(self.btn_siguiente)
+
+        barra_layout.addSpacing(20)
+
+        # Botón Hoy
         self.btn_hoy = QPushButton("📅 Hoy")
         self.btn_hoy.clicked.connect(self.ir_a_hoy)
+        self.btn_hoy.setStyleSheet("""
+            QPushButton {
+                padding: 8px 16px;
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: #45A049;
+            }
+            QPushButton:pressed {
+                background-color: #388E3C;
+            }
+        """)
+        barra_layout.addWidget(self.btn_hoy)
 
-        selector_layout.addWidget(self.btn_mes_anterior)
-        selector_layout.addStretch()
-        selector_layout.addWidget(self.label_mes_anio)
-        selector_layout.addStretch()
-        selector_layout.addWidget(self.btn_mes_siguiente)
-        selector_layout.addWidget(self.btn_hoy)
+        # Selector de año (para vista anual)
+        self.spin_anio = QSpinBox()
+        self.spin_anio.setMinimum(2020)
+        self.spin_anio.setMaximum(2030)
+        self.spin_anio.setValue(self.anio_mostrado)
+        self.spin_anio.valueChanged.connect(self.cambiar_anio)
+        self.spin_anio.setVisible(False)  # Solo visible en vista anual
+        self.spin_anio.setStyleSheet("""
+            QSpinBox {
+                padding: 5px 10px;
+                border: 2px solid #2196F3;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 11px;
+            }
+        """)
+        barra_layout.addWidget(self.spin_anio)
 
-        return selector_layout
+        barra_layout.addStretch()
+
+        # Botón refrescar
+        btn_refrescar = QPushButton("🔄 Refrescar")
+        btn_refrescar.clicked.connect(self.refrescar)
+        btn_refrescar.setStyleSheet("""
+            QPushButton {
+                padding: 8px 16px;
+                background-color: #2196F3;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: #1976D2;
+            }
+            QPushButton:pressed {
+                background-color: #0D47A1;
+            }
+        """)
+        barra_layout.addWidget(btn_refrescar)
+
+        return barra_layout
+
+    def _estilo_boton_navegacion(self) -> str:
+        """Estilo CSS para botones de navegación."""
+        return """
+            QPushButton {
+                padding: 8px 16px;
+                background-color: #2196F3;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: #1976D2;
+            }
+            QPushButton:pressed {
+                background-color: #0D47A1;
+            }
+        """
 
     def _crear_leyenda(self) -> QHBoxLayout:
         """Crear leyenda del calendario."""
         leyenda_layout = QHBoxLayout()
+        leyenda_layout.setSpacing(15)
 
-        leyenda_label = QLabel("📋 Leyenda:")
-        leyenda_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
-        leyenda_layout.addWidget(leyenda_label)
+        label_titulo = QLabel("📋 LEYENDA:")
+        label_titulo.setStyleSheet("font-weight: bold; font-size: 10px; color: #1976D2;")
+        leyenda_layout.addWidget(label_titulo)
 
-        leyenda_sin_guardias = QLabel("⬜ Sin guardias")
-        leyenda_layout.addWidget(leyenda_sin_guardias)
+        # Items de leyenda con colores
+        items = [
+            ("🟨", "Hoy", "#FFF9C4", "#FBC02D"),
+            ("🟦", "Con guardias", "#E3F2FD", "#90CAF9"),
+            ("🟧", "Con sustituciones", "#FFF3E0", "#FF9800"),
+            ("🟥", "Con ausencias", "#FCE4EC", "#E91E63"),
+            ("⬜", "Sin actividad", "#FAFAFA", "#E0E0E0"),
+        ]
 
-        leyenda_con_guardias = QLabel("🟦 Con guardias")
-        leyenda_layout.addWidget(leyenda_con_guardias)
-
-        leyenda_hoy = QLabel("🟨 Hoy")
-        leyenda_layout.addWidget(leyenda_hoy)
-
-        leyenda_ausencias = QLabel("🏥 Con ausencias")
-        leyenda_layout.addWidget(leyenda_ausencias)
+        for emoji, texto, bg_color, border_color in items:
+            label = QLabel(f"{emoji} {texto}")
+            label.setStyleSheet(f"""
+                padding: 4px 8px;
+                background-color: {bg_color};
+                border: 1px solid {border_color};
+                border-radius: 3px;
+                font-size: 9px;
+            """)
+            leyenda_layout.addWidget(label)
 
         leyenda_layout.addStretch()
 
         return leyenda_layout
 
+    def cambiar_vista(self, vista: str):
+        """Cambiar el tipo de vista."""
+        self.vista_actual = vista
+
+        # Mostrar/ocultar controles según la vista
+        if vista == self.VISTA_ANUAL:
+            self.spin_anio.setVisible(True)
+            self.btn_anterior.setText("◀ Año Anterior")
+            self.btn_siguiente.setText("Año Siguiente ▶")
+        else:
+            self.spin_anio.setVisible(False)
+            if vista == self.VISTA_MENSUAL:
+                self.btn_anterior.setText("◀ Mes Anterior")
+                self.btn_siguiente.setText("Mes Siguiente ▶")
+            else:  # SEMANAL
+                self.btn_anterior.setText("◀ Semana Anterior")
+                self.btn_siguiente.setText("Semana Siguiente ▶")
+
+        self.actualizar_calendario()
+
     def actualizar_calendario(self):
-        """Actualizar el calendario con las guardias del mes."""
-        try:
-            # Limpiar calendario anterior
-            while self.calendario_layout.count():
-                item = self.calendario_layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
+        """Actualizar el calendario según la vista actual."""
+        # Limpiar calendario anterior
+        while self.calendario_layout.count():
+            item = self.calendario_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
 
-            # Actualizar etiqueta de mes/año
-            meses = [
-                "",
-                "Enero",
-                "Febrero",
-                "Marzo",
-                "Abril",
-                "Mayo",
-                "Junio",
-                "Julio",
-                "Agosto",
-                "Septiembre",
-                "Octubre",
-                "Noviembre",
-                "Diciembre",
-            ]
-            self.label_mes_anio.setText(
-                f"{meses[self.mes_mostrado]} {self.anio_mostrado}"
+        # Renderizar según vista
+        if self.vista_actual == self.VISTA_MENSUAL:
+            self._renderizar_vista_mensual()
+        elif self.vista_actual == self.VISTA_SEMANAL:
+            self._renderizar_vista_semanal()
+        else:  # ANUAL
+            self._renderizar_vista_anual()
+
+    def _renderizar_vista_mensual(self):
+        """Renderizar vista mensual."""
+        # Actualizar etiqueta de periodo
+        meses = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                 "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+        self.label_periodo.setText(f"{meses[self.mes_mostrado]} {self.anio_mostrado}")
+
+        # Crear grid del calendario
+        grid_calendario = QGridLayout()
+        grid_calendario.setSpacing(5)
+        grid_calendario.setContentsMargins(10, 10, 10, 10)
+
+        # Encabezados de días de la semana
+        dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+        for i, dia in enumerate(dias_semana):
+            label = QLabel(dia)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            font = QFont()
+            font.setBold(True)
+            font.setPointSize(10)
+            label.setFont(font)
+            label.setStyleSheet("""
+                QLabel {
+                    background-color: #2196F3;
+                    color: white;
+                    padding: 12px;
+                    border-radius: 4px;
+                }
+            """)
+            grid_calendario.addWidget(label, 0, i)
+
+        # Cargar datos del mes
+        primer_dia = date(self.anio_mostrado, self.mes_mostrado, 1)
+        dias_en_mes = monthrange(self.anio_mostrado, self.mes_mostrado)[1]
+        ultimo_dia = date(self.anio_mostrado, self.mes_mostrado, dias_en_mes)
+
+        guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha = self._cargar_datos_periodo(
+            primer_dia, ultimo_dia
+        )
+
+        # Renderizar días del mes
+        dia_semana_inicio = primer_dia.weekday()  # 0=Lunes, 6=Domingo
+        fila = 1
+        columna = dia_semana_inicio
+
+        for dia_num in range(1, dias_en_mes + 1):
+            fecha_dia = date(self.anio_mostrado, self.mes_mostrado, dia_num)
+
+            celda = CeldaDia(
+                fecha=fecha_dia,
+                guardias=guardias_por_fecha.get(fecha_dia, []),
+                ausencias=ausencias_por_fecha.get(fecha_dia, []),
+                sustituciones=sustituciones_por_fecha.get(fecha_dia, []),
+                es_hoy=(fecha_dia == self.fecha_actual)
             )
+            celda.dia_clicked.connect(self._dia_seleccionado)
 
-            # Encabezados de días de la semana
-            dias_semana = [
-                "Lunes",
-                "Martes",
-                "Miércoles",
-                "Jueves",
-                "Viernes",
-                "Sábado",
-                "Domingo",
-            ]
-            for i, dia in enumerate(dias_semana):
-                label = QLabel(dia)
-                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                font = QFont()
-                font.setBold(True)
-                label.setFont(font)
-                label.setStyleSheet(
-                    "background-color: #3498db; color: white; padding: 10px;"
-                )
-                self.calendario_layout.addWidget(label, 0, i)
+            grid_calendario.addWidget(celda, fila, columna)
 
-            # Cargar guardias del mes
-            primer_dia = date(self.anio_mostrado, self.mes_mostrado, 1)
-            dias_en_mes = monthrange(self.anio_mostrado, self.mes_mostrado)[1]
-            ultimo_dia = date(self.anio_mostrado, self.mes_mostrado, dias_en_mes)
+            columna += 1
+            if columna > 6:  # Nueva fila después del domingo
+                columna = 0
+                fila += 1
 
-            guardias = (
-                self.session.query(Guardia)
-                .filter(Guardia.fecha >= primer_dia, Guardia.fecha <= ultimo_dia)
-                .all()
+        # Añadir grid al layout principal
+        widget_grid = QWidget()
+        widget_grid.setLayout(grid_calendario)
+        self.calendario_layout.addWidget(widget_grid)
+        self.calendario_layout.addStretch()
+
+    def _renderizar_vista_semanal(self):
+        """Renderizar vista semanal."""
+        # Calcular primer y último día de la semana
+        # Encontrar el lunes de la semana actual
+        fecha_ref = date(self.anio_mostrado, self.mes_mostrado, 1)
+        # Buscar una fecha en la semana deseada
+        primer_dia_anio = date(self.anio_mostrado, 1, 1)
+        dias_desde_inicio = (self.semana_mostrada - 1) * 7
+        fecha_semana = primer_dia_anio + timedelta(days=dias_desde_inicio)
+
+        # Ajustar al lunes
+        primer_dia_semana = fecha_semana - timedelta(days=fecha_semana.weekday())
+        ultimo_dia_semana = primer_dia_semana + timedelta(days=6)
+
+        # Actualizar etiqueta
+        self.label_periodo.setText(
+            f"Semana {self.semana_mostrada} - {primer_dia_semana.strftime('%d/%m')} "
+            f"al {ultimo_dia_semana.strftime('%d/%m/%Y')}"
+        )
+
+        # Crear grid
+        grid_calendario = QGridLayout()
+        grid_calendario.setSpacing(5)
+        grid_calendario.setContentsMargins(10, 10, 10, 10)
+
+        # Encabezados
+        dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+        for i, dia in enumerate(dias_semana):
+            label = QLabel(dia)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            font = QFont()
+            font.setBold(True)
+            font.setPointSize(10)
+            label.setFont(font)
+            label.setStyleSheet("""
+                QLabel {
+                    background-color: #2196F3;
+                    color: white;
+                    padding: 12px;
+                    border-radius: 4px;
+                }
+            """)
+            grid_calendario.addWidget(label, 0, i)
+
+        # Cargar datos
+        guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha = self._cargar_datos_periodo(
+            primer_dia_semana, ultimo_dia_semana
+        )
+
+        # Renderizar días de la semana
+        for i in range(7):
+            fecha_dia = primer_dia_semana + timedelta(days=i)
+
+            celda = CeldaDia(
+                fecha=fecha_dia,
+                guardias=guardias_por_fecha.get(fecha_dia, []),
+                ausencias=ausencias_por_fecha.get(fecha_dia, []),
+                sustituciones=sustituciones_por_fecha.get(fecha_dia, []),
+                es_hoy=(fecha_dia == self.fecha_actual)
             )
+            celda.dia_clicked.connect(self._dia_seleccionado)
+            celda.setMinimumHeight(400)  # Más altura en vista semanal
 
-            # Agrupar guardias por fecha
-            guardias_por_fecha = defaultdict(list)
-            for g in guardias:
-                guardias_por_fecha[g.fecha].append(g)
+            grid_calendario.addWidget(celda, 1, i)
 
-            # Cargar ausencias del mes
-            ausencias = (
-                self.session.query(Ausencia)
-                .filter(
-                    Ausencia.activa == True,  # noqa: E712
-                    Ausencia.fecha_inicio <= ultimo_dia,
-                    Ausencia.fecha_fin >= primer_dia,
-                )
-                .all()
-            )
+        widget_grid = QWidget()
+        widget_grid.setLayout(grid_calendario)
+        self.calendario_layout.addWidget(widget_grid)
+        self.calendario_layout.addStretch()
 
-            # Agrupar ausencias por fecha (una ausencia puede abarcar múltiples días)
-            ausencias_por_fecha = self._agrupar_ausencias_por_fecha(
-                ausencias, primer_dia, ultimo_dia
-            )
+    def _renderizar_vista_anual(self):
+        """Renderizar vista anual (12 meses en miniatura)."""
+        self.label_periodo.setText(f"Año {self.anio_mostrado}")
 
-            # Día de la semana del primer día (0=Lunes, 6=Domingo)
-            dia_semana_inicio = primer_dia.weekday()
+        # Grid de 3x4 para 12 meses
+        grid_anual = QGridLayout()
+        grid_anual.setSpacing(15)
+        grid_anual.setContentsMargins(10, 10, 10, 10)
 
-            # Renderizar días del mes
-            fila = 1
-            columna = dia_semana_inicio
+        meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                 "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 
-            for dia_num in range(1, dias_en_mes + 1):
-                fecha_dia = date(self.anio_mostrado, self.mes_mostrado, dia_num)
-                guardias_dia = guardias_por_fecha.get(fecha_dia, [])
-                ausencias_dia = ausencias_por_fecha.get(fecha_dia, [])
+        for mes_num in range(1, 13):
+            fila = (mes_num - 1) // 4
+            columna = (mes_num - 1) % 4
 
-                # Crear celda de día
-                celda = self._crear_celda_dia(
-                    dia_num, guardias_dia, fecha_dia, ausencias_dia
-                )
-                self.calendario_layout.addWidget(celda, fila, columna)
+            mes_widget = self._crear_mes_miniatura(mes_num, meses[mes_num - 1])
+            grid_anual.addWidget(mes_widget, fila, columna)
 
-                columna += 1
-                if columna > 6:  # Nueva fila después del domingo
-                    columna = 0
-                    fila += 1
+        widget_grid = QWidget()
+        widget_grid.setLayout(grid_anual)
+        self.calendario_layout.addWidget(widget_grid)
+        self.calendario_layout.addStretch()
 
-        except Exception as e:
-            self.manejar_excepcion(e, "actualizar calendario")
+    def _crear_mes_miniatura(self, mes: int, nombre_mes: str) -> QGroupBox:
+        """Crear widget de mes miniatura para vista anual."""
+        grupo = QGroupBox(nombre_mes)
+        grupo.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                border: 2px solid #2196F3;
+                border-radius: 6px;
+                margin-top: 10px;
+                padding: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px;
+                color: #1976D2;
+            }
+        """)
 
-    def _agrupar_ausencias_por_fecha(
-        self, ausencias: list, primer_dia: date, ultimo_dia: date
-    ) -> dict:
-        """Agrupar ausencias por fecha."""
-        ausencias_por_fecha = defaultdict(list)
-
-        for ausencia in ausencias:
-            # Iterar sobre cada día de la ausencia
-            fecha_actual_ausencia = max(ausencia.fecha_inicio, primer_dia)
-            fecha_fin_ausencia = min(ausencia.fecha_fin, ultimo_dia)
-
-            while fecha_actual_ausencia <= fecha_fin_ausencia:
-                if fecha_actual_ausencia.month == self.mes_mostrado:
-                    ausencias_por_fecha[fecha_actual_ausencia].append(ausencia)
-                fecha_actual_ausencia = fecha_actual_ausencia + timedelta(days=1)
-
-        return ausencias_por_fecha
-
-    def _crear_celda_dia(
-        self, dia_num: int, guardias: list, fecha: date, ausencias: list = None
-    ) -> QGroupBox:
-        """Crear una celda para un día del calendario."""
-        if ausencias is None:
-            ausencias = []
-
-        celda = QGroupBox()
         layout = QVBoxLayout()
 
-        # Número del día con icono de ausencia si aplica
-        texto_dia = str(dia_num)
-        if len(ausencias) > 0:
-            texto_dia = f"{dia_num} 🏥"
+        # Mini calendario
+        grid = QGridLayout()
+        grid.setSpacing(2)
 
-        label_dia = QLabel(texto_dia)
-        label_dia.setAlignment(Qt.AlignmentFlag.AlignRight)
-        font_dia = QFont()
-        font_dia.setBold(True)
-        font_dia.setPointSize(12)
-        label_dia.setFont(font_dia)
-        layout.addWidget(label_dia)
+        # Encabezados (abreviados)
+        dias_semana_cortos = ["L", "M", "X", "J", "V", "S", "D"]
+        for i, dia in enumerate(dias_semana_cortos):
+            label = QLabel(dia)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setStyleSheet("font-size: 8px; font-weight: bold; color: #666;")
+            grid.addWidget(label, 0, i)
 
-        # Aplicar estilos según estado
-        celda.setStyleSheet(self._obtener_estilo_celda(fecha, guardias, ausencias))
+        # Días del mes
+        primer_dia = date(self.anio_mostrado, mes, 1)
+        dias_en_mes = monthrange(self.anio_mostrado, mes)[1]
+        ultimo_dia = date(self.anio_mostrado, mes, dias_en_mes)
 
-        # Mostrar guardias (máximo 3 para no saturar)
-        self._agregar_guardias_a_celda(layout, guardias)
+        # Cargar datos (solo guardias para simplificar)
+        guardias = (
+            self.session.query(Guardia)
+            .filter(Guardia.fecha >= primer_dia, Guardia.fecha <= ultimo_dia)
+            .all()
+        )
 
-        # Mostrar ausencias
-        if ausencias:
-            self._agregar_ausencias_a_celda(layout, ausencias)
+        guardias_por_fecha = defaultdict(int)
+        for g in guardias:
+            guardias_por_fecha[g.fecha] += 1
 
-        # Si hay más guardias, mostrar contador
-        if len(guardias) > 3:
-            label_mas = QLabel(f"+ {len(guardias) - 3} más...")
-            label_mas.setStyleSheet(
-                "font-size: 8px; color: #666; font-style: italic;"
-            )
-            layout.addWidget(label_mas)
+        dia_semana_inicio = primer_dia.weekday()
+        fila = 1
+        columna = dia_semana_inicio
 
-        layout.addStretch()
-        celda.setLayout(layout)
-        return celda
+        for dia_num in range(1, dias_en_mes + 1):
+            fecha_dia = date(self.anio_mostrado, mes, dia_num)
+            num_guardias = guardias_por_fecha.get(fecha_dia, 0)
 
-    def _obtener_estilo_celda(
-        self, fecha: date, guardias: list, ausencias: list
-    ) -> str:
-        """Obtener el estilo CSS para una celda según su estado."""
+            label = QLabel(str(dia_num))
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setStyleSheet(self._estilo_dia_miniatura(fecha_dia, num_guardias))
+            label.setMinimumSize(25, 25)
+            label.setMaximumSize(25, 25)
+
+            if num_guardias > 0:
+                label.setToolTip(f"{num_guardias} guardias")
+
+            grid.addWidget(label, fila, columna)
+
+            columna += 1
+            if columna > 6:
+                columna = 0
+                fila += 1
+
+        layout.addLayout(grid)
+        grupo.setLayout(layout)
+
+        # Click en mes para ir a vista mensual
+        grupo.mousePressEvent = lambda event: self._seleccionar_mes(mes)
+        grupo.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        return grupo
+
+    def _estilo_dia_miniatura(self, fecha: date, num_guardias: int) -> str:
+        """Obtener estilo para día en vista anual miniatura."""
         es_hoy = fecha == self.fecha_actual
-        tiene_guardias = len(guardias) > 0
 
         if es_hoy:
             return """
-                QGroupBox {
-                    background-color: #fff9c4;
-                    border: 2px solid #fbc02d;
-                    border-radius: 5px;
-                    min-height: 100px;
-                    min-width: 120px;
+                QLabel {
+                    background-color: #FBC02D;
+                    color: white;
+                    border-radius: 3px;
+                    font-size: 9px;
+                    font-weight: bold;
                 }
             """
-        elif tiene_guardias:
-            return """
-                QGroupBox {
-                    background-color: #e3f2fd;
-                    border: 1px solid #90caf9;
-                    border-radius: 5px;
-                    min-height: 100px;
-                    min-width: 120px;
-                }
+        elif num_guardias > 0:
+            intensidad = min(num_guardias * 20, 200)  # Más oscuro = más guardias
+            return f"""
+                QLabel {{
+                    background-color: rgb({255-intensidad}, {242-intensidad//2}, 253);
+                    border: 1px solid #90CAF9;
+                    border-radius: 3px;
+                    font-size: 8px;
+                }}
             """
         else:
             return """
-                QGroupBox {
-                    background-color: #fafafa;
-                    border: 1px solid #e0e0e0;
-                    border-radius: 5px;
-                    min-height: 100px;
-                    min-width: 120px;
+                QLabel {
+                    background-color: #FAFAFA;
+                    border: 1px solid #E0E0E0;
+                    border-radius: 3px;
+                    font-size: 8px;
                 }
             """
 
-    def _agregar_guardias_a_celda(self, layout: QVBoxLayout, guardias: list):
-        """Agregar información de guardias a la celda."""
-        for guardia in guardias[:3]:
-            profesor = self.session.query(Profesor).get(guardia.profesor_id)
-            zona = self.session.query(Zona).get(guardia.zona_id)
+    def _cargar_datos_periodo(self, fecha_inicio: date, fecha_fin: date) -> tuple:
+        """
+        Cargar guardias, ausencias y sustituciones de un periodo.
+        
+        Returns:
+            Tupla de (guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha)
+        """
+        # Guardias
+        guardias = (
+            self.session.query(Guardia)
+            .filter(Guardia.fecha >= fecha_inicio, Guardia.fecha <= fecha_fin)
+            .all()
+        )
 
-            if profesor and zona:
-                # Extraer solo apellido
-                nombre_completo = profesor.nombre_completo
-                if "," in nombre_completo:
-                    apellido = nombre_completo.split(",")[0]
-                else:
-                    apellido = nombre_completo
+        guardias_por_fecha = defaultdict(list)
+        sustituciones_por_fecha = defaultdict(list)
 
-                texto = f"🕐 {guardia.turno[:1].upper()} R{guardia.recreo}"
-                label_guardia = QLabel(f"{texto}\n{apellido[:15]}")
-                label_guardia.setStyleSheet(
-                    "font-size: 9px; padding: 2px; background-color: white; "
-                    "border-radius: 3px; margin: 2px;"
-                )
-                label_guardia.setWordWrap(True)
-                layout.addWidget(label_guardia)
+        for g in guardias:
+            guardias_por_fecha[g.fecha].append(g)
+            # Detectar sustituciones (tiene profesor_sustituido_id)
+            if hasattr(g, 'profesor_sustituido_id') and g.profesor_sustituido_id:
+                sustituciones_por_fecha[g.fecha].append(g)
 
-    def _agregar_ausencias_a_celda(self, layout: QVBoxLayout, ausencias: list):
-        """Agregar información de ausencias a la celda."""
-        profesores_ausentes = set()
-        for ausencia in ausencias:
-            if ausencia.profesor:
-                profesores_ausentes.add(ausencia.profesor.nombre_completo)
-
-        if profesores_ausentes:
-            texto_ausencias = f"🏥 {len(profesores_ausentes)} ausente(s)"
-            label_ausencias = QLabel(texto_ausencias)
-            label_ausencias.setStyleSheet(
-                "font-size: 8px; padding: 2px; background-color: #ffebee; "
-                "border-radius: 3px; margin: 2px; color: #c62828;"
+        # Ausencias
+        ausencias = (
+            self.session.query(Ausencia)
+            .filter(
+                Ausencia.activa == True,  # noqa: E712
+                Ausencia.fecha_inicio <= fecha_fin,
+                Ausencia.fecha_fin >= fecha_inicio,
             )
-            layout.addWidget(label_ausencias)
+            .all()
+        )
+
+        ausencias_por_fecha = defaultdict(list)
+        for ausencia in ausencias:
+            fecha_actual = max(ausencia.fecha_inicio, fecha_inicio)
+            fecha_fin_ausencia = min(ausencia.fecha_fin, fecha_fin)
+
+            while fecha_actual <= fecha_fin_ausencia:
+                ausencias_por_fecha[fecha_actual].append(ausencia)
+                fecha_actual += timedelta(days=1)
+
+        return guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha
+
+    def _dia_seleccionado(self, fecha: date):
+        """Manejar click en un día (futuro: abrir detalle)."""
+        print(f"Día seleccionado: {fecha}")
+        # TODO: Implementar ventana de detalle del día
+
+    def _seleccionar_mes(self, mes: int):
+        """Cambiar a vista mensual del mes seleccionado."""
+        self.mes_mostrado = mes
+        self.vista_actual = self.VISTA_MENSUAL
+        self.combo_vista.setCurrentText(self.VISTA_MENSUAL)
+        self.actualizar_calendario()
+
+    def periodo_anterior(self):
+        """Navegar al periodo anterior según la vista."""
+        if self.vista_actual == self.VISTA_MENSUAL:
+            self.mes_anterior()
+        elif self.vista_actual == self.VISTA_SEMANAL:
+            self.semana_anterior()
+        else:  # ANUAL
+            self.anio_anterior()
+
+    def periodo_siguiente(self):
+        """Navegar al periodo siguiente según la vista."""
+        if self.vista_actual == self.VISTA_MENSUAL:
+            self.mes_siguiente()
+        elif self.vista_actual == self.VISTA_SEMANAL:
+            self.semana_siguiente()
+        else:  # ANUAL
+            self.anio_siguiente()
 
     def mes_anterior(self):
-        """Navegar al mes anterior."""
+        """Ir al mes anterior."""
         if self.mes_mostrado == 1:
             self.mes_mostrado = 12
             self.anio_mostrado -= 1
@@ -381,7 +946,7 @@ class VistaCalendario(BaseForm):
         self.actualizar_calendario()
 
     def mes_siguiente(self):
-        """Navegar al mes siguiente."""
+        """Ir al mes siguiente."""
         if self.mes_mostrado == 12:
             self.mes_mostrado = 1
             self.anio_mostrado += 1
@@ -389,12 +954,50 @@ class VistaCalendario(BaseForm):
             self.mes_mostrado += 1
         self.actualizar_calendario()
 
+    def semana_anterior(self):
+        """Ir a la semana anterior."""
+        if self.semana_mostrada == 1:
+            self.semana_mostrada = 52
+            self.anio_mostrado -= 1
+        else:
+            self.semana_mostrada -= 1
+        self.actualizar_calendario()
+
+    def semana_siguiente(self):
+        """Ir a la semana siguiente."""
+        if self.semana_mostrada >= 52:
+            self.semana_mostrada = 1
+            self.anio_mostrado += 1
+        else:
+            self.semana_mostrada += 1
+        self.actualizar_calendario()
+
+    def anio_anterior(self):
+        """Ir al año anterior."""
+        self.anio_mostrado -= 1
+        self.spin_anio.setValue(self.anio_mostrado)
+        self.actualizar_calendario()
+
+    def anio_siguiente(self):
+        """Ir al año siguiente."""
+        self.anio_mostrado += 1
+        self.spin_anio.setValue(self.anio_mostrado)
+        self.actualizar_calendario()
+
+    def cambiar_anio(self, anio: int):
+        """Cambiar el año mostrado (desde el spinner)."""
+        self.anio_mostrado = anio
+        self.actualizar_calendario()
+
     def ir_a_hoy(self):
-        """Volver al mes actual."""
+        """Volver a la fecha actual."""
+        self.fecha_actual = datetime.now().date()
         self.mes_mostrado = self.fecha_actual.month
         self.anio_mostrado = self.fecha_actual.year
+        self.semana_mostrada = self.fecha_actual.isocalendar()[1]
         self.actualizar_calendario()
 
     def refrescar(self):
-        """Refrescar el calendario (útil después de generar guardias)."""
+        """Refrescar el calendario."""
+        self.session.expire_all()  # Limpiar caché de SQLAlchemy
         self.actualizar_calendario()

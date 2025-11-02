@@ -16,6 +16,7 @@ from application.use_cases.profesor import (
     CrearProfesorUseCase,
     EliminarProfesorUseCase,
     ListarProfesoresUseCase,
+    ObtenerProfesorUseCase,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -77,6 +78,7 @@ class ProfesorForm(BaseForm):
         self.eliminar_use_case = EliminarProfesorUseCase(session)
         self.listar_use_case = ListarProfesoresUseCase(session)
         self.buscar_use_case = BuscarProfesoresUseCase(session)
+        self.obtener_use_case = ObtenerProfesorUseCase(session)
 
         # Configurar atajos
         self._configurar_atajos()
@@ -376,12 +378,16 @@ class ProfesorForm(BaseForm):
             datos_horario = self.horario_widget.get_datos()
             datos_restricciones = self.restricciones_widget.get_datos()
 
-            # Obtener restricciones de horario
-            recreos_dict = {}
+            # Obtener restricciones de horario (matriz de recreos)
             matriz_json = self.restricciones_widget.get_recreos_permitidos_json()
+            recreos_dict = {}
             if matriz_json:
-                recreos_dict = json.loads(matriz_json)
-                recreos_dict = {int(k): v for k, v in recreos_dict.items()}
+                try:
+                    recreos_dict = json.loads(matriz_json)
+                    # Convertir claves a int si es necesario
+                    recreos_dict = {int(k): v for k, v in recreos_dict.items()}
+                except (json.JSONDecodeError, ValueError):
+                    pass
 
             # Guardar profesor
             if self.profesor_editando_id:
@@ -396,23 +402,10 @@ class ProfesorForm(BaseForm):
                     tutor=datos_basicos["es_tutor"],
                     fecha_inicio_guardias=datos_restricciones.get("fecha_inicio"),
                     fecha_fin_guardias=datos_restricciones.get("fecha_fin"),
-                    recreos_permitidos=None,
+                    recreos_permitidos=recreos_dict if recreos_dict else {},  # Pasar la matriz completa
                     dias_semana_permitidos=datos_restricciones.get("dias_permitidos"),
                 )
                 self.actualizar_use_case.execute(self.profesor_editando_id, dto)
-
-                # Actualizar recreos_permitidos con JSON
-                if recreos_dict:
-                    from models.models import Profesor
-
-                    profesor = (
-                        self.session.query(Profesor)
-                        .filter(Profesor.id == self.profesor_editando_id)
-                        .first()
-                    )
-                    if profesor:
-                        profesor.recreos_permitidos = json.dumps(recreos_dict)
-                        self.session.commit()
             else:
                 # Modo creación
                 dto = CrearProfesorDTO(
@@ -425,32 +418,20 @@ class ProfesorForm(BaseForm):
                     tutor=datos_basicos["es_tutor"],
                     fecha_inicio_guardias=datos_restricciones.get("fecha_inicio"),
                     fecha_fin_guardias=datos_restricciones.get("fecha_fin"),
-                    recreos_permitidos=None,
+                    recreos_permitidos=recreos_dict if recreos_dict else {},  # Pasar matriz
                     dias_semana_permitidos=datos_restricciones.get("dias_permitidos"),
                 )
                 profesor_creado = self.crear_use_case.execute(dto)
 
-                # Actualizar recreos_permitidos con JSON
-                if recreos_dict and profesor_creado:
-                    from models.models import Profesor
-
-                    profesor = (
-                        self.session.query(Profesor)
-                        .filter(Profesor.id == profesor_creado.id)
-                        .first()
-                    )
-                    if profesor:
-                        profesor.recreos_permitidos = json.dumps(recreos_dict)
-                        self.session.commit()
-
             # Guardar selección antes de recargar
-            if self.profesor_editando_id:
-                # En modo edición, guardar el ID que estamos editando
-                self.table_manager._last_selected_id = self.profesor_editando_id
-            else:
-                # En modo creación, guardar el ID del nuevo profesor si existe
-                if profesor_creado:
-                    self.table_manager._last_selected_id = profesor_creado.id
+            if self.table_manager:
+                if self.profesor_editando_id:
+                    # En modo edición, guardar el ID que estamos editando
+                    self.table_manager._last_selected_id = self.profesor_editando_id
+                else:
+                    # En modo creación, guardar el ID del nuevo profesor si existe
+                    if profesor_creado:
+                        self.table_manager._last_selected_id = profesor_creado.id
 
             # Recargar tabla y emitir señal
             self.cargar_profesores()
@@ -463,7 +444,8 @@ class ProfesorForm(BaseForm):
                 self.titulo_seccion.setText("✏️ ALTA DE PROFESOR")
                 self.submit_btn.setText("💾 Guardar nuevo profesor")
                 self.cancelar_btn.setVisible(False)
-                self.table_manager.enable_table_interactions(True)
+                if self.table_manager:
+                    self.table_manager.enable_table_interactions(True)
                 self.busqueda_input.setEnabled(True)
 
                 # La selección se restaurará automáticamente en cargar_profesores()
@@ -571,39 +553,36 @@ class ProfesorForm(BaseForm):
         id_profesor = id_item.data(Qt.ItemDataRole.UserRole)
 
         try:
-            from models.models import Profesor
-
-            profesor = self.session.query(Profesor).filter(Profesor.id == id_profesor).first()
-            if not profesor:
-                return
+            # Usar Use Case para obtener el profesor
+            profesor_dto = self.obtener_use_case.execute(id_profesor)
 
             # Limpiar formulario
             self._limpiar_formulario()
 
-            # Cargar datos en widgets
+            # Cargar datos en widgets desde el DTO
             self.datos_basicos_widget.set_datos(
                 {
-                    "nombre_completo": profesor.nombre_completo or "",
-                    "email": profesor.email_corporativo or "",
-                    "es_tutor": profesor.tutor or False,
+                    "nombre_completo": profesor_dto.nombre_completo or "",
+                    "email": profesor_dto.email_corporativo or "",
+                    "es_tutor": profesor_dto.tutor or False,
                 }
             )
 
             self.horario_widget.set_datos(
                 {
-                    "horas_contrato": profesor.horas_contrato,
-                    "turno": profesor.turno,
-                    "horas_manana": profesor.horas_manana,
-                    "horas_tarde": profesor.horas_tarde,
+                    "horas_contrato": profesor_dto.horas_contrato,
+                    "turno": profesor_dto.turno,
+                    "horas_manana": profesor_dto.horas_manana,
+                    "horas_tarde": profesor_dto.horas_tarde,
                 }
             )
 
             self.restricciones_widget.set_datos(
                 {
-                    "fecha_inicio": profesor.fecha_inicio_guardias,
-                    "fecha_fin": profesor.fecha_fin_guardias,
-                    "recreos_permitidos": profesor.recreos_permitidos,
-                    "turno": profesor.turno,
+                    "fecha_inicio": profesor_dto.fecha_inicio_guardias,
+                    "fecha_fin": profesor_dto.fecha_fin_guardias,
+                    "recreos_permitidos": profesor_dto.recreos_permitidos,
+                    "turno": profesor_dto.turno,
                 }
             )
 
@@ -613,34 +592,39 @@ class ProfesorForm(BaseForm):
             self.cancelar_btn.setVisible(False)
 
         except Exception as e:
-            self.mostrar_error("Error al cargar", f"Error: {str(e)}")
+            self.manejar_excepcion(e, "cargar datos del profesor")
 
     def editar_profesor(self):
         """Cargar profesor seleccionado en formulario para edición."""
-        fila_actual = self.tabla_profesores.currentRow()
-        if fila_actual < 0:
-            self.mostrar_advertencia("Selección requerida", "Selecciona un profesor para editar.")
-            return
+        try:
+            fila_actual = self.tabla_profesores.currentRow()
+            if fila_actual < 0:
+                self.mostrar_advertencia("Selección requerida", "Selecciona un profesor para editar.")
+                return
 
-        id_item = self.tabla_profesores.item(fila_actual, 0)
-        if not id_item:
-            return
+            id_item = self.tabla_profesores.item(fila_actual, 0)
+            if not id_item:
+                return
 
-        id_profesor = id_item.data(Qt.ItemDataRole.UserRole)
+            id_profesor = id_item.data(Qt.ItemDataRole.UserRole)
 
-        # Si no está en modo edición, primero mostrar los datos
-        if self.profesor_editando_id is None:
-            self.mostrar_profesor()
+            # Si no está en modo edición, primero mostrar los datos
+            if self.profesor_editando_id is None:
+                self.mostrar_profesor()
 
-        # Ahora activar modo edición
-        self.profesor_editando_id = id_profesor
-        self.titulo_seccion.setText(f"✏️ EDITAR PROFESOR [ID: {id_profesor}]")
-        self.submit_btn.setText("💾 Actualizar Profesor")
-        self.cancelar_btn.setVisible(True)
+            # Ahora activar modo edición
+            self.profesor_editando_id = id_profesor
+            self.titulo_seccion.setText(f"✏️ EDITAR PROFESOR [ID: {id_profesor}]")
+            self.submit_btn.setText("💾 Actualizar Profesor")
+            self.cancelar_btn.setVisible(True)
 
-        # Deshabilitar interacción con la tabla mientras se edita
-        self.table_manager.enable_table_interactions(False)
-        self.busqueda_input.setEnabled(False)
+            # Deshabilitar interacción con la tabla mientras se edita
+            if self.table_manager:
+                self.table_manager.enable_table_interactions(False)
+            self.busqueda_input.setEnabled(False)
+
+        except Exception as e:
+            self.manejar_excepcion(e, "editar profesor")
 
     def eliminar_profesor(self):
         """Eliminar profesor(es) seleccionado(s)."""

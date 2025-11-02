@@ -16,6 +16,7 @@ from utils.repository_cache import invalidate_profesores_cache
 from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
 
 from application.dtos.profesor_dto import ActualizarProfesorDTO, ProfesorDTO
+from application.use_cases.profesor.parsers import parse_dias_semana, parse_recreos
 
 logger = get_logger(__name__)
 
@@ -124,8 +125,17 @@ class ActualizarProfesorUseCase:
         if data.dias_semana_permitidos is not None:
             profesor.dias_semana_permitidos = json.dumps(data.dias_semana_permitidos)
 
+        # Actualizar recreos_permitidos incluso si es un diccionario vacío
+        # Esto permite limpiar las restricciones
         if data.recreos_permitidos is not None:
-            profesor.recreos_permitidos = json.dumps(data.recreos_permitidos)
+            if isinstance(data.recreos_permitidos, dict):
+                # Guardar diccionario vacío como string vacío
+                if not data.recreos_permitidos:
+                    profesor.recreos_permitidos = ""
+                else:
+                    profesor.recreos_permitidos = json.dumps(data.recreos_permitidos)
+            else:
+                profesor.recreos_permitidos = json.dumps(data.recreos_permitidos)
 
         try:
             self.session.commit()
@@ -145,20 +155,7 @@ class ActualizarProfesorUseCase:
             raise BusinessLogicError(f"Error al actualizar el profesor: {str(e)}") from e
 
     def _convertir_a_dto(self, profesor: Profesor) -> ProfesorDTO:
-        """Convertir modelo a DTO parseando campos JSON"""
-        # Parsear recreos_permitidos y convertir dict a lista si es necesario
-        recreos_permitidos = [1, 2]  # Default
-        if profesor.recreos_permitidos:
-            parsed = json.loads(profesor.recreos_permitidos)
-            if isinstance(parsed, dict):
-                # Si es dict {"0": [1,2], "1": [2]}, extraer todos los recreos únicos
-                recreos_set = set()
-                for recreos_list in parsed.values():
-                    recreos_set.update(recreos_list)
-                recreos_permitidos = sorted(list(recreos_set))
-            elif isinstance(parsed, list):
-                recreos_permitidos = parsed
-
+        """Convertir modelo a DTO parseando campos JSON de forma segura."""
         return ProfesorDTO(
             id=profesor.id,
             nombre_completo=profesor.nombre_completo,
@@ -171,10 +168,6 @@ class ActualizarProfesorUseCase:
             tutor=profesor.tutor,
             fecha_inicio_guardias=profesor.fecha_inicio_guardias,
             fecha_fin_guardias=profesor.fecha_fin_guardias,
-            dias_semana_permitidos=(
-                json.loads(profesor.dias_semana_permitidos)
-                if profesor.dias_semana_permitidos
-                else list(range(7))
-            ),
-            recreos_permitidos=recreos_permitidos,
+            dias_semana_permitidos=parse_dias_semana(profesor.dias_semana_permitidos),
+            recreos_permitidos=parse_recreos(profesor.recreos_permitidos),
         )

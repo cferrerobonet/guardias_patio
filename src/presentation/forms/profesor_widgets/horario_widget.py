@@ -190,18 +190,20 @@ class HorarioWidget(QGroupBox):
         Obtener el turno seleccionado.
 
         Returns:
-            Turno seleccionado (Mañana/Tarde/Mixto)
+            Turno seleccionado en minúsculas (mañana/tarde/mixto)
         """
-        return self.turno_input.currentText()
+        return self.turno_input.currentText().lower()
 
     def set_turno(self, turno: str):
         """
         Establecer el turno.
 
         Args:
-            turno: Turno a seleccionar (Mañana/Tarde/Mixto)
+            turno: Turno a seleccionar (puede venir en minúsculas: mañana/tarde/mixto)
         """
-        index = self.turno_input.findText(turno)
+        # Capitalizar para coincidir con los items del combo (Mañana/Tarde/Mixto)
+        turno_capitalizado = turno.capitalize()
+        index = self.turno_input.findText(turno_capitalizado)
         if index >= 0:
             self.turno_input.setCurrentIndex(index)
 

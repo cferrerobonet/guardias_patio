@@ -6,7 +6,7 @@ Validan datos de entrada/salida sin exponer entidades de dominio.
 """
 
 from datetime import date
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -27,7 +27,10 @@ class ProfesorDTO(BaseModel):
     fecha_fin_guardias: Optional[date] = None
     # Solo días laborables por defecto (0-4: Lun-Vie)
     dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))
-    recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2, 3, 4])  # Todos
+    # Acepta lista [1,2,3,4] o dict {"0": [1,2], "1": [3,4]} para restricciones por día
+    recreos_permitidos: Union[list[int], dict[int, list[int]]] = Field(
+        default_factory=lambda: [1, 2, 3, 4]
+    )
 
     # Campos calculados
     ajuste_guardias: Optional[float] = None
@@ -51,7 +54,10 @@ class CrearProfesorDTO(BaseModel):
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
     dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))  # 0-4: Lun-Vie
-    recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2, 3, 4])  # Todos los recreos por defecto
+    # Acepta lista [1,2,3,4] o dict {"0": [1,2], "1": [3,4]} para restricciones por día
+    recreos_permitidos: Union[list[int], dict[int, list[int]]] = Field(
+        default_factory=lambda: [1, 2, 3, 4]
+    )
 
     @field_validator("dias_semana_permitidos", mode='before')
     @classmethod
@@ -67,15 +73,24 @@ class CrearProfesorDTO(BaseModel):
 
     @field_validator("recreos_permitidos", mode='before')
     @classmethod
-    def validar_recreos(cls, v) -> list[int]:
-        """Valida que los recreos sean números positivos."""
+    def validar_recreos(cls, v) -> Union[list[int], dict[int, list[int]]]:
+        """Valida recreos (lista simple o diccionario por día)."""
         # Si es None, usar valor por defecto
         if v is None:
-            return [1, 2]
-        # Validar que todos los recreos sean positivos
-        if not all(recreo >= 1 for recreo in v):
-            raise ValueError("Los números de recreo deben ser positivos")
-        return v
+            return [1, 2, 3, 4]
+        # Si es diccionario, validar estructura
+        if isinstance(v, dict):
+            for dia, recreos in v.items():
+                if not all(isinstance(r, int) and r >= 1 for r in recreos):
+                    raise ValueError("Los recreos deben ser números positivos")
+            return v
+        # Si es lista, validar valores
+        if isinstance(v, list):
+            if not all(isinstance(r, int) and r >= 1 for r in v):
+                raise ValueError("Los recreos deben ser números positivos")
+            return v
+        raise ValueError("recreos_permitidos debe ser lista o diccionario")
+
 
     @field_validator("horas_manana", "horas_tarde")
     @classmethod
@@ -99,7 +114,8 @@ class ActualizarProfesorDTO(BaseModel):
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
     dias_semana_permitidos: Optional[list[int]] = None
-    recreos_permitidos: Optional[list[int]] = None
+    # Acepta lista [1,2,3,4] o dict {"0": [1,2], "1": [3,4]} para restricciones por día
+    recreos_permitidos: Optional[Union[list[int], dict[int, list[int]]]] = None
 
     @field_validator("dias_semana_permitidos")
     @classmethod
@@ -111,8 +127,19 @@ class ActualizarProfesorDTO(BaseModel):
 
     @field_validator("recreos_permitidos")
     @classmethod
-    def validar_recreos(cls, v: Optional[list[int]]) -> Optional[list[int]]:
-        """Valida que los recreos sean números positivos."""
-        if v is not None and not all(recreo >= 1 for recreo in v):
-            raise ValueError("Los números de recreo deben ser positivos")
-        return v
+    def validar_recreos(cls, v: Optional[Union[list[int], dict[int, list[int]]]]) -> Optional[Union[list[int], dict[int, list[int]]]]:
+        """Valida recreos (lista simple o diccionario por día)."""
+        if v is None:
+            return None
+        # Si es diccionario, validar estructura
+        if isinstance(v, dict):
+            for dia, recreos in v.items():
+                if not all(isinstance(r, int) and r >= 1 for r in recreos):
+                    raise ValueError("Los recreos deben ser números positivos")
+            return v
+        # Si es lista, validar valores
+        if isinstance(v, list):
+            if not all(isinstance(r, int) and r >= 1 for r in v):
+                raise ValueError("Los recreos deben ser números positivos")
+            return v
+        raise ValueError("recreos_permitidos debe ser lista o diccionario")

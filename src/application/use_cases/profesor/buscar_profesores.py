@@ -1,17 +1,17 @@
 """
-Use Case: Buscar profesores por nombre o email.
+Use Case: Buscar Profesores
 
-Permite buscar profesores filtrando por nombre o email corporativo.
+Buscar profesores por término de búsqueda en nombre o email.
 """
 
-import json
 from typing import List
 
+from core.observability import with_metrics
+from models.models import Profesor
 from sqlalchemy.orm import Session
 
 from application.dtos.profesor_dto import ProfesorDTO
-from core.observability import with_metrics
-from models.models import Profesor
+from application.use_cases.profesor.parsers import parse_dias_semana, parse_recreos
 
 
 class BuscarProfesoresUseCase:
@@ -61,20 +61,7 @@ class BuscarProfesoresUseCase:
         return [self._convertir_a_dto(prof) for prof in profesores]
 
     def _convertir_a_dto(self, profesor: Profesor) -> ProfesorDTO:
-        """Convertir modelo a DTO parseando campos JSON"""
-        # Parsear recreos_permitidos y convertir dict a lista si es necesario
-        recreos_permitidos = [1, 2]  # Default
-        if profesor.recreos_permitidos:
-            parsed = json.loads(profesor.recreos_permitidos)
-            if isinstance(parsed, dict):
-                # Si es dict {"0": [1,2], "1": [2]}, extraer todos los recreos únicos
-                recreos_set = set()
-                for recreos_list in parsed.values():
-                    recreos_set.update(recreos_list)
-                recreos_permitidos = sorted(list(recreos_set))
-            elif isinstance(parsed, list):
-                recreos_permitidos = parsed
-
+        """Convertir modelo a DTO parseando campos JSON de forma segura."""
         return ProfesorDTO(
             id=profesor.id,
             nombre_completo=profesor.nombre_completo,
@@ -87,10 +74,6 @@ class BuscarProfesoresUseCase:
             tutor=profesor.tutor,
             fecha_inicio_guardias=profesor.fecha_inicio_guardias,
             fecha_fin_guardias=profesor.fecha_fin_guardias,
-            dias_semana_permitidos=(
-                json.loads(profesor.dias_semana_permitidos)
-                if profesor.dias_semana_permitidos
-                else list(range(7))
-            ),
-            recreos_permitidos=recreos_permitidos,
+            dias_semana_permitidos=parse_dias_semana(profesor.dias_semana_permitidos),
+            recreos_permitidos=parse_recreos(profesor.recreos_permitidos),
         )

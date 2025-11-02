@@ -27,6 +27,7 @@ class Profesor(Base):
     horas_manana = Column(Float, nullable=True)  # Horas en turno de mañana (para mixto)
     horas_tarde = Column(Float, nullable=True)  # Horas en turno de tarde (para mixto)
     tutor = Column(Boolean, default=False, nullable=False)
+    activo = Column(Boolean, default=True, nullable=False)  # Profesor activo en el sistema
     fecha_inicio_guardias = Column(Date, nullable=True)
     fecha_fin_guardias = Column(Date, nullable=True)  # Fecha límite para terminar guardias
     dias_semana_permitidos = Column(Text, nullable=True)  # JSON: [0..6]

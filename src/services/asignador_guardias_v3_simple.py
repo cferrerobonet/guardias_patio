@@ -31,6 +31,7 @@ Selección del algoritmo:
 
 from __future__ import annotations
 
+import ast
 import json
 from collections import defaultdict
 from dataclasses import dataclass
@@ -114,45 +115,71 @@ def _cumple_restricciones(
     if _profesor_ausente(session, profesor.id, slot.fecha):
         return False
 
-    # 2. Fecha de inicio
+    # 2. Fecha de inicio y fin de guardias
     if profesor.fecha_inicio_guardias and slot.fecha < profesor.fecha_inicio_guardias:
+        return False
+
+    if profesor.fecha_fin_guardias and slot.fecha > profesor.fecha_fin_guardias:
         return False
 
     # 3. Horario permitido (días y recreos)
     if profesor.dias_semana_permitidos:
         dia_semana = slot.fecha.weekday()
-        # dias_semana_permitidos es JSON string, parsear
+        # dias_semana_permitidos es JSON/Python literal string, parsear de forma segura
         try:
+            # Intentar JSON primero
             dias_permitidos = json.loads(profesor.dias_semana_permitidos)
-            if dia_semana not in dias_permitidos:
-                return False
         except (json.JSONDecodeError, TypeError):
-            pass  # Si no es válido, no filtrar
+            # Si falla JSON, intentar Python literal
+            try:
+                dias_permitidos = ast.literal_eval(profesor.dias_semana_permitidos)
+            except (ValueError, SyntaxError, TypeError):
+                # Si todo falla, asumir todos los días permitidos
+                dias_permitidos = list(range(7))
+
+        if dia_semana not in dias_permitidos:
+            return False
 
     if profesor.recreos_permitidos:
         # recreos_permitidos puede ser JSON string con lista o diccionario
         try:
+            # Intentar JSON primero
             recreos_perms = json.loads(profesor.recreos_permitidos)
-
-            # Manejar dos formatos:
-            # 1. Lista: [1, 2]
-            # 2. Diccionario por día: {"0": [1, 2], "1": [1, 2], ...}
-            if isinstance(recreos_perms, dict):
-                # Formato diccionario: extraer todos los recreos únicos
-                recreos_unicos = set()
-                for recreos_dia in recreos_perms.values():
-                    if isinstance(recreos_dia, list):
-                        recreos_unicos.update(recreos_dia)
-                recreos_perms = list(recreos_unicos)
-
-            # Ahora recreos_perms es siempre una lista
-            if isinstance(recreos_perms, list) and slot.recreo_id not in recreos_perms:
-                return False
         except (json.JSONDecodeError, TypeError):
-            pass  # Si no es válido, no filtrar
+            # Si falla JSON, intentar Python literal
+            try:
+                recreos_perms = ast.literal_eval(profesor.recreos_permitidos)
+            except (ValueError, SyntaxError, TypeError):
+                # Si todo falla, asumir todos los recreos permitidos
+                recreos_perms = [1, 2, 3, 4]
+
+        # Manejar dos formatos:
+        # 1. Lista: [1, 2] - recreos permitidos todos los días
+        # 2. Diccionario por día: {"0": [1, 2], "1": [1, 2], ...}
+        if isinstance(recreos_perms, dict):
+            # CORREGIDO: Validar recreos específicos del día de la semana
+            dia_semana = slot.fecha.weekday()
+            dia_key = str(dia_semana)
+
+            if dia_key in recreos_perms:
+                recreos_dia = recreos_perms[dia_key]
+                if isinstance(recreos_dia, list):
+                    if slot.recreo_id not in recreos_dia:
+                        return False
+                else:
+                    # Si no es lista, no permitir (configuración inválida)
+                    return False
+            else:
+                # Si no hay configuración para este día, no permitir
+                return False
+        elif isinstance(recreos_perms, list):
+            # Lista simple: validar recreo permitido
+            if slot.recreo_id not in recreos_perms:
+                return False
 
     # 4. Turno
-    if profesor.turno and profesor.turno != "ambos":
+    # Profesores de turno mixto pueden cubrir tanto mañana como tarde
+    if profesor.turno and profesor.turno not in ("ambos", "mixto"):
         if slot.turno != profesor.turno:
             return False
 
@@ -239,25 +266,111 @@ def _ordenar_profesores_por_prioridad(
 
 
 def _ordenar_slots_para_profesor(
-    slots: List[SlotV3], profesor: Profesor
+    slots: List[SlotV3], profesor: Profesor, guardias_previas: List[SlotV3] = None
 ) -> List[SlotV3]:
     """
-    Ordena slots por optimalidad para un profesor.
+    Ordena slots por optimalidad para un profesor, priorizando patrones consistentes.
 
-    Criterios:
-    1. Fecha (cronológico)
-    2. Preferencia de zona (si tiene zona_preferida_id)
-    3. Recreo (orden natural)
+    Criterios de ordenamiento (de mayor a menor prioridad):
+    1. Misma zona que guardias previas (si existen) o zona preferida
+    2. Mismo recreo que guardias previas (si existen)
+    3. Mismo día de semana que guardias previas (si existen)
+    4. Agrupar fechas cercanas (semanas consecutivas)
+    5. Fecha cronológica
+    6. Recreo (orden natural)
+
+    Objetivo: Agrupar guardias en patrones consistentes:
+    - Mismo día de la semana cada semana (ej: siempre lunes)
+    - Misma zona
+    - Mismo recreo
+    - Fechas consecutivas cuando es posible
+
+    Args:
+        slots: Lista de slots disponibles
+        profesor: Profesor para quien se ordenan los slots
+        guardias_previas: Lista de slots ya asignados a este profesor
+
+    Returns:
+        Lista de slots ordenados por optimalidad
     """
+    # Inicializar guardias_previas como lista vacía si es None
+    if guardias_previas is None:
+        guardias_previas = []
+
+    # Analizar patrones de guardias previas
+    zonas_previas = [s.zona_id for s in guardias_previas] if guardias_previas else []
+    recreos_previos = [s.recreo_id for s in guardias_previas] if guardias_previas else []
+    dias_semana_previos = [s.fecha.weekday() for s in guardias_previas] if guardias_previas else []
+
+    # Calcular zona más frecuente (o preferida)
+    zona_objetivo = None
+    if zonas_previas:
+        # Zona más frecuente en guardias previas
+        zona_objetivo = max(set(zonas_previas), key=zonas_previas.count)
+    elif hasattr(profesor, "zona_preferida_id") and profesor.zona_preferida_id:
+        # Zona preferida del profesor
+        zona_objetivo = profesor.zona_preferida_id
+    else:
+        # Si no hay preferencia, usar la zona más frecuente en todos los slots disponibles
+        if slots:
+            zonas_disponibles = [s.zona_id for s in slots]
+            zona_objetivo = max(set(zonas_disponibles), key=zonas_disponibles.count)
+
+    # Calcular recreo más frecuente
+    recreo_objetivo = None
+    if recreos_previos:
+        recreo_objetivo = max(set(recreos_previos), key=recreos_previos.count)
+    else:
+        # Si no hay guardias previas, usar el primer recreo disponible
+        if slots:
+            recreos_disponibles = [s.recreo_id for s in slots]
+            recreo_objetivo = min(recreos_disponibles)  # Preferir recreos tempranos
+
+    # Calcular día de semana más frecuente
+    dia_semana_objetivo = None
+    if dias_semana_previos:
+        dia_semana_objetivo = max(set(dias_semana_previos), key=dias_semana_previos.count)
+    else:
+        # Si no hay guardias previas, usar el primer día de semana disponible
+        if slots:
+            dias_disponibles = [s.fecha.weekday() for s in slots]
+            dia_semana_objetivo = min(dias_disponibles)  # Lunes = 0, preferir inicio de semana
 
     def clave_ordenamiento(slot: SlotV3) -> Tuple:
-        # Prioridad de zona (0 si es preferida, 1 si no)
-        zona_prioridad = 0 if slot.zona_id == getattr(profesor, "zona_preferida_id", None) else 1
+        """
+        Clave de ordenamiento multi-criterio.
+
+        Menores valores = mayor prioridad
+        """
+        # 1. Prioridad de zona (0 = zona objetivo, 1 = otra zona)
+        zona_match = 0 if zona_objetivo and slot.zona_id == zona_objetivo else 1
+
+        # 2. Prioridad de recreo (0 = recreo objetivo, 1 = otro recreo)
+        recreo_match = 0 if recreo_objetivo and slot.recreo_id == recreo_objetivo else 1
+
+        # 3. Prioridad de día de semana (0 = día objetivo, 1 = otro día)
+        dia_semana_match = (
+            0 if dia_semana_objetivo is not None and slot.fecha.weekday() == dia_semana_objetivo
+            else 1
+        )
+
+        # 4. Fecha (cronológico) - Agrupar por semanas
+        # Usamos el número de semana del año para agrupar fechas cercanas
+        semana = slot.fecha.isocalendar()[1]
+
+        # 5. Fecha exacta (cronológico)
+        fecha = slot.fecha
+
+        # 6. Recreo (orden natural como desempate)
+        recreo_id = slot.recreo_id
 
         return (
-            slot.fecha,  # Cronológico
-            zona_prioridad,  # Zona preferida primero
-            slot.recreo_id,  # Orden de recreo
+            zona_match,          # Prioridad 1: Mantener misma zona
+            recreo_match,        # Prioridad 2: Mantener mismo recreo
+            dia_semana_match,    # Prioridad 3: Mantener mismo día de semana
+            semana,              # Prioridad 4: Agrupar por semanas consecutivas
+            fecha,               # Prioridad 5: Cronológico dentro de la semana
+            recreo_id,           # Prioridad 6: Desempate por recreo
         )
 
     return sorted(slots, key=clave_ordenamiento)
@@ -315,7 +428,7 @@ def generar_guardias_v3_simple(
 
     reportar_progreso(5, "Paso 1: Cargando profesores activos...")
     profesores = session.query(Profesor).filter(Profesor.activo == True).all()  # noqa: E712
-    logger.info(f"  ✓ Configuración: {config.fecha_inicio} a {config.fecha_fin}")
+    logger.info(f"  ✓ Configuración: {config.fecha_inicio_curso} a {config.fecha_fin_curso}")
     logger.info(f"  ✓ Profesores activos: {len(profesores)}")
     reportar_progreso(7, f"Paso 1: {len(profesores)} profesores cargados")
 
@@ -411,6 +524,9 @@ def generar_guardias_v3_simple(
     guardias_asignadas = 0
     profesores_incompletos = []
 
+    # Diccionario para trackear guardias asignadas por profesor
+    slots_por_profesor: Dict[int, List[SlotV3]] = {}
+
     for idx, pc in enumerate(profesores_ordenados, 1):
         profesor = pc.profesor
         cuota = pc.cuota
@@ -434,12 +550,21 @@ def generar_guardias_v3_simple(
             and _cumple_restricciones(profesor, slot, session)
         ]
 
-        # Ordenar slots por optimalidad
-        slots_disponibles = _ordenar_slots_para_profesor(slots_disponibles, profesor)
+        # Obtener guardias previas de este profesor (si las hay)
+        guardias_previas = slots_por_profesor.get(profesor.id, [])
+
+        # Ordenar slots por optimalidad, considerando guardias previas
+        slots_disponibles = _ordenar_slots_para_profesor(
+            slots_disponibles, profesor, guardias_previas
+        )
 
         # Tomar exactamente la cuota (o lo máximo disponible)
         slots_asignar = slots_disponibles[:cuota]
         asignadas = len(slots_asignar)
+
+        # Inicializar lista de slots para este profesor si no existe
+        if profesor.id not in slots_por_profesor:
+            slots_por_profesor[profesor.id] = []
 
         # Crear guardias
         for slot in slots_asignar:
@@ -455,6 +580,9 @@ def generar_guardias_v3_simple(
             slots_ocupados.add(slot)
             indice_slots.marcar_ocupado(slot.fecha, slot.turno, slot.recreo_id, slot.zona_id)
             guardias_asignadas += 1
+
+            # Trackear slot asignado para este profesor
+            slots_por_profesor[profesor.id].append(slot)
 
         # Log resultado
         if asignadas < cuota:
@@ -472,7 +600,6 @@ def generar_guardias_v3_simple(
 
         # Reportar progreso detallado
         progreso = 30 + int((idx / len(profesores_ordenados)) * 60)
-        slots_restantes = total_slots - guardias_asignadas
         cobertura_actual = (guardias_asignadas / total_slots * 100) if total_slots > 0 else 0
 
         # Mensaje más detallado

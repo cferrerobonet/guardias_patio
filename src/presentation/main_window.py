@@ -15,7 +15,6 @@ from database.db_manager import SessionLocal
 
 from presentation.forms import (
     AsignacionGuardiasForm,
-    CalendarioGuardiasForm,
     ConfiguracionForm,
     ImportExportForm,
     ProfesorForm,
@@ -70,10 +69,12 @@ class MainWindow(QWidget):
         )
 
         # Widgets refactorizados (Sprint 5)
-        self.vista_calendario = VistaCalendario(self.session)
         self.gestionar_ausencias = GestionarAusenciasForm(self.session)
         self.tabs.addTab(self.gestionar_ausencias, "🏥 Ausencias")
-        self.tabs.addTab(self.vista_calendario, "📅 Vista Calendario")
+
+        # Calendario mejorado
+        self.vista_calendario = VistaCalendario(self.session)
+        self.tabs.addTab(self.vista_calendario, "📆 Calendario de Guardias")
 
         self.panel_estadisticas = PanelEstadisticas(self.session)
         self.tabs.addTab(self.panel_estadisticas, "📊 Estadísticas")
@@ -81,7 +82,6 @@ class MainWindow(QWidget):
         self.gestor_sustituciones = GestorSustituciones(self.session)
         self.tabs.addTab(self.gestor_sustituciones, "🔄 Sustituciones")
 
-        self.tabs.addTab(CalendarioGuardiasForm(self.session), "📆 Calendario")
         self.tabs.addTab(self.import_export_form, "💾 Importar / Exportar")
 
         # Conectar señales para actualización automática

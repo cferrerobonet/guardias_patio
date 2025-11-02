@@ -14,6 +14,7 @@ from core.exceptions import (
     MaxGuardiasDiaExceededError,
     ProfesorAusenteError,
 )
+
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
 
 
@@ -58,6 +59,7 @@ class ProfesorEntity:
 
     # Características
     es_tutor: bool = False
+    activo: bool = True  # Indica si el profesor está activo en el sistema
 
     # Disponibilidad temporal
     fecha_inicio_guardias: Optional[date] = None

@@ -7,6 +7,7 @@ Este widget encapsula:
 - Matriz de disponibilidad día × recreo (Lun-Vie × R1-R4)
 """
 
+import ast
 import json
 from datetime import date
 from typing import Dict, Optional, Tuple
@@ -334,12 +335,13 @@ class RestriccionesWidget(QGroupBox):
                 resultado[str(dia)] = recreos_activos
         return json.dumps(resultado) if resultado else ""
 
-    def set_recreos_permitidos_json(self, json_str: str):
+    def set_recreos_permitidos_json(self, json_str):
         """
-        Cargar recreos permitidos desde JSON.
+        Cargar recreos permitidos desde JSON o lista.
 
         Args:
             json_str: JSON string con formato {"0": [1, 2]} o lista [1, 2, 3, 4]
+                     También acepta directamente una lista de Python
         """
         self._marcar_todos_matriz(False)
 
@@ -347,7 +349,22 @@ class RestriccionesWidget(QGroupBox):
             return
 
         try:
-            datos = json.loads(json_str)
+            # Si ya es una lista, usarla directamente
+            if isinstance(json_str, list):
+                datos = json_str
+            # Si es string, parsearlo
+            elif isinstance(json_str, str):
+                # Intentar JSON primero
+                try:
+                    datos = json.loads(json_str)
+                except json.JSONDecodeError:
+                    # Si falla JSON, intentar Python literal
+                    try:
+                        datos = ast.literal_eval(json_str)
+                    except (ValueError, SyntaxError):
+                        return
+            else:
+                return
 
             # Si es una lista simple (formato nuevo)
             if isinstance(datos, list):
@@ -369,7 +386,7 @@ class RestriccionesWidget(QGroupBox):
                     except (ValueError, KeyError):
                         continue
 
-        except (json.JSONDecodeError, ValueError):
+        except Exception:
             pass  # Ignorar errores de formato
 
     def get_datos(self) -> dict:

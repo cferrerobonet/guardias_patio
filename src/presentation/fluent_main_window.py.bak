@@ -17,7 +17,6 @@ from presentation.components.sidebar_menu import MenuCategory, MenuItem, Sidebar
 from presentation.components.top_bar import TopBar
 from presentation.forms import (
     AsignacionGuardiasForm,
-    CalendarioGuardiasForm,
     ConfiguracionForm,
     ImportExportForm,
     ProfesorForm,
@@ -108,8 +107,7 @@ class FluentMainWindow(QWidget):
 
         # Guardias
         self.widgets['asignacion'] = AsignacionGuardiasForm(self.session, sync_manager=self.sync_manager)
-        self.widgets['calendario'] = CalendarioGuardiasForm(self.session)
-        self.widgets['vista_calendario'] = VistaCalendario(self.session)
+        self.widgets['calendario'] = VistaCalendario(self.session)
         self.widgets['estadisticas'] = PanelEstadisticas(self.session)
 
         # Ausencias y Sustituciones

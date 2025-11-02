@@ -195,21 +195,21 @@ class CCleanerMainWindow(QMainWindow):
                     dashboard_widget = container.findChild(DashboardResumen)
 
         if dashboard_widget:
-            dashboard_widget.btn_generar.clicked.connect(
+            dashboard_widget.btn_generar.boton.clicked.connect(
                 lambda: self.sidebar.set_active_section("asignacion")
             )
-            dashboard_widget.btn_calendario.clicked.connect(
+            dashboard_widget.btn_calendario.boton.clicked.connect(
                 lambda: self.sidebar.set_active_section("calendario")
             )
-            dashboard_widget.btn_ausencias.clicked.connect(
+            dashboard_widget.btn_ausencias.boton.clicked.connect(
                 lambda: self.sidebar.set_active_section("ausencias")
             )
-            dashboard_widget.btn_profesores.clicked.connect(
+            dashboard_widget.btn_profesores.boton.clicked.connect(
                 lambda: self.sidebar.set_active_section("profesores")
             )
-            dashboard_widget.btn_exportar.clicked.connect(
+            dashboard_widget.btn_exportar.boton.clicked.connect(
                 lambda: self.sidebar.set_active_section("importar")
             )
-            dashboard_widget.btn_reportes.clicked.connect(
+            dashboard_widget.btn_reportes.boton.clicked.connect(
                 lambda: self.sidebar.set_active_section("reportes")
             )

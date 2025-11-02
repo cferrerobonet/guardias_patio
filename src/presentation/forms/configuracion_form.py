@@ -554,8 +554,12 @@ class ConfiguracionForm(BaseForm):
 
     def cambiar_contrasena(self) -> None:
         """Abre diálogo para cambiar la contraseña."""
-        from presentation.forms.change_password_dialog import ChangePasswordDialog
+        try:
+            from presentation.forms.change_password_dialog import ChangePasswordDialog
 
-        dialog = ChangePasswordDialog(self.current_username, self)
-        dialog.exec()
+            dialog = ChangePasswordDialog(self.current_username, self)
+            dialog.exec()
+
+        except Exception as e:
+            self.manejar_excepcion(e, "abrir diálogo de cambio de contraseña")
 

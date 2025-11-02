@@ -1,7 +1,7 @@
 """
 Dashboard de Resumen General.
 
-Muestra estadísticas clave y accesos rápidos.
+Muestra estadísticas clave y accesos rápidos con ilustraciones vectoriales.
 """
 
 from datetime import datetime
@@ -9,16 +9,357 @@ from typing import Optional
 
 from database.db_manager import SessionLocal
 from models.models import Ausencia, Guardia, Profesor
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QPointF, Qt
+from PyQt6.QtGui import QBrush, QColor, QLinearGradient, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import (
     QFrame,
     QGridLayout,
+    QHBoxLayout,
     QLabel,
     QPushButton,
     QVBoxLayout,
     QWidget,
 )
 from sqlalchemy.orm import Session
+
+
+class DibujoVectorial(QWidget):
+    """Widget que dibuja una ilustración vectorial personalizada."""
+
+    def __init__(self, tipo: str, parent: Optional[QWidget] = None):
+        """
+        Inicializa dibujo vectorial.
+
+        Args:
+            tipo: Tipo de dibujo ('generar', 'calendario', 'ausencias',
+                  'profesores', 'exportar', 'reportes')
+            parent: Widget padre
+        """
+        super().__init__(parent)
+        self.tipo = tipo
+        self.setFixedSize(80, 80)
+
+    def paintEvent(self, event):
+        """Dibuja la ilustración vectorial."""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        if self.tipo == 'generar':
+            self._dibujar_dados_guardias(painter)
+        elif self.tipo == 'calendario':
+            self._dibujar_calendario(painter)
+        elif self.tipo == 'ausencias':
+            self._dibujar_cruz_medica(painter)
+        elif self.tipo == 'profesores':
+            self._dibujar_grupo_personas(painter)
+        elif self.tipo == 'exportar':
+            self._dibujar_documento_pdf(painter)
+        elif self.tipo == 'reportes':
+            self._dibujar_graficos_reportes(painter)
+
+    def _dibujar_dados_guardias(self, painter: QPainter):
+        """Dibuja dos dados representando generación aleatoria."""
+        # Dado 1
+        path1 = QPainterPath()
+        path1.addRoundedRect(10, 15, 30, 30, 4, 4)
+
+        gradient1 = QLinearGradient(10, 15, 40, 45)
+        gradient1.setColorAt(0, QColor('#e74c3c'))
+        gradient1.setColorAt(1, QColor('#c0392b'))
+        painter.fillPath(path1, QBrush(gradient1))
+
+        painter.setPen(QPen(QColor('#a93226'), 2))
+        painter.drawPath(path1)
+
+        # Puntos del dado 1 (número 6)
+        painter.setBrush(QBrush(QColor('white')))
+        painter.setPen(Qt.PenStyle.NoPen)
+        puntos1 = [(15, 20), (15, 30), (15, 40), (35, 20), (35, 30), (35, 40)]
+        for x, y in puntos1:
+            painter.drawEllipse(QPointF(x, y), 2.5, 2.5)
+
+        # Dado 2 (más pequeño, detrás)
+        path2 = QPainterPath()
+        path2.addRoundedRect(42, 25, 25, 25, 3, 3)
+
+        gradient2 = QLinearGradient(42, 25, 67, 50)
+        gradient2.setColorAt(0, QColor('#3498db'))
+        gradient2.setColorAt(1, QColor('#2980b9'))
+        painter.fillPath(path2, QBrush(gradient2))
+
+        painter.setPen(QPen(QColor('#21618c'), 2))
+        painter.drawPath(path2)
+
+        # Puntos del dado 2 (número 5)
+        painter.setBrush(QBrush(QColor('white')))
+        painter.setPen(Qt.PenStyle.NoPen)
+        puntos2 = [(47, 30), (47, 45), (62, 30), (62, 45), (54.5, 37.5)]
+        for x, y in puntos2:
+            painter.drawEllipse(QPointF(x, y), 2, 2)
+
+    def _dibujar_calendario(self, painter: QPainter):
+        """Dibuja un calendario de pared."""
+        # Marco del calendario
+        path_marco = QPainterPath()
+        path_marco.addRoundedRect(15, 20, 50, 45, 3, 3)
+
+        gradient_marco = QLinearGradient(15, 20, 65, 65)
+        gradient_marco.setColorAt(0, QColor('#ecf0f1'))
+        gradient_marco.setColorAt(1, QColor('#bdc3c7'))
+        painter.fillPath(path_marco, QBrush(gradient_marco))
+
+        painter.setPen(QPen(QColor('#95a5a6'), 2))
+        painter.drawPath(path_marco)
+
+        # Anillas superior
+        painter.setBrush(QBrush(QColor('#34495e')))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(QPointF(27, 18), 3, 3)
+        painter.drawEllipse(QPointF(40, 18), 3, 3)
+        painter.drawEllipse(QPointF(53, 18), 3, 3)
+
+        # Cabecera del calendario
+        painter.setBrush(QBrush(QColor('#e74c3c')))
+        painter.drawRect(15, 22, 50, 10)
+
+        # Días (grid de puntos)
+        painter.setBrush(QBrush(QColor('#3498db')))
+        for fila in range(3):
+            for col in range(5):
+                x = 20 + col * 9
+                y = 38 + fila * 8
+                painter.drawEllipse(QPointF(x, y), 2, 2)
+
+        # Marcar día actual
+        painter.setBrush(QBrush(QColor('#27ae60')))
+        painter.drawEllipse(QPointF(38, 46), 3, 3)
+
+    def _dibujar_cruz_medica(self, painter: QPainter):
+        """Dibuja un botiquín médico con cruz."""
+        # Caja del botiquín
+        path_caja = QPainterPath()
+        path_caja.addRoundedRect(20, 25, 40, 35, 3, 3)
+
+        gradient_caja = QLinearGradient(20, 25, 60, 60)
+        gradient_caja.setColorAt(0, QColor('#e74c3c'))
+        gradient_caja.setColorAt(1, QColor('#c0392b'))
+        painter.fillPath(path_caja, QBrush(gradient_caja))
+
+        painter.setPen(QPen(QColor('#a93226'), 2))
+        painter.drawPath(path_caja)
+
+        # Asa superior
+        path_asa = QPainterPath()
+        path_asa.moveTo(30, 25)
+        path_asa.quadTo(40, 15, 50, 25)
+        painter.setPen(QPen(QColor('#c0392b'), 3, Qt.PenStyle.SolidLine,
+                            Qt.PenCapStyle.RoundCap))
+        painter.drawPath(path_asa)
+
+        # Cruz blanca
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(QColor('white')))
+        # Vertical
+        painter.drawRoundedRect(37, 33, 6, 20, 2, 2)
+        # Horizontal
+        painter.drawRoundedRect(30, 40, 20, 6, 2, 2)
+
+        # Brillo
+        painter.setBrush(QBrush(QColor(255, 255, 255, 60)))
+        painter.drawEllipse(QPointF(28, 32), 8, 8)
+
+    def _dibujar_grupo_personas(self, painter: QPainter):
+        """Dibuja un grupo de 3 personas."""
+        colores = [
+            (QColor('#3498db'), QColor('#2980b9')),
+            (QColor('#27ae60'), QColor('#229954')),
+            (QColor('#e74c3c'), QColor('#c0392b'))
+        ]
+
+        posiciones = [(25, 40), (40, 35), (55, 40)]
+
+        for idx, (x, y) in enumerate(posiciones):
+            color1, color2 = colores[idx]
+
+            # Cabeza
+            gradient_cabeza = QLinearGradient(x, y-15, x, y-5)
+            gradient_cabeza.setColorAt(0, color1.lighter(110))
+            gradient_cabeza.setColorAt(1, color2)
+
+            painter.setBrush(QBrush(gradient_cabeza))
+            painter.setPen(QPen(color2.darker(120), 1.5))
+            painter.drawEllipse(QPointF(x, y-10), 6, 6)
+
+            # Cuerpo
+            path_cuerpo = QPainterPath()
+            path_cuerpo.moveTo(x, y-4)
+            path_cuerpo.lineTo(x-8, y+12)
+            path_cuerpo.lineTo(x-8, y+18)
+            path_cuerpo.lineTo(x+8, y+18)
+            path_cuerpo.lineTo(x+8, y+12)
+            path_cuerpo.closeSubpath()
+
+            gradient_cuerpo = QLinearGradient(x, y-4, x, y+18)
+            gradient_cuerpo.setColorAt(0, color1)
+            gradient_cuerpo.setColorAt(1, color2)
+
+            painter.setBrush(QBrush(gradient_cuerpo))
+            painter.setPen(QPen(color2.darker(120), 1.5))
+            painter.drawPath(path_cuerpo)
+
+    def _dibujar_documento_pdf(self, painter: QPainter):
+        """Dibuja un documento PDF siendo exportado."""
+        # Documento principal
+        path_doc = QPainterPath()
+        path_doc.moveTo(25, 15)
+        path_doc.lineTo(50, 15)
+        path_doc.lineTo(60, 25)
+        path_doc.lineTo(60, 60)
+        path_doc.lineTo(25, 60)
+        path_doc.closeSubpath()
+
+        gradient_doc = QLinearGradient(25, 15, 60, 60)
+        gradient_doc.setColorAt(0, QColor('#ecf0f1'))
+        gradient_doc.setColorAt(1, QColor('#bdc3c7'))
+        painter.fillPath(path_doc, QBrush(gradient_doc))
+
+        painter.setPen(QPen(QColor('#7f8c8d'), 2))
+        painter.drawPath(path_doc)
+
+        # Doblez esquina
+        path_doblez = QPainterPath()
+        path_doblez.moveTo(50, 15)
+        path_doblez.lineTo(50, 25)
+        path_doblez.lineTo(60, 25)
+        painter.setBrush(QBrush(QColor('#95a5a6')))
+        painter.drawPath(path_doblez)
+
+        # Texto "PDF"
+        painter.setPen(QPen(QColor('#e74c3c'), 2))
+        painter.setFont(painter.font())
+        font = painter.font()
+        font.setBold(True)
+        font.setPixelSize(12)
+        painter.setFont(font)
+        painter.drawText(30, 35, 30, 15, Qt.AlignmentFlag.AlignCenter, "PDF")
+
+        # Flecha de descarga
+        painter.setPen(QPen(QColor('#27ae60'), 3, Qt.PenStyle.SolidLine,
+                            Qt.PenCapStyle.RoundCap))
+        painter.drawLine(42, 45, 42, 55)
+        # Punta de flecha
+        path_flecha = QPainterPath()
+        path_flecha.moveTo(37, 51)
+        path_flecha.lineTo(42, 56)
+        path_flecha.lineTo(47, 51)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawPath(path_flecha)
+
+    def _dibujar_graficos_reportes(self, painter: QPainter):
+        """Dibuja gráficos de barras y líneas."""
+        # Fondo papel
+        painter.setBrush(QBrush(QColor('#ecf0f1')))
+        painter.setPen(QPen(QColor('#bdc3c7'), 2))
+        painter.drawRoundedRect(15, 15, 50, 50, 3, 3)
+
+        # Ejes
+        painter.setPen(QPen(QColor('#34495e'), 2))
+        painter.drawLine(22, 55, 22, 25)  # Eje Y
+        painter.drawLine(22, 55, 58, 55)  # Eje X
+
+        # Barras
+        alturas = [15, 25, 20, 30]
+        colores_barras = [QColor('#3498db'), QColor('#27ae60'),
+                          QColor('#f39c12'), QColor('#e74c3c')]
+
+        for i, (altura, color) in enumerate(zip(alturas, colores_barras)):
+            x = 28 + i * 8
+
+            gradient = QLinearGradient(x, 55-altura, x+5, 55)
+            gradient.setColorAt(0, color.lighter(120))
+            gradient.setColorAt(1, color)
+
+            painter.setBrush(QBrush(gradient))
+            painter.setPen(QPen(color.darker(120), 1))
+            painter.drawRect(x, 55-altura, 5, altura)
+
+        # Línea de tendencia
+        puntos_linea = [QPointF(30, 45), QPointF(38, 38),
+                        QPointF(46, 40), QPointF(54, 32)]
+        path_linea = QPainterPath()
+        path_linea.moveTo(puntos_linea[0])
+        for punto in puntos_linea[1:]:
+            path_linea.lineTo(punto)
+
+        painter.setPen(QPen(QColor('#9b59b6'), 2.5, Qt.PenStyle.SolidLine,
+                            Qt.PenCapStyle.RoundCap))
+        painter.drawPath(path_linea)
+
+        # Puntos en la línea
+        painter.setBrush(QBrush(QColor('#9b59b6')))
+        painter.setPen(QPen(QColor('white'), 1.5))
+        for punto in puntos_linea:
+            painter.drawEllipse(punto, 3, 3)
+
+
+class BotonConDibujo(QWidget):
+    """Contenedor que muestra un dibujo vectorial junto a un botón."""
+
+    def __init__(
+        self,
+        texto: str,
+        tipo_dibujo: str,
+        parent: Optional[QWidget] = None,
+    ):
+        """
+        Inicializa botón con dibujo.
+
+        Args:
+            texto: Texto del botón
+            tipo_dibujo: Tipo de dibujo vectorial
+            parent: Widget padre
+        """
+        super().__init__(parent)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        # Dibujo vectorial
+        self.dibujo = DibujoVectorial(tipo_dibujo)
+        layout.addWidget(self.dibujo)
+
+        # Botón
+        self.boton = QPushButton(texto)
+        self.boton.setMinimumHeight(70)
+        self.boton.setStyleSheet(
+            """
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #3498db, stop:1 #2980b9);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 15px 20px;
+                font-size: 15px;
+                font-weight: 600;
+                text-align: left;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #5dade2, stop:1 #3498db);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #2980b9, stop:1 #21618c);
+            }
+        """
+        )
+        layout.addWidget(self.boton, 1)
+
+    def clicked_connect(self, slot):
+        """Conecta la señal clicked del botón."""
+        self.boton.clicked.connect(slot)
 
 
 class TarjetaEstadistica(QFrame):
@@ -170,13 +511,13 @@ class DashboardResumen(QWidget):
         accesos_grid = QGridLayout()
         accesos_grid.setSpacing(12)
 
-        # Botones de acceso rápido
-        btn_generar = BotonAccesoRapido("Generar Guardias", "🎲")
-        btn_calendario = BotonAccesoRapido("Ver Calendario", "📅")
-        btn_ausencias = BotonAccesoRapido("Gestionar Ausencias", "🏥")
-        btn_profesores = BotonAccesoRapido("Gestionar Profesores", "👥")
-        btn_exportar = BotonAccesoRapido("Exportar PDFs", "📄")
-        btn_reportes = BotonAccesoRapido("Generar Reportes", "📊")
+        # Botones de acceso rápido con dibujos vectoriales
+        btn_generar = BotonConDibujo("🎲 Generar Guardias", "generar")
+        btn_calendario = BotonConDibujo("📅 Ver Calendario", "calendario")
+        btn_ausencias = BotonConDibujo("🏥 Gestionar Ausencias", "ausencias")
+        btn_profesores = BotonConDibujo("👥 Gestionar Profesores", "profesores")
+        btn_exportar = BotonConDibujo("📄 Exportar PDFs", "exportar")
+        btn_reportes = BotonConDibujo("📊 Generar Reportes", "reportes")
 
         accesos_grid.addWidget(btn_generar, 0, 0)
         accesos_grid.addWidget(btn_calendario, 0, 1)

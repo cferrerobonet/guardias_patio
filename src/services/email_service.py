@@ -5,7 +5,9 @@ Utiliza SMTP para enviar códigos de recuperación a los usuarios.
 """
 
 import logging
+import os
 import smtplib
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
@@ -202,6 +204,208 @@ Sistema de Gestión de Guardias
 
         except smtplib.SMTPException as e:
             error_msg = f"Error SMTP: {str(e)}"
+            logger.error(error_msg)
+            return False, error_msg
+
+        except Exception as e:
+            error_msg = f"Error al enviar email: {str(e)}"
+            logger.error(error_msg)
+            return False, error_msg
+
+    def send_calendar_pdf(
+        self,
+        to_email: str,
+        profesor_nombre: str,
+        pdf_path: str,
+        curso_escolar: str,
+    ) -> tuple[bool, str]:
+        """
+        Envía un calendario de guardias en PDF por email.
+
+        Args:
+            to_email: Email del destinatario
+            profesor_nombre: Nombre completo del profesor
+            pdf_path: Ruta al archivo PDF
+            curso_escolar: Curso escolar (ej: "2024/2025")
+
+        Returns:
+            Tupla (éxito, mensaje)
+        """
+        if not self.smtp_user or not self.smtp_password:
+            return False, "Email no configurado. Por favor contacta al administrador."
+
+        if not os.path.exists(pdf_path):
+            return False, f"El archivo PDF no existe: {pdf_path}"
+
+        try:
+            # Crear mensaje
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = f"📅 Calendario de Guardias {curso_escolar} - Guardias de Patio"
+            msg["From"] = self.from_email
+            msg["To"] = to_email
+
+            # Contenido del email (texto plano)
+            text_content = f"""
+Hola {profesor_nombre},
+
+Te adjuntamos tu calendario personalizado de guardias de patio para el curso escolar {curso_escolar}.
+
+El PDF adjunto muestra todas tus guardias asignadas desde tu primera hasta tu última fecha de guardia.
+
+Características del calendario:
+• Visualización mensual con mini calendarios
+• Colores según la zona asignada
+• Formas geométricas según el recreo
+• Tabla detallada con todas las guardias
+
+Si tienes alguna duda o consulta, por favor contacta con el coordinador.
+
+---
+Guardias de Patio
+Sistema de Gestión de Guardias
+            """
+
+            # Contenido del email (HTML)
+            html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9fafb;
+        }}
+        .header {{
+            background-color: #007ACC;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }}
+        .content {{
+            background-color: white;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+        }}
+        .info-box {{
+            background-color: #e0f2fe;
+            border-left: 4px solid #007ACC;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }}
+        .feature-list {{
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }}
+        .feature-list ul {{
+            margin: 10px 0;
+            padding-left: 20px;
+        }}
+        .feature-list li {{
+            margin: 5px 0;
+        }}
+        .footer {{
+            text-align: center;
+            margin-top: 20px;
+            color: #6b7280;
+            font-size: 12px;
+        }}
+        .attachment-note {{
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Calendario de Guardias</h1>
+            <p style="margin: 5px 0;">Curso Escolar {curso_escolar}</p>
+        </div>
+        <div class="content">
+            <p>Hola <strong>{profesor_nombre}</strong>,</p>
+
+            <p>Te adjuntamos tu calendario personalizado de guardias de patio para el curso escolar <strong>{curso_escolar}</strong>.</p>
+
+            <div class="info-box">
+                📎 El PDF adjunto muestra todas tus guardias asignadas desde tu <strong>primera</strong> hasta tu <strong>última</strong> fecha de guardia.
+            </div>
+
+            <div class="feature-list">
+                <strong>Características del calendario:</strong>
+                <ul>
+                    <li>📆 Visualización mensual con mini calendarios</li>
+                    <li>🎨 Colores según la zona asignada</li>
+                    <li>🔷 Formas geométricas según el recreo</li>
+                    <li>📋 Tabla detallada con todas las guardias</li>
+                </ul>
+            </div>
+
+            <div class="attachment-note">
+                💡 <strong>Tip:</strong> Puedes imprimir este calendario o guardarlo en tu dispositivo para tenerlo siempre a mano.
+            </div>
+
+            <p>Si tienes alguna duda o consulta, por favor contacta con el coordinador.</p>
+        </div>
+        <div class="footer">
+            <p>Guardias de Patio - Sistema de Gestión de Guardias</p>
+        </div>
+    </div>
+</body>
+</html>
+            """
+
+            # Adjuntar ambas versiones del texto
+            part1 = MIMEText(text_content, "plain")
+            part2 = MIMEText(html_content, "html")
+            msg.attach(part1)
+            msg.attach(part2)
+
+            # Adjuntar el PDF
+            with open(pdf_path, "rb") as f:
+                pdf_attachment = MIMEApplication(f.read(), _subtype="pdf")
+                pdf_filename = os.path.basename(pdf_path)
+                pdf_attachment.add_header(
+                    "Content-Disposition", "attachment", filename=pdf_filename
+                )
+                msg.attach(pdf_attachment)
+
+            # Enviar email
+            logger.info(f"Enviando calendario PDF a {to_email}")
+
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()  # Seguridad TLS
+                server.login(self.smtp_user, self.smtp_password)
+                server.send_message(msg)
+
+            logger.info(f"Calendario PDF enviado exitosamente a {to_email}")
+            return True, f"Calendario enviado a {to_email}"
+
+        except smtplib.SMTPAuthenticationError:
+            error_msg = "Error de autenticación SMTP. Verifica usuario y contraseña."
+            logger.error(error_msg)
+            return False, error_msg
+
+        except smtplib.SMTPException as e:
+            error_msg = f"Error SMTP: {str(e)}"
+            logger.error(error_msg)
+            return False, error_msg
+
+        except FileNotFoundError:
+            error_msg = f"Archivo PDF no encontrado: {pdf_path}"
             logger.error(error_msg)
             return False, error_msg
 
