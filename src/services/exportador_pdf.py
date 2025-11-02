@@ -23,6 +23,7 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+from services.pdf_styles import PDFStyles
 from sqlalchemy.orm import Session, joinedload
 from utils import get_logger
 
@@ -674,25 +675,10 @@ class ExportadorPDF:
                 texto = String(x, y, dia, fontSize=font_size_dias, fontName='Helvetica-Bold', textAnchor='middle')
                 drawing.add(texto)
 
-            # Colores por zona (hasta 8 zonas diferentes)
-            colores_zonas = {
-                1: colors.HexColor('#e74c3c'),  # Rojo
-                2: colors.HexColor('#3498db'),  # Azul
-                3: colors.HexColor('#2ecc71'),  # Verde
-                4: colors.HexColor('#f39c12'),  # Naranja
-                5: colors.HexColor('#9b59b6'),  # Morado
-                6: colors.HexColor('#1abc9c'),  # Turquesa
-                7: colors.HexColor('#e67e22'),  # Naranja oscuro
-                8: colors.HexColor('#34495e'),  # Gris oscuro
-            }
-
+            # Colores por zona (hasta 10 zonas diferentes) - usar estilos corporativos
             def obtener_color_zona(zona_id):
                 """Obtiene el color para una zona específica."""
-                if zona_id is None:
-                    return colors.grey
-                # Si hay más de 8 zonas, usar módulo para reciclar colores
-                zona_num = ((zona_id - 1) % 8) + 1
-                return colores_zonas.get(zona_num, colors.grey)
+                return PDFStyles.get_color_zona(zona_id)
 
             def dibujar_forma_recreo(x_centro, y_centro, recreo, color, tamano=None):
                 """Dibuja la forma correspondiente al recreo con tamaño proporcional."""
@@ -896,50 +882,114 @@ class ExportadorPDF:
             banner = Drawing(ancho_pagina, altura_banner)
 
             # Fondo degradado azul
-            fondo = Rect(0, 0, ancho_pagina, altura_banner,
-                        fillColor=colors.HexColor('#1976D2'),
-                        strokeColor=None)
+            fondo = Rect(
+                0, 0, ancho_pagina, altura_banner,
+                fillColor=PDFStyles.AZUL_PRINCIPAL,
+                strokeColor=None
+            )
             banner.add(fondo)
 
             # Borde inferior decorativo
-            borde = Rect(0, 0, ancho_pagina, 0.3*cm,
-                        fillColor=colors.HexColor('#0D47A1'),
-                        strokeColor=None)
+            borde = Rect(
+                0, 0, ancho_pagina, 0.3*cm,
+                fillColor=PDFStyles.AZUL_OSCURO,
+                strokeColor=None
+            )
             banner.add(borde)
 
             # Título principal en blanco
             titulo_texto = String(
                 ancho_pagina/2, altura_banner - 0.8*cm,
-                "� CALENDARIO PERSONAL DE GUARDIAS",
-                fontSize=18,
-                fontName='Helvetica-Bold',
+                "CALENDARIO PERSONAL DE GUARDIAS",
+                fontSize=PDFStyles.TAMANO_TITULO_PRINCIPAL,
+                fontName=PDFStyles.FUENTE_TITULO,
                 textAnchor='middle',
                 fillColor=colors.whitesmoke
             )
             banner.add(titulo_texto)
 
-            # Nombre del profesor (destacado)
+            # Nombre del profesor (destacado en amarillo/dorado)
             nombre_texto = String(
                 ancho_pagina/2, altura_banner - 1.5*cm,
                 profesor.nombre_completo.upper(),
-                fontSize=14,
-                fontName='Helvetica-Bold',
+                fontSize=PDFStyles.TAMANO_SUBTITULO,
+                fontName=PDFStyles.FUENTE_TITULO,
                 textAnchor='middle',
-                fillColor=colors.white
+                fillColor=PDFStyles.COLOR_DATO_PRINCIPAL  # Amarillo destacado
             )
             banner.add(nombre_texto)
 
-            # Información adicional (más pequeña)
-            info_line = f"Turno: {profesor.turno.capitalize()}  •  Tutor: {'Sí' if profesor.tutor else 'No'}  •  Periodo: {primera_guardia.strftime('%d/%m/%Y')} - {ultima_guardia.strftime('%d/%m/%Y')}"
-            info_texto = String(
-                ancho_pagina/2, altura_banner - 2.1*cm,
-                info_line,
-                fontSize=10,
+            # Información adicional con datos dinámicos en colores destacados
+            turno_valor = profesor.turno.capitalize()
+            tutor_valor = 'Si' if profesor.tutor else 'No'
+            periodo_inicio = primera_guardia.strftime('%d/%m/%Y')
+            periodo_fin = ultima_guardia.strftime('%d/%m/%Y')
+
+            # Turno en color secundario
+            x_pos = 3*cm
+            turno_label = String(
+                x_pos, altura_banner - 2.1*cm,
+                "Turno:",
+                fontSize=9,
                 fontName='Helvetica',
-                textAnchor='middle',
-                fillColor=colors.HexColor('#E3F2FD')
+                textAnchor='start',
+                fillColor=PDFStyles.AZUL_CLARO
             )
-            banner.add(info_texto)
+            banner.add(turno_label)
+
+            turno_dato = String(
+                x_pos + 1*cm, altura_banner - 2.1*cm,
+                turno_valor,
+                fontSize=9,
+                fontName='Helvetica-Bold',
+                textAnchor='start',
+                fillColor=PDFStyles.COLOR_DATO_SECUNDARIO  # Amarillo claro
+            )
+            banner.add(turno_dato)
+
+            # Tutor en color secundario
+            x_pos += 4*cm
+            tutor_label = String(
+                x_pos, altura_banner - 2.1*cm,
+                "Tutor:",
+                fontSize=9,
+                fontName='Helvetica',
+                textAnchor='start',
+                fillColor=PDFStyles.AZUL_CLARO
+            )
+            banner.add(tutor_label)
+
+            tutor_dato = String(
+                x_pos + 1*cm, altura_banner - 2.1*cm,
+                tutor_valor,
+                fontSize=9,
+                fontName='Helvetica-Bold',
+                textAnchor='start',
+                fillColor=PDFStyles.COLOR_DATO_SECUNDARIO  # Amarillo claro
+            )
+            banner.add(tutor_dato)
+
+            # Periodo en color terciario
+            x_pos += 3*cm
+            periodo_label = String(
+                x_pos, altura_banner - 2.1*cm,
+                "Periodo:",
+                fontSize=9,
+                fontName='Helvetica',
+                textAnchor='start',
+                fillColor=PDFStyles.AZUL_CLARO
+            )
+            banner.add(periodo_label)
+
+            periodo_dato = String(
+                x_pos + 1.3*cm, altura_banner - 2.1*cm,
+                f"{periodo_inicio} - {periodo_fin}",
+                fontSize=9,
+                fontName='Helvetica-Bold',
+                textAnchor='start',
+                fillColor=PDFStyles.COLOR_DATO_TERCIARIO  # Amarillo pastel
+            )
+            banner.add(periodo_dato)
 
             elements.append(banner)
             elements.append(Spacer(1, 0.8*cm))
@@ -1007,27 +1057,18 @@ class ExportadorPDF:
                     """Crea la leyenda de colores y formas de forma compacta."""
                     from reportlab.graphics.shapes import Circle, Polygon
 
-                    # Colores por zona (mismo que en crear_mini_calendario)
-                    colores_zonas = {
-                        1: colors.HexColor('#e74c3c'),  # Rojo
-                        2: colors.HexColor('#3498db'),  # Azul
-                        3: colors.HexColor('#2ecc71'),  # Verde
-                        4: colors.HexColor('#f39c12'),  # Naranja
-                        5: colors.HexColor('#9b59b6'),  # Morado
-                        6: colors.HexColor('#1abc9c'),  # Turquesa
-                        7: colors.HexColor('#e67e22'),  # Naranja oscuro
-                        8: colors.HexColor('#34495e'),  # Gris oscuro
-                    }
-
                     # Leyenda más compacta (todo en una línea)
                     leyenda_ancho = 27*cm
                     leyenda_alto = 0.9*cm
                     leyenda_drawing = Drawing(leyenda_ancho, leyenda_alto)
 
-                    # Marco de la leyenda
-                    marco = Rect(0, 0, leyenda_ancho, leyenda_alto,
-                               fillColor=colors.HexColor('#f8f9fa'),
-                               strokeColor=colors.HexColor('#dee2e6'), strokeWidth=1)
+                    # Marco de la leyenda con colores corporativos
+                    marco = Rect(
+                        0, 0, leyenda_ancho, leyenda_alto,
+                        fillColor=PDFStyles.FONDO_CLARO,
+                        strokeColor=colors.HexColor('#dee2e6'),
+                        strokeWidth=1
+                    )
                     leyenda_drawing.add(marco)
 
                     y_pos = leyenda_alto / 2 - 0.05*cm
@@ -1100,15 +1141,16 @@ class ExportadorPDF:
                                 zonas_info[zona_id] = g.zona.nombre_zona
                                 break
 
-                    # Mostrar zonas compactas
-                    for zona_id in sorted(zonas_usadas)[:8]:  # Máximo 8 zonas
-                        zona_num = ((zona_id - 1) % 8) + 1
-                        color = colores_zonas.get(zona_num, colors.grey)
+                    # Mostrar zonas compactas (usando estilos corporativos)
+                    for zona_id in sorted(zonas_usadas)[:10]:  # Máximo 10 zonas
+                        color = PDFStyles.get_color_zona(zona_id)
 
                         # Cuadradito de color más pequeño
-                        cuadrado = Rect(x_pos - 0.06*cm, y_pos,
-                                      0.16*cm, 0.16*cm,
-                                      fillColor=color, strokeColor=color)
+                        cuadrado = Rect(
+                            x_pos - 0.06*cm, y_pos,
+                            0.16*cm, 0.16*cm,
+                            fillColor=color, strokeColor=color
+                        )
                         leyenda_drawing.add(cuadrado)
 
                         # Nombre de la zona compacto
@@ -1129,66 +1171,131 @@ class ExportadorPDF:
 
             reportar_progreso(50, "Generando tabla de guardias...")
 
-            # Agrupar por fecha
+            # Agrupar por fecha Y por mes
             guardias_por_fecha = defaultdict(list)
+            guardias_por_mes = defaultdict(list)  # Nuevo: agrupar por mes
             for g in guardias:
                 guardias_por_fecha[g.fecha].append(g)
+                mes_anio = (g.fecha.year, g.fecha.month)
+                guardias_por_mes[mes_anio].append(g)
 
-            # Crear tabla de guardias con información detallada
+            # Crear tabla de guardias con separación visual por meses
             data = [['Fecha', 'Día', 'Turno', 'Recreo - Hora', 'Zona - Descripción']]
-            dias_semana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+            dias_semana = PDFStyles.get_dias_semana_completos()
 
-            for fecha in fechas_guardias:
-                guardias_dia = guardias_por_fecha[fecha]
-                for i, guardia in enumerate(guardias_dia):
-                    fecha_str = fecha.strftime("%d/%m/%Y") if i == 0 else ""
-                    dia_semana = dias_semana[fecha.weekday()] if i == 0 else ""
+            # Lista para rastrear estilos de filas según mes y recreo
+            estilos_filas = []
+            fila_actual = 1  # Empezar después del encabezado
 
-                    # Zona con descripción
-                    if guardia.zona:
-                        if guardia.zona.descripcion:
-                            zona_info = f"{guardia.zona.nombre_zona} - {guardia.zona.descripcion}"
+            # Procesar guardias organizadas por mes
+            meses_ordenados = sorted(guardias_por_mes.keys())
+
+            for idx_mes, (anio, mes) in enumerate(meses_ordenados):
+                # Obtener fechas de guardias para este mes
+                fechas_del_mes = sorted([
+                    f for f in fechas_guardias
+                    if f.year == anio and f.month == mes
+                ])
+
+                # Fila separadora de mes (opcional, comentado por ahora)
+                # data.append([f"=== {meses_nombres[mes]} {anio} ===", '', '', '', ''])
+                # estilos_filas.append(('BACKGROUND', (0, fila_actual), (-1, fila_actual),
+                #                     PDFStyles.get_color_mes(idx_mes)))
+                # fila_actual += 1
+
+                # Color de fondo para este mes
+                color_fondo_mes = PDFStyles.get_color_mes(idx_mes)
+
+                # Procesar cada fecha del mes
+                for fecha in fechas_del_mes:
+                    guardias_dia = guardias_por_fecha[fecha]
+
+                    for i, guardia in enumerate(guardias_dia):
+                        fecha_str = fecha.strftime("%d/%m/%Y") if i == 0 else ""
+                        dia_semana = dias_semana[fecha.weekday()] if i == 0 else ""
+
+                        # Zona con descripción
+                        if guardia.zona:
+                            if guardia.zona.descripcion:
+                                zona_info = f"{guardia.zona.nombre_zona} - {guardia.zona.descripcion}"
+                            else:
+                                zona_info = guardia.zona.nombre_zona
                         else:
-                            zona_info = guardia.zona.nombre_zona
-                    else:
-                        zona_info = "N/A"
+                            zona_info = "N/A"
 
-                    # Recreo con hora
-                    hora = obtener_hora_recreo(config, guardia.turno, guardia.recreo) if config else ""
-                    if hora:
-                        recreo_info = f"Recreo {guardia.recreo} ({hora})"
-                    else:
-                        recreo_info = f"Recreo {guardia.recreo}"
+                        # Recreo con hora
+                        hora = obtener_hora_recreo(config, guardia.turno, guardia.recreo) if config else ""
+                        if hora:
+                            recreo_info = f"Recreo {guardia.recreo} ({hora})"
+                        else:
+                            recreo_info = f"Recreo {guardia.recreo}"
 
-                    data.append([
-                        fecha_str,
-                        dia_semana,
-                        guardia.turno.capitalize(),
-                        recreo_info,
-                        zona_info,
-                    ])
+                        data.append([
+                            fecha_str,
+                            dia_semana,
+                            guardia.turno.capitalize(),
+                            recreo_info,
+                            zona_info,
+                        ])
+
+                        # Aplicar color de fondo según mes
+                        estilos_filas.append(
+                            ('BACKGROUND', (0, fila_actual), (-1, fila_actual), color_fondo_mes)
+                        )
+
+                        # Aplicar color al recreo (columna 3) según el número de recreo
+                        color_recreo = PDFStyles.get_color_recreo(guardia.recreo)
+                        estilos_filas.append(
+                            ('TEXTCOLOR', (3, fila_actual), (3, fila_actual), color_recreo)
+                        )
+                        estilos_filas.append(
+                            ('FONTNAME', (3, fila_actual), (3, fila_actual), 'Helvetica-Bold')
+                        )
+
+                        # Aplicar color a la zona (columna 4) según el ID de zona
+                        if guardia.zona:
+                            color_zona = PDFStyles.get_color_zona(guardia.zona.id)
+                            estilos_filas.append(
+                                ('TEXTCOLOR', (4, fila_actual), (4, fila_actual), color_zona)
+                            )
+                            estilos_filas.append(
+                                ('FONTNAME', (4, fila_actual), (4, fila_actual), 'Helvetica-Bold')
+                            )
+
+                        fila_actual += 1
+
+                # Línea divisoria más gruesa entre meses (si no es el último mes)
+                if idx_mes < len(meses_ordenados) - 1:
+                    estilos_filas.append(
+                        ('LINEBELOW', (0, fila_actual - 1), (-1, fila_actual - 1), 3,
+                         PDFStyles.AZUL_PRINCIPAL)
+                    )
 
             # Tabla con columnas ajustadas
             tabla = Table(data, colWidths=[3*cm, 3*cm, 2.5*cm, 4*cm, 9*cm])
 
-            tabla.setStyle(TableStyle([
+            # Estilos base de la tabla
+            estilos_base = [
                 # Encabezado
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1976D2')),
+                ('BACKGROUND', (0, 0), (-1, 0), PDFStyles.FONDO_TABLA_HEADER),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('FONTNAME', (0, 0), (-1, 0), PDFStyles.FUENTE_NEGRITA),
+                ('FONTSIZE', (0, 0), (-1, 0), PDFStyles.TAMANO_ENCABEZADO_TABLA),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
 
                 # Cuerpo
-                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 1), (-1, -1), 9),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('TEXTCOLOR', (0, 1), (2, -1), PDFStyles.TEXTO_OSCURO),  # Fecha, Día, Turno
+                ('FONTNAME', (0, 1), (-1, -1), PDFStyles.FUENTE_NORMAL),
+                ('FONTSIZE', (0, 1), (-1, -1), PDFStyles.TAMANO_CUERPO_TABLA),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
-            ]))
+                ('TOPPADDING', (0, 1), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+            ]
+
+            # Combinar estilos base con estilos por fila
+            tabla.setStyle(TableStyle(estilos_base + estilos_filas))
 
             elements.append(tabla)
 

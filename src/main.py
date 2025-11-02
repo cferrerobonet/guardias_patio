@@ -17,6 +17,7 @@ from PyQt6.QtCore import QLibraryInfo, QLocale, QTranslator
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from sync import SyncManager, get_default_backend
+from utils.corporate_branding import apply_corporate_branding
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -26,6 +27,9 @@ def main():
     """Función principal"""
     # Crear la aplicación
     app = QApplication(sys.argv)
+
+    # Aplicar branding corporativo a todos los QMessageBox
+    apply_corporate_branding()
 
     # ==========================================
     # Validar Configuración Inicial (SFTP/SMTP)

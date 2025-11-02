@@ -25,6 +25,7 @@ class ProfesorDTO(BaseModel):
     tutor: bool  # Nombre del campo en el modelo
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
+    zona_preferida_id: Optional[int] = None  # ID de zona preferida (None = sin preferencia)
     # Solo días laborables por defecto (0-4: Lun-Vie)
     dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))
     # Acepta lista [1,2,3,4] o dict {"0": [1,2], "1": [3,4]} para restricciones por día
@@ -53,7 +54,9 @@ class CrearProfesorDTO(BaseModel):
     tutor: bool = False  # Nombre del campo en el modelo
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
-    dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))  # 0-4: Lun-Vie
+    zona_preferida_id: Optional[int] = Field(None, ge=1)  # ID de zona preferida
+    # Solo días laborables por defecto (0-4: Lun-Vie)
+    dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))
     # Acepta lista [1,2,3,4] o dict {"0": [1,2], "1": [3,4]} para restricciones por día
     recreos_permitidos: Union[list[int], dict[int, list[int]]] = Field(
         default_factory=lambda: [1, 2, 3, 4]
@@ -113,6 +116,7 @@ class ActualizarProfesorDTO(BaseModel):
     tutor: Optional[bool] = None  # Nombre del campo en el modelo
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
+    zona_preferida_id: Optional[int] = Field(None, ge=1)  # ID de zona preferida
     dias_semana_permitidos: Optional[list[int]] = None
     # Acepta lista [1,2,3,4] o dict {"0": [1,2], "1": [3,4]} para restricciones por día
     recreos_permitidos: Optional[Union[list[int], dict[int, list[int]]]] = None

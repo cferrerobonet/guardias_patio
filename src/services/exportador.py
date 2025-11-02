@@ -95,6 +95,7 @@ class ExportadorDatos:
                 "fecha_fin_guardias": ExportadorDatos._serializar_fecha(
                     p.fecha_fin_guardias
                 ),  # Campo añadido
+                "zona_preferida_id": p.zona_preferida_id,  # Campo añadido
                 "dias_semana_permitidos": p.dias_semana_permitidos,
                 "recreos_permitidos": p.recreos_permitidos,
             }
@@ -314,6 +315,7 @@ class ExportadorDatos:
                     existing.fecha_fin_guardias = ExportadorDatos._deserializar_fecha(
                         p_data.get("fecha_fin_guardias")
                     )
+                    existing.zona_preferida_id = p_data.get("zona_preferida_id")
                     existing.dias_semana_permitidos = p_data.get("dias_semana_permitidos")
                     existing.recreos_permitidos = p_data.get("recreos_permitidos")
                 else:
@@ -335,6 +337,7 @@ class ExportadorDatos:
                         fecha_fin_guardias=ExportadorDatos._deserializar_fecha(
                             p_data.get("fecha_fin_guardias")
                         ),
+                        zona_preferida_id=p_data.get("zona_preferida_id"),
                         dias_semana_permitidos=p_data.get("dias_semana_permitidos"),
                         recreos_permitidos=p_data.get("recreos_permitidos"),
                     )
@@ -357,6 +360,7 @@ class ExportadorDatos:
                     fecha_fin_guardias=ExportadorDatos._deserializar_fecha(
                         p_data.get("fecha_fin_guardias")
                     ),
+                    zona_preferida_id=p_data.get("zona_preferida_id"),
                     dias_semana_permitidos=p_data.get("dias_semana_permitidos"),
                     recreos_permitidos=p_data.get("recreos_permitidos"),
                 )

@@ -28,6 +28,7 @@ htmlcov/
 *.swp
 *.swo
 *~
+*.bak
 
 # Sistema Operativo
 .DS_Store      # macOS

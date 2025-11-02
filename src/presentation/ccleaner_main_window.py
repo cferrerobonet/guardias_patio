@@ -28,7 +28,6 @@ from presentation.themes.ccleaner_theme import (
     get_complete_stylesheet,
 )
 from presentation.widgets import (
-    DashboardResumen,
     GestionarAusenciasForm,
     GestorSustituciones,
     PanelEstadisticas,
@@ -123,15 +122,13 @@ class CCleanerMainWindow(QMainWindow):
         self.connect_signals()
 
         # Activar la primera sección (Dashboard)
-        self.sidebar.set_active_section("dashboard")
+        # Cambiar la sección activa inicial a "profesores" en lugar de "dashboard"
+        self.sidebar.set_active_section("profesores")
 
     def create_views(self):
         """Crear todas las vistas/páginas de la aplicación"""
 
-        # INICIO
-        self.add_view("dashboard", "Dashboard", DashboardResumen())
-
-        # GESTIÓN
+        # GESTIÓN (ahora es la primera sección)
         self.add_view("profesores", "Gestión de Profesores", ProfesorForm(self.session))
         self.add_view("zonas", "Gestión de Zonas", ZonaForm(self.session))
         self.add_view(
@@ -182,34 +179,5 @@ class CCleanerMainWindow(QMainWindow):
 
     def connect_signals(self):
         """Conectar señales de los widgets"""
-        # Dashboard - conectar botones de acceso rápido
-        dashboard_widget = None
+        # Dashboard eliminado - ya no hay botones de acceso rápido que conectar
 
-        # Buscar los widgets dentro de los wrappers
-        for key, wrapper in self.widgets.items():
-            if key == "dashboard":
-                # El ContentWrapper tiene un scroll con un container
-                scroll = wrapper.findChild(QScrollArea)
-                if scroll and scroll.widget():
-                    container = scroll.widget()
-                    dashboard_widget = container.findChild(DashboardResumen)
-
-        if dashboard_widget:
-            dashboard_widget.btn_generar.boton.clicked.connect(
-                lambda: self.sidebar.set_active_section("asignacion")
-            )
-            dashboard_widget.btn_calendario.boton.clicked.connect(
-                lambda: self.sidebar.set_active_section("calendario")
-            )
-            dashboard_widget.btn_ausencias.boton.clicked.connect(
-                lambda: self.sidebar.set_active_section("ausencias")
-            )
-            dashboard_widget.btn_profesores.boton.clicked.connect(
-                lambda: self.sidebar.set_active_section("profesores")
-            )
-            dashboard_widget.btn_exportar.boton.clicked.connect(
-                lambda: self.sidebar.set_active_section("importar")
-            )
-            dashboard_widget.btn_reportes.boton.clicked.connect(
-                lambda: self.sidebar.set_active_section("reportes")
-            )

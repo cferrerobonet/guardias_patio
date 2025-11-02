@@ -271,19 +271,22 @@ def _ordenar_slots_para_profesor(
     """
     Ordena slots por optimalidad para un profesor, priorizando patrones consistentes.
 
-    Criterios de ordenamiento (de mayor a menor prioridad):
+    Criterios de ordenamiento (de mayor a menor prioridad) - MEJORADO v1.3:
     1. Misma zona que guardias previas (si existen) o zona preferida
     2. Mismo recreo que guardias previas (si existen)
-    3. Mismo día de semana que guardias previas (si existen)
-    4. Agrupar fechas cercanas (semanas consecutivas)
-    5. Fecha cronológica
-    6. Recreo (orden natural)
+    3. ⭐ FECHAS CONSECUTIVAS/AGRUPADAS: Minimizar distancia desde última guardia
+       - Objetivo: Que el profesor termine sus guardias lo antes posible
+       - Estrategia: Asignar en fechas cercanas para liberar períodos largos
+    4. Mismo día de semana que guardias previas (menor prioridad que fechas)
+    5. Fecha cronológica (desempate)
+    6. Recreo (orden natural como desempate final)
 
     Objetivo: Agrupar guardias en patrones consistentes:
-    - Mismo día de la semana cada semana (ej: siempre lunes)
-    - Misma zona
-    - Mismo recreo
-    - Fechas consecutivas cuando es posible
+    - Misma zona siempre
+    - Mismo recreo siempre
+    - ⭐ FECHAS CONSECUTIVAS O MUY CERCANAS (nuevo - máxima prioridad)
+    - Mismo día de la semana cuando sea compatible con fechas cercanas
+    - Fechas cronológicas
 
     Args:
         slots: Lista de slots disponibles
@@ -301,6 +304,7 @@ def _ordenar_slots_para_profesor(
     zonas_previas = [s.zona_id for s in guardias_previas] if guardias_previas else []
     recreos_previos = [s.recreo_id for s in guardias_previas] if guardias_previas else []
     dias_semana_previos = [s.fecha.weekday() for s in guardias_previas] if guardias_previas else []
+    fechas_previas = [s.fecha for s in guardias_previas] if guardias_previas else []
 
     # Calcular zona más frecuente (o preferida)
     zona_objetivo = None
@@ -326,7 +330,15 @@ def _ordenar_slots_para_profesor(
             recreos_disponibles = [s.recreo_id for s in slots]
             recreo_objetivo = min(recreos_disponibles)  # Preferir recreos tempranos
 
-    # Calcular día de semana más frecuente
+    # ⭐ NUEVO v1.3: Calcular fecha base para agrupar (última guardia asignada)
+    fecha_base = None
+    if fechas_previas:
+        fecha_base = max(fechas_previas)  # Última guardia para agrupar cerca
+    elif slots:
+        # Si no hay guardias previas, usar fecha mínima de slots disponibles
+        fecha_base = min(s.fecha for s in slots)
+
+    # Calcular día de semana más frecuente (ahora menor prioridad que fechas)
     dia_semana_objetivo = None
     if dias_semana_previos:
         dia_semana_objetivo = max(set(dias_semana_previos), key=dias_semana_previos.count)
@@ -348,28 +360,32 @@ def _ordenar_slots_para_profesor(
         # 2. Prioridad de recreo (0 = recreo objetivo, 1 = otro recreo)
         recreo_match = 0 if recreo_objetivo and slot.recreo_id == recreo_objetivo else 1
 
-        # 3. Prioridad de día de semana (0 = día objetivo, 1 = otro día)
+        # 3. ⭐ NUEVO v1.3: FECHAS CONSECUTIVAS - Distancia en días desde última guardia
+        # Menor distancia = mayor prioridad (guardias agrupadas)
+        if fecha_base:
+            distancia_dias = abs((slot.fecha - fecha_base).days)
+        else:
+            distancia_dias = 0
+
+        # 4. Prioridad de día de semana (0 = día objetivo, 1 = otro día)
+        # MENOR PRIORIDAD que fechas consecutivas
         dia_semana_match = (
             0 if dia_semana_objetivo is not None and slot.fecha.weekday() == dia_semana_objetivo
             else 1
         )
 
-        # 4. Fecha (cronológico) - Agrupar por semanas
-        # Usamos el número de semana del año para agrupar fechas cercanas
-        semana = slot.fecha.isocalendar()[1]
-
-        # 5. Fecha exacta (cronológico)
+        # 5. Fecha exacta (cronológico como desempate)
         fecha = slot.fecha
 
-        # 6. Recreo (orden natural como desempate)
+        # 6. Recreo (orden natural como desempate final)
         recreo_id = slot.recreo_id
 
         return (
             zona_match,          # Prioridad 1: Mantener misma zona
             recreo_match,        # Prioridad 2: Mantener mismo recreo
-            dia_semana_match,    # Prioridad 3: Mantener mismo día de semana
-            semana,              # Prioridad 4: Agrupar por semanas consecutivas
-            fecha,               # Prioridad 5: Cronológico dentro de la semana
+            distancia_dias,      # Prioridad 3: ⭐ Fechas consecutivas/agrupadas (NUEVO)
+            dia_semana_match,    # Prioridad 4: Mantener mismo día de semana (menor prioridad)
+            fecha,               # Prioridad 5: Cronológico dentro del grupo
             recreo_id,           # Prioridad 6: Desempate por recreo
         )
 

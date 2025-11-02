@@ -82,7 +82,7 @@ Para crear el instalador DMG:
 - ✅ **Patrón de Widgets**: 12 widgets reutilizables extraídos, -40.3% código en formularios
 - ✅ **Sistema de Cache**: Cache inteligente en 12 Use Cases (90-98% menos queries)
 - ✅ **Type Safety con Pydantic**: Validación automática de datos en todas las capas
-- ✅ **Sistema de Observabilidad**: Dashboard con métricas, health checks y logs
+- ✅ **Sistema de Observabilidad**: Métricas, health checks y logging estructurado
 - ✅ **Inyección de Dependencias**: Acoplamiento débil entre componentes
 - ✅ **Performance Optimizado**: Eager loading, caching inteligente, eliminación de N+1 queries
 
@@ -350,7 +350,7 @@ La documentación está organizada en las siguientes categorías:
 
 - ✅ **Sistema Multi-usuario**: Gestión de múltiples usuarios con recuperación de contraseña por email
 - ✅ **Sincronización Cloud**: Soporte SFTP para sincronización entre dispositivos
-- ✅ **Dashboard de observabilidad**: Métricas, health checks y logs
+- ✅ **Sistema de Observabilidad**: Métricas, health checks y logging estructurado
 - ✅ **Logo corporativo**: Branding consistente
 - ✅ **Performance**: Eager loading, eliminación N+1 queries
 

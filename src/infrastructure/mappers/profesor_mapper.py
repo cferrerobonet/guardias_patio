@@ -57,8 +57,14 @@ class ProfesorMapper:
             # Turnos simples
             turno = Turno.from_string(model.turno)
 
-        # Zona preferida (implementación futura, por ahora None)
+        # Zona preferida - cargar desde BD si existe
         zona_preferida = ZonaPreferida.sin_preferencia()
+        if model.zona_preferida_id:
+            # Tiene zona preferida asignada
+            zona_nombre = None
+            if hasattr(model, 'zona_preferida') and model.zona_preferida:
+                zona_nombre = model.zona_preferida.nombre_zona
+            zona_preferida = ZonaPreferida.from_id(model.zona_preferida_id, zona_nombre)
 
         # Días y recreos permitidos (desde JSON o representación Python)
         dias_permitidos = list(range(7))  # Por defecto todos
@@ -169,6 +175,12 @@ class ProfesorMapper:
         model.activo = getattr(entity, 'activo', True)  # Manejar entidades antiguas sin el campo
         model.fecha_inicio_guardias = entity.fecha_inicio_guardias
         model.fecha_fin_guardias = entity.fecha_fin_guardias
+        
+        # Zona preferida - guardar ID en BD
+        if entity.zona_preferida and entity.zona_preferida.tiene_preferencia:
+            model.zona_preferida_id = entity.zona_preferida.zona_id
+        else:
+            model.zona_preferida_id = None
 
         # Serializar listas a JSON
         # Asegurarse de que son listas antes de serializar

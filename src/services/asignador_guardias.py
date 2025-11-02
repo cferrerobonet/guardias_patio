@@ -249,16 +249,23 @@ def _seleccionar_profesor_optimizado(
     """
     Selección DETERMINISTA EQUITATIVA con garantía de igualdad por grupos.
 
-    NUEVO ALGORITMO (v2.9):
-    =======================
+    NUEVO ALGORITMO (v2.9 MEJORADO v1.3):
+    ======================================
     REGLA ABSOLUTA: Profesores con mismas características (turno, horas, tutoría)
     DEBEN recibir EXACTAMENTE las mismas guardias (±1 por redondeo).
 
-    Criterios de selección (en orden estricto):
+    Criterios de selección (en orden estricto) - MEJORADO v1.3:
     1. DÉFICIT ABSOLUTO: Cuota ideal - asignadas (más déficit = prioridad)
     2. ZONA PREFERIDA: Consistencia de zona
-    3. DÍAS SIN GUARDIA: Minimizar tiempo sin asignación
-    4. DESEMPATE DETERMINISTA: ID del profesor (sin aleatoriedad)
+    3. ⭐ FECHAS CONSECUTIVAS: Menor distancia desde última guardia (NUEVO v1.3)
+       - Objetivo: Agrupar guardias para que el profesor termine antes
+       - Beneficio: Períodos largos sin guardias
+    4. RECREO CONSISTENTE: Mantener mismo recreo
+    5. DESEMPATE DETERMINISTA: ID del profesor (sin aleatoriedad)
+
+    MEJORA v1.3:
+    - ✅ Añadido criterio de fechas consecutivas (prioridad 3)
+    - ✅ Recreo movido a prioridad 4 (antes implícito en días sin guardia)
 
     ELIMINADO:
     - ❌ Factor aleatorio (causaba inequidad)
@@ -279,7 +286,7 @@ def _seleccionar_profesor_optimizado(
     Returns:
         Profesor seleccionado (el que NECESITA más guardias)
     """
-    def score_equitativo(p: Profesor) -> Tuple[float, int, int, int]:
+    def score_equitativo(p: Profesor) -> Tuple[float, int, int, int, int]:
         # 1. DÉFICIT ABSOLUTO (más importante)
         # Cuántas guardias le faltan para alcanzar su cuota ideal
         cuota_ideal = cuotas_ideales.get(p.id, 0)
@@ -293,28 +300,42 @@ def _seleccionar_profesor_optimizado(
         else:
             s_zona = -50
 
-        # 3. DÍAS SIN GUARDIA (priorizar profesores "olvidados")
-        # Cuántos días han pasado desde su última guardia
+        # 3. ⭐ NUEVO v1.3: FECHAS CONSECUTIVAS/AGRUPADAS
+        # Invertir: menor distancia = mayor prioridad
+        # Multiplicar por -1 para ordenar descendente (menor distancia primero)
         if ultimo_dia_prof[p.id]:
-            dias_sin_guardia = (slot.fecha - ultimo_dia_prof[p.id]).days
+            distancia_dias = (slot.fecha - ultimo_dia_prof[p.id]).days
+            # Negar para que menor distancia sea mayor valor (ordenamos reverse=True)
+            puntuacion_fechas = -distancia_dias
         else:
-            # Nunca ha tenido guardias, MÁXIMA prioridad
-            dias_sin_guardia = 9999
+            # Nunca ha tenido guardias, prioridad media (0)
+            # No tan alta como fechas consecutivas, pero mejor que dispersas
+            puntuacion_fechas = 0
 
-        # 4. DESEMPATE DETERMINISTA (ID menor = prioridad)
+        # 4. RECREO CONSISTENTE (mantener mismo recreo)
+        if ultimo_recreo_prof[p.id] is None:
+            s_recreo = 0
+        elif ultimo_recreo_prof[p.id] == slot.recreo_id:
+            s_recreo = 50  # Bonus por consistencia
+        else:
+            s_recreo = -25  # Penalización por cambio de recreo
+
+        # 5. DESEMPATE DETERMINISTA (ID menor = prioridad)
         # Esto garantiza orden reproducible entre profesores idénticos
         desempate = -p.id  # Negativo para que menor ID = mayor prioridad
 
-        # Orden de prioridad:
+        # Orden de prioridad (ordenado reverse=True, mayores valores primero):
         # 1. Deficit (DESC): Más necesita = primero
-        # 2. Zona (DESC): Zona preferida = beneficio
-        # 3. Días sin guardia (DESC): Más olvidado = prioridad
-        # 4. Desempate (DESC): ID menor = prioridad
+        # 2. Zona (DESC): Zona preferida = beneficio (100 > 0 > -50)
+        # 3. ⭐ Fechas (DESC): Menor distancia = mayor prioridad (NUEVO)
+        # 4. Recreo (DESC): Recreo consistente = beneficio (50 > 0 > -25)
+        # 5. Desempate (DESC): ID menor = prioridad
         return (
-            deficit,           # Más positivo = más prioridad
-            s_zona,           # 100 > 0 > -50
-            dias_sin_guardia,  # Más días = más prioridad
-            desempate         # -ID menor = más prioridad
+            deficit,            # Más positivo = más prioridad
+            s_zona,            # 100 > 0 > -50
+            puntuacion_fechas, # Mayor = fechas más cercanas (0 a -inf)
+            s_recreo,          # 50 > 0 > -25
+            desempate          # -ID menor = más prioridad
         )
 
     return sorted(elegibles, key=score_equitativo, reverse=True)[0]

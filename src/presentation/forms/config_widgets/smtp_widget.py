@@ -211,11 +211,13 @@ class SMTPConfigWidget(QGroupBox):
             self.smtp_port_input.setStyleSheet(readonly_style)
             self.smtp_user_input.setStyleSheet(readonly_style)
             self.smtp_password_input.setStyleSheet(readonly_style)
+            self.smtp_from_name_input.setStyleSheet(readonly_style)
         else:
             self.smtp_server_input.setStyleSheet(styles.STYLE_INPUT)
             self.smtp_port_input.setStyleSheet(styles.STYLE_INPUT)
             self.smtp_user_input.setStyleSheet(styles.STYLE_INPUT)
             self.smtp_password_input.setStyleSheet(styles.STYLE_INPUT)
+            self.smtp_from_name_input.setStyleSheet(styles.STYLE_INPUT)
 
     def _toggle_editable(self) -> None:
         """Alterna entre bloquear y desbloquear los campos SMTP."""
@@ -505,10 +507,15 @@ class SMTPConfigWidget(QGroupBox):
                 server.starttls()
                 server.login(smtp_user, smtp_password)
 
+                # Obtener nombre del remitente
+                smtp_from_name = self.smtp_from_name_input.text().strip()
+                if not smtp_from_name:
+                    smtp_from_name = "Guardias de Patio"
+
                 # Crear email de prueba
                 msg = MIMEMultipart("alternative")
                 msg["Subject"] = "✅ Prueba de Configuración SMTP - Guardias de Patio"
-                msg["From"] = smtp_user
+                msg["From"] = f"{smtp_from_name} <{smtp_user}>"
                 msg["To"] = destination_email
 
                 # Contenido del email

@@ -15,6 +15,67 @@ Este documento consolida el historial de todas las limpiezas y reorganizaciones 
 
 ---
 
+## 📅 Noviembre 2025 - Limpieza de Documentación (Parte 2)
+
+**Fecha:** 2 de Noviembre de 2025  
+**Contexto:** Consolidación de documentación MD después de v3.0
+
+### Eliminado
+- **Archivos de sistema:**
+  - 2 archivos `.DS_Store`
+- **Documentación obsoleta:**
+  - `INDICE_RAPIDO.md` (obsoleto, información en README.md)
+- **Carpetas vacías:**
+  - `validaciones/` (carpeta vacía)
+
+### Archivado (9 documentos → `archivo/`)
+- **Desarrollo:**
+  - `PLAN_HOMOGENEIZACION_FORMULARIOS.md` ✅ Completado
+  - `ERRORES_V3_ENCONTRADOS.md` ✅ Resueltos
+  - `SPRINT_1.2_PLAN_DETALLADO.md` ✅ Completado
+  - `RESUMEN_EJECUTIVO_REFACTORIZACION.md` ✅ Completado
+  - `IMPLEMENTACION_ICALENDAR_EMAIL.md` ✅ Completado
+  - `CORRECCIONES_ALGORITMO_v3.md` ✅ Aplicadas
+
+- **Versiones:**
+  - `CORRECCION_EQUIDAD_v2.9.md` (consolidado en CHANGELOG_v2.9)
+  - `RESUMEN_CORRECCION_v2.9.md` (consolidado en CHANGELOG_v2.9)
+  - `MEJORAS_CALENDARIO_v2.9.md` (consolidado en CHANGELOG_v2.9)
+
+### Documentos Actualizados
+- **README.md principal** (documentacion/)
+  - Actualizado a v3.0.0
+  - Estructura reorganizada
+  - Referencias corregidas
+  - Novedades de v3.0 destacadas
+
+- **versiones/README.md**
+  - Actualizado con v3.0.0 como versión actual
+  - Añadido Sistema de PDFs Corporativos
+  - Añadido Algoritmo v3.0 con fechas consecutivas
+  - Referencias actualizadas a archivo/
+
+- **desarrollo/README.md**
+  - Actualizado a v3.0.0
+  - Estructura de proyecto actualizada
+  - Enlaces corregidos
+  - Eliminadas referencias a archivos movidos
+
+- **build/README.md** (NUEVO)
+  - Índice de documentación de build
+  - Enlaces a guías consolidadas
+  - Checklist pre-release
+  - Troubleshooting común
+
+### Resultado
+- **-12 archivos** (eliminados/archivados)
+- **+1 archivo nuevo** (build/README.md)
+- **4 README actualizados** con información correcta
+- Todas las referencias actualizadas a v3.0.0
+- Estructura más clara y mantenible
+
+---
+
 ## 📅 Noviembre 2025 - Limpieza Post-Refactorización
 
 **Fecha:** 1 de Noviembre de 2025  

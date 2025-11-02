@@ -70,7 +70,11 @@ class CrearProfesorUseCase:
             email = Email.from_optional(dto.email_corporativo) if dto.email_corporativo else None
             horas = HorasContrato(dto.horas_contrato)
             turno = Turno.from_string(dto.turno, dto.horas_manana, dto.horas_tarde)
+            
+            # Zona preferida - crear desde ID si se proporciona
             zona_preferida = ZonaPreferida.sin_preferencia()
+            if dto.zona_preferida_id:
+                zona_preferida = ZonaPreferida.from_id(dto.zona_preferida_id)
 
             # 3. Crear entidad de dominio
             entidad = ProfesorEntity(
@@ -128,6 +132,7 @@ class CrearProfesorUseCase:
             tutor=entidad.es_tutor,  # Entidad usa 'es_tutor', DTO usa 'tutor'
             fecha_inicio_guardias=entidad.fecha_inicio_guardias,
             fecha_fin_guardias=entidad.fecha_fin_guardias,
+            zona_preferida_id=entidad.zona_preferida.zona_id if entidad.zona_preferida.tiene_preferencia else None,
             dias_semana_permitidos=entidad.dias_semana_permitidos,
             recreos_permitidos=entidad.recreos_permitidos,
             ajuste_guardias=entidad.ajuste_guardias,

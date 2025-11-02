@@ -91,6 +91,7 @@ class ProfesorForm(BaseForm):
 
         # Cargar datos iniciales
         self.cargar_profesores()
+        self.cargar_zonas()
 
     def setup_ui(self):
         """Construir la interfaz del formulario con diseño responsivo."""
@@ -402,6 +403,7 @@ class ProfesorForm(BaseForm):
                     tutor=datos_basicos["es_tutor"],
                     fecha_inicio_guardias=datos_restricciones.get("fecha_inicio"),
                     fecha_fin_guardias=datos_restricciones.get("fecha_fin"),
+                    zona_preferida_id=datos_restricciones.get("zona_preferida_id"),
                     recreos_permitidos=recreos_dict if recreos_dict else {},  # Pasar la matriz completa
                     dias_semana_permitidos=datos_restricciones.get("dias_permitidos"),
                 )
@@ -418,6 +420,7 @@ class ProfesorForm(BaseForm):
                     tutor=datos_basicos["es_tutor"],
                     fecha_inicio_guardias=datos_restricciones.get("fecha_inicio"),
                     fecha_fin_guardias=datos_restricciones.get("fecha_fin"),
+                    zona_preferida_id=datos_restricciones.get("zona_preferida_id"),
                     recreos_permitidos=recreos_dict if recreos_dict else {},  # Pasar matriz
                     dias_semana_permitidos=datos_restricciones.get("dias_permitidos"),
                 )
@@ -514,6 +517,18 @@ class ProfesorForm(BaseForm):
         except Exception as e:
             self.manejar_excepcion(e, "cargar profesores")
 
+    def cargar_zonas(self):
+        """Cargar zonas disponibles en el combo del widget de restricciones."""
+        try:
+            from models.models import Zona
+
+            zonas = self.session.query(Zona).order_by(Zona.nombre_zona).all()
+            zonas_list = [(z.id, z.nombre_zona) for z in zonas]
+            self.restricciones_widget.cargar_zonas(zonas_list)
+
+        except Exception as e:
+            self.manejar_excepcion(e, "cargar zonas")
+
     def filtrar_profesores(self):
         """Filtrar profesores en la tabla según búsqueda."""
         texto_busqueda = self.busqueda_input.text().lower().strip()
@@ -581,6 +596,7 @@ class ProfesorForm(BaseForm):
                 {
                     "fecha_inicio": profesor_dto.fecha_inicio_guardias,
                     "fecha_fin": profesor_dto.fecha_fin_guardias,
+                    "zona_preferida_id": profesor_dto.zona_preferida_id,
                     "recreos_permitidos": profesor_dto.recreos_permitidos,
                     "turno": profesor_dto.turno,
                 }

@@ -16,6 +16,7 @@ import ui_styles as styles
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDateEdit,
     QGridLayout,
     QGroupBox,
@@ -68,6 +69,9 @@ class RestriccionesWidget(QGroupBox):
 
         # Sección de fechas
         layout.addLayout(self._crear_seccion_fechas())
+
+        # Sección de zona preferida
+        layout.addLayout(self._crear_seccion_zona_preferida())
 
         # Checkbox para restricciones de horario
         self.usar_restricciones_horario_checkbox = QCheckBox(
@@ -124,6 +128,24 @@ class RestriccionesWidget(QGroupBox):
         layout_fecha_fin.addWidget(self.fecha_fin_guardias_input)
         layout_fecha_fin.addStretch()
         layout.addLayout(layout_fecha_fin)
+
+        return layout
+
+    def _crear_seccion_zona_preferida(self) -> QHBoxLayout:
+        """Crear sección de zona preferida."""
+        layout = QHBoxLayout()
+
+        label = QLabel("🎯 Zona preferida:")
+        label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        layout.addWidget(label)
+
+        self.zona_preferida_combo = QComboBox()
+        self.zona_preferida_combo.setStyleSheet(styles.STYLE_INPUT)
+        self.zona_preferida_combo.setMaximumWidth(300)
+        # Se cargará dinámicamente en el formulario principal
+        layout.addWidget(self.zona_preferida_combo)
+
+        layout.addStretch()
 
         return layout
 
@@ -389,16 +411,47 @@ class RestriccionesWidget(QGroupBox):
         except Exception:
             pass  # Ignorar errores de formato
 
+    def get_zona_preferida_id(self) -> Optional[int]:
+        """Obtener ID de zona preferida seleccionada."""
+        zona_id = self.zona_preferida_combo.currentData()
+        return zona_id if zona_id and zona_id > 0 else None
+
+    def set_zona_preferida_id(self, zona_id: Optional[int]):
+        """Establecer zona preferida por ID."""
+        if zona_id is None:
+            # Seleccionar "Sin preferencia" (índice 0)
+            self.zona_preferida_combo.setCurrentIndex(0)
+        else:
+            # Buscar el índice por data
+            for i in range(self.zona_preferida_combo.count()):
+                if self.zona_preferida_combo.itemData(i) == zona_id:
+                    self.zona_preferida_combo.setCurrentIndex(i)
+                    break
+
+    def cargar_zonas(self, zonas: list):
+        """
+        Cargar lista de zonas en el combo.
+
+        Args:
+            zonas: Lista de tuplas (id, nombre_zona)
+        """
+        self.zona_preferida_combo.clear()
+        self.zona_preferida_combo.addItem("Sin preferencia", 0)
+        for zona_id, nombre in zonas:
+            self.zona_preferida_combo.addItem(nombre, zona_id)
+
     def get_datos(self) -> dict:
         """
         Obtener todos los datos del widget.
 
         Returns:
-            Diccionario con fecha_inicio, fecha_fin, usar_restricciones, recreos_permitidos
+            Diccionario con fecha_inicio, fecha_fin, zona_preferida_id,
+            usar_restricciones, recreos_permitidos
         """
         return {
             "fecha_inicio": self.get_fecha_inicio(),
             "fecha_fin": self.get_fecha_fin(),
+            "zona_preferida_id": self.get_zona_preferida_id(),
             "usar_restricciones": self.get_usar_restricciones(),
             "recreos_permitidos": self.get_recreos_permitidos_json(),
         }
@@ -408,12 +461,15 @@ class RestriccionesWidget(QGroupBox):
         Establecer todos los datos del widget.
 
         Args:
-            datos: Diccionario con fecha_inicio, fecha_fin, usar_restricciones, recreos_permitidos
+            datos: Diccionario con fecha_inicio, fecha_fin, zona_preferida_id,
+            usar_restricciones, recreos_permitidos
         """
         if "fecha_inicio" in datos:
             self.set_fecha_inicio(datos["fecha_inicio"])
         if "fecha_fin" in datos:
             self.set_fecha_fin(datos["fecha_fin"])
+        if "zona_preferida_id" in datos:
+            self.set_zona_preferida_id(datos["zona_preferida_id"])
         if "usar_restricciones" in datos:
             self.set_usar_restricciones(datos["usar_restricciones"])
         if "recreos_permitidos" in datos:
@@ -426,6 +482,7 @@ class RestriccionesWidget(QGroupBox):
         self.usar_restricciones_horario_checkbox.setChecked(False)
         self.fecha_inicio_guardias_input.setDate(QDate.currentDate())
         self.fecha_fin_guardias_input.setDate(QDate.currentDate())
+        self.zona_preferida_combo.setCurrentIndex(0)  # Sin preferencia
         self._marcar_todos_matriz(False)
 
     def validar(self) -> Tuple[bool, str]:

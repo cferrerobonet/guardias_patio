@@ -1,8 +1,9 @@
 # Premisas y Restricciones del Algoritmo de Asignación de Guardias
 
-**Versión del Algoritmo**: v3.0 Simple Determinista  
-**Archivo**: `src/services/asignador_guardias_v3_simple.py`  
-**Fecha de Análisis**: 1 de noviembre de 2025
+**Versión del Algoritmo**: v3.0 Simple Determinista (MEJORADO v1.3)  
+**Archivo**: `src/services/asignador_guardias_v3_simple.py` + `src/services/asignador_guardias.py`  
+**Fecha de Análisis**: 2 de noviembre de 2025  
+**Mejora v1.3**: ✅ Añadida premisa de **Fechas Consecutivas/Agrupadas** (Prioridad Alta)
 
 ---
 
@@ -294,28 +295,49 @@ profesores_prioritarios = sorted(
 
 Una vez seleccionado un profesor, los slots se ordenan para optimizar la asignación y crear **patrones consistentes**:
 
-#### Criterios de Ordenamiento (de mayor a menor prioridad) - MEJORADO v1.1
+#### Criterios de Ordenamiento (de mayor a menor prioridad) - MEJORADO v1.3
 
-1. **Zona Consistente**
+1. **📍 Zona Consistente** ⭐ PRIORITARIA
    - Prioriza la misma zona que las guardias previas del profesor
    - Si no tiene guardias previas, usa su `zona_preferida_id`
    - **Objetivo**: Minimizar desplazamientos entre zonas
+   - **Justificación**: Reducir tiempo de traslado, facilitar rutinas
    
-2. **Recreo Consistente**
+2. **⏰ Recreo Consistente** ⭐ PRIORITARIA
    - Prioriza el mismo recreo que las guardias previas
    - **Objetivo**: Patrones predecibles (ej: siempre 2º recreo)
+   - **Justificación**: Rutinas más fáciles de recordar
    
-3. **Día de Semana Consistente**
+3. **📆 Fechas Consecutivas/Agrupadas** ⭐⭐ MUY PRIORITARIA (NUEVO v1.3)
+   - **Premisa**: Asignar guardias en fechas lo más cercanas posibles
+   - **Objetivo**: Que el profesor termine sus guardias lo antes posible
+   - **Restricción**: Máximo una guardia por día
+   - **Estrategia**:
+     * Priorizar fechas en la misma semana
+     * Priorizar fechas consecutivas dentro de semanas diferentes
+     * Agrupar guardias en tramos temporales compactos
+   - **Justificación**: 
+     * Profesor completa su cuota más rápido
+     * Períodos libres de guardias más largos
+     * Mejor conciliación y planificación personal
+   
+4. **🗓️ Día de Semana Consistente**
    - Prioriza el mismo día de la semana que guardias previas
    - **Objetivo**: Rutinas semanales (ej: siempre los lunes)
+   - **Nota**: Menor prioridad que fechas consecutivas
    
-4. **Fecha (Cronológico)**
+5. **📅 Fecha (Cronológico)**
    - Ordena por fecha para agrupar guardias cercanas en el tiempo
+   - **Nota**: Solo como criterio de desempate
    
-5. **Recreo Natural (Desempate)**
+6. **🔢 Recreo Natural (Desempate)**
    - Orden ascendente de recreo ID como criterio final
 
-**Código**: `_ordenar_slots_para_profesor()` líneas 273-363 (REESCRITO v1.1)
+**IMPORTANTE**: La premisa de **fechas consecutivas** tiene prioridad sobre el patrón de día de semana. Es decir:
+- ✅ **PREFERIDO**: Guardias en días 1, 2, 3, 4, 5 (consecutivos, diferentes días de semana)
+- ❌ **EVITAR**: Guardias en días 1, 8, 15, 22, 29 (mismo día de semana, pero muy dispersas)
+
+**Código**: `_ordenar_slots_para_profesor()` líneas 268-363 (REESCRITO v1.3)
 ```python
 def _ordenar_slots_para_profesor(slots, profesor, guardias_previas=None):
     # Analizar patrones de guardias previas
@@ -333,33 +355,62 @@ def _ordenar_slots_para_profesor(slots, profesor, guardias_previas=None):
         recreos = [s.recreo_id for s in guardias_previas]
         recreo_objetivo = max(set(recreos), key=recreos.count)
     
-    # Día de semana más frecuente
+    # Fecha más reciente de guardias previas (para agrupar cerca)
+    fecha_base = None
+    if guardias_previas:
+        fechas_previas = [s.fecha for s in guardias_previas]
+        fecha_base = max(fechas_previas)  # Última guardia asignada
+    
+    # Día de semana más frecuente (menor prioridad)
     dia_semana_objetivo = None
     if guardias_previas:
         dias = [s.fecha.weekday() for s in guardias_previas]
         dia_semana_objetivo = max(set(dias), key=dias.count)
     
     def clave_ordenamiento(slot):
+        # 1. Zona (0 = match, 1 = diferente)
         zona_match = 0 if zona_objetivo and slot.zona_id == zona_objetivo else 1
+        
+        # 2. Recreo (0 = match, 1 = diferente)
         recreo_match = 0 if recreo_objetivo and slot.recreo_id == recreo_objetivo else 1
+        
+        # 3. Fechas agrupadas (distancia desde última guardia)
+        # Menor distancia = mayor prioridad
+        if fecha_base:
+            distancia_dias = abs((slot.fecha - fecha_base).days)
+        else:
+            # Si no hay guardias previas, priorizar fechas tempranas
+            distancia_dias = (slot.fecha - fecha_inicio_curso).days
+        
+        # 4. Día de semana (0 = match, 1 = diferente)
+        # MENOR PRIORIDAD que fechas consecutivas
         dia_match = 0 if dia_semana_objetivo and slot.fecha.weekday() == dia_semana_objetivo else 1
         
-        return (zona_match, recreo_match, dia_match, slot.fecha, slot.recreo_id)
+        # 5. Fecha cronológica (desempate)
+        fecha = slot.fecha
+        
+        # 6. Recreo natural (desempate final)
+        recreo_id = slot.recreo_id
+        
+        return (zona_match, recreo_match, distancia_dias, dia_match, fecha, recreo_id)
     
     return sorted(slots, key=clave_ordenamiento)
 ```
 
-**¿Se cumple?**: ✅ **SÍ (MEJORADO)**
+**¿Se cumple?**: ✅ **SÍ (MEJORADO v1.3)**
 - ✅ Zona preferida/consistente
-- ✅ Recreo consistente (NUEVO)
-- ✅ Día de semana consistente (NUEVO)
+- ✅ Recreo consistente
+- ✅ **Fechas consecutivas/agrupadas (NUEVO - MÁXIMA PRIORIDAD)**
+- ✅ Día de semana consistente (menor prioridad)
 - ✅ Orden cronológico
-- **Mejora aplicada**: 1 de noviembre de 2025
+- **Mejora aplicada**: 2 de noviembre de 2025
 
-**Beneficios de la mejora**:
+**Beneficios de la mejora v1.3**:
 - 📍 Profesores permanecen en la misma zona
-- ⏰ Guardias en el mismo recreo cada semana
-- 📅 Patrones semanales predecibles (ej: lunes y miércoles)
+- ⏰ Guardias en el mismo recreo cada vez
+- 📆 **Guardias agrupadas en el tiempo - profesor termina antes**
+- 🏖️ **Períodos libres de guardias más largos**
+- 📅 Patrones semanales predecibles (cuando es compatible con fechas agrupadas)
 - 🔄 Rutinas más fáciles de recordar
 
 ---

@@ -414,9 +414,9 @@ class InitialConfigDialog(QDialog):
         smtp_password_row.addWidget(smtp_password_label)
         smtp_password_row.addWidget(self.smtp_password_input)
 
-        # Nombre del remitente
+        # Nombre del remitente (igual formato que los demás campos)
         smtp_from_name_row = QHBoxLayout()
-        smtp_from_name_label = QLabel("Nombre Remitente:")
+        smtp_from_name_label = QLabel("Nombre del Remitente:")
         smtp_from_name_label.setMinimumWidth(120)
         self.smtp_from_name_input = QLineEdit()
         self.smtp_from_name_input.setPlaceholderText("Guardias de Patio")
