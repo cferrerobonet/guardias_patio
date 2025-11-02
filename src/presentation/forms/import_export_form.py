@@ -5,6 +5,8 @@ Este módulo implementa la UI para exportar/importar datos en JSON
 y generar calendarios PDF para profesores.
 """
 
+import os
+
 import ui_styles as styles
 from models.models import Configuracion, Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -587,26 +589,69 @@ class ImportExportForm(BaseForm):
                         exitos += 1
 
                         # Enviar email si está habilitado
-                        if enviar_email and email_service and profesor.email:
+                        if enviar_email and email_service and profesor.email_corporativo:
                             if progress_callback:
                                 progress_callback(
                                     porcentaje,
                                     f"Enviando email a {profesor.nombre_completo}...",
                                 )
 
+                            # Generar archivo .ics para adjuntar
+                            ics_path = None
+                            try:
+                                from services.icalendar_service import ICalendarService
+
+                                ics_filename = ICalendarService.obtener_nombre_archivo_ics(
+                                    profesor.nombre_completo
+                                )
+                                ics_path = os.path.join(carpeta, ics_filename)
+
+                                # Obtener configuración para nombre del centro
+                                config_db = (
+                                    self.session.query(Configuracion).first()
+                                )
+                                nombre_centro = "Centro Educativo"
+                                if config_db and hasattr(config_db, "nombre_centro"):
+                                    nombre_centro = config_db.nombre_centro
+
+                                # Generar archivo .ics
+                                if ICalendarService.generar_icalendar_profesor(
+                                    session=self.session,
+                                    profesor_id=profesor.id,
+                                    ruta_salida=ics_path,
+                                    nombre_centro=nombre_centro,
+                                ):
+                                    logger.info(
+                                        f"Archivo iCalendar generado: {ics_path}"
+                                    )
+                                else:
+                                    logger.warning(
+                                        f"No se pudo generar iCalendar para "
+                                        f"{profesor.nombre_completo}"
+                                    )
+                                    ics_path = None
+                            except Exception as e:
+                                logger.warning(
+                                    f"Error al generar iCalendar: {e}"
+                                )
+                                ics_path = None
+
                             exito_email, mensaje_email = email_service.send_calendar_pdf(
-                                to_email=profesor.email,
+                                to_email=profesor.email_corporativo,
                                 profesor_nombre=profesor.nombre_completo,
                                 pdf_path=ruta_salida,
                                 curso_escolar=curso_escolar,
+                                ics_path=ics_path,
                             )
 
                             if exito_email:
                                 emails_enviados += 1
-                                logger.info(f"Email enviado a {profesor.email}: {mensaje_email}")
+                                logger.info(
+                                    f"Email enviado a {profesor.email_corporativo}: {mensaje_email}"
+                                )
                             else:
                                 logger.warning(
-                                    f"No se pudo enviar email a {profesor.email}: {mensaje_email}"
+                                    f"No se pudo enviar email a {profesor.email_corporativo}: {mensaje_email}"
                                 )
 
                 except Exception as e:

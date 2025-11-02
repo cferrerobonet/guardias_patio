@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import random
+import ast
+import json
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date
@@ -20,6 +21,23 @@ from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
+
+# Caché global de elegibilidad (se limpia al inicio de cada generación)
+_cache_elegibilidad: Dict[Tuple[date, str, int, int], List[int]] = {}
+_cache_hits = 0
+_cache_misses = 0
+
+# Contadores globales de métricas
+_rechazos_globales: Dict[str, int] = defaultdict(int)
+_total_evaluaciones = 0
+
+
+def _limpiar_cache_elegibilidad() -> None:
+    """Limpia el caché de elegibilidad al inicio de cada generación."""
+    global _cache_elegibilidad, _cache_hits, _cache_misses
+    _cache_elegibilidad.clear()
+    _cache_hits = 0
+    _cache_misses = 0
 
 
 def profesor_ausente(session: Session, profesor_id: int, fecha: date) -> bool:
@@ -59,18 +77,18 @@ def _horario_permitido(
     fecha: date, recreo_id: int, horario_json: Optional[str]
 ) -> bool:
     """
-    Valida si un día+recreo está permitido según la matriz JSON.
+    Valida si un recreo está permitido en una fecha según la matriz JSON.
 
     Soporta DOS formatos:
     1. Matriz completa: '{"0": [1, 2], "1": [1, 2], ...}' (día: recreos)
-    2. Lista simple: '[1, 2]' (mismos recreos todos los días L-V)
+    2. Lista simple: '[1, 2]' (mismos recreos todos los días)
 
-    Si no hay restricciones definidas, permite L-V y todos los recreos (1-4).
+    NOTA: Esta función SOLO valida recreos permitidos.
+    La validación de días de la semana se hace en _obtener_profesores_elegibles().
     """
     if not horario_json:
-        # Por defecto: lunes a viernes (0-4), todos los recreos (1-4)
-        # Esto permite que profesores sin restricciones puedan cubrir cualquier recreo
-        return fecha.weekday() < 5 and 1 <= recreo_id <= 4
+        # Por defecto: todos los recreos (1-4) permitidos
+        return 1 <= recreo_id <= 4
 
     try:
         import json
@@ -80,8 +98,13 @@ def _horario_permitido(
         if isinstance(datos, dict):
             dia_str = str(fecha.weekday())
 
-            # Si el día no está en el JSON, no está permitido
+            # Si el día no está en el JSON, verificar solo recreo
+            # (el día se valida por separado en _obtener_profesores_elegibles)
             if dia_str not in datos:
+                # Revisar si hay una clave especial para "todos los días"
+                if "*" in datos:
+                    return recreo_id in datos["*"]
+                # Si no hay entrada para este día, no permitir
                 return False
 
             # Verificar si el recreo está en la lista de recreos del día
@@ -90,19 +113,16 @@ def _horario_permitido(
 
         # FORMATO 2: Lista simple [1, 2] - mismos recreos todos los días
         elif isinstance(datos, list):
-            # Solo días lectivos (L-V)
-            if fecha.weekday() >= 5:
-                return False
             # Verificar si el recreo está en la lista
             return recreo_id in datos
 
         else:
-            # Formato desconocido, permitir L-V por defecto
-            return fecha.weekday() < 5
+            # Formato desconocido, permitir todos los recreos
+            return 1 <= recreo_id <= 4
 
     except (json.JSONDecodeError, ValueError, KeyError, TypeError):
-        # En caso de error, permitir L-V por defecto
-        return fecha.weekday() < 5
+        # En caso de error, permitir todos los recreos
+        return 1 <= recreo_id <= 4
 
 
 def _turno_de_recreo(turno_prof: str, recreo_turno: str) -> bool:
@@ -172,11 +192,6 @@ def _build_slots(session: Session, config: Configuracion) -> List[Slot]:
 
     logger.info(f"Slots creados: {len(slots)} (considerando fechas de zonas)")
     return slots
-
-
-# Diccionario global para acumular estadísticas de rechazos (diagnóstico)
-_rechazos_globales = defaultdict(int)
-_total_evaluaciones = 0
 
 
 def _obtener_profesores_elegibles_optimizado(
@@ -354,6 +369,7 @@ def generar_calendario_guardias(
     global _rechazos_globales, _total_evaluaciones
     _rechazos_globales.clear()
     _total_evaluaciones = 0
+    _limpiar_cache_elegibilidad()
 
     logger.info("=" * 80)
     logger.info("INICIANDO GENERACIÓN CON ALGORITMO OPTIMIZADO AVANZADO")
@@ -564,12 +580,42 @@ def generar_calendario_guardias(
         if cuotas_ideales.get(p.id, 0) > 0 and matriz_elegibilidad.get(p.id, 0) > 0
     ]
 
-    # Ordenar por ID para garantizar orden determinista
-    # Profesores del mismo grupo se procesarán en orden fijo
+    # ORDENAMIENTO POR PRIORIDADES (según premisas del sistema):
+    # 1. Profesores con fecha_inicio_guardias (más restrictivos temporalmente)
+    # 2. Profesores con fecha_fin_guardias (periodo limitado)
+    # 3. Profesores con turno mixto (mayor complejidad de asignación)
+    # 4. Resto de profesores
+    # 5. ID como desempate determinista
+    def calcular_prioridad_profesor(p: Profesor) -> Tuple[int, int, int, int]:
+        """
+        Calcula prioridad de asignación del profesor.
+        
+        Retorna tupla (prioridad_inicio, prioridad_fin, prioridad_mixto, id)
+        Valores menores = mayor prioridad (se ordenará ascendente)
+        """
+        # Prioridad 1: Fecha de inicio (0 = tiene fecha inicio, 1 = no tiene)
+        tiene_inicio = 0 if p.fecha_inicio_guardias else 1
+
+        # Prioridad 2: Fecha de fin (0 = tiene fecha fin, 1 = no tiene)
+        tiene_fin = 0 if p.fecha_fin_guardias else 1
+
+        # Prioridad 3: Turno mixto (0 = mixto, 1 = otros)
+        es_mixto = 0 if p.turno and p.turno.lower() in ('mixto', 'ambos') else 1
+
+        # Desempate: ID menor primero
+        return (tiene_inicio, tiene_fin, es_mixto, p.id)
+
     profesores_prioritarios = sorted(
         profesores_con_cuota,
-        key=lambda p: p.id
+        key=calcular_prioridad_profesor
     )
+
+    # Log de orden de prioridades
+    logger.info("Orden de asignación por prioridades:")
+    logger.info(f"  1. Profesores con fecha_inicio: {sum(1 for p in profesores_prioritarios if p.fecha_inicio_guardias)}")
+    logger.info(f"  2. Profesores con fecha_fin: {sum(1 for p in profesores_prioritarios if p.fecha_fin_guardias)}")
+    logger.info(f"  3. Profesores mixtos: {sum(1 for p in profesores_prioritarios if p.turno and p.turno.lower() in ('mixto', 'ambos'))}")
+    logger.info(f"  4. Total profesores: {len(profesores_prioritarios)}")
 
     # RONDAS: Dar 1 guardia a TODOS antes de dar 2 guardias a CUALQUIERA
     # Esto garantiza equidad perfecta en la distribución inicial
@@ -943,7 +989,7 @@ def generar_calendario_guardias(
     reportar_progreso(75, "Fase 4: Optimizando con Simulated Annealing...")
 
     import math
-    import random
+    import random as rand_sa  # Renombrar para evitar conflicto
 
     # Función de energía: mide la calidad de la solución (menor es mejor)
     def calcular_energia(asignadas_temp: Dict[int, int], cuotas_ideales_temp: Dict[int, int]) -> float:
@@ -1007,8 +1053,8 @@ def generar_calendario_guardias(
                 break
 
             # Seleccionar 2 guardias aleatorias
-            g1 = random.choice(calendario)
-            g2 = random.choice(calendario)
+            g1 = rand_sa.choice(calendario)
+            g2 = rand_sa.choice(calendario)
 
             if g1.id == g2.id or g1.profesor_id == g2.profesor_id:
                 continue
@@ -1075,7 +1121,7 @@ def generar_calendario_guardias(
             else:
                 # Empeoramiento: aceptar con probabilidad e^(-ΔE/T)
                 probabilidad = math.exp(-delta_energia / temperatura)
-                if random.random() < probabilidad:
+                if rand_sa.random() < probabilidad:
                     aceptar = True
 
             if aceptar:
@@ -1859,12 +1905,36 @@ def _obtener_profesores_elegibles(
         # Validar días de la semana permitidos
         if p.dias_semana_permitidos:
             try:
-                dias_permitidos = [int(d.strip()) for d in p.dias_semana_permitidos.split(",")]
-                if slot.fecha.weekday() not in dias_permitidos:
-                    rechazados['dias_semana'] += 1
-                    _rechazos_globales['dias_semana'] += 1
-                    continue
-            except (ValueError, AttributeError):
+                # Soportar tanto JSON como CSV
+                dias_permitidos = None
+                dias_str = p.dias_semana_permitidos.strip()
+
+                # Intentar JSON primero
+                try:
+                    dias_permitidos = json.loads(dias_str)
+                except (json.JSONDecodeError, ValueError):
+                    # Intentar Python literal (ast.literal_eval)
+                    try:
+                        dias_permitidos = ast.literal_eval(dias_str)
+                    except (ValueError, SyntaxError):
+                        # Intentar CSV
+                        try:
+                            dias_permitidos = [
+                                int(d.strip()) for d in dias_str.split(",")
+                            ]
+                        except ValueError:
+                            pass
+
+                if dias_permitidos and isinstance(dias_permitidos, list):
+                    if slot.fecha.weekday() not in dias_permitidos:
+                        rechazados['dias_semana'] += 1
+                        _rechazos_globales['dias_semana'] += 1
+                        continue
+            except Exception as e:
+                logger.warning(
+                    f"Error al parsear dias_semana_permitidos "
+                    f"para {p.nombre_completo}: {e}"
+                )
                 pass
 
         # Validar matriz de horario
@@ -1931,10 +2001,10 @@ def _seleccionar_mejor_profesor(
 
     Criterios de selección (en orden de importancia):
     1. Zona preferida (mantener consistencia)
-    2. Déficit de guardias (equilibrar carga)
+    2. Déficit porcentual de guardias (equilibrar carga proporcional)
     3. Continuidad de días
     4. Mismo recreo anterior
-    5. Aleatorio (desempate)
+    5. ID del profesor (desempate determinístico)
 
     Args:
         elegibles: Lista de profesores elegibles
@@ -1948,7 +2018,7 @@ def _seleccionar_mejor_profesor(
     Returns:
         Profesor seleccionado
     """
-    def score(p: Profesor) -> Tuple[int, int, int, int, float]:
+    def score(p: Profesor) -> Tuple[int, float, int, int, int]:
         # Zona preferida
         if zona_preferida_prof[p.id] is None:
             s_zona = 0
@@ -1957,8 +2027,15 @@ def _seleccionar_mejor_profesor(
         else:
             s_zona = -50
 
-        # Déficit de guardias
-        deficit = cuotas.get(p.id, 0) - asignadas[p.id]
+        # Déficit porcentual (más justo que déficit absoluto)
+        # Un profesor con 5/10 (50%) tiene mismo déficit relativo que 1/2 (50%)
+        cuota_ideal = cuotas.get(p.id, 1)
+        if cuota_ideal > 0:
+            deficit_porcentual = (
+                (cuota_ideal - asignadas[p.id]) / cuota_ideal * 100
+            )
+        else:
+            deficit_porcentual = 0.0
 
         # Continuidad de días
         s_continuidad = 1 if (
@@ -1969,7 +2046,8 @@ def _seleccionar_mejor_profesor(
         # Mismo recreo
         s_recreo = 1 if ultimo_recreo_prof[p.id] == slot.recreo_id else 0
 
-        return (s_zona, deficit, s_continuidad, s_recreo, random.random())
+        # Desempate determinístico por ID (menor ID = mayor prioridad)
+        return (s_zona, deficit_porcentual, s_continuidad, s_recreo, -p.id)
 
     return sorted(elegibles, key=score, reverse=True)[0]
 

@@ -28,6 +28,30 @@ def main():
     app = QApplication(sys.argv)
 
     # ==========================================
+    # Validar Configuración Inicial (SFTP/SMTP)
+    # ==========================================
+
+    from presentation.dialogs.initial_config_dialog import InitialConfigDialog
+
+    # Verificar si es necesario configurar SFTP/SMTP
+    if InitialConfigDialog.is_configuration_needed():
+        logger.info("Configuración inicial requerida. Mostrando diálogo...")
+
+        config_dialog = InitialConfigDialog()
+        if config_dialog.exec() != InitialConfigDialog.DialogCode.Accepted:
+            logger.info("Usuario canceló la configuración inicial. Saliendo...")
+            QMessageBox.critical(
+                None,
+                "Configuración Incompleta",
+                "No se puede iniciar la aplicación sin configurar SFTP.\n\n"
+                "El servidor SFTP es necesario para garantizar copias de seguridad "
+                "y sincronización de datos."
+            )
+            sys.exit(0)
+
+        logger.info("✓ Configuración inicial completada")
+
+    # ==========================================
     # Configurar traducción al español
     # ==========================================
 

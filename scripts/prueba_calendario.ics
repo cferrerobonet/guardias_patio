@@ -1,0 +1,60 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Guardias de Patio//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Guardias de Patio - GARCÍA LÓPEZ, JUAN
+X-WR-CALDESC:Calendario de guardias de patio para GARCÍA LÓPEZ, JUAN
+X-WR-TIMEZONE:Europe/Madrid
+BEGIN:VEVENT
+UID:guardia-1-20251115-1@guardiaspatio
+DTSTAMP:20251102T184741Z
+DTSTART:20251115T110000
+DTEND:20251115T113000
+SUMMARY:🏫 Guardia de Patio - Patio Principal
+DESCRIPTION:Guardia de patio en Patio Principal\nTurno: Mañana\nRecreo: 1\nDescripción: Patio principal del centro\n\n📍 Ubicación: IES Ejemplo\n⏰ Recuerda llegar unos minutos antes\n\nGenerado por Guardias de Patio
+LOCATION:IES Ejemplo
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+CATEGORIES:Guardia de Patio,Mañana
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Guardia de patio en 15 minutos
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:guardia-2-20251117-2@guardiaspatio
+DTSTAMP:20251102T184741Z
+DTSTART:20251117T133000
+DTEND:20251117T140000
+SUMMARY:🏫 Guardia de Patio - Patio Secundaria
+DESCRIPTION:Guardia de patio en Patio Secundaria\nTurno: Mañana\nRecreo: 2\nDescripción: Patio del edificio de secundaria\n\n📍 Ubicación: IES Ejemplo\n⏰ Recuerda llegar unos minutos antes\n\nGenerado por Guardias de Patio
+LOCATION:IES Ejemplo
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+CATEGORIES:Guardia de Patio,Mañana
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Guardia de patio en 15 minutos
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:guardia-3-20251119-1@guardiaspatio
+DTSTAMP:20251102T184741Z
+DTSTART:20251119T160000
+DTEND:20251119T163000
+SUMMARY:🏫 Guardia de Patio - Patio Principal
+DESCRIPTION:Guardia de patio en Patio Principal\nTurno: Tarde\nRecreo: 1\nDescripción: Patio principal del centro\n\n📍 Ubicación: IES Ejemplo\n⏰ Recuerda llegar unos minutos antes\n\nGenerado por Guardias de Patio
+LOCATION:IES Ejemplo
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+CATEGORIES:Guardia de Patio,Tarde
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Guardia de patio en 15 minutos
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+END:VCALENDAR

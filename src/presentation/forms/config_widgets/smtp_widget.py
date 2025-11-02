@@ -138,6 +138,26 @@ class SMTPConfigWidget(QGroupBox):
 
         layout.addLayout(fila2_layout)
 
+        # FILA 3: Nombre del Remitente
+        fila3_layout = QHBoxLayout()
+        fila3_layout.setSpacing(10)
+
+        # Nombre del remitente (campo completo)
+        nombre_container = QVBoxLayout()
+        nombre_container.setSpacing(3)
+        label_nombre = QLabel("Nombre del Remitente:")
+        label_nombre.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        nombre_container.addWidget(label_nombre)
+
+        self.smtp_from_name_input = QLineEdit()
+        self.smtp_from_name_input.setPlaceholderText("Guardias de Patio")
+        self.smtp_from_name_input.setReadOnly(True)
+        self.smtp_from_name_input.textChanged.connect(self.config_changed.emit)
+        nombre_container.addWidget(self.smtp_from_name_input)
+        fila3_layout.addLayout(nombre_container, 1)
+
+        layout.addLayout(fila3_layout)
+
         # Botones SMTP
         smtp_btn_layout = QHBoxLayout()
         smtp_btn_layout.setSpacing(8)
@@ -213,6 +233,7 @@ class SMTPConfigWidget(QGroupBox):
         self.smtp_port_input.setReadOnly(new_state)
         self.smtp_user_input.setReadOnly(new_state)
         self.smtp_password_input.setReadOnly(new_state)
+        self.smtp_from_name_input.setReadOnly(new_state)
 
         # Cambiar estilos y texto del botón
         self._apply_readonly_style(new_state)
@@ -291,6 +312,7 @@ class SMTPConfigWidget(QGroupBox):
         self.smtp_server_input.setText(os.getenv("SMTP_SERVER", ""))
         self.smtp_port_input.setText(os.getenv("SMTP_PORT", "587"))
         self.smtp_user_input.setText(os.getenv("SMTP_USER", ""))
+        self.smtp_from_name_input.setText(os.getenv("SMTP_FROM_NAME", "Guardias de Patio"))
 
         # Almacenar la contraseña real internamente
         self._actual_password = os.getenv("SMTP_PASSWORD", "")
@@ -317,6 +339,7 @@ class SMTPConfigWidget(QGroupBox):
             smtp_port = self.smtp_port_input.text().strip()
             smtp_user = self.smtp_user_input.text().strip()
             smtp_password = self.smtp_password_input.text().strip()
+            smtp_from_name = self.smtp_from_name_input.text().strip()
 
             # Si la contraseña son asteriscos, usar la almacenada
             if smtp_password == "••••••••":
@@ -329,6 +352,10 @@ class SMTPConfigWidget(QGroupBox):
             if not smtp_server or not smtp_port or not smtp_user or not password_to_save:
                 self.logger.warning("Configuración SMTP incompleta, no se guardó")
                 return False
+
+            # Usar valor por defecto si no se especifica nombre
+            if not smtp_from_name:
+                smtp_from_name = "Guardias de Patio"
 
             # Leer archivo .env actual
             env_path = ".env"
@@ -344,6 +371,7 @@ class SMTPConfigWidget(QGroupBox):
                 "SMTP_PORT": smtp_port,
                 "SMTP_USER": smtp_user,
                 "SMTP_PASSWORD": password_to_save,
+                "SMTP_FROM_NAME": smtp_from_name,
             }
 
             updated_vars = set()
@@ -405,15 +433,68 @@ class SMTPConfigWidget(QGroupBox):
 
             # Si no se proporciona email de destino, pedir uno
             if not destination_email:
-                from PyQt6.QtWidgets import QInputDialog
+                from PyQt6.QtWidgets import QDialog, QInputDialog
 
-                destination_email, ok = QInputDialog.getText(
-                    self,
-                    "Email de Prueba",
-                    "Introduce el email donde recibir la prueba:",
-                    QLineEdit.EchoMode.Normal,
-                    smtp_user,
-                )
+                # Crear diálogo personalizado con estilo
+                dialog = QInputDialog(self)
+                dialog.setWindowTitle("Email de Prueba")
+                dialog.setLabelText("Introduce el email donde recibir la prueba:")
+                dialog.setTextValue(smtp_user)
+                dialog.setInputMode(QInputDialog.InputMode.TextInput)
+                dialog.setTextEchoMode(QLineEdit.EchoMode.Normal)
+
+                # Aplicar estilo al diálogo
+                dialog.setStyleSheet("""
+                    QInputDialog {
+                        background-color: white;
+                        min-width: 400px;
+                    }
+                    QLabel {
+                        color: #2c3e50;
+                        font-size: 13px;
+                        padding: 10px;
+                    }
+                    QLineEdit {
+                        padding: 8px;
+                        border: 1px solid #dcdcdc;
+                        border-radius: 4px;
+                        font-size: 13px;
+                        background-color: white;
+                        color: #2c3e50;
+                        min-width: 350px;
+                    }
+                    QLineEdit:focus {
+                        border: 2px solid #3498db;
+                    }
+                    QPushButton {
+                        background-color: #3498db;
+                        color: white;
+                        border: none;
+                        padding: 8px 20px;
+                        border-radius: 4px;
+                        font-size: 13px;
+                        font-weight: bold;
+                        min-width: 80px;
+                    }
+                    QPushButton:hover {
+                        background-color: #2980b9;
+                    }
+                    QPushButton:pressed {
+                        background-color: #21618c;
+                    }
+                    QPushButton[text="Cancelar"],
+                    QPushButton[text="Cancel"] {
+                        background-color: #95a5a6;
+                    }
+                    QPushButton[text="Cancelar"]:hover,
+                    QPushButton[text="Cancel"]:hover {
+                        background-color: #7f8c8d;
+                    }
+                """)
+
+                ok = dialog.exec() == QDialog.DialogCode.Accepted
+                destination_email = dialog.textValue()
+
                 if not ok or not destination_email or "@" not in destination_email:
                     return
 
@@ -582,6 +663,7 @@ class SMTPConfigWidget(QGroupBox):
             "smtp_port": self.smtp_port_input.text().strip(),
             "smtp_user": self.smtp_user_input.text().strip(),
             "smtp_password": smtp_password,
+            "smtp_from_name": self.smtp_from_name_input.text().strip() or "Guardias de Patio",
         }
 
     def set_config_dict(self, config: dict) -> None:

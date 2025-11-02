@@ -109,6 +109,7 @@ class DataExporter:
         smtp_port = os.getenv("SMTP_PORT", "")
         smtp_user = os.getenv("SMTP_USER", "")
         smtp_password = os.getenv("SMTP_PASSWORD", "")
+        smtp_from_name = os.getenv("SMTP_FROM_NAME", "")
 
         # Solo exportar si hay configuración completa
         if smtp_server and smtp_port and smtp_user and smtp_password:
@@ -117,6 +118,7 @@ class DataExporter:
                 "smtp_port": smtp_port,
                 "smtp_user": smtp_user,
                 "smtp_password": DataExporter._encriptar_password(smtp_password),  # Encriptada
+                "smtp_from_name": smtp_from_name,  # Nombre del remitente
             }
         return None
 
@@ -141,6 +143,7 @@ class DataExporter:
             smtp_port = smtp_data.get("smtp_port", "")
             smtp_user = smtp_data.get("smtp_user", "")
             smtp_password_encrypted = smtp_data.get("smtp_password", "")
+            smtp_from_name = smtp_data.get("smtp_from_name", "Guardias de Patio")
 
             if not smtp_server or not smtp_port or not smtp_user or not smtp_password_encrypted:
                 logger.warning("Configuración SMTP incompleta en JSON")
@@ -163,6 +166,7 @@ class DataExporter:
                 "SMTP_PORT": smtp_port,
                 "SMTP_USER": smtp_user,
                 "SMTP_PASSWORD": smtp_password,  # Guardamos desencriptada
+                "SMTP_FROM_NAME": smtp_from_name,  # Nombre del remitente
             }
 
             updated_vars = set()
@@ -329,8 +333,11 @@ class DataExporter:
                     "horas_manana": float(p.horas_manana) if p.horas_manana else None,
                     "horas_tarde": float(p.horas_tarde) if p.horas_tarde else None,
                     "tutor": p.tutor,
+                    "activo": p.activo,  # Campo añadido
                     "fecha_inicio_guardias": DataExporter._serialize_date(p.fecha_inicio_guardias) if p.fecha_inicio_guardias else None,
                     "fecha_fin_guardias": DataExporter._serialize_date(p.fecha_fin_guardias) if p.fecha_fin_guardias else None,
+                    "dias_semana_permitidos": p.dias_semana_permitidos,  # Campo añadido
+                    "recreos_permitidos": p.recreos_permitidos,  # Campo añadido
                 })
             logger.info(f"✓ {len(profesores)} profesores exportados")
 
@@ -362,6 +369,7 @@ class DataExporter:
                     "recreos_config": c.recreos_config,
                     "ajuste_tutores": float(c.ajuste_tutores) if c.ajuste_tutores else 1.0,
                     "ajuste_no_tutores": float(c.ajuste_no_tutores) if c.ajuste_no_tutores else 1.0,
+                    "algoritmo_asignacion": c.algoritmo_asignacion,  # Campo añadido
                 })
             logger.info(f"✓ {len(configs)} configuraciones exportadas")
 
@@ -494,8 +502,11 @@ class DataExporter:
                     existing.horas_manana = p_data.get("horas_manana")
                     existing.horas_tarde = p_data.get("horas_tarde")
                     existing.tutor = p_data.get("tutor", False)
+                    existing.activo = p_data.get("activo", True)  # Campo añadido
                     existing.fecha_inicio_guardias = DataExporter._parse_date(p_data.get("fecha_inicio_guardias"))
                     existing.fecha_fin_guardias = DataExporter._parse_date(p_data.get("fecha_fin_guardias"))
+                    existing.dias_semana_permitidos = p_data.get("dias_semana_permitidos")  # Campo añadido
+                    existing.recreos_permitidos = p_data.get("recreos_permitidos")  # Campo añadido
                 else:
                     # Crear nuevo
                     profesor = Profesor(
@@ -508,8 +519,11 @@ class DataExporter:
                         horas_manana=p_data.get("horas_manana"),
                         horas_tarde=p_data.get("horas_tarde"),
                         tutor=p_data.get("tutor", False),
+                        activo=p_data.get("activo", True),  # Campo añadido
                         fecha_inicio_guardias=DataExporter._parse_date(p_data.get("fecha_inicio_guardias")),
                         fecha_fin_guardias=DataExporter._parse_date(p_data.get("fecha_fin_guardias")),
+                        dias_semana_permitidos=p_data.get("dias_semana_permitidos"),  # Campo añadido
+                        recreos_permitidos=p_data.get("recreos_permitidos"),  # Campo añadido
                     )
                     session.add(profesor)
                 profesores_importados += 1
@@ -533,6 +547,7 @@ class DataExporter:
                     existing.recreos_config = c_data.get("recreos_config")
                     existing.ajuste_tutores = c_data.get("ajuste_tutores", 1.0)
                     existing.ajuste_no_tutores = c_data.get("ajuste_no_tutores", 1.0)
+                    existing.algoritmo_asignacion = c_data.get("algoritmo_asignacion", "v2.9")  # Campo añadido
                 else:
                     # Crear nueva
                     config = Configuracion(
@@ -548,6 +563,7 @@ class DataExporter:
                         recreos_config=c_data.get("recreos_config"),
                         ajuste_tutores=c_data.get("ajuste_tutores", 1.0),
                         ajuste_no_tutores=c_data.get("ajuste_no_tutores", 1.0),
+                        algoritmo_asignacion=c_data.get("algoritmo_asignacion", "v2.9"),  # Campo añadido
                     )
                     session.add(config)
                 configs_importadas += 1
@@ -585,6 +601,11 @@ class DataExporter:
                     existing.motivo = a_data.get("motivo")
                     existing.documento_path = a_data.get("documento_path")
                     existing.activa = a_data.get("activa", True)
+                    # Preservar timestamps
+                    if a_data.get("created_at"):
+                        existing.created_at = datetime.fromisoformat(a_data["created_at"])
+                    if a_data.get("updated_at"):
+                        existing.updated_at = datetime.fromisoformat(a_data["updated_at"])
                 else:
                     # Crear nueva
                     ausencia = Ausencia(
@@ -596,6 +617,16 @@ class DataExporter:
                         motivo=a_data.get("motivo"),
                         documento_path=a_data.get("documento_path"),
                         activa=a_data.get("activa", True),
+                        created_at=(
+                            datetime.fromisoformat(a_data["created_at"])
+                            if a_data.get("created_at")
+                            else datetime.utcnow()
+                        ),
+                        updated_at=(
+                            datetime.fromisoformat(a_data["updated_at"])
+                            if a_data.get("updated_at")
+                            else datetime.utcnow()
+                        ),
                     )
                     session.add(ausencia)
                 ausencias_importadas += 1

@@ -9,7 +9,7 @@ from datetime import date, time
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from models.models import Configuracion, Guardia, Profesor, Zona
+from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session, joinedload
 
 
@@ -79,15 +79,22 @@ class ExportadorDatos:
         profesores = session.query(Profesor).all()
         return [
             {
+                "id": p.id,  # ID necesario para restauración completa
                 "nombre_completo": p.nombre_completo,
                 "email_corporativo": p.email_corporativo,
                 "horas_contrato": p.horas_contrato,
                 "porcentaje_jornada": p.porcentaje_jornada,
                 "turno": p.turno,
+                "horas_manana": p.horas_manana,  # Campo añadido
+                "horas_tarde": p.horas_tarde,  # Campo añadido
                 "tutor": p.tutor,
+                "activo": p.activo,  # Campo añadido
                 "fecha_inicio_guardias": ExportadorDatos._serializar_fecha(
                     p.fecha_inicio_guardias
                 ),
+                "fecha_fin_guardias": ExportadorDatos._serializar_fecha(
+                    p.fecha_fin_guardias
+                ),  # Campo añadido
                 "dias_semana_permitidos": p.dias_semana_permitidos,
                 "recreos_permitidos": p.recreos_permitidos,
             }
@@ -100,8 +107,11 @@ class ExportadorDatos:
         zonas = session.query(Zona).all()
         return [
             {
+                "id": z.id,  # ID necesario para restauración completa
                 "nombre_zona": z.nombre_zona,
                 "descripcion": z.descripcion,
+                "fecha_inicio": ExportadorDatos._serializar_fecha(z.fecha_inicio),  # Campo añadido
+                "fecha_fin": ExportadorDatos._serializar_fecha(z.fecha_fin),  # Campo añadido
             }
             for z in zonas
         ]
@@ -114,6 +124,7 @@ class ExportadorDatos:
             return None
 
         return {
+            "id": config.id,  # ID necesario para restauración completa
             "fecha_inicio_curso": ExportadorDatos._serializar_fecha(
                 config.fecha_inicio_curso
             ),
@@ -135,6 +146,7 @@ class ExportadorDatos:
             "recreos_config": config.recreos_config,
             "ajuste_tutores": config.ajuste_tutores,
             "ajuste_no_tutores": config.ajuste_no_tutores,
+            "algoritmo_asignacion": config.algoritmo_asignacion,  # Campo añadido
         }
 
     @staticmethod
@@ -146,13 +158,39 @@ class ExportadorDatos:
         ).all()
         return [
             {
+                "id": g.id,  # ID necesario para restauración completa
+                "profesor_id": g.profesor_id,  # FK necesario para relaciones
                 "profesor_nombre_completo": g.profesor.nombre_completo if g.profesor else None,
                 "fecha": ExportadorDatos._serializar_fecha(g.fecha),
                 "turno": g.turno,
                 "recreo": g.recreo,
+                "zona_id": g.zona_id,  # FK necesario para relaciones
                 "zona_nombre": g.zona.nombre_zona if g.zona else None,
             }
             for g in guardias
+        ]
+
+    @staticmethod
+    def exportar_ausencias(session: Session) -> list[dict[str, Any]]:
+        """Exporta todas las ausencias a diccionario."""
+        ausencias = session.query(Ausencia).options(
+            joinedload(Ausencia.profesor)
+        ).all()
+        return [
+            {
+                "id": a.id,  # ID necesario para restauración completa
+                "profesor_id": a.profesor_id,  # FK necesario para relaciones
+                "profesor_nombre_completo": a.profesor.nombre_completo if a.profesor else None,
+                "fecha_inicio": ExportadorDatos._serializar_fecha(a.fecha_inicio),
+                "fecha_fin": ExportadorDatos._serializar_fecha(a.fecha_fin),
+                "tipo": a.tipo,
+                "motivo": a.motivo,
+                "documento_path": a.documento_path,
+                "activa": a.activa,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "updated_at": a.updated_at.isoformat() if a.updated_at else None,
+            }
+            for a in ausencias
         ]
 
     @staticmethod
@@ -176,6 +214,7 @@ class ExportadorDatos:
         smtp_port = os.getenv("SMTP_PORT", "")
         smtp_user = os.getenv("SMTP_USER", "")
         smtp_password = os.getenv("SMTP_PASSWORD", "")
+        smtp_from_name = os.getenv("SMTP_FROM_NAME", "Guardias de Patio")
 
         if smtp_server and smtp_port and smtp_user and smtp_password:
             smtp_config = {
@@ -183,6 +222,7 @@ class ExportadorDatos:
                 "smtp_port": smtp_port,
                 "smtp_user": smtp_user,
                 "smtp_password": ExportadorDatos._encriptar_password(smtp_password),  # Encriptada
+                "smtp_from_name": smtp_from_name,  # Nombre del remitente
             }
 
         # Exportar configuración SFTP GLOBAL (compartida entre todos los usuarios)
@@ -211,6 +251,7 @@ class ExportadorDatos:
             "zonas": ExportadorDatos.exportar_zonas(session),
             "configuracion": ExportadorDatos.exportar_configuracion(session),
             "guardias": ExportadorDatos.exportar_guardias(session),
+            "ausencias": ExportadorDatos.exportar_ausencias(session),  # Campo añadido
         }
 
         ruta = Path(ruta_archivo)
@@ -233,8 +274,9 @@ class ExportadorDatos:
             Número de profesores importados
         """
         if limpiar:
-            # Eliminar guardias primero por FOREIGN KEY constraint
+            # Eliminar guardias y ausencias primero por FOREIGN KEY constraint
             session.query(Guardia).delete()
+            session.query(Ausencia).delete()
             session.flush()
             # Ahora eliminar profesores
             session.query(Profesor).delete()
@@ -252,20 +294,73 @@ class ExportadorDatos:
             else:
                 continue  # Skip si no tiene datos de nombre
 
-            profesor = Profesor(
-                nombre_completo=nombre_completo,
-                email_corporativo=p_data.get("email_corporativo"),
-                horas_contrato=p_data["horas_contrato"],
-                porcentaje_jornada=p_data["porcentaje_jornada"],
-                turno=p_data["turno"],
-                tutor=p_data.get("tutor", False),
-                fecha_inicio_guardias=ExportadorDatos._deserializar_fecha(
-                    p_data.get("fecha_inicio_guardias")
-                ),
-                dias_semana_permitidos=p_data.get("dias_semana_permitidos"),
-                recreos_permitidos=p_data.get("recreos_permitidos"),
-            )
-            session.add(profesor)
+            # Si hay ID, intentar actualizar o crear con ID específico
+            if "id" in p_data:
+                existing = session.query(Profesor).filter_by(id=p_data["id"]).first()
+                if existing:
+                    # Actualizar existente
+                    existing.nombre_completo = nombre_completo
+                    existing.email_corporativo = p_data.get("email_corporativo")
+                    existing.horas_contrato = p_data["horas_contrato"]
+                    existing.porcentaje_jornada = p_data["porcentaje_jornada"]
+                    existing.turno = p_data["turno"]
+                    existing.horas_manana = p_data.get("horas_manana")
+                    existing.horas_tarde = p_data.get("horas_tarde")
+                    existing.tutor = p_data.get("tutor", False)
+                    existing.activo = p_data.get("activo", True)
+                    existing.fecha_inicio_guardias = ExportadorDatos._deserializar_fecha(
+                        p_data.get("fecha_inicio_guardias")
+                    )
+                    existing.fecha_fin_guardias = ExportadorDatos._deserializar_fecha(
+                        p_data.get("fecha_fin_guardias")
+                    )
+                    existing.dias_semana_permitidos = p_data.get("dias_semana_permitidos")
+                    existing.recreos_permitidos = p_data.get("recreos_permitidos")
+                else:
+                    # Crear nuevo con ID específico
+                    profesor = Profesor(
+                        id=p_data["id"],
+                        nombre_completo=nombre_completo,
+                        email_corporativo=p_data.get("email_corporativo"),
+                        horas_contrato=p_data["horas_contrato"],
+                        porcentaje_jornada=p_data["porcentaje_jornada"],
+                        turno=p_data["turno"],
+                        horas_manana=p_data.get("horas_manana"),
+                        horas_tarde=p_data.get("horas_tarde"),
+                        tutor=p_data.get("tutor", False),
+                        activo=p_data.get("activo", True),
+                        fecha_inicio_guardias=ExportadorDatos._deserializar_fecha(
+                            p_data.get("fecha_inicio_guardias")
+                        ),
+                        fecha_fin_guardias=ExportadorDatos._deserializar_fecha(
+                            p_data.get("fecha_fin_guardias")
+                        ),
+                        dias_semana_permitidos=p_data.get("dias_semana_permitidos"),
+                        recreos_permitidos=p_data.get("recreos_permitidos"),
+                    )
+                    session.add(profesor)
+            else:
+                # Formato antiguo sin ID, crear nuevo (autoincrementado)
+                profesor = Profesor(
+                    nombre_completo=nombre_completo,
+                    email_corporativo=p_data.get("email_corporativo"),
+                    horas_contrato=p_data["horas_contrato"],
+                    porcentaje_jornada=p_data["porcentaje_jornada"],
+                    turno=p_data["turno"],
+                    horas_manana=p_data.get("horas_manana"),
+                    horas_tarde=p_data.get("horas_tarde"),
+                    tutor=p_data.get("tutor", False),
+                    activo=p_data.get("activo", True),
+                    fecha_inicio_guardias=ExportadorDatos._deserializar_fecha(
+                        p_data.get("fecha_inicio_guardias")
+                    ),
+                    fecha_fin_guardias=ExportadorDatos._deserializar_fecha(
+                        p_data.get("fecha_fin_guardias")
+                    ),
+                    dias_semana_permitidos=p_data.get("dias_semana_permitidos"),
+                    recreos_permitidos=p_data.get("recreos_permitidos"),
+                )
+                session.add(profesor)
             count += 1
 
         session.commit()
@@ -293,11 +388,46 @@ class ExportadorDatos:
 
         count = 0
         for z_data in zonas_data:
-            zona = Zona(
-                nombre_zona=z_data["nombre_zona"],
-                descripcion=z_data.get("descripcion"),
-            )
-            session.add(zona)
+            # Si hay ID, intentar actualizar o crear con ID específico
+            if "id" in z_data:
+                existing = session.query(Zona).filter_by(id=z_data["id"]).first()
+                if existing:
+                    # Actualizar existente
+                    existing.nombre_zona = z_data["nombre_zona"]
+                    existing.descripcion = z_data.get("descripcion")
+                    existing.fecha_inicio = ExportadorDatos._deserializar_fecha(
+                        z_data.get("fecha_inicio")
+                    )
+                    existing.fecha_fin = ExportadorDatos._deserializar_fecha(
+                        z_data.get("fecha_fin")
+                    )
+                else:
+                    # Crear nueva con ID específico
+                    zona = Zona(
+                        id=z_data["id"],
+                        nombre_zona=z_data["nombre_zona"],
+                        descripcion=z_data.get("descripcion"),
+                        fecha_inicio=ExportadorDatos._deserializar_fecha(
+                            z_data.get("fecha_inicio")
+                        ),
+                        fecha_fin=ExportadorDatos._deserializar_fecha(
+                            z_data.get("fecha_fin")
+                        ),
+                    )
+                    session.add(zona)
+            else:
+                # Formato antiguo sin ID, crear nueva (autoincrementado)
+                zona = Zona(
+                    nombre_zona=z_data["nombre_zona"],
+                    descripcion=z_data.get("descripcion"),
+                    fecha_inicio=ExportadorDatos._deserializar_fecha(
+                        z_data.get("fecha_inicio")
+                    ),
+                    fecha_fin=ExportadorDatos._deserializar_fecha(
+                        z_data.get("fecha_fin")
+                    ),
+                )
+                session.add(zona)
             count += 1
 
         session.commit()
@@ -326,36 +456,106 @@ class ExportadorDatos:
             session.flush()
             session.expire_all()
 
-        config = Configuracion(
-            fecha_inicio_curso=ExportadorDatos._deserializar_fecha(
-                config_data["fecha_inicio_curso"]
-            ),
-            fecha_fin_curso=ExportadorDatos._deserializar_fecha(
-                config_data["fecha_fin_curso"]
-            ),
-            hora_recreo1_manana=ExportadorDatos._deserializar_hora(
-                config_data["hora_recreo1_manana"]
-            ),
-            hora_recreo2_manana=ExportadorDatos._deserializar_hora(
-                config_data["hora_recreo2_manana"]
-            ),
-            hora_recreo1_tarde=ExportadorDatos._deserializar_hora(
-                config_data.get("hora_recreo1_tarde")
-            ),
-            hora_recreo2_tarde=ExportadorDatos._deserializar_hora(
-                config_data.get("hora_recreo2_tarde")
-            ),
-            activar_festivos_automaticos=config_data.get(
-                "activar_festivos_automaticos", True
-            ),
-            dias_no_lectivos_personalizados=config_data.get(
-                "dias_no_lectivos_personalizados"
-            ),
-            recreos_config=config_data.get("recreos_config"),
-            ajuste_tutores=config_data.get("ajuste_tutores", 1.0),
-            ajuste_no_tutores=config_data.get("ajuste_no_tutores", 1.0),
-        )
-        session.add(config)
+        # Si hay ID, intentar actualizar o crear con ID específico
+        if "id" in config_data:
+            existing = session.query(Configuracion).filter_by(id=config_data["id"]).first()
+            if existing:
+                # Actualizar existente
+                existing.fecha_inicio_curso = ExportadorDatos._deserializar_fecha(
+                    config_data["fecha_inicio_curso"]
+                )
+                existing.fecha_fin_curso = ExportadorDatos._deserializar_fecha(
+                    config_data["fecha_fin_curso"]
+                )
+                existing.hora_recreo1_manana = ExportadorDatos._deserializar_hora(
+                    config_data["hora_recreo1_manana"]
+                )
+                existing.hora_recreo2_manana = ExportadorDatos._deserializar_hora(
+                    config_data["hora_recreo2_manana"]
+                )
+                existing.hora_recreo1_tarde = ExportadorDatos._deserializar_hora(
+                    config_data.get("hora_recreo1_tarde")
+                )
+                existing.hora_recreo2_tarde = ExportadorDatos._deserializar_hora(
+                    config_data.get("hora_recreo2_tarde")
+                )
+                existing.activar_festivos_automaticos = config_data.get(
+                    "activar_festivos_automaticos", True
+                )
+                existing.dias_no_lectivos_personalizados = config_data.get(
+                    "dias_no_lectivos_personalizados"
+                )
+                existing.recreos_config = config_data.get("recreos_config")
+                existing.ajuste_tutores = config_data.get("ajuste_tutores", 1.0)
+                existing.ajuste_no_tutores = config_data.get("ajuste_no_tutores", 1.0)
+                existing.algoritmo_asignacion = config_data.get("algoritmo_asignacion", "v2.9")
+            else:
+                # Crear nueva con ID específico
+                config = Configuracion(
+                    id=config_data["id"],
+                    fecha_inicio_curso=ExportadorDatos._deserializar_fecha(
+                        config_data["fecha_inicio_curso"]
+                    ),
+                    fecha_fin_curso=ExportadorDatos._deserializar_fecha(
+                        config_data["fecha_fin_curso"]
+                    ),
+                    hora_recreo1_manana=ExportadorDatos._deserializar_hora(
+                        config_data["hora_recreo1_manana"]
+                    ),
+                    hora_recreo2_manana=ExportadorDatos._deserializar_hora(
+                        config_data["hora_recreo2_manana"]
+                    ),
+                    hora_recreo1_tarde=ExportadorDatos._deserializar_hora(
+                        config_data.get("hora_recreo1_tarde")
+                    ),
+                    hora_recreo2_tarde=ExportadorDatos._deserializar_hora(
+                        config_data.get("hora_recreo2_tarde")
+                    ),
+                    activar_festivos_automaticos=config_data.get(
+                        "activar_festivos_automaticos", True
+                    ),
+                    dias_no_lectivos_personalizados=config_data.get(
+                        "dias_no_lectivos_personalizados"
+                    ),
+                    recreos_config=config_data.get("recreos_config"),
+                    ajuste_tutores=config_data.get("ajuste_tutores", 1.0),
+                    ajuste_no_tutores=config_data.get("ajuste_no_tutores", 1.0),
+                    algoritmo_asignacion=config_data.get("algoritmo_asignacion", "v2.9"),
+                )
+                session.add(config)
+        else:
+            # Formato antiguo sin ID, crear nueva (autoincrementado)
+            config = Configuracion(
+                fecha_inicio_curso=ExportadorDatos._deserializar_fecha(
+                    config_data["fecha_inicio_curso"]
+                ),
+                fecha_fin_curso=ExportadorDatos._deserializar_fecha(
+                    config_data["fecha_fin_curso"]
+                ),
+                hora_recreo1_manana=ExportadorDatos._deserializar_hora(
+                    config_data["hora_recreo1_manana"]
+                ),
+                hora_recreo2_manana=ExportadorDatos._deserializar_hora(
+                    config_data["hora_recreo2_manana"]
+                ),
+                hora_recreo1_tarde=ExportadorDatos._deserializar_hora(
+                    config_data.get("hora_recreo1_tarde")
+                ),
+                hora_recreo2_tarde=ExportadorDatos._deserializar_hora(
+                    config_data.get("hora_recreo2_tarde")
+                ),
+                activar_festivos_automaticos=config_data.get(
+                    "activar_festivos_automaticos", True
+                ),
+                dias_no_lectivos_personalizados=config_data.get(
+                    "dias_no_lectivos_personalizados"
+                ),
+                recreos_config=config_data.get("recreos_config"),
+                ajuste_tutores=config_data.get("ajuste_tutores", 1.0),
+                ajuste_no_tutores=config_data.get("ajuste_no_tutores", 1.0),
+                algoritmo_asignacion=config_data.get("algoritmo_asignacion", "v2.9"),
+            )
+            session.add(config)
         session.commit()
         return True
 
@@ -379,41 +579,180 @@ class ExportadorDatos:
 
         count = 0
         for g_data in guardias_data:
-            # Buscar profesor por nombre_completo (nuevo formato) o nombre+apellidos (antiguo)
-            profesor = None
-            if g_data.get("profesor_nombre_completo"):
-                profesor = (
-                    session.query(Profesor)
-                    .filter_by(nombre_completo=g_data["profesor_nombre_completo"])
-                    .first()
-                )
-            elif g_data.get("profesor_nombre") and g_data.get("profesor_apellidos"):
-                # Compatibilidad con formato antiguo
-                nombre_completo = f"{g_data['profesor_apellidos']}, {g_data['profesor_nombre']}"
-                profesor = (
-                    session.query(Profesor)
-                    .filter_by(nombre_completo=nombre_completo)
-                    .first()
-                )
+            # Priorizar IDs (formato nuevo) sobre nombres (formato antiguo)
+            profesor_id = g_data.get("profesor_id")
+            zona_id = g_data.get("zona_id")
 
-            # Buscar zona por nombre
-            zona = None
-            if g_data.get("zona_nombre"):
+            # Si no hay IDs, buscar por nombre (compatibilidad retroactiva)
+            if not profesor_id:
+                if g_data.get("profesor_nombre_completo"):
+                    profesor = (
+                        session.query(Profesor)
+                        .filter_by(nombre_completo=g_data["profesor_nombre_completo"])
+                        .first()
+                    )
+                    profesor_id = profesor.id if profesor else None
+                elif g_data.get("profesor_nombre") and g_data.get("profesor_apellidos"):
+                    # Compatibilidad con formato antiguo
+                    nombre_completo = f"{g_data['profesor_apellidos']}, {g_data['profesor_nombre']}"
+                    profesor = (
+                        session.query(Profesor)
+                        .filter_by(nombre_completo=nombre_completo)
+                        .first()
+                    )
+                    profesor_id = profesor.id if profesor else None
+
+            if not zona_id and g_data.get("zona_nombre"):
                 zona = (
                     session.query(Zona)
                     .filter_by(nombre_zona=g_data["zona_nombre"])
                     .first()
                 )
+                zona_id = zona.id if zona else None
 
-            if profesor and zona:  # Solo crear si encontramos profesor y zona
-                guardia = Guardia(
-                    profesor_id=profesor.id,
-                    fecha=ExportadorDatos._deserializar_fecha(g_data["fecha"]),
-                    turno=g_data["turno"],
-                    recreo=g_data["recreo"],
-                    zona_id=zona.id,
+            if profesor_id and zona_id:  # Solo crear si tenemos ambos IDs
+                # Si hay ID, actualizar o crear con ID específico
+                if "id" in g_data:
+                    existing = session.query(Guardia).filter_by(id=g_data["id"]).first()
+                    if existing:
+                        # Actualizar existente
+                        existing.profesor_id = profesor_id
+                        existing.fecha = ExportadorDatos._deserializar_fecha(g_data["fecha"])
+                        existing.turno = g_data["turno"]
+                        existing.recreo = g_data["recreo"]
+                        existing.zona_id = zona_id
+                    else:
+                        # Crear con ID específico
+                        guardia = Guardia(
+                            id=g_data["id"],
+                            profesor_id=profesor_id,
+                            fecha=ExportadorDatos._deserializar_fecha(g_data["fecha"]),
+                            turno=g_data["turno"],
+                            recreo=g_data["recreo"],
+                            zona_id=zona_id,
+                        )
+                        session.add(guardia)
+                else:
+                    # Formato antiguo, crear con autoincremento
+                    guardia = Guardia(
+                        profesor_id=profesor_id,
+                        fecha=ExportadorDatos._deserializar_fecha(g_data["fecha"]),
+                        turno=g_data["turno"],
+                        recreo=g_data["recreo"],
+                        zona_id=zona_id,
+                    )
+                    session.add(guardia)
+                count += 1
+
+        session.commit()
+        return count
+
+    @staticmethod
+    def importar_ausencias(
+        session: Session, ausencias_data: list[dict[str, Any]], limpiar: bool = False
+    ) -> int:
+        """
+        Importa ausencias desde diccionario.
+
+        Args:
+            session: Sesión de SQLAlchemy
+            ausencias_data: Lista de diccionarios con datos de ausencias
+            limpiar: Si True, elimina ausencias existentes antes de importar
+
+        Returns:
+            Número de ausencias importadas
+        """
+        from datetime import datetime
+
+        if limpiar:
+            session.query(Ausencia).delete()
+
+        count = 0
+        for a_data in ausencias_data:
+            # Priorizar ID (formato nuevo) sobre nombre (formato antiguo)
+            profesor_id = a_data.get("profesor_id")
+
+            # Si no hay ID, buscar por nombre (compatibilidad retroactiva)
+            if not profesor_id and a_data.get("profesor_nombre_completo"):
+                profesor = (
+                    session.query(Profesor)
+                    .filter_by(nombre_completo=a_data["profesor_nombre_completo"])
+                    .first()
                 )
-                session.add(guardia)
+                profesor_id = profesor.id if profesor else None
+
+            if profesor_id:  # Solo crear si encontramos el profesor
+                # Si hay ID, actualizar o crear con ID específico
+                if "id" in a_data:
+                    existing = session.query(Ausencia).filter_by(id=a_data["id"]).first()
+                    if existing:
+                        # Actualizar existente
+                        existing.profesor_id = profesor_id
+                        existing.fecha_inicio = ExportadorDatos._deserializar_fecha(
+                            a_data["fecha_inicio"]
+                        )
+                        existing.fecha_fin = ExportadorDatos._deserializar_fecha(
+                            a_data["fecha_fin"]
+                        )
+                        existing.tipo = a_data["tipo"]
+                        existing.motivo = a_data.get("motivo")
+                        existing.documento_path = a_data.get("documento_path")
+                        existing.activa = a_data.get("activa", True)
+                        # Preservar timestamps
+                        if a_data.get("created_at"):
+                            existing.created_at = datetime.fromisoformat(a_data["created_at"])
+                        if a_data.get("updated_at"):
+                            existing.updated_at = datetime.fromisoformat(a_data["updated_at"])
+                    else:
+                        # Crear con ID específico
+                        ausencia = Ausencia(
+                            id=a_data["id"],
+                            profesor_id=profesor_id,
+                            fecha_inicio=ExportadorDatos._deserializar_fecha(
+                                a_data["fecha_inicio"]
+                            ),
+                            fecha_fin=ExportadorDatos._deserializar_fecha(a_data["fecha_fin"]),
+                            tipo=a_data["tipo"],
+                            motivo=a_data.get("motivo"),
+                            documento_path=a_data.get("documento_path"),
+                            activa=a_data.get("activa", True),
+                            created_at=(
+                                datetime.fromisoformat(a_data["created_at"])
+                                if a_data.get("created_at")
+                                else datetime.utcnow()
+                            ),
+                            updated_at=(
+                                datetime.fromisoformat(a_data["updated_at"])
+                                if a_data.get("updated_at")
+                                else datetime.utcnow()
+                            ),
+                        )
+                        session.add(ausencia)
+                else:
+                    # Formato antiguo, crear con autoincremento
+                    ausencia = Ausencia(
+                        profesor_id=profesor_id,
+                        fecha_inicio=ExportadorDatos._deserializar_fecha(
+                            a_data["fecha_inicio"]
+                        ),
+                        fecha_fin=ExportadorDatos._deserializar_fecha(a_data["fecha_fin"]),
+                        tipo=a_data["tipo"],
+                        motivo=a_data.get("motivo"),
+                        documento_path=a_data.get("documento_path"),
+                        activa=a_data.get("activa", True),
+                        created_at=(
+                            datetime.fromisoformat(a_data["created_at"])
+                            if a_data.get("created_at")
+                            else datetime.utcnow()
+                        ),
+                        updated_at=(
+                            datetime.fromisoformat(a_data["updated_at"])
+                            if a_data.get("updated_at")
+                            else datetime.utcnow()
+                        ),
+                    )
+                    session.add(ausencia)
+                count += 1
                 count += 1
 
         session.commit()
@@ -440,6 +779,7 @@ class ExportadorDatos:
             smtp_port = smtp_data.get("smtp_port", "")
             smtp_user = smtp_data.get("smtp_user", "")
             smtp_password_encrypted = smtp_data.get("smtp_password", "")
+            smtp_from_name = smtp_data.get("smtp_from_name", "Guardias de Patio")
 
             if not smtp_server or not smtp_port or not smtp_user or not smtp_password_encrypted:
                 return False
@@ -461,6 +801,7 @@ class ExportadorDatos:
                 "SMTP_PORT": smtp_port,
                 "SMTP_USER": smtp_user,
                 "SMTP_PASSWORD": smtp_password,  # Guardamos desencriptada
+                "SMTP_FROM_NAME": smtp_from_name,  # Nombre del remitente
             }
 
             updated_vars = set()
@@ -577,6 +918,7 @@ class ExportadorDatos:
             "zonas": 0,
             "configuracion": 0,
             "guardias": 0,
+            "ausencias": 0,  # Campo añadido
             "smtp_config": 0,
             "sftp_config": 0,
         }
@@ -615,6 +957,12 @@ class ExportadorDatos:
         if "guardias" in datos:
             resultado["guardias"] = ExportadorDatos.importar_guardias(
                 session, datos["guardias"], limpiar
+            )
+
+        # Ausencias al final (depende de profesores)
+        if "ausencias" in datos:
+            resultado["ausencias"] = ExportadorDatos.importar_ausencias(
+                session, datos["ausencias"], limpiar
             )
 
         return resultado

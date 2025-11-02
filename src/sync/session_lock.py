@@ -39,7 +39,7 @@ class SessionLock:
         self.user_hash = user_hash
         self.lock_filename = "session.lock"
         self.heartbeat_interval = 30  # segundos
-        self.lock_timeout = 90  # segundos (3x heartbeat)
+        self.lock_timeout = 30  # segundos
 
         # Información de esta sesión
         self.session_info = {

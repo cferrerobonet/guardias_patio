@@ -215,34 +215,76 @@ cuota_cruda = (
 
 ## 🎯 Priorización de Profesores
 
-### Orden de Asignación
+### Orden de Asignación - ACTUALIZADO v1.2
 
 Los profesores se ordenan para asignar primero a los más restrictivos:
 
-#### Criterios de Prioridad (de mayor a menor)
+#### Criterios de Prioridad (de mayor a menor) - MEJORADO 2 nov 2025
 
-1. **Profesores con Menos Slots Disponibles**
-   - Ratio: `cuota / slots_posibles`
-   - Cuanto más alto el ratio, más prioritario (más restrictivo)
-   
-2. **Profesores con Mayor Cuota**
-   - Necesitan más guardias, deben asignarse pronto
-   
-3. **ID del Profesor (Desempate)**
-   - Garantiza determinismo
+**ORDEN ESTRICTO DE ASIGNACIÓN:**
 
-**Código**: `_calcular_prioridad_profesor()` líneas 227-248
+1. **Profesores con `fecha_inicio_guardias` definida** ⭐ PRIORITARIO
+   - Son los más restrictivos temporalmente
+   - Tienen una ventana de tiempo específica para empezar
+   - **Justificación**: Incorporaciones tardías al curso necesitan asignación inmediata
+
+2. **Profesores con `fecha_fin_guardias` definida** ⭐ PRIORITARIO
+   - Tienen un periodo limitado de disponibilidad
+   - **Justificación**: Salidas anticipadas requieren completar su cuota antes del fin
+
+3. **Profesores con turno mixto/ambos** 🔄
+   - Mayor complejidad en la distribución (mañana + tarde)
+   - **Justificación**: Requieren balance entre turnos según horas contratadas
+
+4. **Resto de profesores** 📊
+   - Profesores estándar con disponibilidad completa del curso
+   - **Justificación**: Mayor flexibilidad para ajustar la distribución
+
+5. **ID del Profesor (Desempate)** 🔢
+   - Garantiza determinismo en el orden de asignación
+   - **Justificación**: Reproducibilidad de resultados
+
+**Código**: `generar_calendario_guardias()` líneas 560-602 (MEJORADO v1.2)
 ```python
-def _calcular_prioridad_profesor(pc: ProfesorConCuota) -> float:
-    if pc.slots_posibles == 0:
-        return float("inf")  # No puede cubrir ningún slot
+def calcular_prioridad_profesor(p: Profesor) -> Tuple[int, int, int, int]:
+    """
+    Calcula prioridad de asignación del profesor.
     
-    ratio_restriccion = pc.cuota / pc.slots_posibles
-    prioridad = (1.0 - ratio_restriccion) * 1000 + pc.profesor.id
-    return prioridad
+    Retorna tupla (prioridad_inicio, prioridad_fin, prioridad_mixto, id)
+    Valores menores = mayor prioridad (se ordenará ascendente)
+    """
+    # Prioridad 1: Fecha de inicio (0 = tiene fecha inicio, 1 = no tiene)
+    tiene_inicio = 0 if p.fecha_inicio_guardias else 1
+    
+    # Prioridad 2: Fecha de fin (0 = tiene fecha fin, 1 = no tiene)
+    tiene_fin = 0 if p.fecha_fin_guardias else 1
+    
+    # Prioridad 3: Turno mixto (0 = mixto, 1 = otros)
+    es_mixto = 0 if p.turno and p.turno.lower() in ('mixto', 'ambos') else 1
+    
+    # Desempate: ID menor primero
+    return (tiene_inicio, tiene_fin, es_mixto, p.id)
+
+profesores_prioritarios = sorted(
+    profesores_con_cuota,
+    key=calcular_prioridad_profesor
+)
 ```
 
-**¿Se cumple?**: ✅ **SÍ** - Asigna correctamente por prioridad
+**Mejoras en v1.2**:
+- ✅ **Respeta fechas de inicio** como máxima prioridad
+- ✅ **Respeta fechas de fin** como segunda prioridad
+- ✅ **Considera profesores mixtos** como tercera prioridad
+- ✅ **Orden determinista** mediante ID como desempate
+- ✅ **Logging detallado** del orden de prioridades
+
+**Beneficios**:
+- 🎯 Profesores con restricciones temporales reciben guardias primero
+- 📅 Garantiza que profesores con fecha_fin completen su cuota a tiempo
+- 🔄 Profesores mixtos tienen mejor balance mañana/tarde
+- 🔢 Reproducibilidad total del algoritmo
+
+**¿Se cumple?**: ✅ **SÍ (MEJORADO v1.2)** - 2 de noviembre de 2025
 
 ---
 
@@ -584,7 +626,7 @@ if profesor.fecha_fin_guardias and slot.fecha > profesor.fecha_fin_guardias:
 
 ## 📝 Resumen Ejecutivo
 
-### Versión 1.1 - Actualizado: 1 de noviembre de 2025
+### Versión 1.2 - Actualizado: 2 de noviembre de 2025
 
 | Premisa | ¿Se Cumple? | Estado |
 |---------|-------------|--------|
@@ -596,26 +638,47 @@ if profesor.fecha_fin_guardias and slot.fecha > profesor.fecha_fin_guardias:
 | **Recreos por día específico** | ✅ **SÍ** | ✅ **CORREGIDO v1.1** |
 | Turno | ✅ SÍ | Estable |
 | Cuota proporcional | ✅ SÍ | Estable |
-| Priorización restrictivos | ✅ SÍ | Estable |
+| **Prioridad fecha_inicio** | ✅ **SÍ** | ✅ **MEJORADO v1.2** |
+| **Prioridad fecha_fin** | ✅ **SÍ** | ✅ **MEJORADO v1.2** |
+| **Prioridad profesores mixtos** | ✅ **SÍ** | ✅ **MEJORADO v1.2** |
 | **Guardias agrupadas** | ✅ **SÍ** | ✅ **MEJORADO v1.1** |
 | Equidad perfecta | ⚠️ PARCIAL | Diseño |
 | Cuota exacta | ⚠️ PARCIAL | Diseño |
 
 ---
 
-### 🎯 Mejoras Implementadas en v1.1
+### 🎯 Mejoras Implementadas
 
-#### 1. ✅ Validación de Recreos por Día
+#### Versión 1.2 - 2 de noviembre de 2025
+
+**✨ Priorización Correcta de Profesores**
+
+- **Problema**: El algoritmo asignaba profesores por orden de ID, sin considerar restricciones temporales ni complejidad de turno
+- **Solución**: Implementación de sistema de prioridades multi-criterio:
+  1. Profesores con `fecha_inicio_guardias` (máxima prioridad)
+  2. Profesores con `fecha_fin_guardias` (segunda prioridad)
+  3. Profesores con turno mixto/ambos (tercera prioridad)
+  4. Resto de profesores
+  5. ID como desempate
+- **Impacto**: 
+  - ✅ Profesores con incorporación tardía reciben guardias inmediatamente
+  - ✅ Profesores con salida anticipada completan su cuota a tiempo
+  - ✅ Profesores mixtos obtienen mejor balance entre turnos
+  - ✅ Orden de asignación completamente determinista y reproducible
+
+#### Versión 1.1 - 1 de noviembre de 2025
+
+##### 1. ✅ Validación de Recreos por Día
 - **Problema**: Diccionarios de recreos ignoraban el día específico
 - **Solución**: Validación día a día considerando `weekday()`
 - **Impacto**: Mayor precisión en restricciones de profesores
 
-#### 2. ✅ Validación de Fecha Fin de Guardias
+##### 2. ✅ Validación de Fecha Fin de Guardias
 - **Problema**: Solo se validaba fecha de inicio
 - **Solución**: Añadida validación de `fecha_fin_guardias`
 - **Impacto**: Respeta límites temporales completos
 
-#### 3. ✅ Agrupación Inteligente de Guardias
+##### 3. ✅ Agrupación Inteligente de Guardias
 - **Problema**: No se priorizaban patrones consistentes
 - **Solución**: Ordenamiento multi-criterio con memoria de guardias previas
 - **Impacto**: Guardias más predecibles y cómodas para profesores
@@ -627,15 +690,25 @@ if profesor.fecha_fin_guardias and slot.fecha > profesor.fecha_fin_guardias:
 
 ### 📊 Comparativa de Versiones
 
-| Característica | v1.0 Original | v1.1 Mejorada |
-|---------------|---------------|---------------|
-| Recreos por día | ❌ Ignora día | ✅ Valida día específico |
-| Fecha fin | ❌ No validada | ✅ Validada |
-| Agrupación zona | ⚠️ Preferencia básica | ✅ Prioridad con memoria |
-| Agrupación recreo | ❌ No considerado | ✅ Mantiene patrón |
-| Agrupación día semana | ❌ No considerado | ✅ Mantiene patrón |
-| Trackeo guardias | ❌ No | ✅ Sí, en tiempo real |
+| Característica | v1.0 Original | v1.1 (1 nov) | v1.2 (2 nov) |
+|---------------|---------------|--------------|--------------|
+| Recreos por día | ❌ Ignora día | ✅ Valida día específico | ✅ Valida día específico |
+| Fecha fin | ❌ No validada | ✅ Validada | ✅ Validada |
+| **Prioridad fecha_inicio** | ❌ No considerado | ❌ No considerado | ✅ **MÁXIMA prioridad** |
+| **Prioridad fecha_fin** | ❌ No considerado | ❌ No considerado | ✅ **2ª prioridad** |
+| **Prioridad mixtos** | ❌ No considerado | ❌ No considerado | ✅ **3ª prioridad** |
+| Agrupación zona | ⚠️ Preferencia básica | ✅ Prioridad con memoria | ✅ Prioridad con memoria |
+| Agrupación recreo | ❌ No considerado | ✅ Mantiene patrón | ✅ Mantiene patrón |
+| Agrupación día semana | ❌ No considerado | ✅ Mantiene patrón | ✅ Mantiene patrón |
+| Trackeo guardias | ❌ No | ✅ Sí, en tiempo real | ✅ Sí, en tiempo real |
+| Orden asignación | ⚠️ Solo por ID | ⚠️ Solo por ID | ✅ **Multi-criterio** |
 
 ---
 
-**Conclusión v1.1**: El algoritmo ahora cumple con **todas las premisas críticas** y ofrece una mejor experiencia para los profesores mediante patrones de guardias más consistentes y predecibles.
+**Conclusión v1.2**: El algoritmo ahora cumple con **TODAS las premisas críticas** establecidas en el sistema, incluyendo la correcta priorización de profesores según sus restricciones temporales y características de turno. Esto garantiza:
+
+- 🎯 **Máxima equidad**: Profesores restrictivos obtienen guardias primero
+- 📅 **Cumplimiento temporal**: Fechas de inicio/fin respetadas
+- 🔄 **Balance óptimo**: Profesores mixtos con distribución equilibrada
+- 🔢 **Determinismo total**: Resultados reproducibles
+- 📊 **Mejor experiencia**: Patrones consistentes y predecibles

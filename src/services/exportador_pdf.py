@@ -888,41 +888,61 @@ class ExportadorPDF:
             elements = []
             styles = getSampleStyleSheet()
 
-            # Título más compacto
-            titulo_style = ParagraphStyle(
-                'TituloIndividual',
-                parent=styles['Heading1'],
+            # ===== ENCABEZADO VISUAL MEJORADO =====
+            # Crear banner de encabezado (ancho completo, con fondo azul)
+            ancho_pagina = landscape(A4)[0] - 2*cm  # Ancho disponible
+            altura_banner = 2.5*cm
+
+            banner = Drawing(ancho_pagina, altura_banner)
+
+            # Fondo degradado azul
+            fondo = Rect(0, 0, ancho_pagina, altura_banner,
+                        fillColor=colors.HexColor('#1976D2'),
+                        strokeColor=None)
+            banner.add(fondo)
+
+            # Borde inferior decorativo
+            borde = Rect(0, 0, ancho_pagina, 0.3*cm,
+                        fillColor=colors.HexColor('#0D47A1'),
+                        strokeColor=None)
+            banner.add(borde)
+
+            # Título principal en blanco
+            titulo_texto = String(
+                ancho_pagina/2, altura_banner - 0.8*cm,
+                "� CALENDARIO PERSONAL DE GUARDIAS",
+                fontSize=18,
+                fontName='Helvetica-Bold',
+                textAnchor='middle',
+                fillColor=colors.whitesmoke
+            )
+            banner.add(titulo_texto)
+
+            # Nombre del profesor (destacado)
+            nombre_texto = String(
+                ancho_pagina/2, altura_banner - 1.5*cm,
+                profesor.nombre_completo.upper(),
                 fontSize=14,
-                textColor=colors.HexColor('#1976D2'),
-                spaceAfter=6,
-                alignment=1,
+                fontName='Helvetica-Bold',
+                textAnchor='middle',
+                fillColor=colors.white
             )
+            banner.add(nombre_texto)
 
-            titulo = Paragraph(
-                "📋 Calendario Personal de Guardias",
-                titulo_style
-            )
-            elements.append(titulo)
-
-            # Información del profesor más compacta
-            info_style = ParagraphStyle(
-                'InfoProfesor',
-                parent=styles['Normal'],
+            # Información adicional (más pequeña)
+            info_line = f"Turno: {profesor.turno.capitalize()}  •  Tutor: {'Sí' if profesor.tutor else 'No'}  •  Periodo: {primera_guardia.strftime('%d/%m/%Y')} - {ultima_guardia.strftime('%d/%m/%Y')}"
+            info_texto = String(
+                ancho_pagina/2, altura_banner - 2.1*cm,
+                info_line,
                 fontSize=10,
-                textColor=colors.HexColor('#34495e'),
-                spaceAfter=4,
-                alignment=1,
+                fontName='Helvetica',
+                textAnchor='middle',
+                fillColor=colors.HexColor('#E3F2FD')
             )
+            banner.add(info_texto)
 
-            info = Paragraph(
-                f"<b>{profesor.nombre_completo}</b> | "
-                f"Turno: {profesor.turno.capitalize()} | "
-                f"Tutor: {'Sí' if profesor.tutor else 'No'} | "
-                f"Periodo: {primera_guardia.strftime('%d/%m/%Y')} - {ultima_guardia.strftime('%d/%m/%Y')}",
-                info_style
-            )
-            elements.append(info)
-            elements.append(Spacer(1, 0.5*cm))
+            elements.append(banner)
+            elements.append(Spacer(1, 0.8*cm))
 
             reportar_progreso(40, "Generando mini calendarios...")
 

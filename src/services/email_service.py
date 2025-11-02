@@ -10,9 +10,100 @@ import smtplib
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Optional
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+
+def generar_plantilla_email_html(
+    titulo: str,
+    contenido_principal: str,
+    secciones: Optional[List[Dict[str, str]]] = None,
+    pie_texto: str = "Guardias de Patio - Sistema de Gestión de Guardias"
+) -> str:
+    """
+    Genera una plantilla HTML estándar para emails del sistema.
+
+    Esta función garantiza que todos los emails sigan el mismo diseño elegante
+    y profesional, manteniendo consistencia visual en toda la aplicación.
+
+    Args:
+        titulo: Título principal del email (aparece en el encabezado)
+        contenido_principal: Texto principal del email (puede incluir HTML)
+        secciones: Lista opcional de secciones con formato especial. Cada sección es un dict con:
+            - 'tipo': 'info' (azul), 'warning' (amarillo), 'success' (verde), 'neutral' (gris)
+            - 'contenido': Contenido HTML de la sección
+        pie_texto: Texto del footer (por defecto es el nombre del sistema)
+
+    Returns:
+        String con el HTML completo del email
+
+    Example:
+        >>> html = generar_plantilla_email_html(
+        ...     titulo="📅 Calendario de Guardias 2024-2025",
+        ...     contenido_principal="<p>Hola <strong>Juan</strong>,</p><p>Adjuntamos tu calendario.</p>",
+        ...     secciones=[
+        ...         {'tipo': 'info', 'contenido': '<p>📎 Archivos adjuntos incluidos</p>'},
+        ...         {'tipo': 'success', 'contenido': '<p>💡 Tip: Guarda este email</p>'}
+        ...     ]
+        ... )
+    """
+    # Estilos según tipo de sección
+    estilos_secciones = {
+        'info': {
+            'bg_color': '#e0f2fe',
+            'border_color': '#007ACC'
+        },
+        'warning': {
+            'bg_color': '#fef3c7',
+            'border_color': '#f59e0b'
+        },
+        'success': {
+            'bg_color': '#d1fae5',
+            'border_color': '#059669'
+        },
+        'neutral': {
+            'bg_color': '#f3f4f6',
+            'border_color': '#9ca3af'
+        }
+    }
+
+    # Construir secciones HTML
+    secciones_html = ""
+    if secciones:
+        for seccion in secciones:
+            tipo = seccion.get('tipo', 'neutral')
+            contenido = seccion.get('contenido', '')
+            estilo = estilos_secciones.get(tipo, estilos_secciones['neutral'])
+
+            secciones_html += f"""
+      <div style="background-color: {estilo['bg_color']}; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid {estilo['border_color']};">
+        {contenido}
+      </div>
+"""
+
+    # Plantilla HTML completa
+    html = f"""
+<html>
+  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+      <h2 style="color: #007ACC; margin-bottom: 20px;">{titulo}</h2>
+
+      {contenido_principal}
+
+      {secciones_html}
+
+      <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+      <p style="font-size: 12px; color: #6b7280; text-align: center;">
+        {pie_texto}
+      </p>
+    </div>
+  </body>
+</html>
+    """
+
+    return html.strip()
 
 
 class EmailService:
@@ -30,6 +121,7 @@ class EmailService:
         smtp_user: Optional[str] = None,
         smtp_password: Optional[str] = None,
         from_email: Optional[str] = None,
+        from_name: Optional[str] = None,
     ):
         """
         Inicializa el servicio de email.
@@ -40,12 +132,14 @@ class EmailService:
             smtp_user: Usuario SMTP
             smtp_password: Contraseña SMTP o App Password
             from_email: Email del remitente
+            from_name: Nombre del remitente que aparecerá en los emails
         """
         self.smtp_server = smtp_server or self.DEFAULT_SMTP_SERVER
         self.smtp_port = smtp_port or self.DEFAULT_SMTP_PORT
         self.smtp_user = smtp_user
         self.smtp_password = smtp_password
         self.from_email = from_email or smtp_user
+        self.from_name = from_name or "Guardias de Patio"
 
     def send_recovery_code(
         self,
@@ -71,7 +165,7 @@ class EmailService:
             # Crear mensaje
             msg = MIMEMultipart("alternative")
             msg["Subject"] = "🔑 Código de Recuperación - Guardias de Patio"
-            msg["From"] = self.from_email
+            msg["From"] = f"{self.from_name} <{self.from_email}>"
             msg["To"] = to_email
 
             # Contenido del email (texto plano)
@@ -93,92 +187,38 @@ Guardias de Patio
 Sistema de Gestión de Guardias
             """
 
-            # Contenido del email (HTML)
-            html_content = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body {{
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-        }}
-        .container {{
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f9fafb;
-        }}
-        .header {{
-            background-color: #007ACC;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 8px 8px 0 0;
-        }}
-        .content {{
-            background-color: white;
-            padding: 30px;
-            border-radius: 0 0 8px 8px;
-        }}
-        .code-box {{
-            background-color: #f3f4f6;
-            border: 2px solid #007ACC;
-            border-radius: 6px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-        }}
-        .code {{
-            font-size: 24px;
-            font-weight: bold;
-            color: #007ACC;
-            letter-spacing: 2px;
-            font-family: monospace;
-        }}
-        .warning {{
-            background-color: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 12px;
-            margin: 20px 0;
-        }}
-        .footer {{
-            text-align: center;
-            margin-top: 20px;
-            color: #6b7280;
-            font-size: 12px;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🔑 Recuperación de Contraseña</h1>
-        </div>
-        <div class="content">
-            <p>Hola <strong>{username}</strong>,</p>
-
-            <p>Has solicitado recuperar tu contraseña para la aplicación <strong>Guardias de Patio</strong>.</p>
-
-            <div class="code-box">
-                <p style="margin: 0 0 10px 0; color: #6b7280;">Tu código de recuperación es:</p>
-                <div class="code">{recovery_code}</div>
-            </div>
-
-            <p>Este código es válido para <strong>un solo uso</strong>. Cópialo y pégalo en la ventana de recuperación de contraseña.</p>
-
-            <div class="warning">
-                ⚠️ Si no has solicitado este código, puedes ignorar este mensaje. Tu contraseña permanecerá sin cambios.
-            </div>
-        </div>
-        <div class="footer">
-            <p>Guardias de Patio - Sistema de Gestión de Guardias</p>
-        </div>
-    </div>
-</body>
-</html>
+            # Contenido del email (HTML) - Usando plantilla estándar
+            contenido_principal = f"""
+      <p>Hola <strong>{username}</strong>,</p>
+      <p>Has solicitado recuperar tu contraseña para la aplicación <strong>Guardias de Patio</strong>.</p>
             """
+
+            secciones = [
+                {
+                    'tipo': 'info',
+                    'contenido': f"""
+        <div style="text-align: center; background-color: #f3f4f6; border: 2px solid #007ACC; border-radius: 6px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0 0 10px 0; color: #6b7280;">Tu código de recuperación es:</p>
+          <div style="font-size: 24px; font-weight: bold; color: #007ACC; letter-spacing: 2px; font-family: monospace;">
+            {recovery_code}
+          </div>
+        </div>
+        <p style="margin-top: 15px;">Este código es válido para <strong>un solo uso</strong>. Cópialo y pégalo en la ventana de recuperación de contraseña.</p>
+                    """
+                },
+                {
+                    'tipo': 'warning',
+                    'contenido': """
+        <p style="margin: 5px 0;">⚠️ Si no has solicitado este código, puedes ignorar este mensaje. Tu contraseña permanecerá sin cambios.</p>
+                    """
+                }
+            ]
+
+            html_content = generar_plantilla_email_html(
+                titulo="🔑 Recuperación de Contraseña",
+                contenido_principal=contenido_principal,
+                secciones=secciones
+            )
 
             # Adjuntar ambas versiones
             part1 = MIMEText(text_content, "plain")
@@ -218,6 +258,7 @@ Sistema de Gestión de Guardias
         profesor_nombre: str,
         pdf_path: str,
         curso_escolar: str,
+        ics_path: Optional[str] = None,
     ) -> tuple[bool, str]:
         """
         Envía un calendario de guardias en PDF por email.
@@ -227,6 +268,7 @@ Sistema de Gestión de Guardias
             profesor_nombre: Nombre completo del profesor
             pdf_path: Ruta al archivo PDF
             curso_escolar: Curso escolar (ej: "2024/2025")
+            ics_path: Ruta opcional al archivo .ics (iCalendar)
 
         Returns:
             Tupla (éxito, mensaje)
@@ -238,10 +280,10 @@ Sistema de Gestión de Guardias
             return False, f"El archivo PDF no existe: {pdf_path}"
 
         try:
-            # Crear mensaje
-            msg = MIMEMultipart("alternative")
+            # Crear mensaje principal (mixed para adjuntos)
+            msg = MIMEMultipart("mixed")
             msg["Subject"] = f"📅 Calendario de Guardias {curso_escolar} - Guardias de Patio"
-            msg["From"] = self.from_email
+            msg["From"] = f"{self.from_name} <{self.from_email}>"
             msg["To"] = to_email
 
             # Contenido del email (texto plano)
@@ -250,9 +292,15 @@ Hola {profesor_nombre},
 
 Te adjuntamos tu calendario personalizado de guardias de patio para el curso escolar {curso_escolar}.
 
-El PDF adjunto muestra todas tus guardias asignadas desde tu primera hasta tu última fecha de guardia.
+📎 ADJUNTOS:
+• PDF: Calendario visual con todas tus guardias
+• ICS: Archivo para importar a tu calendario digital
 
-Características del calendario:
+📱 IMPORTAR A TU CALENDARIO:
+El archivo .ics se puede abrir con Google Calendar, Apple Calendar, Outlook, etc.
+Simplemente abre el archivo desde tu móvil, tablet u ordenador.
+
+📅 CARACTERÍSTICAS:
 • Visualización mensual con mini calendarios
 • Colores según la zona asignada
 • Formas geométricas según el recreo
@@ -265,114 +313,72 @@ Guardias de Patio
 Sistema de Gestión de Guardias
             """
 
-            # Contenido del email (HTML)
-            html_content = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body {{
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-        }}
-        .container {{
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f9fafb;
-        }}
-        .header {{
-            background-color: #007ACC;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 8px 8px 0 0;
-        }}
-        .content {{
-            background-color: white;
-            padding: 30px;
-            border-radius: 0 0 8px 8px;
-        }}
-        .info-box {{
-            background-color: #e0f2fe;
-            border-left: 4px solid #007ACC;
-            border-radius: 6px;
-            padding: 15px;
-            margin: 20px 0;
-        }}
-        .feature-list {{
-            background-color: #f3f4f6;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-        }}
-        .feature-list ul {{
-            margin: 10px 0;
-            padding-left: 20px;
-        }}
-        .feature-list li {{
-            margin: 5px 0;
-        }}
-        .footer {{
-            text-align: center;
-            margin-top: 20px;
-            color: #6b7280;
-            font-size: 12px;
-        }}
-        .attachment-note {{
-            background-color: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 12px;
-            margin: 20px 0;
-            border-radius: 4px;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📅 Calendario de Guardias</h1>
-            <p style="margin: 5px 0;">Curso Escolar {curso_escolar}</p>
-        </div>
-        <div class="content">
-            <p>Hola <strong>{profesor_nombre}</strong>,</p>
-
-            <p>Te adjuntamos tu calendario personalizado de guardias de patio para el curso escolar <strong>{curso_escolar}</strong>.</p>
-
-            <div class="info-box">
-                📎 El PDF adjunto muestra todas tus guardias asignadas desde tu <strong>primera</strong> hasta tu <strong>última</strong> fecha de guardia.
-            </div>
-
-            <div class="feature-list">
-                <strong>Características del calendario:</strong>
-                <ul>
-                    <li>📆 Visualización mensual con mini calendarios</li>
-                    <li>🎨 Colores según la zona asignada</li>
-                    <li>🔷 Formas geométricas según el recreo</li>
-                    <li>📋 Tabla detallada con todas las guardias</li>
-                </ul>
-            </div>
-
-            <div class="attachment-note">
-                💡 <strong>Tip:</strong> Puedes imprimir este calendario o guardarlo en tu dispositivo para tenerlo siempre a mano.
-            </div>
-
-            <p>Si tienes alguna duda o consulta, por favor contacta con el coordinador.</p>
-        </div>
-        <div class="footer">
-            <p>Guardias de Patio - Sistema de Gestión de Guardias</p>
-        </div>
-    </div>
-</body>
-</html>
+            # Contenido del email (HTML) - Usando plantilla estándar
+            contenido_principal = f"""
+      <p>Hola <strong>{profesor_nombre}</strong>,</p>
+      <p>Te adjuntamos tu calendario personalizado de guardias de patio para el curso escolar <strong>{curso_escolar}</strong>.</p>
             """
 
-            # Adjuntar ambas versiones del texto
-            part1 = MIMEText(text_content, "plain")
-            part2 = MIMEText(html_content, "html")
-            msg.attach(part1)
-            msg.attach(part2)
+            secciones = [
+                {
+                    'tipo': 'info',
+                    'contenido': """
+        <p style="margin: 5px 0; font-weight: bold;">📎 Archivos adjuntos:</p>
+        <p style="margin: 5px 0;">• <strong>PDF:</strong> Calendario visual con todas tus guardias</p>
+        <p style="margin: 5px 0;">• <strong>ICS:</strong> Para importar a tu calendario digital</p>
+                    """
+                },
+                {
+                    'tipo': 'warning',
+                    'contenido': """
+        <p style="margin: 5px 0; font-weight: bold;">📱 Importar a tu calendario:</p>
+        <p style="margin: 5px 0;">El archivo <strong>.ics</strong> se puede abrir directamente con:</p>
+        <p style="margin: 5px 0;">• Google Calendar</p>
+        <p style="margin: 5px 0;">• Apple Calendar (iPhone, iPad, Mac)</p>
+        <p style="margin: 5px 0;">• Microsoft Outlook</p>
+        <p style="margin: 5px 0; color: #92400e; font-size: 14px; margin-top: 10px;">
+          <em>Solo tienes que abrir el archivo desde tu dispositivo y se añadirán automáticamente todas las guardias.</em>
+        </p>
+                    """
+                },
+                {
+                    'tipo': 'neutral',
+                    'contenido': """
+        <p style="margin: 5px 0; font-weight: bold;">📅 Características del calendario PDF:</p>
+        <p style="margin: 8px 0;">✓ Visualización mensual con mini calendarios</p>
+        <p style="margin: 8px 0;">✓ Colores según la zona asignada</p>
+        <p style="margin: 8px 0;">✓ Formas geométricas según el recreo</p>
+        <p style="margin: 8px 0;">✓ Tabla detallada con todas las guardias</p>
+                    """
+                },
+                {
+                    'tipo': 'success',
+                    'contenido': """
+        <p style="margin: 5px 0;">💡 Tip: Puedes imprimir el PDF o guardarlo en tu dispositivo para tenerlo siempre a mano.</p>
+                    """
+                }
+            ]
+
+            # Añadir texto final
+            contenido_principal += """
+      <p style="margin-top: 30px;">Si tienes alguna duda o consulta, por favor contacta con el coordinador.</p>
+            """
+
+            html_content = generar_plantilla_email_html(
+                titulo=f"📅 Calendario de Guardias {curso_escolar}",
+                contenido_principal=contenido_principal,
+                secciones=secciones
+            )
+
+            # Crear contenedor alternativo para texto plano y HTML
+            msg_alternative = MIMEMultipart("alternative")
+            part1 = MIMEText(text_content, "plain", "utf-8")
+            part2 = MIMEText(html_content, "html", "utf-8")
+            msg_alternative.attach(part1)
+            msg_alternative.attach(part2)
+
+            # Adjuntar el contenedor alternativo al mensaje principal
+            msg.attach(msg_alternative)
 
             # Adjuntar el PDF
             with open(pdf_path, "rb") as f:
@@ -382,6 +388,25 @@ Sistema de Gestión de Guardias
                     "Content-Disposition", "attachment", filename=pdf_filename
                 )
                 msg.attach(pdf_attachment)
+
+            # Adjuntar el archivo .ics si está disponible
+            if ics_path and os.path.exists(ics_path):
+                with open(ics_path, "rb") as f:
+                    ics_attachment = MIMEApplication(
+                        f.read(), _subtype="ics"
+                    )
+                    ics_filename = os.path.basename(ics_path)
+                    ics_attachment.add_header(
+                        "Content-Disposition",
+                        "attachment",
+                        filename=ics_filename,
+                    )
+                    # Agregar header específico para calendarios
+                    ics_attachment.add_header(
+                        "Content-Type", "text/calendar", charset="utf-8"
+                    )
+                    msg.attach(ics_attachment)
+                    logger.info(f"Archivo iCalendar adjunto: {ics_filename}")
 
             # Enviar email
             logger.info(f"Enviando calendario PDF a {to_email}")
@@ -437,6 +462,7 @@ def get_email_service() -> Optional[EmailService]:
     smtp_password = os.getenv("SMTP_PASSWORD")
     smtp_server = os.getenv("SMTP_SERVER", EmailService.DEFAULT_SMTP_SERVER)
     smtp_port = int(os.getenv("SMTP_PORT", str(EmailService.DEFAULT_SMTP_PORT)))
+    smtp_from_name = os.getenv("SMTP_FROM_NAME", "Guardias de Patio")
 
     if not smtp_user or not smtp_password:
         logger.warning(
@@ -450,4 +476,5 @@ def get_email_service() -> Optional[EmailService]:
         smtp_port=smtp_port,
         smtp_user=smtp_user,
         smtp_password=smtp_password,
+        from_name=smtp_from_name,
     )
