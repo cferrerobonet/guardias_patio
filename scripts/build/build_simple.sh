@@ -5,12 +5,18 @@
 # Motivo: Los archivos .spec tienen un bug con PyQt6 en macOS que causa
 # que la compilación se cuelgue en "Building PKG". Usar siempre este método.
 #
-# Documentación completa: documentacion/SOLUCION_COMPILACION.md
+# ⚠️  ADVERTENCIA CRÍTICA: NO EXCLUIR matplotlib ni pandas
+# La app requiere matplotlib para el panel de estadísticas (panel_estadisticas.py).
+# Si se excluyen con --exclude-module, la app compilará pero crasheará al iniciar.
+# Error resultante: "ModuleNotFoundError: No module named 'matplotlib'"
+#
+# Documentación completa: documentacion/archivo/SOLUCION_COMPILACION.md
 #
 # Este método:
 # ✅ Evita problemas con symlinks de PyQt6
 # ✅ Funciona tanto con 'open' como con ejecución directa
 # ✅ Usa rutas adaptativas para desarrollo y producción
+# ✅ Incluye matplotlib/pandas (REQUERIDOS - no excluir)
 
 echo "=== Compilación de Guardias de Patio ==="
 echo "Fecha: $(date)"
@@ -48,12 +54,21 @@ echo ""
 # Compilar
 echo "Iniciando compilación..."
 echo ""
-echo "NOTA: NO se incluyen matplotlib ni pandas para reducir el tamaño."
-echo "Si son necesarios, quitar las líneas --exclude-module correspondientes."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "⚠️  DEPENDENCIAS INCLUIDAS (NO EXCLUIR):"
+echo "   • matplotlib - REQUERIDO por panel_estadisticas.py"
+echo "   • pandas     - REQUERIDO por análisis de datos"
+echo ""
+echo "   Excluir estos módulos causa crash inmediato al iniciar la app."
+echo "   Tamaño del DMG: ~100 MB (necesario para funcionalidad completa)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 # IMPORTANTE: NO usar archivos .spec, causará que se cuelgue la compilación
 # Usar siempre comando directo de PyInstaller
+#
+# ⚠️  NO AGREGAR: --exclude-module=matplotlib --exclude-module=pandas
+# Estos módulos son REQUERIDOS. Si se excluyen, la app crasheará.
 $PYTHON_PATH -m PyInstaller \
     --clean \
     --onedir \
@@ -64,8 +79,6 @@ $PYTHON_PATH -m PyInstaller \
     --add-data="alembic.ini:." \
     --add-data="alembic:alembic" \
     --exclude-module=tkinter \
-    --exclude-module=matplotlib \
-    --exclude-module=pandas \
     --osx-bundle-identifier="com.guardias-patio.app" \
     src/main.py
 

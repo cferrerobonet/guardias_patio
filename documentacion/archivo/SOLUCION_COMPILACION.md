@@ -326,5 +326,177 @@ icon_path = get_resources_directory() / "icons" / "login.svg"
 
 ---
 
-**Última actualización:** 28 de Octubre de 2025  
+**Última actualización:** 3 de Noviembre de 2025  
 **Versión compilada exitosamente:** PyInstaller 6.16.0 + Python 3.11.14 + PyQt6
+
+---
+
+## 🚨 ACTUALIZACIÓN: 3 de Noviembre de 2025
+
+### 3. **App Compila Pero Crashea al Iniciar - ModuleNotFoundError**
+
+#### Síntoma:
+La app compila sin errores pero al ejecutarla se cierra inmediatamente:
+
+```bash
+open "dist/Guardias de Patio.app"  # Se cierra instantáneamente
+```
+
+Al ejecutar directamente el binario para ver el error:
+```bash
+./dist/Guardias\ de\ Patio.app/Contents/MacOS/Guardias\ de\ Patio
+
+# Error:
+Traceback (most recent call last):
+  File "presentation/widgets/panel_estadisticas.py", line 9, in <module>
+ModuleNotFoundError: No module named 'matplotlib'
+```
+
+#### Causa:
+El script de compilación `build_simple.sh` tenía estas líneas:
+
+```bash
+# ❌ CÓDIGO ANTIGUO (INCORRECTO)
+$PYTHON_PATH -m PyInstaller \
+    ...
+    --exclude-module=matplotlib \
+    --exclude-module=pandas \
+    ...
+```
+
+Esto excluía matplotlib y pandas para reducir el tamaño del DMG (de ~100 MB a ~70 MB), pero la app **requiere** estos módulos:
+
+- `src/presentation/widgets/panel_estadisticas.py` línea 9: `import matplotlib`
+- El panel de estadísticas usa `matplotlib.backends.backend_qt5agg` para gráficos
+- Pandas se usa para análisis de datos en reportes
+
+#### Solución:
+**NUNCA excluir matplotlib ni pandas** en la compilación:
+
+```bash
+# ✅ CÓDIGO NUEVO (CORRECTO)
+$PYTHON_PATH -m PyInstaller \
+    --clean \
+    --onedir \
+    --windowed \
+    --name "Guardias de Patio" \
+    --icon="imagenes/icono.icns" \
+    --add-data="imagenes:imagenes" \
+    --add-data="alembic.ini:." \
+    --add-data="alembic:alembic" \
+    --exclude-module=tkinter \
+    --osx-bundle-identifier="com.guardias-patio.app" \
+    src/main.py
+    
+# ⚠️  NO AGREGAR ESTAS LÍNEAS (causan crash):
+# --exclude-module=matplotlib
+# --exclude-module=pandas
+```
+
+#### Archivos Modificados:
+- `scripts/build/build_simple.sh` - Eliminadas líneas de exclusión
+- Documentación actualizada con advertencias
+
+#### Impacto:
+- **Tamaño del DMG**: ~100 MB (necesario para funcionalidad completa)
+- **Sin matplotlib/pandas**: ~70 MB (pero la app crashea al iniciar)
+- **Trade-off aceptado**: Preferir app funcional sobre tamaño reducido
+
+---
+
+## ⚠️ REGLAS DE COMPILACIÓN CRÍTICAS
+
+### ❌ NUNCA Hacer:
+
+```bash
+# NO excluir módulos requeridos
+--exclude-module=matplotlib  # ❌ Panel de estadísticas crasheará
+--exclude-module=pandas      # ❌ Análisis de datos fallará
+--exclude-module=PyQt6       # ❌ La app entera crasheará
+--exclude-module=sqlalchemy  # ❌ Base de datos no funcionará
+```
+
+### ✅ SIEMPRE Hacer:
+
+```bash
+# Solo excluir módulos verdaderamente innecesarios
+--exclude-module=tkinter     # ✅ No usamos tkinter
+```
+
+### 🔍 Cómo Verificar si un Módulo es Requerido:
+
+```bash
+# Buscar importaciones en el código
+grep -r "import matplotlib" src/
+grep -r "import pandas" src/
+grep -r "from matplotlib" src/
+grep -r "from pandas" src/
+```
+
+Si encuentra resultados, **NO excluir ese módulo**.
+
+---
+
+## 📊 Tamaños de Compilación Típicos
+
+| Configuración | Tamaño DMG | Estado | Notas |
+|---------------|-----------|--------|-------|
+| Completa (con matplotlib/pandas) | ~100 MB | ✅ Funcional | **Recomendado** |
+| Sin matplotlib/pandas | ~70 MB | ❌ Crashea | NO usar |
+| Mínima (solo PyQt6 + SQLAlchemy) | ~50 MB | ⚠️ Limitada | Falta funcionalidad |
+
+---
+
+## 🧪 Pruebas Post-Compilación ACTUALIZADAS
+
+### 1. Verificar que la app NO crashea al iniciar:
+```bash
+./dist/Guardias\ de\ Patio.app/Contents/MacOS/Guardias\ de\ Patio 2>&1 | head -20
+```
+**Esperado:** Debe mostrar logs de inicio, NO errores de `ModuleNotFoundError`.
+
+### 2. Verificar que matplotlib está incluido:
+```bash
+# Buscar en los archivos del bundle
+ls -la "dist/Guardias de Patio.app/Contents/Frameworks/" | grep -i matplotlib
+ls -la "dist/Guardias de Patio.app/Contents/Resources/" | grep -i matplotlib
+```
+**Esperado:** Debe encontrar archivos relacionados con matplotlib.
+
+### 3. Probar apertura normal:
+```bash
+open "dist/Guardias de Patio.app"
+```
+**Esperado:** Ventana de login aparece, NO se cierra inmediatamente.
+
+### 4. Verificar módulos importados (opcional):
+```python
+# Ejecutar dentro de la app compilada
+python3 << 'EOF'
+import sys
+sys.path.insert(0, 'dist/Guardias de Patio.app/Contents/Resources')
+import matplotlib
+import pandas
+print("✅ matplotlib:", matplotlib.__version__)
+print("✅ pandas:", pandas.__version__)
+EOF
+```
+
+---
+
+## 📝 Checklist de Compilación ACTUALIZADO
+
+Antes de compilar, verificar:
+
+- [ ] **Iconos**: `src/utils/icon_manager.py` usa `get_resources_directory()`
+- [ ] **Logs**: `src/config/settings.py` NO crea directorios con rutas relativas
+- [ ] **Users**: `src/sync/sync_manager.py` usa `get_data_directory() / "users.json"`
+- [ ] **Recursos**: Todos los archivos de datos usan funciones de `core/paths.py`
+- [ ] **Python**: Usar Python 3.11 (`python3.11 -m PyInstaller`)
+- [ ] **Limpieza**: Ejecutar `rm -rf dist build` antes de compilar
+- [ ] **Dependencias**: ⚠️ NO excluir matplotlib ni pandas
+- [ ] **Script**: Usar `build_simple.sh` SIN modificar exclusiones
+
+---
+
+````
