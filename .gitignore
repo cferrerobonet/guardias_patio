@@ -31,10 +31,10 @@ htmlcov/
 *.bak
 
 # Sistema Operativo
-.DS_Store      # macOS
-**/.DS_Store   # macOS (en cualquier subdirectorio)
-Thumbs.db      # Windows
-desktop.ini    # Windows
+.DS_Store
+**/. DS_Store
+Thumbs.db
+desktop.ini
 
 # Variables de entorno locales (¡pueden contener secretos!)
 .env
@@ -76,8 +76,7 @@ build/
 dist/
 *.dmg
 *.exe
-*.spec  # Archivo de configuración generado por PyInstaller
-Guardias de Patio.spec  # Archivo generado por PyInstaller
+*.spec
 checksums*.txt
 imagenes/*.iconset
 Output/  # Directorio de salida de Inno Setup
@@ -109,6 +108,3 @@ Calendario_*.pdf
 # ❌ htmlcov/, coverage.xml     - Reportes de cobertura (se regeneran)
 # ❌ __pycache__/, *.pyc        - Archivos compilados (se regeneran)
 # ============================================================================
-.env
-*.pyc
-__pycache__/
