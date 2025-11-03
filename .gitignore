@@ -32,6 +32,7 @@ htmlcov/
 
 # Sistema Operativo
 .DS_Store      # macOS
+**/.DS_Store   # macOS (en cualquier subdirectorio)
 Thumbs.db      # Windows
 desktop.ini    # Windows
 
@@ -51,7 +52,9 @@ guardias_patio.db
 # Archivos de sincronización y sesión
 session.lock
 last_sync.json
+**/last_sync.json  # En cualquier subdirectorio
 guardias_patio_data.json
+**/guardias_patio_data.json  # En cualquier subdirectorio
 
 # Archivos de demostración y testing (obsoletos tras Sprint 12)
 demo_*.py
@@ -82,6 +85,10 @@ Output/  # Directorio de salida de Inno Setup
 # Archivos históricos comprimidos (muy grandes para git)
 ARCHIVO_HISTORICO_*.tar.gz
 ARCHIVO_HISTORICO_*.zip
+
+# PDFs generados como ejemplos o pruebas
+documentacion/datos ejemplo/*.pdf
+Calendario_*.pdf
 
 # ============================================================================
 # NOTA IMPORTANTE: 
