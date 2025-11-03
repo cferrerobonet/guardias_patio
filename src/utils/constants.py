@@ -7,7 +7,7 @@ Define valores constantes utilizados en toda la aplicación para evitar
 
 # ========== CONSTANTES DE APLICACIÓN ==========
 APP_NAME = "Gestión de Guardias de Patio"
-APP_VERSION = "2.1.0"
+APP_VERSION = "3.0.0"
 APP_AUTHOR = "Carlos Ferrero Bonet"
 
 # ========== CONSTANTES DE BASE DE DATOS ==========
