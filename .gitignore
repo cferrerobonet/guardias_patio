@@ -73,6 +73,7 @@ build/
 dist/
 *.dmg
 *.exe
+*.spec  # Archivo de configuración generado por PyInstaller
 checksums*.txt
 imagenes/*.iconset
 Output/  # Directorio de salida de Inno Setup
