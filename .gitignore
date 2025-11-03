@@ -74,6 +74,7 @@ dist/
 *.dmg
 *.exe
 *.spec  # Archivo de configuración generado por PyInstaller
+Guardias de Patio.spec  # Archivo generado por PyInstaller
 checksums*.txt
 imagenes/*.iconset
 Output/  # Directorio de salida de Inno Setup
