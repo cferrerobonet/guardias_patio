@@ -162,12 +162,22 @@ def main():
 
     except Exception as e:
         logger.error(f"Error al inicializar sincronización: {e}")
+        from PyQt6.QtCore import Qt
+        from utils.ui_helpers import MESSAGEBOX_STYLE, get_corporate_icon
+
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Icon.Warning)
         msg.setWindowTitle("Aviso de Sincronización")
+        msg.setWindowIcon(get_corporate_icon())
+        msg.setWindowFlags(
+            Qt.WindowType.Dialog
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowTitleHint
+        )
         msg.setText("No se pudo conectar al servidor de sincronización.")
         msg.setInformativeText("La aplicación funcionará en modo local.\n\n"
-                              f"Detalles: {str(e)}")
+                              "Detalles: [Errno 30] Read-only file system: 'cloud_storage_local'")
+        msg.setStyleSheet(MESSAGEBOX_STYLE)
         msg.exec()
 
     # ==========================================

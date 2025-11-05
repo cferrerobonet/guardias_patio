@@ -196,12 +196,12 @@ class ReportesForm(BaseForm):
             self.resultado_text.setText(f"❌ Error al generar PDFs: {e}")
 
     def _exportar_mes_todos(self, config: dict, carpeta: str):
-        """Exportar mes específico para todos los profesores."""
+        """Exportar mes específico consolidado para todos los profesores."""
         mes = config["mes"]
         anio = config["anio"]
 
         def tarea_exportacion(progress_callback):
-            return ExportadorPDF.exportar_todos_los_profesores(
+            return ExportadorPDF.exportar_mes_consolidado(
                 self.session, mes, anio, carpeta, progress_callback=progress_callback
             )
 
@@ -230,15 +230,18 @@ class ReportesForm(BaseForm):
             ]
 
             mensaje = (
-                f"✅ PDFs generados exitosamente\n\n"
+                f"✅ PDF consolidado generado exitosamente\n\n"
                 f"Tipo: Mes específico (todos los profesores)\n"
                 f"Mes: {meses_nombres[mes]} {anio}\n"
                 f"Carpeta: {carpeta}\n"
-                f"PDFs creados: {resultado}\n"
+                f"Archivo: {resultado}\n"
             )
 
             self.resultado_text.setText(mensaje)
-            self.mostrar_exito("PDFs generados", f"Se generaron {resultado} calendarios correctamente.")
+            self.mostrar_exito(
+                "PDF consolidado generado",
+                "Se generó el calendario consolidado correctamente."
+            )
 
     def _exportar_mes_seleccionados(self, config: dict, carpeta: str):
         """Exportar mes específico para profesores seleccionados."""

@@ -113,7 +113,10 @@ class CalendariosPdfWidget(QGroupBox):
         tipo_layout.addWidget(tipo_label)
 
         self.pdf_tipo_combo = QComboBox()
-        self.pdf_tipo_combo.addItem("📅 Mes específico - Todos los profesores", "mes_todos")
+        self.pdf_tipo_combo.addItem(
+            "📅 Mes específico - PDF Consolidado (todos los profesores)",
+            "mes_todos"
+        )
         self.pdf_tipo_combo.addItem(
             "👤 Mes específico - Profesores seleccionados", "mes_seleccionados"
         )
@@ -245,7 +248,6 @@ class CalendariosPdfWidget(QGroupBox):
 
         # Checkbox "Seleccionar todos"
         self.seleccionar_todos_check = QCheckBox("✅ Seleccionar todos")
-        self.seleccionar_todos_check.setTristate(True)  # Permitir estado parcial
         self.seleccionar_todos_check.setCheckState(Qt.CheckState.Checked)
         self.seleccionar_todos_check.setStyleSheet(
             """
@@ -354,7 +356,9 @@ class CalendariosPdfWidget(QGroupBox):
 
         # Actualizar texto del botón
         if tipo == "mes_todos":
-            self.exportar_pdf_btn.setText("📄 Generar PDFs para Todos (Mes)")
+            self.exportar_pdf_btn.setText(
+                "📄 Generar PDF Consolidado (Mes)"
+            )
         elif tipo == "mes_seleccionados":
             self.exportar_pdf_btn.setText("📄 Generar PDFs Seleccionados (Mes)")
         elif tipo == "curso_todos":
@@ -366,17 +370,6 @@ class CalendariosPdfWidget(QGroupBox):
 
     def _on_seleccionar_todos_changed(self, state):
         """Manejar cambio en el checkbox de seleccionar todos."""
-        # Si está en estado parcial y el usuario hace clic, cambiar a checked
-        # Qt automáticamente cicla: Checked → Unchecked → PartiallyChecked → Checked
-        # Pero queremos: Checked → Unchecked → Checked (sin parcial en el ciclo del usuario)
-
-        if state == Qt.CheckState.PartiallyChecked:
-            # Si el usuario hizo clic en parcial, cambiar a checked
-            self.seleccionar_todos_check.blockSignals(True)
-            self.seleccionar_todos_check.setCheckState(Qt.CheckState.Checked)
-            self.seleccionar_todos_check.blockSignals(False)
-            state = Qt.CheckState.Checked
-
         seleccionado = state == Qt.CheckState.Checked
 
         # Bloquear señales temporalmente para evitar bucles
@@ -398,11 +391,16 @@ class CalendariosPdfWidget(QGroupBox):
         self.seleccionar_todos_check.blockSignals(True)
 
         if todos_seleccionados:
+            self.seleccionar_todos_check.setTristate(False)
             self.seleccionar_todos_check.setCheckState(Qt.CheckState.Checked)
         elif ninguno_seleccionado:
+            self.seleccionar_todos_check.setTristate(False)
             self.seleccionar_todos_check.setCheckState(Qt.CheckState.Unchecked)
         else:
+            # Activar tristate solo para mostrar estado parcial
+            self.seleccionar_todos_check.setTristate(True)
             self.seleccionar_todos_check.setCheckState(Qt.CheckState.PartiallyChecked)
+            self.seleccionar_todos_check.setTristate(False)
 
         self.seleccionar_todos_check.blockSignals(False)
 

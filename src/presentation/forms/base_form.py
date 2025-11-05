@@ -116,6 +116,31 @@ class BaseForm(QWidget):
 
         msg_box.exec()
 
+    def mostrar_informacion(self, titulo: str, mensaje: str) -> None:
+        """
+        Muestra un mensaje informativo al usuario.
+
+        Args:
+            titulo: Título del mensaje
+            mensaje: Contenido del mensaje (puede contener HTML)
+        """
+        from PyQt6.QtCore import Qt
+
+        self.logger.info(f"Información mostrada: {titulo} - {mensaje}")
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(titulo)
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
+        msg_box.setText(mensaje)
+        msg_box.setWindowIcon(get_corporate_icon())
+
+        # Aplicar icono corporativo
+        apply_corporate_icon_to_messagebox(msg_box)
+
+        # Aplicar estilos directamente
+        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
+
+        msg_box.exec()
+
     def confirmar_accion(self, titulo: str, mensaje: str) -> bool:
         """
         Solicita confirmación al usuario para una acción.

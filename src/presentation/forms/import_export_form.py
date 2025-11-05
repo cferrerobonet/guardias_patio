@@ -197,16 +197,26 @@ class ImportExportForm(BaseForm):
             # Confirmación previa
             limpiar = self.limpiar_checkbox.isChecked()
             if limpiar:
-                respuesta = QMessageBox.question(
-                    self,
-                    "Confirmar importación",
-                    "⚠️ ATENCIÓN: Se eliminarán TODOS los datos actuales.\n\n"
-                    "¿Está seguro de que desea continuar?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No,
-                )
+                from utils.ui_helpers import MESSAGEBOX_STYLE, get_corporate_icon
 
-                if respuesta != QMessageBox.StandardButton.Yes:
+                msg = QMessageBox(self)
+                msg.setIcon(QMessageBox.Icon.Question)
+                msg.setWindowTitle("Confirmar importación")
+                msg.setWindowIcon(get_corporate_icon())
+                msg.setWindowFlags(
+                    Qt.WindowType.Dialog
+                    | Qt.WindowType.CustomizeWindowHint
+                    | Qt.WindowType.WindowTitleHint
+                )
+                msg.setText("⚠️ ATENCIÓN: Se eliminarán TODOS los datos actuales.\n\n"
+                           "¿Está seguro de que desea continuar?")
+                msg.setStandardButtons(
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                msg.setDefaultButton(QMessageBox.StandardButton.No)
+                msg.setStyleSheet(MESSAGEBOX_STYLE)
+
+                if msg.exec() != QMessageBox.StandardButton.Yes:
                     return
 
             # Diálogo para seleccionar archivo
@@ -237,6 +247,12 @@ class ImportExportForm(BaseForm):
 
             self.resultado_text.setText(mensaje)
 
+            # Emitir señales de datos importados
+            if resultado.get("profesores", 0) > 0:
+                self.profesores_importados.emit()
+            if resultado.get("zonas", 0) > 0:
+                self.zonas_importadas.emit()
+
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
             msg.setWindowTitle("Éxito")
@@ -246,16 +262,11 @@ class ImportExportForm(BaseForm):
                 | Qt.WindowType.WindowTitleHint
             )
             msg.setText(
-                "Datos importados correctamente.\n\n"
-                "Se recomienda reiniciar la aplicación para ver los cambios."
+                "✅ Datos importados correctamente.\n\n"
+                "Las tablas de profesores y zonas se han actualizado automáticamente."
             )
+            msg.setStyleSheet(self.parent().styleSheet() if self.parent() else "")
             msg.exec()
-
-            # Emitir señales de datos importados
-            if resultado.get("profesores", 0) > 0:
-                self.profesores_importados.emit()
-            if resultado.get("zonas", 0) > 0:
-                self.zonas_importadas.emit()
 
         except Exception as e:
             self.manejar_excepcion(e, "importar datos")

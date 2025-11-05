@@ -8,7 +8,7 @@ Validan datos de entrada/salida sin exponer entidades de dominio.
 from datetime import date
 from typing import Optional, Union
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ProfesorDTO(BaseModel):
@@ -16,7 +16,7 @@ class ProfesorDTO(BaseModel):
 
     id: int
     nombre_completo: str
-    email_corporativo: Optional[EmailStr] = None
+    email_corporativo: Optional[str] = None
     horas_contrato: float
     porcentaje_jornada: float
     turno: str  # "mañana", "tarde", "mixto"
@@ -46,7 +46,7 @@ class CrearProfesorDTO(BaseModel):
     """DTO de entrada para crear un profesor."""
 
     nombre_completo: str = Field(..., min_length=3, max_length=200)
-    email_corporativo: Optional[EmailStr] = None
+    email_corporativo: Optional[str] = None
     horas_contrato: float = Field(..., ge=1.0, le=40.0)
     turno: str = Field(..., pattern="^(mañana|tarde|mixto)$")
     horas_manana: Optional[float] = Field(None, ge=0.0, le=40.0)
@@ -108,7 +108,7 @@ class ActualizarProfesorDTO(BaseModel):
     """DTO de entrada para actualizar un profesor (todos los campos opcionales)."""
 
     nombre_completo: Optional[str] = Field(None, min_length=3, max_length=200)
-    email_corporativo: Optional[EmailStr] = None
+    email_corporativo: Optional[str] = None
     horas_contrato: Optional[float] = Field(None, ge=1.0, le=40.0)
     turno: Optional[str] = Field(None, pattern="^(mañana|tarde|mixto)$")
     horas_manana: Optional[float] = Field(None, ge=0.0, le=40.0)

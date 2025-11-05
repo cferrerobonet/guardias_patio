@@ -346,6 +346,246 @@ class ExportadorPDF:
         return exitos
 
     @staticmethod
+    def exportar_mes_consolidado(
+        session: Session,
+        mes: int,
+        anio: int,
+        ruta_salida: str,
+        progress_callback: Optional[Callable[[int, str], None]] = None
+    ) -> bool:
+        """
+        Exporta un PDF consolidado con todas las guardias del mes.
+        Muestra todos los profesores que tienen guardia cada día, organizados por fecha.
+
+        Args:
+            session: Sesión de base de datos
+            mes: Mes (1-12)
+            anio: Año
+            ruta_salida: Ruta del archivo PDF a generar
+            progress_callback: Función opcional para reportar progreso
+
+        Returns:
+            True si se generó correctamente, False en caso contrario
+        """
+        def reportar_progreso(porcentaje: int, mensaje: str = ""):
+            """Helper para reportar progreso de forma segura."""
+            if progress_callback:
+                try:
+                    progress_callback(porcentaje, mensaje)
+                except Exception as e:
+                    logger.warning(f"Error al reportar progreso: {e}")
+
+        try:
+            reportar_progreso(0, "Preparando exportación consolidada del mes...")
+
+            # Obtener guardias del mes
+            primer_dia = date(anio, mes, 1)
+            dias_en_mes = monthrange(anio, mes)[1]
+            ultimo_dia = date(anio, mes, dias_en_mes)
+
+            reportar_progreso(20, "Consultando guardias del mes...")
+
+            guardias = (
+                session.query(Guardia)
+                .options(joinedload(Guardia.zona), joinedload(Guardia.profesor))
+                .filter(
+                    Guardia.fecha >= primer_dia,
+                    Guardia.fecha <= ultimo_dia
+                )
+                .order_by(Guardia.fecha, Guardia.turno, Guardia.recreo, Guardia.profesor_id)
+                .all()
+            )
+
+            if not guardias:
+                reportar_progreso(100, "No hay guardias en este mes")
+                return False
+
+            reportar_progreso(40, f"Procesando {len(guardias)} guardias...")
+
+            # Agrupar por fecha
+            guardias_por_fecha = defaultdict(list)
+            for g in guardias:
+                guardias_por_fecha[g.fecha].append(g)
+
+            # Crear PDF
+            doc = SimpleDocTemplate(
+                ruta_salida,
+                pagesize=landscape(A4),
+                rightMargin=1.5*cm,
+                leftMargin=1.5*cm,
+                topMargin=1.5*cm,
+                bottomMargin=1.5*cm,
+            )
+
+            elements = []
+            styles_doc = getSampleStyleSheet()
+
+            reportar_progreso(50, "Generando documento PDF...")
+
+            # Título
+            meses = [
+                "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+                "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+            ]
+
+            titulo_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles_doc['Heading1'],
+                fontSize=20,
+                textColor=colors.HexColor('#2c3e50'),
+                spaceAfter=10,
+                alignment=1,
+                fontName='Helvetica-Bold',
+            )
+
+            titulo = Paragraph(
+                f"📅 CALENDARIO DE GUARDIAS - {meses[mes-1]} {anio}",
+                titulo_style
+            )
+            elements.append(titulo)
+            elements.append(Spacer(1, 0.5*cm))
+
+            # Subtítulo con resumen
+            subtitulo_style = ParagraphStyle(
+                'Subtitulo',
+                parent=styles_doc['Normal'],
+                fontSize=11,
+                textColor=colors.HexColor('#7f8c8d'),
+                alignment=1,
+                spaceAfter=15,
+            )
+
+            profesores_unicos = len(set(g.profesor_id for g in guardias if g.profesor_id))
+            dias_con_guardias = len(guardias_por_fecha)
+
+            subtitulo = Paragraph(
+                f"Total: {len(guardias)} guardias | {profesores_unicos} profesores | "
+                f"{dias_con_guardias} días con guardias",
+                subtitulo_style
+            )
+            elements.append(subtitulo)
+            elements.append(Spacer(1, 0.3*cm))
+
+            # Crear tabla consolidada
+            data = [['Fecha', 'Día', 'Turno', 'Recreo', 'Profesor', 'Zona']]
+            dias_semana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+            total_fechas = len(guardias_por_fecha)
+            for idx_fecha, (fecha, guardias_dia) in enumerate(sorted(guardias_por_fecha.items())):
+                # Actualizar progreso (50% a 90%)
+                porcentaje = 50 + int((idx_fecha / total_fechas) * 40)
+                reportar_progreso(porcentaje, f"Procesando {fecha.strftime('%d/%m/%Y')}...")
+
+                for i, guardia in enumerate(guardias_dia):
+                    fecha_str = fecha.strftime("%d/%m/%Y") if i == 0 else ""
+                    dia_semana = dias_semana[fecha.weekday()] if i == 0 else ""
+
+                    # Nombre del profesor
+                    if guardia.profesor:
+                        profesor_nombre = guardia.profesor.nombre_completo
+                    else:
+                        profesor_nombre = "Sin asignar"
+
+                    # Zona
+                    zona_nombre = guardia.zona.nombre_zona if guardia.zona else "N/A"
+
+                    data.append([
+                        fecha_str,
+                        dia_semana,
+                        guardia.turno.capitalize(),
+                        f"Recreo {guardia.recreo}",
+                        profesor_nombre,
+                        zona_nombre,
+                    ])
+
+            reportar_progreso(90, "Aplicando estilos a la tabla...")
+
+            # Crear tabla con columnas ajustadas
+            tabla = Table(data, colWidths=[2.5*cm, 2.5*cm, 2*cm, 2*cm, 7*cm, 4.5*cm])
+
+            # Estilos de la tabla
+            estilos_tabla = [
+                # Encabezado
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498db')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+
+                # Cuerpo
+                ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#2c3e50')),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#bdc3c7')),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('TOPPADDING', (0, 1), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+            ]
+
+            # Alternar colores de fondo por día (agrupando todas las guardias del mismo día)
+            fila_actual = 1
+            color_actual = 0
+            fecha_anterior = None
+
+            for fecha in sorted(guardias_por_fecha.keys()):
+                num_guardias = len(guardias_por_fecha[fecha])
+
+                # Alternar color para cada nuevo día
+                if fecha != fecha_anterior:
+                    if color_actual % 2 == 0:
+                        color_fondo = colors.white
+                    else:
+                        color_fondo = colors.HexColor('#ecf0f1')
+                    color_actual += 1
+                    fecha_anterior = fecha
+
+                # Aplicar color a todas las filas de este día
+                fila_fin = fila_actual + num_guardias - 1
+                estilos_tabla.append(
+                    ('BACKGROUND', (0, fila_actual), (-1, fila_fin), color_fondo)
+                )
+
+                fila_actual += num_guardias
+
+            tabla.setStyle(TableStyle(estilos_tabla))
+            elements.append(tabla)
+            elements.append(Spacer(1, 0.5*cm))
+
+            # Pie de página con fecha de generación
+            reportar_progreso(95, "Finalizando documento...")
+
+            from datetime import datetime
+            footer_style = ParagraphStyle(
+                'FooterStyle',
+                parent=styles_doc['Normal'],
+                fontSize=8,
+                textColor=colors.HexColor('#7f8c8d'),
+                alignment=2,
+            )
+
+            fecha_generacion = datetime.now().strftime("%d/%m/%Y %H:%M")
+            footer = Paragraph(
+                f"Documento generado el {fecha_generacion}",
+                footer_style
+            )
+            elements.append(footer)
+
+            # Generar PDF
+            doc.build(elements)
+
+            reportar_progreso(100, "PDF consolidado generado exitosamente")
+            logger.info(f"PDF consolidado generado: {ruta_salida}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error al exportar mes consolidado: {e}", exc_info=True)
+            reportar_progreso(100, f"Error: {str(e)}")
+            return False
+
+    @staticmethod
     def exportar_curso_completo(
         session: Session,
         anio_inicio: int,
@@ -623,7 +863,13 @@ class ExportadorPDF:
                 except Exception as e:
                     logger.warning(f"Error al reportar progreso: {e}")
 
-        def crear_mini_calendario(mes: int, anio: int, guardias_del_mes: dict, ancho=4*cm, alto=3.5*cm):
+        def crear_mini_calendario(
+            mes: int,
+            anio: int,
+            guardias_del_mes: dict,
+            ancho=4*cm,
+            alto=3.5*cm
+        ):
             """
             Crea un mini calendario mensual con días marcados según zona y recreo.
             
@@ -644,7 +890,12 @@ class ExportadorPDF:
             drawing = Drawing(ancho, alto)
 
             # Marco del calendario
-            marco = Rect(0, 0, ancho, alto, fillColor=None, strokeColor=colors.HexColor('#2c3e50'), strokeWidth=1.5)
+            marco = Rect(
+                0, 0, ancho, alto,
+                fillColor=None,
+                strokeColor=colors.HexColor('#2c3e50'),
+                strokeWidth=1.5
+            )
             drawing.add(marco)
 
             # Calcular proporciones en base al tamaño
@@ -672,7 +923,12 @@ class ExportadorPDF:
             y = alto - header_height - celda_alto * 0.3
             for i, dia in enumerate(dias_sem):
                 x = i * celda_ancho + celda_ancho / 2
-                texto = String(x, y, dia, fontSize=font_size_dias, fontName='Helvetica-Bold', textAnchor='middle')
+                texto = String(
+                    x, y, dia,
+                    fontSize=font_size_dias,
+                    fontName='Helvetica-Bold',
+                    textAnchor='middle'
+                )
                 drawing.add(texto)
 
             # Colores por zona (hasta 10 zonas diferentes) - usar estilos corporativos
@@ -760,7 +1016,10 @@ class ExportadorPDF:
                                     x_pos, y_pos = x + celda_ancho/3, y + celda_alto*0.3
                                 else:
                                     x_pos, y_pos = x + 2*celda_ancho/3, y + celda_alto*0.3
-                                dibujar_forma_recreo(x_pos, y_pos, recreo, color, tamano=tamano_reducido)
+                                dibujar_forma_recreo(
+                                    x_pos, y_pos, recreo, color,
+                                    tamano=tamano_reducido
+                                )
 
                         else:
                             # Cuatro o más guardias, esquinas
@@ -775,16 +1034,27 @@ class ExportadorPDF:
                                     x_pos, y_pos = x + celda_ancho/3, y + celda_alto*0.3
                                 else:
                                     x_pos, y_pos = x + 2*celda_ancho/3, y + celda_alto*0.3
-                                dibujar_forma_recreo(x_pos, y_pos, recreo, color, tamano=tamano_mini)
+                                dibujar_forma_recreo(
+                                    x_pos, y_pos, recreo, color,
+                                    tamano=tamano_mini
+                                )
 
                         # Número del día en negro y más pequeño
-                        texto = String(x + celda_ancho/2, y + celda_alto/8, str(dia),
-                                     fontSize=font_size_numeros-1, fontName='Helvetica-Bold',
-                                     textAnchor='middle', fillColor=colors.black)
+                        texto = String(
+                            x + celda_ancho/2, y + celda_alto/8, str(dia),
+                            fontSize=font_size_numeros-1,
+                            fontName='Helvetica-Bold',
+                            textAnchor='middle',
+                            fillColor=colors.black
+                        )
                     else:
                         # Número normal para días sin guardias
-                        texto = String(x + celda_ancho/2, y + celda_alto/3, str(dia),
-                                     fontSize=font_size_numeros, fontName='Helvetica', textAnchor='middle')
+                        texto = String(
+                            x + celda_ancho/2, y + celda_alto/3, str(dia),
+                            fontSize=font_size_numeros,
+                            fontName='Helvetica',
+                            textAnchor='middle'
+                        )
 
                     drawing.add(texto)
 
@@ -803,7 +1073,7 @@ class ExportadorPDF:
                         return config.hora_recreo1_tarde.strftime("%H:%M")
                     elif recreo == 2 and config.hora_recreo2_tarde:
                         return config.hora_recreo2_tarde.strftime("%H:%M")
-            except:
+            except Exception:
                 pass
             return ""
 
@@ -1046,7 +1316,11 @@ class ExportadorPDF:
                                 x_pos - 0.08*cm, y_pos,
                                 x_pos + 0.08*cm, y_pos,
                             ]
-                            triangulo = Polygon(puntos, fillColor=colors.grey, strokeColor=colors.grey)
+                            triangulo = Polygon(
+                                puntos,
+                                fillColor=colors.grey,
+                                strokeColor=colors.grey
+                            )
                             leyenda_drawing.add(triangulo)
                             forma_nombre = "▲=R3"
                         else:
@@ -1163,14 +1437,21 @@ class ExportadorPDF:
                         # Zona con descripción
                         if guardia.zona:
                             if guardia.zona.descripcion:
-                                zona_info = f"{guardia.zona.nombre_zona} - {guardia.zona.descripcion}"
+                                zona_nombre = guardia.zona.nombre_zona
+                                zona_desc = guardia.zona.descripcion
+                                zona_info = f"{zona_nombre} - {zona_desc}"
                             else:
                                 zona_info = guardia.zona.nombre_zona
                         else:
                             zona_info = "N/A"
 
                         # Recreo con hora
-                        hora = obtener_hora_recreo(config, guardia.turno, guardia.recreo) if config else ""
+                        if config:
+                            hora = obtener_hora_recreo(
+                                config, guardia.turno, guardia.recreo
+                            )
+                        else:
+                            hora = ""
                         if hora:
                             recreo_info = f"Recreo {guardia.recreo} ({hora})"
                         else:

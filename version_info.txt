@@ -7,8 +7,8 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
     # filevers y prodvers deben ser tuplas de 4 enteros (major, minor, patch, build)
-    filevers=(2, 7, 0, 0),
-    prodvers=(2, 7, 0, 0),
+    filevers=(3, 0, 0, 0),
+    prodvers=(3, 0, 0, 0),
     # Máscara de bits que especifica atributos del archivo válidos
     mask=0x3f,
     # Máscara de bits que especifica atributos del archivo actuales

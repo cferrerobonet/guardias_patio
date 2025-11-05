@@ -3,6 +3,7 @@ Diálogo de Login para Sistema Multi-Usuario
 """
 
 
+from core.paths import get_resources_directory
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
@@ -16,8 +17,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
-from core.paths import get_resources_directory
 from sync.sync_manager import UserAuth
 from utils.icon_manager import get_icon
 from utils.ui_helpers import get_corporate_icon
@@ -144,60 +143,90 @@ class RegisterDialog(QDialog):
 
         # Validaciones
         if not username:
-            QMessageBox.warning(self, "Campo vacío", "Por favor introduce un nombre de usuario")
+            from utils.ui_helpers import MESSAGEBOX_STYLE
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Campo vacío")
+            msg.setWindowIcon(get_corporate_icon())
+            msg.setText("Por favor introduce un nombre de usuario")
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.exec()
             self.username_input.setFocus()
             return
 
         if not email:
-            QMessageBox.warning(
-                self,
-                "Email obligatorio",
+            from utils.ui_helpers import MESSAGEBOX_STYLE
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Email obligatorio")
+            msg.setWindowIcon(get_corporate_icon())
+            msg.setText(
                 "El email es obligatorio para poder recuperar la contraseña en caso de olvido"
             )
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.exec()
             self.email_input.setFocus()
             return
 
         # Validación básica de email
         if "@" not in email or "." not in email:
-            QMessageBox.warning(
-                self,
-                "Email inválido",
-                "Por favor introduce un email válido (ej: usuario@ejemplo.com)"
-            )
+            from utils.ui_helpers import MESSAGEBOX_STYLE
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Email inválido")
+            msg.setWindowIcon(get_corporate_icon())
+            msg.setText("Por favor introduce un email válido (ej: usuario@ejemplo.com)")
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.exec()
             self.email_input.setFocus()
             return
 
         if not password:
-            QMessageBox.warning(self, "Campo vacío", "Por favor introduce una contraseña")
+            from utils.ui_helpers import MESSAGEBOX_STYLE
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Campo vacío")
+            msg.setWindowIcon(get_corporate_icon())
+            msg.setText("Por favor introduce una contraseña")
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.exec()
             self.password_input.setFocus()
             return
 
         if len(password) < 4:
-            QMessageBox.warning(
-                self,
-                "Contraseña débil",
-                "La contraseña debe tener al menos 4 caracteres"
-            )
+            from utils.ui_helpers import MESSAGEBOX_STYLE
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Contraseña débil")
+            msg.setWindowIcon(get_corporate_icon())
+            msg.setText("La contraseña debe tener al menos 4 caracteres")
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.exec()
             self.password_input.setFocus()
             return
 
         if password != password_confirm:
-            QMessageBox.warning(
-                self,
-                "Contraseñas no coinciden",
-                "Las contraseñas introducidas no son iguales.\n"
-                "Por favor, verifica que sean idénticas."
-            )
+            from utils.ui_helpers import MESSAGEBOX_STYLE
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Contraseñas no coinciden")
+            msg.setWindowIcon(get_corporate_icon())
+            msg.setText("Las contraseñas introducidas no son iguales.\n"
+                       "Por favor, verifica que sean idénticas.")
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.exec()
             self.password_confirm_input.clear()
             self.password_confirm_input.setFocus()
             return
 
         # Intentar registrar
         if self.user_auth.register_user(username, password, email):
+            from utils.ui_helpers import MESSAGEBOX_STYLE
             self.registered_username = username
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
             msg.setWindowTitle("✅ Registro exitoso")
+            msg.setWindowIcon(get_corporate_icon())
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
                 Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
@@ -208,12 +237,15 @@ class RegisterDialog(QDialog):
                 f"registrado correctamente.<br><br>"
                 f"Ahora puedes iniciar sesión con tus credenciales."
             )
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.accept()
         else:
+            from utils.ui_helpers import MESSAGEBOX_STYLE
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
             msg.setWindowTitle("Usuario existente")
+            msg.setWindowIcon(get_corporate_icon())
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
                 Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
@@ -224,6 +256,7 @@ class RegisterDialog(QDialog):
                 f"ya está registrado.<br>"
                 f"Por favor, elige otro nombre de usuario."
             )
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.username_input.selectAll()
             self.username_input.setFocus()
@@ -512,9 +545,11 @@ class LoginDialog(QDialog):
             self.password_input.clear()
             self.password_input.setFocus()
 
+            from utils.ui_helpers import MESSAGEBOX_STYLE
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
             msg.setWindowTitle("🔄 Datos actualizados")
+            msg.setWindowIcon(get_corporate_icon())
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
                 Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
@@ -524,6 +559,7 @@ class LoginDialog(QDialog):
                 "Por favor, introduce tu <span style='color: #007ACC; "
                 "font-style: italic;'>nueva contraseña</span> para iniciar sesión."
             )
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
 
     def login(self):
@@ -532,18 +568,23 @@ class LoginDialog(QDialog):
         password = self.password_input.text()
 
         if not username or not password:
-            QMessageBox.warning(
-                self,
-                "Campos vacíos",
-                "Por favor introduce usuario y contraseña"
-            )
+            from utils.ui_helpers import MESSAGEBOX_STYLE
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Campos vacíos")
+            msg.setWindowIcon(get_corporate_icon())
+            msg.setText("Por favor introduce usuario y contraseña")
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.exec()
             return
 
         if self.user_auth.authenticate(username, password):
+            from utils.ui_helpers import MESSAGEBOX_STYLE
             self.authenticated_user = username
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
             msg.setWindowTitle("✅ Bienvenido")
+            msg.setWindowIcon(get_corporate_icon())
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
                 Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
@@ -553,15 +594,21 @@ class LoginDialog(QDialog):
                 f"Sesión iniciada correctamente.<br><br>"
                 f"Usuario: <span style='color: #007ACC; font-style: italic;'>{username}</span>"
             )
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.accept()
         else:
-            QMessageBox.critical(
-                self,
-                "❌ Error de autenticación",
+            from utils.ui_helpers import MESSAGEBOX_STYLE
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.setWindowTitle("❌ Error de autenticación")
+            msg.setWindowIcon(get_corporate_icon())
+            msg.setText(
                 "Usuario o contraseña incorrectos.\n\n"
                 "Por favor, verifica tus credenciales."
             )
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.exec()
             self.password_input.clear()
             self.password_input.setFocus()
 

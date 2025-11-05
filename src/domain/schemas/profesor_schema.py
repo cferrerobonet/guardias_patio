@@ -8,7 +8,7 @@ relacionados con profesores.
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
 
@@ -51,7 +51,7 @@ class ProfesorSchema(BaseModel):
         max_length=200,
         description="Nombre completo del profesor (formato: APELLIDOS, NOMBRE)"
     )
-    email_corporativo: Optional[EmailStr] = Field(
+    email_corporativo: Optional[str] = Field(
         None,
         description="Email corporativo del profesor"
     )
@@ -187,7 +187,7 @@ class ProfesorCreateSchema(BaseModel):
     )
 
     # Campos opcionales
-    email_corporativo: Optional[EmailStr] = None
+    email_corporativo: Optional[str] = None
     porcentaje_jornada: Optional[float] = Field(
         None,
         ge=0.0,
@@ -254,7 +254,7 @@ class ProfesorUpdateSchema(BaseModel):
 
     # Todos los campos opcionales
     nombre_completo: Optional[str] = Field(None, min_length=3, max_length=200)
-    email_corporativo: Optional[EmailStr] = None
+    email_corporativo: Optional[str] = None
     horas_contrato: Optional[float] = Field(None, ge=0.0, le=40.0)
     porcentaje_jornada: Optional[float] = Field(None, ge=0.0, le=100.0)
     turno: Optional[str] = Field(None, pattern="^(mañana|tarde)$")
