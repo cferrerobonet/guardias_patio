@@ -443,6 +443,40 @@ class DataExporter:
             logger.info(f"   Versión: {data.get('version', 'desconocida')}")
             logger.info(f"   Fecha exportación: {data.get('export_date', 'desconocida')}")
 
+            # Verificar que el esquema de la base de datos esté actualizado
+            from sqlalchemy import inspect
+            inspector = inspect(session.bind)
+
+            # Verificar columnas críticas en la tabla profesores
+            profesores_columns = {col['name'] for col in inspector.get_columns('profesores')}
+            required_profesor_columns = {
+                'activo', 'zona_preferida_id', 'dias_semana_permitidos',
+                'recreos_permitidos', 'fecha_inicio_guardias', 'fecha_fin_guardias'
+            }
+
+            missing_profesor_cols = required_profesor_columns - profesores_columns
+            if missing_profesor_cols:
+                logger.error(
+                    f"❌ El esquema de la base de datos está desactualizado. "
+                    f"Faltan columnas en profesores: {missing_profesor_cols}"
+                )
+                logger.error(
+                    "Por favor, ejecute las migraciones de Alembic o reinicie la aplicación."
+                )
+                return False
+
+            # Verificar columnas críticas en la tabla configuracion
+            config_columns = {col['name'] for col in inspector.get_columns('configuracion')}
+            if 'algoritmo_asignacion' not in config_columns:
+                logger.error(
+                    "❌ El esquema de la base de datos está desactualizado. "
+                    "Falta la columna 'algoritmo_asignacion' en configuracion."
+                )
+                logger.error(
+                    "Por favor, ejecute las migraciones de Alembic o reinicie la aplicación."
+                )
+                return False
+
             # Importar configuración SMTP GLOBAL si existe en el JSON
             if "smtp_config" in data and data["smtp_config"]:
                 DataExporter._import_smtp_config(data["smtp_config"])
@@ -637,6 +671,6 @@ class DataExporter:
             return True
 
         except Exception as e:
-            logger.error(f"❌ Error importando datos desde JSON: {e}")
+            logger.error(f"❌ Error importando datos desde JSON: {e}", exc_info=True)
             session.rollback()
             return False

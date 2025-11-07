@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     log_file: str = "logs/guardias_patio.log"
     log_to_console: bool = True
     log_to_file: bool = True
-    structured_logging: bool = True  # JSON structured logs
+    structured_logging: bool = False  # Desactivado para evitar logs verbosos en consola
 
     # ========== TURNOS ==========
     turno_manana: str = "mañana"

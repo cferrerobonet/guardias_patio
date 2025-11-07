@@ -81,12 +81,22 @@ class CrearProfesorDTO(BaseModel):
         # Si es None, usar valor por defecto
         if v is None:
             return [1, 2, 3, 4]
-        # Si es diccionario, validar estructura
+        # Si es diccionario vacío, devolver lista por defecto
+        if isinstance(v, dict) and not v:
+            return [1, 2, 3, 4]
+        # Si es diccionario, validar estructura y convertir claves a int
         if isinstance(v, dict):
-            for dia, recreos in v.items():
-                if not all(isinstance(r, int) and r >= 1 for r in recreos):
-                    raise ValueError("Los recreos deben ser números positivos")
-            return v
+            try:
+                # Convertir claves a int si son strings
+                v = {int(k): recreos for k, recreos in v.items()}
+                for dia, recreos in v.items():
+                    if not isinstance(recreos, list):
+                        raise ValueError(f"Los recreos del día {dia} deben ser una lista")
+                    if not all(isinstance(r, int) and r >= 1 for r in recreos):
+                        raise ValueError(f"Los recreos del día {dia} deben ser números positivos")
+                return v
+            except (ValueError, TypeError) as e:
+                raise ValueError(f"Error en formato de recreos_permitidos: {e}")
         # Si es lista, validar valores
         if isinstance(v, list):
             if not all(isinstance(r, int) and r >= 1 for r in v):
@@ -131,16 +141,28 @@ class ActualizarProfesorDTO(BaseModel):
 
     @field_validator("recreos_permitidos")
     @classmethod
-    def validar_recreos(cls, v: Optional[Union[list[int], dict[int, list[int]]]]) -> Optional[Union[list[int], dict[int, list[int]]]]:
+    def validar_recreos(
+        cls, v: Optional[Union[list[int], dict[int, list[int]]]]
+    ) -> Optional[Union[list[int], dict[int, list[int]]]]:
         """Valida recreos (lista simple o diccionario por día)."""
         if v is None:
             return None
-        # Si es diccionario, validar estructura
+        # Si es diccionario vacío, devolver None
+        if isinstance(v, dict) and not v:
+            return None
+        # Si es diccionario, validar estructura y convertir claves a int
         if isinstance(v, dict):
-            for dia, recreos in v.items():
-                if not all(isinstance(r, int) and r >= 1 for r in recreos):
-                    raise ValueError("Los recreos deben ser números positivos")
-            return v
+            try:
+                # Convertir claves a int si son strings
+                v = {int(k): recreos for k, recreos in v.items()}
+                for dia, recreos in v.items():
+                    if not isinstance(recreos, list):
+                        raise ValueError(f"Los recreos del día {dia} deben ser una lista")
+                    if not all(isinstance(r, int) and r >= 1 for r in recreos):
+                        raise ValueError(f"Los recreos del día {dia} deben ser números positivos")
+                return v
+            except (ValueError, TypeError) as e:
+                raise ValueError(f"Error en formato de recreos_permitidos: {e}")
         # Si es lista, validar valores
         if isinstance(v, list):
             if not all(isinstance(r, int) and r >= 1 for r in v):

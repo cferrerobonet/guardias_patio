@@ -209,8 +209,6 @@ class ProfesorForm(BaseForm):
         self.tabla_profesores.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         # Permitir selección múltiple (Ctrl+clic o Shift+clic)
         self.tabla_profesores.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
-        # Click simple: mostrar datos sin editar
-        self.tabla_profesores.clicked.connect(self.mostrar_profesor)
         # Doble click: activar modo edición
         self.tabla_profesores.doubleClicked.connect(self.editar_profesor)
 
@@ -275,8 +273,8 @@ class ProfesorForm(BaseForm):
     def _crear_seccion_formulario(self) -> QVBoxLayout:
         """Crear sección derecha con formulario de alta/edición."""
         layout = QVBoxLayout()
-        layout.setContentsMargins(10, 10, 10, 10)  # Cambiado de (10, 0, 10, 10) a (10, 10, 10, 10)
-        layout.setSpacing(12)
+        layout.setContentsMargins(6, 6, 6, 6)  # Reducido de 8 a 6
+        layout.setSpacing(6)  # Reducido de 8 a 6
 
         self.titulo_seccion = QLabel("✏️ ALTA DE PROFESOR")
         self.titulo_seccion.setStyleSheet(styles.STYLE_TITLE_MAIN)
@@ -292,9 +290,14 @@ class ProfesorForm(BaseForm):
         self.restricciones_widget = RestriccionesWidget(self)
         layout.addWidget(self.restricciones_widget)
 
+        # Conectar señal de cambio de turno para actualizar matriz de restricciones
+        self.horario_widget.turno_changed.connect(
+            self._actualizar_matriz_restricciones_por_turno
+        )
+
         # Botones de acción
         botones_accion = QHBoxLayout()
-        botones_accion.setSpacing(10)
+        botones_accion.setSpacing(8)  # Reducido de 10 a 8
 
         self.submit_btn = QPushButton("💾 Guardar nuevo profesor")
         self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
@@ -330,11 +333,16 @@ class ProfesorForm(BaseForm):
             self.tabla_profesores.selectAll()
 
     def _limpiar_formulario(self):
-        """Limpiar todos los campos del formulario."""
+        """Limpiar todos los campos del formulario y preseleccionar matriz según turno."""
         # Delegar limpieza a los widgets
         self.datos_basicos_widget.limpiar()
         self.horario_widget.limpiar()
         self.restricciones_widget.limpiar()
+
+        # Preseleccionar matriz de restricciones según el turno por defecto (Mañana)
+        turno_por_defecto = self.horario_widget.get_turno()
+        if turno_por_defecto:
+            self.restricciones_widget.preseleccionar_segun_turno(turno_por_defecto)
 
         # Actualizar estado del formulario
         self.profesor_editando_id = None
@@ -349,11 +357,10 @@ class ProfesorForm(BaseForm):
         self.busqueda_input.setEnabled(True)
 
     def cancelar_edicion(self):
-        """Cancelar edición y volver a modo creación."""
+        """Cancelar edición y volver a modo creación (sin recargar tabla)."""
         self._limpiar_formulario()
-        # Recarga tabla por si hubo cambios
-        self.cargar_profesores()
-        self.mostrar_exito("Cancelado", "Edición cancelada.")
+        # NO recargar tabla - es más rápido y no se han guardado cambios
+        # self.cargar_profesores()  # ELIMINADO - innecesario
 
     def guardar_profesor(self):
         """Crear o actualizar profesor según el modo actual."""
@@ -379,16 +386,23 @@ class ProfesorForm(BaseForm):
             datos_horario = self.horario_widget.get_datos()
             datos_restricciones = self.restricciones_widget.get_datos()
 
-            # Obtener restricciones de horario (matriz de recreos)
-            matriz_json = self.restricciones_widget.get_recreos_permitidos_json()
+            # ✅ Obtener restricciones de horario (matriz de recreos)
+            matriz_json = datos_restricciones.get("recreos_permitidos", "")
             recreos_dict = {}
+
             if matriz_json:
+                # Hay restricciones personalizadas (checkbox activado)
                 try:
                     recreos_dict = json.loads(matriz_json)
                     # Convertir claves a int si es necesario
                     recreos_dict = {int(k): v for k, v in recreos_dict.items()}
                 except (json.JSONDecodeError, ValueError):
                     pass
+            else:
+                # ✅ NO hay restricciones personalizadas (checkbox desactivado)
+                # GUARDAR configuración por defecto según turno
+                turno = datos_horario["turno"]
+                recreos_dict = self.restricciones_widget._obtener_recreos_por_defecto(turno)
 
             # Guardar profesor
             if self.profesor_editando_id:
@@ -553,7 +567,12 @@ class ProfesorForm(BaseForm):
         self.busqueda_input.clear()
 
     def mostrar_profesor(self):
-        """Mostrar datos del profesor seleccionado sin activar modo edición."""
+        """
+        Mostrar datos del profesor seleccionado en modo lectura (sin editar).
+        
+        NOTA: Este método ya NO se llama desde click simple de la tabla.
+        Solo se usa internamente en editar_profesor().
+        """
         if self.profesor_editando_id is not None:
             return
 
@@ -570,6 +589,17 @@ class ProfesorForm(BaseForm):
         try:
             # Usar Use Case para obtener el profesor
             profesor_dto = self.obtener_use_case.execute(id_profesor)
+
+            # 🔧 OBTENER recreos_permitidos RAW desde la BD (sin procesar)
+            # El DTO pierde la estructura por día al convertir dict a lista
+            recreos_raw = None
+            try:
+                from models.models import Profesor
+                profesor_model = self.session.query(Profesor).filter_by(id=id_profesor).first()
+                if profesor_model and profesor_model.recreos_permitidos:
+                    recreos_raw = profesor_model.recreos_permitidos  # String JSON original
+            except Exception as e:
+                print(f"Warning: No se pudo obtener recreos_permitidos raw: {e}")
 
             # Limpiar formulario
             self._limpiar_formulario()
@@ -597,14 +627,14 @@ class ProfesorForm(BaseForm):
                     "fecha_inicio": profesor_dto.fecha_inicio_guardias,
                     "fecha_fin": profesor_dto.fecha_fin_guardias,
                     "zona_preferida_id": profesor_dto.zona_preferida_id,
-                    "recreos_permitidos": profesor_dto.recreos_permitidos,
+                    "recreos_permitidos": recreos_raw,  # ✅ Pasar JSON raw en lugar del DTO procesado
                     "turno": profesor_dto.turno,
                 }
             )
 
-            # Actualizar título
-            self.titulo_seccion.setText("📋 DATOS DEL PROFESOR")
-            self.submit_btn.setText("💾 Guardar Profesor")
+            # Actualizar título - modo lectura
+            self.titulo_seccion.setText("📋 VISTA PREVIA")
+            self.submit_btn.setText("💾 Guardar Cambios")
             self.cancelar_btn.setVisible(False)
 
         except Exception as e:
@@ -732,3 +762,14 @@ class ProfesorForm(BaseForm):
 
             except Exception as e:
                 self.manejar_excepcion(e, "eliminar profesores")
+
+    def _actualizar_matriz_restricciones_por_turno(self, turno: str):
+        """
+        Actualizar la matriz de restricciones según el turno seleccionado.
+
+        Solo actualiza si NO hay restricciones personalizadas activas.
+        """
+        # Solo actualizar si el checkbox de restricciones NO está activado
+        if not self.restricciones_widget.get_usar_restricciones():
+            self.restricciones_widget.preseleccionar_segun_turno(turno)
+

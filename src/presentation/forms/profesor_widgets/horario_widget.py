@@ -50,7 +50,7 @@ class HorarioWidget(QGroupBox):
     def _setup_ui(self):
         """Crear la interfaz de usuario del widget."""
         layout = QVBoxLayout()
-        layout.setSpacing(8)
+        layout.setSpacing(4)  # Reducido de 6 a 4
 
         # Primera fila: Horas y Turno
         layout_fila1 = QHBoxLayout()

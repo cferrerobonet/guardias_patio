@@ -41,7 +41,7 @@ class DatosBasicosWidget(QGroupBox):
     def _setup_ui(self):
         """Crear la interfaz de usuario del widget."""
         layout = QVBoxLayout()
-        layout.setSpacing(8)
+        layout.setSpacing(4)  # Reducido de 6 a 4
 
         # Nombre completo
         label_nombre = QLabel("Nombre completo (formato: APELLIDOS, NOMBRE):")
@@ -76,7 +76,7 @@ class DatosBasicosWidget(QGroupBox):
 
         # Tutor
         self.tutor_checkbox = QCheckBox("✓ Es tutor/a")
-        self.tutor_checkbox.setStyleSheet("font-size: 13px; margin-top: 5px;")
+        self.tutor_checkbox.setStyleSheet("font-size: 13px; margin-top: 2px;")  # Reducido de 5px a 2px
         self.tutor_checkbox.setToolTip(
             "Marca si el profesor es tutor de un grupo\n"
             "Los tutores pueden tener un ajuste de carga diferente"

@@ -14,10 +14,9 @@ import os
 from contextlib import contextmanager
 from pathlib import Path
 
+from core.paths import get_user_data_directory
 from sqlalchemy import create_engine, event, pool
 from sqlalchemy.orm import sessionmaker
-
-from core.paths import get_user_data_directory
 from utils.constants import TIMEOUT_DB
 from utils.logger import get_logger
 
@@ -46,52 +45,57 @@ def _run_alembic_migrations(engine, db_path: Path):
         db_path: Ruta al archivo de base de datos
     """
     try:
-        from alembic.config import Config
         from sqlalchemy import inspect
 
         from alembic import command
+        from alembic.config import Config
 
         # Verificar si la base de datos ya tiene tablas
         inspector = inspect(engine)
         existing_tables = inspector.get_table_names()
 
-        if not existing_tables:
-            logger.info("Base de datos nueva detectada. Inicializando esquema...")
+        # Configurar Alembic
+        import sys
+        from pathlib import Path
 
-            # Configurar Alembic
-            import sys
-            from pathlib import Path
-
-            # Obtener ruta al alembic.ini
-            if getattr(sys, 'frozen', False):
-                # Aplicación empaquetada
-                if hasattr(sys, '_MEIPASS'):
-                    alembic_ini_path = Path(sys._MEIPASS) / 'alembic.ini'
-                else:
-                    alembic_ini_path = Path(sys.executable).parent / 'alembic.ini'
+        # Obtener ruta al alembic.ini
+        if getattr(sys, 'frozen', False):
+            # Aplicación empaquetada
+            if hasattr(sys, '_MEIPASS'):
+                alembic_ini_path = Path(sys._MEIPASS) / 'alembic.ini'
             else:
-                # Modo desarrollo
-                alembic_ini_path = Path(__file__).parent.parent.parent / 'alembic.ini'
-
-            if not alembic_ini_path.exists():
-                logger.warning(f"alembic.ini no encontrado en {alembic_ini_path}")
-                logger.info("Usando create_all() para inicializar esquema")
-                return
-
-            # Configurar Alembic
-            alembic_cfg = Config(str(alembic_ini_path))
-            alembic_cfg.set_main_option('sqlalchemy.url', str(engine.url))
-
-            # Ejecutar upgrade a head
-            command.upgrade(alembic_cfg, 'head')
-            logger.info("✓ Migraciones de Alembic aplicadas correctamente")
-
+                alembic_ini_path = Path(sys.executable).parent / 'alembic.ini'
         else:
-            logger.info(f"Base de datos existente con {len(existing_tables)} tablas")
+            # Modo desarrollo
+            alembic_ini_path = Path(__file__).parent.parent.parent / 'alembic.ini'
+
+        if not alembic_ini_path.exists():
+            logger.warning(f"alembic.ini no encontrado en {alembic_ini_path}")
+            logger.info("Usando create_all() para inicializar esquema")
+            return
+
+        # Configurar Alembic
+        alembic_cfg = Config(str(alembic_ini_path))
+        alembic_cfg.set_main_option('sqlalchemy.url', str(engine.url))
+
+        if not existing_tables:
+            logger.info("Base de datos nueva detectada. Inicializando esquema completo...")
+            # Marcar la base de datos en la versión head sin ejecutar migraciones
+            # ya que vamos a crear todo desde cero con create_all()
+            command.stamp(alembic_cfg, 'head')
+            logger.info("✓ Base de datos marcada con la versión actual del esquema")
+        else:
+            logger.info(
+                f"Base de datos existente con {len(existing_tables)} tablas. "
+                "Verificando migraciones..."
+            )
+            # Intentar aplicar migraciones pendientes
+            command.upgrade(alembic_cfg, 'head')
+            logger.info("✓ Migraciones de Alembic aplicadas/verificadas correctamente")
 
     except Exception as e:
         logger.warning(f"No se pudieron ejecutar migraciones de Alembic: {e}")
-        logger.info("La aplicación continuará usando el esquema actual")
+        logger.info("La aplicación continuará usando create_all() para el esquema")
 
 
 
@@ -145,12 +149,12 @@ def initialize_user_database(user_id: str):
         cursor.execute("PRAGMA temp_store=MEMORY")
         cursor.close()
 
-    # Crear tablas si no existen
+    # Primero ejecutar migraciones de Alembic (esto manejará la creación/actualización del esquema)
+    _run_alembic_migrations(engine, db_path)
+
+    # Como fallback, crear tablas con SQLAlchemy si Alembic falló
     from models.models import Base
     Base.metadata.create_all(bind=engine)
-
-    # Ejecutar migraciones de Alembic si es necesario
-    _run_alembic_migrations(engine, db_path)
 
     # Session factory para este usuario
     session_factory = sessionmaker(

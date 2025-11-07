@@ -15,7 +15,7 @@ from application.use_cases.zona import (
 )
 from core.exceptions import BusinessLogicError, NotFoundError
 from pydantic import ValidationError
-from PyQt6.QtCore import QDate, Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -217,8 +217,6 @@ class ZonaForm(BaseForm):
         self.tabla_zonas.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
         # Impedir edición directa en la tabla - solo a través del formulario
         self.tabla_zonas.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        # Click simple: mostrar datos sin editar
-        self.tabla_zonas.clicked.connect(self.mostrar_zona)
         # Doble click: activar modo edición
         self.tabla_zonas.doubleClicked.connect(self.editar_zona)
         left_section.addWidget(self.tabla_zonas)
@@ -331,20 +329,22 @@ class ZonaForm(BaseForm):
     def guardar_zona(self):
         """Guardar o actualizar una zona usando el Use Case correspondiente"""
         try:
-            nombre = self.nombre_zona_input.text().strip()
-            descripcion = self.descripcion_input.text().strip() or None
+            # ✅ Validar widget
+            valido, error = self.datos_zona_widget.validar()
+            if not valido:
+                self.mostrar_advertencia("Validación", error)
+                return
 
-            # Obtener fechas opcionales
-            fecha_inicio = None
-            if self.usar_fecha_inicio_check.isChecked():
-                fecha_inicio = self.fecha_inicio_input.date().toPyDate()
+            # ✅ Obtener datos del widget
+            datos = self.datos_zona_widget.get_datos()
 
-            fecha_fin = None
-            if self.usar_fecha_fin_check.isChecked():
-                fecha_fin = self.fecha_fin_input.date().toPyDate()
+            nombre = datos["nombre"]
+            descripcion = datos["descripcion"] or None
+            fecha_inicio = datos["fecha_inicio"]
+            fecha_fin = datos["fecha_fin"]
 
+            # Modo actualización
             if self.zona_editando_id is not None:
-                # Modo actualización
                 zona_dto = ActualizarZonaDTO(
                     nombre_zona=nombre,
                     descripcion=descripcion,
@@ -359,17 +359,21 @@ class ZonaForm(BaseForm):
                 # Ejecutar Use Case de actualización
                 zona_actualizada = self.actualizar_zona_uc.execute(self.zona_editando_id, zona_dto)
 
+                # ✅ Recargar tabla ANTES de salir del modo edición
+                self.cargar_zonas()
+                self.datos_modificados.emit()
+
+                # Salir del modo edición
+                self.cancelar_edicion()
+
                 # Mostrar mensaje de éxito
                 self.mostrar_exito(
                     "Zona actualizada",
                     f"Zona '{zona_actualizada.nombre_zona}' actualizada correctamente.",
                 )
 
-                # Salir del modo edición
-                self.cancelar_edicion()
-
+            # Modo creación
             else:
-                # Modo creación
                 zona_dto = CrearZonaDTO(
                     nombre_zona=nombre,
                     descripcion=descripcion,
@@ -381,23 +385,20 @@ class ZonaForm(BaseForm):
                 zona_creada = self.crear_zona_uc.execute(zona_dto)
 
                 # Guardar ID para restaurar selección
-                # Actualizar ID para restaurar selección después
                 if zona_creada and self.table_manager:
                     self.table_manager._last_selected_id = str(zona_creada.id)
+
+                # ✅ Recargar tabla ANTES de limpiar formulario
+                self.cargar_zonas()
+                self.datos_modificados.emit()
+
+                # Limpiar formulario
+                self.limpiar_formulario()
 
                 # Mostrar mensaje de éxito
                 self.mostrar_exito(
                     "Zona guardada", f"Zona '{zona_creada.nombre_zona}' guardada correctamente."
                 )
-
-                # Limpiar formulario
-                self.limpiar_formulario()
-
-            # Recargar lista (restaurará la selección automáticamente)
-            self.cargar_zonas()
-
-            # Emitir señal de modificación de datos
-            self.datos_modificados.emit()
 
         except ValidationError as e:
             # Errores de validación de Pydantic
@@ -413,7 +414,12 @@ class ZonaForm(BaseForm):
             self.manejar_excepcion(e, "guardar la zona")
 
     def mostrar_zona(self):
-        """Mostrar datos de la zona seleccionada sin activar modo edición."""
+        """
+        Mostrar datos de la zona seleccionada en modo lectura (sin editar).
+        
+        NOTA: Este método ya NO se llama desde click simple de la tabla.
+        Solo se usa internamente en editar_zona().
+        """
         # Si ya está en modo edición, no hacer nada
         if self.zona_editando_id is not None:
             return
@@ -436,34 +442,17 @@ class ZonaForm(BaseForm):
             # Limpiar formulario primero
             self.limpiar_formulario()
 
-            # Cargar datos desde el DTO
-            self.nombre_zona_input.setText(zona_dto.nombre_zona or "")
-            self.descripcion_input.setText(zona_dto.descripcion or "")
+            # ✅ Cargar datos en el widget
+            self.datos_zona_widget.set_datos({
+                "nombre": zona_dto.nombre_zona or "",
+                "descripcion": zona_dto.descripcion or "",
+                "fecha_inicio": zona_dto.fecha_inicio,
+                "fecha_fin": zona_dto.fecha_fin,
+            })
 
-            # Cargar fechas si existen
-            if zona_dto.fecha_inicio:
-                self.usar_fecha_inicio_check.setChecked(True)
-                qdate_inicio = QDate(
-                    zona_dto.fecha_inicio.year,
-                    zona_dto.fecha_inicio.month,
-                    zona_dto.fecha_inicio.day,
-                )
-                self.fecha_inicio_input.setDate(qdate_inicio)
-            else:
-                self.usar_fecha_inicio_check.setChecked(False)
-
-            if zona_dto.fecha_fin:
-                self.usar_fecha_fin_check.setChecked(True)
-                qdate_fin = QDate(
-                    zona_dto.fecha_fin.year, zona_dto.fecha_fin.month, zona_dto.fecha_fin.day
-                )
-                self.fecha_fin_input.setDate(qdate_fin)
-            else:
-                self.usar_fecha_fin_check.setChecked(False)
-
-            # NO activar modo edición - mantener título normal
-            self.titulo_form.setText("📋 DATOS DE LA ZONA")
-            self.submit_btn.setText("💾 Guardar Zona")
+            # Actualizar título - modo lectura/vista previa
+            self.titulo_form.setText("📋 VISTA PREVIA")
+            self.submit_btn.setText("💾 Guardar Cambios")
             self.cancelar_btn.setVisible(False)
 
         except Exception as e:
@@ -502,13 +491,14 @@ class ZonaForm(BaseForm):
             self.table_manager.enable_table_interactions(False)
 
     def cancelar_edicion(self):
-        """Cancelar la edición y volver al modo 'nueva zona'"""
+        """Cancelar la edición y volver al modo 'nueva zona' (sin recargar tabla)."""
         self.zona_editando_id = None
         self.titulo_form.setText("✏️ NUEVA ZONA")
         self.submit_btn.setText("💾 Guardar Zona")
         self.cancelar_btn.setVisible(False)
         self.limpiar_formulario()
-        self.cargar_zonas()  # Recargar tabla para asegurar sincronización
+        # NO recargar tabla - más rápido y no hay cambios guardados
+        # self.cargar_zonas()  # ELIMINADO - innecesario
 
     def cargar_zonas(self):
         """Cargar la lista de zonas desde la base de datos usando el Use Case"""
@@ -664,12 +654,8 @@ class ZonaForm(BaseForm):
 
     def limpiar_formulario(self):
         """Limpiar todos los campos del formulario"""
-        self.nombre_zona_input.clear()
-        self.descripcion_input.clear()
-        self.usar_fecha_inicio_check.setChecked(False)
-        self.usar_fecha_fin_check.setChecked(False)
-        self.fecha_inicio_input.setDate(QDate.currentDate())
-        self.fecha_fin_input.setDate(QDate.currentDate())
+        # ✅ Delegar limpieza al widget
+        self.datos_zona_widget.limpiar()
 
         # Re-habilitar interacción con la tabla después de cancelar/guardar
         if self.table_manager:
