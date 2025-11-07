@@ -112,8 +112,8 @@ def main():
         sync_manager = SyncManager(backend, username)
 
         # Sistema de bloqueo de sesión única
+        from presentation.dialogs.session_locked_dialog import SessionLockedDialog
         from sync.session_lock import SessionLock, SessionLockManager
-        from ui.dialogs.session_locked_dialog import SessionLockedDialog
 
         session_lock = SessionLock(backend, username, sync_manager.user_hash)
 
@@ -185,16 +185,31 @@ def main():
     # ==========================================
 
     try:
-        # Crear y mostrar la ventana principal
-        window = CCleanerMainWindow(session, sync_manager=sync_manager)
-        window.show()
+        # Crear ventana principal
+        logger.info("Creando ventana principal...")
+        window = CCleanerMainWindow(session, sync_manager=sync_manager)  # noqa: F841
+        logger.info("Ventana principal creada exitosamente")
+
+        # La ventana ya se muestra maximizada desde su __init__
+        # No necesitamos hacer nada más aquí
 
         # Iniciar sistema de heartbeat para mantener el bloqueo activo
         if session_lock_manager:
             session_lock_manager.start_heartbeat(app)
 
         # Ejecutar la aplicación
+        logger.info("Iniciando event loop de Qt...")
         exit_code = app.exec()
+
+    except Exception as e:
+        logger.exception(f"Error fatal al crear o ejecutar la ventana principal: {e}")
+        import traceback
+        print("=" * 80)
+        print("ERROR FATAL:")
+        print("=" * 80)
+        traceback.print_exc()
+        print("=" * 80)
+        raise
 
     finally:
         # Detener heartbeat
@@ -206,7 +221,7 @@ def main():
             logger.info("Cerrando aplicación. Sincronizando cambios...")
 
             # Importar el diálogo de progreso
-            from ui.widgets.sync_progress_dialog import SyncProgressDialog
+            from presentation.widgets.sync_progress_dialog import SyncProgressDialog
 
             # Crear diálogo de progreso
             progress_dialog = SyncProgressDialog()
