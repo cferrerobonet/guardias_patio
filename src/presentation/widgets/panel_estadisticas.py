@@ -9,6 +9,7 @@ from collections import defaultdict
 import matplotlib
 
 matplotlib.use("QtAgg")
+
 import ui_styles as styles
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
@@ -128,9 +129,18 @@ class PanelEstadisticas(BaseForm):
         layout = QVBoxLayout()
 
         self.tabla_profesores = QTableWidget()
-        self.tabla_profesores.setColumnCount(6)
+        self.tabla_profesores.setColumnCount(8)
         self.tabla_profesores.setHorizontalHeaderLabels(
-            ["Profesor", "Total", "Mañana", "Tarde", "% Total", "Estado"]
+            [
+                "Profesor",
+                "Total",
+                "Mañana",
+                "Tarde",
+                "% Total",
+                "Estado",
+                "Inicio Guardias",
+                "Fin Guardias",
+            ]
         )
         # Ajustar ancho automático de columnas al contenido
         self.tabla_profesores.horizontalHeader().setSectionResizeMode(
@@ -224,12 +234,8 @@ class PanelEstadisticas(BaseForm):
             self.label_cobertura.setText(f"Cobertura Estimada: {cobertura}%")
 
             # Info adicional
-            guardias_manana = (
-                self.session.query(Guardia).filter(Guardia.turno == "mañana").count()
-            )
-            guardias_tarde = (
-                self.session.query(Guardia).filter(Guardia.turno == "tarde").count()
-            )
+            guardias_manana = self.session.query(Guardia).filter(Guardia.turno == "mañana").count()
+            guardias_tarde = self.session.query(Guardia).filter(Guardia.turno == "tarde").count()
 
             porcentaje_manana = int(guardias_manana / total_guardias * 100)
             porcentaje_tarde = int(guardias_tarde / total_guardias * 100)
@@ -268,25 +274,33 @@ class PanelEstadisticas(BaseForm):
         self.tabla_profesores.setRowCount(len(profesores))
 
         for i, profesor in enumerate(profesores):
-            stats = guardias_por_prof.get(
-                profesor.id, {"total": 0, "mañana": 0, "tarde": 0}
-            )
+            stats = guardias_por_prof.get(profesor.id, {"total": 0, "mañana": 0, "tarde": 0})
 
-            self.tabla_profesores.setItem(
-                i, 0, QTableWidgetItem(profesor.nombre_completo)
-            )
-            self.tabla_profesores.setItem(i, 1, QTableWidgetItem(str(stats["total"])))
-            self.tabla_profesores.setItem(i, 2, QTableWidgetItem(str(stats["mañana"])))
-            self.tabla_profesores.setItem(i, 3, QTableWidgetItem(str(stats["tarde"])))
+            self.tabla_profesores.setItem(i, 0, QTableWidgetItem(profesor.nombre_completo))
 
-            # Porcentaje
+            # Total (centrado)
+            total_item = QTableWidgetItem(str(stats["total"]))
+            total_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.tabla_profesores.setItem(i, 1, total_item)
+
+            # Mañana (centrado)
+            manana_item = QTableWidgetItem(str(stats["mañana"]))
+            manana_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.tabla_profesores.setItem(i, 2, manana_item)
+
+            # Tarde (centrado)
+            tarde_item = QTableWidgetItem(str(stats["tarde"]))
+            tarde_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.tabla_profesores.setItem(i, 3, tarde_item)
+
+            # Porcentaje (centrado)
             if total_guardias > 0:
                 porcentaje = (stats["total"] / total_guardias) * 100
-                self.tabla_profesores.setItem(
-                    i, 4, QTableWidgetItem(f"{porcentaje:.1f}%")
-                )
+                porcentaje_item = QTableWidgetItem(f"{porcentaje:.1f}%")
             else:
-                self.tabla_profesores.setItem(i, 4, QTableWidgetItem("0%"))
+                porcentaje_item = QTableWidgetItem("0%")
+            porcentaje_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.tabla_profesores.setItem(i, 4, porcentaje_item)
 
             # Estado
             if stats["total"] == 0:
@@ -297,6 +311,26 @@ class PanelEstadisticas(BaseForm):
                 estado = "✅ Asignado"
             self.tabla_profesores.setItem(i, 5, QTableWidgetItem(estado))
 
+            # Fecha Inicio Guardias (centrado)
+            fecha_inicio_text = (
+                profesor.fecha_inicio_guardias.strftime("%d/%m/%Y")
+                if profesor.fecha_inicio_guardias
+                else "-"
+            )
+            fecha_inicio_item = QTableWidgetItem(fecha_inicio_text)
+            fecha_inicio_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.tabla_profesores.setItem(i, 6, fecha_inicio_item)
+
+            # Fecha Fin Guardias (centrado)
+            fecha_fin_text = (
+                profesor.fecha_fin_guardias.strftime("%d/%m/%Y")
+                if profesor.fecha_fin_guardias
+                else "-"
+            )
+            fecha_fin_item = QTableWidgetItem(fecha_fin_text)
+            fecha_fin_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.tabla_profesores.setItem(i, 7, fecha_fin_item)
+
     def actualizar_tabla_zonas(self):
         """Actualizar la tabla de estadísticas por zona."""
         zonas = self.session.query(Zona).all()
@@ -305,9 +339,7 @@ class PanelEstadisticas(BaseForm):
         for i, zona in enumerate(zonas):
             self.tabla_zonas.setItem(i, 0, QTableWidgetItem(zona.nombre_zona))
 
-            total = (
-                self.session.query(Guardia).filter(Guardia.zona_id == zona.id).count()
-            )
+            total = self.session.query(Guardia).filter(Guardia.zona_id == zona.id).count()
             self.tabla_zonas.setItem(i, 1, QTableWidgetItem(str(total)))
 
             profesores_diferentes = (
@@ -347,9 +379,7 @@ class PanelEstadisticas(BaseForm):
             self.canvas_profesores.axes.bar(nombres, cantidades, color=SUCCESS_GREEN)
             self.canvas_profesores.axes.set_xlabel("Profesor")
             self.canvas_profesores.axes.set_ylabel("Guardias")
-            self.canvas_profesores.axes.set_title(
-                "Distribución de Guardias por Profesor"
-            )
+            self.canvas_profesores.axes.set_title("Distribución de Guardias por Profesor")
             self.canvas_profesores.axes.tick_params(axis="x", rotation=45)
             self.canvas_profesores.figure.tight_layout()
             self.canvas_profesores.draw()
