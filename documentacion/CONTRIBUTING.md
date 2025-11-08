@@ -499,9 +499,43 @@ Cierra #123
 
 ### 3. Code Review
 
-- ✅ **Aprobar**: Merge automático
-- ⚠️ **Request Changes**: Hacer ajustes
-- 💬 **Comment**: Responder dudas
+**La rama `main` está protegida con las siguientes reglas**:
+
+#### Branch Protection Rules
+
+| Regla | Requerido | Descripción |
+|-------|-----------|-------------|
+| **Pull Request** | ✅ Sí | No se permite push directo a `main` |
+| **Approving Reviews** | ✅ 1 aprobación | Mínimo un revisor debe aprobar |
+| **Status Checks** | ✅ Obligatorios | CI/CD debe pasar antes de merge |
+| **Linear History** | ✅ Sí | No se permiten merge commits |
+| **Conversation Resolution** | ✅ Sí | Resolver todos los comentarios |
+
+#### Status Checks Obligatorios
+
+Estos checks **deben pasar** antes de hacer merge:
+
+| Check | Descripción | Bloquea Merge |
+|-------|-------------|---------------|
+| `test (ubuntu-latest, 3.11)` | Tests en Python 3.11 + Ubuntu | ✅ Sí |
+| `test (macos-latest, 3.11)` | Tests en Python 3.11 + macOS | ✅ Sí |
+| `lint` | Linting y formateo | ✅ Sí |
+| `security` | Auditoría de seguridad | ⚠️ No (informativo) |
+
+**¿Qué significa esto para ti?**:
+
+1. ✅ **Tu PR debe pasar CI** antes de que pueda ser mergeado
+2. ✅ **Necesitas 1 aprobación** de un maintainer
+3. ✅ **Tu rama debe estar actualizada** con `main`
+4. ✅ **Todos los comentarios** deben ser resueltos
+
+**Ver detalles en**: [CI_CD.md](CI_CD.md) - Sección "Branch Protection"
+
+#### Estados del Review
+
+- ✅ **Aprobar**: Merge automático (si CI pasa)
+- ⚠️ **Request Changes**: Hacer ajustes y solicitar re-review
+- 💬 **Comment**: Responder dudas (no bloquea merge)
 
 ---
 

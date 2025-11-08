@@ -16,6 +16,7 @@ Sistema de gestión de guardias de patio para centros educativos. Documentación
 | **[USER_GUIDE.md](USER_GUIDE.md)** | Guía completa de usuario | 👤 Usuarios finales |
 | **[TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md)** | Documentación técnica completa | 👨‍💻 Desarrolladores |
 | **[DEPLOYMENT.md](DEPLOYMENT.md)** | Compilación y distribución | 🚀 DevOps |
+| **[CI_CD.md](CI_CD.md)** | Integración y despliegue continuos | 🔄 DevOps |
 | **[CONTRIBUTING.md](CONTRIBUTING.md)** | Cómo contribuir al proyecto | 🤝 Colaboradores |
 | **[CHANGELOG.md](CHANGELOG.md)** | Historial de versiones (v1.0-v3.0) | 📋 Todos |
 | **[SECURITY.md](SECURITY.md)** | Política de seguridad | 🔒 Seguridad |
@@ -61,17 +62,26 @@ Sistema de gestión de guardias de patio para centros educativos. Documentación
 
 ### 🚀 DevOps / Build Engineers
 
-**Empezar aquí**: [DEPLOYMENT.md](DEPLOYMENT.md)
+**Empezar aquí**: [DEPLOYMENT.md](DEPLOYMENT.md) + [CI_CD.md](CI_CD.md)
 
 **Contenido**:
-- ✅ Requisitos de compilación (macOS/Windows)
-- ✅ Entorno de desarrollo
-- ✅ Build de producción con PyInstaller
-- ✅ Creación de instaladores (DMG/InnoSetup)
-- ✅ Testing de ejecutables
-- ✅ Distribución vía GitHub Releases
-- ✅ Troubleshooting de compilación
-- ✅ Checklist completo
+- ✅ **DEPLOYMENT.md**:
+  - Requisitos de compilación (macOS/Windows)
+  - Entorno de desarrollo
+  - Build de producción con PyInstaller
+  - Creación de instaladores (DMG/InnoSetup)
+  - Testing de ejecutables
+  - Distribución vía GitHub Releases
+  - Troubleshooting de compilación
+  - Checklist completo
+
+- ✅ **CI_CD.md**:
+  - Workflows de GitHub Actions
+  - Tests automatizados en múltiples plataformas
+  - Configuración de Codecov
+  - Releases automatizados
+  - Branch protection rules
+  - Troubleshooting de CI/CD
 
 ### 🛠️ Mantenedores
 
@@ -157,10 +167,11 @@ documentacion/
 - Difícil navegación
 
 **Después**:
-- ✅ **7 guías principales consolidadas** (5,362 líneas)
+- ✅ **8 guías principales consolidadas** (CI_CD.md añadida)
 - ✅ **41 archivos originales preservados** en `archivo/`
 - ✅ **100% de información preservada**
 - ✅ **Navegación clara por rol**
+- ✅ **CI/CD documentado y operativo**
 
 ### Documentos Consolidados
 
@@ -173,6 +184,7 @@ documentacion/
 | CONTRIBUTING.md | 5 archivos desarrollo | 748 | 5b6ba28 |
 | SECURITY.md | Documento nuevo | 431 | 6b5544b |
 | MAINTENANCE.md | Documento nuevo | 718 | 6b5544b |
+| CI_CD.md | Documento nuevo | 700+ | Fase 5 |
 
 ---
 
@@ -187,6 +199,9 @@ documentacion/
 
 ### "Quiero compilar la aplicación"
 → [DEPLOYMENT.md](DEPLOYMENT.md) - Sección "Build de Producción"
+
+### "Quiero configurar CI/CD o entender los workflows"
+→ [CI_CD.md](CI_CD.md) - Todo el documento
 
 ### "Quiero contribuir al proyecto"
 → [CONTRIBUTING.md](CONTRIBUTING.md) - Todo el documento

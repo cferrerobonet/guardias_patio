@@ -6,16 +6,24 @@ on:
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 1'  # Semanal: lunes 2:00 AM (auditoría de dependencias)
 
 jobs:
   test:
-    name: Tests en Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    name: Tests en Python ${{ matrix.python-version }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.11", "3.12"]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.9"
+          - os: ubuntu-latest
+            python-version: "3.10"
     
     steps:
     - name: Checkout código
@@ -27,7 +35,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
     
-    - name: Instalar dependencias del sistema (Qt)
+    - name: Instalar dependencias del sistema (Qt) - Linux
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y \
@@ -46,9 +55,17 @@ jobs:
     
     - name: Instalar dependencias de Python
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt
-        pip install pytest pytest-cov pytest-qt pytest-mock ruff black
+        pip install pytest pytest-cov pytest-qt pytest-mock ruff black mypy
+    
+    - name: Cache de paquetes PyQt
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     
     - name: Crear directorio de datos
       run: |
@@ -59,39 +76,48 @@ jobs:
         QT_QPA_PLATFORM: offscreen
         DISPLAY: ":99"
       run: |
-        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        # Iniciar Xvfb solo en Linux
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          sleep 3
+        fi
+        
         pytest tests/ \
           --cov=src \
           --cov-report=xml \
           --cov-report=html \
           --cov-report=term-missing \
-          --junitxml=junit/test-results-${{ matrix.python-version }}.xml \
+          --junitxml=junit/test-results-${{ matrix.python-version }}-${{ matrix.os }}.xml \
+          --tb=short \
           -v
     
     - name: Subir resultados de tests
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: test-results-${{ matrix.python-version }}
-        path: junit/test-results-${{ matrix.python-version }}.xml
+        name: test-results-${{ matrix.python-version }}-${{ matrix.os }}
+        path: junit/test-results-${{ matrix.python-version }}-${{ matrix.os }}.xml
+        retention-days: 30
     
     - name: Subir reporte de cobertura
       uses: actions/upload-artifact@v4
-      if: matrix.python-version == '3.11'
+      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
       with:
         name: coverage-report
         path: |
           coverage.xml
           htmlcov/
+        retention-days: 30
     
     - name: Subir cobertura a Codecov
       uses: codecov/codecov-action@v4
-      if: matrix.python-version == '3.11'
+      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
       with:
         file: ./coverage.xml
         flags: unittests
-        name: codecov-umbrella
+        name: codecov-python-${{ matrix.python-version }}
         fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     name: Linting y formato de código

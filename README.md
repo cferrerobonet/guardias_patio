@@ -1,9 +1,11 @@
 # Guardias de Patio
 
+[![CI/CD Pipeline](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml/badge.svg)](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/cferrerobonet/guardias_patio/branch/main/graph/badge.svg)](https://codecov.io/gh/cferrerobonet/guardias_patio)
+[![Release](https://img.shields.io/github/v/release/cferrerobonet/guardias_patio)](https://github.com/cferrerobonet/guardias_patio/releases/latest)
 ![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)
 ![Tests](https://img.shields.io/badge/Tests-976_passed-success.svg)
-![Coverage](https://img.shields.io/badge/Coverage-46.31%25-yellow.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.7.0-orange.svg)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-red.svg)
 ![Arquitectura](https://img.shields.io/badge/Arquitectura-Clean-brightgreen.svg)
