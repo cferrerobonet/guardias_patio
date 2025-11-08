@@ -1,16 +1,26 @@
 # Guardias de Patio
 
+<!-- Build & Quality Badges -->
 [![CI/CD Pipeline](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml/badge.svg)](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/cferrerobonet/guardias_patio/branch/main/graph/badge.svg)](https://codecov.io/gh/cferrerobonet/guardias_patio)
+![Tests](https://img.shields.io/badge/Tests-990_passed-success.svg)
+![Coverage](https://img.shields.io/badge/Coverage-46.31%25-yellow.svg)
+
+<!-- Security & Release -->
 [![Security](https://img.shields.io/badge/Security-✅_0_vulnerabilities-success.svg)](documentacion/auditoria/SECURITY_FIX_20251108.md)
 [![Release](https://img.shields.io/github/v/release/cferrerobonet/guardias_patio)](https://github.com/cferrerobonet/guardias_patio/releases/latest)
 ![Version](https://img.shields.io/badge/Version-3.0.2-blue.svg)
+
+<!-- Tech Stack -->
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)
-![Tests](https://img.shields.io/badge/Tests-990_passed-success.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.7.0-orange.svg)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-red.svg)
+
+<!-- Architecture & Standards -->
 ![Arquitectura](https://img.shields.io/badge/Arquitectura-Clean-brightgreen.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Linting: ruff](https://img.shields.io/badge/linting-ruff-blueviolet.svg)](https://github.com/astral-sh/ruff)
 
 **Aplicación de escritorio profesional** para la gestión integral de guardias de patio en centros educativos. Asignación automática equitativa con algoritmo optimizado, gestión completa de ausencias y sustituciones, calendario interactivo, y arquitectura limpia con 46% de cobertura de tests.
 
