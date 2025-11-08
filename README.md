@@ -55,8 +55,11 @@
 - ✅ **Fluent Design**: Interfaz moderna inspirada en Windows 11
 - ✅ **Responsive**: Validación automática de resolución (mínimo 1280x720)
 - ✅ **Feedback Visual**: Indicadores de progreso y confirmaciones contextuales
-- ✅ **Auto-save**: Persistencia automática de configuraciones
-- ✅ **Atajos de Teclado**: Navegación rápida con shortcuts
+- ✅ **Tooltips Intuitivos**: ~85% de campos con ayuda contextual ([Auditoría UX](documentacion/UX_AUDIT.md))
+- ✅ **Confirmaciones Inteligentes**: Solo en acciones destructivas (100% apropiadas)
+- ✅ **Atajos de Teclado**: 50+ shortcuts documentados ([Guía completa](documentacion/guias/KEYBOARD_SHORTCUTS.md))
+- ✅ **Patrones UX Consistentes**: [Guía de patrones](documentacion/guias/UX_PATTERNS.md) para desarrollo
+- ✅ **Puntuación UX**: 8.2/10 según auditoría independiente
 
 ---
 
@@ -168,7 +171,21 @@ python src/main.py
 | **[SECURITY.md](documentacion/SECURITY.md)** | Política de seguridad | 🔒 Seguridad |
 | **[MAINTENANCE.md](documentacion/MAINTENANCE.md)** | Tareas de mantenimiento | 🛠️ Mantenedores |
 
-### 🎯 Por Tema
+### � UX y Experiencia de Usuario (NUEVO v3.0.2)
+
+| Documento | Descripción | Audiencia |
+|-----------|-------------|-----------|
+| **[UX_AUDIT.md](documentacion/UX_AUDIT.md)** | Auditoría completa de UX (8.2/10) | 🎨 Diseñadores UX |
+| **[UX_PATTERNS.md](documentacion/guias/UX_PATTERNS.md)** | Patrones y convenciones UX | 👨‍💻 Desarrolladores |
+| **[KEYBOARD_SHORTCUTS.md](documentacion/guias/KEYBOARD_SHORTCUTS.md)** | 50+ atajos de teclado | 👤 Usuarios avanzados |
+
+**Resultados de auditoría UX:**
+- ✅ 85% de campos con tooltip/placeholder (objetivo: ≥80%)
+- ✅ 100% de confirmaciones apropiadas
+- ✅ 8.2/10 puntuación global (MUY BUENO)
+- ✅ Patrones documentados para desarrollo consistente
+
+### �🎯 Por Tema
 
 **Instalación y Uso**
 - [Guía de Usuario](documentacion/USER_GUIDE.md) - Tutorial completo paso a paso
