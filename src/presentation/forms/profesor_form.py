@@ -109,9 +109,10 @@ class ProfesorForm(BaseForm):
         right_widget = self._crear_widget_formulario_con_scroll()
         splitter.addWidget(right_widget)
 
-        # Establecer proporciones iniciales: 60% tabla, 40% formulario
-        splitter.setStretchFactor(0, 60)
-        splitter.setStretchFactor(1, 40)
+        # Establecer proporciones iniciales: 70% tabla, 30% formulario
+        # (más espacio para la tabla para no comprimir información)
+        splitter.setStretchFactor(0, 70)
+        splitter.setStretchFactor(1, 30)
 
         main_layout.addWidget(splitter)
         self.setLayout(main_layout)
@@ -267,60 +268,39 @@ class ProfesorForm(BaseForm):
         self.titulo_seccion.setStyleSheet(styles.STYLE_TITLE_MAIN)
         layout.addWidget(self.titulo_seccion)
 
-        # =================================================
-        # LAYOUT HORIZONTAL: 2 COLUMNAS PARA OPTIMIZAR ESPACIO
-        # =================================================
-        columnas_layout = QHBoxLayout()
-        columnas_layout.setSpacing(6)
-
-        # COLUMNA IZQUIERDA: Datos Básicos + Horario
-        columna_izq = QVBoxLayout()
-        columna_izq.setSpacing(4)
-
+        # Widgets del formulario (layout vertical simple para no comprimir tabla)
         self.datos_basicos_widget = DatosBasicosWidget(self)
-        columna_izq.addWidget(self.datos_basicos_widget)
+        layout.addWidget(self.datos_basicos_widget)
 
         self.horario_widget = HorarioWidget(self)
-        columna_izq.addWidget(self.horario_widget)
-        columna_izq.addStretch()  # Push widgets arriba
-
-        # COLUMNA DERECHA: Restricciones
-        columna_der = QVBoxLayout()
-        columna_der.setSpacing(4)
+        layout.addWidget(self.horario_widget)
 
         self.restricciones_widget = RestriccionesWidget(self)
-        columna_der.addWidget(self.restricciones_widget)
-        columna_der.addStretch()  # Push widgets arriba
-
-        # Añadir columnas al layout horizontal
-        columnas_layout.addLayout(columna_izq, 50)  # 50% ancho
-        columnas_layout.addLayout(columna_der, 50)  # 50% ancho
-
-        layout.addLayout(columnas_layout)
+        layout.addWidget(self.restricciones_widget)
 
         # Conectar señal de cambio de turno para actualizar matriz de restricciones
         self.horario_widget.turno_changed.connect(self._actualizar_matriz_restricciones_por_turno)
 
-        # Botones de acción (mantener en la parte inferior)
+        # Botones de acción más compactos
         botones_accion = QHBoxLayout()
         botones_accion.setSpacing(6)
 
         self.submit_btn = QPushButton("💾 Guardar")
         self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.submit_btn.clicked.connect(self.guardar_profesor)
-        self.submit_btn.setMaximumHeight(35)  # Limitar altura
+        self.submit_btn.setMaximumHeight(32)  # Altura reducida
 
         self.cancelar_btn = QPushButton("❌ Cancelar")
         self.cancelar_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.cancelar_btn.clicked.connect(self.cancelar_edicion)
         self.cancelar_btn.setVisible(False)
-        self.cancelar_btn.setMaximumHeight(35)  # Limitar altura
+        self.cancelar_btn.setMaximumHeight(32)  # Altura reducida
 
         botones_accion.addWidget(self.submit_btn)
         botones_accion.addWidget(self.cancelar_btn)
         layout.addLayout(botones_accion)
 
-        # NO añadir stretch al final para permitir que los botones se mantengan al fondo
+        layout.addStretch()  # Push todo hacia arriba
 
         return layout
 
