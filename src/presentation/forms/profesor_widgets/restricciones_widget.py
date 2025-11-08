@@ -200,7 +200,7 @@ class RestriccionesWidget(QGroupBox):
         # Tabla
         self.tabla_restricciones = QTableWidget()
         self.tabla_restricciones.setColumnCount(2)
-        self.tabla_restricciones.setHorizontalHeaderLabels(["Día", "Recreos Disponibles"])
+        self.tabla_restricciones.setHorizontalHeaderLabels(["Día", "Recreos"])
         self.tabla_restricciones.horizontalHeader().setStretchLastSection(True)
         self.tabla_restricciones.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.ResizeToContents
