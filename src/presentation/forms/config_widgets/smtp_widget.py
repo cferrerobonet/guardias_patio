@@ -14,7 +14,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 
-import ui_styles as styles
 from dotenv import load_dotenv
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -26,6 +25,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
+import ui_styles as styles
 from utils import get_logger
 
 
@@ -52,7 +53,7 @@ class SMTPConfigWidget(QGroupBox):
         Args:
             parent: Widget padre (opcional)
         """
-        super().__init__("📧 Config SMTP", parent)
+        super().__init__("📧 Configuración SMTP", parent)
         self.logger = get_logger(self.__class__.__name__)
         self.setStyleSheet(styles.STYLE_GROUPBOX)
 
@@ -175,18 +176,23 @@ class SMTPConfigWidget(QGroupBox):
         layout.addLayout(smtp_btn_layout)
 
         # Nota informativa
-        nota = QLabel("💡 Para Gmail, usa una App Password en lugar de tu contraseña normal.")
-        nota.setStyleSheet("""
+        info_label = QLabel(
+            "💡 Para Gmail, usa una App Password en lugar de tu contraseña normal."
+        )
+        info_label.setStyleSheet(
+            """
             QLabel {
-                color: #6b7280;
-                font-size: 11px;
-                padding: 5px;
-                background-color: #f3f4f6;
-                border-radius: 3px;
+                padding: 10px;
+                background-color: #eff6ff;
+                border-left: 4px solid #3b82f6;
+                color: #1e40af;
+                font-size: 12px;
+                margin-top: 10px;
             }
-        """)
-        nota.setWordWrap(True)
-        layout.addWidget(nota)
+        """
+        )
+        info_label.setWordWrap(True)
+        layout.addWidget(info_label)
 
         self.setLayout(layout)
         self._apply_readonly_style(True)
@@ -197,7 +203,7 @@ class SMTPConfigWidget(QGroupBox):
 
         Args:
             readonly: True para modo solo lectura, False para editable
-        
+
         Nota: smtp_from_name_input siempre es editable y no se modifica aquí
         """
         if readonly:
@@ -222,7 +228,7 @@ class SMTPConfigWidget(QGroupBox):
     def _toggle_editable(self) -> None:
         """
         Alterna entre bloquear y desbloquear los campos SMTP críticos.
-        
+
         Nota: smtp_from_name_input siempre permanece editable
         """
         is_readonly = self.smtp_server_input.isReadOnly()
@@ -409,7 +415,7 @@ class SMTPConfigWidget(QGroupBox):
     def save_from_name_only(self) -> bool:
         """
         Guarda solo el nombre del remitente SMTP en el archivo .env.
-        
+
         Este método permite actualizar el nombre del remitente sin modificar
         los otros campos críticos de configuración SMTP.
 
@@ -595,7 +601,8 @@ Sistema de Gestión de Guardias de Patio
                 # Contenido HTML con la plantilla corporativa
                 contenido_principal = """
       <p>Hola,</p>
-      <p>Este es un email de prueba para verificar que la configuración SMTP está funcionando correctamente.</p>
+      <p>Este es un email de prueba para verificar que la configuración SMTP 
+      está funcionando correctamente.</p>
                 """
 
                 secciones = [

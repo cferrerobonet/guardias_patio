@@ -42,7 +42,7 @@ class SFTPConfigWidget(QGroupBox):
         Args:
             parent: Widget padre
         """
-        super().__init__("☁️ Config SFTP", parent)
+        super().__init__("☁️ Configuración SFTP", parent)
         self.logger = get_logger(self.__class__.__name__)
         self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._actual_password = ""
@@ -53,18 +53,20 @@ class SFTPConfigWidget(QGroupBox):
         """Configura la interfaz del widget SFTP."""
         layout = QVBoxLayout()
 
-        # FILA 1: Host + Port
-        fila1 = QHBoxLayout()
-
-        # Host (campo largo)
+        # Servidor SFTP (campo completo con label arriba)
         host_label = QLabel("Servidor SFTP:")
         host_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        layout.addWidget(host_label)
+
+        # Fila con input de host y puerto
+        host_row = QHBoxLayout()
         self.sftp_host_input = QLineEdit()
         self.sftp_host_input.setPlaceholderText("ejemplo: home491590459.1and1-data.host")
         self.sftp_host_input.setStyleSheet(styles.STYLE_INPUT)
         self.sftp_host_input.setReadOnly(True)
+        host_row.addWidget(self.sftp_host_input)
 
-        # Port (campo corto)
+        # Puerto (campo corto en la misma fila)
         port_label = QLabel("Puerto:")
         port_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         self.sftp_port_input = QLineEdit()
@@ -72,26 +74,25 @@ class SFTPConfigWidget(QGroupBox):
         self.sftp_port_input.setStyleSheet(styles.STYLE_INPUT)
         self.sftp_port_input.setMaximumWidth(80)
         self.sftp_port_input.setReadOnly(True)
+        host_row.addWidget(port_label)
+        host_row.addWidget(self.sftp_port_input)
 
-        fila1.addWidget(host_label)
-        fila1.addWidget(self.sftp_host_input)
-        fila1.addWidget(port_label)
-        fila1.addWidget(self.sftp_port_input)
+        layout.addLayout(host_row)
 
-        layout.addLayout(fila1)
-
-        # FILA 2: User + Password
-        fila2 = QHBoxLayout()
-
-        # User
+        # Usuario (campo completo con label arriba)
         user_label = QLabel("Usuario:")
         user_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        layout.addWidget(user_label)
+
+        # Fila con usuario y contraseña
+        user_row = QHBoxLayout()
         self.sftp_user_input = QLineEdit()
         self.sftp_user_input.setPlaceholderText("ejemplo: u123456789")
         self.sftp_user_input.setStyleSheet(styles.STYLE_INPUT)
         self.sftp_user_input.setReadOnly(True)
+        user_row.addWidget(self.sftp_user_input)
 
-        # Password
+        # Contraseña (en la misma fila)
         password_label = QLabel("Contraseña:")
         password_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         self.sftp_password_input = QLineEdit()
@@ -99,28 +100,21 @@ class SFTPConfigWidget(QGroupBox):
         self.sftp_password_input.setStyleSheet(styles.STYLE_INPUT)
         self.sftp_password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.sftp_password_input.setReadOnly(True)
+        user_row.addWidget(password_label)
+        user_row.addWidget(self.sftp_password_input)
 
-        fila2.addWidget(user_label)
-        fila2.addWidget(self.sftp_user_input)
-        fila2.addWidget(password_label)
-        fila2.addWidget(self.sftp_password_input)
+        layout.addLayout(user_row)
 
-        layout.addLayout(fila2)
-
-        # FILA 3: Base Directory
-        fila3 = QHBoxLayout()
-
+        # Directorio Base (campo completo con label arriba)
         basedir_label = QLabel("Directorio Base:")
         basedir_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        layout.addWidget(basedir_label)
+
         self.sftp_basedir_input = QLineEdit()
         self.sftp_basedir_input.setPlaceholderText("ejemplo: /aplicaciones/guardias_patio")
         self.sftp_basedir_input.setStyleSheet(styles.STYLE_INPUT)
         self.sftp_basedir_input.setReadOnly(True)
-
-        fila3.addWidget(basedir_label)
-        fila3.addWidget(self.sftp_basedir_input)
-
-        layout.addLayout(fila3)
+        layout.addWidget(self.sftp_basedir_input)
 
         # Botones de acción
         botones_layout = QHBoxLayout()

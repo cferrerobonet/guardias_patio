@@ -45,26 +45,21 @@ class FechasRecreosWidget(QGroupBox):
 
     def _setup_ui(self) -> None:
         """Configura la interfaz del widget."""
-        main_layout = QVBoxLayout()
+        # Layout horizontal único para toda la sección
+        main_layout = QHBoxLayout()
         main_layout.setSpacing(10)
 
-        # SECCIÓN 1: Fechas del curso
+        # GRUPO 1: Fechas del curso
         fechas_grupo = self._crear_grupo_fechas()
         main_layout.addWidget(fechas_grupo)
 
-        # SECCIÓN 2: Recreos en layout horizontal
-        recreos_layout = QHBoxLayout()
-        recreos_layout.setSpacing(10)
-
-        # Recreos de mañana
+        # GRUPO 2: Recreos de mañana
         recreos_manana_grupo = self._crear_grupo_recreos_manana()
-        recreos_layout.addWidget(recreos_manana_grupo)
+        main_layout.addWidget(recreos_manana_grupo)
 
-        # Recreos de tarde
+        # GRUPO 3: Recreos de tarde
         recreos_tarde_grupo = self._crear_grupo_recreos_tarde()
-        recreos_layout.addWidget(recreos_tarde_grupo)
-
-        main_layout.addLayout(recreos_layout)
+        main_layout.addWidget(recreos_tarde_grupo)
 
         self.setLayout(main_layout)
 
