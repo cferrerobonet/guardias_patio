@@ -142,7 +142,14 @@ jobs:
     - name: Ejecutar Ruff (linter)
       run: |
         ruff check src/ tests/ --output-format=github
-      continue-on-error: true
+    
+    - name: Verificar formato con Black
+      run: |
+        black --check src/ tests/
+    
+    - name: Verificar imports con isort
+      run: |
+        isort --check-only src/ tests/
     
     - name: Ejecutar mypy (type checking)
       run: |
@@ -152,32 +159,22 @@ jobs:
         
         # Core modules - Alta prioridad (strict)
         echo "- Core: app_initializer, qt_imports"
-        mypy src/core/app_initializer.py src/core/qt_imports.py --config-file=mypy.ini --show-error-codes || echo "❌ Errores en core"
+        mypy src/core/app_initializer.py src/core/qt_imports.py --config-file=mypy.ini --show-error-codes || echo "⚠️ Errores en core (no bloquea)"
         
         # Domain entities y repositories (strict)
         echo "- Domain: entities, repositories"
-        mypy src/domain/entities/ src/domain/repositories/ --config-file=mypy.ini --show-error-codes || echo "❌ Errores en domain"
+        mypy src/domain/entities/ src/domain/repositories/ --config-file=mypy.ini --show-error-codes || echo "⚠️ Errores en domain (no bloquea)"
         
         # Use cases y repositories (strict)
         echo "- Application: use cases"
-        mypy src/application/use_cases/ --config-file=mypy.ini --show-error-codes --no-error-summary || echo "⚠️ Algunos errores en use cases"
+        mypy src/application/use_cases/ --config-file=mypy.ini --show-error-codes --no-error-summary || echo "⚠️ Algunos errores en use cases (no bloquea)"
         
         echo "- Infrastructure: repositories"
-        mypy src/infrastructure/repositories/ --config-file=mypy.ini --show-error-codes --no-error-summary || echo "⚠️ Algunos errores en repositories"
+        mypy src/infrastructure/repositories/ --config-file=mypy.ini --show-error-codes --no-error-summary || echo "⚠️ Algunos errores en repositories (no bloquea)"
         
         echo ""
-        echo "✅ Verificación de type hints completada"
-      continue-on-error: true
-    
-    - name: Verificar formato con Black
-      run: |
-        black --check src/ tests/
-      continue-on-error: true
-    
-    - name: Verificar imports con isort
-      run: |
-        isort --check-only src/ tests/
-      continue-on-error: true
+        echo "✅ Verificación de type hints completada (informativo)"
+      continue-on-error: true  # Mypy es informativo por ahora
 
   security:
     name: Análisis de seguridad
