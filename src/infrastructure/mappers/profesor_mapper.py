@@ -168,9 +168,19 @@ class ProfesorMapper:
         )
         model.horas_contrato = float(entity.horas_contrato)
         model.porcentaje_jornada = entity.porcentaje_jornada
-        model.turno = entity.turno.value.value
-        model.horas_manana = entity.turno.horas_manana
-        model.horas_tarde = entity.turno.horas_tarde
+
+        # Manejar turno: puede ser Turno value object o string
+        if hasattr(entity.turno, 'value'):
+            # Es un Turno value object
+            model.turno = entity.turno.value.value
+            model.horas_manana = entity.turno.horas_manana
+            model.horas_tarde = entity.turno.horas_tarde
+        else:
+            # Es un string directo
+            model.turno = str(entity.turno)
+            model.horas_manana = getattr(entity, 'horas_manana', None)
+            model.horas_tarde = getattr(entity, 'horas_tarde', None)
+
         model.tutor = entity.es_tutor
         model.activo = getattr(entity, 'activo', True)  # Manejar entidades antiguas sin el campo
         model.fecha_inicio_guardias = entity.fecha_inicio_guardias
