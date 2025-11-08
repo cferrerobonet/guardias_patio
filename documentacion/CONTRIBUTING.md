@@ -13,11 +13,12 @@
 2. [Configuración del Entorno](#configuración-del-entorno)
 3. [Flujo de Trabajo](#flujo-de-trabajo)
 4. [Estándares de Código](#estándares-de-código)
-5. [Testing](#testing)
-6. [Proceso de Pull Request](#proceso-de-pull-request)
-7. [Añadir Funcionalidades](#añadir-funcionalidades)
-8. [Historia del Proyecto](#historia-del-proyecto)
-9. [Mantenimiento](#mantenimiento)
+5. [Guías UX](#guías-ux) 🆕
+6. [Testing](#testing)
+7. [Proceso de Pull Request](#proceso-de-pull-request)
+8. [Añadir Funcionalidades](#añadir-funcionalidades)
+9. [Historia del Proyecto](#historia-del-proyecto)
+10. [Mantenimiento](#mantenimiento)
 
 ---
 
@@ -78,7 +79,31 @@ pip install pytest pytest-cov pytest-qt pytest-mock mypy ruff
 pip list | grep -E 'PyQt6|SQLAlchemy|pydantic|pytest'
 ```
 
-#### 4. Base de Datos
+#### 4. Pre-commit Hooks (Opcional pero Recomendado)
+
+El proyecto usa **pre-commit hooks** para validar código antes de commits:
+
+```bash
+# Instalar pre-commit
+pip install pre-commit
+
+# Activar hooks
+pre-commit install
+
+# Ejecutar manualmente (opcional)
+pre-commit run --all-files
+```
+
+**Hooks activos**:
+- `ruff` - Linting y formato de código
+- Validación automática en cada `git commit`
+
+**Desactivar temporalmente** (no recomendado):
+```bash
+git commit --no-verify -m "mensaje"
+```
+
+#### 5. Base de Datos
 
 ```bash
 # Aplicar migraciones
@@ -359,7 +384,87 @@ class ProfesorManager:
 
 ---
 
+## 🎨 Guías UX
+
+### Documentación UX
+
+El proyecto mantiene estándares UX bien documentados (Fase 7 - Nov 2025):
+
+| Documento | Propósito | Cuándo Consultar |
+|-----------|-----------|------------------|
+| **[UX_AUDIT.md](UX_AUDIT.md)** | Auditoría completa (8.2/10) | Ver estado actual de UX |
+| **[guias/UX_PATTERNS.md](guias/UX_PATTERNS.md)** | Patrones y convenciones | Al crear formularios/widgets |
+| **[guias/KEYBOARD_SHORTCUTS.md](guias/KEYBOARD_SHORTCUTS.md)** | 50+ atajos | Al añadir funcionalidad nueva |
+
+### Checklist UX para Nuevos Formularios
+
+Al crear un nuevo formulario o widget, asegúrate de:
+
+- [ ] **Tooltips informativos**: Todos los campos complejos tienen tooltip con:
+  ```python
+  campo.setToolTip(
+      "Descripción del campo\n"
+      "Información adicional o rango válido"
+  )
+  ```
+  
+- [ ] **Placeholders con ejemplos**: Campos de entrada muestran formato esperado:
+  ```python
+  self.nombre_input.setPlaceholderText("GARCÍA LÓPEZ, JUAN")
+  self.email_input.setPlaceholderText("profesor@colegio.edu")
+  ```
+
+- [ ] **Confirmaciones apropiadas**: Solo para acciones destructivas:
+  ```python
+  # ✅ SÍ confirmar: Eliminar, limpiar datos masivamente
+  # ❌ NO confirmar: Guardar, refrescar, cancelar sin cambios
+  ```
+
+- [ ] **Atajos de teclado**: Implementar shortcuts estándar:
+  ```python
+  QShortcut(QKeySequence("F5"), self, self.refrescar)
+  QShortcut(QKeySequence.StandardKey.Save, self, self.guardar)
+  ```
+
+- [ ] **Estilos consistentes**: Usar estilos predefinidos:
+  ```python
+  from presentation.styles import styles
+  self.guardar_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
+  self.eliminar_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
+  ```
+
+- [ ] **Validación en tiempo real**: Feedback inmediato en campos críticos:
+  ```python
+  self.campo.editingFinished.connect(self._validar_campo)
+  ```
+
+**📖 Guía completa**: [UX_PATTERNS.md](guias/UX_PATTERNS.md)
+
+### Métricas UX Actuales (v3.0.2)
+
+- ✅ **85% cobertura tooltips/placeholders** (objetivo: ≥80%)
+- ✅ **100% confirmaciones apropiadas**
+- ✅ **8.2/10 puntuación global** (auditoría independiente)
+- ✅ **50+ atajos documentados**
+
+**Mantén estos estándares** en nuevo código.
+
+---
+
 ## 🧪 Testing
+
+### Estado Actual (Nov 2025)
+
+**Métricas**:
+- ✅ **990 tests** pasando (100%)
+- ✅ **46.31% coverage** global
+- ✅ **92-96% coverage** en entidades de dominio (ProfesorEntity, GuardiaEntity, ZonaEntity)
+- ⚠️ **23-25% coverage** en repositories (área de mejora)
+- ⚠️ **0% coverage** en use cases (área de mejora)
+
+**Objetivo**: Mantener >45% coverage, priorizando tests en domain layer.
+
+📖 **Documentación completa**: [TESTING.md](TESTING.md)
 
 ### Ejecutar Tests
 
