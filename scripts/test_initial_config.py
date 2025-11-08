@@ -18,7 +18,7 @@ from src.presentation.dialogs.initial_config_dialog import InitialConfigDialog
 
 def main():
     """Prueba el diálogo de configuración inicial."""
-    app = QApplication(sys.argv)
+    QApplication(sys.argv)
 
     # Verificar si es necesario mostrar el diálogo
     if InitialConfigDialog.is_configuration_needed():
