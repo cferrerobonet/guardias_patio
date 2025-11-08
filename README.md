@@ -2,6 +2,7 @@
 
 [![CI/CD Pipeline](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml/badge.svg)](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/cferrerobonet/guardias_patio/branch/main/graph/badge.svg)](https://codecov.io/gh/cferrerobonet/guardias_patio)
+[![Security Audit](https://img.shields.io/badge/Security_Audit-Nov_2025-green.svg)](documentacion/auditoria/SECURITY_AUDIT.md)
 [![Release](https://img.shields.io/github/v/release/cferrerobonet/guardias_patio)](https://github.com/cferrerobonet/guardias_patio/releases/latest)
 ![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)

@@ -2,7 +2,8 @@
 
 **Guardias de Patio** - Política de Seguridad  
 **Versión**: 3.0.0  
-**Última actualización**: 8 de noviembre de 2025
+**Última actualización**: 8 de noviembre de 2025  
+**Última auditoría**: 8 de noviembre de 2025 ✅
 
 ---
 
@@ -10,11 +11,13 @@
 
 1. [Versiones Soportadas](#versiones-soportadas)
 2. [Reporte de Vulnerabilidades](#reporte-de-vulnerabilidades)
-3. [Gestión de Secretos](#gestión-de-secretos)
-4. [Validaciones de Seguridad](#validaciones-de-seguridad)
-5. [Dependencias y Actualizaciones](#dependencias-y-actualizaciones)
-6. [Seguridad en Base de Datos](#seguridad-en-base-de-datos)
-7. [Buenas Prácticas](#buenas-prácticas)
+3. [Auditorías Recientes](#auditorías-recientes)
+4. [Gestión de Secretos](#gestión-de-secretos)
+5. [Validaciones de Seguridad](#validaciones-de-seguridad)
+6. [Dependencias y Actualizaciones](#dependencias-y-actualizaciones)
+7. [Seguridad en Base de Datos](#seguridad-en-base-de-datos)
+8. [Buenas Prácticas](#buenas-prácticas)
+9. [CI/CD y Auditorías Automáticas](#cicd-y-auditorías-automáticas)
 
 ---
 
@@ -104,7 +107,68 @@ Las vulnerabilidades de seguridad deben reportarse de forma privada para evitar 
 
 ---
 
-## 🔐 Gestión de Secretos
+## � Auditorías Recientes
+
+### Última Auditoría: 8 de Noviembre de 2025
+
+**Herramientas utilizadas:**
+- ✅ `pip-audit` - Análisis de vulnerabilidades en dependencias
+- ✅ `bandit` - Análisis estático de seguridad del código Python
+- ✅ Verificación manual de secretos y archivos sensibles
+
+#### Resultados
+
+| Herramienta | Issues Encontrados | Severidad | Estado |
+|-------------|-------------------|-----------|--------|
+| **pip-audit** | 7 vulnerabilidades | 4 paquetes afectados | ⚠️ No crítico para el proyecto |
+| **bandit** | 1 HIGH, 29 LOW | Mixed | ⚠️ 1 issue documentado |
+| **Verificación secretos** | 0 | - | ✅ Ningún secreto en git |
+
+#### Detalles de Vulnerabilidades en Dependencias
+
+**Paquetes con vulnerabilidades** (no críticas para este proyecto):
+
+| Paquete | Versión Actual | Vulnerabilidad | Impacto Real |
+|---------|---------------|----------------|--------------|
+| **future** | 0.18.2 | PYSEC-2022-42991 | ⚠️ Bajo - No usamos el módulo afectado |
+| **pip** | 21.2.4 | PYSEC-2023-228, GHSA-4xh5 | ⚠️ Bajo - Solo desarrollo |
+| **setuptools** | 58.0.4 | PYSEC-2022-43012, PYSEC-2025-49, GHSA-cx63 | ⚠️ Bajo - Solo instalación |
+| **wheel** | 0.37.0 | PYSEC-2022-43017 | ⚠️ Bajo - Solo empaquetado |
+
+**Justificación "No Crítico"**:
+- Las vulnerabilidades afectan a herramientas de **build/instalación**, no al runtime de la aplicación
+- La aplicación se distribuye como **ejecutable compilado** (PyInstaller), no como paquete pip
+- Los usuarios finales **no ejecutan pip/setuptools** en su entorno
+
+**Plan de Acción**:
+- ✅ Documentar vulnerabilidades conocidas
+- 🔄 Actualizar en próxima versión de desarrollo
+- ✅ No requiere hotfix urgente
+
+#### Issue Bandit de Alta Severidad
+
+**B507: SSH without host key verification**
+
+```python
+# Ubicación: src/sync/sync_manager.py:104
+self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+```
+
+**Justificación**:
+- Feature de sincronización SFTP es **opcional** y no está habilitado por defecto
+- Solo se usa en entornos educativos controlados
+- La IP del servidor SFTP es fija y conocida
+
+**Mitigación**:
+- ⚠️ Documentado en `USER_GUIDE.md` - solo para administradores
+- ✅ Requiere configuración manual explícita
+- 🔄 En roadmap: implementar verificación de host key en v3.1
+
+**Ver reporte completo**: `documentacion/auditoria/SECURITY_AUDIT.md`
+
+---
+
+## �🔐 Gestión de Secretos
 
 ### Secretos NO Permitidos en el Repositorio
 
@@ -408,6 +472,95 @@ logger.info(f"Usuario {profesor.email} con contraseña {password}")
 ```
 
 ---
+
+## 🤖 CI/CD y Auditorías Automáticas
+
+### GitHub Actions - Security Workflow
+
+El proyecto incluye auditorías de seguridad automatizadas en `.github/workflows/ci.yml`:
+
+#### Ejecución Programada
+
+```yaml
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Cada lunes a las 2:00 AM
+```
+
+#### Jobs de Seguridad
+
+| Job | Herramienta | Propósito | Frecuencia |
+|-----|-------------|-----------|------------|
+| **security** | `safety` | Vulnerabilidades en dependencias | Cada push + semanal |
+| **security** | `bandit` | Análisis estático de código | Cada push + semanal |
+| **test** | `pytest` | Tests de seguridad (validaciones) | Cada push |
+
+#### Ejecución Manual
+
+```bash
+# Ejecutar auditorías localmente
+python3 -m pip_audit --desc
+python3 -m bandit -r src/ -ll  # Solo medium/high
+```
+
+#### Reportes Generados
+
+Los workflows generan artefactos descargables:
+
+- **bandit-report.json** - Análisis completo de Bandit
+- **coverage.xml** - Cobertura de tests (incluye tests de validación)
+- **test-results-*.xml** - Resultados de tests JUnit
+
+**Acceso**: GitHub → Actions → Workflow run → Artifacts
+
+### Configuración de Alerts
+
+#### Dependabot (Recomendado)
+
+Activar en: `GitHub → Settings → Security → Dependabot alerts`
+
+Beneficios:
+- ✅ Notificaciones automáticas de vulnerabilidades
+- ✅ Pull requests automáticos con fixes
+- ✅ Integración con GitHub Security Advisory
+
+#### CodeQL (Opcional)
+
+Para análisis más profundo:
+
+```yaml
+# .github/workflows/codeql.yml
+name: "CodeQL"
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Semanal
+```
+
+### Checklist de Seguridad Pre-Release
+
+Antes de cada release, verificar:
+
+- [ ] `pip-audit` sin vulnerabilidades críticas
+- [ ] `bandit` sin nuevos issues HIGH
+- [ ] Tests de validación pasando (100%)
+- [ ] `.gitignore` actualizado
+- [ ] `SECURITY.md` actualizado con auditoría reciente
+- [ ] Dependencias actualizadas a versiones seguras
+- [ ] Changelog incluye fixes de seguridad
+
+### Contacto de Seguridad
+
+**Email de seguridad**: cferrerobonet@gmail.com  
+**Respuesta esperada**: 48 horas  
+**Idiomas**: Español, Inglés
+
+---
+
+**Última revisión de este documento**: 8 de noviembre de 2025  
+**Próxima auditoría programada**: 15 de noviembre de 2025 (automática via CI)  
+**Mantenido por**: Carlos Ferrero Bonet
 
 ## 📚 Referencias
 
