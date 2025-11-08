@@ -136,7 +136,8 @@ class DiaDetalleDialog(QDialog):
         """Crear widget con resumen estadístico del día."""
         group = QGroupBox("📊 Resumen")
         layout = QHBoxLayout()
-        layout.setSpacing(20)
+        layout.setSpacing(15)
+        layout.setContentsMargins(10, 15, 10, 10)
 
         # Contadores
         total_guardias = len(self.guardias)
@@ -166,28 +167,40 @@ class DiaDetalleDialog(QDialog):
         for nombre, valor, icono in stats:
             stat_widget = QWidget()
             stat_layout = QVBoxLayout(stat_widget)
-            stat_layout.setSpacing(2)
-            stat_layout.setContentsMargins(10, 5, 10, 5)
+            stat_layout.setSpacing(4)
+            stat_layout.setContentsMargins(12, 10, 12, 10)
 
-            label_valor = QLabel(f"{icono} {valor}")
+            # Icono y valor en la misma línea, arriba
+            top_layout = QHBoxLayout()
+            top_layout.setSpacing(5)
+
+            label_icono = QLabel(icono)
+            label_icono.setStyleSheet("font-size: 18px;")
+            top_layout.addWidget(label_icono)
+
+            label_valor = QLabel(str(valor))
             font_valor = QFont()
-            font_valor.setPointSize(16)
+            font_valor.setPointSize(18)
             font_valor.setBold(True)
             label_valor.setFont(font_valor)
-            label_valor.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label_valor.setStyleSheet("color: #333;")
+            top_layout.addWidget(label_valor)
+            top_layout.addStretch()
 
+            stat_layout.addLayout(top_layout)
+
+            # Nombre debajo, más separado
             label_nombre = QLabel(nombre)
-            label_nombre.setStyleSheet("color: #666; font-size: 10px;")
-            label_nombre.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            stat_layout.addWidget(label_valor)
+            label_nombre.setStyleSheet("color: #666; font-size: 11px; margin-top: 4px;")
             stat_layout.addWidget(label_nombre)
 
-            # Estilo según el valor
-            color = "#4CAF50" if valor > 0 else "#ccc"
-            stat_widget.setStyleSheet(
-                f"background-color: {color}15; border-radius: 5px; border: 1px solid {color};"
-            )
+            # Estilo simple y limpio sin marcos dobles
+            stat_widget.setStyleSheet("""
+                QWidget {
+                    background-color: #f8f9fa;
+                    border-radius: 6px;
+                }
+            """)
 
             layout.addWidget(stat_widget)
 
