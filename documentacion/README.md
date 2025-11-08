@@ -117,12 +117,10 @@ documentacion/
 │   ├── UX_TESTING_MANUAL.md
 │   └── UX_CONFIRMACIONES_AUDITORIA.md
 │
-├── roadmap/                     # Planificación futura
-│   └── roadmap-v3.0.md
-│
 └── archivo/                     # 📦 Documentación histórica
     ├── tecnico/                 # 14 archivos técnicos archivados
     ├── build/                   # 7 archivos de build archivados
+    ├── roadmap/                 # 2 archivos de roadmap archivados (v3.0 lanzado)
     ├── funcionalidades/         # 4 archivos de features archivados
     ├── guias/                   # 4 guías archivadas
     ├── versiones/               # 5 changelogs archivados
@@ -160,7 +158,7 @@ documentacion/
 
 **Después**:
 - ✅ **7 guías principales consolidadas** (5,362 líneas)
-- ✅ **39 archivos originales preservados** en `archivo/`
+- ✅ **41 archivos originales preservados** en `archivo/`
 - ✅ **100% de información preservada**
 - ✅ **Navegación clara por rol**
 
@@ -206,7 +204,7 @@ documentacion/
 
 ## 📦 Archivo Histórico
 
-La carpeta `archivo/` contiene **39 archivos originales** preservados para referencia histórica:
+La carpeta `archivo/` contiene **41 archivos originales** preservados para referencia histórica:
 
 | Categoría | Archivos | Descripción |
 |-----------|----------|-------------|
@@ -216,6 +214,7 @@ La carpeta `archivo/` contiene **39 archivos originales** preservados para refer
 | `archivo/guias/` | 4 | Guías de usuario originales |
 | `archivo/versiones/` | 5 | Changelogs originales |
 | `archivo/desarrollo/` | 5 | Docs de desarrollo originales |
+| `archivo/roadmap/` | 2 | Roadmaps v3.0 (completados) |
 
 **Razón**: Mantener histórico completo mientras se mejora la navegación.
 

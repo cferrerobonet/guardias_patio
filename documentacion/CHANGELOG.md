@@ -102,7 +102,7 @@ Refactorización arquitectónica completa de la capa de presentación y optimiza
 
 ### Documentation
 
-- [SISTEMA_PDF_CORPORATIVO.md](tecnico/SISTEMA_PDF_CORPORATIVO.md) - Sistema de PDFs
+- [SISTEMA_PDF_CORPORATIVO.md](archivo/tecnico/SISTEMA_PDF_CORPORATIVO.md) - Sistema de PDFs
 - [PREMISAS_ASIGNACION_GUARDIAS.md](PREMISAS_ASIGNACION_GUARDIAS.md) - Algoritmo v3.0
 - Patrón de widgets documentado
 - Docstrings completos (100%)
