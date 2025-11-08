@@ -27,7 +27,6 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
-    QScrollArea,
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
@@ -125,27 +124,13 @@ class ProfesorForm(BaseForm):
         return widget
 
     def _crear_widget_formulario_con_scroll(self) -> QWidget:
-        """Crear widget con scroll para el formulario."""
-        # Crear contenedor del formulario
+        """Crear widget para el formulario (sin scroll, optimizado horizontalmente)."""
+        # Crear contenedor del formulario sin ScrollArea
         form_container = QWidget()
         form_layout = self._crear_seccion_formulario()
         form_container.setLayout(form_layout)
 
-        # Envolver en QScrollArea
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)  # CRÍTICO: permite que el widget se ajuste
-        scroll_area.setWidget(form_container)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-
-        # Crear widget contenedor para el scroll
-        container = QWidget()
-        container_layout = QVBoxLayout()
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.addWidget(scroll_area)
-        container.setLayout(container_layout)
-
-        return container
+        return form_container
 
     def _crear_seccion_tabla(self) -> QVBoxLayout:
         """Crear sección izquierda con tabla de profesores."""
@@ -272,48 +257,70 @@ class ProfesorForm(BaseForm):
         return layout
 
     def _crear_seccion_formulario(self) -> QVBoxLayout:
-        """Crear sección derecha con formulario de alta/edición."""
+        """Crear sección derecha con formulario de alta/edición optimizado sin scroll."""
         layout = QVBoxLayout()
-        layout.setContentsMargins(6, 6, 6, 6)  # Reducido de 8 a 6
-        layout.setSpacing(6)  # Reducido de 8 a 6
+        layout.setContentsMargins(4, 4, 4, 4)  # Márgenes mínimos
+        layout.setSpacing(4)  # Espaciado mínimo entre elementos
 
+        # Título más compacto
         self.titulo_seccion = QLabel("✏️ ALTA DE PROFESOR")
         self.titulo_seccion.setStyleSheet(styles.STYLE_TITLE_MAIN)
         layout.addWidget(self.titulo_seccion)
 
-        # Widgets del formulario
+        # =================================================
+        # LAYOUT HORIZONTAL: 2 COLUMNAS PARA OPTIMIZAR ESPACIO
+        # =================================================
+        columnas_layout = QHBoxLayout()
+        columnas_layout.setSpacing(6)
+
+        # COLUMNA IZQUIERDA: Datos Básicos + Horario
+        columna_izq = QVBoxLayout()
+        columna_izq.setSpacing(4)
+
         self.datos_basicos_widget = DatosBasicosWidget(self)
-        layout.addWidget(self.datos_basicos_widget)
+        columna_izq.addWidget(self.datos_basicos_widget)
 
         self.horario_widget = HorarioWidget(self)
-        layout.addWidget(self.horario_widget)
+        columna_izq.addWidget(self.horario_widget)
+        columna_izq.addStretch()  # Push widgets arriba
+
+        # COLUMNA DERECHA: Restricciones
+        columna_der = QVBoxLayout()
+        columna_der.setSpacing(4)
 
         self.restricciones_widget = RestriccionesWidget(self)
-        layout.addWidget(self.restricciones_widget)
+        columna_der.addWidget(self.restricciones_widget)
+        columna_der.addStretch()  # Push widgets arriba
+
+        # Añadir columnas al layout horizontal
+        columnas_layout.addLayout(columna_izq, 50)  # 50% ancho
+        columnas_layout.addLayout(columna_der, 50)  # 50% ancho
+
+        layout.addLayout(columnas_layout)
 
         # Conectar señal de cambio de turno para actualizar matriz de restricciones
-        self.horario_widget.turno_changed.connect(
-            self._actualizar_matriz_restricciones_por_turno
-        )
+        self.horario_widget.turno_changed.connect(self._actualizar_matriz_restricciones_por_turno)
 
-        # Botones de acción
+        # Botones de acción (mantener en la parte inferior)
         botones_accion = QHBoxLayout()
-        botones_accion.setSpacing(8)  # Reducido de 10 a 8
+        botones_accion.setSpacing(6)
 
-        self.submit_btn = QPushButton("💾 Guardar nuevo profesor")
+        self.submit_btn = QPushButton("💾 Guardar")
         self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.submit_btn.clicked.connect(self.guardar_profesor)
+        self.submit_btn.setMaximumHeight(35)  # Limitar altura
 
-        self.cancelar_btn = QPushButton("❌ Cancelar Edición")
+        self.cancelar_btn = QPushButton("❌ Cancelar")
         self.cancelar_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.cancelar_btn.clicked.connect(self.cancelar_edicion)
         self.cancelar_btn.setVisible(False)
+        self.cancelar_btn.setMaximumHeight(35)  # Limitar altura
 
         botones_accion.addWidget(self.submit_btn)
         botones_accion.addWidget(self.cancelar_btn)
         layout.addLayout(botones_accion)
 
-        layout.addStretch()
+        # NO añadir stretch al final para permitir que los botones se mantengan al fondo
 
         return layout
 
@@ -598,6 +605,7 @@ class ProfesorForm(BaseForm):
             recreos_raw = None
             try:
                 from models.models import Profesor
+
                 profesor_model = self.session.query(Profesor).filter_by(id=id_profesor).first()
                 if profesor_model and profesor_model.recreos_permitidos:
                     recreos_raw = profesor_model.recreos_permitidos  # String JSON original
@@ -778,4 +786,3 @@ class ProfesorForm(BaseForm):
         # Solo actualizar si el checkbox de restricciones NO está activado
         if not self.restricciones_widget.get_usar_restricciones():
             self.restricciones_widget.preseleccionar_segun_turno(turno)
-

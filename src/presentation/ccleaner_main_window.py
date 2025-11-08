@@ -83,8 +83,8 @@ class CCleanerMainWindow(QMainWindow):
         self.setWindowTitle("Guardias de Patio")
         self.setMinimumSize(1400, 900)
 
-        # Abrir maximizada (no fullscreen para poder minimizar/cerrar)
-        self.showMaximized()
+        # Abrir en pantalla completa
+        self.showFullScreen()
 
         # Aplicar stylesheet global
         self.setStyleSheet(get_complete_stylesheet())
@@ -180,4 +180,3 @@ class CCleanerMainWindow(QMainWindow):
     def connect_signals(self):
         """Conectar señales de los widgets"""
         # Dashboard eliminado - ya no hay botones de acceso rápido que conectar
-
