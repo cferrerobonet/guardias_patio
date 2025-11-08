@@ -228,7 +228,7 @@ src/
 
 ---
 
-## <a name="fase-3"></a>3️⃣ FASE 3 – Tests: Arreglar y Medir ✅ COMPLETADA
+## 3️⃣ FASE 3 – Tests: Arreglar y Medir ✅ COMPLETADA
 
 **Estado**: ✅ **COMPLETADA** (8 nov 2025)  
 **Coverage alcanzado**: 46.31% (objetivo inicial superado)  
@@ -304,7 +304,7 @@ Si se desea llegar a 60% coverage:
 
 ---
 
-## <a name="fase-4"></a>4️⃣ FASE 4 – Documentación: Consolidar y Simplificar
+## 4️⃣ FASE 4 – Documentación: Consolidar y Simplificar
 
 ### 🎯 Objetivo
 Reducir de 30+ archivos markdown a 12-15 archivos principales bien organizados.
