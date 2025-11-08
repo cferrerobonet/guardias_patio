@@ -222,7 +222,7 @@ class DiaDetalleDialog(QDialog):
         """Crear widget para un recreo específico."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setSpacing(3)
+        layout.setSpacing(5)
         layout.setContentsMargins(0, 0, 0, 0)
 
         # Header del recreo
@@ -230,53 +230,82 @@ class DiaDetalleDialog(QDialog):
         font_header = QFont()
         font_header.setBold(True)
         header.setFont(font_header)
-        header.setStyleSheet("background-color: #e3f2fd; padding: 5px; border-radius: 3px;")
+        header.setStyleSheet(
+            "background-color: #e3f2fd; padding: 8px; "
+            "border-radius: 4px; color: #1565C0;"
+        )
         layout.addWidget(header)
 
-        # Lista de guardias
-        for guardia in guardias:
+        # Ordenar guardias por zona (Z1, Z2, Z3, Z4)
+        guardias_ordenadas = sorted(
+            guardias,
+            key=lambda g: (
+                int(g.zona.nombre_zona[1]) if g.zona and g.zona.nombre_zona.startswith('Z') else 999
+            )
+        )
+
+        # Lista de guardias ordenadas por zona
+        for guardia in guardias_ordenadas:
             guardia_widget = self._crear_widget_guardia(guardia)
             layout.addWidget(guardia_widget)
 
         return widget
 
     def _crear_widget_guardia(self, guardia: Guardia) -> QWidget:
-        """Crear widget para una guardia individual."""
+        """Crear widget para una guardia individual con mejor diseño."""
         widget = QWidget()
         layout = QHBoxLayout(widget)
-        layout.setContentsMargins(15, 5, 5, 5)
-        layout.setSpacing(10)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(15)
 
-        # Nombre del profesor
-        nombre = f"👤 {guardia.profesor.nombre_completo}"
+        # Zona con badge distintivo
+        if guardia.zona:
+            zona_label = QLabel(f"{guardia.zona.nombre_zona}")
+            zona_label.setStyleSheet("""
+                background-color: #1976D2;
+                color: white;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 4px 10px;
+                border-radius: 3px;
+                min-width: 35px;
+            """)
+            zona_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(zona_label)
+
+        # Nombre del profesor con mejor tipografía
+        nombre = guardia.profesor.nombre_completo
         if guardia.profesor.tutor:
-            nombre += " (Tutor)"
+            nombre += " 👨‍🏫"  # Icono de tutor más discreto
 
         label_profesor = QLabel(nombre)
         font_profesor = QFont()
         font_profesor.setPointSize(10)
         label_profesor.setFont(font_profesor)
-        layout.addWidget(label_profesor)
+        label_profesor.setStyleSheet("color: #333; padding-left: 8px;")
+        layout.addWidget(label_profesor, 1)  # Stretch factor para que ocupe espacio
 
-        # Zona
-        if guardia.zona:
-            label_zona = QLabel(f"📍 {guardia.zona.nombre_zona}")
-            label_zona.setStyleSheet("color: #1976D2; font-size: 9px;")
-            layout.addWidget(label_zona)
-
-        # Turno del profesor
-        turno_icons = {"Mañana": "☀️", "Tarde": "🌙", "Ambos": "🔄"}
+        # Turno del profesor con icono más sutil
+        turno_icons = {"Mañana": "☀", "Tarde": "🌙", "Ambos": "⏰"}
         icon_turno = turno_icons.get(guardia.profesor.turno, "")
         label_turno = QLabel(f"{icon_turno} {guardia.profesor.turno}")
-        label_turno.setStyleSheet("color: #666; font-size: 9px;")
+        label_turno.setStyleSheet(
+            "color: #666; font-size: 9px; "
+            "background-color: #f5f5f5; padding: 3px 8px; border-radius: 3px;"
+        )
         layout.addWidget(label_turno)
 
-        layout.addStretch()
-
-        widget.setStyleSheet(
-            "background-color: #f5f5f5; border-left: 3px solid #4CAF50; "
-            "border-radius: 3px; padding: 2px;"
-        )
+        widget.setStyleSheet("""
+            QWidget {
+                background-color: white;
+                border-left: 4px solid #4CAF50;
+                border-radius: 4px;
+                margin: 2px 0px;
+            }
+            QWidget:hover {
+                background-color: #f8f9fa;
+            }
+        """)
 
         return widget
 

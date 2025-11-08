@@ -15,8 +15,6 @@ from datetime import date, datetime, timedelta
 from typing import List
 
 from models.models import Ausencia, Guardia
-from presentation.dialogs.dia_detalle_dialog import DiaDetalleDialog
-from presentation.forms.base_form import BaseForm
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -33,6 +31,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from presentation.dialogs.dia_detalle_dialog import DiaDetalleDialog
+from presentation.forms.base_form import BaseForm
+
 
 class CeldaDia(QGroupBox):
     """Celda individual para un día del calendario con scroll interno."""
@@ -43,7 +44,7 @@ class CeldaDia(QGroupBox):
                  sustituciones: List[Guardia], es_hoy: bool = False):
         """
         Inicializar celda de día.
-        
+
         Args:
             fecha: Fecha del día
             guardias: Lista de guardias del día
@@ -140,7 +141,7 @@ class CeldaDia(QGroupBox):
         self._aplicar_estilo()
 
     def _agregar_guardias_agrupadas(self, layout: QVBoxLayout):
-        """Agregar guardias agrupadas por turno y recreo."""
+        """Agregar guardias agrupadas por turno y recreo, ordenadas por zona."""
         # Agrupar guardias por turno y recreo
         grupos = defaultdict(list)
         for guardia in self.guardias:
@@ -157,24 +158,36 @@ class CeldaDia(QGroupBox):
         for turno, recreo in claves_ordenadas:
             guardias_grupo = grupos[(turno, recreo)]
 
+            # Ordenar guardias del grupo por zona (Z1, Z2, Z3, Z4)
+            guardias_ordenadas = sorted(
+                guardias_grupo,
+                key=lambda g: (
+                    int(g.zona.nombre_zona[1])
+                    if g.zona and g.zona.nombre_zona.startswith("Z")
+                    else 999
+                ),
+            )
+
             # Encabezado del grupo
-            icono_turno = "☀️" if turno == "mañana" else "🌙"
-            label_grupo = QLabel(f"{icono_turno} {turno.title()} - Recreo {recreo}")
+            icono_turno = "☀" if turno == "mañana" else "🌙"
+            label_grupo = QLabel(f"{icono_turno} Recreo {recreo} ({turno})")
             label_grupo.setStyleSheet(
-                "font-size: 9px; font-weight: bold; color: #2196F3; "
-                "background-color: #E3F2FD; padding: 2px; border-radius: 2px;"
+                "font-size: 9px; font-weight: bold; color: #1565C0; "
+                "background-color: #E3F2FD; padding: 3px 5px; border-radius: 2px;"
             )
             layout.addWidget(label_grupo)
 
-            # Guardias del grupo
-            for guardia in guardias_grupo:
+            # Guardias del grupo ordenadas por zona
+            for guardia in guardias_ordenadas:
                 self._agregar_guardia_individual(layout, guardia)
 
     def _agregar_guardia_individual(self, layout: QVBoxLayout, guardia: Guardia):
-        """Agregar una guardia individual."""
+        """Agregar una guardia individual con mejor diseño."""
         # Obtener información
-        profesor_nombre = guardia.profesor.nombre_completo if guardia.profesor else "Sin asignar"
-        zona_nombre = guardia.zona.nombre_zona if guardia.zona else "Sin zona"
+        profesor_nombre = (
+            guardia.profesor.nombre_completo if guardia.profesor else "Sin asignar"
+        )
+        zona_nombre = guardia.zona.nombre_zona if guardia.zona else "??"
 
         # Abreviar nombre (apellido solo)
         if "," in profesor_nombre:
@@ -186,27 +199,61 @@ class CeldaDia(QGroupBox):
         # Determinar si es sustitución
         es_sustitucion = guardia in self.sustituciones
 
-        # Crear label
-        texto = f"  • {apellido[:12]} - {zona_nombre[:8]}"
-        label = QLabel(texto)
+        # Crear widget contenedor con layout horizontal
+        widget = QWidget()
+        h_layout = QHBoxLayout(widget)
+        h_layout.setContentsMargins(3, 2, 3, 2)
+        h_layout.setSpacing(5)
+
+        # Badge de zona (más compacto y visible)
+        zona_label = QLabel(zona_nombre)
+        zona_label.setStyleSheet("""
+            background-color: #1976D2;
+            color: white;
+            font-size: 8px;
+            font-weight: bold;
+            padding: 2px 4px;
+            border-radius: 2px;
+            min-width: 18px;
+        """)
+        zona_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        h_layout.addWidget(zona_label)
+
+        # Nombre del profesor
+        nombre_label = QLabel(apellido[:15])
+        nombre_label.setStyleSheet("font-size: 8px; color: #333;")
+        h_layout.addWidget(nombre_label, 1)
 
         if es_sustitucion:
-            # Estilo para sustituciones
-            label.setStyleSheet(
-                "font-size: 8px; padding: 1px 3px; margin-left: 5px; "
-                "background-color: #FFF3E0; border-left: 3px solid #FF9800; "
-                "color: #E65100; font-weight: bold;"
-            )
-            label.setToolTip(f"SUSTITUCIÓN: {profesor_nombre} en {zona_nombre}")
-        else:
-            # Estilo normal
-            label.setStyleSheet(
-                "font-size: 8px; padding: 1px 3px; margin-left: 5px; "
-                "background-color: white; border-left: 2px solid #4CAF50;"
-            )
-            label.setToolTip(f"{profesor_nombre} en {zona_nombre}")
+            # Indicador de sustitución
+            sust_label = QLabel("🔄")
+            sust_label.setStyleSheet("font-size: 8px;")
+            sust_label.setToolTip("Sustitución")
+            h_layout.addWidget(sust_label)
 
-        layout.addWidget(label)
+        # Estilo del widget según sea sustitución o no
+        if es_sustitucion:
+            widget.setStyleSheet("""
+                QWidget {
+                    background-color: #FFF3E0;
+                    border-left: 3px solid #FF9800;
+                    border-radius: 3px;
+                    margin: 1px 0px;
+                }
+            """)
+            widget.setToolTip(f"SUSTITUCIÓN: {profesor_nombre} en {zona_nombre}")
+        else:
+            widget.setStyleSheet("""
+                QWidget {
+                    background-color: white;
+                    border-left: 2px solid #4CAF50;
+                    border-radius: 2px;
+                    margin: 1px 0px;
+                }
+            """)
+            widget.setToolTip(f"{profesor_nombre} en {zona_nombre}")
+
+        layout.addWidget(widget)
 
     def _agregar_ausencias(self, layout: QVBoxLayout):
         """Agregar información de ausencias."""
@@ -312,7 +359,7 @@ class VistaCalendario(BaseForm):
     def __init__(self, session):
         """
         Inicializar vista de calendario.
-        
+
         Args:
             session: Sesión de base de datos
         """
@@ -617,9 +664,11 @@ class VistaCalendario(BaseForm):
         dias_en_mes = monthrange(self.anio_mostrado, self.mes_mostrado)[1]
         ultimo_dia = date(self.anio_mostrado, self.mes_mostrado, dias_en_mes)
 
-        guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha = self._cargar_datos_periodo(
-            primer_dia, ultimo_dia
-        )
+        (
+            guardias_por_fecha,
+            ausencias_por_fecha,
+            sustituciones_por_fecha,
+        ) = self._cargar_datos_periodo(primer_dia, ultimo_dia)
 
         # Renderizar días del mes
         dia_semana_inicio = primer_dia.weekday()  # 0=Lunes, 6=Domingo
@@ -655,7 +704,7 @@ class VistaCalendario(BaseForm):
         """Renderizar vista semanal."""
         # Calcular primer y último día de la semana
         # Encontrar el lunes de la semana actual
-        fecha_ref = date(self.anio_mostrado, self.mes_mostrado, 1)
+        date(self.anio_mostrado, self.mes_mostrado, 1)
         # Buscar una fecha en la semana deseada
         primer_dia_anio = date(self.anio_mostrado, 1, 1)
         dias_desde_inicio = (self.semana_mostrada - 1) * 7
@@ -696,9 +745,11 @@ class VistaCalendario(BaseForm):
             grid_calendario.addWidget(label, 0, i)
 
         # Cargar datos
-        guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha = self._cargar_datos_periodo(
-            primer_dia_semana, ultimo_dia_semana
-        )
+        (
+            guardias_por_fecha,
+            ausencias_por_fecha,
+            sustituciones_por_fecha,
+        ) = self._cargar_datos_periodo(primer_dia_semana, ultimo_dia_semana)
 
         # Renderizar días de la semana
         for i in range(7):
@@ -864,7 +915,7 @@ class VistaCalendario(BaseForm):
     def _cargar_datos_periodo(self, fecha_inicio: date, fecha_fin: date) -> tuple:
         """
         Cargar guardias, ausencias y sustituciones de un periodo.
-        
+
         Returns:
             Tupla de (guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha)
         """
