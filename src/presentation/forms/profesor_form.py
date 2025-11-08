@@ -179,15 +179,23 @@ class ProfesorForm(BaseForm):
 
         # Tabla de profesores
         self.tabla_profesores = QTableWidget()
-        self.tabla_profesores.setColumnCount(5)
+        self.tabla_profesores.setColumnCount(7)
         self.tabla_profesores.setHorizontalHeaderLabels(
-            ["Nombre Completo", "Email", "Horas", "Turno", "Tutor"]
+            [
+                "Nombre Completo",
+                "Email",
+                "Horas",
+                "Turno",
+                "Tutor",
+                "Inicio Guardias",
+                "Fin Guardias",
+            ]
         )
         self.tabla_profesores.horizontalHeader().setStretchLastSection(False)
         self.tabla_profesores.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.Stretch
         )
-        for i in [1, 2, 3, 4]:
+        for i in [1, 2, 3, 4, 5, 6]:
             self.tabla_profesores.horizontalHeader().setSectionResizeMode(
                 i, QHeaderView.ResizeMode.ResizeToContents
             )
@@ -507,6 +515,22 @@ class ProfesorForm(BaseForm):
                 tutor_text = "Sí" if prof.tutor else "No"
                 tutor_item = QTableWidgetItem(tutor_text)
                 self.tabla_profesores.setItem(i, 4, tutor_item)
+
+                # Fecha Inicio Guardias
+                fecha_inicio_text = (
+                    prof.fecha_inicio_guardias.strftime("%d/%m/%Y")
+                    if prof.fecha_inicio_guardias
+                    else "-"
+                )
+                fecha_inicio_item = QTableWidgetItem(fecha_inicio_text)
+                self.tabla_profesores.setItem(i, 5, fecha_inicio_item)
+
+                # Fecha Fin Guardias
+                fecha_fin_text = (
+                    prof.fecha_fin_guardias.strftime("%d/%m/%Y") if prof.fecha_fin_guardias else "-"
+                )
+                fecha_fin_item = QTableWidgetItem(fecha_fin_text)
+                self.tabla_profesores.setItem(i, 6, fecha_fin_item)
 
             # Habilitar ordenación manual (el usuario puede hacer clic en las columnas)
             self.tabla_profesores.setSortingEnabled(True)

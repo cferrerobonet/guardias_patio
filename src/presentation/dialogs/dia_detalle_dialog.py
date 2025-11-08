@@ -5,6 +5,7 @@ Muestra información detallada de todas las guardias, ausencias y sustituciones
 del día seleccionado en el calendario.
 """
 
+import locale
 from datetime import date
 from typing import List
 
@@ -22,6 +23,15 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+# Configurar locale para fechas en español
+try:
+    locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
+except locale.Error:
+    try:
+        locale.setlocale(locale.LC_TIME, "es_ES")
+    except locale.Error:
+        pass  # Si no está disponible, usar el locale por defecto
 
 
 class DiaDetalleDialog(QDialog):
@@ -135,9 +145,25 @@ class DiaDetalleDialog(QDialog):
     def _crear_resumen_estadistico(self) -> QGroupBox:
         """Crear widget con resumen estadístico del día."""
         group = QGroupBox("📊 Resumen")
+        group.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                margin-top: 12px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 2px 5px;
+                left: 10px;
+                top: -7px;
+            }
+        """)
         layout = QHBoxLayout()
         layout.setSpacing(15)
-        layout.setContentsMargins(10, 15, 10, 10)
+        layout.setContentsMargins(10, 20, 10, 10)
 
         # Contadores
         total_guardias = len(self.guardias)
@@ -211,6 +237,22 @@ class DiaDetalleDialog(QDialog):
     def _crear_seccion_guardias(self) -> QGroupBox:
         """Crear sección con lista de guardias."""
         group = QGroupBox(f"🛡️ Guardias ({len(self.guardias)})")
+        group.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                margin-top: 12px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 2px 5px;
+                left: 10px;
+                top: -7px;
+            }
+        """)
         layout = QVBoxLayout()
         layout.setSpacing(5)
 
@@ -323,6 +365,22 @@ class DiaDetalleDialog(QDialog):
     def _crear_seccion_ausencias(self) -> QGroupBox:
         """Crear sección con lista de ausencias."""
         group = QGroupBox(f"🏥 Ausencias ({len(self.ausencias)})")
+        group.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                margin-top: 12px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 2px 5px;
+                left: 10px;
+                top: -7px;
+            }
+        """)
         layout = QVBoxLayout()
         layout.setSpacing(5)
 
@@ -374,6 +432,22 @@ class DiaDetalleDialog(QDialog):
     def _crear_seccion_sustituciones(self) -> QGroupBox:
         """Crear sección con lista de sustituciones."""
         group = QGroupBox(f"🔄 Sustituciones ({len(self.sustituciones)})")
+        group.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                margin-top: 12px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 2px 5px;
+                left: 10px;
+                top: -7px;
+            }
+        """)
         layout = QVBoxLayout()
         layout.setSpacing(5)
 
