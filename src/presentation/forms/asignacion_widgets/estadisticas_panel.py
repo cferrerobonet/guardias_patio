@@ -19,7 +19,7 @@ from ui_styles import (
 
 class EstadisticasPanel(QGroupBox):
     """Panel para mostrar estadísticas del curso.
-    
+
     Muestra:
     - Días lectivos
     - Recreos (mañana/tarde)
@@ -27,7 +27,7 @@ class EstadisticasPanel(QGroupBox):
     - Número de profesores
     - Slots totales disponibles
     - Diferencia entre slots teóricos y reales
-    
+
     Señales:
         No emite señales (solo visualización).
     """
@@ -35,6 +35,25 @@ class EstadisticasPanel(QGroupBox):
     def __init__(self, parent=None):
         """Inicializa el panel de estadísticas."""
         super().__init__("📊 Estadísticas del Curso", parent)
+        self.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                font-size: 13px;
+                border: 2px solid #3b82f6;
+                border-radius: 6px;
+                margin-top: 12px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 2px 8px;
+                left: 10px;
+                top: -7px;
+                background-color: white;
+                color: #1e40af;
+            }
+        """)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -55,7 +74,7 @@ class EstadisticasPanel(QGroupBox):
 
     def mostrar_estadisticas(self, stats):
         """Muestra las estadísticas del curso.
-        
+
         Args:
             stats: DTO con estadísticas del curso con atributos:
                 - dias_lectivos (int)
@@ -67,52 +86,52 @@ class EstadisticasPanel(QGroupBox):
         """
         # Calcular slots teóricos
         slots_teoricos = (
-            stats.dias_lectivos
-            * (stats.recreos_manana + stats.recreos_tarde)
-            * stats.num_zonas
+            stats.dias_lectivos * (stats.recreos_manana + stats.recreos_tarde) * stats.num_zonas
         )
 
         # Formatear texto
-        dias_val = format_terminal_value(f'{stats.dias_lectivos} días (L-V)')
+        dias_val = format_terminal_value(f"{stats.dias_lectivos} días (L-V)")
         total_recreos = stats.recreos_manana + stats.recreos_tarde
 
         texto = f"""
-{format_terminal_label('Días lectivos:')} {dias_val}
-{format_terminal_label('Recreos mañana:')} {format_terminal_number(stats.recreos_manana)}
-{format_terminal_label('Recreos tarde:')} {format_terminal_number(stats.recreos_tarde)}
-{format_terminal_label('Total recreos/día:')} {format_terminal_number(total_recreos)}
-{format_terminal_label('Número de zonas:')} {format_terminal_number(stats.num_zonas)}
-{format_terminal_label('Número de profesores:')} {format_terminal_number(stats.num_profesores)}
+{format_terminal_label("Días lectivos:")} {dias_val}
+{format_terminal_label("Recreos mañana:")} {format_terminal_number(stats.recreos_manana)}
+{format_terminal_label("Recreos tarde:")} {format_terminal_number(stats.recreos_tarde)}
+{format_terminal_label("Total recreos/día:")} {format_terminal_number(total_recreos)}
+{format_terminal_label("Número de zonas:")} {format_terminal_number(stats.num_zonas)}
+{format_terminal_label("Número de profesores:")} {format_terminal_number(stats.num_profesores)}
 
-{format_terminal_success(f'📌 SLOTS TOTALES: {stats.slots_totales} guardias')}
+{format_terminal_success(f"📌 SLOTS TOTALES: {stats.slots_totales} guardias")}
 """
 
         # Añadir explicación si hay diferencia
         if stats.slots_totales < slots_teoricos:
             diferencia = slots_teoricos - stats.slots_totales
             porcentaje = (diferencia / slots_teoricos * 100) if slots_teoricos > 0 else 0
-            info_sin_fechas = f'(sin fechas: {stats.dias_lectivos} × {total_recreos} × {stats.num_zonas})'
-            reduccion_msg = f'{diferencia} slots ({porcentaje:.1f}%)'
+            info_sin_fechas = (
+                f"(sin fechas: {stats.dias_lectivos} × {total_recreos} × {stats.num_zonas})"
+            )
+            reduccion_msg = f"{diferencia} slots ({porcentaje:.1f}%)"
 
             texto += f"""
-   {format_terminal_label('• Slots teóricos:')} {format_terminal_number(slots_teoricos)}
+   {format_terminal_label("• Slots teóricos:")} {format_terminal_number(slots_teoricos)}
      {format_terminal_info(info_sin_fechas)}
-   {format_terminal_label('• Slots reales:')} {format_terminal_number(stats.slots_totales)}
-   {format_terminal_label('• Reducción:')} {format_terminal_warning(reduccion_msg)}
+   {format_terminal_label("• Slots reales:")} {format_terminal_number(stats.slots_totales)}
+   {format_terminal_label("• Reducción:")} {format_terminal_warning(reduccion_msg)}
 
-   {format_terminal_info('ℹ️  Hay zonas con fechas de inicio/fin que reducen')}
-   {format_terminal_info('el número total de slots disponibles.')}
+   {format_terminal_info("ℹ️  Hay zonas con fechas de inicio/fin que reducen")}
+   {format_terminal_info("el número total de slots disponibles.")}
 """
         else:
             formula = f"{stats.dias_lectivos} × {total_recreos} × {stats.num_zonas}"
-            texto += f"""   {format_terminal_info(f'(días × recreos × zonas = {formula})')}
+            texto += f"""   {format_terminal_info(f"(días × recreos × zonas = {formula})")}
 """
 
         self.stats_text.setHtml(wrap_terminal_html(texto.strip()))
 
     def mostrar_error(self, mensaje: str):
         """Muestra un mensaje de error.
-        
+
         Args:
             mensaje: Mensaje de error a mostrar.
         """

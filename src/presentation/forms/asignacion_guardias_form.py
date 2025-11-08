@@ -76,8 +76,8 @@ class AsignacionGuardiasForm(BaseForm):
         """Configurar la interfaz de usuario del formulario"""
         # Layout principal
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(8, 6, 8, 6)
-        main_layout.setSpacing(4)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
 
         # Título principal
         titulo = QLabel("🎯 ASIGNACIÓN DE GUARDIAS")
@@ -93,9 +93,9 @@ class AsignacionGuardiasForm(BaseForm):
         # Widget contenedor del contenido
         content_widget = QWidget()
         grid_layout = QGridLayout()
-        grid_layout.setSpacing(6)
-        grid_layout.setVerticalSpacing(8)
-        grid_layout.setContentsMargins(6, 4, 6, 4)
+        grid_layout.setSpacing(12)
+        grid_layout.setVerticalSpacing(12)
+        grid_layout.setContentsMargins(10, 10, 10, 10)
         content_widget.setLayout(grid_layout)
 
         # ============ COLUMNA IZQUIERDA ============
@@ -140,15 +140,15 @@ class AsignacionGuardiasForm(BaseForm):
         # Botón limpiar (centrado, abajo)
         button_container = QWidget()
         button_layout = QHBoxLayout()
-        button_layout.setContentsMargins(0, 4, 0, 0)
+        button_layout.setContentsMargins(0, 10, 0, 10)
         button_container.setLayout(button_layout)
 
         button_layout.addStretch()
         self.limpiar_button = QPushButton("🗑️  Limpiar Todas las Guardias")
         self.limpiar_button.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.limpiar_button.setMinimumWidth(280)
-        self.limpiar_button.setMinimumHeight(34)
-        self.limpiar_button.setMaximumHeight(34)
+        self.limpiar_button.setMinimumHeight(40)
+        self.limpiar_button.setMaximumHeight(40)
         self.limpiar_button.clicked.connect(self.limpiar_guardias)
         button_layout.addWidget(self.limpiar_button)
         button_layout.addStretch()

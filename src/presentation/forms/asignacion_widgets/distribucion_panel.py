@@ -21,23 +21,42 @@ from ui_styles import (
 
 class DistribucionPanel(QGroupBox):
     """Panel para mostrar la distribución objetivo de guardias.
-    
+
     Muestra la distribución estimada de guardias por profesor basada
     en sus porcentajes de jornada y turnos.
-    
+
     Señales:
         No emite señales (solo visualización).
     """
 
     def __init__(self, session: Session, parent=None):
         """Inicializa el panel de distribución.
-        
+
         Args:
             session: Sesión de SQLAlchemy para consultas.
             parent: Widget padre opcional.
         """
         super().__init__("📋 Distribución por Profesor", parent)
         self.session = session
+        self.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                font-size: 13px;
+                border: 2px solid #10b981;
+                border-radius: 6px;
+                margin-top: 12px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 2px 8px;
+                left: 10px;
+                top: -7px;
+                background-color: white;
+                color: #047857;
+            }
+        """)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -58,7 +77,7 @@ class DistribucionPanel(QGroupBox):
 
     def mostrar_distribucion(self, distribucion_dto):
         """Muestra la distribución de guardias.
-        
+
         Args:
             distribucion_dto: DTO con la distribución calculada con atributos:
                 - distribucion (dict): {profesor_id: num_guardias}
@@ -69,8 +88,8 @@ class DistribucionPanel(QGroupBox):
         """
         texto = f"{format_terminal_success('📊 Distribución OBJETIVO (estimada):')}\n\n"
 
-        info_msg1 = 'ℹ️  Esta distribución es el objetivo ideal basado en porcentajes.'
-        info_msg2 = 'El algoritmo puede ajustar ligeramente para cubrir todos los slots.'
+        info_msg1 = "ℹ️  Esta distribución es el objetivo ideal basado en porcentajes."
+        info_msg2 = "El algoritmo puede ajustar ligeramente para cubrir todos los slots."
         texto += f"{format_terminal_info(info_msg1)}\n"
         texto += f"{format_terminal_info(info_msg2)}\n\n"
 
@@ -84,18 +103,18 @@ class DistribucionPanel(QGroupBox):
         for profesor_id, guardias in profesores_ordenados:
             profesor = self.session.query(Profesor).get(profesor_id)
             if profesor:
-                porcentaje_jornada = f'{profesor.porcentaje_jornada*100:.0f}%'
-                info_prof = f'({profesor.turno}, {porcentaje_jornada})'
+                porcentaje_jornada = f"{profesor.porcentaje_jornada * 100:.0f}%"
+                info_prof = f"({profesor.turno}, {porcentaje_jornada})"
                 texto += (
                     f"• {format_terminal_profesor(profesor.nombre_completo)} "
                     f"{format_terminal_info(info_prof)}: "
                     f"{format_terminal_number(f'{guardias} guardias')}\n"
                 )
 
-        total_msg = f'✅ TOTAL: {distribucion_dto.total_guardias} guardias'
+        total_msg = f"✅ TOTAL: {distribucion_dto.total_guardias} guardias"
         texto += f"\n{format_terminal_success(total_msg)}"
 
-        slots_label = format_terminal_label('📌 Slots disponibles:')
+        slots_label = format_terminal_label("📌 Slots disponibles:")
         slots_num = format_terminal_number(distribucion_dto.slots_totales)
         texto += f"\n{slots_label} {slots_num}"
 
@@ -103,7 +122,7 @@ class DistribucionPanel(QGroupBox):
             texto += f"\n\n{format_terminal_success('✅ La distribución es exacta')}"
         else:
             diferencia_abs = abs(distribucion_dto.diferencia)
-            dif_msg = f'⚠️  Diferencia: {diferencia_abs}'
+            dif_msg = f"⚠️  Diferencia: {diferencia_abs}"
             texto += f"\n\n{format_terminal_warning(dif_msg)}"
 
         msg_resultados = '💡 Tras generar, verifica el reparto real en "Resultados"'
@@ -113,7 +132,7 @@ class DistribucionPanel(QGroupBox):
 
     def mostrar_error(self, mensaje: str):
         """Muestra un mensaje de error.
-        
+
         Args:
             mensaje: Mensaje de error a mostrar.
         """

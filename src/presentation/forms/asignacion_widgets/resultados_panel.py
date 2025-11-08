@@ -20,25 +20,44 @@ from ui_styles import (
 
 class ResultadosPanel(QGroupBox):
     """Panel para mostrar resultados de generación de guardias.
-    
+
     Muestra:
     - Guardias generadas vs slots esperados
     - Estado de cobertura
     - Top 10 profesores con más guardias
-    
+
     Señales:
         No emite señales (solo visualización).
     """
 
     def __init__(self, session: Session, parent=None):
         """Inicializa el panel de resultados.
-        
+
         Args:
             session: Sesión de SQLAlchemy para consultas.
             parent: Widget padre opcional.
         """
         super().__init__("📈 Resultados de Generación", parent)
         self.session = session
+        self.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                font-size: 13px;
+                border: 2px solid #8b5cf6;
+                border-radius: 6px;
+                margin-top: 12px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 2px 8px;
+                left: 10px;
+                top: -7px;
+                background-color: white;
+                color: #6d28d9;
+            }
+        """)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -59,7 +78,7 @@ class ResultadosPanel(QGroupBox):
 
     def mostrar_resultados(self, resumen):
         """Muestra los resultados de generación.
-        
+
         Args:
             resumen: ResumenGeneracionDTO con atributos:
                 - guardias_generadas (int)
@@ -73,16 +92,16 @@ class ResultadosPanel(QGroupBox):
 
     def _formatear_resumen(self, resumen) -> str:
         """Formatea el resumen de generación.
-        
+
         Args:
             resumen: ResumenGeneracionDTO con los resultados.
-            
+
         Returns:
             Texto formateado (HTML con colores terminal).
         """
-        guardias_label = format_terminal_label('Guardias generadas:')
+        guardias_label = format_terminal_label("Guardias generadas:")
         guardias_num = format_terminal_number(resumen.guardias_generadas)
-        slots_label = format_terminal_label('Slots esperados:')
+        slots_label = format_terminal_label("Slots esperados:")
         slots_num = format_terminal_number(resumen.slots_esperados)
 
         lineas = [
@@ -93,10 +112,7 @@ class ResultadosPanel(QGroupBox):
         if resumen.cobertura_completa:
             lineas.append(format_terminal_success("✅ Cobertura completa"))
         elif resumen.slots_sin_cubrir > 0:
-            warning_msg = (
-                f"⚠️ {resumen.slots_sin_cubrir} slots sin cubrir "
-                f"(falta elegibilidad)"
-            )
+            warning_msg = f"⚠️ {resumen.slots_sin_cubrir} slots sin cubrir (falta elegibilidad)"
             lineas.append(format_terminal_warning(warning_msg))
 
         # Top profesores (máximo 10)
