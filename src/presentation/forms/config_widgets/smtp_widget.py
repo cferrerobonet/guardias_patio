@@ -14,6 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 
+import ui_styles as styles
 from dotenv import load_dotenv
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -25,8 +26,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
-import ui_styles as styles
 from utils import get_logger
 
 
@@ -66,98 +65,73 @@ class SMTPConfigWidget(QGroupBox):
     def _setup_ui(self) -> None:
         """Configura la interfaz de usuario del widget."""
         layout = QVBoxLayout()
-        layout.setSpacing(8)
-        layout.setContentsMargins(8, 8, 8, 8)
 
-        # FILA 1: Servidor y Puerto
-        fila1_layout = QHBoxLayout()
-        fila1_layout.setSpacing(10)
-
-        # Servidor (campo largo)
-        servidor_container = QVBoxLayout()
-        servidor_container.setSpacing(3)
+        # Servidor SMTP (campo completo con label arriba)
         label_server = QLabel("Servidor SMTP:")
         label_server.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        servidor_container.addWidget(label_server)
+        layout.addWidget(label_server)
 
+        # Fila con input de servidor y puerto
+        server_row = QHBoxLayout()
         self.smtp_server_input = QLineEdit()
         self.smtp_server_input.setPlaceholderText("smtp.ionos.es")
+        self.smtp_server_input.setStyleSheet(styles.STYLE_INPUT)
         self.smtp_server_input.setReadOnly(True)
         self.smtp_server_input.textChanged.connect(self.config_changed.emit)
-        servidor_container.addWidget(self.smtp_server_input)
-        fila1_layout.addLayout(servidor_container, 3)
+        server_row.addWidget(self.smtp_server_input)
 
-        # Puerto (campo corto)
-        puerto_container = QVBoxLayout()
-        puerto_container.setSpacing(3)
+        # Puerto (campo corto en la misma fila)
         label_port = QLabel("Puerto:")
         label_port.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        puerto_container.addWidget(label_port)
-
         self.smtp_port_input = QLineEdit()
         self.smtp_port_input.setPlaceholderText("587")
+        self.smtp_port_input.setStyleSheet(styles.STYLE_INPUT)
         self.smtp_port_input.setMaximumWidth(80)
         self.smtp_port_input.setReadOnly(True)
         self.smtp_port_input.textChanged.connect(self.config_changed.emit)
-        puerto_container.addWidget(self.smtp_port_input)
-        fila1_layout.addLayout(puerto_container, 1)
+        server_row.addWidget(label_port)
+        server_row.addWidget(self.smtp_port_input)
 
-        layout.addLayout(fila1_layout)
+        layout.addLayout(server_row)
 
-        # FILA 2: Usuario y Contraseña
-        fila2_layout = QHBoxLayout()
-        fila2_layout.setSpacing(10)
-
-        # Usuario
-        usuario_container = QVBoxLayout()
-        usuario_container.setSpacing(3)
+        # Usuario (campo completo con label arriba)
         label_user = QLabel("Usuario:")
         label_user.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        usuario_container.addWidget(label_user)
+        layout.addWidget(label_user)
 
+        # Fila con usuario y contraseña
+        user_row = QHBoxLayout()
         self.smtp_user_input = QLineEdit()
-        self.smtp_user_input.setPlaceholderText("correo@ejemplo.com")
+        self.smtp_user_input.setPlaceholderText("no_contestar@aplicaciones.epla.es")
+        self.smtp_user_input.setStyleSheet(styles.STYLE_INPUT)
         self.smtp_user_input.setReadOnly(True)
         self.smtp_user_input.textChanged.connect(self.config_changed.emit)
-        usuario_container.addWidget(self.smtp_user_input)
-        fila2_layout.addLayout(usuario_container, 1)
+        user_row.addWidget(self.smtp_user_input)
 
-        # Contraseña
-        password_container = QVBoxLayout()
-        password_container.setSpacing(3)
+        # Contraseña (en la misma fila)
         label_password = QLabel("Contraseña:")
         label_password.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        password_container.addWidget(label_password)
-
         self.smtp_password_input = QLineEdit()
-        self.smtp_password_input.setPlaceholderText("••••••••")
+        self.smtp_password_input.setPlaceholderText("Contraseña del servidor SMTP")
+        self.smtp_password_input.setStyleSheet(styles.STYLE_INPUT)
         self.smtp_password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.smtp_password_input.setReadOnly(True)
         self.smtp_password_input.textChanged.connect(self.config_changed.emit)
-        password_container.addWidget(self.smtp_password_input)
-        fila2_layout.addLayout(password_container, 1)
+        user_row.addWidget(label_password)
+        user_row.addWidget(self.smtp_password_input)
 
-        layout.addLayout(fila2_layout)
+        layout.addLayout(user_row)
 
-        # FILA 3: Nombre del Remitente (siempre editable)
-        fila3_layout = QHBoxLayout()
-        fila3_layout.setSpacing(10)
-
-        # Nombre del remitente (campo completo - siempre editable)
-        nombre_container = QVBoxLayout()
-        nombre_container.setSpacing(3)
+        # Nombre del Remitente (campo completo con label arriba)
         label_nombre = QLabel("Nombre del Remitente:")
         label_nombre.setStyleSheet(styles.STYLE_LABEL_FIELD)
-        nombre_container.addWidget(label_nombre)
+        layout.addWidget(label_nombre)
 
         self.smtp_from_name_input = QLineEdit()
-        self.smtp_from_name_input.setPlaceholderText("Guardias de Patio")
-        self.smtp_from_name_input.setStyleSheet(styles.STYLE_INPUT)  # Siempre editable
+        self.smtp_from_name_input.setPlaceholderText("Generador de Guardias de Patio")
+        self.smtp_from_name_input.setStyleSheet(styles.STYLE_INPUT)
         self.smtp_from_name_input.textChanged.connect(self.config_changed.emit)
-        nombre_container.addWidget(self.smtp_from_name_input)
-        fila3_layout.addLayout(nombre_container, 1)
-
-        layout.addLayout(fila3_layout)
+        layout.addWidget(self.smtp_from_name_input)
 
         # Botones SMTP
         smtp_btn_layout = QHBoxLayout()
@@ -176,9 +150,7 @@ class SMTPConfigWidget(QGroupBox):
         layout.addLayout(smtp_btn_layout)
 
         # Nota informativa
-        info_label = QLabel(
-            "💡 Para Gmail, usa una App Password en lugar de tu contraseña normal."
-        )
+        info_label = QLabel("💡 Para Gmail, usa una App Password en lugar de tu contraseña normal.")
         info_label.setStyleSheet(
             """
             QLabel {
@@ -601,35 +573,36 @@ Sistema de Gestión de Guardias de Patio
                 # Contenido HTML con la plantilla corporativa
                 contenido_principal = """
       <p>Hola,</p>
-      <p>Este es un email de prueba para verificar que la configuración SMTP 
+      <p>Este es un email de prueba para verificar que la configuración SMTP
       está funcionando correctamente.</p>
                 """
 
                 secciones = [
                     {
-                        'tipo': 'info',
-                        'contenido': f"""
+                        "tipo": "info",
+                        "contenido": f"""
         <p style="margin: 5px 0;"><strong>📡 Detalles de la Conexión:</strong></p>
         <p style="margin: 5px 0;">• Servidor: <strong>{smtp_server}:{smtp_port}</strong></p>
         <p style="margin: 5px 0;">• Usuario: <strong>{smtp_user}</strong></p>
-                        """
+                        """,
                     },
                     {
-                        'tipo': 'success',
-                        'contenido': """
+                        "tipo": "success",
+                        "contenido": """
         <p style="margin: 5px 0;"><strong>✅ Configuración Correcta</strong></p>
-        <p style="margin: 8px 0;">Si estás recibiendo este email, significa que el sistema está correctamente configurado para:</p>
+        <p style="margin: 8px 0;">Si estás recibiendo este email, significa que
+        el sistema está correctamente configurado para:</p>
         <p style="margin: 5px 0;">• Enviar códigos de recuperación de contraseña</p>
         <p style="margin: 5px 0;">• Enviar calendarios PDF a profesores</p>
         <p style="margin: 5px 0;">• Notificaciones del sistema</p>
-                        """
-                    }
+                        """,
+                    },
                 ]
 
                 html = generar_plantilla_email_html(
                     titulo="✅ Prueba de Configuración SMTP",
                     contenido_principal=contenido_principal,
-                    secciones=secciones
+                    secciones=secciones,
                 )
 
                 part1 = MIMEText(texto, "plain", "utf-8")
@@ -643,10 +616,14 @@ Sistema de Gestión de Guardias de Patio
             # Éxito
             self._show_success(
                 "✅ Email de Prueba Enviado",
-                f"La conexión SMTP se estableció correctamente y se envió un email de prueba.<br><br>"
-                f"<b>Servidor:</b> <span style='color: #007ACC; font-style: italic;'>{smtp_server}:{smtp_port}</span><br>"
-                f"<b>Usuario:</b> <span style='color: #007ACC; font-style: italic;'>{smtp_user}</span><br>"
-                f"<b>Email enviado a:</b> <span style='color: #007ACC; font-style: italic;'>{destination_email}</span><br><br>"
+                f"La conexión SMTP se estableció correctamente y se envió "
+                f"un email de prueba.<br><br>"
+                f"<b>Servidor:</b> <span style='color: #007ACC; "
+                f"font-style: italic;'>{smtp_server}:{smtp_port}</span><br>"
+                f"<b>Usuario:</b> <span style='color: #007ACC; "
+                f"font-style: italic;'>{smtp_user}</span><br>"
+                f"<b>Email enviado a:</b> <span style='color: #007ACC; "
+                f"font-style: italic;'>{destination_email}</span><br><br>"
                 "Revisa tu bandeja de entrada (y spam) para verificar que llegó el email.",
             )
             self.logger.info(
