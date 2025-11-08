@@ -219,7 +219,8 @@ class ProfesorForm(BaseForm):
 
         # Label informativo de multiselección
         info_label = QLabel(
-            "💡 <b>Selección múltiple:</b> Ctrl+clic (individual) | Shift+clic (rango) | Ctrl+A (todos) | Supr (eliminar)"
+            "💡 <b>Selección múltiple:</b> Ctrl+clic (individual) | "
+            "Shift+clic (rango) | Ctrl+A (todos) | Supr (eliminar)"
         )
         info_label.setStyleSheet(f"""
             QLabel {{
@@ -418,7 +419,8 @@ class ProfesorForm(BaseForm):
                     fecha_inicio_guardias=datos_restricciones.get("fecha_inicio"),
                     fecha_fin_guardias=datos_restricciones.get("fecha_fin"),
                     zona_preferida_id=datos_restricciones.get("zona_preferida_id"),
-                    recreos_permitidos=recreos_dict if recreos_dict else {},  # Pasar la matriz completa
+                    # Pasar la matriz completa
+                    recreos_permitidos=recreos_dict if recreos_dict else {},
                     dias_semana_permitidos=datos_restricciones.get("dias_permitidos"),
                 )
                 self.actualizar_use_case.execute(self.profesor_editando_id, dto)
@@ -456,11 +458,12 @@ class ProfesorForm(BaseForm):
 
             # Manejar modo edición
             if self.profesor_editando_id:
-                id_editado = self.profesor_editando_id
                 self.profesor_editando_id = None
                 self.titulo_seccion.setText("✏️ ALTA DE PROFESOR")
                 self.submit_btn.setText("💾 Guardar nuevo profesor")
                 self.cancelar_btn.setVisible(False)
+                # ✅ Limpiar formulario después de actualizar para evitar confusión
+                self._limpiar_formulario()
                 if self.table_manager:
                     self.table_manager.enable_table_interactions(True)
                 self.busqueda_input.setEnabled(True)
@@ -569,7 +572,7 @@ class ProfesorForm(BaseForm):
     def mostrar_profesor(self):
         """
         Mostrar datos del profesor seleccionado en modo lectura (sin editar).
-        
+
         NOTA: Este método ya NO se llama desde click simple de la tabla.
         Solo se usa internamente en editar_profesor().
         """
@@ -627,7 +630,8 @@ class ProfesorForm(BaseForm):
                     "fecha_inicio": profesor_dto.fecha_inicio_guardias,
                     "fecha_fin": profesor_dto.fecha_fin_guardias,
                     "zona_preferida_id": profesor_dto.zona_preferida_id,
-                    "recreos_permitidos": recreos_raw,  # ✅ Pasar JSON raw en lugar del DTO procesado
+                    # ✅ Pasar JSON raw en lugar del DTO procesado
+                    "recreos_permitidos": recreos_raw,
                     "turno": profesor_dto.turno,
                 }
             )
@@ -645,7 +649,9 @@ class ProfesorForm(BaseForm):
         try:
             fila_actual = self.tabla_profesores.currentRow()
             if fila_actual < 0:
-                self.mostrar_advertencia("Selección requerida", "Selecciona un profesor para editar.")
+                self.mostrar_advertencia(
+                    "Selección requerida", "Selecciona un profesor para editar."
+                )
                 return
 
             id_item = self.tabla_profesores.item(fila_actual, 0)
