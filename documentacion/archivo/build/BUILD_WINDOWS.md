@@ -1,354 +1,330 @@
-# 📦 Construcción de Instalador para Windows
+# Guía de Compilación para Windows
 
-Este directorio contiene los scripts necesarios para crear un instalador EXE profesional de **Guardias de Patio** para Windows.
+## Versión: 3.0.0
+**Última actualización:** 5 de noviembre de 2025
 
-## 🚀 Inicio Rápido
+---
 
-### Opción 1: Script Batch (Recomendado para principiantes)
-
-```batch
-build_windows.bat
-```
-
-### Opción 2: Script PowerShell (Instalador completo)
-
-```powershell
-.\build_windows.ps1
-```
-
-El instalador estará en `dist/GuardiasDePatio-2.7.0-Windows-Setup.exe`
-
-## 📋 Requisitos
+## 📋 Requisitos Previos
 
 ### Software Necesario
 
-1. **Python 3.11 o superior**
+1. **Python 3.13.3** (o superior)
    - Descargar de: https://www.python.org/downloads/
-   - ✅ Marcar "Add Python to PATH" durante instalación
 
-2. **PyInstaller** (se instala automáticamente)
-   ```bash
-   pip install pyinstaller
-   ```
-
-3. **Inno Setup 6** (para crear instalador)
+2. **Inno Setup 6.5.4** (o superior)
    - Descargar de: https://jrsoftware.org/isdl.php
-   - Instalar con opciones predeterminadas
+   - **IMPORTANTE**: Instalar en `C:\Program Files (x86)\Inno Setup 6\`
 
-### Espacio en Disco
-
-- Aproximadamente 500 MB libres durante el proceso
-- El instalador final: ~50-80 MB
-
-## 🛠️ Proceso de Construcción
-
-### Paso 1: Crear el ejecutable
-
-```batch
-# Con batch
-build_windows.bat
-
-# O con PowerShell
-.\build_windows.ps1
-```
-
-Esto creará:
-- `dist/GuardiasDePatio/GuardiasDePatio.exe` - Ejecutable principal
-- `dist/GuardiasDePatio/*` - Archivos de soporte
-
-### Paso 2: Crear el instalador (si tienes Inno Setup)
-
-**Opción A - Automático (PowerShell):**
-```powershell
-.\build_windows.ps1
-```
-
-**Opción B - Manual:**
-1. Abre `installer_windows.iss` con Inno Setup
-2. Click en menú: **Build** → **Compile**
-3. El instalador se creará en `dist/`
-
-## 📁 Archivos Importantes
-
-### Scripts de Build
-
-- **`build_windows.bat`** - Script batch simple (solo ejecutable)
-- **`build_windows.ps1`** - Script PowerShell completo (ejecutable + instalador)
-- **`guardias_patio_windows.spec`** - Configuración de PyInstaller
-- **`installer_windows.iss`** - Script de Inno Setup
-- **`version_info.txt`** - Información de versión del EXE
-
-### Configuración
-
-#### guardias_patio_windows.spec
-
-Configuración de PyInstaller para Windows:
-
-```python
-# Icono de Windows
-icon='imagenes/logo.ico'
-
-# Sin consola
-console=False
-
-# Archivos incluidos
-datas=[
-    ('imagenes', 'imagenes'),
-    ('alembic.ini', '.'),
-    ('alembic', 'alembic'),
-]
-```
-
-#### installer_windows.iss
-
-Configuración del instalador:
-
-```ini
-AppName=Guardias de Patio
-AppVersion=2.7.0
-DefaultDirName={autopf}\Guardias de Patio
-OutputBaseFilename=GuardiasDePatio-2.7.0-Windows-Setup
-```
-
-## 🎯 Características del Instalador
-
-### Lo que incluye:
-
-✅ **Instalación visual** - Wizard profesional en español/inglés  
-✅ **Icono en escritorio** - Opcional durante instalación  
-✅ **Menú inicio** - Acceso directo automático  
-✅ **Desinstalador** - Incluido automáticamente  
-✅ **Base de datos** - SQLite embebido  
-✅ **Sin dependencias** - Incluye Python y librerías  
-
-### Opciones de instalación:
-
-- Instalación por usuario (no requiere admin)
-- Crear icono en escritorio (opcional)
-- Crear acceso rápido (opcional)
-- Idioma: Español o Inglés
-
-## 📦 Distribución
-
-### Tamaños Esperados
-
-- **Ejecutable portable**: ~120 MB (carpeta dist/GuardiasDePatio/)
-- **Instalador comprimido**: ~50-80 MB (.exe)
-
-### Métodos de Distribución
-
-1. **GitHub Releases** (Recomendado)
-   ```bash
-   # Crear release y subir instalador
-   ```
-
-2. **Descarga directa**
-   - Subir a servidor web
-   - Compartir link de descarga
-
-3. **USB/Red local**
-   - Copiar instalador directamente
-
-### Firma Digital (Opcional)
-
-Para evitar advertencias de Windows SmartScreen:
-
-1. **Obtener certificado de código**
-   - Comprar de: DigiCert, Sectigo, etc. (~$150-400/año)
-   
-2. **Firmar el ejecutable**
-   ```bash
-   signtool sign /f certificado.pfx /p password /t http://timestamp.digicert.com GuardiasDePatio.exe
-   ```
-
-3. **Firmar el instalador**
-   ```bash
-   signtool sign /f certificado.pfx /p password GuardiasDePatio-2.7.0-Windows-Setup.exe
-   ```
-
-## 🐛 Troubleshooting
-
-### Error: "Python no encontrado"
-
-**Solución:**
-1. Instala Python desde python.org
-2. Marca "Add Python to PATH"
-3. Reinicia PowerShell/CMD
-
-### Error: "PyInstaller not found"
-
-**Solución:**
-```bash
-pip install pyinstaller
-```
-
-### Error: "No se puede importar PyQt6"
-
-**Solución:**
-```bash
-pip install PyQt6
-pip install -r requirements.txt
-```
-
-### El ejecutable no abre
-
-**Posibles causas:**
-
-1. **Antivirus bloqueando**
-   - Agregar excepción en Windows Defender
-   - Temporal: Desactivar antivirus durante prueba
-
-2. **Falta Visual C++ Redistributable**
-   - Descargar de: https://aka.ms/vs/17/release/vc_redist.x64.exe
-
-3. **Logs de error**
-   - Ejecutar desde CMD para ver errores:
+3. **Git** (opcional, para control de versiones)
+   - Configuración recomendada:
      ```bash
-     cd dist\GuardiasDePatio
-     GuardiasDePatio.exe
+     git config --global core.autocrlf input
+     git config --global core.longpaths true
      ```
 
-### El instalador marca "No es seguro"
+### Estructura de Directorios
 
-**Causa:** Instalador sin firma digital
+```
+C:\dev\
+├── guardias-patio\.venv\      # Virtual environment Python
+├── gdp_dist\                   # Output de PyInstaller (generado)
+├── gdp_build\                  # Archivos temporales (generado)
+└── gdp_out\                    # Instaladores finales (generado)
+```
 
-**Solución temporal:**
-1. Click en "Más información"
-2. Click en "Ejecutar de todas formas"
+**⚠️ IMPORTANTE**: Usar rutas cortas fuera de OneDrive para evitar problemas de sincronización y límites de longitud de ruta.
 
-**Solución permanente:**
-- Firmar con certificado de código (ver sección Firma Digital)
+---
 
-### El instalador es muy grande
+## 🚀 Compilación Automática (RECOMENDADO)
 
-**Optimizaciones:**
+### Uso Básico
 
-1. **Excluir paquetes innecesarios** en `guardias_patio_windows.spec`:
-   ```python
-   excludes=[
-       'matplotlib',
-       'numpy', 
-       'pandas',
-       'tkinter',
-   ]
-   ```
+```powershell
+# Desde el directorio del proyecto
+.\scripts\build_windows.ps1
+```
 
-2. **Usar UPX** (ya incluido):
-   ```python
-   upx=True
-   ```
+### Opciones Avanzadas
 
-3. **Comprimir más en Inno Setup** en `installer_windows.iss`:
-   ```ini
-   Compression=lzma2/ultra64
-   ```
+```powershell
+# Compilar solo el ejecutable (sin instalador)
+.\scripts\build_windows.ps1 -SkipInstaller
 
-## 🔧 Personalización
+# Compilar sin limpiar archivos anteriores
+.\scripts\build_windows.ps1 -SkipClean
 
-### Cambiar versión
+# Especificar versión personalizada
+.\scripts\build_windows.ps1 -Version "3.1.0"
+```
 
-Editar en 3 archivos:
+### ¿Qué hace el script automático?
 
-1. **guardias_patio_windows.spec:**
-   ```python
-   version='version_info.txt'
-   ```
+1. ✅ Verifica que todas las dependencias estén instaladas
+2. ✅ Confirma que `email_validator` NO esté presente
+3. ✅ Limpia directorios de compilaciones anteriores
+4. ✅ Ejecuta PyInstaller con todos los parámetros correctos
+5. ✅ Verifica que matplotlib y reportlab estén incluidos
+6. ✅ Elimina email_validator si se filtró
+7. ✅ Compila el instalador con Inno Setup
+8. ✅ Valida que el instalador se creó correctamente
 
-2. **version_info.txt:**
-   ```python
-   filevers=(2, 7, 0, 0),
-   prodvers=(2, 7, 0, 0),
-   ```
+---
 
-3. **installer_windows.iss:**
-   ```ini
-   #define MyAppVersion "2.7.0"
-   ```
+## 🔧 Compilación Manual (Solo si es necesario)
 
-### Cambiar icono
+### Paso 1: Configurar Virtual Environment
 
-Reemplazar `imagenes/logo.ico` con tu propio icono:
+```powershell
+# Crear venv en ubicación externa
+python -m venv C:\dev\guardias-patio\.venv
 
-- Formato: ICO
-- Tamaños recomendados: 16x16, 32x32, 48x48, 256x256
-- Herramienta: IcoFX, GIMP, o convertidores online
+# Activar (solo para verificación)
+C:\dev\guardias-patio\.venv\Scripts\Activate.ps1
 
-### Agregar archivos al instalador
+# Instalar dependencias
+C:\dev\guardias-patio\.venv\Scripts\pip.exe install -r requirements.txt
 
-Editar `installer_windows.iss`:
+# CRÍTICO: Desinstalar email_validator si existe
+C:\dev\guardias-patio\.venv\Scripts\pip.exe uninstall -y email_validator
+```
 
+### Paso 2: Limpiar Compilaciones Anteriores
+
+```powershell
+Remove-Item -Path "C:\dev\gdp_dist" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\dev\gdp_build" -Recurse -Force -ErrorAction SilentlyContinue
+```
+
+### Paso 3: Compilar con PyInstaller
+
+```powershell
+cd "ruta\al\proyecto"
+
+C:\dev\guardias-patio\.venv\Scripts\pyinstaller.exe `
+    --windowed `
+    --noconfirm `
+    --clean `
+    --icon="imagenes/logo.ico" `
+    --add-data "imagenes;imagenes" `
+    --add-data "alembic;alembic" `
+    --exclude-module tkinter `
+    --exclude-module email_validator `
+    --hidden-import=matplotlib `
+    --hidden-import=matplotlib.backends.backend_qtagg `
+    --hidden-import=reportlab `
+    --distpath "C:\dev\gdp_dist" `
+    --workpath "C:\dev\gdp_build" `
+    --name "GuardiasDePatio" `
+    src/main.py
+```
+
+### Paso 4: Verificar Dependencias Críticas
+
+```powershell
+# Verificar matplotlib
+Test-Path "C:\dev\gdp_dist\GuardiasDePatio\_internal\matplotlib"
+
+# Verificar reportlab (si no está, copiar manualmente)
+if (-not (Test-Path "C:\dev\gdp_dist\GuardiasDePatio\_internal\reportlab")) {
+    Copy-Item -Path "C:\dev\guardias-patio\.venv\Lib\site-packages\reportlab" `
+              -Destination "C:\dev\gdp_dist\GuardiasDePatio\_internal\reportlab" `
+              -Recurse -Force
+}
+
+# Eliminar email_validator si existe
+Get-ChildItem "C:\dev\gdp_dist\GuardiasDePatio\_internal" -Recurse -Filter "*email_validator*" | Remove-Item -Recurse -Force
+```
+
+### Paso 5: Compilar Instalador
+
+```powershell
+& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer_windows.iss"
+```
+
+**Resultado:** `C:\dev\gdp_out\GuardiasDePatio-3.0.0-Windows-Setup.exe`
+
+---
+
+## ⚠️ Problemas Comunes y Soluciones
+
+### 1. Error: "No module named 'matplotlib'"
+
+**Causa:** matplotlib no está en el venv correcto
+
+**Solución:**
+```powershell
+C:\dev\guardias-patio\.venv\Scripts\pip.exe install matplotlib>=3.7.0
+```
+
+### 2. Error: "No module named 'reportlab'"
+
+**Causa:** reportlab no incluido por PyInstaller
+
+**Solución:**
+```powershell
+# Instalar en venv
+C:\dev\guardias-patio\.venv\Scripts\pip.exe install reportlab>=4.0.0
+
+# Si aún falla, copiar manualmente después de compilar
+Copy-Item -Path "C:\dev\guardias-patio\.venv\Lib\site-packages\reportlab" `
+          -Destination "C:\dev\gdp_dist\GuardiasDePatio\_internal\reportlab" `
+          -Recurse -Force
+```
+
+### 3. Error: "email-validator is not installed"
+
+**Causa:** Pydantic intenta usar EmailStr pero email_validator está excluido
+
+**Solución:**
+- ✅ **CORRECTO**: Eliminar email_validator del venv
+- ✅ **CORRECTO**: Usar `str` en lugar de `EmailStr` en DTOs y schemas
+- ❌ **INCORRECTO**: Instalar email_validator (causa conflictos)
+
+```powershell
+# Verificar y eliminar
+C:\dev\guardias-patio\.venv\Scripts\pip.exe uninstall -y email_validator
+```
+
+### 4. Proceso se "Cuelga" Durante Compilación
+
+**Causa:** Uso de `Start-Sleep` u otros comandos que bloquean terminal
+
+**Solución:**
+- Nunca usar `Start-Sleep` después de comandos largos
+- Usar `isBackground: true` para procesos largos
+- Monitorear con `get_terminal_output` en lugar de esperas
+
+### 5. Rutas Demasiado Largas en OneDrive
+
+**Causa:** Windows tiene límite de 260 caracteres; OneDrive empeora esto
+
+**Solución:**
+- Usar `C:\dev\` para builds
+- Nunca compilar directamente en carpetas de OneDrive
+- Habilitar rutas largas: `git config --global core.longpaths true`
+
+### 6. Inno Setup: "Error on line X"
+
+**Causas comunes:**
+- Sintaxis incorrecta en `AppId={{...}}`
+- Tareas obsoletas (quicklaunchicon)
+- Archivos de imagen faltantes
+
+**Solución:**
 ```ini
-[Files]
-Source: "dist\GuardiasDePatio\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
-Source: "mi_archivo.txt"; DestDir: "{app}"; Flags: ignoreversion
+; Correcto
+AppId={{8B5C9D4E-3F2A-4A1B-9E6D-7C8A5B2F1E3D}}
+
+; Usar imágenes clásicas
+WizardImageFile={#SourcePath}\WizClassicImage-IS.bmp
+WizardSmallImageFile={#SourcePath}\WizClassicSmallImage-IS.bmp
+
+; No usar quicklaunchicon (obsoleto en Windows 10+)
 ```
 
-## 📊 Comparación: Ejecutable vs Instalador
+---
 
-| Característica | Ejecutable Portable | Instalador EXE |
-|---|---|---|
-| **Tamaño** | ~120 MB (carpeta) | ~50-80 MB (comprimido) |
-| **Instalación** | Copiar carpeta | Wizard profesional |
-| **Desinstalar** | Borrar carpeta | Panel de control |
-| **Usuarios** | Técnicos | Usuarios finales |
-| **Actualizaciones** | Manual | Puede ser automático |
-| **Registro Windows** | No | Sí |
+## 📦 Dependencias Críticas
 
-## 🎓 Guía de Uso para Usuarios
+### DEBEN estar en requirements.txt:
 
-### Instalación
-
-1. Descargar `GuardiasDePatio-2.7.0-Windows-Setup.exe`
-2. Hacer doble clic
-3. Seguir el asistente de instalación
-4. Elegir carpeta de destino (predeterminada: `C:\Program Files\Guardias de Patio`)
-5. Marcar opciones (icono escritorio, etc.)
-6. Click en "Instalar"
-7. Al finalizar, marcar "Ejecutar Guardias de Patio"
-
-### Primer uso
-
-1. La aplicación creará la base de datos automáticamente
-2. Configurar datos iniciales
-3. Comenzar a usar
-
-### Desinstalación
-
-**Opción 1 - Panel de Control:**
-1. Ir a Panel de Control → Programas
-2. Buscar "Guardias de Patio"
-3. Click en "Desinstalar"
-
-**Opción 2 - Desde el menú inicio:**
-1. Buscar "Guardias de Patio" en el menú inicio
-2. Click en "Desinstalar Guardias de Patio"
-
-## 📚 Referencias
-
-- [PyInstaller Documentation](https://pyinstaller.org/)
-- [Inno Setup Documentation](https://jrsoftware.org/ishelp/)
-- [Windows Code Signing](https://learn.microsoft.com/en-us/windows/win32/seccrypto/cryptography-tools)
-- [PyQt6 Deployment](https://www.riverbankcomputing.com/static/Docs/PyQt6/deployment.html)
-
-## ⚡ Script Rápido de Prueba
-
-Para probar solo el ejecutable sin crear instalador:
-
-```batch
-@echo off
-python -m PyInstaller --noconfirm --clean ^
-  --name "GuardiasDePatio" ^
-  --windowed ^
-  --icon "imagenes/logo.ico" ^
-  --add-data "imagenes;imagenes" ^
-  --add-data "alembic.ini;." ^
-  --add-data "alembic;alembic" ^
-  src/main.py
-
-echo.
-echo Ejecutable creado en: dist\GuardiasDePatio\
-echo.
-pause
+```txt
+matplotlib>=3.7.0
+reportlab>=4.0.0
+PyQt6==6.7.0
+PyQt6-Qt6==6.7.3
+pydantic>=2.0.0  # SIN [email]
+pydantic-settings>=2.0.0
+sqlalchemy
+alembic
+structlog>=23.0.0
+python-dotenv>=1.0.0
+paramiko>=4.0.0
+psutil>=5.9.0
+bcrypt
+cryptography
 ```
 
-Guardar como `quick_build.bat` y ejecutar.
+### NO DEBEN estar:
+
+```txt
+❌ email-validator
+❌ pydantic[email]  # Usar pydantic sin extras
+❌ tkinter  # Excluido en PyInstaller
+```
+
+---
+
+## 🔍 Verificación Post-Compilación
+
+### Verificar Ejecutable
+
+```powershell
+# Tamaño esperado: ~18-20 MB
+Get-Item "C:\dev\gdp_dist\GuardiasDePatio\GuardiasDePatio.exe" | Select-Object Length
+
+# Dependencias incluidas
+Test-Path "C:\dev\gdp_dist\GuardiasDePatio\_internal\matplotlib"    # Debe ser True
+Test-Path "C:\dev\gdp_dist\GuardiasDePatio\_internal\reportlab"     # Debe ser True
+Get-ChildItem "C:\dev\gdp_dist\GuardiasDePatio\_internal" -Filter "*email_validator*"  # Debe estar vacío
+```
+
+### Verificar Instalador
+
+```powershell
+# Tamaño esperado: ~60-70 MB
+Get-Item "C:\dev\gdp_out\GuardiasDePatio-3.0.0-Windows-Setup.exe" | Select-Object Length, LastWriteTime
+```
+
+### Prueba de Instalación
+
+1. Desinstalar versiones anteriores
+2. Ejecutar instalador como administrador
+3. Verificar instalación en: `C:\Program Files\Guardias de Patio\`
+4. Ejecutar app y verificar:
+   - ✅ Se abre sin errores
+   - ✅ No hay errores de matplotlib
+   - ✅ No hay errores de reportlab
+   - ✅ No hay errores de email_validator
+
+---
+
+## 📝 Checklist Pre-Compilación
+
+- [ ] Virtual environment configurado en `C:\dev\guardias-patio\.venv`
+- [ ] Todas las dependencias instaladas (sin email_validator)
+- [ ] `version_info.txt` actualizado con versión correcta
+- [ ] `installer_windows.iss` actualizado con versión correcta
+- [ ] Git commit de cambios pendientes
+- [ ] Directorios de compilación limpios
+
+---
+
+## 🎯 Resumen de Comandos Rápidos
+
+```powershell
+# Compilación completa automatizada
+.\scripts\build_windows.ps1
+
+# Solo actualizar dependencias
+C:\dev\guardias-patio\.venv\Scripts\pip.exe install -r requirements.txt
+
+# Limpiar y recompilar desde cero
+Remove-Item C:\dev\gdp_dist, C:\dev\gdp_build -Recurse -Force
+.\scripts\build_windows.ps1
+```
+
+---
+
+## 📞 Soporte
+
+Si encuentras errores no documentados aquí:
+
+1. Verifica que todas las dependencias estén en el venv correcto
+2. Confirma que no hay `Start-Sleep` interrumpiendo procesos
+3. Revisa los logs de PyInstaller en: `C:\dev\gdp_build\`
+4. Consulta la documentación de Inno Setup para errores de instalador
+
+**Fecha de última compilación exitosa:** 5 de noviembre de 2025, 22:01:24
