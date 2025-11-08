@@ -6,6 +6,8 @@ Permite registrar, editar, eliminar y visualizar ausencias.
 
 from datetime import date
 
+import ui_styles as styles
+from models.models import Ausencia, Profesor
 from PyQt6.QtCore import QDate, Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -22,10 +24,6 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
-
-import ui_styles as styles
-from models.models import Ausencia, Profesor
-from presentation.forms.base_form import BaseForm
 from services.gestor_ausencias import (
     desactivar_ausencia,
     editar_ausencia,
@@ -38,6 +36,8 @@ from services.gestor_ausencias import (
     registrar_ausencia,
 )
 from utils.ui_helpers import get_corporate_icon
+
+from presentation.forms.base_form import BaseForm
 
 
 class GestionarAusenciasForm(BaseForm):
@@ -289,9 +289,7 @@ class GestionarAusenciasForm(BaseForm):
         """Cargar la lista de profesores en el combo."""
         try:
             self.profesor_combo.clear()
-            profesores = (
-                self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
-            )
+            profesores = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
             for p in profesores:
                 self.profesor_combo.addItem(p.nombre_completo, p.id)
         except Exception as e:
@@ -302,9 +300,7 @@ class GestionarAusenciasForm(BaseForm):
         try:
             self.tabla_ausencias.setRowCount(0)
 
-            ausencias = (
-                self.session.query(Ausencia).order_by(Ausencia.fecha_inicio.desc()).all()
-            )
+            ausencias = self.session.query(Ausencia).order_by(Ausencia.fecha_inicio.desc()).all()
 
             for ausencia in ausencias:
                 row = self.tabla_ausencias.rowCount()
@@ -313,9 +309,7 @@ class GestionarAusenciasForm(BaseForm):
                 # Llenar datos
                 self.tabla_ausencias.setItem(row, 0, QTableWidgetItem(str(ausencia.id)))
 
-                profesor_nombre = (
-                    ausencia.profesor.nombre_completo if ausencia.profesor else "N/A"
-                )
+                profesor_nombre = ausencia.profesor.nombre_completo if ausencia.profesor else "N/A"
                 self.tabla_ausencias.setItem(row, 1, QTableWidgetItem(profesor_nombre))
 
                 self.tabla_ausencias.setItem(row, 2, QTableWidgetItem(ausencia.tipo))
@@ -332,9 +326,7 @@ class GestionarAusenciasForm(BaseForm):
                 self.tabla_ausencias.setItem(row, 5, QTableWidgetItem(str(dias)))
 
                 # Estado con color
-                estado_item = QTableWidgetItem(
-                    "Activa" if ausencia.activa else "Inactiva"
-                )
+                estado_item = QTableWidgetItem("Activa" if ausencia.activa else "Inactiva")
                 if ausencia.activa:
                     if ausencia.fecha_fin < date.today():
                         estado_item.setBackground(Qt.GlobalColor.lightGray)
@@ -467,15 +459,17 @@ class GestionarAusenciasForm(BaseForm):
         row = selected_rows[0].row()
         ausencia_id = int(self.tabla_ausencias.item(row, 0).text())
 
-        respuesta = QMessageBox.question(
+        from utils.ui_helpers import show_confirmation
+
+        confirmado = show_confirmation(
             self,
             "Confirmar eliminación",
             "¿Estás seguro de que quieres eliminar esta ausencia?\n"
             "Esta acción no se puede deshacer.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            default_button="No",
         )
 
-        if respuesta == QMessageBox.StandardButton.Yes:
+        if confirmado:
             try:
                 eliminar_ausencia(self.session, ausencia_id)
                 self.mostrar_exito("Éxito", "Ausencia eliminada correctamente")
@@ -507,9 +501,7 @@ class GestionarAusenciasForm(BaseForm):
     def actualizar_preview_guardias(self):
         """Actualizar el preview de guardias afectadas."""
         if self.profesor_combo.currentIndex() < 0:
-            self.preview_text.setPlainText(
-                "Selecciona un profesor para ver las guardias afectadas"
-            )
+            self.preview_text.setPlainText("Selecciona un profesor para ver las guardias afectadas")
             return
 
         try:
@@ -518,9 +510,7 @@ class GestionarAusenciasForm(BaseForm):
             fecha_fin = self.fecha_fin_input.date().toPyDate()
 
             if fecha_fin < fecha_inicio:
-                self.preview_text.setPlainText(
-                    "⚠️ Fecha de fin anterior a fecha de inicio"
-                )
+                self.preview_text.setPlainText("⚠️ Fecha de fin anterior a fecha de inicio")
                 return
 
             guardias = obtener_guardias_afectadas_por_periodo(
@@ -528,9 +518,7 @@ class GestionarAusenciasForm(BaseForm):
             )
 
             if not guardias:
-                self.preview_text.setPlainText(
-                    "✅ No hay guardias asignadas en este periodo"
-                )
+                self.preview_text.setPlainText("✅ No hay guardias asignadas en este periodo")
             else:
                 texto = f"⚠️ {len(guardias)} guardias afectadas:\n\n"
                 for g in guardias[:10]:  # Mostrar máximo 10
@@ -549,9 +537,7 @@ class GestionarAusenciasForm(BaseForm):
     def mostrar_guardias_afectadas(self):
         """Mostrar diálogo con guardias afectadas y opción de reasignación."""
         if not self.ausencia_actual:
-            self.mostrar_advertencia(
-                "Error", "Primero debes seleccionar o guardar una ausencia"
-            )
+            self.mostrar_advertencia("Error", "Primero debes seleccionar o guardar una ausencia")
             return
 
         try:
@@ -564,9 +550,7 @@ class GestionarAusenciasForm(BaseForm):
                 return
 
             # Crear diálogo de reasignación
-            dialogo = DialogoReasignacion(
-                guardias, self.ausencia_actual, self.session, self
-            )
+            dialogo = DialogoReasignacion(guardias, self.ausencia_actual, self.session, self)
             dialogo.exec()
 
             # Actualizar tabla si hubo cambios
@@ -646,16 +630,12 @@ class DialogoReasignacion(QDialog):
         for i, guardia in enumerate(self.guardias):
             tabla.insertRow(i)
             tabla.setItem(i, 0, QTableWidgetItem(str(guardia.id)))
-            tabla.setItem(
-                i, 1, QTableWidgetItem(guardia.fecha.strftime("%d/%m/%Y"))
-            )
+            tabla.setItem(i, 1, QTableWidgetItem(guardia.fecha.strftime("%d/%m/%Y")))
             tabla.setItem(i, 2, QTableWidgetItem(guardia.turno))
             tabla.setItem(i, 3, QTableWidgetItem(str(guardia.recreo)))
             zona_nombre = guardia.zona.nombre_zona if guardia.zona else "N/A"
             tabla.setItem(i, 4, QTableWidgetItem(zona_nombre))
-            profesor_nombre = (
-                guardia.profesor.nombre_completo if guardia.profesor else "N/A"
-            )
+            profesor_nombre = guardia.profesor.nombre_completo if guardia.profesor else "N/A"
             tabla.setItem(i, 5, QTableWidgetItem(profesor_nombre))
 
         return tabla
@@ -693,9 +673,7 @@ class DialogoReasignacion(QDialog):
 
         if respuesta == QMessageBox.StandardButton.Yes:
             try:
-                resultados = reasignar_guardias_automaticamente(
-                    self.session, self.guardias
-                )
+                resultados = reasignar_guardias_automaticamente(self.session, self.guardias)
 
                 mensaje = (
                     f"Reasignación completada:\n\n"
@@ -710,8 +688,9 @@ class DialogoReasignacion(QDialog):
                 msg.setIcon(QMessageBox.Icon.Information)
                 msg.setWindowTitle("Resultado")
                 msg.setWindowFlags(
-                    Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
-                    Qt.WindowType.WindowTitleHint
+                    Qt.WindowType.Dialog
+                    | Qt.WindowType.CustomizeWindowHint
+                    | Qt.WindowType.WindowTitleHint
                 )
                 msg.setText(mensaje)
                 msg.exec()
@@ -753,10 +732,7 @@ class DialogoReasignacion(QDialog):
                 )
                 return
 
-            nombres = [
-                f"{p.nombre_completo} ({count} guardias hoy)"
-                for p, count in disponibles
-            ]
+            nombres = [f"{p.nombre_completo} ({count} guardias hoy)" for p, count in disponibles]
 
             nombre_seleccionado, ok = QInputDialog.getItem(
                 self, "Seleccionar Sustituto", "Profesor:", nombres, 0, False
@@ -772,13 +748,15 @@ class DialogoReasignacion(QDialog):
                 msg.setIcon(QMessageBox.Icon.Information)
                 msg.setWindowTitle("Éxito")
                 msg.setWindowFlags(
-                    Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
-                    Qt.WindowType.WindowTitleHint
+                    Qt.WindowType.Dialog
+                    | Qt.WindowType.CustomizeWindowHint
+                    | Qt.WindowType.WindowTitleHint
                 )
                 msg.setTextFormat(Qt.TextFormat.RichText)
                 msg.setText(
                     f"Guardia reasignada a "
-                    f"<span style='color: #007ACC; font-style: italic;'>{nuevo_profesor.nombre_completo}</span>"
+                    f"<span style='color: #007ACC; "
+                    f"font-style: italic;'>{nuevo_profesor.nombre_completo}</span>"
                 )
                 msg.exec()
 

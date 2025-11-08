@@ -76,9 +76,10 @@ def get_corporate_pixmap(size: int = 64) -> Optional[QPixmap]:
             pixmap = QPixmap(str(icon_path))
             if not pixmap.isNull():
                 return pixmap.scaled(
-                    size, size,
+                    size,
+                    size,
                     Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
+                    Qt.TransformationMode.SmoothTransformation,
                 )
     except Exception as e:
         print(f"Error cargando logo corporativo: {e}")
@@ -103,9 +104,10 @@ def apply_corporate_icon_to_messagebox(msg_box: QMessageBox) -> None:
             if not pixmap.isNull():
                 # Escalar el pixmap
                 scaled_pixmap = pixmap.scaled(
-                    64, 64,
+                    64,
+                    64,
                     Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
+                    Qt.TransformationMode.SmoothTransformation,
                 )
                 # Forzar el uso del pixmap personalizado
                 msg_box.setIconPixmap(scaled_pixmap)
@@ -188,10 +190,7 @@ def show_error(parent: Optional[QWidget], title: str, message: str) -> None:
 
 
 def show_question(
-    parent: Optional[QWidget],
-    title: str,
-    message: str,
-    default_no: bool = True
+    parent: Optional[QWidget], title: str, message: str, default_no: bool = True
 ) -> int:
     """
     Muestra una pregunta con icono corporativo.
@@ -213,9 +212,7 @@ def show_question(
     # Aplicar icono corporativo
     apply_corporate_icon_to_messagebox(msg_box)
 
-    msg_box.setStandardButtons(
-        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-    )
+    msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
     if default_no:
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
     else:
@@ -228,10 +225,7 @@ def show_question(
 
 
 def show_question_with_cancel(
-    parent: Optional[QWidget],
-    title: str,
-    message: str,
-    default_button: str = "No"
+    parent: Optional[QWidget], title: str, message: str, default_button: str = "No"
 ) -> int:
     """
     Muestra una pregunta con Yes/No/Cancel y logo corporativo.
@@ -270,3 +264,39 @@ def show_question_with_cancel(
     msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
     return msg_box.exec()
+
+
+def show_confirmation(
+    parent: Optional[QWidget], title: str, message: str, default_button: str = "No"
+) -> bool:
+    """
+    Muestra una confirmación Yes/No con logo corporativo.
+
+    Args:
+        parent: Widget padre
+        title: Título del diálogo
+        message: Mensaje de confirmación
+        default_button: Botón predeterminado ("Yes" o "No")
+
+    Returns:
+        True si se presionó Yes, False si se presionó No
+    """
+    msg_box = QMessageBox(parent)
+    msg_box.setWindowTitle(title)
+    msg_box.setText(message)
+    msg_box.setWindowIcon(get_corporate_icon())
+
+    # Aplicar icono corporativo
+    apply_corporate_icon_to_messagebox(msg_box)
+
+    msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+    if default_button == "Yes":
+        msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
+    else:
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+
+    # Aplicar estilos
+    msg_box.setStyleSheet(MESSAGEBOX_STYLE)
+
+    return msg_box.exec() == QMessageBox.StandardButton.Yes
