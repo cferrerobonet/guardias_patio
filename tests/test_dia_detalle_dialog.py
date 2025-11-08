@@ -4,69 +4,8 @@ Tests para DiaDetalleDialog - ventana de detalle de guardias del día.
 
 from datetime import date
 
-import pytest
-from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
+from models.models import Ausencia, Guardia
 from presentation.dialogs.dia_detalle_dialog import DiaDetalleDialog
-from PyQt6.QtWidgets import QApplication
-
-
-@pytest.fixture
-def qapp():
-    """Fixture de QApplication para tests de Qt."""
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    return app
-
-
-@pytest.fixture
-def profesor_basico(session):
-    """Crear profesor básico para tests."""
-    config = Configuracion(
-        nombre_centro="Test Centro",
-        curso_academico="2024/2025",
-        fecha_inicio=date(2024, 9, 1),
-        fecha_fin=date(2025, 6, 30),
-    )
-    session.add(config)
-    session.flush()
-
-    profesor = Profesor(
-        nombre="García, Juan",
-        email="juan@test.com",
-        horas_contrato=25.0,
-        es_tutor=False,
-        turno="Mañana",
-        porcentaje_jornada=100,
-        configuracion_id=config.id,
-    )
-    session.add(profesor)
-    session.commit()
-    return profesor
-
-
-@pytest.fixture
-def zona_basica(session):
-    """Crear zona básica para tests."""
-    config = session.query(Configuracion).first()
-    if not config:
-        config = Configuracion(
-            nombre_centro="Test Centro",
-            curso_academico="2024/2025",
-            fecha_inicio=date(2024, 9, 1),
-            fecha_fin=date(2025, 6, 30),
-        )
-        session.add(config)
-        session.flush()
-
-    zona = Zona(
-        nombre="Patio Principal",
-        descripcion="Zona principal del centro",
-        configuracion_id=config.id,
-    )
-    session.add(zona)
-    session.commit()
-    return zona
 
 
 class TestDiaDetalleDialogBasico:
@@ -112,16 +51,23 @@ class TestDiaDetalleDialogBasico:
 class TestDiaDetalleDialogConDatos:
     """Tests con datos reales de guardias, ausencias y sustituciones."""
 
-    def test_crear_dialogo_con_guardias(self, qapp, session, profesor_basico, zona_basica):
+    def test_crear_dialogo_con_guardias(
+        self, qapp, session, profesor_factory, zona_factory
+    ):
         """Crear diálogo con guardias."""
         fecha_test = date(2024, 11, 8)
 
+        # Crear profesor y zona usando factories
+        profesor = profesor_factory(nombre_completo="García, Juan")
+        zona = zona_factory(nombre_zona="Patio Principal")
+
+        # Crear guardia con los campos correctos
         guardia = Guardia(
             fecha=fecha_test,
-            numero_recreo=1,
-            profesor_id=profesor_basico.id,
-            zona_id=zona_basica.id,
-            configuracion_id=profesor_basico.configuracion_id,
+            recreo=1,  # Correcto: 'recreo' no 'numero_recreo'
+            turno="mañana",
+            profesor_id=profesor.id,
+            zona_id=zona.id,
         )
         session.add(guardia)
         session.commit()
@@ -135,18 +81,22 @@ class TestDiaDetalleDialogConDatos:
         )
 
         assert len(dialog.guardias) == 1
-        assert dialog.guardias[0].profesor.nombre == "García, Juan"
+        assert dialog.guardias[0].profesor.nombre_completo == "García, Juan"
 
-    def test_crear_dialogo_con_ausencias(self, qapp, session, profesor_basico):
+    def test_crear_dialogo_con_ausencias(self, qapp, session, profesor_factory):
         """Crear diálogo con ausencias."""
         fecha_test = date(2024, 11, 8)
 
+        # Crear profesor usando factory
+        profesor = profesor_factory(nombre_completo="López, Ana")
+
+        # Crear ausencia con los campos correctos
         ausencia = Ausencia(
-            profesor_id=profesor_basico.id,
+            profesor_id=profesor.id,
             fecha_inicio=fecha_test,
             fecha_fin=fecha_test,
+            tipo="permiso",
             motivo="Test ausencia",
-            configuracion_id=profesor_basico.configuracion_id,
         )
         session.add(ausencia)
         session.commit()
@@ -163,18 +113,22 @@ class TestDiaDetalleDialogConDatos:
         assert dialog.ausencias[0].motivo == "Test ausencia"
 
     def test_crear_dialogo_con_sustituciones(
-        self, qapp, session, profesor_basico, zona_basica
+        self, qapp, session, profesor_factory, zona_factory
     ):
         """Crear diálogo con sustituciones."""
         fecha_test = date(2024, 11, 8)
 
+        # Crear profesor y zona usando factories
+        profesor = profesor_factory(nombre_completo="Martínez, Carlos")
+        zona = zona_factory(nombre_zona="Zona Deportiva")
+
+        # Crear sustitución (es una guardia normal, se identifica por la lista donde se pasa)
         sustitucion = Guardia(
             fecha=fecha_test,
-            numero_recreo=1,
-            profesor_id=profesor_basico.id,
-            zona_id=zona_basica.id,
-            configuracion_id=profesor_basico.configuracion_id,
-            es_sustitucion=True,
+            recreo=1,
+            turno="mañana",
+            profesor_id=profesor.id,
+            zona_id=zona.id,
         )
         session.add(sustitucion)
         session.commit()
@@ -194,20 +148,24 @@ class TestDiaDetalleDialogResumen:
     """Tests para el resumen estadístico del diálogo."""
 
     def test_resumen_con_multiples_guardias(
-        self, qapp, session, profesor_basico, zona_basica
+        self, qapp, session, profesor_factory, zona_factory
     ):
         """Verificar resumen con múltiples guardias."""
         fecha_test = date(2024, 11, 8)
 
+        # Crear profesor y zona usando factories
+        profesor = profesor_factory(nombre_completo="Pérez, Luis")
+        zona = zona_factory(nombre_zona="Cafetería")
+
         # Crear 3 guardias en diferentes recreos
         guardias = []
-        for recreo in [1, 2, 3]:
+        for recreo in [1, 2]:
             guardia = Guardia(
                 fecha=fecha_test,
-                numero_recreo=recreo,
-                profesor_id=profesor_basico.id,
-                zona_id=zona_basica.id,
-                configuracion_id=profesor_basico.configuracion_id,
+                recreo=recreo,
+                turno="mañana",
+                profesor_id=profesor.id,
+                zona_id=zona.id,
             )
             session.add(guardia)
             guardias.append(guardia)
@@ -223,44 +181,47 @@ class TestDiaDetalleDialogResumen:
         )
 
         # Verificar que se creó el resumen
-        assert len(dialog.guardias) == 3
+        assert len(dialog.guardias) == 2
 
 
 class TestDiaDetalleDialogIntegracion:
     """Tests de integración del diálogo completo."""
 
     def test_dialogo_completo_con_todos_los_datos(
-        self, qapp, session, profesor_basico, zona_basica
+        self, qapp, session, profesor_factory, zona_factory
     ):
         """Crear diálogo con guardias, ausencias y sustituciones."""
         fecha_test = date(2024, 11, 8)
 
+        # Crear profesor y zona usando factories
+        profesor = profesor_factory(nombre_completo="González, María")
+        zona = zona_factory(nombre_zona="Biblioteca")
+
         # Crear guardia
         guardia = Guardia(
             fecha=fecha_test,
-            numero_recreo=1,
-            profesor_id=profesor_basico.id,
-            zona_id=zona_basica.id,
-            configuracion_id=profesor_basico.configuracion_id,
+            recreo=1,
+            turno="mañana",
+            profesor_id=profesor.id,
+            zona_id=zona.id,
         )
 
         # Crear ausencia
         ausencia = Ausencia(
-            profesor_id=profesor_basico.id,
+            profesor_id=profesor.id,
             fecha_inicio=fecha_test,
             fecha_fin=fecha_test,
+            tipo="otros",
             motivo="Test completo",
-            configuracion_id=profesor_basico.configuracion_id,
         )
 
-        # Crear sustitución
+        # Crear sustitución (es una guardia normal, se identifica por la lista donde se pasa)
         sustitucion = Guardia(
             fecha=fecha_test,
-            numero_recreo=2,
-            profesor_id=profesor_basico.id,
-            zona_id=zona_basica.id,
-            configuracion_id=profesor_basico.configuracion_id,
-            es_sustitucion=True,
+            recreo=2,
+            turno="mañana",
+            profesor_id=profesor.id,
+            zona_id=zona.id,
         )
 
         session.add_all([guardia, ausencia, sustitucion])

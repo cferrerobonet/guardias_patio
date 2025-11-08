@@ -147,13 +147,13 @@ class DiaDetalleDialog(QDialog):
         # Recreos únicos
         recreos_unicos = set()
         for guardia in self.guardias:
-            recreos_unicos.add(guardia.numero_recreo)
+            recreos_unicos.add(guardia.recreo)
 
         # Zonas únicas
         zonas_unicas = set()
         for guardia in self.guardias:
             if guardia.zona:
-                zonas_unicas.add(guardia.zona.nombre)
+                zonas_unicas.add(guardia.zona.nombre_zona)
 
         # Labels con estadísticas
         stats = [
@@ -205,10 +205,10 @@ class DiaDetalleDialog(QDialog):
 
         # Agrupar por recreo
         guardias_por_recreo = {}
-        for guardia in sorted(self.guardias, key=lambda g: g.numero_recreo):
-            if guardia.numero_recreo not in guardias_por_recreo:
-                guardias_por_recreo[guardia.numero_recreo] = []
-            guardias_por_recreo[guardia.numero_recreo].append(guardia)
+        for guardia in sorted(self.guardias, key=lambda g: g.recreo):
+            if guardia.recreo not in guardias_por_recreo:
+                guardias_por_recreo[guardia.recreo] = []
+            guardias_por_recreo[guardia.recreo].append(guardia)
 
         # Crear widget por cada recreo
         for recreo, guardias_recreo in guardias_por_recreo.items():
@@ -248,8 +248,8 @@ class DiaDetalleDialog(QDialog):
         layout.setSpacing(10)
 
         # Nombre del profesor
-        nombre = f"👤 {guardia.profesor.nombre}"
-        if guardia.profesor.es_tutor:
+        nombre = f"👤 {guardia.profesor.nombre_completo}"
+        if guardia.profesor.tutor:
             nombre += " (Tutor)"
 
         label_profesor = QLabel(nombre)
@@ -260,7 +260,7 @@ class DiaDetalleDialog(QDialog):
 
         # Zona
         if guardia.zona:
-            label_zona = QLabel(f"📍 {guardia.zona.nombre}")
+            label_zona = QLabel(f"📍 {guardia.zona.nombre_zona}")
             label_zona.setStyleSheet("color: #1976D2; font-size: 9px;")
             layout.addWidget(label_zona)
 
@@ -302,7 +302,7 @@ class DiaDetalleDialog(QDialog):
 
         # Primera línea: Profesor y fechas
         linea1 = QHBoxLayout()
-        label_profesor = QLabel(f"👤 {ausencia.profesor.nombre}")
+        label_profesor = QLabel(f"👤 {ausencia.profesor.nombre_completo}")
         font_prof = QFont()
         font_prof.setBold(True)
         label_profesor.setFont(font_prof)
@@ -353,7 +353,7 @@ class DiaDetalleDialog(QDialog):
         layout.setSpacing(10)
 
         # Sustituto
-        label_sustituto = QLabel(f"🔄 {guardia.profesor.nombre} (Sustituto)")
+        label_sustituto = QLabel(f"🔄 {guardia.profesor.nombre_completo} (Sustituto)")
         font_sust = QFont()
         font_sust.setBold(True)
         label_sustituto.setFont(font_sust)
@@ -361,12 +361,12 @@ class DiaDetalleDialog(QDialog):
 
         # Zona
         if guardia.zona:
-            label_zona = QLabel(f"📍 {guardia.zona.nombre}")
+            label_zona = QLabel(f"📍 {guardia.zona.nombre_zona}")
             label_zona.setStyleSheet("color: #1976D2; font-size: 9px;")
             layout.addWidget(label_zona)
 
         # Recreo
-        label_recreo = QLabel(f"⏰ Recreo {guardia.numero_recreo}")
+        label_recreo = QLabel(f"⏰ Recreo {guardia.recreo}")
         label_recreo.setStyleSheet("color: #666; font-size: 9px;")
         layout.addWidget(label_recreo)
 
