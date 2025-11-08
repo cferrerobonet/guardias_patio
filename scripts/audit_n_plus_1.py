@@ -14,10 +14,9 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
+from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
-
-from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 
 
 class QueryAuditor:

@@ -426,7 +426,7 @@ pdoc src/ -o documentacion/api/ --html
 
 ---
 
-## <a name="fase-5"></a>5️⃣ FASE 5 – CI/CD Básico
+## 5️⃣ FASE 5 – CI/CD Básico
 
 ### 🎯 Objetivo
 Automatizar lo que ya funciona: tests, linting, coverage.

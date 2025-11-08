@@ -24,10 +24,9 @@ sys.path.insert(0, str(src_path))
 os.chdir(src_path)
 
 from models.database import SessionLocal, get_db_path  # noqa: E402
-from sqlalchemy import func  # noqa: E402
-
 from models.models import Configuracion, Guardia, Profesor  # noqa: E402
 from services.asignador_guardias import generar_guardias  # noqa: E402
+from sqlalchemy import func  # noqa: E402
 from utils import get_logger  # noqa: E402
 
 logger = get_logger(__name__)
