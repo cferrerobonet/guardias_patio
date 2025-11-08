@@ -29,11 +29,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from presentation.themes.ccleaner_theme import (
-    FONT_SIZE_SMALL,
-    SPACING_SM,
-    TEXT_SECONDARY,
-)
+from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
 
 class RestriccionesWidget(QGroupBox):
@@ -209,12 +205,8 @@ class RestriccionesWidget(QGroupBox):
         self.tabla_restricciones.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.ResizeToContents
         )
-        self.tabla_restricciones.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
-        self.tabla_restricciones.setSelectionMode(
-            QTableWidget.SelectionMode.SingleSelection
-        )
+        self.tabla_restricciones.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.tabla_restricciones.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.tabla_restricciones.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabla_restricciones.setAlternatingRowColors(True)
         self.tabla_restricciones.clicked.connect(self._cargar_dia_en_formulario)
@@ -250,9 +242,7 @@ class RestriccionesWidget(QGroupBox):
 
         # Label del día seleccionado
         self.label_dia_editando = QLabel("Selecciona un día de la tabla")
-        self.label_dia_editando.setStyleSheet(
-            "font-weight: bold; font-size: 13px; color: #007ACC;"
-        )
+        self.label_dia_editando.setStyleSheet("font-weight: bold; font-size: 13px; color: #007ACC;")
         self.label_dia_editando.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.label_dia_editando)
 
@@ -287,25 +277,8 @@ class RestriccionesWidget(QGroupBox):
         btn_limpiar_todo = QPushButton("Restaurar defecto")
         btn_limpiar_todo.setStyleSheet(styles.STYLE_BUTTON_WARNING)
         btn_limpiar_todo.clicked.connect(self._restaurar_por_turno)
-        btn_limpiar_todo.setToolTip(
-            "Restaura los recreos por defecto según el turno del profesor"
-        )
+        btn_limpiar_todo.setToolTip("Restaura los recreos por defecto según el turno del profesor")
         layout.addWidget(btn_limpiar_todo)
-
-        # Ayuda contextual
-        help_label = QLabel(
-            "💡 Los cambios se guardan automáticamente al modificar los checkboxes"
-        )
-        help_label.setStyleSheet(f"""
-            QLabel {{
-                color: {TEXT_SECONDARY};
-                font-size: {FONT_SIZE_SMALL}px;
-                padding: {SPACING_SM}px;
-                font-style: italic;
-            }}
-        """)
-        help_label.setWordWrap(True)
-        layout.addWidget(help_label)
 
         layout.addStretch()
 
@@ -316,9 +289,7 @@ class RestriccionesWidget(QGroupBox):
         """Conectar señales de los campos."""
         self.usar_fecha_inicio_checkbox.stateChanged.connect(self._toggle_fechas_guardias)
         self.usar_fecha_fin_checkbox.stateChanged.connect(self._toggle_fechas_guardias)
-        self.usar_restricciones_checkbox.stateChanged.connect(
-            self._toggle_panel_restricciones
-        )
+        self.usar_restricciones_checkbox.stateChanged.connect(self._toggle_panel_restricciones)
 
         # Señales de cambio
         self.fecha_inicio_guardias_input.dateChanged.connect(self.restricciones_changed.emit)
@@ -473,7 +444,7 @@ class RestriccionesWidget(QGroupBox):
         turno_actual = "Mañana"  # Por defecto
         try:
             # Intentar obtener el turno del formulario padre
-            if hasattr(self.parent(), 'horario_widget'):
+            if hasattr(self.parent(), "horario_widget"):
                 turno_widget = self.parent().horario_widget
                 turno_actual = turno_widget.turno_input.currentText()
         except Exception:
@@ -805,8 +776,7 @@ class RestriccionesWidget(QGroupBox):
         SOLO valida restricciones si el checkbox está activado.
         """
         # Validar exclusividad de fechas
-        if (self.usar_fecha_inicio_checkbox.isChecked() and
-                self.usar_fecha_fin_checkbox.isChecked()):
+        if self.usar_fecha_inicio_checkbox.isChecked() and self.usar_fecha_fin_checkbox.isChecked():
             return False, "No se pueden usar fecha de inicio y fin simultáneamente"
 
         # Validar restricciones SOLO si el checkbox está activo
@@ -814,16 +784,13 @@ class RestriccionesWidget(QGroupBox):
             if not self.restricciones_dias:
                 return (
                     False,
-                    "Si activa restricciones de horario, debe configurar al menos un día"
+                    "Si activa restricciones de horario, debe configurar al menos un día",
                 )
 
             # Verificar que cada día tenga al menos un recreo
             for dia, recreos in self.restricciones_dias.items():
                 if not recreos:
                     dia_nombre = self.DIAS_SEMANA[dia]
-                    return (
-                        False,
-                        f"El {dia_nombre} debe tener al menos un recreo disponible"
-                    )
+                    return (False, f"El {dia_nombre} debe tener al menos un recreo disponible")
 
         return True, ""
