@@ -105,8 +105,7 @@ class DiaDetalleDialog(QDialog):
         else:
             label_sin_guardias = QLabel("ℹ️ No hay guardias asignadas para este día")
             label_sin_guardias.setStyleSheet(
-                "padding: 20px; background-color: #f0f0f0; "
-                "border-radius: 5px; color: #666;"
+                "padding: 20px; background-color: #f0f0f0; border-radius: 5px; color: #666;"
             )
             contenido_layout.addWidget(label_sin_guardias)
 
@@ -187,8 +186,7 @@ class DiaDetalleDialog(QDialog):
             # Estilo según el valor
             color = "#4CAF50" if valor > 0 else "#ccc"
             stat_widget.setStyleSheet(
-                f"background-color: {color}15; border-radius: 5px; "
-                f"border: 1px solid {color};"
+                f"background-color: {color}15; border-radius: 5px; border: 1px solid {color};"
             )
 
             layout.addWidget(stat_widget)
@@ -231,8 +229,7 @@ class DiaDetalleDialog(QDialog):
         font_header.setBold(True)
         header.setFont(font_header)
         header.setStyleSheet(
-            "background-color: #e3f2fd; padding: 8px; "
-            "border-radius: 4px; color: #1565C0;"
+            "background-color: #e3f2fd; padding: 8px; border-radius: 4px; color: #1565C0;"
         )
         layout.addWidget(header)
 
@@ -240,8 +237,8 @@ class DiaDetalleDialog(QDialog):
         guardias_ordenadas = sorted(
             guardias,
             key=lambda g: (
-                int(g.zona.nombre_zona[1]) if g.zona and g.zona.nombre_zona.startswith('Z') else 999
-            )
+                int(g.zona.nombre_zona[1]) if g.zona and g.zona.nombre_zona.startswith("Z") else 999
+            ),
         )
 
         # Lista de guardias ordenadas por zona
@@ -282,8 +279,9 @@ class DiaDetalleDialog(QDialog):
         font_profesor = QFont()
         font_profesor.setPointSize(10)
         label_profesor.setFont(font_profesor)
-        label_profesor.setStyleSheet("color: #333; padding-left: 8px;")
-        layout.addWidget(label_profesor, 1)  # Stretch factor para que ocupe espacio
+        label_profesor.setStyleSheet("color: #333; padding-left: 8px; qproperty-wordWrap: false;")
+        label_profesor.setMinimumWidth(200)  # Asegurar espacio suficiente
+        layout.addWidget(label_profesor, 2)  # Mayor stretch factor
 
         # Turno del profesor con icono más sutil
         turno_icons = {"Mañana": "☀", "Tarde": "🌙", "Ambos": "⏰"}
@@ -355,8 +353,7 @@ class DiaDetalleDialog(QDialog):
             layout.addWidget(label_motivo)
 
         widget.setStyleSheet(
-            "background-color: #fff3e0; border-left: 3px solid #FF9800; "
-            "border-radius: 3px;"
+            "background-color: #fff3e0; border-left: 3px solid #FF9800; border-radius: 3px;"
         )
 
         return widget

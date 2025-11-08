@@ -40,8 +40,14 @@ class CeldaDia(QGroupBox):
 
     dia_clicked = pyqtSignal(date)  # Señal cuando se hace click en el día
 
-    def __init__(self, fecha: date, guardias: List[Guardia], ausencias: List[Ausencia],
-                 sustituciones: List[Guardia], es_hoy: bool = False):
+    def __init__(
+        self,
+        fecha: date,
+        guardias: List[Guardia],
+        ausencias: List[Ausencia],
+        sustituciones: List[Guardia],
+        es_hoy: bool = False,
+    ):
         """
         Inicializar celda de día.
 
@@ -150,10 +156,7 @@ class CeldaDia(QGroupBox):
 
         # Ordenar por turno (mañana primero) y recreo
         orden_turno = {"mañana": 0, "tarde": 1}
-        claves_ordenadas = sorted(
-            grupos.keys(),
-            key=lambda x: (orden_turno.get(x[0], 2), x[1])
-        )
+        claves_ordenadas = sorted(grupos.keys(), key=lambda x: (orden_turno.get(x[0], 2), x[1]))
 
         for turno, recreo in claves_ordenadas:
             guardias_grupo = grupos[(turno, recreo)]
@@ -184,17 +187,11 @@ class CeldaDia(QGroupBox):
     def _agregar_guardia_individual(self, layout: QVBoxLayout, guardia: Guardia):
         """Agregar una guardia individual con mejor diseño."""
         # Obtener información
-        profesor_nombre = (
-            guardia.profesor.nombre_completo if guardia.profesor else "Sin asignar"
-        )
+        profesor_nombre = guardia.profesor.nombre_completo if guardia.profesor else "Sin asignar"
         zona_nombre = guardia.zona.nombre_zona if guardia.zona else "??"
 
-        # Abreviar nombre (apellido solo)
-        if "," in profesor_nombre:
-            apellido = profesor_nombre.split(",")[0].strip()
-        else:
-            partes = profesor_nombre.split()
-            apellido = partes[-1] if partes else profesor_nombre
+        # Formatear nombre: "Apellido, Nombre" completo
+        nombre_mostrar = profesor_nombre
 
         # Determinar si es sustitución
         es_sustitucion = guardia in self.sustituciones
@@ -219,8 +216,8 @@ class CeldaDia(QGroupBox):
         zona_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         h_layout.addWidget(zona_label)
 
-        # Nombre del profesor
-        nombre_label = QLabel(apellido[:15])
+        # Nombre del profesor completo
+        nombre_label = QLabel(nombre_mostrar)
         nombre_label.setStyleSheet("font-size: 8px; color: #333;")
         h_layout.addWidget(nombre_label, 1)
 
@@ -631,8 +628,21 @@ class VistaCalendario(BaseForm):
     def _renderizar_vista_mensual(self):
         """Renderizar vista mensual."""
         # Actualizar etiqueta de periodo
-        meses = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                 "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+        meses = [
+            "",
+            "Enero",
+            "Febrero",
+            "Marzo",
+            "Abril",
+            "Mayo",
+            "Junio",
+            "Julio",
+            "Agosto",
+            "Septiembre",
+            "Octubre",
+            "Noviembre",
+            "Diciembre",
+        ]
         self.label_periodo.setText(f"{meses[self.mes_mostrado]} {self.anio_mostrado}")
 
         # Crear grid del calendario
@@ -683,7 +693,7 @@ class VistaCalendario(BaseForm):
                 guardias=guardias_por_fecha.get(fecha_dia, []),
                 ausencias=ausencias_por_fecha.get(fecha_dia, []),
                 sustituciones=sustituciones_por_fecha.get(fecha_dia, []),
-                es_hoy=(fecha_dia == self.fecha_actual)
+                es_hoy=(fecha_dia == self.fecha_actual),
             )
             celda.dia_clicked.connect(self._dia_seleccionado)
 
@@ -760,7 +770,7 @@ class VistaCalendario(BaseForm):
                 guardias=guardias_por_fecha.get(fecha_dia, []),
                 ausencias=ausencias_por_fecha.get(fecha_dia, []),
                 sustituciones=sustituciones_por_fecha.get(fecha_dia, []),
-                es_hoy=(fecha_dia == self.fecha_actual)
+                es_hoy=(fecha_dia == self.fecha_actual),
             )
             celda.dia_clicked.connect(self._dia_seleccionado)
             celda.setMinimumHeight(400)  # Más altura en vista semanal
@@ -781,8 +791,20 @@ class VistaCalendario(BaseForm):
         grid_anual.setSpacing(15)
         grid_anual.setContentsMargins(10, 10, 10, 10)
 
-        meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                 "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+        meses = [
+            "Enero",
+            "Febrero",
+            "Marzo",
+            "Abril",
+            "Mayo",
+            "Junio",
+            "Julio",
+            "Agosto",
+            "Septiembre",
+            "Octubre",
+            "Noviembre",
+            "Diciembre",
+        ]
 
         for mes_num in range(1, 13):
             fila = (mes_num - 1) // 4
@@ -896,7 +918,7 @@ class VistaCalendario(BaseForm):
             intensidad = min(num_guardias * 20, 200)  # Más oscuro = más guardias
             return f"""
                 QLabel {{
-                    background-color: rgb({255-intensidad}, {242-intensidad//2}, 253);
+                    background-color: rgb({255 - intensidad}, {242 - intensidad // 2}, 253);
                     border: 1px solid #90CAF9;
                     border-radius: 3px;
                     font-size: 8px;
@@ -932,7 +954,7 @@ class VistaCalendario(BaseForm):
         for g in guardias:
             guardias_por_fecha[g.fecha].append(g)
             # Detectar sustituciones (tiene profesor_sustituido_id)
-            if hasattr(g, 'profesor_sustituido_id') and g.profesor_sustituido_id:
+            if hasattr(g, "profesor_sustituido_id") and g.profesor_sustituido_id:
                 sustituciones_por_fecha[g.fecha].append(g)
 
         # Ausencias
