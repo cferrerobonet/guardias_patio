@@ -1,6 +1,6 @@
 # 📚 Documentación - Guardias de Patio
 
-**Versión**: 3.0.0  
+**Versión**: 3.0.2  
 **Última actualización**: 8 de noviembre de 2025
 
 Sistema de gestión de guardias de patio para centros educativos. Documentación completa organizada por audiencia y tema.
@@ -18,9 +18,18 @@ Sistema de gestión de guardias de patio para centros educativos. Documentación
 | **[DEPLOYMENT.md](DEPLOYMENT.md)** | Compilación y distribución | 🚀 DevOps |
 | **[CI_CD.md](CI_CD.md)** | Integración y despliegue continuos | 🔄 DevOps |
 | **[CONTRIBUTING.md](CONTRIBUTING.md)** | Cómo contribuir al proyecto | 🤝 Colaboradores |
-| **[CHANGELOG.md](CHANGELOG.md)** | Historial de versiones (v1.0-v3.0) | 📋 Todos |
+| **[CHANGELOG.md](CHANGELOG.md)** | Historial de versiones (v1.0-v3.0.2) | 📋 Todos |
 | **[SECURITY.md](SECURITY.md)** | Política de seguridad | 🔒 Seguridad |
 | **[MAINTENANCE.md](MAINTENANCE.md)** | Guía de mantenimiento | 🛠️ Mantenedores |
+
+### 🎨 UX y Experiencia de Usuario (v3.0.2)
+
+| Documento | Descripción | Audiencia |
+|-----------|-------------|-----------|
+| **[UX_AUDIT.md](UX_AUDIT.md)** | Auditoría completa de UX (8.2/10) | 🎨 Diseñadores UX |
+| **[guias/UX_PATTERNS.md](guias/UX_PATTERNS.md)** | Patrones y convenciones UX | 👨‍💻 Desarrolladores |
+| **[guias/KEYBOARD_SHORTCUTS.md](guias/KEYBOARD_SHORTCUTS.md)** | 50+ atajos de teclado | 👤 Usuarios avanzados |
+| **[auditoria/UX_CONFIRMACIONES_AUDITORIA.md](auditoria/UX_CONFIRMACIONES_AUDITORIA.md)** | Auditoría de confirmaciones (100% apropiadas) | 🎨 UX/Desarrolladores |
 
 ---
 
@@ -57,8 +66,32 @@ Sistema de gestión de guardias de patio para centros educativos. Documentación
 - Configuración del entorno
 - Workflow de Git
 - Estándares de código (PEP 8, type hints)
-- Testing (976 tests, 46.31% coverage)
+- **NUEVO**: Guías UX (tooltips, confirmaciones, shortcuts)
+- Testing (990 tests, 46.31% coverage)
 - Proceso de Pull Request
+
+### 🎨 Diseñadores UX
+
+**Empezar aquí**: [UX_AUDIT.md](UX_AUDIT.md)
+
+**Contenido**:
+- ✅ Auditoría completa de 9 formularios
+- ✅ Puntuación global: 8.2/10 (MUY BUENO)
+- ✅ Métricas: 85% tooltips, 100% confirmaciones
+- ✅ Análisis por formulario con recomendaciones
+- ✅ Anti-patrones a evitar
+
+**Desarrollar UX**: [guias/UX_PATTERNS.md](guias/UX_PATTERNS.md)
+- Filosofía UX (4 principios fundamentales)
+- 8 patrones implementados (tooltips, placeholders, confirmaciones, etc.)
+- Ejemplos de código real
+- Checklist para nuevos formularios
+- Plantilla de formulario
+
+**Atajos**: [guias/KEYBOARD_SHORTCUTS.md](guias/KEYBOARD_SHORTCUTS.md)
+- 50+ atajos documentados
+- Organizados por contexto (global, profesores, zonas, calendario, etc.)
+- Priorización: esenciales, útiles, avanzados
 
 ### 🚀 DevOps / Build Engineers
 
