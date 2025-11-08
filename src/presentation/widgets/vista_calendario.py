@@ -15,6 +15,8 @@ from datetime import date, datetime, timedelta
 from typing import List
 
 from models.models import Ausencia, Guardia
+from presentation.dialogs.dia_detalle_dialog import DiaDetalleDialog
+from presentation.forms.base_form import BaseForm
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -30,8 +32,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from presentation.forms.base_form import BaseForm
 
 
 class CeldaDia(QGroupBox):
@@ -907,9 +907,25 @@ class VistaCalendario(BaseForm):
         return guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha
 
     def _dia_seleccionado(self, fecha: date):
-        """Manejar click en un día (futuro: abrir detalle)."""
-        print(f"Día seleccionado: {fecha}")
-        # TODO: Implementar ventana de detalle del día
+        """Abrir ventana de detalle del día seleccionado."""
+        # Obtener datos del día
+        guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha = (
+            self._cargar_datos_periodo(fecha, fecha)
+        )
+
+        guardias = guardias_por_fecha.get(fecha, [])
+        ausencias = ausencias_por_fecha.get(fecha, [])
+        sustituciones = sustituciones_por_fecha.get(fecha, [])
+
+        # Abrir diálogo con detalles
+        dialog = DiaDetalleDialog(
+            fecha=fecha,
+            guardias=guardias,
+            ausencias=ausencias,
+            sustituciones=sustituciones,
+            parent=self,
+        )
+        dialog.exec()
 
     def _seleccionar_mes(self, mes: int):
         """Cambiar a vista mensual del mes seleccionado."""

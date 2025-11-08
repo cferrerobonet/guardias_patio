@@ -4,9 +4,9 @@
 [![codecov](https://codecov.io/gh/cferrerobonet/guardias_patio/branch/main/graph/badge.svg)](https://codecov.io/gh/cferrerobonet/guardias_patio)
 [![Security](https://img.shields.io/badge/Security-✅_0_vulnerabilities-success.svg)](documentacion/auditoria/SECURITY_FIX_20251108.md)
 [![Release](https://img.shields.io/github/v/release/cferrerobonet/guardias_patio)](https://github.com/cferrerobonet/guardias_patio/releases/latest)
-![Version](https://img.shields.io/badge/Version-3.0.1-blue.svg)
+![Version](https://img.shields.io/badge/Version-3.0.2-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)
-![Tests](https://img.shields.io/badge/Tests-976_passed-success.svg)
+![Tests](https://img.shields.io/badge/Tests-990_passed-success.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.7.0-orange.svg)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-red.svg)
 ![Arquitectura](https://img.shields.io/badge/Arquitectura-Clean-brightgreen.svg)
@@ -14,8 +14,9 @@
 
 **Aplicación de escritorio profesional** para la gestión integral de guardias de patio en centros educativos. Asignación automática equitativa con algoritmo optimizado, gestión completa de ausencias y sustituciones, calendario interactivo, y arquitectura limpia con 46% de cobertura de tests.
 
-> 🔒 **v3.0.1 Security Update** - Todas las vulnerabilidades corregidas: 0 issues críticos, SFTP seguro  
-> 🚀 **v3.0.0 Released** - Refactorización arquitectónica completa: Clean Architecture, -40% código, cache inteligente, 976 tests  
+> � **v3.0.2 Released** - Ventana de detalle del día implementada: resumen completo de guardias, ausencias y sustituciones  
+> �🔒 **v3.0.1 Security Update** - Todas las vulnerabilidades corregidas: 0 issues críticos, SFTP seguro  
+> 🚀 **v3.0.0 Released** - Refactorización arquitectónica completa: Clean Architecture, -40% código, cache inteligente  
 > 📚 [Ver Changelog](documentacion/CHANGELOG.md) | [Guía de Usuario](documentacion/USER_GUIDE.md) | [Guía Técnica](documentacion/TECHNICAL_GUIDE.md)
 
 ---

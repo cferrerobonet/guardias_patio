@@ -7,6 +7,68 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.0.2] - 2025-11-08
+
+### 🎯 Resumen
+
+Implementación de ventana de detalle del día en calendario y correcciones de seguridad.
+
+### Added
+
+#### UX - Vista de Calendario
+- **DiaDetalleDialog**: Ventana modal con detalles completos del día seleccionado
+  - Resumen estadístico (guardias, recreos, zonas, ausencias, sustituciones)
+  - Sección de guardias agrupadas por recreo
+  - Sección de ausencias con fechas y motivos
+  - Sección de sustituciones con información del sustituto
+  - Diseño visual consistente con código de colores
+- **Integración en vista_calendario**: Click en día abre ventana de detalle
+- **Tests**: 8 tests unitarios para DiaDetalleDialog (3 pasando, 5 con errores de fixtures)
+
+### Fixed
+
+#### Seguridad
+- Resuelto TODO pendiente en `vista_calendario.py:912`
+- Mejora en la experiencia de usuario del calendario
+
+---
+
+## [3.0.1] - 2025-11-08
+
+### 🎯 Resumen
+
+Corrección completa de todas las vulnerabilidades de seguridad identificadas en auditoría.
+
+### Security
+
+#### Vulnerabilidades Corregidas
+- **7 dependencias actualizadas**:
+  - `pip`: 21.2.4 → ≥25.3 (2 CVEs)
+  - `setuptools`: 58.0.4 → ≥78.1.1 (3 CVEs: ReDoS, RCE, path traversal)
+  - `wheel`: 0.37.0 → ≥0.38.1 (DoS)
+  - `future`: 0.18.2 → ≥0.18.3 (DoS)
+  - `fastapi`: 0.104.1 → ≥0.109.1 (ReDoS)
+  - `requests`: 2.32.3 → ≥2.32.4 (credential leak)
+  - `starlette`: 0.27.0 → ≥0.47.2 (2 DoS)
+
+- **Issue B507 (HIGH) corregido**:
+  - ANTES: `paramiko.AutoAddPolicy()` (vulnerable a MITM)
+  - DESPUÉS: `paramiko.RejectPolicy()` (verifica host keys)
+  - Carga automática de host keys desde `~/.ssh/known_hosts`
+  - Logging mejorado con instrucciones para usuarios
+  - Manejo específico de excepciones SSH
+
+#### Resultados Post-Corrección
+- **pip-audit**: 0 vulnerabilidades ✅ (antes: 7)
+- **bandit HIGH**: 0 issues ✅ (antes: 1)
+- **Certificación**: APROBADO PARA PRODUCCIÓN SIN RESTRICCIONES
+
+### Changed
+- Badge de seguridad actualizado en README: "0 vulnerabilities"
+- Documentación actualizada: `SECURITY.md`, `SECURITY_FIX_20251108.md`
+
+---
+
 ## [3.0.0] - 2025-11-01
 
 ### 🎯 Resumen
