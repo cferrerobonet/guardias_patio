@@ -503,33 +503,38 @@ class ProfesorForm(BaseForm):
                 email_item = QTableWidgetItem(prof.email_corporativo or "-")
                 self.tabla_profesores.setItem(i, 1, email_item)
 
-                # Horas
+                # Horas (centrado)
                 horas_item = QTableWidgetItem(f"{prof.horas_contrato:.1f}h")
+                horas_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_profesores.setItem(i, 2, horas_item)
 
-                # Turno
+                # Turno (centrado)
                 turno_item = QTableWidgetItem(prof.turno.capitalize())
+                turno_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_profesores.setItem(i, 3, turno_item)
 
-                # Tutor
+                # Tutor (centrado)
                 tutor_text = "Sí" if prof.tutor else "No"
                 tutor_item = QTableWidgetItem(tutor_text)
+                tutor_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_profesores.setItem(i, 4, tutor_item)
 
-                # Fecha Inicio Guardias
+                # Fecha Inicio Guardias (centrado)
                 fecha_inicio_text = (
                     prof.fecha_inicio_guardias.strftime("%d/%m/%Y")
                     if prof.fecha_inicio_guardias
                     else "-"
                 )
                 fecha_inicio_item = QTableWidgetItem(fecha_inicio_text)
+                fecha_inicio_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_profesores.setItem(i, 5, fecha_inicio_item)
 
-                # Fecha Fin Guardias
+                # Fecha Fin Guardias (centrado)
                 fecha_fin_text = (
                     prof.fecha_fin_guardias.strftime("%d/%m/%Y") if prof.fecha_fin_guardias else "-"
                 )
                 fecha_fin_item = QTableWidgetItem(fecha_fin_text)
+                fecha_fin_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_profesores.setItem(i, 6, fecha_fin_item)
 
             # Habilitar ordenación manual (el usuario puede hacer clic en las columnas)
