@@ -285,6 +285,116 @@ La carpeta `archivo/` contiene **41 archivos originales** preservados para refer
 
 ---
 
+## ⚠️ Buenas Prácticas para Crear/Modificar Documentación
+
+### Regla de Oro: NO Crear Documentos Sueltos
+
+**Antes de crear un nuevo `.md`**, SIEMPRE pregúntate:
+
+#### 1️⃣ ¿Puede ir en un documento existente?
+
+```markdown
+❌ MAL: Crear "SFTP_GUIDE.md"
+✅ BIEN: Añadir sección en TECHNICAL_GUIDE.md → "Configuración SFTP"
+
+❌ MAL: Crear "HOW_TO_TEST.md"
+✅ BIEN: Ampliar CONTRIBUTING.md → Sección "Testing"
+
+❌ MAL: Crear "NEW_FEATURE_X.md"
+✅ BIEN: Actualizar USER_GUIDE.md → Añadir en sección relevante
+```
+
+#### 2️⃣ Si NO cabe en ningún documento existente, ¿dónde colocarlo?
+
+**Estructura de carpetas**:
+
+```
+documentacion/
+├── [DOCUMENTO_PRINCIPAL].md     # Solo si es guía completa (USER, TECHNICAL, etc.)
+│
+├── guias/                       # Guías específicas temáticas
+│   ├── UX_PATTERNS.md
+│   ├── KEYBOARD_SHORTCUTS.md
+│   └── BRANCH_PROTECTION_SETUP.md
+│
+├── auditoria/                   # Auditorías y análisis
+│   ├── UX_TESTING_MANUAL.md
+│   └── UX_CONFIRMACIONES_AUDITORIA.md
+│
+└── archivo/                     # SOLO documentación histórica
+    ├── tecnico/
+    ├── build/
+    └── ...
+```
+
+**Criterios de decisión**:
+
+| Tipo de Documento | Ubicación | Ejemplo |
+|-------------------|-----------|---------|
+| **Guía completa multi-tema** | Raíz (`/documentacion/`) | `USER_GUIDE.md`, `TECHNICAL_GUIDE.md` |
+| **Guía específica de un tema** | `/guias/` | `KEYBOARD_SHORTCUTS.md`, `UX_PATTERNS.md` |
+| **Auditoría o análisis** | `/auditoria/` | `UX_CONFIRMACIONES_AUDITORIA.md` |
+| **Plan temporal/proyecto** | Raíz (luego archivar) | `PLAN_REFACTORIZACION.md` |
+| **Documento histórico** | `/archivo/[categoria]/` | Solo al archivar |
+
+#### 3️⃣ Checklist ANTES de crear un nuevo `.md`
+
+```markdown
+- [ ] ¿He buscado en los 8 documentos principales si cabe la info?
+      (USER_GUIDE, TECHNICAL_GUIDE, DEPLOYMENT, CI_CD, CONTRIBUTING, 
+       SECURITY, MAINTENANCE, CHANGELOG)
+
+- [ ] ¿He revisado `/guias/` por si existe algo similar?
+
+- [ ] ¿He revisado `/auditoria/` por si es un análisis/auditoría?
+
+- [ ] ¿Es realmente necesario un documento nuevo o puedo ampliar uno existente?
+
+- [ ] Si creo documento nuevo:
+      - [ ] ¿Está en la carpeta correcta? (`/`, `/guias/`, `/auditoria/`)
+      - [ ] ¿He añadido entrada en este README.md?
+      - [ ] ¿He enlazado desde documentos relacionados?
+      - [ ] ¿Tiene formato consistente (header con versión, TOC, etc.)?
+```
+
+#### 4️⃣ Ejemplos Reales del Proyecto
+
+**✅ CASOS BIEN HECHOS**:
+
+1. **UX_PATTERNS.md** → `/guias/` (guía específica de patrones UX)
+2. **KEYBOARD_SHORTCUTS.md** → `/guias/` (guía específica de atajos)
+3. **BRANCH_PROTECTION_SETUP.md** → `/guias/` (guía específica de configuración)
+4. **CI_CD.md** → Raíz (guía completa multi-tema)
+
+**❌ ANTI-PATRONES A EVITAR**:
+
+```markdown
+❌ Crear "TOOLTIPS.md" → Debería estar en UX_PATTERNS.md
+❌ Crear "PYTEST_CONFIG.md" → Debería estar en CONTRIBUTING.md
+❌ Crear "ALEMBIC_MIGRATIONS.md" → Debería estar en TECHNICAL_GUIDE.md
+❌ Crear "GITHUB_ACTIONS.md" → YA existe CI_CD.md
+```
+
+### Proceso de Revisión
+
+Cuando añadas documentación:
+
+1. **Abre PR** con los cambios
+2. **En la descripción**, justifica:
+   - ¿Por qué no cabe en docs existentes?
+   - ¿Por qué elegiste esa ubicación?
+3. **Revisor verificará** que se siguen las buenas prácticas
+
+### Mantener Documentación Limpia
+
+**Objetivo**: Que un nuevo desarrollador encuentre información en ≤3 clicks.
+
+- ✅ **Menos documentos** = Mejor navegación
+- ✅ **Documentos consolidados** = Menos duplicación
+- ✅ **Estructura clara** = Fácil de mantener
+
+---
+
 ## 🤝 Contribuir a la Documentación
 
 Si encuentras:
