@@ -30,11 +30,7 @@ from PyQt6.QtWidgets import (
 )
 
 from presentation.themes.ccleaner_theme import (
-    CONTENT_BG_ALT,
     FONT_SIZE_SMALL,
-    PRIMARY_BLUE,
-    RADIUS_SMALL,
-    SPACING_MD,
     SPACING_SM,
     TEXT_SECONDARY,
 )
@@ -115,24 +111,6 @@ class RestriccionesWidget(QGroupBox):
         )
         self.usar_restricciones_checkbox.setChecked(False)  # Desactivado por defecto
         main_layout.addWidget(self.usar_restricciones_checkbox)
-
-        # Información contextual
-        info_label = QLabel(
-            "💡 <b>Tip:</b> Selecciona un día en la tabla para editar sus recreos disponibles. "
-            "Usa 'Aplicar a todos' para copiar la configuración a todos los días."
-        )
-        info_label.setStyleSheet(f"""
-            QLabel {{
-                background-color: {CONTENT_BG_ALT};
-                color: {TEXT_SECONDARY};
-                font-size: {FONT_SIZE_SMALL}px;
-                padding: {SPACING_SM}px {SPACING_MD}px;
-                border-left: 3px solid {PRIMARY_BLUE};
-                border-radius: {RADIUS_SMALL}px;
-            }}
-        """)
-        info_label.setWordWrap(True)
-        main_layout.addWidget(info_label)
 
         self.setLayout(main_layout)
 
@@ -398,7 +376,11 @@ class RestriccionesWidget(QGroupBox):
         self.restricciones_changed.emit()
 
     def _cargar_dia_en_formulario(self):
-        """Cargar el día seleccionado en el formulario (siempre se puede ver, solo lectura si no está activado)."""
+        """
+        Cargar el día seleccionado en el formulario.
+
+        Siempre se puede ver, solo lectura si no está activado.
+        """
         fila_actual = self.tabla_restricciones.currentRow()
         if fila_actual < 0:
             return
@@ -426,7 +408,7 @@ class RestriccionesWidget(QGroupBox):
     def _auto_guardar_recreos_dia_actual(self):
         """
         Auto-guardar cambios de recreos del día actual cuando se modifican checkboxes.
-        
+
         Este método se llama automáticamente cuando cambia cualquier checkbox de recreo.
         """
         if self.dia_editando is None:
@@ -454,8 +436,8 @@ class RestriccionesWidget(QGroupBox):
     def _aplicar_recreos_a_dia(self):
         """
         Aplicar los recreos seleccionados al día actual.
-        
-        NOTA: Este método ya NO es necesario con el auto-guardado, 
+
+        NOTA: Este método ya NO es necesario con el auto-guardado,
         pero se mantiene por compatibilidad.
         """
         self._auto_guardar_recreos_dia_actual()
@@ -483,7 +465,7 @@ class RestriccionesWidget(QGroupBox):
     def _restaurar_por_turno(self):
         """
         Restaurar restricciones a los valores por defecto según el turno del profesor.
-        
+
         Este método obtiene el turno actual del widget de horario y recarga
         la matriz con los valores predeterminados.
         """
@@ -494,7 +476,7 @@ class RestriccionesWidget(QGroupBox):
             if hasattr(self.parent(), 'horario_widget'):
                 turno_widget = self.parent().horario_widget
                 turno_actual = turno_widget.turno_input.currentText()
-        except:
+        except Exception:
             pass
 
         # Preseleccionar según turno
@@ -525,10 +507,10 @@ class RestriccionesWidget(QGroupBox):
     def _obtener_recreos_por_defecto(self, turno: str) -> Dict[int, List[int]]:
         """
         Obtener la configuración de recreos por defecto según el turno.
-        
+
         Args:
             turno: Turno del profesor ('Mañana', 'Tarde', 'Mixto')
-            
+
         Returns:
             Diccionario con los recreos por defecto para cada día
         """
@@ -552,11 +534,11 @@ class RestriccionesWidget(QGroupBox):
     ) -> bool:
         """
         Verificar si las restricciones son diferentes a las del turno por defecto.
-        
+
         Args:
             restricciones: Restricciones actuales del profesor
             recreos_defecto: Recreos por defecto según turno
-            
+
         Returns:
             True si hay diferencias (personalizadas), False si son iguales al defecto
         """
@@ -739,7 +721,7 @@ class RestriccionesWidget(QGroupBox):
     def get_datos(self) -> dict:
         """
         Obtener todos los datos del widget.
-        
+
         IMPORTANTE: Solo devuelve recreos_permitidos si el checkbox está ACTIVADO.
         Si está desactivado, la matriz es solo visual (según turno por defecto).
         """
@@ -764,7 +746,7 @@ class RestriccionesWidget(QGroupBox):
     def set_datos(self, datos: dict):
         """
         Establecer todos los datos del widget.
-        
+
         Siempre carga la matriz desde la BD. Solo activa el checkbox si las restricciones
         guardadas SON DIFERENTES al turno por defecto actual.
         """
@@ -819,7 +801,7 @@ class RestriccionesWidget(QGroupBox):
     def validar(self) -> Tuple[bool, str]:
         """
         Validar los datos del widget.
-        
+
         SOLO valida restricciones si el checkbox está activado.
         """
         # Validar exclusividad de fechas
