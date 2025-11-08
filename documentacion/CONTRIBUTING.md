@@ -15,10 +15,11 @@
 4. [Estándares de Código](#estándares-de-código)
 5. [Guías UX](#guías-ux) 🆕
 6. [Testing](#testing)
-7. [Proceso de Pull Request](#proceso-de-pull-request)
-8. [Añadir Funcionalidades](#añadir-funcionalidades)
-9. [Historia del Proyecto](#historia-del-proyecto)
-10. [Mantenimiento](#mantenimiento)
+7. [CI/CD y Automatización](#cicd-y-automatización) 🆕
+8. [Proceso de Pull Request](#proceso-de-pull-request)
+9. [Añadir Funcionalidades](#añadir-funcionalidades)
+10. [Historia del Proyecto](#historia-del-proyecto)
+11. [Mantenimiento](#mantenimiento)
 
 ---
 
@@ -538,7 +539,155 @@ open htmlcov/index.html
 
 ---
 
-## 🔍 Proceso de Pull Request
+## � CI/CD y Automatización
+
+### Workflows Automáticos
+
+Cada **push** y **pull request** ejecuta automáticamente:
+
+| Workflow | Propósito | Tiempo | Bloquea Merge |
+|----------|-----------|--------|---------------|
+| **Tests** | 990 tests en Python 3.9-3.12 + Ubuntu/macOS | 3-5 min | ✅ Sí |
+| **Linting** | Ruff + Black + isort | 1-2 min | ✅ Sí |
+| **Type Checking** | mypy (progresivo) | 1-2 min | ❌ No (informativo) |
+| **Security** | safety + bandit | 2-3 min | ❌ No (informativo) |
+| **Coverage** | Codecov con threshold 60% | Auto | ❌ No (informativo) |
+
+📖 **Documentación completa**: [CI_CD.md](CI_CD.md)
+
+### Verificaciones Locales (Pre-PR)
+
+```bash
+# 1. Ejecutar todos los checks localmente
+make all
+
+# 2. O ejecutar individualmente:
+pytest                           # Tests
+ruff check src/ tests/ --fix   # Linting (auto-fix)
+black src/ tests/               # Formateo
+isort src/ tests/               # Ordenar imports
+mypy src/ --config-file=mypy.ini  # Type checking
+```
+
+### Interpretar Resultados del CI
+
+#### ✅ Todos los Checks Pasaron
+
+Tu PR está listo para revisión:
+
+```
+✅ Tests (ubuntu-latest, 3.11) - passed
+✅ Tests (macos-latest, 3.11) - passed
+✅ Linting - passed
+ℹ️ Type Checking - passed (informativo)
+ℹ️ Security - passed (informativo)
+ℹ️ Codecov - 48.2% (+2.0%) - passed
+```
+
+**Próximo paso**: Esperar revisión de código
+
+#### ❌ Tests Fallaron
+
+```
+❌ Tests (ubuntu-latest, 3.11) - failed
+   12 failed, 978 passed in 3.2s
+```
+
+**Acción requerida**:
+1. Ver logs en GitHub Actions
+2. Reproducir localmente: `pytest -v`
+3. Corregir tests y hacer nuevo commit
+4. CI se ejecutará automáticamente
+
+#### ❌ Linting Falló
+
+```
+❌ Linting - failed
+   src/domain/entities/profesor.py:15:1: E501 line too long
+   src/application/use_cases/crear_guardia.py:42:1: F401 unused import
+```
+
+**Acción requerida**:
+```bash
+# Auto-fix con ruff
+ruff check src/ tests/ --fix
+
+# Formatear con black
+black src/ tests/
+
+# Verificar y commit
+git add -u
+git commit -m "style: fix linting issues"
+git push
+```
+
+#### ⚠️ Cobertura Bajó
+
+```
+ℹ️ Codecov - 44.1% (-2.2%) - warning
+   New code coverage: 35% (target: 60%)
+```
+
+**Acción sugerida** (no bloquea):
+```bash
+# Añadir tests para código nuevo
+pytest tests/test_tu_modulo.py --cov=src/tu_modulo --cov-report=term-missing
+
+# Ver qué líneas faltan cubrir
+pytest --cov=src --cov-report=html
+open htmlcov/index.html
+```
+
+### Pre-commit Hooks (Opcional pero Recomendado)
+
+```bash
+# Instalar hooks (solo una vez)
+pre-commit install
+
+# Ahora en cada commit se ejecuta automáticamente:
+# - ruff (linting)
+# - black (formateo) - Próximamente
+# - isort (imports) - Próximamente
+```
+
+**Bypass temporal** (no recomendado):
+```bash
+git commit --no-verify -m "WIP: trabajo en progreso"
+```
+
+### Branch Protection (Configurado)
+
+La rama `main` está protegida:
+
+- ✅ Requiere PR (no push directo)
+- ✅ Requiere 1 aprobación
+- ✅ Requiere checks de CI pasando:
+  - Tests (Python 3.11 Ubuntu)
+  - Tests (Python 3.11 macOS)
+  - Linting
+- ✅ Requiere conversaciones resueltas
+- ✅ No permite force push
+
+**Para emergencias**: Contactar al maintainer (@cferrerobonet)
+
+### Monitoreo del CI
+
+**Dashboard**: [GitHub Actions](https://github.com/cferrerobonet/guardias_patio/actions)
+
+- Ver historial de workflows
+- Descargar artifacts (coverage, security reports)
+- Re-ejecutar workflows fallidos
+- Ver logs detallados
+
+**Codecov**: [Dashboard de Cobertura](https://codecov.io/gh/cferrerobonet/guardias_patio)
+
+- Evolución de cobertura
+- Archivos con menor coverage
+- Comparación entre commits
+
+---
+
+## �🔍 Proceso de Pull Request
 
 ### 1. Preparar el PR
 
