@@ -92,22 +92,52 @@ class LocalSyncBackend(SyncBackend):
 
 class SFTPSyncBackend(SyncBackend):
     """
-    Backend de sincronización usando SFTP.
+    Backend de sincronización usando SFTP con verificación de host key.
     Requiere: pip install paramiko
+    
+    SEGURIDAD:
+    - Utiliza RejectPolicy() por defecto (rechaza hosts desconocidos)
+    - Carga host keys desde ~/.ssh/known_hosts
+    - Para agregar un host: ssh-keyscan -H <host> >> ~/.ssh/known_hosts
     """
 
-    def __init__(self, host: str, port: int, username: str, password: str, base_dir: str = "/guardias_patio"):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        base_dir: str = "/guardias_patio",
+    ):
         try:
             import paramiko
 
             self.client = paramiko.SSHClient()
-            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+            # 🔒 SEGURIDAD: Cargar host keys conocidas desde archivo del sistema
+            known_hosts_path = Path.home() / ".ssh" / "known_hosts"
+            if known_hosts_path.exists():
+                self.client.load_host_keys(str(known_hosts_path))
+                logger.info(f"Host keys cargadas desde {known_hosts_path}")
+            else:
+                logger.warning(f"Archivo known_hosts no encontrado: {known_hosts_path}")
+                logger.warning("Para agregar el host: ssh-keyscan -H <host> >> ~/.ssh/known_hosts")
+
+            # 🔒 SEGURIDAD: Rechazar hosts desconocidos (NO AutoAddPolicy)
+            # Esto previene ataques Man-in-the-Middle (MITM)
+            self.client.set_missing_host_key_policy(paramiko.RejectPolicy())
+
             self.client.connect(host, port=port, username=username, password=password)
             self.sftp = self.client.open_sftp()
             self.base_dir = base_dir
-            logger.info(f"SFTP conectado a {host}:{port}")
+            logger.info(f"SFTP conectado a {host}:{port} con verificación de host key ✅")
         except ImportError:
             logger.error("Paramiko no instalado. Ejecutar: pip install paramiko")
+            raise
+        except paramiko.SSHException as e:
+            logger.error(f"Error de host key: {e}")
+            logger.error("El servidor no está en known_hosts. Agregarlo con:")
+            logger.error(f"  ssh-keyscan -H {host} >> ~/.ssh/known_hosts")
             raise
         except Exception as e:
             logger.error(f"Error conectando SFTP: {e}")
@@ -229,7 +259,9 @@ class SyncManager:
                     if session:
                         from sync.data_exporter import DataExporter
                         logger.info("📊 Importando datos a la base de datos local...")
-                        if DataExporter.import_from_json(session, local_json_path, clear_existing=False):
+                        if DataExporter.import_from_json(
+                            session, local_json_path, clear_existing=False
+                        ):
                             logger.info("✅ Datos importados exitosamente")
                         else:
                             logger.error("❌ Error al importar datos")

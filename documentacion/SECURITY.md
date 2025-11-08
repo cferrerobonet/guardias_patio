@@ -1,9 +1,10 @@
 # Security Policy
 
 **Guardias de Patio** - Política de Seguridad  
-**Versión**: 3.0.0  
+**Versión**: 3.0.1  
 **Última actualización**: 8 de noviembre de 2025  
-**Última auditoría**: 8 de noviembre de 2025 ✅
+**Última auditoría**: 8 de noviembre de 2025 ✅  
+**Estado**: ✅ **TODAS LAS VULNERABILIDADES SOLUCIONADAS** (8 nov 2025)
 
 ---
 
