@@ -155,6 +155,7 @@ class ReportesForm(BaseForm):
             # Para otros tipos o si no se envía email, pedir carpeta al usuario
             if tipo == "individual_seleccionados" and enviar_email:
                 import tempfile
+
                 carpeta = tempfile.mkdtemp()
                 logger.info(f"Usando carpeta temporal para envío de emails: {carpeta}")
             else:
@@ -200,9 +201,28 @@ class ReportesForm(BaseForm):
         mes = config["mes"]
         anio = config["anio"]
 
+        # Nombre del archivo PDF consolidado
+        meses_nombres = [
+            "",
+            "Enero",
+            "Febrero",
+            "Marzo",
+            "Abril",
+            "Mayo",
+            "Junio",
+            "Julio",
+            "Agosto",
+            "Septiembre",
+            "Octubre",
+            "Noviembre",
+            "Diciembre",
+        ]
+        nombre_archivo = f"Guardias_Consolidado_{meses_nombres[mes]}_{anio}.pdf"
+        ruta_salida = os.path.join(carpeta, nombre_archivo)
+
         def tarea_exportacion(progress_callback):
             return ExportadorPDF.exportar_mes_consolidado(
-                self.session, mes, anio, carpeta, progress_callback=progress_callback
+                self.session, mes, anio, ruta_salida, progress_callback=progress_callback
             )
 
         resultado = ejecutar_con_progreso(
@@ -213,34 +233,17 @@ class ReportesForm(BaseForm):
         )
 
         if resultado is not None:
-            meses_nombres = [
-                "",
-                "Enero",
-                "Febrero",
-                "Marzo",
-                "Abril",
-                "Mayo",
-                "Junio",
-                "Julio",
-                "Agosto",
-                "Septiembre",
-                "Octubre",
-                "Noviembre",
-                "Diciembre",
-            ]
-
             mensaje = (
                 f"✅ PDF consolidado generado exitosamente\n\n"
                 f"Tipo: Mes específico (todos los profesores)\n"
                 f"Mes: {meses_nombres[mes]} {anio}\n"
                 f"Carpeta: {carpeta}\n"
-                f"Archivo: {resultado}\n"
+                f"Archivo: {nombre_archivo}\n"
             )
 
             self.resultado_text.setText(mensaje)
             self.mostrar_exito(
-                "PDF consolidado generado",
-                "Se generó el calendario consolidado correctamente."
+                "PDF consolidado generado", "Se generó el calendario consolidado correctamente."
             )
 
     def _exportar_mes_seleccionados(self, config: dict, carpeta: str):
@@ -251,7 +254,7 @@ class ReportesForm(BaseForm):
 
         def tarea_exportacion(progress_callback):
             return ExportadorPDF.exportar_profesores_seleccionados(
-                self.session, mes, anio, profesor_ids, carpeta, progress_callback=progress_callback
+                self.session, profesor_ids, mes, anio, carpeta, progress_callback=progress_callback
             )
 
         resultado = ejecutar_con_progreso(
@@ -288,7 +291,9 @@ class ReportesForm(BaseForm):
             )
 
             self.resultado_text.setText(mensaje)
-            self.mostrar_exito("PDFs generados", f"Se generaron {resultado} calendarios correctamente.")
+            self.mostrar_exito(
+                "PDFs generados", f"Se generaron {resultado} calendarios correctamente."
+            )
 
     def _exportar_curso_todos(self, config: dict, carpeta: str):
         """Exportar curso completo para todos los profesores."""
@@ -327,11 +332,11 @@ class ReportesForm(BaseForm):
         profesor_ids = config["profesores_ids"]
 
         def tarea_exportacion(progress_callback):
-            return ExportadorPDF.exportar_curso_seleccionados(
+            return ExportadorPDF.exportar_curso_completo(
                 self.session,
                 anio_inicio,
-                profesor_ids,
                 carpeta,
+                profesor_ids=profesor_ids,
                 progress_callback=progress_callback,
             )
 
@@ -402,9 +407,7 @@ class ReportesForm(BaseForm):
 
                 # Obtener rango de fechas de guardias del profesor
                 guardias = (
-                    self.session.query(Guardia)
-                    .filter(Guardia.profesor_id == profesor_id)
-                    .all()
+                    self.session.query(Guardia).filter(Guardia.profesor_id == profesor_id).all()
                 )
 
                 if not guardias:
@@ -443,7 +446,8 @@ class ReportesForm(BaseForm):
                             if not profesor.email_corporativo:
                                 profesores_sin_email.append(profesor.nombre_completo)
                                 logger.warning(
-                                    f"Profesor {profesor.nombre_completo} no tiene email configurado"
+                                    f"Profesor {profesor.nombre_completo} "
+                                    f"no tiene email configurado"
                                 )
                             else:
                                 if progress_callback:
@@ -463,9 +467,7 @@ class ReportesForm(BaseForm):
                                     ics_path = os.path.join(carpeta, ics_filename)
 
                                     # Obtener configuración para nombre del centro
-                                    config_db = (
-                                        self.session.query(Configuracion).first()
-                                    )
+                                    config_db = self.session.query(Configuracion).first()
                                     nombre_centro = "Centro Educativo"
                                     if config_db and hasattr(config_db, "nombre_centro"):
                                         nombre_centro = config_db.nombre_centro
@@ -477,9 +479,7 @@ class ReportesForm(BaseForm):
                                         ruta_salida=ics_path,
                                         nombre_centro=nombre_centro,
                                     ):
-                                        logger.info(
-                                            f"Archivo iCalendar generado: {ics_path}"
-                                        )
+                                        logger.info(f"Archivo iCalendar generado: {ics_path}")
                                     else:
                                         logger.warning(
                                             f"No se pudo generar iCalendar para "
@@ -487,9 +487,7 @@ class ReportesForm(BaseForm):
                                         )
                                         ics_path = None
                                 except Exception as e:
-                                    logger.warning(
-                                        f"Error al generar iCalendar: {e}"
-                                    )
+                                    logger.warning(f"Error al generar iCalendar: {e}")
                                     ics_path = None
 
                                 exito_email, mensaje_email = email_service.send_calendar_pdf(
@@ -503,14 +501,16 @@ class ReportesForm(BaseForm):
                                 if exito_email:
                                     emails_enviados += 1
                                     logger.info(
-                                        f"Email enviado a {profesor.email_corporativo}: {mensaje_email}"
+                                        f"Email enviado a {profesor.email_corporativo}: "
+                                        f"{mensaje_email}"
                                     )
                                 else:
                                     errores_email.append(
                                         f"{profesor.nombre_completo}: {mensaje_email}"
                                     )
                                     logger.warning(
-                                        f"No se pudo enviar email a {profesor.email_corporativo}: {mensaje_email}"
+                                        f"No se pudo enviar email a "
+                                        f"{profesor.email_corporativo}: {mensaje_email}"
                                     )
 
                 except Exception as e:
@@ -556,7 +556,8 @@ class ReportesForm(BaseForm):
                 mensaje += f"Emails enviados: {emails_enviados}\n"
 
             mensaje += (
-                "\nNota: Cada PDF muestra solo las fechas desde la primera hasta la última guardia del profesor."
+                "\nNota: Cada PDF muestra solo las fechas desde la primera "
+                "hasta la última guardia del profesor."
             )
 
             self.resultado_text.setText(mensaje)
