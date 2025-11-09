@@ -114,8 +114,7 @@ class CalendariosPdfWidget(QGroupBox):
 
         self.pdf_tipo_combo = QComboBox()
         self.pdf_tipo_combo.addItem(
-            "📅 Mes específico - PDF Consolidado (todos los profesores)",
-            "mes_todos"
+            "📅 Mes específico - PDF Consolidado (todos los profesores)", "mes_todos"
         )
         self.pdf_tipo_combo.addItem(
             "👤 Mes específico - Profesores seleccionados", "mes_seleccionados"
@@ -192,21 +191,32 @@ class CalendariosPdfWidget(QGroupBox):
         curso_layout.setContentsMargins(0, 0, 0, 0)
         curso_layout.setSpacing(5)
 
-        curso_label = QLabel("📚 Año de inicio del curso:")
+        curso_label = QLabel("📚 Curso escolar:")
         curso_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         curso_layout.addWidget(curso_label)
 
-        self.pdf_curso_combo = QComboBox()
-        anio_actual = datetime.now().year
-        for anio in range(anio_actual - 1, anio_actual + 3):
-            self.pdf_curso_combo.addItem(f"{anio}/{anio + 1}", anio)
-        # Seleccionar por defecto el año anterior (2024/2025 si estamos en 2025)
-        # ya que es más probable que tenga guardias asignadas
-        self.pdf_curso_combo.setCurrentIndex(0)
-        self.pdf_curso_combo.setStyleSheet(styles.STYLE_INPUT)
-        curso_layout.addWidget(self.pdf_curso_combo)
+        # Mostrar el curso activo (sin selector - se usa automáticamente)
+        self.curso_activo_label = QLabel()
+        self.curso_activo_label.setStyleSheet(
+            """
+            QLabel {
+                background-color: #e3f2fd;
+                border: 2px solid #2196f3;
+                border-radius: 4px;
+                padding: 8px;
+                font-size: 12px;
+                font-weight: bold;
+                color: #1976d2;
+            }
+        """
+        )
+        curso_layout.addWidget(self.curso_activo_label)
 
-        curso_info = QLabel("ℹ️ Se generarán PDFs de Septiembre a Junio")
+        curso_info = QLabel(
+            "ℹ️ Se exportará el curso activo completo.\n"
+            "Para cambiar de curso, usa el selector en la barra superior."
+        )
+        curso_info.setWordWrap(True)
         curso_info.setStyleSheet(
             f"""
             color: {TEXT_SECONDARY};
@@ -215,6 +225,9 @@ class CalendariosPdfWidget(QGroupBox):
         """
         )
         curso_layout.addWidget(curso_info)
+
+        # Actualizar el label con el curso activo
+        self._actualizar_curso_activo_label()
 
         return container
 
@@ -287,9 +300,7 @@ class CalendariosPdfWidget(QGroupBox):
         email_layout.setSpacing(5)
 
         # Checkbox de envío por email
-        self.enviar_email_check = QCheckBox(
-            "📧 Enviar calendario por email a cada profesor"
-        )
+        self.enviar_email_check = QCheckBox("📧 Enviar calendario por email a cada profesor")
         self.enviar_email_check.setChecked(False)
         self.enviar_email_check.setStyleSheet(
             """
@@ -358,9 +369,7 @@ class CalendariosPdfWidget(QGroupBox):
 
         # Actualizar texto del botón
         if tipo == "mes_todos":
-            self.exportar_pdf_btn.setText(
-                "📄 Generar PDF Consolidado (Mes)"
-            )
+            self.exportar_pdf_btn.setText("📄 Generar PDF Consolidado (Mes)")
         elif tipo == "mes_seleccionados":
             self.exportar_pdf_btn.setText("📄 Generar PDFs Seleccionados (Mes)")
         elif tipo == "curso_todos":
@@ -407,6 +416,42 @@ class CalendariosPdfWidget(QGroupBox):
         self.seleccionar_todos_check.blockSignals(False)
 
     # ========== API PÚBLICA ==========
+
+    def _actualizar_curso_activo_label(self):
+        """Actualiza el label del curso activo desde la base de datos."""
+        try:
+            from services.gestor_cursos import GestorCursos
+
+            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            if curso_activo:
+                self.curso_activo_label.setText(
+                    f"⭐ {curso_activo.nombre}\n"
+                    f"📅 {curso_activo.fecha_inicio.strftime('%d/%m/%Y')} - "
+                    f"{curso_activo.fecha_fin.strftime('%d/%m/%Y')}"
+                )
+            else:
+                self.curso_activo_label.setText(
+                    "⚠️ No hay curso activo.\nCrea un curso desde Configuración → Gestión de Cursos"
+                )
+                self.curso_activo_label.setStyleSheet(
+                    """
+                    QLabel {
+                        background-color: #fff3cd;
+                        border: 2px solid #ffc107;
+                        border-radius: 4px;
+                        padding: 8px;
+                        font-size: 12px;
+                        font-weight: bold;
+                        color: #856404;
+                    }
+                """
+                )
+        except Exception as e:
+            self.curso_activo_label.setText(f"❌ Error al obtener curso: {e}")
+
+    def refrescar_curso_activo(self):
+        """Método público para refrescar el curso activo desde la UI principal."""
+        self._actualizar_curso_activo_label()
 
     def cargar_profesores_checkboxes(self):
         """Cargar checkboxes de profesores desde la base de datos."""
@@ -462,7 +507,17 @@ class CalendariosPdfWidget(QGroupBox):
             config["mes"] = self.pdf_mes_combo.currentIndex() + 1
             config["anio"] = int(self.pdf_anio_combo.currentText())
         elif "curso" in tipo:
-            config["anio_inicio_curso"] = self.pdf_curso_combo.currentData()
+            # Obtener año de inicio del curso activo
+            from services.gestor_cursos import GestorCursos
+
+            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            if curso_activo:
+                config["anio_inicio_curso"] = curso_activo.anio_inicio
+                config["curso_id"] = curso_activo.id
+            else:
+                # Si no hay curso activo, retornar None para que el formulario lo maneje
+                config["anio_inicio_curso"] = None
+                config["curso_id"] = None
 
         if "seleccionados" in tipo:
             config["profesores_ids"] = self.get_profesores_seleccionados()

@@ -299,6 +299,15 @@ class ReportesForm(BaseForm):
         """Exportar curso completo para todos los profesores."""
         anio_inicio = config["anio_inicio_curso"]
 
+        # Validar que hay curso activo
+        if anio_inicio is None:
+            self.mostrar_advertencia(
+                "Sin curso activo",
+                "No hay ningún curso escolar activo.\n\n"
+                "Ve a Configuración → Gestión de Cursos para crear y activar un curso.",
+            )
+            return
+
         def tarea_exportacion(progress_callback):
             return ExportadorPDF.exportar_curso_completo(
                 self.session, anio_inicio, carpeta, progress_callback=progress_callback
@@ -345,6 +354,16 @@ class ReportesForm(BaseForm):
     def _exportar_curso_seleccionados(self, config: dict, carpeta: str):
         """Exportar curso completo para profesores seleccionados."""
         anio_inicio = config["anio_inicio_curso"]
+
+        # Validar que hay curso activo
+        if anio_inicio is None:
+            self.mostrar_advertencia(
+                "Sin curso activo",
+                "No hay ningún curso escolar activo.\n\n"
+                "Ve a Configuración → Gestión de Cursos para crear y activar un curso.",
+            )
+            return
+
         profesor_ids = config["profesores_ids"]
 
         def tarea_exportacion(progress_callback):
