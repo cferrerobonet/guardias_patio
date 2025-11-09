@@ -11,13 +11,42 @@ from sqlalchemy import (
     String,
     Text,
     Time,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
+
+class CursoEscolar(Base):
+    """
+    Modelo para gestionar cursos escolares.
+
+    Permite trabajar con múltiples cursos académicos sin perder datos históricos.
+    Solo puede haber un curso activo a la vez.
+    """
+
+    __tablename__ = "cursos_escolares"
+
+    id = Column(Integer, primary_key=True)
+    anio_inicio = Column(Integer, nullable=False)  # 2024, 2025, etc.
+    anio_fin = Column(Integer, nullable=False)  # 2025, 2026, etc.
+    fecha_inicio = Column(Date, nullable=False)  # Por defecto 01/07/YYYY
+    fecha_fin = Column(Date, nullable=False)  # Por defecto 30/06/YYYY+1
+    nombre = Column(String, nullable=False)  # "Curso 2024/2025"
+    activo = Column(Boolean, default=False, nullable=False)  # Solo uno activo
+    cerrado = Column(Boolean, default=False, nullable=False)  # Curso finalizado
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Constraint: solo un curso puede estar activo
+    __table_args__ = (UniqueConstraint("anio_inicio", "anio_fin", name="uq_anio_curso"),)
+
+    # Relaciones
+    guardias = relationship("Guardia", back_populates="curso", cascade="all, delete-orphan")
+
+
 class Profesor(Base):
-    __tablename__ = 'profesores'
+    __tablename__ = "profesores"
     id = Column(Integer, primary_key=True)
     nombre_completo = Column(String, nullable=False)  # Formato: "APELLIDOS, NOMBRE"
     email_corporativo = Column(String, nullable=True)  # Para envío de calendarios
@@ -30,23 +59,25 @@ class Profesor(Base):
     activo = Column(Boolean, default=True, nullable=False)  # Profesor activo en el sistema
     fecha_inicio_guardias = Column(Date, nullable=True)
     fecha_fin_guardias = Column(Date, nullable=True)  # Fecha límite para terminar guardias
-    zona_preferida_id = Column(Integer, ForeignKey('zonas.id'), nullable=True)  # Zona preferida
+    zona_preferida_id = Column(Integer, ForeignKey("zonas.id"), nullable=True)  # Zona preferida
     dias_semana_permitidos = Column(Text, nullable=True)  # JSON: [0..6]
-    recreos_permitidos = Column(Text, nullable=True)      # JSON: [1..N]
-    guardias = relationship('Guardia', back_populates='profesor')
-    zona_preferida = relationship('Zona', foreign_keys=[zona_preferida_id])
+    recreos_permitidos = Column(Text, nullable=True)  # JSON: [1..N]
+    guardias = relationship("Guardia", back_populates="profesor")
+    zona_preferida = relationship("Zona", foreign_keys=[zona_preferida_id])
+
 
 class Zona(Base):
-    __tablename__ = 'zonas'
+    __tablename__ = "zonas"
     id = Column(Integer, primary_key=True)
     nombre_zona = Column(String, nullable=False)
     descripcion = Column(String)
     fecha_inicio = Column(Date, nullable=True)  # Fecha inicio operativa (opcional)
     fecha_fin = Column(Date, nullable=True)  # Fecha fin operativa (opcional)
-    guardias = relationship('Guardia', back_populates='zona')
+    guardias = relationship("Guardia", back_populates="zona")
+
 
 class Configuracion(Base):
-    __tablename__ = 'configuracion'
+    __tablename__ = "configuracion"
     id = Column(Integer, primary_key=True)
     anio_inicio_curso = Column(Integer, nullable=False)  # Año de inicio del curso (ej: 2025)
     fecha_inicio_curso = Column(Date, nullable=False)
@@ -61,17 +92,27 @@ class Configuracion(Base):
     ajuste_tutores = Column(Float, default=1.0, nullable=False)
     ajuste_no_tutores = Column(Float, default=1.0, nullable=False)
     algoritmo_asignacion = Column(String, default="v2.9", nullable=False)  # "v2.9" o "v3.0"
+    curso_activo_id = Column(Integer, ForeignKey("cursos_escolares.id"), nullable=True)
+
+    # Relación con curso activo
+    curso_activo = relationship("CursoEscolar", foreign_keys=[curso_activo_id])
+
 
 class Guardia(Base):
-    __tablename__ = 'guardias'
+    __tablename__ = "guardias"
     id = Column(Integer, primary_key=True)
-    profesor_id = Column(Integer, ForeignKey('profesores.id'))
+    # Nullable para permitir migración gradual
+    curso_id = Column(Integer, ForeignKey("cursos_escolares.id"), nullable=True)
+    profesor_id = Column(Integer, ForeignKey("profesores.id"))
     fecha = Column(Date, nullable=False)
     turno = Column(String, nullable=False)
     recreo = Column(Integer, nullable=False)  # 1 o 2
-    zona_id = Column(Integer, ForeignKey('zonas.id'))
-    profesor = relationship('Profesor', back_populates='guardias')
-    zona = relationship('Zona', back_populates='guardias')
+    zona_id = Column(Integer, ForeignKey("zonas.id"))
+
+    # Relaciones
+    curso = relationship("CursoEscolar", back_populates="guardias")
+    profesor = relationship("Profesor", back_populates="guardias")
+    zona = relationship("Zona", back_populates="guardias")
 
 
 class Ausencia(Base):
@@ -80,9 +121,9 @@ class Ausencia(Base):
     Permite registrar periodos en los que un profesor no está disponible.
     """
 
-    __tablename__ = 'ausencias'
+    __tablename__ = "ausencias"
     id = Column(Integer, primary_key=True)
-    profesor_id = Column(Integer, ForeignKey('profesores.id'), nullable=False)
+    profesor_id = Column(Integer, ForeignKey("profesores.id"), nullable=False)
     fecha_inicio = Column(Date, nullable=False)
     fecha_fin = Column(Date, nullable=False)
     tipo = Column(String, nullable=False)  # baja_medica, permiso, vacaciones, otros
@@ -93,4 +134,4 @@ class Ausencia(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relación con Profesor
-    profesor = relationship('Profesor', backref='ausencias')
+    profesor = relationship("Profesor", backref="ausencias")
