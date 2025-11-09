@@ -24,9 +24,10 @@ sys.path.insert(0, str(root_dir / "src"))
 
 import hashlib
 
-from database.db_manager import USER_DATA_DIR
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
+from database.db_manager import USER_DATA_DIR
 
 
 def obtener_recreos_por_defecto(turno: str) -> dict:

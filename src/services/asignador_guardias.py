@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
+from sqlalchemy.orm import Session
+
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
@@ -17,7 +19,6 @@ from services.optimizaciones_asignador import (
     IndiceSlots,
     estadisticas_rendimiento,
 )
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -610,7 +611,7 @@ def generar_calendario_guardias(
     def calcular_prioridad_profesor(p: Profesor) -> Tuple[int, int, int, int]:
         """
         Calcula prioridad de asignación del profesor.
-        
+
         Retorna tupla (prioridad_inicio, prioridad_fin, prioridad_mixto, id)
         Valores menores = mayor prioridad (se ordenará ascendente)
         """

@@ -1,9 +1,9 @@
 """Use Case: Crear un nuevo perfil de usuario."""
 
+
 from application.dtos.perfil_dto import CrearPerfilDTO, PerfilDTO
 from core.exceptions import ValidationError
-from database.db_manager import create_user_database, get_current_user_id, user_has_database
-from pathlib import Path
+from database.db_manager import create_user_database, get_current_user_id
 from sync.sync_manager import UserAuth
 
 

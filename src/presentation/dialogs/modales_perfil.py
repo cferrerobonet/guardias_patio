@@ -1,7 +1,5 @@
 """Diálogos modales profesionales para gestión de perfiles."""
 
-import ui_styles as styles
-from application.dtos.perfil_dto import ActualizarPerfilDTO, CambiarPasswordDTO, CrearPerfilDTO
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -11,6 +9,9 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QVBoxLayout,
 )
+
+import ui_styles as styles
+from application.dtos.perfil_dto import ActualizarPerfilDTO, CambiarPasswordDTO, CrearPerfilDTO
 
 
 class DialogoCrearPerfilProfesional(QDialog):

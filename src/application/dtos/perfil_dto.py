@@ -10,7 +10,7 @@ from typing import Optional
 @dataclass
 class PerfilDTO:
     """DTO para representar un perfil de usuario."""
-    
+
     username: str
     email: str
     tiene_bd: bool
@@ -23,7 +23,7 @@ class PerfilDTO:
 @dataclass
 class CrearPerfilDTO:
     """DTO para crear un nuevo perfil."""
-    
+
     username: str
     email: str
     password: str
@@ -32,7 +32,7 @@ class CrearPerfilDTO:
 @dataclass
 class ActualizarPerfilDTO:
     """DTO para actualizar un perfil existente."""
-    
+
     username: str
     email: str
 
@@ -40,7 +40,7 @@ class ActualizarPerfilDTO:
 @dataclass
 class CambiarPasswordDTO:
     """DTO para cambiar contraseña."""
-    
+
     username: str
     password_actual: str
     password_nueva: str

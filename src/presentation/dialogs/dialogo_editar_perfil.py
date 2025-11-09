@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
 from sync.sync_manager import UserAuth
 
 

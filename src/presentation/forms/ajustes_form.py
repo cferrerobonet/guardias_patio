@@ -5,13 +5,6 @@ Form para gestionar los ajustes del curso escolar.
 Sigue el patrón MVP usando Use Cases.
 """
 
-import ui_styles as styles
-from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
-from application.use_cases.configuracion import (
-    ActualizarConfiguracionUseCase,
-    ObtenerConfiguracionUseCase,
-)
-from core.exceptions import NotFoundError
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -23,6 +16,13 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
+import ui_styles as styles
+from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
+from application.use_cases.configuracion import (
+    ActualizarConfiguracionUseCase,
+    ObtenerConfiguracionUseCase,
+)
+from core.exceptions import NotFoundError
 from presentation.forms.base_form import BaseForm
 from presentation.forms.config_widgets import (
     AjustesWidget,
@@ -315,7 +315,7 @@ class AjustesForm(BaseForm):
     def _generar_recreos_config_json(self) -> str:
         """
         Genera el JSON de configuración de recreos basado en los valores del formulario.
-        
+
         El número de zonas se obtiene automáticamente contando las zonas en la tabla Zona.
 
         Returns:

@@ -1,8 +1,9 @@
 """Use Case: Eliminar un perfil de usuario."""
 
+from pathlib import Path
+
 from core.exceptions import NotFoundError, ValidationError
 from database.db_manager import delete_user_database, get_current_user_id
-from pathlib import Path
 from sync.sync_manager import UserAuth
 
 

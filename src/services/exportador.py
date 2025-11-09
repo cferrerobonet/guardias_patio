@@ -9,8 +9,9 @@ from datetime import date, time
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session, joinedload
+
+from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 
 
 class ExportadorDatos:
@@ -198,17 +199,16 @@ class ExportadorDatos:
     def exportar_usuarios() -> Optional[dict[str, Any]]:
         """
         Exporta todos los usuarios (perfiles) del sistema.
-        
+
         Returns:
             Diccionario con datos de usuarios o None si no hay archivo
         """
-        from core.paths import get_data_directory
         from sync.sync_manager import UserAuth
-        
+
         try:
             user_auth = UserAuth()
             usuarios_export = []
-            
+
             for username, user_data in user_auth.users.items():
                 usuarios_export.append({
                     "username": username,
@@ -216,7 +216,7 @@ class ExportadorDatos:
                     "password_hash": user_data.get("password_hash", ""),
                     "created_at": user_data.get("created_at", ""),
                 })
-            
+
             return {
                 "count": len(usuarios_export),
                 "usuarios": usuarios_export
@@ -229,25 +229,25 @@ class ExportadorDatos:
     def exportar_cursos_escolares(session: Session) -> Optional[dict[str, Any]]:
         """
         Exporta todos los cursos escolares del sistema.
-        
+
         Args:
             session: Sesión de SQLAlchemy
-            
+
         Returns:
             Diccionario con datos de cursos o None si hay error
         """
         from models.models import CursoEscolar
-        
+
         try:
             cursos = session.query(CursoEscolar).all()
-            
+
             cursos_export = []
             curso_actual = None
-            
+
             for curso in cursos:
                 if curso.activo and not curso.cerrado:
                     curso_actual = curso.nombre
-                    
+
                 cursos_export.append({
                     "nombre": curso.nombre,
                     "activo": curso.activo,
@@ -255,7 +255,7 @@ class ExportadorDatos:
                     "fecha_creacion": curso.fecha_creacion.isoformat() if curso.fecha_creacion else None,
                     "fecha_cierre": curso.fecha_cierre.isoformat() if curso.fecha_cierre else None,
                 })
-            
+
             return {
                 "count": len(cursos_export),
                 "curso_actual": curso_actual,
@@ -975,39 +975,39 @@ class ExportadorDatos:
     def importar_usuarios(usuarios_data: Optional[dict[str, Any]], limpiar: bool = False) -> int:
         """
         Importa usuarios desde diccionario.
-        
+
         Args:
             usuarios_data: Diccionario con datos de usuarios
             limpiar: Si True, elimina usuarios existentes antes de importar
-            
+
         Returns:
             Número de usuarios importados
         """
         if not usuarios_data or "usuarios" not in usuarios_data:
             return 0
-            
+
         from sync.sync_manager import UserAuth
-        
+
         try:
             user_auth = UserAuth()
-            
+
             if limpiar:
                 # Limpiar usuarios existentes
                 user_auth.users = {}
-            
+
             count = 0
             for usuario in usuarios_data["usuarios"]:
                 username = usuario.get("username")
                 if not username:
                     continue
-                    
+
                 user_auth.users[username] = {
                     "password_hash": usuario.get("password_hash", ""),
                     "email": usuario.get("email", ""),
                     "created_at": usuario.get("created_at", ""),
                 }
                 count += 1
-            
+
             user_auth._save_users()
             return count
         except Exception as e:
@@ -1020,33 +1020,34 @@ class ExportadorDatos:
     ) -> int:
         """
         Importa cursos escolares desde diccionario.
-        
+
         Args:
             session: Sesión de SQLAlchemy
             cursos_data: Diccionario con datos de cursos
             limpiar: Si True, elimina cursos existentes antes de importar
-            
+
         Returns:
             Número de cursos importados
         """
         if not cursos_data or "cursos" not in cursos_data:
             return 0
-            
-        from models.models import CursoEscolar
+
         from datetime import datetime
-        
+
+        from models.models import CursoEscolar
+
         try:
             if limpiar:
                 # Limpiar cursos existentes
                 session.query(CursoEscolar).delete()
                 session.flush()
-            
+
             count = 0
             for curso in cursos_data["cursos"]:
                 nombre = curso.get("nombre")
                 if not nombre:
                     continue
-                
+
                 # Verificar si ya existe
                 existe = session.query(CursoEscolar).filter_by(nombre=nombre).first()
                 if existe:
@@ -1065,9 +1066,9 @@ class ExportadorDatos:
                         fecha_cierre=datetime.fromisoformat(curso["fecha_cierre"]) if curso.get("fecha_cierre") else None,
                     )
                     session.add(nuevo_curso)
-                
+
                 count += 1
-            
+
             session.commit()
             return count
         except Exception as e:

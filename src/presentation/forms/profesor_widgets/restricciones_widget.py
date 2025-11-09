@@ -12,7 +12,6 @@ import json
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
-import ui_styles as styles
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -29,6 +28,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+import ui_styles as styles
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
 

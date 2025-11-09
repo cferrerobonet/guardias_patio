@@ -94,7 +94,7 @@ class SFTPSyncBackend(SyncBackend):
     """
     Backend de sincronización usando SFTP con verificación de host key.
     Requiere: pip install paramiko
-    
+
     SEGURIDAD:
     - Utiliza RejectPolicy() por defecto (rechaza hosts desconocidos)
     - Carga host keys desde ~/.ssh/known_hosts

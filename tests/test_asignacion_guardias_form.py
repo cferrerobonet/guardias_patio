@@ -12,11 +12,12 @@ from datetime import date, time
 from unittest.mock import Mock, patch
 
 import pytest
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QMessageBox
+
 from core.exceptions import BusinessLogicError
 from models.models import Configuracion, Guardia
 from presentation.forms.asignacion_guardias_form import AsignacionGuardiasForm
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QMessageBox
 
 # ========================================
 # FIXTURES

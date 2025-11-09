@@ -2,9 +2,7 @@
 Diálogo para crear un nuevo perfil de usuario con su base de datos.
 """
 
-from pathlib import Path
 
-from database.db_manager import create_user_database
 from PyQt6.QtWidgets import (
     QDialog,
     QFormLayout,
@@ -15,6 +13,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
+from database.db_manager import create_user_database
 from sync.sync_manager import UserAuth
 
 

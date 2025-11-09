@@ -7,19 +7,20 @@ Combina:
 - Selector de algoritmo de asignación
 """
 
-import ui_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QGroupBox, QLabel, QLineEdit, QVBoxLayout
+
+import ui_styles as styles
 
 
 class AjustesWidget(QGroupBox):
     """
     Widget para gestionar ajustes adicionales de configuración.
-    
+
     Combina en un solo widget:
     - Multiplicadores de guardias (tutores/no tutores)
     - Selector de algoritmo de asignación
-    
+
     Signals:
         config_changed: Emitido cuando cambia cualquier valor
     """
@@ -30,7 +31,7 @@ class AjustesWidget(QGroupBox):
     def __init__(self, parent=None):
         """
         Inicializa el widget de ajustes.
-        
+
         Args:
             parent: Widget padre opcional
         """
@@ -101,7 +102,7 @@ class AjustesWidget(QGroupBox):
     def get_ajustes(self) -> dict:
         """
         Obtiene los valores de ajustes.
-        
+
         Returns:
             dict: Diccionario con claves:
                 - tutores: float (multiplicador tutores)
@@ -122,7 +123,7 @@ class AjustesWidget(QGroupBox):
     ) -> None:
         """
         Establece los valores de ajustes.
-        
+
         Args:
             tutores: Multiplicador para tutores (default: 1.0)
             no_tutores: Multiplicador para no tutores (default: 1.0)
@@ -142,7 +143,7 @@ class AjustesWidget(QGroupBox):
     def validar(self) -> tuple[bool, str]:
         """
         Valida los valores de ajustes.
-        
+
         Returns:
             tuple: (es_valido, mensaje_error)
                 - es_valido: True si todos los valores son válidos

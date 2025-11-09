@@ -9,7 +9,6 @@ import locale
 from datetime import date
 from typing import List
 
-from models.models import Ausencia, Guardia
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -23,6 +22,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from models.models import Ausencia, Guardia
 
 # Configurar locale para fechas en español
 try:

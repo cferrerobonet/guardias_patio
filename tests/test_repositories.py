@@ -3,7 +3,7 @@ Tests para los repositorios de infraestructura.
 
 Tests unitarios para SQLAlchemy repositories:
 - SQLAlchemyProfesorRepository
-- SQLAlchemyZonaRepository  
+- SQLAlchemyZonaRepository
 - SQLAlchemyGuardiaRepository
 """
 
@@ -898,7 +898,7 @@ Profesor Repository: 6 tests
 - save, find_by_id, find_by_nombre, find_by_nombre_not_found
 - get_all, delete
 
-Zona Repository: 5 tests  
+Zona Repository: 5 tests
 - save, find_by_id, find_by_nombre, get_all, delete
 
 Guardia Repository: 3 tests

@@ -12,10 +12,11 @@ from pathlib import Path
 # Agregar src al path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+from sqlalchemy.orm import Session
+
 from database.db_manager import SessionLocal
 from models.models import Guardia, Profesor, Zona
 from services.exportador_pdf import ExportadorPDF
-from sqlalchemy.orm import Session
 
 
 def profile_data_loading(session: Session) -> dict:

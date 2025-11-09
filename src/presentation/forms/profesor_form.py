@@ -8,16 +8,6 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 import json
 from typing import Optional
 
-import ui_styles as styles
-from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
-from application.use_cases.profesor import (
-    ActualizarProfesorUseCase,
-    BuscarProfesoresUseCase,
-    CrearProfesorUseCase,
-    EliminarProfesorUseCase,
-    ListarProfesoresUseCase,
-    ObtenerProfesorUseCase,
-)
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -34,6 +24,16 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+import ui_styles as styles
+from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
+from application.use_cases.profesor import (
+    ActualizarProfesorUseCase,
+    BuscarProfesoresUseCase,
+    CrearProfesorUseCase,
+    EliminarProfesorUseCase,
+    ListarProfesoresUseCase,
+    ObtenerProfesorUseCase,
+)
 from presentation.forms.base_form import BaseForm
 from presentation.forms.profesor_widgets import (
     DatosBasicosWidget,
@@ -191,14 +191,18 @@ class ProfesorForm(BaseForm):
                 "Fin Guardias",
             ]
         )
-        self.tabla_profesores.horizontalHeader().setStretchLastSection(False)
-        self.tabla_profesores.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.Stretch
-        )
-        for i in [1, 2, 3, 4, 5, 6]:
-            self.tabla_profesores.horizontalHeader().setSectionResizeMode(
-                i, QHeaderView.ResizeMode.ResizeToContents
-            )
+
+        # Configurar anchos de columnas para ver todo el contenido
+        header = self.tabla_profesores.horizontalHeader()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Nombre - Stretch
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Email - Stretch
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Horas
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Turno
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # Tutor
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)  # Inicio
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)  # Fin
+
         self.tabla_profesores.setSortingEnabled(True)
         self.tabla_profesores.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         # Permitir selección múltiple (Ctrl+clic o Shift+clic)

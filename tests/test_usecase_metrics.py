@@ -4,8 +4,9 @@ registran las métricas apropiadas.
 
 Se testea `ObtenerEstadisticasUseCase` en ruta de éxito y en ruta de error.
 """
-import core.observability.decorators as obs_decorators
 import pytest
+
+import core.observability.decorators as obs_decorators
 from application.use_cases.asignacion_guardias.obtener_estadisticas import (
     ObtenerEstadisticasUseCase,
 )
@@ -74,8 +75,9 @@ def test_obtener_estadisticas_error(monkeypatch):
         fake_service_empty,
     )
 
-    from core.exceptions import BusinessLogicError
     from sqlalchemy.orm import Session
+
+    from core.exceptions import BusinessLogicError
 
     uc = ObtenerEstadisticasUseCase(Session())
 

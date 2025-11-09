@@ -3,7 +3,6 @@ Diálogo de Login para Sistema Multi-Usuario
 """
 
 
-from core.paths import get_resources_directory
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
@@ -17,6 +16,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
+from core.paths import get_resources_directory
 from sync.sync_manager import UserAuth
 from utils.icon_manager import get_icon
 from utils.ui_helpers import get_corporate_icon

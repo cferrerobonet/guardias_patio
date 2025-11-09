@@ -1,9 +1,10 @@
 """Use Case: Actualizar un perfil existente."""
 
+from pathlib import Path
+
 from application.dtos.perfil_dto import ActualizarPerfilDTO, PerfilDTO
 from core.exceptions import NotFoundError, ValidationError
 from database.db_manager import get_current_user_id, user_has_database
-from pathlib import Path
 from sync.sync_manager import UserAuth
 
 

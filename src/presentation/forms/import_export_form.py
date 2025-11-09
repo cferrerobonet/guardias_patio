@@ -5,8 +5,6 @@ Este módulo implementa la UI para exportar/importar datos en JSON
 y profesores desde Excel.
 """
 
-import ui_styles as styles
-from models.models import Configuracion, Profesor, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFileDialog,
@@ -18,14 +16,16 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
-from services.exportador import ExportadorDatos
-from services.importador_profesores import importar_profesores_desde_excel
-from utils import get_logger
 
+import ui_styles as styles
+from models.models import Configuracion, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 from presentation.forms.import_export_widgets import JsonOperationsWidget
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
+from services.exportador import ExportadorDatos
+from services.importador_profesores import importar_profesores_desde_excel
+from utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -174,12 +174,12 @@ class ImportExportForm(BaseForm):
             # Mostrar resumen
             from models.models import CursoEscolar
             from sync.sync_manager import UserAuth
-            
+
             prof_count = self.session.query(Profesor).count()
             zona_count = self.session.query(Zona).count()
             config_count = self.session.query(Configuracion).count()
             curso_count = self.session.query(CursoEscolar).count()
-            
+
             # Contar usuarios
             try:
                 user_auth = UserAuth()

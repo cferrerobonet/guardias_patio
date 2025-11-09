@@ -254,7 +254,7 @@ class TestEjecutarConProgreso:
             # Mock exec() para que no bloquee
             mock_dialog.exec.return_value = 1
 
-            resultado = ejecutar_con_progreso(
+            ejecutar_con_progreso(
                 parent_widget,
                 funcion_test,
                 titulo="Test",
@@ -282,7 +282,7 @@ class TestEjecutarConProgreso:
             MockDialog.return_value = mock_dialog
             mock_dialog.exec.return_value = 0  # Diálogo rechazado
 
-            resultado = ejecutar_con_progreso(
+            ejecutar_con_progreso(
                 parent_widget,
                 funcion_larga,
                 titulo="Test"

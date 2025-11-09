@@ -79,7 +79,7 @@ class TestProfesorEntity:
         p1 = ProfesorEntity(id=1, nombre_completo="Ana")
         p2 = ProfesorEntity(id=1, nombre_completo="Otro")
         assert hash(p1) == hash(p2)
-        
+
         # Pueden usarse en sets
         profesores = {p1, p2}
         assert len(profesores) == 1
@@ -145,7 +145,7 @@ class TestProfesorEntity:
         dia_semana = hoy.weekday()
         # Permitir todos EXCEPTO el día de hoy
         dias_permitidos = [d for d in range(7) if d != dia_semana]
-        
+
         profesor = ProfesorEntity(
             id=1,
             nombre_completo="Ana",
@@ -243,7 +243,7 @@ class TestProfesorEntity:
         # Llenar hasta el máximo
         for _ in range(settings.max_guardias_por_profesor_dia):
             profesor.asignar_guardia()
-        
+
         puede, razon = profesor.puede_asignar_guardia(hoy, "mañana", 1)
         assert puede is False
         assert "guardias" in razon.lower()
@@ -274,11 +274,11 @@ class TestProfesorEntity:
     def test_asignar_guardia_maximo_excedido(self):
         """Test que lanza error al exceder máximo de guardias."""
         profesor = ProfesorEntity(id=1, nombre_completo="Ana")
-        
+
         # Llenar hasta el máximo
         for _ in range(settings.max_guardias_por_profesor_dia):
             profesor.asignar_guardia()
-        
+
         # Intentar una más debe fallar
         with pytest.raises(MaxGuardiasDiaExceededError):
             profesor.asignar_guardia()
@@ -298,7 +298,7 @@ class TestProfesorEntity:
         """Test que liberar guardia no baja de cero."""
         profesor = ProfesorEntity(id=1, nombre_completo="Ana")
         assert profesor.guardias_asignadas_dia == 0
-        
+
         profesor.liberar_guardia()
         assert profesor.guardias_asignadas_dia == 0
 

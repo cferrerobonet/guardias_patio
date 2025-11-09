@@ -15,7 +15,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from utils.icon_manager import get_icon
 
 from presentation.themes.ccleaner_theme import (
     SIDEBAR_BG,
@@ -24,6 +23,7 @@ from presentation.themes.ccleaner_theme import (
     SPACING_SM,
     get_sidebar_style,
 )
+from utils.icon_manager import get_icon
 
 
 class SidebarMenu(QWidget):
@@ -64,16 +64,16 @@ class SidebarMenu(QWidget):
         logo_section_layout = QVBoxLayout(logo_section)
         logo_section_layout.setContentsMargins(0, 20, 0, 20)
         logo_section_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         # Label para el logo
         self.logo_label = QLabel()
         self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.logo_label.setFixedSize(120, 120)
         self.logo_label.setScaledContents(True)
-        
+
         # Intentar cargar logo corporativo del usuario actual
         self.update_logo()
-        
+
         logo_section_layout.addWidget(self.logo_label)
         layout.addWidget(logo_section)
 
@@ -135,14 +135,15 @@ class SidebarMenu(QWidget):
         """Actualiza el logo mostrado (corporativo o por defecto)"""
         if self.logo_label is None:
             return
-            
+
         # Buscar logo corporativo del usuario actual
         try:
-            from database.db_manager import get_current_user_id
             from PyQt6.QtGui import QPixmap
+
+            from database.db_manager import get_current_user_id
             current_user = get_current_user_id()
             logo_path = Path("imagenes") / f"{current_user}.png"
-            
+
             if logo_path.exists():
                 # Cargar logo corporativo sin borde (fondo claro ya lo tiene la sección)
                 pixmap = QPixmap(str(logo_path))
@@ -158,7 +159,7 @@ class SidebarMenu(QWidget):
                     return
         except Exception as e:
             print(f"Error al cargar logo corporativo: {e}")
-        
+
         # Si no hay logo corporativo, usar icono por defecto (school.svg)
         # En este caso usamos color oscuro porque el fondo es claro
         icon = get_icon("school", "#3a4149", 100)

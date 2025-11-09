@@ -10,10 +10,11 @@ from pathlib import Path
 # Agregar src al path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from models.models import Configuracion, Profesor, Zona
-from services.asignador_guardias import generar_calendario_guardias
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from models.models import Configuracion, Profesor, Zona
+from services.asignador_guardias import generar_calendario_guardias
 
 
 def main():

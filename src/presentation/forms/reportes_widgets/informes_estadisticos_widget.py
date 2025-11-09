@@ -11,7 +11,6 @@ Genera reportes detallados con estadísticas y gráficos sobre:
 
 from datetime import datetime
 
-import ui_styles as styles
 from PyQt6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -25,6 +24,7 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
+import ui_styles as styles
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
 

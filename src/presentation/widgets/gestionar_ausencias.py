@@ -6,8 +6,6 @@ Permite registrar, editar, eliminar y visualizar ausencias.
 
 from datetime import date
 
-import ui_styles as styles
-from models.models import Ausencia, Profesor
 from PyQt6.QtCore import QDate, Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -24,6 +22,10 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+
+import ui_styles as styles
+from models.models import Ausencia, Profesor
+from presentation.forms.base_form import BaseForm
 from services.gestor_ausencias import (
     desactivar_ausencia,
     editar_ausencia,
@@ -36,8 +38,6 @@ from services.gestor_ausencias import (
     registrar_ausencia,
 )
 from utils.ui_helpers import get_corporate_icon
-
-from presentation.forms.base_form import BaseForm
 
 
 class GestionarAusenciasForm(BaseForm):

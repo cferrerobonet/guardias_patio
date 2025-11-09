@@ -6,7 +6,6 @@ Permite visualizar todos los cursos y realizar operaciones de gestión.
 
 from typing import Optional
 
-import ui_styles as styles
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
@@ -22,6 +21,7 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
+import ui_styles as styles
 from core.logging import get_logger
 from models.models import CursoEscolar, Guardia
 from presentation.dialogs.dialogo_crear_curso import DialogoCrearCurso
@@ -114,7 +114,7 @@ class GestionCursosWidget(QWidget):
         self.tabla_cursos.setHorizontalHeaderLabels(
             ["Curso", "Fecha Inicio", "Fecha Fin", "Estado", "Guardias", "Creado"]
         )
-        
+
         # Ajustar columnas
         header = self.tabla_cursos.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Curso
@@ -123,23 +123,23 @@ class GestionCursosWidget(QWidget):
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Estado
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # Guardias
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)  # Creado
-        
+
         self.tabla_cursos.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.tabla_cursos.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.tabla_cursos.setAlternatingRowColors(True)
-        
+
         # Eliminar altura mínima fija para que sea flexible
         # El scroll aparecerá automáticamente cuando haya muchas filas
         self.tabla_cursos.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.tabla_cursos.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        
+
         self.tabla_cursos.itemSelectionChanged.connect(self._on_seleccion_cambiada)
-        
+
         # Añadir tabla con stretch=1 para que ocupe el espacio disponible
         grupo_layout.addWidget(self.tabla_cursos, 1)
-        
+
         grupo.setLayout(grupo_layout)
-        
+
         # Añadir GroupBox con stretch=1 para que se expanda verticalmente
         layout.addWidget(grupo, 1)
 
@@ -264,10 +264,10 @@ class GestionCursosWidget(QWidget):
                 # Si está cerrado, reabrirlo primero
                 if curso.cerrado:
                     GestorCursos.reabrir_curso(self.session, curso_id)
-                
+
                 # Luego activarlo
                 GestorCursos.activar_curso(self.session, curso_id)
-                
+
                 QMessageBox.information(
                     self, "Curso Activado", f"El curso {curso.nombre} está ahora activo."
                 )
@@ -321,30 +321,46 @@ class GestionCursosWidget(QWidget):
             num_guardias = self.session.query(Guardia).filter_by(curso_id=curso_id).count()
 
             # Confirmación doble
-            respuesta1 = QMessageBox.warning(
-                self,
-                "⚠️ Eliminar Curso",
-                f"¿ELIMINAR el curso {curso.nombre}?\n\n"
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+            msg_box.setWindowTitle("⚠️ Eliminar Curso")
+            msg_box.setText(f"¿ELIMINAR el curso {curso.nombre}?")
+            msg_box.setInformativeText(
                 f"⚠️ Esta acción eliminará:\n"
                 f"   • {num_guardias} guardias asignadas\n"
                 f"   • Todos los datos asociados al curso\n\n"
-                "Esta acción NO se puede deshacer.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
+                "Esta acción NO se puede deshacer."
             )
+            msg_box.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+
+            # Ajustar tamaño mínimo para que se vean los botones
+            msg_box.setMinimumWidth(500)
+            msg_box.setMinimumHeight(250)
+
+            respuesta1 = msg_box.exec()
 
             if respuesta1 != QMessageBox.StandardButton.Yes:
                 return
 
             # Segunda confirmación
-            respuesta2 = QMessageBox.critical(
-                self,
-                "⚠️ CONFIRMACIÓN FINAL",
-                f"¿Estás COMPLETAMENTE SEGURO de eliminar {curso.nombre}?\n\n"
-                "Se perderán todos los datos permanentemente.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-                QMessageBox.StandardButton.Cancel,
+            msg_box2 = QMessageBox(self)
+            msg_box2.setIcon(QMessageBox.Icon.Critical)
+            msg_box2.setWindowTitle("⚠️ CONFIRMACIÓN FINAL")
+            msg_box2.setText(f"¿Estás COMPLETAMENTE SEGURO de eliminar {curso.nombre}?")
+            msg_box2.setInformativeText("Se perderán todos los datos permanentemente.")
+            msg_box2.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel
             )
+            msg_box2.setDefaultButton(QMessageBox.StandardButton.Cancel)
+
+            # Ajustar tamaño mínimo
+            msg_box2.setMinimumWidth(450)
+            msg_box2.setMinimumHeight(200)
+
+            respuesta2 = msg_box2.exec()
 
             if respuesta2 == QMessageBox.StandardButton.Yes:
                 # Eliminar curso (cascade eliminará guardias)

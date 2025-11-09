@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -31,7 +32,7 @@ logger = get_logger(__name__)
 class InitialConfigDialog(QDialog):
     """
     Diálogo de configuración inicial SMTP/SFTP.
-    
+
     Valida que ambas configuraciones estén completas antes de permitir
     el uso de la aplicación. SFTP es obligatorio, SMTP es opcional.
     """

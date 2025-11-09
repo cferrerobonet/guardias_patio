@@ -22,8 +22,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from sqlalchemy import create_engine, text
 
-from database.db_manager import get_user_database_path
-
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -37,10 +35,10 @@ def aplicar_migracion_multi_curso():
 
     logger.info(f"Conectando a base de datos: {db_path}")
     engine = create_engine(f"sqlite:///{db_path}")
-    
+
     with engine.begin() as conn:
         logger.info("Iniciando migración Multi-Curso...")
-        
+
         try:
             # 1. Crear tabla cursos_escolares
             logger.info("1. Creando tabla cursos_escolares...")
@@ -59,13 +57,13 @@ def aplicar_migracion_multi_curso():
                 )
             """))
             logger.info("   ✓ Tabla cursos_escolares creada")
-            
+
             # 2. Añadir curso_activo_id a configuracion
             logger.info("2. Añadiendo curso_activo_id a configuracion...")
             try:
                 conn.execute(text("""
-                    ALTER TABLE configuracion 
-                    ADD COLUMN curso_activo_id INTEGER 
+                    ALTER TABLE configuracion
+                    ADD COLUMN curso_activo_id INTEGER
                     REFERENCES cursos_escolares(id)
                 """))
                 logger.info("   ✓ Columna curso_activo_id añadida")
@@ -74,13 +72,13 @@ def aplicar_migracion_multi_curso():
                     logger.info("   ⚠ Columna curso_activo_id ya existe")
                 else:
                     raise
-            
+
             # 3. Añadir curso_id a guardias
             logger.info("3. Añadiendo curso_id a guardias...")
             try:
                 conn.execute(text("""
-                    ALTER TABLE guardias 
-                    ADD COLUMN curso_id INTEGER 
+                    ALTER TABLE guardias
+                    ADD COLUMN curso_id INTEGER
                     REFERENCES cursos_escolares(id)
                 """))
                 logger.info("   ✓ Columna curso_id añadida a guardias")
@@ -89,13 +87,13 @@ def aplicar_migracion_multi_curso():
                     logger.info("   ⚠ Columna curso_id ya existe en guardias")
                 else:
                     raise
-            
+
             logger.info("✅ Migración Multi-Curso completada exitosamente")
-            
+
         except Exception as e:
             logger.error(f"❌ Error durante la migración: {e}")
             raise
-    
+
     engine.dispose()
 
 

@@ -1,10 +1,10 @@
 """Use Case: Listar todos los perfiles del sistema."""
 
+from pathlib import Path
 from typing import List
 
 from application.dtos.perfil_dto import PerfilDTO
 from database.db_manager import get_current_user_id, user_has_database
-from pathlib import Path
 from sync.sync_manager import UserAuth
 
 

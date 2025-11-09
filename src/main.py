@@ -11,11 +11,12 @@ from pathlib import Path
 # Añadir el directorio raíz al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from presentation.ccleaner_main_window import CCleanerMainWindow
-from presentation.forms.login_dialog import LoginDialog
 from PyQt6.QtCore import QLibraryInfo, QLocale, QTranslator
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
+
+from presentation.ccleaner_main_window import CCleanerMainWindow
+from presentation.forms.login_dialog import LoginDialog
 from sync import SyncManager, get_default_backend
 from utils.corporate_branding import apply_corporate_branding
 
@@ -178,6 +179,7 @@ def main():
     except Exception as e:
         logger.error(f"Error al inicializar sincronización: {e}")
         from PyQt6.QtCore import Qt
+
         from utils.ui_helpers import MESSAGEBOX_STYLE, get_corporate_icon
 
         msg = QMessageBox()

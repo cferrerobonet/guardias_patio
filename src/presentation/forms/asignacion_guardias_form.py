@@ -4,16 +4,6 @@ Formulario de asignación de guardias.
 Permite calcular distribución y generar el calendario completo de guardias.
 """
 
-import ui_styles as styles
-from application.use_cases.asignacion_guardias import (
-    CalcularDistribucionUseCase,
-    GenerarGuardiasUseCase,
-    ObtenerEstadisticasUseCase,
-)
-from application.use_cases.guardia import LimpiarGuardiasUseCase
-from core.exceptions import BusinessLogicError
-from infrastructure.repositories import SQLAlchemyGuardiaRepository
-from models.models import Guardia
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QGridLayout,
@@ -26,6 +16,16 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
+import ui_styles as styles
+from application.use_cases.asignacion_guardias import (
+    CalcularDistribucionUseCase,
+    GenerarGuardiasUseCase,
+    ObtenerEstadisticasUseCase,
+)
+from application.use_cases.guardia import LimpiarGuardiasUseCase
+from core.exceptions import BusinessLogicError
+from infrastructure.repositories import SQLAlchemyGuardiaRepository
+from models.models import Guardia
 from presentation.forms.asignacion_widgets import (
     DistribucionPanel,
     EstadisticasPanel,
@@ -208,6 +208,7 @@ class AsignacionGuardiasForm(BaseForm):
 
             if count_guardias > 0:
                 from PyQt6.QtWidgets import QMessageBox
+
                 from utils.ui_helpers import show_question_with_cancel
 
                 respuesta = show_question_with_cancel(

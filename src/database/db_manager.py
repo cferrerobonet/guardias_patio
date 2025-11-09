@@ -14,10 +14,11 @@ import os
 from contextlib import contextmanager
 from pathlib import Path
 
-from core.paths import get_user_data_directory
-from models.models import Base
 from sqlalchemy import create_engine, event, pool
 from sqlalchemy.orm import sessionmaker
+
+from core.paths import get_user_data_directory
+from models.models import Base
 from utils.constants import TIMEOUT_DB
 from utils.logger import get_logger
 
@@ -46,10 +47,10 @@ def _run_alembic_migrations(engine, db_path: Path):
         db_path: Ruta al archivo de base de datos
     """
     try:
+        from alembic.config import Config
         from sqlalchemy import inspect
 
         from alembic import command
-        from alembic.config import Config
 
         # Verificar si la base de datos ya tiene tablas
         inspector = inspect(engine)
@@ -198,17 +199,17 @@ def create_user_database(user_id: str) -> bool:
     """
     try:
         db_path = get_user_database_path(user_id)
-        
+
         # Crear directorio si no existe
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Crear base de datos con todas las tablas
         engine = create_engine(f"sqlite:///{db_path}")
         Base.metadata.create_all(engine)
-        
+
         logger.info(f"Base de datos creada para usuario: {user_id}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Error creando base de datos para usuario {user_id}: {e}")
         return False

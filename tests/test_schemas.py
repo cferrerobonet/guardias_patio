@@ -7,6 +7,8 @@ Objetivo: Aumentar cobertura de domain/schemas desde 0% a ~90%.
 from datetime import date
 
 import pytest
+from pydantic import ValidationError
+
 from domain.schemas.configuracion_schema import ConfiguracionSchema
 from domain.schemas.guardia_schema import (
     GuardiaCreateSchema,
@@ -18,7 +20,6 @@ from domain.schemas.profesor_schema import (
     ProfesorSchema,
     ProfesorUpdateSchema,
 )
-from pydantic import ValidationError
 
 
 class TestProfesorCreateSchema:

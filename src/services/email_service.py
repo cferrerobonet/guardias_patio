@@ -87,7 +87,7 @@ def generar_plantilla_email_html(
 <html>
   <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 20px;">
     <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      
+
       <!-- Logo corporativo con gradiente verde -->
       <div style="background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%); padding: 30px 20px; text-align: center;">
         <div style="background-color: white; width: 80px; height: 80px; margin: 0 auto 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
@@ -96,7 +96,7 @@ def generar_plantilla_email_html(
         <h1 style="color: white; margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Guardias de Patio</h1>
         <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0; font-size: 13px;">Sistema de Gestión de Guardias</p>
       </div>
-      
+
       <!-- Contenido principal -->
       <div style="padding: 30px 20px;">
         <h2 style="color: #4CAF50; margin: 0 0 20px 0; font-size: 22px;">{titulo}</h2>
@@ -105,7 +105,7 @@ def generar_plantilla_email_html(
 
         {secciones_html}
       </div>
-      
+
       <!-- Footer -->
       <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
         <p style="font-size: 12px; color: #6b7280; margin: 0;">

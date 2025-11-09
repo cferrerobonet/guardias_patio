@@ -13,6 +13,7 @@ no reimplementan la lógica compleja.
 from datetime import date, time
 
 import pytest
+
 from application.use_cases.asignacion_guardias.calcular_distribucion import (
     CalcularDistribucionUseCase,
 )

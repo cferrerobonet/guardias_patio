@@ -6,7 +6,6 @@ Gestiona las conexiones externas del sistema:
 - Servidor SFTP para sincronización en la nube
 """
 
-import ui_styles as styles
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -17,14 +16,15 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
+import ui_styles as styles
 from presentation.forms.base_form import BaseForm
-from presentation.forms.config_widgets import SMTPConfigWidget, SFTPConfigWidget
+from presentation.forms.config_widgets import SFTPConfigWidget, SMTPConfigWidget
 
 
 class ConectividadForm(BaseForm):
     """
     Formulario para gestionar la conectividad del sistema.
-    
+
     Permite configurar:
     - Servidor SMTP (correo electrónico)
     - Servidor SFTP (sincronización de archivos)
@@ -33,7 +33,7 @@ class ConectividadForm(BaseForm):
     def __init__(self, session: Session, parent=None):
         """
         Inicializa el formulario de conectividad.
-        
+
         Args:
             session: Sesión de SQLAlchemy
             parent: Widget padre

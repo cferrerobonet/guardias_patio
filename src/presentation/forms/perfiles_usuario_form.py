@@ -10,17 +10,6 @@ CRUD Profesional con:
 - Cambio de contraseña seguro (solo perfil actual)
 """
 
-import ui_styles as styles
-from application.use_cases.perfil import (
-    ActualizarLogoUseCase,
-    ActualizarPerfilUseCase,
-    CambiarPasswordUseCase,
-    CrearPerfilUseCase,
-    EliminarPerfilUseCase,
-    ListarPerfilesUseCase,
-)
-from core.exceptions import NotFoundError, ValidationError
-from database.db_manager import get_current_user_id
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFileDialog,
@@ -34,14 +23,25 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from sqlalchemy.orm import Session
-from sync.sync_manager import UserAuth
 
+import ui_styles as styles
+from application.use_cases.perfil import (
+    ActualizarLogoUseCase,
+    ActualizarPerfilUseCase,
+    CambiarPasswordUseCase,
+    CrearPerfilUseCase,
+    EliminarPerfilUseCase,
+    ListarPerfilesUseCase,
+)
+from core.exceptions import NotFoundError, ValidationError
+from database.db_manager import get_current_user_id
 from presentation.dialogs.modales_perfil import (
     DialogoCambiarPasswordProfesional,
     DialogoCrearPerfilProfesional,
     DialogoEditarPerfilProfesional,
 )
 from presentation.forms.base_form import BaseForm
+from sync.sync_manager import UserAuth
 
 
 class PerfilesUsuarioForm(BaseForm):

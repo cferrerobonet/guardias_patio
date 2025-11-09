@@ -5,6 +5,9 @@ Caso de uso para crear un nuevo profesor en el sistema.
 Invalida cache de profesores tras crear.
 """
 
+from sqlalchemy.orm import Session
+
+from application.dtos import CrearProfesorDTO, ProfesorDTO
 from core.exceptions import ValidationError
 from core.logging import get_logger
 from core.observability import with_metrics
@@ -13,10 +16,7 @@ from domain.repositories import IProfesorRepository
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
 from infrastructure.mappers import ProfesorMapper
 from infrastructure.repositories import SQLAlchemyProfesorRepository
-from sqlalchemy.orm import Session
 from utils.repository_cache import invalidate_profesores_cache
-
-from application.dtos import CrearProfesorDTO, ProfesorDTO
 
 logger = get_logger(__name__)
 

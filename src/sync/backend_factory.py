@@ -6,7 +6,6 @@ import logging
 from pathlib import Path
 
 from config import get_sftp_config, validate_sftp_config
-
 from sync.sync_manager import LocalSyncBackend, SFTPSyncBackend, SyncBackend
 
 logger = logging.getLogger(__name__)
