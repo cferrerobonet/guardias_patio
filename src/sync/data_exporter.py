@@ -13,7 +13,7 @@ from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
+from models.models import Ausencia, Configuracion, CursoEscolar, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class DataExporter:
         """
         if not password:
             return ""
-        return base64.b64encode(password.encode('utf-8')).decode('utf-8')
+        return base64.b64encode(password.encode("utf-8")).decode("utf-8")
 
     @staticmethod
     def _desencriptar_password(encrypted_password: str) -> str:
@@ -51,7 +51,7 @@ class DataExporter:
         if not encrypted_password:
             return ""
         try:
-            return base64.b64decode(encrypted_password.encode('utf-8')).decode('utf-8')
+            return base64.b64decode(encrypted_password.encode("utf-8")).decode("utf-8")
         except Exception as e:
             logger.warning(f"Error al desencriptar contraseña: {e}. Usando valor original.")
             return encrypted_password  # Si falla, asumir que ya está desencriptada
@@ -313,6 +313,7 @@ class DataExporter:
                 "version": "1.0",
                 "smtp_config": DataExporter._export_smtp_config(),  # Config global SMTP
                 "sftp_config": DataExporter._export_sftp_config(),  # Config global SFTP
+                "cursos_escolares": [],  # NUEVO: Cursos escolares
                 "profesores": [],
                 "zonas": [],
                 "configuracion": [],
@@ -320,97 +321,152 @@ class DataExporter:
                 "ausencias": [],
             }
 
+            # Exportar Cursos Escolares (NUEVO)
+            cursos = session.query(CursoEscolar).all()
+            for c in cursos:
+                data["cursos_escolares"].append(
+                    {
+                        "id": c.id,
+                        "anio_inicio": c.anio_inicio,
+                        "anio_fin": c.anio_fin,
+                        "fecha_inicio": DataExporter._serialize_date(c.fecha_inicio),
+                        "fecha_fin": DataExporter._serialize_date(c.fecha_fin),
+                        "nombre": c.nombre,
+                        "activo": c.activo,
+                        "cerrado": c.cerrado,
+                        "created_at": DataExporter._serialize_date(c.created_at),
+                    }
+                )
+            logger.info(f"✓ {len(cursos)} cursos escolares exportados")
+
             # Exportar Profesores
             profesores = session.query(Profesor).all()
             for p in profesores:
-                data["profesores"].append({
-                    "id": p.id,
-                    "nombre_completo": p.nombre_completo,
-                    "email_corporativo": p.email_corporativo,
-                    "horas_contrato": float(p.horas_contrato),
-                    "porcentaje_jornada": float(p.porcentaje_jornada),
-                    "turno": p.turno,
-                    "horas_manana": float(p.horas_manana) if p.horas_manana else None,
-                    "horas_tarde": float(p.horas_tarde) if p.horas_tarde else None,
-                    "tutor": p.tutor,
-                    "activo": p.activo,  # Campo añadido
-                    "fecha_inicio_guardias": DataExporter._serialize_date(p.fecha_inicio_guardias) if p.fecha_inicio_guardias else None,
-                    "fecha_fin_guardias": DataExporter._serialize_date(p.fecha_fin_guardias) if p.fecha_fin_guardias else None,
-                    "dias_semana_permitidos": p.dias_semana_permitidos,  # Campo añadido
-                    "recreos_permitidos": p.recreos_permitidos,  # Campo añadido
-                })
+                data["profesores"].append(
+                    {
+                        "id": p.id,
+                        "nombre_completo": p.nombre_completo,
+                        "email_corporativo": p.email_corporativo,
+                        "horas_contrato": float(p.horas_contrato),
+                        "porcentaje_jornada": float(p.porcentaje_jornada),
+                        "turno": p.turno,
+                        "horas_manana": float(p.horas_manana) if p.horas_manana else None,
+                        "horas_tarde": float(p.horas_tarde) if p.horas_tarde else None,
+                        "tutor": p.tutor,
+                        "activo": p.activo,  # Campo añadido
+                        "fecha_inicio_guardias": DataExporter._serialize_date(
+                            p.fecha_inicio_guardias
+                        )
+                        if p.fecha_inicio_guardias
+                        else None,
+                        "fecha_fin_guardias": DataExporter._serialize_date(p.fecha_fin_guardias)
+                        if p.fecha_fin_guardias
+                        else None,
+                        "dias_semana_permitidos": p.dias_semana_permitidos,  # Campo añadido
+                        "recreos_permitidos": p.recreos_permitidos,  # Campo añadido
+                    }
+                )
             logger.info(f"✓ {len(profesores)} profesores exportados")
 
             # Exportar Zonas
             zonas = session.query(Zona).all()
             for z in zonas:
-                data["zonas"].append({
-                    "id": z.id,
-                    "nombre_zona": z.nombre_zona,
-                    "descripcion": z.descripcion,
-                    "fecha_inicio": DataExporter._serialize_date(z.fecha_inicio) if z.fecha_inicio else None,
-                    "fecha_fin": DataExporter._serialize_date(z.fecha_fin) if z.fecha_fin else None,
-                })
+                data["zonas"].append(
+                    {
+                        "id": z.id,
+                        "nombre_zona": z.nombre_zona,
+                        "descripcion": z.descripcion,
+                        "fecha_inicio": DataExporter._serialize_date(z.fecha_inicio)
+                        if z.fecha_inicio
+                        else None,
+                        "fecha_fin": DataExporter._serialize_date(z.fecha_fin)
+                        if z.fecha_fin
+                        else None,
+                    }
+                )
             logger.info(f"✓ {len(zonas)} zonas exportadas")
 
             # Exportar Configuración
             configs = session.query(Configuracion).all()
             for c in configs:
-                data["configuracion"].append({
-                    "id": c.id,
-                    "fecha_inicio_curso": DataExporter._serialize_date(c.fecha_inicio_curso),
-                    "fecha_fin_curso": DataExporter._serialize_date(c.fecha_fin_curso),
-                    "hora_recreo1_manana": c.hora_recreo1_manana.isoformat() if c.hora_recreo1_manana else None,
-                    "hora_recreo2_manana": c.hora_recreo2_manana.isoformat() if c.hora_recreo2_manana else None,
-                    "hora_recreo1_tarde": c.hora_recreo1_tarde.isoformat() if c.hora_recreo1_tarde else None,
-                    "hora_recreo2_tarde": c.hora_recreo2_tarde.isoformat() if c.hora_recreo2_tarde else None,
-                    "activar_festivos_automaticos": c.activar_festivos_automaticos,
-                    "dias_no_lectivos_personalizados": c.dias_no_lectivos_personalizados,
-                    "recreos_config": c.recreos_config,
-                    "ajuste_tutores": float(c.ajuste_tutores) if c.ajuste_tutores else 1.0,
-                    "ajuste_no_tutores": float(c.ajuste_no_tutores) if c.ajuste_no_tutores else 1.0,
-                    "algoritmo_asignacion": c.algoritmo_asignacion,  # Campo añadido
-                })
+                data["configuracion"].append(
+                    {
+                        "id": c.id,
+                        "fecha_inicio_curso": DataExporter._serialize_date(c.fecha_inicio_curso),
+                        "fecha_fin_curso": DataExporter._serialize_date(c.fecha_fin_curso),
+                        "hora_recreo1_manana": c.hora_recreo1_manana.isoformat()
+                        if c.hora_recreo1_manana
+                        else None,
+                        "hora_recreo2_manana": c.hora_recreo2_manana.isoformat()
+                        if c.hora_recreo2_manana
+                        else None,
+                        "hora_recreo1_tarde": c.hora_recreo1_tarde.isoformat()
+                        if c.hora_recreo1_tarde
+                        else None,
+                        "hora_recreo2_tarde": c.hora_recreo2_tarde.isoformat()
+                        if c.hora_recreo2_tarde
+                        else None,
+                        "activar_festivos_automaticos": c.activar_festivos_automaticos,
+                        "dias_no_lectivos_personalizados": c.dias_no_lectivos_personalizados,
+                        "recreos_config": c.recreos_config,
+                        "ajuste_tutores": float(c.ajuste_tutores) if c.ajuste_tutores else 1.0,
+                        "ajuste_no_tutores": float(c.ajuste_no_tutores)
+                        if c.ajuste_no_tutores
+                        else 1.0,
+                        "algoritmo_asignacion": c.algoritmo_asignacion,  # Campo añadido
+                    }
+                )
             logger.info(f"✓ {len(configs)} configuraciones exportadas")
 
             # Exportar Guardias
             guardias = session.query(Guardia).all()
             for g in guardias:
-                data["guardias"].append({
-                    "id": g.id,
-                    "profesor_id": g.profesor_id,
-                    "fecha": DataExporter._serialize_date(g.fecha),
-                    "turno": g.turno,
-                    "recreo": g.recreo,
-                    "zona_id": g.zona_id,
-                })
+                data["guardias"].append(
+                    {
+                        "id": g.id,
+                        "curso_id": g.curso_id,  # NUEVO: FK a cursos_escolares
+                        "profesor_id": g.profesor_id,
+                        "fecha": DataExporter._serialize_date(g.fecha),
+                        "turno": g.turno,
+                        "recreo": g.recreo,
+                        "zona_id": g.zona_id,
+                    }
+                )
             logger.info(f"✓ {len(guardias)} guardias exportadas")
 
             # Exportar Ausencias
             ausencias = session.query(Ausencia).all()
             for a in ausencias:
-                data["ausencias"].append({
-                    "id": a.id,
-                    "profesor_id": a.profesor_id,
-                    "fecha_inicio": DataExporter._serialize_date(a.fecha_inicio),
-                    "fecha_fin": DataExporter._serialize_date(a.fecha_fin),
-                    "tipo": a.tipo,
-                    "motivo": a.motivo,
-                    "documento_path": a.documento_path,
-                    "activa": a.activa,
-                    "created_at": DataExporter._serialize_date(a.created_at) if a.created_at else None,
-                    "updated_at": DataExporter._serialize_date(a.updated_at) if a.updated_at else None,
-                })
+                data["ausencias"].append(
+                    {
+                        "id": a.id,
+                        "profesor_id": a.profesor_id,
+                        "fecha_inicio": DataExporter._serialize_date(a.fecha_inicio),
+                        "fecha_fin": DataExporter._serialize_date(a.fecha_fin),
+                        "tipo": a.tipo,
+                        "motivo": a.motivo,
+                        "documento_path": a.documento_path,
+                        "activa": a.activa,
+                        "created_at": DataExporter._serialize_date(a.created_at)
+                        if a.created_at
+                        else None,
+                        "updated_at": DataExporter._serialize_date(a.updated_at)
+                        if a.updated_at
+                        else None,
+                    }
+                )
             logger.info(f"✓ {len(ausencias)} ausencias exportadas")
 
             # Guardar JSON
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
             logger.info(f"✅ Datos exportados exitosamente a {output_path}")
-            logger.info(f"   Total: {len(profesores)} profesores, {len(zonas)} zonas, "
-                       f"{len(guardias)} guardias, {len(ausencias)} ausencias")
+            logger.info(
+                f"   Total: {len(profesores)} profesores, {len(zonas)} zonas, "
+                f"{len(guardias)} guardias, {len(ausencias)} ausencias"
+            )
             return True
 
         except Exception as e:
@@ -436,7 +492,7 @@ class DataExporter:
                 return False
 
             # Leer JSON
-            with open(input_path, 'r', encoding='utf-8') as f:
+            with open(input_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             logger.info(f"📥 Importando datos desde {input_path}")
@@ -445,13 +501,18 @@ class DataExporter:
 
             # Verificar que el esquema de la base de datos esté actualizado
             from sqlalchemy import inspect
+
             inspector = inspect(session.bind)
 
             # Verificar columnas críticas en la tabla profesores
-            profesores_columns = {col['name'] for col in inspector.get_columns('profesores')}
+            profesores_columns = {col["name"] for col in inspector.get_columns("profesores")}
             required_profesor_columns = {
-                'activo', 'zona_preferida_id', 'dias_semana_permitidos',
-                'recreos_permitidos', 'fecha_inicio_guardias', 'fecha_fin_guardias'
+                "activo",
+                "zona_preferida_id",
+                "dias_semana_permitidos",
+                "recreos_permitidos",
+                "fecha_inicio_guardias",
+                "fecha_fin_guardias",
             }
 
             missing_profesor_cols = required_profesor_columns - profesores_columns
@@ -466,8 +527,8 @@ class DataExporter:
                 return False
 
             # Verificar columnas críticas en la tabla configuracion
-            config_columns = {col['name'] for col in inspector.get_columns('configuracion')}
-            if 'algoritmo_asignacion' not in config_columns:
+            config_columns = {col["name"] for col in inspector.get_columns("configuracion")}
+            if "algoritmo_asignacion" not in config_columns:
                 logger.error(
                     "❌ El esquema de la base de datos está desactualizado. "
                     "Falta la columna 'algoritmo_asignacion' en configuracion."
@@ -495,7 +556,42 @@ class DataExporter:
                 session.query(Profesor).delete()
                 session.query(Zona).delete()
                 session.query(Configuracion).delete()
+                session.query(CursoEscolar).delete()  # NUEVO
                 session.commit()
+
+            # Importar Cursos Escolares (NUEVO - primero para que existan las FK)
+            cursos_importados = 0
+            for c_data in data.get("cursos_escolares", []):
+                # Verificar si ya existe
+                existing = session.query(CursoEscolar).filter_by(id=c_data["id"]).first()
+                if existing:
+                    # Actualizar
+                    existing.anio_inicio = c_data["anio_inicio"]
+                    existing.anio_fin = c_data["anio_fin"]
+                    existing.fecha_inicio = DataExporter._parse_date(c_data["fecha_inicio"])
+                    existing.fecha_fin = DataExporter._parse_date(c_data["fecha_fin"])
+                    existing.nombre = c_data["nombre"]
+                    existing.activo = c_data["activo"]
+                    existing.cerrado = c_data["cerrado"]
+                    existing.created_at = DataExporter._parse_date(c_data["created_at"])
+                else:
+                    # Crear nuevo
+                    curso = CursoEscolar(
+                        id=c_data["id"],
+                        anio_inicio=c_data["anio_inicio"],
+                        anio_fin=c_data["anio_fin"],
+                        fecha_inicio=DataExporter._parse_date(c_data["fecha_inicio"]),
+                        fecha_fin=DataExporter._parse_date(c_data["fecha_fin"]),
+                        nombre=c_data["nombre"],
+                        activo=c_data["activo"],
+                        cerrado=c_data["cerrado"],
+                        created_at=DataExporter._parse_date(c_data["created_at"]),
+                    )
+                    session.add(curso)
+                cursos_importados += 1
+
+            session.commit()
+            logger.info(f"✓ {cursos_importados} cursos escolares importados")
 
             # Importar Zonas (primero, porque pueden ser referenciadas)
             zonas_importadas = 0
@@ -537,9 +633,15 @@ class DataExporter:
                     existing.horas_tarde = p_data.get("horas_tarde")
                     existing.tutor = p_data.get("tutor", False)
                     existing.activo = p_data.get("activo", True)  # Campo añadido
-                    existing.fecha_inicio_guardias = DataExporter._parse_date(p_data.get("fecha_inicio_guardias"))
-                    existing.fecha_fin_guardias = DataExporter._parse_date(p_data.get("fecha_fin_guardias"))
-                    existing.dias_semana_permitidos = p_data.get("dias_semana_permitidos")  # Campo añadido
+                    existing.fecha_inicio_guardias = DataExporter._parse_date(
+                        p_data.get("fecha_inicio_guardias")
+                    )
+                    existing.fecha_fin_guardias = DataExporter._parse_date(
+                        p_data.get("fecha_fin_guardias")
+                    )
+                    existing.dias_semana_permitidos = p_data.get(
+                        "dias_semana_permitidos"
+                    )  # Campo añadido
                     existing.recreos_permitidos = p_data.get("recreos_permitidos")  # Campo añadido
                 else:
                     # Crear nuevo
@@ -554,9 +656,15 @@ class DataExporter:
                         horas_tarde=p_data.get("horas_tarde"),
                         tutor=p_data.get("tutor", False),
                         activo=p_data.get("activo", True),  # Campo añadido
-                        fecha_inicio_guardias=DataExporter._parse_date(p_data.get("fecha_inicio_guardias")),
-                        fecha_fin_guardias=DataExporter._parse_date(p_data.get("fecha_fin_guardias")),
-                        dias_semana_permitidos=p_data.get("dias_semana_permitidos"),  # Campo añadido
+                        fecha_inicio_guardias=DataExporter._parse_date(
+                            p_data.get("fecha_inicio_guardias")
+                        ),
+                        fecha_fin_guardias=DataExporter._parse_date(
+                            p_data.get("fecha_fin_guardias")
+                        ),
+                        dias_semana_permitidos=p_data.get(
+                            "dias_semana_permitidos"
+                        ),  # Campo añadido
                         recreos_permitidos=p_data.get("recreos_permitidos"),  # Campo añadido
                     )
                     session.add(profesor)
@@ -570,34 +678,64 @@ class DataExporter:
                 existing = session.query(Configuracion).filter_by(id=c_data["id"]).first()
                 if existing:
                     # Actualizar
-                    existing.fecha_inicio_curso = DataExporter._parse_date(c_data["fecha_inicio_curso"])
+                    existing.fecha_inicio_curso = DataExporter._parse_date(
+                        c_data["fecha_inicio_curso"]
+                    )
                     existing.fecha_fin_curso = DataExporter._parse_date(c_data["fecha_fin_curso"])
-                    existing.hora_recreo1_manana = DataExporter._parse_time(c_data.get("hora_recreo1_manana"))
-                    existing.hora_recreo2_manana = DataExporter._parse_time(c_data.get("hora_recreo2_manana"))
-                    existing.hora_recreo1_tarde = DataExporter._parse_time(c_data.get("hora_recreo1_tarde"))
-                    existing.hora_recreo2_tarde = DataExporter._parse_time(c_data.get("hora_recreo2_tarde"))
-                    existing.activar_festivos_automaticos = c_data.get("activar_festivos_automaticos", True)
-                    existing.dias_no_lectivos_personalizados = c_data.get("dias_no_lectivos_personalizados")
+                    existing.hora_recreo1_manana = DataExporter._parse_time(
+                        c_data.get("hora_recreo1_manana")
+                    )
+                    existing.hora_recreo2_manana = DataExporter._parse_time(
+                        c_data.get("hora_recreo2_manana")
+                    )
+                    existing.hora_recreo1_tarde = DataExporter._parse_time(
+                        c_data.get("hora_recreo1_tarde")
+                    )
+                    existing.hora_recreo2_tarde = DataExporter._parse_time(
+                        c_data.get("hora_recreo2_tarde")
+                    )
+                    existing.activar_festivos_automaticos = c_data.get(
+                        "activar_festivos_automaticos", True
+                    )
+                    existing.dias_no_lectivos_personalizados = c_data.get(
+                        "dias_no_lectivos_personalizados"
+                    )
                     existing.recreos_config = c_data.get("recreos_config")
                     existing.ajuste_tutores = c_data.get("ajuste_tutores", 1.0)
                     existing.ajuste_no_tutores = c_data.get("ajuste_no_tutores", 1.0)
-                    existing.algoritmo_asignacion = c_data.get("algoritmo_asignacion", "v2.9")  # Campo añadido
+                    existing.algoritmo_asignacion = c_data.get(
+                        "algoritmo_asignacion", "v2.9"
+                    )  # Campo añadido
                 else:
                     # Crear nueva
                     config = Configuracion(
                         id=c_data["id"],
                         fecha_inicio_curso=DataExporter._parse_date(c_data["fecha_inicio_curso"]),
                         fecha_fin_curso=DataExporter._parse_date(c_data["fecha_fin_curso"]),
-                        hora_recreo1_manana=DataExporter._parse_time(c_data.get("hora_recreo1_manana")),
-                        hora_recreo2_manana=DataExporter._parse_time(c_data.get("hora_recreo2_manana")),
-                        hora_recreo1_tarde=DataExporter._parse_time(c_data.get("hora_recreo1_tarde")),
-                        hora_recreo2_tarde=DataExporter._parse_time(c_data.get("hora_recreo2_tarde")),
-                        activar_festivos_automaticos=c_data.get("activar_festivos_automaticos", True),
-                        dias_no_lectivos_personalizados=c_data.get("dias_no_lectivos_personalizados"),
+                        hora_recreo1_manana=DataExporter._parse_time(
+                            c_data.get("hora_recreo1_manana")
+                        ),
+                        hora_recreo2_manana=DataExporter._parse_time(
+                            c_data.get("hora_recreo2_manana")
+                        ),
+                        hora_recreo1_tarde=DataExporter._parse_time(
+                            c_data.get("hora_recreo1_tarde")
+                        ),
+                        hora_recreo2_tarde=DataExporter._parse_time(
+                            c_data.get("hora_recreo2_tarde")
+                        ),
+                        activar_festivos_automaticos=c_data.get(
+                            "activar_festivos_automaticos", True
+                        ),
+                        dias_no_lectivos_personalizados=c_data.get(
+                            "dias_no_lectivos_personalizados"
+                        ),
                         recreos_config=c_data.get("recreos_config"),
                         ajuste_tutores=c_data.get("ajuste_tutores", 1.0),
                         ajuste_no_tutores=c_data.get("ajuste_no_tutores", 1.0),
-                        algoritmo_asignacion=c_data.get("algoritmo_asignacion", "v2.9"),  # Campo añadido
+                        algoritmo_asignacion=c_data.get(
+                            "algoritmo_asignacion", "v2.9"
+                        ),  # Campo añadido
                     )
                     session.add(config)
                 configs_importadas += 1
@@ -611,6 +749,7 @@ class DataExporter:
                 if not existing:  # Solo crear, no actualizar guardias
                     guardia = Guardia(
                         id=g_data["id"],
+                        curso_id=g_data.get("curso_id"),  # NUEVO: puede ser None
                         profesor_id=g_data["profesor_id"],
                         fecha=DataExporter._parse_date(g_data["fecha"]),
                         turno=g_data["turno"],
