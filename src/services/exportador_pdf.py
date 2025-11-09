@@ -642,9 +642,10 @@ class ExportadorPDF:
 
             # Obtener profesores con guardias
             if profesor_ids is None:
-                # Obtener todos los profesores con guardias en el curso
-                primer_dia_curso = date(anio_inicio, 9, 1)
-                ultimo_dia_curso = date(anio_inicio + 1, 6, 30)
+                # Obtener todos los profesores con guardias en el rango del curso
+                # Ampliar búsqueda: desde inicio del primer año hasta fin del segundo año
+                primer_dia_curso = date(anio_inicio, 1, 1)
+                ultimo_dia_curso = date(anio_inicio + 1, 12, 31)
 
                 logger.info(
                     f"Buscando profesores con guardias entre "

@@ -200,7 +200,9 @@ class CalendariosPdfWidget(QGroupBox):
         anio_actual = datetime.now().year
         for anio in range(anio_actual - 1, anio_actual + 3):
             self.pdf_curso_combo.addItem(f"{anio}/{anio + 1}", anio)
-        self.pdf_curso_combo.setCurrentIndex(1)
+        # Seleccionar por defecto el año anterior (2024/2025 si estamos en 2025)
+        # ya que es más probable que tenga guardias asignadas
+        self.pdf_curso_combo.setCurrentIndex(0)
         self.pdf_curso_combo.setStyleSheet(styles.STYLE_INPUT)
         curso_layout.addWidget(self.pdf_curso_combo)
 

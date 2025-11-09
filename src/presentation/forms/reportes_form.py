@@ -330,7 +330,7 @@ class ReportesForm(BaseForm):
             mensaje = (
                 f"❌ No se pudo generar el PDF del curso\n\n"
                 f"Curso solicitado: {anio_inicio}/{anio_inicio + 1}\n"
-                f"Rango de fechas: Sep {anio_inicio} - Jun {anio_inicio + 1}\n\n"
+                f"Rango de fechas: {anio_inicio} - {anio_inicio + 1} (año completo)\n\n"
                 f"Posibles causas:\n"
                 f"• No hay guardias asignadas en este curso escolar\n"
                 f"• Las guardias existentes están fuera del rango de fechas\n\n"
@@ -384,7 +384,7 @@ class ReportesForm(BaseForm):
                 f"❌ No se pudo generar el PDF del curso\n\n"
                 f"Curso solicitado: {anio_inicio}/{anio_inicio + 1}\n"
                 f"Profesores seleccionados: {len(profesor_ids)}\n"
-                f"Rango de fechas: Sep {anio_inicio} - Jun {anio_inicio + 1}\n\n"
+                f"Rango de fechas: {anio_inicio} - {anio_inicio + 1} (año completo)\n\n"
                 f"Posibles causas:\n"
                 f"• Los profesores seleccionados no tienen guardias en este curso\n"
                 f"• Las guardias existentes están fuera del rango de fechas\n\n"
