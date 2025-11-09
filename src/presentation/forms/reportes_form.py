@@ -325,6 +325,22 @@ class ReportesForm(BaseForm):
                 "PDF generado",
                 f"Se generó el calendario del curso {anio_inicio}/{anio_inicio + 1} correctamente.",
             )
+        else:
+            # No se generó el PDF
+            mensaje = (
+                f"❌ No se pudo generar el PDF del curso\n\n"
+                f"Curso solicitado: {anio_inicio}/{anio_inicio + 1}\n"
+                f"Rango de fechas: Sep {anio_inicio} - Jun {anio_inicio + 1}\n\n"
+                f"Posibles causas:\n"
+                f"• No hay guardias asignadas en este curso escolar\n"
+                f"• Las guardias existentes están fuera del rango de fechas\n\n"
+                f"Revisa el año seleccionado y las fechas de las guardias."
+            )
+            self.resultado_text.setText(mensaje)
+            self.mostrar_advertencia(
+                "Sin datos para exportar",
+                f"No hay guardias para generar el PDF del curso {anio_inicio}/{anio_inicio + 1}.",
+            )
 
     def _exportar_curso_seleccionados(self, config: dict, carpeta: str):
         """Exportar curso completo para profesores seleccionados."""
@@ -361,6 +377,23 @@ class ReportesForm(BaseForm):
             self.mostrar_exito(
                 "PDF generado",
                 f"Se generó el calendario del curso {anio_inicio}/{anio_inicio + 1} correctamente.",
+            )
+        else:
+            # No se generó el PDF
+            mensaje = (
+                f"❌ No se pudo generar el PDF del curso\n\n"
+                f"Curso solicitado: {anio_inicio}/{anio_inicio + 1}\n"
+                f"Profesores seleccionados: {len(profesor_ids)}\n"
+                f"Rango de fechas: Sep {anio_inicio} - Jun {anio_inicio + 1}\n\n"
+                f"Posibles causas:\n"
+                f"• Los profesores seleccionados no tienen guardias en este curso\n"
+                f"• Las guardias existentes están fuera del rango de fechas\n\n"
+                f"Revisa el año seleccionado y las fechas de las guardias."
+            )
+            self.resultado_text.setText(mensaje)
+            self.mostrar_advertencia(
+                "Sin datos para exportar",
+                f"No hay guardias para generar el PDF del curso {anio_inicio}/{anio_inicio + 1}.",
             )
 
     def _exportar_individual_seleccionados(self, config: dict, carpeta: str):
