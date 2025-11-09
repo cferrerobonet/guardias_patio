@@ -49,7 +49,7 @@ def main():
                 "Configuración Incompleta",
                 "No se puede iniciar la aplicación sin configurar SFTP.\n\n"
                 "El servidor SFTP es necesario para garantizar copias de seguridad "
-                "y sincronización de datos."
+                "y sincronización de datos.",
             )
             sys.exit(0)
 
@@ -67,8 +67,9 @@ def main():
     qt_translator = QTranslator()
     translations_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
 
-    if qt_translator.load(QLocale(QLocale.Language.Spanish, QLocale.Country.Spain),
-                          "qtbase", "_", translations_path):
+    if qt_translator.load(
+        QLocale(QLocale.Language.Spanish, QLocale.Country.Spain), "qtbase", "_", translations_path
+    ):
         app.installTranslator(qt_translator)
         logger.info("✓ Traducción de Qt al español cargada")
     else:
@@ -81,6 +82,7 @@ def main():
 
     # Aplicar stylesheet global a toda la aplicación
     from presentation.themes.ccleaner_theme import get_complete_stylesheet
+
     app.setStyleSheet(get_complete_stylesheet())
 
     # ==========================================
@@ -98,11 +100,24 @@ def main():
 
     # Inicializar base de datos específica del usuario
     from database.db_manager import initialize_user_database
+
     engine, SessionFactory = initialize_user_database(username)
     logger.info(f"Base de datos del usuario '{username}' inicializada")
 
     # Crear sesión de base de datos (necesaria para sync)
     session = SessionFactory()
+
+    # 🔄 Ejecutar migración automática al sistema Multi-Curso si es necesario
+    try:
+        from services.migrar_a_multi_curso import ejecutar_migracion_si_necesario
+
+        if ejecutar_migracion_si_necesario(session):
+            logger.info("✅ Migración al sistema Multi-Curso completada")
+        else:
+            logger.info("✅ Sistema Multi-Curso: datos ya migrados")
+    except Exception as e:
+        logger.error(f"⚠ Error en migración Multi-Curso: {e}")
+        # Continuar de todos modos - la migración no es crítica para funcionar
 
     # Inicializar sistema de sincronización
     sync_manager = None
@@ -145,7 +160,7 @@ def main():
                 None,
                 "Sesión Bloqueada",
                 "No se pudo iniciar sesión después de varios intentos.\n"
-                "El usuario está activo en otro dispositivo."
+                "El usuario está activo en otro dispositivo.",
             )
             session.close()
             sys.exit(1)
@@ -170,13 +185,13 @@ def main():
         msg.setWindowTitle("Aviso de Sincronización")
         msg.setWindowIcon(get_corporate_icon())
         msg.setWindowFlags(
-            Qt.WindowType.Dialog
-            | Qt.WindowType.CustomizeWindowHint
-            | Qt.WindowType.WindowTitleHint
+            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )
         msg.setText("No se pudo conectar al servidor de sincronización.")
-        msg.setInformativeText("La aplicación funcionará en modo local.\n\n"
-                              "Detalles: [Errno 30] Read-only file system: 'cloud_storage_local'")
+        msg.setInformativeText(
+            "La aplicación funcionará en modo local.\n\n"
+            "Detalles: [Errno 30] Read-only file system: 'cloud_storage_local'"
+        )
         msg.setStyleSheet(MESSAGEBOX_STYLE)
         msg.exec()
 
@@ -204,6 +219,7 @@ def main():
     except Exception as e:
         logger.exception(f"Error fatal al crear o ejecutar la ventana principal: {e}")
         import traceback
+
         print("=" * 80)
         print("ERROR FATAL:")
         print("=" * 80)
@@ -236,10 +252,10 @@ def main():
 
                     try:
                         total = (
-                            session.query(Profesor).count() +
-                            session.query(Zona).count() +
-                            session.query(Guardia).count() +
-                            session.query(Ausencia).count()
+                            session.query(Profesor).count()
+                            + session.query(Zona).count()
+                            + session.query(Guardia).count()
+                            + session.query(Ausencia).count()
                         )
                         progress_dialog.set_step_exporting(total)
                     except Exception as e:
@@ -263,8 +279,7 @@ def main():
             try:
                 # Ejecutar sincronización con callback de progreso
                 success = sync_manager.sync_on_shutdown(
-                    session=session,
-                    progress_callback=on_progress
+                    session=session, progress_callback=on_progress
                 )
 
                 if success:
@@ -287,7 +302,7 @@ def main():
         session.close()
 
         # Cerrar backend de sincronización si existe
-        if sync_manager and hasattr(sync_manager.backend, 'close'):
+        if sync_manager and hasattr(sync_manager.backend, "close"):
             try:
                 sync_manager.backend.close()
             except Exception as e:
