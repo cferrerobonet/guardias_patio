@@ -76,10 +76,10 @@ class ExportadorPDF:
             doc = SimpleDocTemplate(
                 ruta_salida,
                 pagesize=landscape(A4),
-                rightMargin=2*cm,
-                leftMargin=2*cm,
-                topMargin=2*cm,
-                bottomMargin=2*cm,
+                rightMargin=2 * cm,
+                leftMargin=2 * cm,
+                topMargin=2 * cm,
+                bottomMargin=2 * cm,
             )
 
             elements = []
@@ -87,10 +87,10 @@ class ExportadorPDF:
 
             # Título
             titulo_style = ParagraphStyle(
-                'CustomTitle',
-                parent=styles['Heading1'],
+                "CustomTitle",
+                parent=styles["Heading1"],
                 fontSize=18,
-                textColor=colors.HexColor('#2c3e50'),
+                textColor=colors.HexColor("#2c3e50"),
                 spaceAfter=12,
                 alignment=1,  # Centrado
             )
@@ -111,26 +111,20 @@ class ExportadorPDF:
                 "Diciembre",
             ]
 
-            titulo = Paragraph(
-                f"Calendario de Guardias - {meses[mes]} {anio}",
-                titulo_style
-            )
+            titulo = Paragraph(f"Calendario de Guardias - {meses[mes]} {anio}", titulo_style)
             elements.append(titulo)
 
             # Información del profesor
             info_style = ParagraphStyle(
-                'InfoStyle',
-                parent=styles['Normal'],
+                "InfoStyle",
+                parent=styles["Normal"],
                 fontSize=12,
-                textColor=colors.HexColor('#34495e'),
+                textColor=colors.HexColor("#34495e"),
                 spaceAfter=20,
                 alignment=1,
             )
 
-            info = Paragraph(
-                f"<b>Profesor/a:</b> {profesor.nombre_completo}",
-                info_style
-            )
+            info = Paragraph(f"<b>Profesor/a:</b> {profesor.nombre_completo}", info_style)
             elements.append(info)
 
             # Tabla de guardias
@@ -141,9 +135,9 @@ class ExportadorPDF:
                     guardias_por_fecha[g.fecha].append(g)
 
                 # Crear datos de la tabla
-                data = [['Fecha', 'Día', 'Turno', 'Recreo', 'Zona', 'Observaciones']]
+                data = [["Fecha", "Día", "Turno", "Recreo", "Zona", "Observaciones"]]
 
-                dias_semana = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+                dias_semana = ["L", "M", "X", "J", "V", "S", "D"]
 
                 for fecha, guardias_dia in sorted(guardias_por_fecha.items()):
                     for i, guardia in enumerate(guardias_dia):
@@ -152,48 +146,55 @@ class ExportadorPDF:
                         fecha_str = fecha.strftime("%d/%m/%Y") if i == 0 else ""
                         dia_semana = dias_semana[fecha.weekday()] if i == 0 else ""
 
-                        data.append([
-                            fecha_str,
-                            dia_semana,
-                            guardia.turno.capitalize(),
-                            f"Recreo {guardia.recreo}",
-                            zona_nombre,
-                            ""  # Observaciones vacías
-                        ])
+                        data.append(
+                            [
+                                fecha_str,
+                                dia_semana,
+                                guardia.turno.capitalize(),
+                                f"Recreo {guardia.recreo}",
+                                zona_nombre,
+                                "",  # Observaciones vacías
+                            ]
+                        )
 
                 # Crear tabla
-                tabla = Table(data, colWidths=[3*cm, 1.5*cm, 2.5*cm, 2.5*cm, 5*cm, 5*cm])
+                tabla = Table(
+                    data, colWidths=[3 * cm, 1.5 * cm, 2.5 * cm, 2.5 * cm, 5 * cm, 5 * cm]
+                )
 
                 # Estilo de tabla
-                tabla.setStyle(TableStyle([
-                    # Encabezado
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498db')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 11),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-
-                    # Cuerpo
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                    ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                    ('FONTSIZE', (0, 1), (-1, -1), 10),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
-                ]))
+                tabla.setStyle(
+                    TableStyle(
+                        [
+                            # Encabezado
+                            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3498db")),
+                            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                            ("FONTSIZE", (0, 0), (-1, 0), 11),
+                            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                            # Cuerpo
+                            ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                            ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
+                            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                            ("FONTSIZE", (0, 1), (-1, -1), 10),
+                            ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+                        ]
+                    )
+                )
 
                 elements.append(tabla)
 
                 # Resumen
-                elements.append(Spacer(1, 1*cm))
+                elements.append(Spacer(1, 1 * cm))
 
                 resumen_style = ParagraphStyle(
-                    'ResumenStyle',
-                    parent=styles['Normal'],
+                    "ResumenStyle",
+                    parent=styles["Normal"],
                     fontSize=11,
-                    textColor=colors.HexColor('#2c3e50'),
+                    textColor=colors.HexColor("#2c3e50"),
                 )
 
                 total_guardias = len(guardias)
@@ -213,37 +214,34 @@ class ExportadorPDF:
             else:
                 # No hay guardias
                 no_guardias_style = ParagraphStyle(
-                    'NoGuardiasStyle',
-                    parent=styles['Normal'],
+                    "NoGuardiasStyle",
+                    parent=styles["Normal"],
                     fontSize=12,
-                    textColor=colors.HexColor('#e74c3c'),
+                    textColor=colors.HexColor("#e74c3c"),
                     alignment=1,
                 )
 
                 no_guardias = Paragraph(
-                    f"No hay guardias asignadas para {meses[mes]} {anio}",
-                    no_guardias_style
+                    f"No hay guardias asignadas para {meses[mes]} {anio}", no_guardias_style
                 )
-                elements.append(Spacer(1, 2*cm))
+                elements.append(Spacer(1, 2 * cm))
                 elements.append(no_guardias)
 
             # Pie de página con fecha de generación
-            elements.append(Spacer(1, 2*cm))
+            elements.append(Spacer(1, 2 * cm))
 
             footer_style = ParagraphStyle(
-                'FooterStyle',
-                parent=styles['Normal'],
+                "FooterStyle",
+                parent=styles["Normal"],
                 fontSize=8,
                 textColor=colors.grey,
                 alignment=2,  # Derecha
             )
 
             from datetime import datetime
+
             fecha_generacion = datetime.now().strftime("%d/%m/%Y %H:%M")
-            footer = Paragraph(
-                f"Documento generado el {fecha_generacion}",
-                footer_style
-            )
+            footer = Paragraph(f"Documento generado el {fecha_generacion}", footer_style)
             elements.append(footer)
 
             # Construir PDF
@@ -260,7 +258,7 @@ class ExportadorPDF:
         mes: int,
         anio: int,
         carpeta_salida: str,
-        progress_callback: Optional[Callable[[int, str], None]] = None
+        progress_callback: Optional[Callable[[int, str], None]] = None,
     ) -> int:
         """
         Exporta calendarios PDF para todos los profesores con guardias.
@@ -276,6 +274,7 @@ class ExportadorPDF:
         Returns:
             Número de PDFs generados exitosamente
         """
+
         def reportar_progreso(porcentaje: int, mensaje: str = ""):
             """Helper para reportar progreso de forma segura."""
             if progress_callback:
@@ -351,7 +350,7 @@ class ExportadorPDF:
         mes: int,
         anio: int,
         ruta_salida: str,
-        progress_callback: Optional[Callable[[int, str], None]] = None
+        progress_callback: Optional[Callable[[int, str], None]] = None,
     ) -> bool:
         """
         Exporta un PDF consolidado con todas las guardias del mes.
@@ -367,6 +366,7 @@ class ExportadorPDF:
         Returns:
             True si se generó correctamente, False en caso contrario
         """
+
         def reportar_progreso(porcentaje: int, mensaje: str = ""):
             """Helper para reportar progreso de forma segura."""
             if progress_callback:
@@ -388,10 +388,7 @@ class ExportadorPDF:
             guardias = (
                 session.query(Guardia)
                 .options(joinedload(Guardia.zona), joinedload(Guardia.profesor))
-                .filter(
-                    Guardia.fecha >= primer_dia,
-                    Guardia.fecha <= ultimo_dia
-                )
+                .filter(Guardia.fecha >= primer_dia, Guardia.fecha <= ultimo_dia)
                 .order_by(Guardia.fecha, Guardia.turno, Guardia.recreo, Guardia.profesor_id)
                 .all()
             )
@@ -411,10 +408,10 @@ class ExportadorPDF:
             doc = SimpleDocTemplate(
                 ruta_salida,
                 pagesize=landscape(A4),
-                rightMargin=1.5*cm,
-                leftMargin=1.5*cm,
-                topMargin=1.5*cm,
-                bottomMargin=1.5*cm,
+                rightMargin=1.5 * cm,
+                leftMargin=1.5 * cm,
+                topMargin=1.5 * cm,
+                bottomMargin=1.5 * cm,
             )
 
             elements = []
@@ -424,33 +421,40 @@ class ExportadorPDF:
 
             # Título
             meses = [
-                "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
-                "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+                "ENERO",
+                "FEBRERO",
+                "MARZO",
+                "ABRIL",
+                "MAYO",
+                "JUNIO",
+                "JULIO",
+                "AGOSTO",
+                "SEPTIEMBRE",
+                "OCTUBRE",
+                "NOVIEMBRE",
+                "DICIEMBRE",
             ]
 
             titulo_style = ParagraphStyle(
-                'CustomTitle',
-                parent=styles_doc['Heading1'],
+                "CustomTitle",
+                parent=styles_doc["Heading1"],
                 fontSize=20,
-                textColor=colors.HexColor('#2c3e50'),
+                textColor=colors.HexColor("#2c3e50"),
                 spaceAfter=10,
                 alignment=1,
-                fontName='Helvetica-Bold',
+                fontName="Helvetica-Bold",
             )
 
-            titulo = Paragraph(
-                f"📅 CALENDARIO DE GUARDIAS - {meses[mes-1]} {anio}",
-                titulo_style
-            )
+            titulo = Paragraph(f"📅 CALENDARIO DE GUARDIAS - {meses[mes - 1]} {anio}", titulo_style)
             elements.append(titulo)
-            elements.append(Spacer(1, 0.5*cm))
+            elements.append(Spacer(1, 0.5 * cm))
 
             # Subtítulo con resumen
             subtitulo_style = ParagraphStyle(
-                'Subtitulo',
-                parent=styles_doc['Normal'],
+                "Subtitulo",
+                parent=styles_doc["Normal"],
                 fontSize=11,
-                textColor=colors.HexColor('#7f8c8d'),
+                textColor=colors.HexColor("#7f8c8d"),
                 alignment=1,
                 spaceAfter=15,
             )
@@ -461,14 +465,14 @@ class ExportadorPDF:
             subtitulo = Paragraph(
                 f"Total: {len(guardias)} guardias | {profesores_unicos} profesores | "
                 f"{dias_con_guardias} días con guardias",
-                subtitulo_style
+                subtitulo_style,
             )
             elements.append(subtitulo)
-            elements.append(Spacer(1, 0.3*cm))
+            elements.append(Spacer(1, 0.3 * cm))
 
             # Crear tabla consolidada
-            data = [['Fecha', 'Día', 'Turno', 'Recreo', 'Profesor', 'Zona']]
-            dias_semana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+            data = [["Fecha", "Día", "Turno", "Recreo", "Profesor", "Zona"]]
+            dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
             total_fechas = len(guardias_por_fecha)
             for idx_fecha, (fecha, guardias_dia) in enumerate(sorted(guardias_por_fecha.items())):
@@ -489,40 +493,41 @@ class ExportadorPDF:
                     # Zona
                     zona_nombre = guardia.zona.nombre_zona if guardia.zona else "N/A"
 
-                    data.append([
-                        fecha_str,
-                        dia_semana,
-                        guardia.turno.capitalize(),
-                        f"Recreo {guardia.recreo}",
-                        profesor_nombre,
-                        zona_nombre,
-                    ])
+                    data.append(
+                        [
+                            fecha_str,
+                            dia_semana,
+                            guardia.turno.capitalize(),
+                            f"Recreo {guardia.recreo}",
+                            profesor_nombre,
+                            zona_nombre,
+                        ]
+                    )
 
             reportar_progreso(90, "Aplicando estilos a la tabla...")
 
             # Crear tabla con columnas ajustadas
-            tabla = Table(data, colWidths=[2.5*cm, 2.5*cm, 2*cm, 2*cm, 7*cm, 4.5*cm])
+            tabla = Table(data, colWidths=[2.5 * cm, 2.5 * cm, 2 * cm, 2 * cm, 7 * cm, 4.5 * cm])
 
             # Estilos de la tabla
             estilos_tabla = [
                 # Encabezado
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498db')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 11),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3498db")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 11),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
                 # Cuerpo
-                ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#2c3e50')),
-                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 1), (-1, -1), 9),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#bdc3c7')),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('LEFTPADDING', (0, 0), (-1, -1), 6),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-                ('TOPPADDING', (0, 1), (-1, -1), 5),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+                ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#2c3e50")),
+                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 1), (-1, -1), 9),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#bdc3c7")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 1), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 1), (-1, -1), 5),
             ]
 
             # Alternar colores de fondo por día (agrupando todas las guardias del mismo día)
@@ -538,39 +543,35 @@ class ExportadorPDF:
                     if color_actual % 2 == 0:
                         color_fondo = colors.white
                     else:
-                        color_fondo = colors.HexColor('#ecf0f1')
+                        color_fondo = colors.HexColor("#ecf0f1")
                     color_actual += 1
                     fecha_anterior = fecha
 
                 # Aplicar color a todas las filas de este día
                 fila_fin = fila_actual + num_guardias - 1
-                estilos_tabla.append(
-                    ('BACKGROUND', (0, fila_actual), (-1, fila_fin), color_fondo)
-                )
+                estilos_tabla.append(("BACKGROUND", (0, fila_actual), (-1, fila_fin), color_fondo))
 
                 fila_actual += num_guardias
 
             tabla.setStyle(TableStyle(estilos_tabla))
             elements.append(tabla)
-            elements.append(Spacer(1, 0.5*cm))
+            elements.append(Spacer(1, 0.5 * cm))
 
             # Pie de página con fecha de generación
             reportar_progreso(95, "Finalizando documento...")
 
             from datetime import datetime
+
             footer_style = ParagraphStyle(
-                'FooterStyle',
-                parent=styles_doc['Normal'],
+                "FooterStyle",
+                parent=styles_doc["Normal"],
                 fontSize=8,
-                textColor=colors.HexColor('#7f8c8d'),
+                textColor=colors.HexColor("#7f8c8d"),
                 alignment=2,
             )
 
             fecha_generacion = datetime.now().strftime("%d/%m/%Y %H:%M")
-            footer = Paragraph(
-                f"Documento generado el {fecha_generacion}",
-                footer_style
-            )
+            footer = Paragraph(f"Documento generado el {fecha_generacion}", footer_style)
             elements.append(footer)
 
             # Generar PDF
@@ -591,7 +592,7 @@ class ExportadorPDF:
         anio_inicio: int,
         carpeta_salida: str,
         profesor_ids: Optional[list[int]] = None,
-        progress_callback: Optional[Callable[[int, str], None]] = None
+        progress_callback: Optional[Callable[[int, str], None]] = None,
     ) -> bool:
         """
         Exporta un PDF con el curso escolar completo (Septiembre-Junio).
@@ -606,6 +607,7 @@ class ExportadorPDF:
         Returns:
             True si se generó correctamente, False en caso contrario
         """
+
         def reportar_progreso(porcentaje: int, mensaje: str = ""):
             """Helper para reportar progreso de forma segura."""
             if progress_callback:
@@ -617,21 +619,25 @@ class ExportadorPDF:
         try:
             reportar_progreso(0, "Preparando exportación de curso completo...")
 
+            logger.info(f"Iniciando exportación curso completo. Año inicio: {anio_inicio}")
+            logger.info(f"Carpeta salida: {carpeta_salida}")
+            logger.info(f"Profesor IDs: {profesor_ids}")
+
             carpeta = Path(carpeta_salida)
             carpeta.mkdir(parents=True, exist_ok=True)
 
             # Definir meses del curso escolar: Septiembre a Junio
             meses_curso = [
-                (9, anio_inicio),    # Septiembre
-                (10, anio_inicio),   # Octubre
-                (11, anio_inicio),   # Noviembre
-                (12, anio_inicio),   # Diciembre
-                (1, anio_inicio + 1), # Enero
-                (2, anio_inicio + 1), # Febrero
-                (3, anio_inicio + 1), # Marzo
-                (4, anio_inicio + 1), # Abril
-                (5, anio_inicio + 1), # Mayo
-                (6, anio_inicio + 1), # Junio
+                (9, anio_inicio),  # Septiembre
+                (10, anio_inicio),  # Octubre
+                (11, anio_inicio),  # Noviembre
+                (12, anio_inicio),  # Diciembre
+                (1, anio_inicio + 1),  # Enero
+                (2, anio_inicio + 1),  # Febrero
+                (3, anio_inicio + 1),  # Marzo
+                (4, anio_inicio + 1),  # Abril
+                (5, anio_inicio + 1),  # Mayo
+                (6, anio_inicio + 1),  # Junio
             ]
 
             # Obtener profesores con guardias
@@ -640,23 +646,28 @@ class ExportadorPDF:
                 primer_dia_curso = date(anio_inicio, 9, 1)
                 ultimo_dia_curso = date(anio_inicio + 1, 6, 30)
 
+                logger.info(
+                    f"Buscando profesores con guardias entre "
+                    f"{primer_dia_curso} y {ultimo_dia_curso}"
+                )
+
                 prof_ids_query = (
                     session.query(Guardia.profesor_id)
-                    .filter(
-                        Guardia.fecha >= primer_dia_curso,
-                        Guardia.fecha <= ultimo_dia_curso
-                    )
+                    .filter(Guardia.fecha >= primer_dia_curso, Guardia.fecha <= ultimo_dia_curso)
                     .distinct()
                     .all()
                 )
                 profesor_ids = [pid for (pid,) in prof_ids_query]
+                logger.info(f"Profesores encontrados: {len(profesor_ids)}")
 
             if not profesor_ids:
+                logger.warning("No hay profesores con guardias en este curso")
                 reportar_progreso(100, "No hay profesores con guardias en este curso")
                 return False
 
             # Cargar profesores
             profesores = session.query(Profesor).filter(Profesor.id.in_(profesor_ids)).all()
+            logger.info(f"Profesores cargados: {len(profesores)}")
 
             reportar_progreso(10, f"Generando PDF para {len(profesores)} profesores...")
 
@@ -668,10 +679,10 @@ class ExportadorPDF:
             doc = SimpleDocTemplate(
                 str(ruta_archivo),
                 pagesize=landscape(A4),
-                rightMargin=1.5*cm,
-                leftMargin=1.5*cm,
-                topMargin=1.5*cm,
-                bottomMargin=1.5*cm,
+                rightMargin=1.5 * cm,
+                leftMargin=1.5 * cm,
+                topMargin=1.5 * cm,
+                bottomMargin=1.5 * cm,
             )
 
             elements = []
@@ -679,45 +690,53 @@ class ExportadorPDF:
 
             # Título principal del curso
             titulo_style = ParagraphStyle(
-                'CursoTitle',
-                parent=styles['Heading1'],
+                "CursoTitle",
+                parent=styles["Heading1"],
                 fontSize=20,
-                textColor=colors.HexColor('#1976D2'),
+                textColor=colors.HexColor("#1976D2"),
                 spaceAfter=20,
                 alignment=1,
             )
 
             titulo = Paragraph(
                 f"📚 Guardias de Patio - Curso Escolar {anio_inicio}/{anio_inicio + 1}",
-                titulo_style
+                titulo_style,
             )
             elements.append(titulo)
-            elements.append(Spacer(1, 0.5*cm))
+            elements.append(Spacer(1, 0.5 * cm))
 
             # Procesar cada mes del curso
             total_meses = len(meses_curso)
             for idx_mes, (mes, anio) in enumerate(meses_curso):
                 porcentaje = 10 + int((idx_mes / total_meses) * 80)
                 meses_nombres = [
-                    "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                    "",
+                    "Enero",
+                    "Febrero",
+                    "Marzo",
+                    "Abril",
+                    "Mayo",
+                    "Junio",
+                    "Julio",
+                    "Agosto",
+                    "Septiembre",
+                    "Octubre",
+                    "Noviembre",
+                    "Diciembre",
                 ]
                 reportar_progreso(porcentaje, f"Procesando {meses_nombres[mes]} {anio}...")
 
                 # Título del mes
                 mes_style = ParagraphStyle(
-                    'MesTitle',
-                    parent=styles['Heading2'],
+                    "MesTitle",
+                    parent=styles["Heading2"],
                     fontSize=16,
-                    textColor=colors.HexColor('#2196F3'),
+                    textColor=colors.HexColor("#2196F3"),
                     spaceAfter=12,
                     spaceBefore=12,
                 )
 
-                mes_titulo = Paragraph(
-                    f"📅 {meses_nombres[mes]} {anio}",
-                    mes_style
-                )
+                mes_titulo = Paragraph(f"📅 {meses_nombres[mes]} {anio}", mes_style)
                 elements.append(mes_titulo)
 
                 # Obtener todas las guardias del mes para los profesores seleccionados
@@ -744,8 +763,8 @@ class ExportadorPDF:
                         guardias_por_fecha[g.fecha].append(g)
 
                     # Crear tabla
-                    data = [['Fecha', 'Día', 'Turno', 'Recreo', 'Profesor', 'Zona']]
-                    dias_semana = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+                    data = [["Fecha", "Día", "Turno", "Recreo", "Profesor", "Zona"]]
+                    dias_semana = ["L", "M", "X", "J", "V", "S", "D"]
 
                     for fecha, guardias_dia in sorted(guardias_por_fecha.items()):
                         for i, guardia in enumerate(guardias_dia):
@@ -754,58 +773,71 @@ class ExportadorPDF:
                             profesor_nombre = guardia.profesor.nombre if guardia.profesor else "N/A"
                             zona_nombre = guardia.zona.nombre_zona if guardia.zona else "N/A"
 
-                            data.append([
-                                fecha_str,
-                                dia_semana,
-                                guardia.turno.capitalize(),
-                                f"R{guardia.recreo}",
-                                profesor_nombre,
-                                zona_nombre,
-                            ])
+                            data.append(
+                                [
+                                    fecha_str,
+                                    dia_semana,
+                                    guardia.turno.capitalize(),
+                                    f"R{guardia.recreo}",
+                                    profesor_nombre,
+                                    zona_nombre,
+                                ]
+                            )
 
                     # Crear tabla con columnas más compactas
-                    tabla = Table(data, colWidths=[2*cm, 1.2*cm, 2.2*cm, 1.8*cm, 6*cm, 4*cm])
+                    tabla = Table(
+                        data, colWidths=[2 * cm, 1.2 * cm, 2.2 * cm, 1.8 * cm, 6 * cm, 4 * cm]
+                    )
 
-                    tabla.setStyle(TableStyle([
-                        # Encabezado
-                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498db')),
-                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                        ('FONTSIZE', (0, 0), (-1, 0), 10),
-                        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-
-                        # Cuerpo
-                        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-                        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                        ('FONTSIZE', (0, 1), (-1, -1), 9),
-                        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
-                    ]))
+                    tabla.setStyle(
+                        TableStyle(
+                            [
+                                # Encabezado
+                                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3498db")),
+                                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                                ("FONTSIZE", (0, 0), (-1, 0), 10),
+                                ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+                                # Cuerpo
+                                ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                                ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
+                                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                                ("FONTSIZE", (0, 1), (-1, -1), 9),
+                                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                (
+                                    "ROWBACKGROUNDS",
+                                    (0, 1),
+                                    (-1, -1),
+                                    [colors.white, colors.lightgrey],
+                                ),
+                            ]
+                        )
+                    )
 
                     elements.append(tabla)
-                    elements.append(Spacer(1, 0.5*cm))
+                    elements.append(Spacer(1, 0.5 * cm))
                 else:
                     # No hay guardias este mes
                     no_guardias_style = ParagraphStyle(
-                        'NoGuardiasMes',
-                        parent=styles['Normal'],
+                        "NoGuardiasMes",
+                        parent=styles["Normal"],
                         fontSize=10,
                         textColor=colors.grey,
                         alignment=1,
                     )
                     elements.append(Paragraph("Sin guardias asignadas", no_guardias_style))
-                    elements.append(Spacer(1, 0.3*cm))
+                    elements.append(Spacer(1, 0.3 * cm))
 
             # Pie de página
             reportar_progreso(95, "Generando documento final...")
 
             from datetime import datetime
+
             footer_style = ParagraphStyle(
-                'FooterCurso',
-                parent=styles['Normal'],
+                "FooterCurso",
+                parent=styles["Normal"],
                 fontSize=8,
                 textColor=colors.grey,
                 alignment=2,
@@ -815,9 +847,9 @@ class ExportadorPDF:
             footer = Paragraph(
                 f"Documento generado el {fecha_generacion} | "
                 f"Profesores incluidos: {len(profesores)}",
-                footer_style
+                footer_style,
             )
-            elements.append(Spacer(1, 1*cm))
+            elements.append(Spacer(1, 1 * cm))
             elements.append(footer)
 
             # Construir PDF
@@ -839,7 +871,7 @@ class ExportadorPDF:
         fecha_inicio: date,
         fecha_fin: date,
         ruta_salida: str,
-        progress_callback: Optional[Callable[[int, str], None]] = None
+        progress_callback: Optional[Callable[[int, str], None]] = None,
     ) -> bool:
         """
         Exporta calendario individual de un profesor mostrando SOLO días con guardias.
@@ -856,6 +888,7 @@ class ExportadorPDF:
         Returns:
             True si se generó correctamente, False en caso contrario
         """
+
         def reportar_progreso(porcentaje: int, mensaje: str = ""):
             if progress_callback:
                 try:
@@ -864,22 +897,18 @@ class ExportadorPDF:
                     logger.warning(f"Error al reportar progreso: {e}")
 
         def crear_mini_calendario(
-            mes: int,
-            anio: int,
-            guardias_del_mes: dict,
-            ancho=4*cm,
-            alto=3.5*cm
+            mes: int, anio: int, guardias_del_mes: dict, ancho=4 * cm, alto=3.5 * cm
         ):
             """
             Crea un mini calendario mensual con días marcados según zona y recreo.
-            
+
             Args:
                 mes: Número del mes (1-12)
                 anio: Año
                 guardias_del_mes: Dict con estructura {dia: [(zona_id, recreo), ...]}
                 ancho: Ancho del calendario
                 alto: Alto del calendario
-            
+
             Returns:
                 Drawing con el calendario
             """
@@ -891,10 +920,13 @@ class ExportadorPDF:
 
             # Marco del calendario
             marco = Rect(
-                0, 0, ancho, alto,
+                0,
+                0,
+                ancho,
+                alto,
                 fillColor=None,
-                strokeColor=colors.HexColor('#2c3e50'),
-                strokeWidth=1.5
+                strokeColor=colors.HexColor("#2c3e50"),
+                strokeWidth=1.5,
             )
             drawing.add(marco)
 
@@ -902,20 +934,45 @@ class ExportadorPDF:
             header_height = alto * 0.16  # 16% del alto para encabezado
 
             # Fondo del encabezado
-            fondo_encabezado = Rect(0, alto - header_height, ancho, header_height,
-                                   fillColor=colors.HexColor('#ecf0f1'), strokeColor=None)
+            fondo_encabezado = Rect(
+                0,
+                alto - header_height,
+                ancho,
+                header_height,
+                fillColor=colors.HexColor("#ecf0f1"),
+                strokeColor=None,
+            )
             drawing.add(fondo_encabezado)
 
             # Título del mes (tamaño de fuente proporcional)
-            meses_nombres = ['', 'Enero', 'Feb', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                           'Julio', 'Agosto', 'Sept', 'Oct', 'Nov', 'Dic']
+            meses_nombres = [
+                "",
+                "Enero",
+                "Feb",
+                "Marzo",
+                "Abril",
+                "Mayo",
+                "Junio",
+                "Julio",
+                "Agosto",
+                "Sept",
+                "Oct",
+                "Nov",
+                "Dic",
+            ]
             font_size_titulo = max(8, min(14, int(ancho / cm * 1.8)))  # Escala: ~7-14pt
-            titulo = String(ancho/2, alto - header_height * 0.6, f"{meses_nombres[mes]} {anio}",
-                          fontSize=font_size_titulo, fontName='Helvetica-Bold', textAnchor='middle')
+            titulo = String(
+                ancho / 2,
+                alto - header_height * 0.6,
+                f"{meses_nombres[mes]} {anio}",
+                fontSize=font_size_titulo,
+                fontName="Helvetica-Bold",
+                textAnchor="middle",
+            )
             drawing.add(titulo)
 
             # Encabezados de días
-            dias_sem = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+            dias_sem = ["L", "M", "X", "J", "V", "S", "D"]
             celda_ancho = ancho / 7
             celda_alto = (alto - header_height * 1.1) / 7  # 6 semanas + encabezado
 
@@ -924,10 +981,12 @@ class ExportadorPDF:
             for i, dia in enumerate(dias_sem):
                 x = i * celda_ancho + celda_ancho / 2
                 texto = String(
-                    x, y, dia,
+                    x,
+                    y,
+                    dia,
                     fontSize=font_size_dias,
-                    fontName='Helvetica-Bold',
-                    textAnchor='middle'
+                    fontName="Helvetica-Bold",
+                    textAnchor="middle",
                 )
                 drawing.add(texto)
 
@@ -943,31 +1002,42 @@ class ExportadorPDF:
 
                 if recreo == 1:
                     # Círculo para recreo 1
-                    circulo = Circle(x_centro, y_centro, tamano,
-                                   fillColor=color, strokeColor=color)
+                    circulo = Circle(x_centro, y_centro, tamano, fillColor=color, strokeColor=color)
                     drawing.add(circulo)
                 elif recreo == 2:
                     # Cuadrado para recreo 2
-                    cuadrado = Rect(x_centro - tamano, y_centro - tamano,
-                                  tamano*2, tamano*2,
-                                  fillColor=color, strokeColor=color)
+                    cuadrado = Rect(
+                        x_centro - tamano,
+                        y_centro - tamano,
+                        tamano * 2,
+                        tamano * 2,
+                        fillColor=color,
+                        strokeColor=color,
+                    )
                     drawing.add(cuadrado)
                 elif recreo == 3:
                     # Triángulo para recreo 3
                     puntos = [
-                        x_centro, y_centro + tamano*1.2,  # Punta superior
-                        x_centro - tamano, y_centro - tamano*0.6,  # Izquierda
-                        x_centro + tamano, y_centro - tamano*0.6,  # Derecha
+                        x_centro,
+                        y_centro + tamano * 1.2,  # Punta superior
+                        x_centro - tamano,
+                        y_centro - tamano * 0.6,  # Izquierda
+                        x_centro + tamano,
+                        y_centro - tamano * 0.6,  # Derecha
                     ]
                     triangulo = Polygon(puntos, fillColor=color, strokeColor=color)
                     drawing.add(triangulo)
                 else:
                     # Rombo para recreo 4+
                     puntos = [
-                        x_centro, y_centro + tamano,  # Arriba
-                        x_centro + tamano, y_centro,  # Derecha
-                        x_centro, y_centro - tamano,  # Abajo
-                        x_centro - tamano, y_centro,  # Izquierda
+                        x_centro,
+                        y_centro + tamano,  # Arriba
+                        x_centro + tamano,
+                        y_centro,  # Derecha
+                        x_centro,
+                        y_centro - tamano,  # Abajo
+                        x_centro - tamano,
+                        y_centro,  # Izquierda
                     ]
                     rombo = Polygon(puntos, fillColor=color, strokeColor=color)
                     drawing.add(rombo)
@@ -996,14 +1066,16 @@ class ExportadorPDF:
                             # Una sola guardia, centrada
                             zona_id, recreo = guardias_dia[0]
                             color = obtener_color_zona(zona_id)
-                            dibujar_forma_recreo(x + celda_ancho/2, y + celda_alto/2, recreo, color)
+                            dibujar_forma_recreo(
+                                x + celda_ancho / 2, y + celda_alto / 2, recreo, color
+                            )
 
                         elif num_guardias == 2:
                             # Dos guardias, una a cada lado
                             for idx, (zona_id, recreo) in enumerate(guardias_dia):
                                 color = obtener_color_zona(zona_id)
-                                x_pos = x + celda_ancho/3 if idx == 0 else x + 2*celda_ancho/3
-                                dibujar_forma_recreo(x_pos, y + celda_alto/2, recreo, color)
+                                x_pos = x + celda_ancho / 3 if idx == 0 else x + 2 * celda_ancho / 3
+                                dibujar_forma_recreo(x_pos, y + celda_alto / 2, recreo, color)
 
                         elif num_guardias == 3:
                             # Tres guardias, triángulo
@@ -1011,14 +1083,13 @@ class ExportadorPDF:
                             for idx, (zona_id, recreo) in enumerate(guardias_dia):
                                 color = obtener_color_zona(zona_id)
                                 if idx == 0:
-                                    x_pos, y_pos = x + celda_ancho/2, y + celda_alto*0.7
+                                    x_pos, y_pos = x + celda_ancho / 2, y + celda_alto * 0.7
                                 elif idx == 1:
-                                    x_pos, y_pos = x + celda_ancho/3, y + celda_alto*0.3
+                                    x_pos, y_pos = x + celda_ancho / 3, y + celda_alto * 0.3
                                 else:
-                                    x_pos, y_pos = x + 2*celda_ancho/3, y + celda_alto*0.3
+                                    x_pos, y_pos = x + 2 * celda_ancho / 3, y + celda_alto * 0.3
                                 dibujar_forma_recreo(
-                                    x_pos, y_pos, recreo, color,
-                                    tamano=tamano_reducido
+                                    x_pos, y_pos, recreo, color, tamano=tamano_reducido
                                 )
 
                         else:
@@ -1027,33 +1098,36 @@ class ExportadorPDF:
                             for idx, (zona_id, recreo) in enumerate(guardias_dia[:4]):
                                 color = obtener_color_zona(zona_id)
                                 if idx == 0:
-                                    x_pos, y_pos = x + celda_ancho/3, y + celda_alto*0.7
+                                    x_pos, y_pos = x + celda_ancho / 3, y + celda_alto * 0.7
                                 elif idx == 1:
-                                    x_pos, y_pos = x + 2*celda_ancho/3, y + celda_alto*0.7
+                                    x_pos, y_pos = x + 2 * celda_ancho / 3, y + celda_alto * 0.7
                                 elif idx == 2:
-                                    x_pos, y_pos = x + celda_ancho/3, y + celda_alto*0.3
+                                    x_pos, y_pos = x + celda_ancho / 3, y + celda_alto * 0.3
                                 else:
-                                    x_pos, y_pos = x + 2*celda_ancho/3, y + celda_alto*0.3
+                                    x_pos, y_pos = x + 2 * celda_ancho / 3, y + celda_alto * 0.3
                                 dibujar_forma_recreo(
-                                    x_pos, y_pos, recreo, color,
-                                    tamano=tamano_mini
+                                    x_pos, y_pos, recreo, color, tamano=tamano_mini
                                 )
 
                         # Número del día en negro y más pequeño
                         texto = String(
-                            x + celda_ancho/2, y + celda_alto/8, str(dia),
-                            fontSize=font_size_numeros-1,
-                            fontName='Helvetica-Bold',
-                            textAnchor='middle',
-                            fillColor=colors.black
+                            x + celda_ancho / 2,
+                            y + celda_alto / 8,
+                            str(dia),
+                            fontSize=font_size_numeros - 1,
+                            fontName="Helvetica-Bold",
+                            textAnchor="middle",
+                            fillColor=colors.black,
                         )
                     else:
                         # Número normal para días sin guardias
                         texto = String(
-                            x + celda_ancho/2, y + celda_alto/3, str(dia),
+                            x + celda_ancho / 2,
+                            y + celda_alto / 3,
+                            str(dia),
                             fontSize=font_size_numeros,
-                            fontName='Helvetica',
-                            textAnchor='middle'
+                            fontName="Helvetica",
+                            textAnchor="middle",
                         )
 
                     drawing.add(texto)
@@ -1135,10 +1209,10 @@ class ExportadorPDF:
             doc = SimpleDocTemplate(
                 ruta_salida,
                 pagesize=landscape(A4),
-                rightMargin=1*cm,
-                leftMargin=1*cm,
-                topMargin=1*cm,
-                bottomMargin=1*cm,
+                rightMargin=1 * cm,
+                leftMargin=1 * cm,
+                topMargin=1 * cm,
+                bottomMargin=1 * cm,
             )
 
             elements = []
@@ -1146,69 +1220,73 @@ class ExportadorPDF:
 
             # ===== ENCABEZADO VISUAL MEJORADO =====
             # Crear banner de encabezado (ancho completo, con fondo azul)
-            ancho_pagina = landscape(A4)[0] - 2*cm  # Ancho disponible
-            altura_banner = 2.5*cm
+            ancho_pagina = landscape(A4)[0] - 2 * cm  # Ancho disponible
+            altura_banner = 2.5 * cm
 
             banner = Drawing(ancho_pagina, altura_banner)
 
             # Fondo degradado azul
             fondo = Rect(
-                0, 0, ancho_pagina, altura_banner,
+                0,
+                0,
+                ancho_pagina,
+                altura_banner,
                 fillColor=PDFStyles.AZUL_PRINCIPAL,
-                strokeColor=None
+                strokeColor=None,
             )
             banner.add(fondo)
 
             # Borde inferior decorativo
             borde = Rect(
-                0, 0, ancho_pagina, 0.3*cm,
-                fillColor=PDFStyles.AZUL_OSCURO,
-                strokeColor=None
+                0, 0, ancho_pagina, 0.3 * cm, fillColor=PDFStyles.AZUL_OSCURO, strokeColor=None
             )
             banner.add(borde)
 
             # Título principal en blanco
             titulo_texto = String(
-                ancho_pagina/2, altura_banner - 0.8*cm,
+                ancho_pagina / 2,
+                altura_banner - 0.8 * cm,
                 "CALENDARIO PERSONAL DE GUARDIAS",
                 fontSize=PDFStyles.TAMANO_TITULO_PRINCIPAL,
                 fontName=PDFStyles.FUENTE_TITULO,
-                textAnchor='middle',
-                fillColor=colors.whitesmoke
+                textAnchor="middle",
+                fillColor=colors.whitesmoke,
             )
             banner.add(titulo_texto)
 
             # Nombre del profesor (destacado en amarillo/dorado)
             nombre_texto = String(
-                ancho_pagina/2, altura_banner - 1.5*cm,
+                ancho_pagina / 2,
+                altura_banner - 1.5 * cm,
                 profesor.nombre_completo.upper(),
                 fontSize=PDFStyles.TAMANO_SUBTITULO,
                 fontName=PDFStyles.FUENTE_TITULO,
-                textAnchor='middle',
-                fillColor=PDFStyles.COLOR_DATO_PRINCIPAL  # Amarillo destacado
+                textAnchor="middle",
+                fillColor=PDFStyles.COLOR_DATO_PRINCIPAL,  # Amarillo destacado
             )
             banner.add(nombre_texto)
 
             # Información adicional con datos dinámicos en colores destacados
             turno_valor = profesor.turno.capitalize()
-            tutor_valor = 'Si' if profesor.tutor else 'No'
-            periodo_inicio = primera_guardia.strftime('%d/%m/%Y')
-            periodo_fin = ultima_guardia.strftime('%d/%m/%Y')
+            tutor_valor = "Si" if profesor.tutor else "No"
+            periodo_inicio = primera_guardia.strftime("%d/%m/%Y")
+            periodo_fin = ultima_guardia.strftime("%d/%m/%Y")
 
             # Tercera línea centrada con toda la información
             linea_info = String(
-                ancho_pagina/2, altura_banner - 2.1*cm,
+                ancho_pagina / 2,
+                altura_banner - 2.1 * cm,
                 f"Turno: {turno_valor}     Tutor: {tutor_valor}     "
                 f"Periodo: {periodo_inicio} - {periodo_fin}",
                 fontSize=9,
-                fontName='Helvetica',
-                textAnchor='middle',
-                fillColor=colors.whitesmoke
+                fontName="Helvetica",
+                textAnchor="middle",
+                fillColor=colors.whitesmoke,
             )
             banner.add(linea_info)
 
             elements.append(banner)
-            elements.append(Spacer(1, 0.8*cm))
+            elements.append(Spacer(1, 0.8 * cm))
 
             reportar_progreso(40, "Generando mini calendarios...")
 
@@ -1222,29 +1300,30 @@ class ExportadorPDF:
                 # Curso escolar típico: 10 meses (Sept-Junio)
                 if num_meses <= 6:
                     cal_por_fila = 3
-                    ancho_cal = 8*cm
-                    alto_cal = 6.5*cm
+                    ancho_cal = 8 * cm
+                    alto_cal = 6.5 * cm
                 elif num_meses <= 10:
                     cal_por_fila = 5
-                    ancho_cal = 5*cm
-                    alto_cal = 4.2*cm
+                    ancho_cal = 5 * cm
+                    alto_cal = 4.2 * cm
                 else:  # 11-12 meses
                     cal_por_fila = 4
-                    ancho_cal = 6.5*cm
-                    alto_cal = 5*cm
+                    ancho_cal = 6.5 * cm
+                    alto_cal = 5 * cm
 
                 # Crear mini calendarios con tamaño optimizado
                 calendarios = []
                 for anio, mes in meses_ordenados:
                     guardias_del_mes = guardias_por_mes[(anio, mes)]
-                    mini_cal = crear_mini_calendario(mes, anio, guardias_del_mes,
-                                                     ancho=ancho_cal, alto=alto_cal)
+                    mini_cal = crear_mini_calendario(
+                        mes, anio, guardias_del_mes, ancho=ancho_cal, alto=alto_cal
+                    )
                     calendarios.append(mini_cal)
 
                 # Organizar en filas
                 filas_calendarios = []
                 for i in range(0, len(calendarios), cal_por_fila):
-                    fila = calendarios[i:i+cal_por_fila]
+                    fila = calendarios[i : i + cal_por_fila]
                     # Rellenar con espacios si es necesario para mantener alineación
                     while len(fila) < cal_por_fila:
                         fila.append(Spacer(ancho_cal, alto_cal))
@@ -1252,19 +1331,24 @@ class ExportadorPDF:
 
                 # Crear tabla con los calendarios
                 if filas_calendarios:
-                    ancho_columna = ancho_cal + 0.4*cm  # Pequeño padding
-                    tabla_calendarios = Table(filas_calendarios,
-                                             colWidths=[ancho_columna] * cal_por_fila)
-                    tabla_calendarios.setStyle(TableStyle([
-                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-                        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-                        ('TOPPADDING', (0, 0), (-1, -1), 4),
-                        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-                    ]))
+                    ancho_columna = ancho_cal + 0.4 * cm  # Pequeño padding
+                    tabla_calendarios = Table(
+                        filas_calendarios, colWidths=[ancho_columna] * cal_por_fila
+                    )
+                    tabla_calendarios.setStyle(
+                        TableStyle(
+                            [
+                                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                            ]
+                        )
+                    )
                     elements.append(tabla_calendarios)
-                    elements.append(Spacer(1, 0.3*cm))
+                    elements.append(Spacer(1, 0.3 * cm))
 
                 # Crear leyenda compacta
                 reportar_progreso(45, "Generando leyenda...")
@@ -1274,84 +1358,126 @@ class ExportadorPDF:
                     from reportlab.graphics.shapes import Circle, Polygon
 
                     # Leyenda más compacta (todo en una línea)
-                    leyenda_ancho = 27*cm
-                    leyenda_alto = 0.9*cm
+                    leyenda_ancho = 27 * cm
+                    leyenda_alto = 0.9 * cm
                     leyenda_drawing = Drawing(leyenda_ancho, leyenda_alto)
 
                     # Marco de la leyenda con colores corporativos
                     marco = Rect(
-                        0, 0, leyenda_ancho, leyenda_alto,
+                        0,
+                        0,
+                        leyenda_ancho,
+                        leyenda_alto,
                         fillColor=PDFStyles.FONDO_CLARO,
-                        strokeColor=colors.HexColor('#dee2e6'),
-                        strokeWidth=1
+                        strokeColor=colors.HexColor("#dee2e6"),
+                        strokeWidth=1,
                     )
                     leyenda_drawing.add(marco)
 
-                    y_pos = leyenda_alto / 2 - 0.05*cm
+                    y_pos = leyenda_alto / 2 - 0.05 * cm
 
                     # Sección de formas (recreos) - más compacta
-                    x_pos = 0.3*cm
-                    texto = String(x_pos, y_pos, "Recreos:",
-                                 fontSize=7, fontName='Helvetica-Bold', textAnchor='start')
+                    x_pos = 0.3 * cm
+                    texto = String(
+                        x_pos,
+                        y_pos,
+                        "Recreos:",
+                        fontSize=7,
+                        fontName="Helvetica-Bold",
+                        textAnchor="start",
+                    )
                     leyenda_drawing.add(texto)
 
-                    x_pos = 1.5*cm
+                    x_pos = 1.5 * cm
                     recreos_ordenados = sorted(recreos_usados)
                     for recreo in recreos_ordenados:
                         # Dibujar forma pequeña
                         if recreo == 1:
-                            circulo = Circle(x_pos, y_pos + 0.08*cm, 0.08*cm,
-                                           fillColor=colors.grey, strokeColor=colors.grey)
+                            circulo = Circle(
+                                x_pos,
+                                y_pos + 0.08 * cm,
+                                0.08 * cm,
+                                fillColor=colors.grey,
+                                strokeColor=colors.grey,
+                            )
                             leyenda_drawing.add(circulo)
                             forma_nombre = "●=R1"
                         elif recreo == 2:
-                            cuadrado = Rect(x_pos - 0.08*cm, y_pos,
-                                          0.16*cm, 0.16*cm,
-                                          fillColor=colors.grey, strokeColor=colors.grey)
+                            cuadrado = Rect(
+                                x_pos - 0.08 * cm,
+                                y_pos,
+                                0.16 * cm,
+                                0.16 * cm,
+                                fillColor=colors.grey,
+                                strokeColor=colors.grey,
+                            )
                             leyenda_drawing.add(cuadrado)
                             forma_nombre = "■=R2"
                         elif recreo == 3:
                             puntos = [
-                                x_pos, y_pos + 0.18*cm,
-                                x_pos - 0.08*cm, y_pos,
-                                x_pos + 0.08*cm, y_pos,
+                                x_pos,
+                                y_pos + 0.18 * cm,
+                                x_pos - 0.08 * cm,
+                                y_pos,
+                                x_pos + 0.08 * cm,
+                                y_pos,
                             ]
                             triangulo = Polygon(
-                                puntos,
-                                fillColor=colors.grey,
-                                strokeColor=colors.grey
+                                puntos, fillColor=colors.grey, strokeColor=colors.grey
                             )
                             leyenda_drawing.add(triangulo)
                             forma_nombre = "▲=R3"
                         else:
                             puntos = [
-                                x_pos, y_pos + 0.12*cm,
-                                x_pos + 0.08*cm, y_pos + 0.04*cm,
-                                x_pos, y_pos - 0.04*cm,
-                                x_pos - 0.08*cm, y_pos + 0.04*cm,
+                                x_pos,
+                                y_pos + 0.12 * cm,
+                                x_pos + 0.08 * cm,
+                                y_pos + 0.04 * cm,
+                                x_pos,
+                                y_pos - 0.04 * cm,
+                                x_pos - 0.08 * cm,
+                                y_pos + 0.04 * cm,
                             ]
                             rombo = Polygon(puntos, fillColor=colors.grey, strokeColor=colors.grey)
                             leyenda_drawing.add(rombo)
                             forma_nombre = f"◆=R{recreo}"
 
                         # Texto explicativo compacto
-                        texto = String(x_pos + 0.22*cm, y_pos, forma_nombre,
-                                     fontSize=6, fontName='Helvetica', textAnchor='start')
+                        texto = String(
+                            x_pos + 0.22 * cm,
+                            y_pos,
+                            forma_nombre,
+                            fontSize=6,
+                            fontName="Helvetica",
+                            textAnchor="start",
+                        )
                         leyenda_drawing.add(texto)
-                        x_pos += 1.2*cm
+                        x_pos += 1.2 * cm
 
                     # Separador vertical
-                    x_pos += 0.3*cm
-                    sep = Rect(x_pos, 0.1*cm, 0.02*cm, leyenda_alto - 0.2*cm,
-                             fillColor=colors.HexColor('#dee2e6'), strokeColor=None)
+                    x_pos += 0.3 * cm
+                    sep = Rect(
+                        x_pos,
+                        0.1 * cm,
+                        0.02 * cm,
+                        leyenda_alto - 0.2 * cm,
+                        fillColor=colors.HexColor("#dee2e6"),
+                        strokeColor=None,
+                    )
                     leyenda_drawing.add(sep)
-                    x_pos += 0.3*cm
+                    x_pos += 0.3 * cm
 
                     # Sección de colores (zonas) - compacta
-                    texto = String(x_pos, y_pos, "Zonas:",
-                                 fontSize=7, fontName='Helvetica-Bold', textAnchor='start')
+                    texto = String(
+                        x_pos,
+                        y_pos,
+                        "Zonas:",
+                        fontSize=7,
+                        fontName="Helvetica-Bold",
+                        textAnchor="start",
+                    )
                     leyenda_drawing.add(texto)
-                    x_pos += 1.2*cm
+                    x_pos += 1.2 * cm
 
                     # Obtener información de zonas desde las guardias
                     zonas_info = {}
@@ -1367,18 +1493,27 @@ class ExportadorPDF:
 
                         # Cuadradito de color más pequeño
                         cuadrado = Rect(
-                            x_pos - 0.06*cm, y_pos,
-                            0.16*cm, 0.16*cm,
-                            fillColor=color, strokeColor=color
+                            x_pos - 0.06 * cm,
+                            y_pos,
+                            0.16 * cm,
+                            0.16 * cm,
+                            fillColor=color,
+                            strokeColor=color,
                         )
                         leyenda_drawing.add(cuadrado)
 
                         # Nombre de la zona compacto
                         zona_nombre = zonas_info.get(zona_id, f"Z{zona_id}")
-                        texto = String(x_pos + 0.15*cm, y_pos, zona_nombre,
-                                     fontSize=6, fontName='Helvetica', textAnchor='start')
+                        texto = String(
+                            x_pos + 0.15 * cm,
+                            y_pos,
+                            zona_nombre,
+                            fontSize=6,
+                            fontName="Helvetica",
+                            textAnchor="start",
+                        )
                         leyenda_drawing.add(texto)
-                        x_pos += 1.8*cm
+                        x_pos += 1.8 * cm
 
                     return leyenda_drawing
 
@@ -1400,7 +1535,7 @@ class ExportadorPDF:
                 guardias_por_mes[mes_anio].append(g)
 
             # Crear tabla de guardias con separación visual por meses
-            data = [['Fecha', 'Día', 'Turno', 'Recreo - Hora', 'Zona - Descripción']]
+            data = [["Fecha", "Día", "Turno", "Recreo - Hora", "Zona - Descripción"]]
             dias_semana = PDFStyles.get_dias_semana_completos()
 
             # Lista para rastrear estilos de filas según mes y recreo
@@ -1412,10 +1547,9 @@ class ExportadorPDF:
 
             for idx_mes, (anio, mes) in enumerate(meses_ordenados):
                 # Obtener fechas de guardias para este mes
-                fechas_del_mes = sorted([
-                    f for f in fechas_guardias
-                    if f.year == anio and f.month == mes
-                ])
+                fechas_del_mes = sorted(
+                    [f for f in fechas_guardias if f.year == anio and f.month == mes]
+                )
 
                 # Fila separadora de mes (opcional, comentado por ahora)
                 # data.append([f"=== {meses_nombres[mes]} {anio} ===", '', '', '', ''])
@@ -1447,9 +1581,7 @@ class ExportadorPDF:
 
                         # Recreo con hora
                         if config:
-                            hora = obtener_hora_recreo(
-                                config, guardia.turno, guardia.recreo
-                            )
+                            hora = obtener_hora_recreo(config, guardia.turno, guardia.recreo)
                         else:
                             hora = ""
                         if hora:
@@ -1457,36 +1589,38 @@ class ExportadorPDF:
                         else:
                             recreo_info = f"Recreo {guardia.recreo}"
 
-                        data.append([
-                            fecha_str,
-                            dia_semana,
-                            guardia.turno.capitalize(),
-                            recreo_info,
-                            zona_info,
-                        ])
+                        data.append(
+                            [
+                                fecha_str,
+                                dia_semana,
+                                guardia.turno.capitalize(),
+                                recreo_info,
+                                zona_info,
+                            ]
+                        )
 
                         # Aplicar color de fondo según mes
                         estilos_filas.append(
-                            ('BACKGROUND', (0, fila_actual), (-1, fila_actual), color_fondo_mes)
+                            ("BACKGROUND", (0, fila_actual), (-1, fila_actual), color_fondo_mes)
                         )
 
                         # Aplicar color al recreo (columna 3) según el número de recreo
                         color_recreo = PDFStyles.get_color_recreo(guardia.recreo)
                         estilos_filas.append(
-                            ('TEXTCOLOR', (3, fila_actual), (3, fila_actual), color_recreo)
+                            ("TEXTCOLOR", (3, fila_actual), (3, fila_actual), color_recreo)
                         )
                         estilos_filas.append(
-                            ('FONTNAME', (3, fila_actual), (3, fila_actual), 'Helvetica-Bold')
+                            ("FONTNAME", (3, fila_actual), (3, fila_actual), "Helvetica-Bold")
                         )
 
                         # Aplicar color a la zona (columna 4) según el ID de zona
                         if guardia.zona:
                             color_zona = PDFStyles.get_color_zona(guardia.zona.id)
                             estilos_filas.append(
-                                ('TEXTCOLOR', (4, fila_actual), (4, fila_actual), color_zona)
+                                ("TEXTCOLOR", (4, fila_actual), (4, fila_actual), color_zona)
                             )
                             estilos_filas.append(
-                                ('FONTNAME', (4, fila_actual), (4, fila_actual), 'Helvetica-Bold')
+                                ("FONTNAME", (4, fila_actual), (4, fila_actual), "Helvetica-Bold")
                             )
 
                         fila_actual += 1
@@ -1494,31 +1628,35 @@ class ExportadorPDF:
                 # Línea divisoria más gruesa entre meses (si no es el último mes)
                 if idx_mes < len(meses_ordenados) - 1:
                     estilos_filas.append(
-                        ('LINEBELOW', (0, fila_actual - 1), (-1, fila_actual - 1), 3,
-                         PDFStyles.AZUL_PRINCIPAL)
+                        (
+                            "LINEBELOW",
+                            (0, fila_actual - 1),
+                            (-1, fila_actual - 1),
+                            3,
+                            PDFStyles.AZUL_PRINCIPAL,
+                        )
                     )
 
             # Tabla con columnas ajustadas
-            tabla = Table(data, colWidths=[3*cm, 3*cm, 2.5*cm, 4*cm, 9*cm])
+            tabla = Table(data, colWidths=[3 * cm, 3 * cm, 2.5 * cm, 4 * cm, 9 * cm])
 
             # Estilos base de la tabla
             estilos_base = [
                 # Encabezado
-                ('BACKGROUND', (0, 0), (-1, 0), PDFStyles.FONDO_TABLA_HEADER),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), PDFStyles.FUENTE_NEGRITA),
-                ('FONTSIZE', (0, 0), (-1, 0), PDFStyles.TAMANO_ENCABEZADO_TABLA),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-
+                ("BACKGROUND", (0, 0), (-1, 0), PDFStyles.FONDO_TABLA_HEADER),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), PDFStyles.FUENTE_NEGRITA),
+                ("FONTSIZE", (0, 0), (-1, 0), PDFStyles.TAMANO_ENCABEZADO_TABLA),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
                 # Cuerpo
-                ('TEXTCOLOR', (0, 1), (2, -1), PDFStyles.TEXTO_OSCURO),  # Fecha, Día, Turno
-                ('FONTNAME', (0, 1), (-1, -1), PDFStyles.FUENTE_NORMAL),
-                ('FONTSIZE', (0, 1), (-1, -1), PDFStyles.TAMANO_CUERPO_TABLA),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 1), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+                ("TEXTCOLOR", (0, 1), (2, -1), PDFStyles.TEXTO_OSCURO),  # Fecha, Día, Turno
+                ("FONTNAME", (0, 1), (-1, -1), PDFStyles.FUENTE_NORMAL),
+                ("FONTSIZE", (0, 1), (-1, -1), PDFStyles.TAMANO_CUERPO_TABLA),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 1), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
             ]
 
             # Combinar estilos base con estilos por fila
@@ -1529,13 +1667,13 @@ class ExportadorPDF:
             reportar_progreso(80, "Generando estadísticas...")
 
             # Resumen estadístico
-            elements.append(Spacer(1, 1*cm))
+            elements.append(Spacer(1, 1 * cm))
 
             resumen_style = ParagraphStyle(
-                'ResumenIndividual',
-                parent=styles['Normal'],
+                "ResumenIndividual",
+                parent=styles["Normal"],
                 fontSize=11,
-                textColor=colors.HexColor('#2c3e50'),
+                textColor=colors.HexColor("#2c3e50"),
             )
 
             total_guardias = len(guardias)
@@ -1568,22 +1706,20 @@ class ExportadorPDF:
             elements.append(resumen)
 
             # Pie de página
-            elements.append(Spacer(1, 1*cm))
+            elements.append(Spacer(1, 1 * cm))
 
             from datetime import datetime
+
             footer_style = ParagraphStyle(
-                'FooterIndividual',
-                parent=styles['Normal'],
+                "FooterIndividual",
+                parent=styles["Normal"],
                 fontSize=8,
                 textColor=colors.grey,
                 alignment=2,
             )
 
             fecha_generacion = datetime.now().strftime("%d/%m/%Y %H:%M")
-            footer = Paragraph(
-                f"Documento generado el {fecha_generacion}",
-                footer_style
-            )
+            footer = Paragraph(f"Documento generado el {fecha_generacion}", footer_style)
             elements.append(footer)
 
             reportar_progreso(95, "Construyendo PDF...")
@@ -1607,7 +1743,7 @@ class ExportadorPDF:
         mes: int,
         anio: int,
         carpeta_salida: str,
-        progress_callback: Optional[Callable[[int, str], None]] = None
+        progress_callback: Optional[Callable[[int, str], None]] = None,
     ) -> int:
         """
         Exporta PDFs individuales solo para profesores seleccionados.
@@ -1623,6 +1759,7 @@ class ExportadorPDF:
         Returns:
             Número de PDFs generados exitosamente
         """
+
         def reportar_progreso(porcentaje: int, mensaje: str = ""):
             if progress_callback:
                 try:
