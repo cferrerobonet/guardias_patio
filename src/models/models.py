@@ -48,6 +48,7 @@ class Zona(Base):
 class Configuracion(Base):
     __tablename__ = 'configuracion'
     id = Column(Integer, primary_key=True)
+    anio_inicio_curso = Column(Integer, nullable=False)  # Año de inicio del curso (ej: 2025)
     fecha_inicio_curso = Column(Date, nullable=False)
     fecha_fin_curso = Column(Date, nullable=False)
     hora_recreo1_manana = Column(Time, nullable=False)
