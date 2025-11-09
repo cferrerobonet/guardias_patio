@@ -115,11 +115,8 @@ class GestionarAusenciasForm(BaseForm):
         """Crear botones de acción para la lista."""
         botones = QHBoxLayout()
 
-        self.refresh_btn = QPushButton("🔄 Refrescar")
-        self.refresh_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
-        self.refresh_btn.clicked.connect(self.cargar_ausencias)
-        self.refresh_btn.setToolTip("Recargar la lista de ausencias (F5)")
-        botones.addWidget(self.refresh_btn)
+        # El botón de refrescar fue eliminado porque la tabla se actualiza
+        # automáticamente después de cada operación (crear, editar, eliminar, desactivar)
 
         self.editar_btn = QPushButton("✏️ Editar")
         self.editar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)

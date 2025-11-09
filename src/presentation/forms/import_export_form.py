@@ -172,9 +172,20 @@ class ImportExportForm(BaseForm):
             ExportadorDatos.exportar_todo(self.session, archivo)
 
             # Mostrar resumen
+            from models.models import CursoEscolar
+            from sync.sync_manager import UserAuth
+            
             prof_count = self.session.query(Profesor).count()
             zona_count = self.session.query(Zona).count()
             config_count = self.session.query(Configuracion).count()
+            curso_count = self.session.query(CursoEscolar).count()
+            
+            # Contar usuarios
+            try:
+                user_auth = UserAuth()
+                usuario_count = len(user_auth.users)
+            except:
+                usuario_count = 0
 
             mensaje = (
                 f"✅ Datos exportados exitosamente a:\n{archivo}\n\n"
@@ -182,6 +193,8 @@ class ImportExportForm(BaseForm):
                 f"• Profesores: {prof_count}\n"
                 f"• Zonas: {zona_count}\n"
                 f"• Configuración: {config_count}\n"
+                f"• Usuarios (Perfiles): {usuario_count}\n"
+                f"• Cursos Escolares: {curso_count}\n"
             )
 
             self.resultado_text.setText(mensaje)
@@ -237,6 +250,9 @@ class ImportExportForm(BaseForm):
                 f"• Zonas: {resultado['zonas']}\n"
                 f"• Configuración: {resultado['configuracion']}\n"
                 f"• Guardias: {resultado['guardias']}\n"
+                f"• Ausencias: {resultado.get('ausencias', 0)}\n"
+                f"• Usuarios (Perfiles): {resultado.get('usuarios', 0)}\n"
+                f"• Cursos Escolares: {resultado.get('cursos_escolares', 0)}\n"
             )
 
             # Añadir info de SMTP y SFTP si se importaron

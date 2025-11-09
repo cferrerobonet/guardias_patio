@@ -111,8 +111,8 @@ class CeldaDia(QGroupBox):
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setMinimumHeight(100)
-        scroll_area.setMaximumHeight(200)
+        scroll_area.setMinimumHeight(120)
+        scroll_area.setMaximumHeight(600)  # Aumentado para vista semanal
 
         # Contenedor de guardias
         guardias_widget = QWidget()
@@ -773,7 +773,7 @@ class VistaCalendario(BaseForm):
                 es_hoy=(fecha_dia == self.fecha_actual),
             )
             celda.dia_clicked.connect(self._dia_seleccionado)
-            celda.setMinimumHeight(400)  # Más altura en vista semanal
+            celda.setMinimumHeight(600)  # Altura aumentada para ver más guardias
 
             grid_calendario.addWidget(celda, 1, i)
 

@@ -17,8 +17,10 @@ from sqlalchemy.orm import Session
 
 from presentation.components.ccleaner_sidebar import SidebarMenu
 from presentation.forms.asignacion_guardias_form import AsignacionGuardiasForm
-from presentation.forms.configuracion_form import ConfiguracionForm
+from presentation.forms.ajustes_form import AjustesForm
+from presentation.forms.conectividad_form import ConectividadForm
 from presentation.forms.import_export_form import ImportExportForm
+from presentation.forms.perfiles_usuario_form import PerfilesUsuarioForm
 
 # Importar formularios existentes (los vamos a wrapper)
 from presentation.forms.profesor_form import ProfesorForm
@@ -132,9 +134,19 @@ class CCleanerMainWindow(QMainWindow):
         self.add_view("profesores", "Gestión de Profesores", ProfesorForm(self.session))
         self.add_view("zonas", "Gestión de Zonas", ZonaForm(self.session))
         self.add_view(
-            "configuracion",
-            "Configuración del Sistema",
-            ConfiguracionForm(self.session),
+            "ajustes",
+            "Ajustes del Curso Escolar",
+            AjustesForm(self.session),
+        )
+        self.add_view(
+            "conectividad",
+            "Configuración de Conectividad",
+            ConectividadForm(self.session),
+        )
+        self.add_view(
+            "perfiles",
+            "Gestión de Perfiles de Usuario",
+            PerfilesUsuarioForm(self.session),
         )
 
         # GUARDIAS

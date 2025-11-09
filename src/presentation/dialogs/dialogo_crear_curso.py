@@ -20,8 +20,10 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-from src.core.logging import logger
-from src.services.gestor_cursos import GestorCursos
+from core.logging import get_logger
+from services.gestor_cursos import GestorCursos
+
+logger = get_logger(__name__)
 
 
 class DialogoCrearCurso(QDialog):

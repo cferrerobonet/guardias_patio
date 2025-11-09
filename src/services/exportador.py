@@ -195,6 +195,77 @@ class ExportadorDatos:
         ]
 
     @staticmethod
+    def exportar_usuarios() -> Optional[dict[str, Any]]:
+        """
+        Exporta todos los usuarios (perfiles) del sistema.
+        
+        Returns:
+            Diccionario con datos de usuarios o None si no hay archivo
+        """
+        from core.paths import get_data_directory
+        from sync.sync_manager import UserAuth
+        
+        try:
+            user_auth = UserAuth()
+            usuarios_export = []
+            
+            for username, user_data in user_auth.users.items():
+                usuarios_export.append({
+                    "username": username,
+                    "email": user_data.get("email", ""),
+                    "password_hash": user_data.get("password_hash", ""),
+                    "created_at": user_data.get("created_at", ""),
+                })
+            
+            return {
+                "count": len(usuarios_export),
+                "usuarios": usuarios_export
+            }
+        except Exception as e:
+            print(f"Error al exportar usuarios: {e}")
+            return None
+
+    @staticmethod
+    def exportar_cursos_escolares(session: Session) -> Optional[dict[str, Any]]:
+        """
+        Exporta todos los cursos escolares del sistema.
+        
+        Args:
+            session: Sesión de SQLAlchemy
+            
+        Returns:
+            Diccionario con datos de cursos o None si hay error
+        """
+        from models.models import CursoEscolar
+        
+        try:
+            cursos = session.query(CursoEscolar).all()
+            
+            cursos_export = []
+            curso_actual = None
+            
+            for curso in cursos:
+                if curso.activo and not curso.cerrado:
+                    curso_actual = curso.nombre
+                    
+                cursos_export.append({
+                    "nombre": curso.nombre,
+                    "activo": curso.activo,
+                    "cerrado": curso.cerrado,
+                    "fecha_creacion": curso.fecha_creacion.isoformat() if curso.fecha_creacion else None,
+                    "fecha_cierre": curso.fecha_cierre.isoformat() if curso.fecha_cierre else None,
+                })
+            
+            return {
+                "count": len(cursos_export),
+                "curso_actual": curso_actual,
+                "cursos": cursos_export
+            }
+        except Exception as e:
+            print(f"Error al exportar cursos escolares: {e}")
+            return None
+
+    @staticmethod
     def exportar_todo(session: Session, ruta_archivo: Union[str, Path]) -> None:
         """
         Exporta todos los datos de la aplicación a un archivo JSON.
@@ -252,7 +323,9 @@ class ExportadorDatos:
             "zonas": ExportadorDatos.exportar_zonas(session),
             "configuracion": ExportadorDatos.exportar_configuracion(session),
             "guardias": ExportadorDatos.exportar_guardias(session),
-            "ausencias": ExportadorDatos.exportar_ausencias(session),  # Campo añadido
+            "ausencias": ExportadorDatos.exportar_ausencias(session),
+            "usuarios": ExportadorDatos.exportar_usuarios(),  # Perfiles de usuario
+            "cursos_escolares": ExportadorDatos.exportar_cursos_escolares(session),  # Cursos
         }
 
         ruta = Path(ruta_archivo)
@@ -899,6 +972,110 @@ class ExportadorDatos:
             return False
 
     @staticmethod
+    def importar_usuarios(usuarios_data: Optional[dict[str, Any]], limpiar: bool = False) -> int:
+        """
+        Importa usuarios desde diccionario.
+        
+        Args:
+            usuarios_data: Diccionario con datos de usuarios
+            limpiar: Si True, elimina usuarios existentes antes de importar
+            
+        Returns:
+            Número de usuarios importados
+        """
+        if not usuarios_data or "usuarios" not in usuarios_data:
+            return 0
+            
+        from sync.sync_manager import UserAuth
+        
+        try:
+            user_auth = UserAuth()
+            
+            if limpiar:
+                # Limpiar usuarios existentes
+                user_auth.users = {}
+            
+            count = 0
+            for usuario in usuarios_data["usuarios"]:
+                username = usuario.get("username")
+                if not username:
+                    continue
+                    
+                user_auth.users[username] = {
+                    "password_hash": usuario.get("password_hash", ""),
+                    "email": usuario.get("email", ""),
+                    "created_at": usuario.get("created_at", ""),
+                }
+                count += 1
+            
+            user_auth._save_users()
+            return count
+        except Exception as e:
+            print(f"Error al importar usuarios: {e}")
+            return 0
+
+    @staticmethod
+    def importar_cursos_escolares(
+        session: Session, cursos_data: Optional[dict[str, Any]], limpiar: bool = False
+    ) -> int:
+        """
+        Importa cursos escolares desde diccionario.
+        
+        Args:
+            session: Sesión de SQLAlchemy
+            cursos_data: Diccionario con datos de cursos
+            limpiar: Si True, elimina cursos existentes antes de importar
+            
+        Returns:
+            Número de cursos importados
+        """
+        if not cursos_data or "cursos" not in cursos_data:
+            return 0
+            
+        from models.models import CursoEscolar
+        from datetime import datetime
+        
+        try:
+            if limpiar:
+                # Limpiar cursos existentes
+                session.query(CursoEscolar).delete()
+                session.flush()
+            
+            count = 0
+            for curso in cursos_data["cursos"]:
+                nombre = curso.get("nombre")
+                if not nombre:
+                    continue
+                
+                # Verificar si ya existe
+                existe = session.query(CursoEscolar).filter_by(nombre=nombre).first()
+                if existe:
+                    # Actualizar
+                    existe.activo = curso.get("activo", False)
+                    existe.cerrado = curso.get("cerrado", False)
+                    if curso.get("fecha_cierre"):
+                        existe.fecha_cierre = datetime.fromisoformat(curso["fecha_cierre"])
+                else:
+                    # Crear nuevo
+                    nuevo_curso = CursoEscolar(
+                        nombre=nombre,
+                        activo=curso.get("activo", False),
+                        cerrado=curso.get("cerrado", False),
+                        fecha_creacion=datetime.fromisoformat(curso["fecha_creacion"]) if curso.get("fecha_creacion") else datetime.now(),
+                        fecha_cierre=datetime.fromisoformat(curso["fecha_cierre"]) if curso.get("fecha_cierre") else None,
+                    )
+                    session.add(nuevo_curso)
+                
+                count += 1
+            
+            session.commit()
+            return count
+        except Exception as e:
+            print(f"Error al importar cursos escolares: {e}")
+            session.rollback()
+            return 0
+
+    @staticmethod
     def importar_todo(
         session: Session, ruta_archivo: Union[str, Path], limpiar: bool = False
     ) -> dict[str, int]:
@@ -922,9 +1099,11 @@ class ExportadorDatos:
             "zonas": 0,
             "configuracion": 0,
             "guardias": 0,
-            "ausencias": 0,  # Campo añadido
+            "ausencias": 0,
             "smtp_config": 0,
             "sftp_config": 0,
+            "usuarios": 0,
+            "cursos_escolares": 0,
         }
 
         # Importar configuración SMTP GLOBAL si existe en el JSON
@@ -936,6 +1115,18 @@ class ExportadorDatos:
         if "sftp_config" in datos and datos["sftp_config"]:
             if ExportadorDatos._importar_sftp_config(datos["sftp_config"]):
                 resultado["sftp_config"] = 1
+
+        # Importar usuarios (perfiles)
+        if "usuarios" in datos:
+            resultado["usuarios"] = ExportadorDatos.importar_usuarios(
+                datos["usuarios"], limpiar
+            )
+
+        # Importar cursos escolares
+        if "cursos_escolares" in datos:
+            resultado["cursos_escolares"] = ExportadorDatos.importar_cursos_escolares(
+                session, datos["cursos_escolares"], limpiar
+            )
 
         # Orden importante: primero profesores y zonas (para claves foráneas)
         if "profesores" in datos:

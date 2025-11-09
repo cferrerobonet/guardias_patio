@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from core.paths import get_user_data_directory
+from models.models import Base
 from sqlalchemy import create_engine, event, pool
 from sqlalchemy.orm import sessionmaker
 from utils.constants import TIMEOUT_DB
@@ -183,6 +184,34 @@ def get_user_database_path(user_id: str) -> Path:
     """Obtiene el path de la base de datos de un usuario."""
     user_hash = _hash_user_id(user_id)
     return USER_DATA_DIR / user_hash / "guardias_patio.db"
+
+
+def create_user_database(user_id: str) -> bool:
+    """
+    Crea una nueva base de datos para un usuario con la estructura completa.
+
+    Args:
+        user_id: Identificador del usuario
+
+    Returns:
+        bool: True si se creó correctamente
+    """
+    try:
+        db_path = get_user_database_path(user_id)
+        
+        # Crear directorio si no existe
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Crear base de datos con todas las tablas
+        engine = create_engine(f"sqlite:///{db_path}")
+        Base.metadata.create_all(engine)
+        
+        logger.info(f"Base de datos creada para usuario: {user_id}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error creando base de datos para usuario {user_id}: {e}")
+        return False
 
 
 def user_has_database(user_id: str) -> bool:

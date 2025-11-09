@@ -6,8 +6,10 @@ Permite visualizar todos los cursos y realizar operaciones de gestión.
 
 from typing import Optional
 
+import ui_styles as styles
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
+    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -20,10 +22,12 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-from src.core.logging import logger
-from src.models.models import CursoEscolar, Guardia
-from src.presentation.dialogs.dialogo_crear_curso import DialogoCrearCurso
-from src.services.gestor_cursos import GestorCursos
+from core.logging import get_logger
+from models.models import CursoEscolar, Guardia
+from presentation.dialogs.dialogo_crear_curso import DialogoCrearCurso
+from services.gestor_cursos import GestorCursos
+
+logger = get_logger(__name__)
 
 
 class GestionCursosWidget(QWidget):
@@ -40,11 +44,15 @@ class GestionCursosWidget(QWidget):
     def _inicializar_ui(self) -> None:
         """Crea la interfaz del widget."""
         layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        layout.setContentsMargins(10, 10, 10, 10)
 
-        # Título
-        titulo = QLabel("Gestión de Cursos Escolares")
-        titulo.setStyleSheet("font-size: 16px; font-weight: bold;")
-        layout.addWidget(titulo)
+        # GroupBox con estilo - Se expandirá verticalmente
+        grupo = QGroupBox("📚 Gestión de Cursos Escolares")
+        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
+        grupo_layout = QVBoxLayout()
+        grupo_layout.setSpacing(12)
+        grupo_layout.setContentsMargins(20, 20, 20, 20)
 
         # Descripción
         descripcion = QLabel(
@@ -52,50 +60,88 @@ class GestionCursosWidget(QWidget):
             "y tiene sus propias guardias y datos."
         )
         descripcion.setWordWrap(True)
-        layout.addWidget(descripcion)
+        descripcion.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 5px;")
+        grupo_layout.addWidget(descripcion)
 
-        # Botones de acción
+        # Botones de acción con estilos consistentes
         botones_layout = QHBoxLayout()
+        botones_layout.setSpacing(10)
 
         self.btn_crear = QPushButton("➕ Crear Nuevo Curso")
+        self.btn_crear.setStyleSheet(
+            styles.STYLE_BUTTON_SUCCESS + "font-size: 12px; padding: 8px 16px; font-weight: bold;"
+        )
+        self.btn_crear.setToolTip("Crear un nuevo curso escolar")
         self.btn_crear.clicked.connect(self._crear_curso)
         botones_layout.addWidget(self.btn_crear)
 
-        self.btn_activar = QPushButton("⭐ Activar Curso")
+        self.btn_activar = QPushButton("⭐ Activar")
+        self.btn_activar.setStyleSheet(
+            styles.STYLE_BUTTON_PRIMARY + "font-size: 12px; padding: 8px 16px;"
+        )
+        self.btn_activar.setToolTip("Activar el curso seleccionado (incluso si está cerrado)")
         self.btn_activar.clicked.connect(self._activar_curso_seleccionado)
         self.btn_activar.setEnabled(False)
         botones_layout.addWidget(self.btn_activar)
 
-        self.btn_cerrar = QPushButton("🔒 Cerrar Curso")
+        self.btn_cerrar = QPushButton("🔒 Cerrar")
+        self.btn_cerrar.setStyleSheet(
+            styles.STYLE_BUTTON_WARNING + "font-size: 12px; padding: 8px 16px;"
+        )
+        self.btn_cerrar.setToolTip("Cerrar el curso seleccionado (no se podrán añadir más guardias)")
         self.btn_cerrar.clicked.connect(self._cerrar_curso_seleccionado)
         self.btn_cerrar.setEnabled(False)
         botones_layout.addWidget(self.btn_cerrar)
 
-        self.btn_reabrir = QPushButton("🔓 Reabrir Curso")
-        self.btn_reabrir.clicked.connect(self._reabrir_curso_seleccionado)
-        self.btn_reabrir.setEnabled(False)
-        botones_layout.addWidget(self.btn_reabrir)
-
-        self.btn_eliminar = QPushButton("🗑️ Eliminar Curso")
+        self.btn_eliminar = QPushButton("🗑️ Eliminar")
+        self.btn_eliminar.setStyleSheet(
+            styles.STYLE_BUTTON_DANGER + "font-size: 12px; padding: 8px 16px;"
+        )
+        self.btn_eliminar.setToolTip("Eliminar el curso seleccionado y todas sus guardias")
         self.btn_eliminar.clicked.connect(self._eliminar_curso_seleccionado)
         self.btn_eliminar.setEnabled(False)
-        self.btn_eliminar.setStyleSheet("QPushButton { color: red; }")
         botones_layout.addWidget(self.btn_eliminar)
 
         botones_layout.addStretch()
-        layout.addLayout(botones_layout)
+        grupo_layout.addLayout(botones_layout)
 
-        # Tabla de cursos
+        # Espaciado entre botones y tabla
+        grupo_layout.addSpacing(15)
+
+        # Tabla de cursos con scroll automático
         self.tabla_cursos = QTableWidget()
         self.tabla_cursos.setColumnCount(6)
         self.tabla_cursos.setHorizontalHeaderLabels(
             ["Curso", "Fecha Inicio", "Fecha Fin", "Estado", "Guardias", "Creado"]
         )
-        self.tabla_cursos.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        
+        # Ajustar columnas
+        header = self.tabla_cursos.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Curso
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)  # Fecha Inicio
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Fecha Fin
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Estado
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # Guardias
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)  # Creado
+        
         self.tabla_cursos.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.tabla_cursos.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.tabla_cursos.setAlternatingRowColors(True)
+        
+        # Eliminar altura mínima fija para que sea flexible
+        # El scroll aparecerá automáticamente cuando haya muchas filas
+        self.tabla_cursos.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.tabla_cursos.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        
         self.tabla_cursos.itemSelectionChanged.connect(self._on_seleccion_cambiada)
-        layout.addWidget(self.tabla_cursos)
+        
+        # Añadir tabla con stretch=1 para que ocupe el espacio disponible
+        grupo_layout.addWidget(self.tabla_cursos, 1)
+        
+        grupo.setLayout(grupo_layout)
+        
+        # Añadir GroupBox con stretch=1 para que se expanda verticalmente
+        layout.addWidget(grupo, 1)
 
     def _cargar_cursos(self) -> None:
         """Carga todos los cursos en la tabla."""
@@ -160,7 +206,6 @@ class GestionCursosWidget(QWidget):
         if not hay_seleccion:
             self.btn_activar.setEnabled(False)
             self.btn_cerrar.setEnabled(False)
-            self.btn_reabrir.setEnabled(False)
             self.btn_eliminar.setEnabled(False)
             return
 
@@ -169,14 +214,12 @@ class GestionCursosWidget(QWidget):
         curso = self.session.query(CursoEscolar).filter_by(id=curso_id).first()
 
         if curso:
-            # Activar: solo si no está activo y no está cerrado
-            self.btn_activar.setEnabled(not curso.activo and not curso.cerrado)
+            # Activar: solo si no está activo (puede estar cerrado o no)
+            # El botón "Activar" también reabre cursos cerrados
+            self.btn_activar.setEnabled(not curso.activo)
 
-            # Cerrar: solo si no está cerrado
-            self.btn_cerrar.setEnabled(not curso.cerrado)
-
-            # Reabrir: solo si está cerrado
-            self.btn_reabrir.setEnabled(curso.cerrado)
+            # Cerrar: solo si no está cerrado y está activo
+            self.btn_cerrar.setEnabled(not curso.cerrado and curso.activo)
 
             # Eliminar: solo si no está activo
             self.btn_eliminar.setEnabled(not curso.activo)
@@ -189,7 +232,7 @@ class GestionCursosWidget(QWidget):
             self.curso_modificado.emit()
 
     def _activar_curso_seleccionado(self) -> None:
-        """Activa el curso seleccionado."""
+        """Activa el curso seleccionado (incluso si está cerrado)."""
         curso_id = self._obtener_curso_seleccionado_id()
         if curso_id is None:
             return
@@ -197,15 +240,34 @@ class GestionCursosWidget(QWidget):
         try:
             curso = self.session.query(CursoEscolar).filter_by(id=curso_id).first()
 
+            # Mensaje diferente si el curso está cerrado
+            if curso.cerrado:
+                mensaje = (
+                    f"¿Activar el curso {curso.nombre}?\n\n"
+                    "Este curso está cerrado. Se reabrirá automáticamente.\n"
+                    "El curso activo actual se desactivará."
+                )
+            else:
+                mensaje = (
+                    f"¿Activar el curso {curso.nombre}?\n\n"
+                    "El curso activo actual se desactivará."
+                )
+
             respuesta = QMessageBox.question(
                 self,
                 "Activar Curso",
-                f"¿Activar el curso {curso.nombre}?\n\nEl curso activo actual se desactivará.",
+                mensaje,
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
             if respuesta == QMessageBox.StandardButton.Yes:
+                # Si está cerrado, reabrirlo primero
+                if curso.cerrado:
+                    GestorCursos.reabrir_curso(self.session, curso_id)
+                
+                # Luego activarlo
                 GestorCursos.activar_curso(self.session, curso_id)
+                
                 QMessageBox.information(
                     self, "Curso Activado", f"El curso {curso.nombre} está ahora activo."
                 )
@@ -245,35 +307,6 @@ class GestionCursosWidget(QWidget):
         except Exception as e:
             logger.error(f"Error al cerrar curso: {e}")
             QMessageBox.critical(self, "Error", f"No se pudo cerrar el curso:\n{e}")
-
-    def _reabrir_curso_seleccionado(self) -> None:
-        """Reabre un curso previamente cerrado."""
-        curso_id = self._obtener_curso_seleccionado_id()
-        if curso_id is None:
-            return
-
-        try:
-            curso = self.session.query(CursoEscolar).filter_by(id=curso_id).first()
-
-            respuesta = QMessageBox.question(
-                self,
-                "Reabrir Curso",
-                f"¿Reabrir el curso {curso.nombre}?\n\n"
-                "El curso volverá a estar disponible para modificaciones.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            )
-
-            if respuesta == QMessageBox.StandardButton.Yes:
-                GestorCursos.reabrir_curso(self.session, curso_id)
-                QMessageBox.information(
-                    self, "Curso Reabierto", f"El curso {curso.nombre} ha sido reabierto."
-                )
-                self._cargar_cursos()
-                self.curso_modificado.emit()
-
-        except Exception as e:
-            logger.error(f"Error al reabrir curso: {e}")
-            QMessageBox.critical(self, "Error", f"No se pudo reabrir el curso:\n{e}")
 
     def _eliminar_curso_seleccionado(self) -> None:
         """Elimina el curso seleccionado (con confirmación fuerte)."""

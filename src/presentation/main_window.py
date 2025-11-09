@@ -5,6 +5,7 @@ Módulo que define la clase MainWindow de la aplicación de gestión de guardias
 """
 
 from core.qt_imports import (
+    QHBoxLayout,
     QKeySequence,
     QShortcut,
     QTabWidget,
@@ -15,15 +16,18 @@ from database.db_manager import SessionLocal
 
 from presentation.forms import (
     AsignacionGuardiasForm,
-    ConfiguracionForm,
     ImportExportForm,
     ProfesorForm,
     ZonaForm,
 )
+from presentation.forms.ajustes_form import AjustesForm
+from presentation.forms.conectividad_form import ConectividadForm
+from presentation.forms.perfiles_usuario_form import PerfilesUsuarioForm
 from presentation.widgets import (
     GestionarAusenciasForm,
     GestorSustituciones,
     PanelEstadisticas,
+    SelectorCursoWidget,
     VistaCalendario,
 )
 
@@ -42,12 +46,23 @@ class MainWindow(QWidget):
 
         # Aplicar logo corporativo a la ventana principal
         from utils.ui_helpers import get_corporate_icon
+
         self.setWindowIcon(get_corporate_icon())
 
         self.layout = QVBoxLayout()
 
         # Crear sesión para widgets que la necesiten
         self.session = SessionLocal()
+
+        # Barra superior con selector de curso
+        barra_superior = QHBoxLayout()
+        barra_superior.addStretch()
+
+        self.selector_curso = SelectorCursoWidget(self.session)
+        self.selector_curso.curso_cambiado.connect(self._on_curso_cambiado)
+        barra_superior.addWidget(self.selector_curso)
+
+        self.layout.addLayout(barra_superior)
 
         # Configurar atajos de teclado globales
         self._configurar_atajos_globales()
@@ -62,7 +77,9 @@ class MainWindow(QWidget):
 
         self.tabs.addTab(self.profesor_form, "👨‍🏫 Profesores")
         self.tabs.addTab(self.zona_form, "🏫 Zonas")
-        self.tabs.addTab(ConfiguracionForm(self.session), "⚙️ Configuración")
+        self.tabs.addTab(AjustesForm(self.session), "⚙️ Ajustes")
+        self.tabs.addTab(ConectividadForm(self.session), "🌐 Conectividad")
+        self.tabs.addTab(PerfilesUsuarioForm(self.session), "👤 Perfiles de Usuario")
         self.tabs.addTab(
             AsignacionGuardiasForm(self.session),
             "🎯 Asignación de Guardias",
@@ -145,6 +162,13 @@ class MainWindow(QWidget):
         # Refrescar sustituciones si se muestran
         elif self.tabs.widget(index) == self.gestor_sustituciones:
             self.gestor_sustituciones.refrescar()
+
+    def _on_curso_cambiado(self, curso_id: int):
+        """Callback cuando se cambia el curso activo."""
+        # Refrescar todos los widgets que dependan del curso
+        self.vista_calendario.refrescar()
+        self.panel_estadisticas.refrescar()
+        self.gestor_sustituciones.refrescar()
 
     def closeEvent(self, event):
         """Cierra la sesión al cerrar la ventana."""

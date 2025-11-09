@@ -1,7 +1,7 @@
 """
-Configuración Form - Refactorizado.
+Ajustes Form - Refactorizado.
 
-Form para gestionar la configuración del curso escolar.
+Form para gestionar los ajustes del curso escolar.
 Sigue el patrón MVP usando Use Cases.
 """
 
@@ -12,7 +12,6 @@ from application.use_cases.configuracion import (
     ObtenerConfiguracionUseCase,
 )
 from core.exceptions import NotFoundError
-from database.db_manager import get_current_user_id
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -23,29 +22,25 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
-from sync.sync_manager import UserAuth
 
 from presentation.forms.base_form import BaseForm
 from presentation.forms.config_widgets import (
     AjustesWidget,
     FechasRecreosWidget,
     FestivosWidget,
-    PerfilUsuarioWidget,
-    SFTPConfigWidget,
-    SMTPConfigWidget,
 )
 
 
-class ConfiguracionForm(BaseForm):
+class AjustesForm(BaseForm):
     """
-    Formulario para gestionar la configuración del curso.
+    Formulario para gestionar los ajustes del curso.
 
     Permite configurar:
     - Fechas del curso
     - Horarios de recreos
     - Ajustes de tutores/no tutores
     - Festivos y días no lectivos
-    - Configuración avanzada
+    - Gestión de cursos escolares
     """
 
     def __init__(self, session: Session, parent=None):
@@ -62,17 +57,11 @@ class ConfiguracionForm(BaseForm):
         self.obtener_config_uc = ObtenerConfiguracionUseCase(session)
         self.actualizar_config_uc = ActualizarConfiguracionUseCase(session)
 
-        # Inicializar gestor de usuarios
-        self.user_auth = UserAuth()
-        self.current_username = get_current_user_id()
-
         # Configurar UI
         self.setup_ui()
 
         # Cargar configuración existente si hay
         self.cargar_configuracion()
-
-        # Los widgets SMTP y SFTP cargan su configuración automáticamente en su __init__
 
     # ===== PROPIEDADES DE COMPATIBILIDAD PARA TESTS =====
     # Delegan a los widgets internos para mantener la API anterior
@@ -132,16 +121,6 @@ class ConfiguracionForm(BaseForm):
         """Acceso al campo no_lectivos del widget festivos."""
         return self.festivos_widget.no_lectivos_input
 
-    @property
-    def email_input(self):
-        """Acceso al campo email del widget perfil."""
-        return self.perfil_widget.email_input
-
-    @property
-    def username_display(self):
-        """Acceso al campo username_display del widget perfil."""
-        return self.perfil_widget.username_display
-
     def setup_ui(self) -> None:
         """Configura la interfaz de usuario."""
         self.setWindowTitle("Configuración del Curso")
@@ -161,11 +140,11 @@ class ConfiguracionForm(BaseForm):
         # Widget contenedor del contenido
         content_widget = QWidget()
         content_layout = QVBoxLayout()
-        content_layout.setContentsMargins(20, 20, 20, 20)
-        content_layout.setSpacing(15)
+        content_layout.setContentsMargins(12, 12, 12, 12)
+        content_layout.setSpacing(8)
 
         # Título principal
-        titulo = QLabel("⚙️ CONFIGURACIÓN DEL CURSO ESCOLAR")
+        titulo = QLabel("⚙️ AJUSTES DEL CURSO ESCOLAR")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         content_layout.addWidget(titulo)
 
@@ -173,9 +152,9 @@ class ConfiguracionForm(BaseForm):
         self.fechas_recreos_widget = FechasRecreosWidget(self)
         content_layout.addWidget(self.fechas_recreos_widget)
 
-        # ===== FILA 2: Ajustes + Festivos + Perfil (3 columnas) =====
+        # ===== FILA 2: Ajustes + Festivos (2 columnas) =====
         fila2_layout = QHBoxLayout()
-        fila2_layout.setSpacing(10)
+        fila2_layout.setSpacing(6)
 
         self.ajustes_widget = AjustesWidget(self)
         fila2_layout.addWidget(self.ajustes_widget)
@@ -183,33 +162,20 @@ class ConfiguracionForm(BaseForm):
         self.festivos_widget = FestivosWidget(self)
         fila2_layout.addWidget(self.festivos_widget)
 
-        self.perfil_widget = PerfilUsuarioWidget(
-            self, user_auth=self.user_auth, current_username=self.current_username
-        )
-        # Conectar señal de cambio de contraseña
-        self.perfil_widget.password_change_requested.connect(self.cambiar_contrasena)
-        fila2_layout.addWidget(self.perfil_widget)
-
         content_layout.addLayout(fila2_layout)
 
-        # ===== FILA 3: SMTP + SFTP (2 columnas) =====
-        fila3_layout = QHBoxLayout()
-        fila3_layout.setSpacing(10)
+        # ===== GESTIÓN DE CURSOS ESCOLARES =====
+        from presentation.widgets.gestion_cursos_widget import GestionCursosWidget
 
-        self.smtp_widget = SMTPConfigWidget(self)
-        fila3_layout.addWidget(self.smtp_widget)
+        self.gestion_cursos_widget = GestionCursosWidget(self.session, self)
+        content_layout.addWidget(self.gestion_cursos_widget)
 
-        self.sftp_widget = SFTPConfigWidget(self)
-        fila3_layout.addWidget(self.sftp_widget)
+        # Espacio flexible antes de los botones
+        content_layout.addStretch()
 
-        content_layout.addLayout(fila3_layout)
-
-        # Botones
+        # Botones al final
         btn_layout = self._crear_botones()
         content_layout.addLayout(btn_layout)
-
-        # Espacio flexible
-        content_layout.addStretch()
 
         # Establecer el layout en el widget contenedor
         content_widget.setLayout(content_layout)
@@ -280,34 +246,6 @@ class ConfiguracionForm(BaseForm):
             # Ejecutar Use Case
             config = self.actualizar_config_uc.execute(dto)
 
-            # Guardar email del usuario
-            email_guardado = self._guardar_email_interno()
-
-            # Guardar nombre del remitente SMTP (siempre, ya que es editable)
-            from_name_guardado = self.smtp_widget.save_from_name_only()
-
-            # Guardar configuración SMTP completa SOLO si los campos están desbloqueados
-            smtp_guardado = False
-            smtp_fue_modificado = not self.smtp_widget.smtp_server_input.isReadOnly()
-
-            if smtp_fue_modificado:
-                smtp_guardado = self.smtp_widget.save_config()
-
-                # Bloquear campos SMTP después de guardar exitosamente
-                if smtp_guardado:
-                    self.smtp_widget._toggle_editable()  # Bloquear
-
-            # Guardar configuración SFTP SOLO si los campos están desbloqueados
-            sftp_guardado = False
-            sftp_fue_modificado = not self.sftp_widget.sftp_host_input.isReadOnly()
-
-            if sftp_fue_modificado:
-                sftp_guardado = self.sftp_widget.save_config()
-
-                # Bloquear campos SFTP después de guardar exitosamente
-                if sftp_guardado:
-                    self.sftp_widget._toggle_editable()  # Bloquear
-
             # Mostrar éxito
             # Extraer solo los años de las fechas
             año_inicio = config.fecha_inicio_curso.year
@@ -318,15 +256,6 @@ class ConfiguracionForm(BaseForm):
                 f"<span style='color: #007ACC; font-style: italic;'>{año_inicio}-{año_fin}</span> "
                 f"ha sido guardada correctamente."
             )
-
-            if smtp_guardado:
-                mensaje_exito += "<br><br>La configuración SMTP también se ha guardado."
-
-            if sftp_guardado:
-                mensaje_exito += "<br><br>La configuración SFTP también se ha guardado."
-
-            if email_guardado:
-                mensaje_exito += "<br><br>Tu email ha sido actualizado."
 
             self.mostrar_exito("Configuración Guardada", mensaje_exito)
 

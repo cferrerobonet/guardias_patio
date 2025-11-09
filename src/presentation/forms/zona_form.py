@@ -253,9 +253,8 @@ class ZonaForm(BaseForm):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(8)
 
-        self.refresh_btn = QPushButton("🔄 Actualizar")
-        self.refresh_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
-        self.refresh_btn.clicked.connect(self.cargar_zonas)
+        # Botón "Actualizar" eliminado - la tabla se actualiza automáticamente
+        # después de cada operación (crear, editar, eliminar)
 
         self.editar_btn = QPushButton("✏️ Editar")
         self.editar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
@@ -271,7 +270,6 @@ class ZonaForm(BaseForm):
             "💡 Ctrl+A: seleccionar todas"
         )
 
-        btn_layout.addWidget(self.refresh_btn)
         btn_layout.addWidget(self.editar_btn)
         btn_layout.addWidget(self.delete_btn)
         btn_layout.addStretch()

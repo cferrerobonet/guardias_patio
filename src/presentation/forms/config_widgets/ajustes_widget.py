@@ -41,17 +41,17 @@ class AjustesWidget(QGroupBox):
     def _setup_ui(self) -> None:
         """Crea la interfaz del widget."""
         layout = QVBoxLayout()
-        layout.setSpacing(5)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(1)
+        layout.setContentsMargins(6, 6, 6, 6)
 
         # ===== Multiplicador tutores =====
         label_tutores = QLabel("Multiplicador tutores:")
-        label_tutores.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_tutores.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
         layout.addWidget(label_tutores)
 
         self.ajuste_tutores_input = QLineEdit()
         self.ajuste_tutores_input.setPlaceholderText("0.90")
-        self.ajuste_tutores_input.setStyleSheet(styles.STYLE_INPUT)
+        self.ajuste_tutores_input.setStyleSheet(styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;")
         self.ajuste_tutores_input.setToolTip(
             "Factor multiplicador para tutores (valores < 1.0 reducen su carga de guardias)\n"
             "Ejemplo: 0.90 = 10% menos guardias que un profesor normal"
@@ -61,12 +61,12 @@ class AjustesWidget(QGroupBox):
 
         # ===== Multiplicador no tutores =====
         label_no_tutores = QLabel("Multiplicador no tutores:")
-        label_no_tutores.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_no_tutores.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
         layout.addWidget(label_no_tutores)
 
         self.ajuste_no_tutores_input = QLineEdit()
         self.ajuste_no_tutores_input.setPlaceholderText("1.00")
-        self.ajuste_no_tutores_input.setStyleSheet(styles.STYLE_INPUT)
+        self.ajuste_no_tutores_input.setStyleSheet(styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;")
         self.ajuste_no_tutores_input.setToolTip(
             "Factor multiplicador para no tutores (valores > 1.0 aumentan su carga)\n"
             "Ejemplo: 1.10 = 10% más guardias que un profesor normal"
@@ -76,7 +76,7 @@ class AjustesWidget(QGroupBox):
 
         # ===== Selector de algoritmo =====
         label_algoritmo = QLabel("Algoritmo de asignación:")
-        label_algoritmo.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_algoritmo.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
         layout.addWidget(label_algoritmo)
 
         self.algoritmo_combo = QComboBox()
@@ -86,7 +86,7 @@ class AjustesWidget(QGroupBox):
         self.algoritmo_combo.addItem(
             "v3.0 - Simple Determinista ⚡", "v3.0"
         )
-        self.algoritmo_combo.setStyleSheet(styles.STYLE_INPUT)
+        self.algoritmo_combo.setStyleSheet(styles.STYLE_INPUT + "padding: 3px;")
         self.algoritmo_combo.setToolTip(
             "v2.9: Algoritmo clásico de 7 fases (CSP, Simulated Annealing)\n"
             "v3.0: Algoritmo simple determinista que garantiza 100% cobertura"

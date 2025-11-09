@@ -40,17 +40,17 @@ class FestivosWidget(QGroupBox):
     def _setup_ui(self) -> None:
         """Crea la interfaz del widget."""
         layout = QVBoxLayout()
-        layout.setSpacing(5)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(1)
+        layout.setContentsMargins(6, 6, 6, 6)
 
         # ===== Festivos automáticos =====
         label_auto = QLabel("Aplicar festivos automáticos:")
-        label_auto.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_auto.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
         layout.addWidget(label_auto)
 
         self.festivos_auto_input = QLineEdit()
         self.festivos_auto_input.setPlaceholderText("1 (sí) / 0 (no)")
-        self.festivos_auto_input.setStyleSheet(styles.STYLE_INPUT)
+        self.festivos_auto_input.setStyleSheet(styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;")
         self.festivos_auto_input.setToolTip(
             "Activar festivos nacionales automáticos:\n"
             "1 = Aplicar festivos oficiales de España\n"
@@ -61,12 +61,12 @@ class FestivosWidget(QGroupBox):
 
         # ===== Días no lectivos personalizados =====
         label_custom = QLabel("Días no lectivos (YYYY-MM-DD):")
-        label_custom.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_custom.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
         layout.addWidget(label_custom)
 
         self.no_lectivos_input = QLineEdit()
         self.no_lectivos_input.setPlaceholderText("2025-10-09, 2025-10-12")
-        self.no_lectivos_input.setStyleSheet(styles.STYLE_INPUT)
+        self.no_lectivos_input.setStyleSheet(styles.STYLE_INPUT + "padding: 3px;")
         self.no_lectivos_input.setToolTip(
             "Días no lectivos personalizados del centro\n"
             "Formato: YYYY-MM-DD separados por comas\n"

@@ -14,8 +14,10 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from src.core.logging import logger
-from src.models.models import CursoEscolar, Profesor
+from core.logging import get_logger
+from models.models import CursoEscolar, Profesor
+
+logger = get_logger(__name__)
 
 
 class GestorCursos:

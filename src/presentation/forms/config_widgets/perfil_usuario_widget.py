@@ -48,12 +48,12 @@ class PerfilUsuarioWidget(QGroupBox):
     def _setup_ui(self) -> None:
         """Crea la interfaz del widget."""
         layout = QVBoxLayout()
-        layout.setSpacing(5)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(1)
+        layout.setContentsMargins(6, 6, 6, 6)
 
         # ===== Nombre de usuario (solo lectura) =====
         label_username = QLabel("Usuario:")
-        label_username.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_username.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
         layout.addWidget(label_username)
 
         self.username_display = QLineEdit()
@@ -65,8 +65,10 @@ class PerfilUsuarioWidget(QGroupBox):
                 background-color: #e5e7eb;
                 color: #4b5563;
                 border: 1px solid #d1d5db;
-                padding: 5px;
+                padding: 3px;
+                margin-bottom: 2px;
                 font-weight: 500;
+                font-size: 10px;
             }
         """
         )
@@ -74,7 +76,7 @@ class PerfilUsuarioWidget(QGroupBox):
 
         # ===== Email (editable) =====
         label_email = QLabel("Email:")
-        label_email.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_email.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
         layout.addWidget(label_email)
 
         # Obtener email actual del usuario
@@ -86,7 +88,7 @@ class PerfilUsuarioWidget(QGroupBox):
         self.email_input = QLineEdit()
         self.email_input.setText(current_email)
         self.email_input.setPlaceholderText("tu@email.com")
-        self.email_input.setStyleSheet(styles.STYLE_INPUT)
+        self.email_input.setStyleSheet(styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;")
         self.email_input.setToolTip(
             "Email para notificaciones del sistema\nSe usa para envío de reportes y alertas"
         )
@@ -95,10 +97,12 @@ class PerfilUsuarioWidget(QGroupBox):
 
         # ===== Botón cambiar contraseña =====
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(5)
+        btn_layout.setSpacing(2)
 
         self.change_password_btn = QPushButton("🔒 Cambiar Contraseña")
-        self.change_password_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        self.change_password_btn.setStyleSheet(
+            styles.STYLE_BUTTON_WARNING + "padding: 4px 6px; font-size: 10px;"
+        )
         self.change_password_btn.setToolTip("Cambiar la contraseña de acceso al sistema")
         self.change_password_btn.clicked.connect(self.password_change_requested.emit)
         btn_layout.addWidget(self.change_password_btn)
