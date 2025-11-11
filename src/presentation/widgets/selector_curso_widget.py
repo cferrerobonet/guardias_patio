@@ -83,7 +83,8 @@ class SelectorCursoWidget(QWidget):
             msg_box.setWindowTitle("Error")
             msg_box.setText(f"No se pudieron cargar los cursos:\n{e}")
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msg_box.setFixedSize(450, 200)
+            msg_box.setDefaultButton(QMessageBox.StandardButton.Ok)
+            msg_box.setFixedSize(480, 220)
             msg_box.exec()
 
     def _on_curso_seleccionado(self, index: int) -> None:
@@ -109,7 +110,8 @@ class SelectorCursoWidget(QWidget):
             msg_confirmar.setStandardButtons(
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            msg_confirmar.setFixedSize(500, 300)
+            msg_confirmar.setDefaultButton(QMessageBox.StandardButton.No)
+            msg_confirmar.setFixedSize(520, 280)
             respuesta = msg_confirmar.exec()
 
             if respuesta == QMessageBox.StandardButton.Yes:
@@ -128,7 +130,8 @@ class SelectorCursoWidget(QWidget):
                 msg_success.setWindowTitle("Curso Cambiado")
                 msg_success.setText(f"Ahora estás trabajando con el curso {curso.nombre}")
                 msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
-                msg_success.setFixedSize(450, 200)
+                msg_success.setDefaultButton(QMessageBox.StandardButton.Ok)
+                msg_success.setFixedSize(480, 220)
                 msg_success.exec()
             else:
                 # Restaurar selección anterior
@@ -141,7 +144,8 @@ class SelectorCursoWidget(QWidget):
             msg_error.setWindowTitle("Error")
             msg_error.setText(f"No se pudo cambiar de curso:\n{e}")
             msg_error.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msg_error.setFixedSize(450, 200)
+            msg_error.setDefaultButton(QMessageBox.StandardButton.Ok)
+            msg_error.setFixedSize(480, 220)
             msg_error.exec()
             self._cargar_cursos()
 
