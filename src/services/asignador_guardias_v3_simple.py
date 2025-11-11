@@ -38,8 +38,6 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List, Optional, Set, Tuple
 
-from sqlalchemy.orm import Session
-
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
@@ -47,6 +45,7 @@ from services.calculador_guardias import (
     listar_dias_lectivos,
 )
 from services.optimizaciones_asignador import IndiceSlots
+from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -203,15 +202,24 @@ def _generar_todos_slots(config: Configuracion, session: Session) -> List[SlotV3
             recreo_id = recreo_data['id']
             turno = recreo_data['turno']
             for zona in zonas:
-                slot = SlotV3(
-                    fecha=dia,
-                    recreo_id=recreo_id,
-                    turno=turno,
-                    zona_id=zona.id,
-                )
-                slots.append(slot)
+                # Verificar si la zona está activa en esta fecha
+                zona_activa = True
+                if zona.fecha_inicio and dia < zona.fecha_inicio:
+                    zona_activa = False
+                if zona.fecha_fin and dia > zona.fecha_fin:
+                    zona_activa = False
 
-    logger.info(f"  ✓ Generados {len(slots)} slots totales")
+                # Solo crear slot si la zona está activa en esta fecha
+                if zona_activa:
+                    slot = SlotV3(
+                        fecha=dia,
+                        recreo_id=recreo_id,
+                        turno=turno,
+                        zona_id=zona.id,
+                    )
+                    slots.append(slot)
+
+    logger.info(f"  ✓ Generados {len(slots)} slots totales (considerando fechas de zonas)")
     return slots
 
 
@@ -443,6 +451,16 @@ def generar_guardias_v3_simple(
     if not config:
         raise ValueError("No se encontró configuración activa")
 
+    # Obtener curso activo para asignar a las guardias
+    from services.gestor_cursos import GestorCursos
+    curso_activo = GestorCursos.obtener_curso_activo(session)
+    curso_id = curso_activo.id if curso_activo else None
+
+    if not curso_id:
+        logger.warning("⚠️ No hay curso activo - las guardias se crearán sin curso asignado")
+    else:
+        logger.info(f"✅ Guardias se asignarán al curso activo: {curso_activo.nombre} (ID: {curso_id})")
+
     reportar_progreso(5, "Paso 1: Cargando profesores activos...")
     profesores = session.query(Profesor).filter(Profesor.activo == True).all()  # noqa: E712
     logger.info(f"  ✓ Configuración: {config.fecha_inicio_curso} a {config.fecha_fin_curso}")
@@ -560,10 +578,14 @@ def generar_guardias_v3_simple(
             continue
 
         # Filtrar slots válidos para este profesor
+        # IMPORTANTE: No asignar múltiples guardias el mismo día
+        fechas_ya_asignadas = {slot.fecha for slot in slots_por_profesor.get(profesor.id, [])}
+
         slots_disponibles = [
             slot
             for slot in todos_slots
             if slot not in slots_ocupados
+            and slot.fecha not in fechas_ya_asignadas  # Evitar múltiples guardias por día
             and _cumple_restricciones(profesor, slot, session)
         ]
 
@@ -585,15 +607,16 @@ def generar_guardias_v3_simple(
 
         # Crear guardias
         for slot in slots_asignar:
+            # Crear la asignación
             guardia = Guardia(
                 profesor_id=profesor.id,
                 fecha=slot.fecha,
                 recreo=slot.recreo_id,
                 turno=slot.turno,
                 zona_id=slot.zona_id,
+                curso_id=curso_id,
             )
             session.add(guardia)
-
             slots_ocupados.add(slot)
             indice_slots.marcar_ocupado(slot.fecha, slot.turno, slot.recreo_id, slot.zona_id)
             guardias_asignadas += 1
@@ -698,6 +721,75 @@ def generar_guardias_v3_simple(
                 grupos_inequitativos += 1
 
     logger.info(f"  ✓ Grupos inequitativos: {grupos_inequitativos}")
+
+    # VERIFICACIÓN FINAL: Comprobar asignación correcta de guardias por profesor
+    logger.info("")
+    logger.info("VERIFICACIÓN FINAL DE ASIGNACIÓN")
+    logger.info("=" * 80)
+
+    profesores_con_error = []
+    profesores_con_deficit = []
+    profesores_con_exceso = []
+
+    for pc in profesores_ordenados:
+        profesor = pc.profesor
+        cuota = pc.cuota
+        guardias_asignadas = guardias_por_profesor.get(profesor.id, 0)
+
+        if guardias_asignadas != cuota:
+            diferencia = guardias_asignadas - cuota
+            profesores_con_error.append((profesor, guardias_asignadas, cuota, diferencia))
+
+            if diferencia < 0:
+                profesores_con_deficit.append((profesor, guardias_asignadas, cuota, abs(diferencia)))
+            else:
+                profesores_con_exceso.append((profesor, guardias_asignadas, cuota, diferencia))
+
+    if not profesores_con_error:
+        logger.info("✅ TODOS los profesores tienen la cantidad correcta de guardias")
+    else:
+        logger.warning(f"⚠️  {len(profesores_con_error)} profesores con asignación incorrecta:")
+
+        if profesores_con_deficit:
+            logger.warning(f"\n  Profesores con DÉFICIT ({len(profesores_con_deficit)}):")
+            for profesor, asignadas_real, cuota, faltante in profesores_con_deficit:
+                logger.warning(f"    • {profesor.nombre_completo}: {asignadas_real}/{cuota} (faltan {faltante})")
+
+        if profesores_con_exceso:
+            logger.warning(f"\n  Profesores con EXCESO ({len(profesores_con_exceso)}):")
+            for profesor, asignadas_real, cuota, exceso in profesores_con_exceso:
+                logger.warning(f"    • {profesor.nombre_completo}: {asignadas_real}/{cuota} (sobran {exceso})")
+
+    logger.info("=" * 80)
+
+    # VERIFICACIÓN FINAL 2: Comprobar que ningún profesor tenga >1 guardia por día
+    logger.info("")
+    logger.info("VERIFICACIÓN DE GUARDIAS POR DÍA")
+    logger.info("=" * 80)
+
+    # Agrupar guardias por profesor y fecha
+    guardias_por_profesor_fecha: Dict[Tuple[int, date], int] = {}
+    for profesor_id, slots in slots_por_profesor.items():
+        for slot in slots:
+            key = (profesor_id, slot.fecha)
+            guardias_por_profesor_fecha[key] = guardias_por_profesor_fecha.get(key, 0) + 1
+
+    # Buscar días con múltiples guardias
+    dias_multiples = []
+    for (profesor_id, fecha), count in guardias_por_profesor_fecha.items():
+        if count > 1:
+            profesor = next((p for p in profesores if p.id == profesor_id), None)
+            if profesor:
+                dias_multiples.append((profesor, fecha, count))
+
+    if not dias_multiples:
+        logger.info("✅ Ningún profesor tiene más de 1 guardia por día")
+    else:
+        logger.error(f"❌ PROBLEMA CRÍTICO: {len(dias_multiples)} días con múltiples guardias:")
+        for profesor, fecha, count in sorted(dias_multiples, key=lambda x: (x[1], x[0].nombre_completo)):
+            logger.error(f"    • {profesor.nombre_completo} el {fecha}: {count} guardias")
+
+    logger.info("=" * 80)
 
     reportar_progreso(100, "✓ Generación completada")
 

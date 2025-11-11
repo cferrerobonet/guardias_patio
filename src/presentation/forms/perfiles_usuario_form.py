@@ -10,6 +10,17 @@ CRUD Profesional con:
 - Cambio de contraseña seguro (solo perfil actual)
 """
 
+import ui_styles as styles
+from application.use_cases.perfil import (
+    ActualizarLogoUseCase,
+    ActualizarPerfilUseCase,
+    CambiarPasswordUseCase,
+    CrearPerfilUseCase,
+    EliminarPerfilUseCase,
+    ListarPerfilesUseCase,
+)
+from core.exceptions import NotFoundError, ValidationError
+from database.db_manager import get_current_user_id
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFileDialog,
@@ -23,25 +34,14 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from sqlalchemy.orm import Session
+from sync.sync_manager import UserAuth
 
-import ui_styles as styles
-from application.use_cases.perfil import (
-    ActualizarLogoUseCase,
-    ActualizarPerfilUseCase,
-    CambiarPasswordUseCase,
-    CrearPerfilUseCase,
-    EliminarPerfilUseCase,
-    ListarPerfilesUseCase,
-)
-from core.exceptions import NotFoundError, ValidationError
-from database.db_manager import get_current_user_id
 from presentation.dialogs.modales_perfil import (
     DialogoCambiarPasswordProfesional,
     DialogoCrearPerfilProfesional,
     DialogoEditarPerfilProfesional,
 )
 from presentation.forms.base_form import BaseForm
-from sync.sync_manager import UserAuth
 
 
 class PerfilesUsuarioForm(BaseForm):
@@ -114,6 +114,9 @@ class PerfilesUsuarioForm(BaseForm):
         acciones_layout = QHBoxLayout()
         acciones_layout.setSpacing(8)
 
+        # Espaciador al inicio para empujar botones a la derecha
+        acciones_layout.addStretch()
+
         # Botón Crear (verde)
         self.btn_crear = QPushButton("➕ Crear")
         self.btn_crear.setStyleSheet(
@@ -166,8 +169,8 @@ class PerfilesUsuarioForm(BaseForm):
         self.btn_password.clicked.connect(self._on_password)
         acciones_layout.addWidget(self.btn_password)
 
-        # Espaciador
-        acciones_layout.addStretch()
+        # Separador
+        acciones_layout.addSpacing(20)
 
         # Botón Refrescar (gris)
         btn_refrescar = QPushButton("🔄")
@@ -198,15 +201,17 @@ class PerfilesUsuarioForm(BaseForm):
             ["👤 Usuario", "📧 Email", "💾 BD", "🖼️ Logo", "⭐ Actual", "Acciones"]
         )
 
-        # Configurar header
+        # Configurar header con anchos optimizados
         header = self.tabla.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Usuario
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Email
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # BD
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Logo
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # Actual
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)  # Acciones
-        self.tabla.setColumnWidth(5, 50)
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Usuario - más espacio
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Email - más espacio
+
+        # Columnas con ancho fijo estrecho
+        self.tabla.setColumnWidth(2, 60)   # BD - más estrecho
+        self.tabla.setColumnWidth(3, 70)   # Logo - más estrecho
+        self.tabla.setColumnWidth(4, 80)   # Actual - más estrecho
+        self.tabla.setColumnWidth(5, 100)  # Acciones - ancho legible
 
         # Configurar tabla
         self.tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)

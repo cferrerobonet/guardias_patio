@@ -7,8 +7,9 @@ del día seleccionado en el calendario.
 
 import locale
 from datetime import date
-from typing import List
+from typing import Dict, List, Tuple
 
+from models.models import Ausencia, Guardia, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -22,8 +23,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from models.models import Ausencia, Guardia
 
 # Configurar locale para fechas en español
 try:
@@ -44,6 +43,8 @@ class DiaDetalleDialog(QDialog):
         guardias: List[Guardia],
         ausencias: List[Ausencia],
         sustituciones: List[Guardia],
+        zonas_esperadas_por_recreo: Dict[Tuple[str, int], List[Zona]] = None,
+        es_dia_lectivo: bool = True,
         parent=None,
     ):
         """
@@ -54,6 +55,8 @@ class DiaDetalleDialog(QDialog):
             guardias: Lista de guardias del día
             ausencias: Lista de ausencias del día
             sustituciones: Lista de sustituciones del día
+            zonas_esperadas_por_recreo: Dict con zonas esperadas por (turno, recreo)
+            es_dia_lectivo: Si el día es lectivo (no festivo, no fin de semana)
             parent: Widget padre
         """
         super().__init__(parent)
@@ -61,6 +64,8 @@ class DiaDetalleDialog(QDialog):
         self.guardias = guardias
         self.ausencias = ausencias
         self.sustituciones = sustituciones
+        self.zonas_esperadas_por_recreo = zonas_esperadas_por_recreo or {}
+        self.es_dia_lectivo = es_dia_lectivo
 
         self.setup_ui()
 
@@ -279,6 +284,9 @@ class DiaDetalleDialog(QDialog):
         layout.setSpacing(5)
         layout.setContentsMargins(0, 0, 0, 0)
 
+        # Determinar el turno del recreo (inferir de las guardias)
+        turno = guardias[0].turno if guardias else "mañana"
+
         # Header del recreo
         header = QLabel(f"⏰ Recreo {numero_recreo} ({len(guardias)} profesores)")
         font_header = QFont()
@@ -297,10 +305,62 @@ class DiaDetalleDialog(QDialog):
             ),
         )
 
+        # Detectar zonas faltantes (solo en días lectivos)
+        zonas_con_guardia = {g.zona_id for g in guardias_ordenadas if g.zona_id}
+        zonas_esperadas = self.zonas_esperadas_por_recreo.get((turno, numero_recreo), [])
+        zonas_faltantes = [z for z in zonas_esperadas if z.id not in zonas_con_guardia]
+
         # Lista de guardias ordenadas por zona
         for guardia in guardias_ordenadas:
             guardia_widget = self._crear_widget_guardia(guardia)
             layout.addWidget(guardia_widget)
+
+        # Mostrar zonas faltantes (solo en días lectivos)
+        if self.es_dia_lectivo and zonas_faltantes:
+            for zona in zonas_faltantes:
+                zona_faltante_widget = self._crear_widget_zona_faltante(zona)
+                layout.addWidget(zona_faltante_widget)
+
+        return widget
+
+    def _crear_widget_zona_faltante(self, zona: Zona) -> QWidget:
+        """Crear widget para una zona sin guardia asignada."""
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(15)
+
+        # Zona con badge rojo
+        zona_label = QLabel(f"{zona.nombre_zona}")
+        zona_label.setStyleSheet("""
+            background-color: #D32F2F;
+            color: white;
+            font-weight: bold;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 3px;
+            min-width: 35px;
+        """)
+        zona_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(zona_label)
+
+        # Texto de alerta
+        label_alerta = QLabel("⚠️ SIN GUARDIA ASIGNADA")
+        font_alerta = QFont()
+        font_alerta.setPointSize(10)
+        font_alerta.setBold(True)
+        label_alerta.setFont(font_alerta)
+        label_alerta.setStyleSheet("color: #B71C1C; padding-left: 8px;")
+        layout.addWidget(label_alerta, 2)
+
+        # Estilo del widget
+        widget.setStyleSheet("""
+            QWidget {
+                background-color: #FFEBEE;
+                border: 2px solid #D32F2F;
+                border-radius: 5px;
+            }
+        """)
 
         return widget
 

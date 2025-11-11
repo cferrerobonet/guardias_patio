@@ -9,9 +9,8 @@ from datetime import date, time
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from sqlalchemy.orm import Session, joinedload
-
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
+from sqlalchemy.orm import Session, joinedload
 
 
 class ExportadorDatos:
@@ -168,6 +167,7 @@ class ExportadorDatos:
                 "recreo": g.recreo,
                 "zona_id": g.zona_id,  # FK necesario para relaciones
                 "zona_nombre": g.zona.nombre_zona if g.zona else None,
+                "curso_id": g.curso_id,  # Curso escolar asociado
             }
             for g in guardias
         ]
@@ -688,6 +688,9 @@ class ExportadorDatos:
                 zona_id = zona.id if zona else None
 
             if profesor_id and zona_id:  # Solo crear si tenemos ambos IDs
+                # Obtener curso_id (puede ser None si es dato antiguo)
+                curso_id = g_data.get("curso_id")
+
                 # Si hay ID, actualizar o crear con ID específico
                 if "id" in g_data:
                     existing = session.query(Guardia).filter_by(id=g_data["id"]).first()
@@ -698,6 +701,7 @@ class ExportadorDatos:
                         existing.turno = g_data["turno"]
                         existing.recreo = g_data["recreo"]
                         existing.zona_id = zona_id
+                        existing.curso_id = curso_id
                     else:
                         # Crear con ID específico
                         guardia = Guardia(
@@ -707,6 +711,7 @@ class ExportadorDatos:
                             turno=g_data["turno"],
                             recreo=g_data["recreo"],
                             zona_id=zona_id,
+                            curso_id=curso_id,
                         )
                         session.add(guardia)
                 else:
@@ -717,6 +722,7 @@ class ExportadorDatos:
                         turno=g_data["turno"],
                         recreo=g_data["recreo"],
                         zona_id=zona_id,
+                        curso_id=curso_id,
                     )
                     session.add(guardia)
                 count += 1

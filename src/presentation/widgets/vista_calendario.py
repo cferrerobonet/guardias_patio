@@ -9,11 +9,13 @@ Características:
 - Diseño optimizado para aprovechamiento de espacio
 """
 
+import json
 from calendar import monthrange
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from typing import List
+from typing import Dict, List, Tuple
 
+from models.models import Ausencia, Configuracion, Guardia, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -29,8 +31,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from services.calculador_guardias import listar_dias_lectivos
 
-from models.models import Ausencia, Guardia
 from presentation.dialogs.dia_detalle_dialog import DiaDetalleDialog
 from presentation.forms.base_form import BaseForm
 
@@ -46,6 +48,8 @@ class CeldaDia(QGroupBox):
         guardias: List[Guardia],
         ausencias: List[Ausencia],
         sustituciones: List[Guardia],
+        zonas_esperadas_por_recreo: Dict[Tuple[str, int], List[Zona]] = None,
+        es_dia_lectivo: bool = True,
         es_hoy: bool = False,
     ):
         """
@@ -56,6 +60,8 @@ class CeldaDia(QGroupBox):
             guardias: Lista de guardias del día
             ausencias: Lista de ausencias del día
             sustituciones: Lista de sustituciones del día
+            zonas_esperadas_por_recreo: Dict con zonas esperadas por (turno, recreo)
+            es_dia_lectivo: Si el día es lectivo (no festivo, no fin de semana)
             es_hoy: Si es el día actual
         """
         super().__init__()
@@ -63,6 +69,8 @@ class CeldaDia(QGroupBox):
         self.guardias = guardias
         self.ausencias = ausencias
         self.sustituciones = sustituciones
+        self.zonas_esperadas_por_recreo = zonas_esperadas_por_recreo or {}
+        self.es_dia_lectivo = es_dia_lectivo
         self.es_hoy = es_hoy
 
         self.setup_ui()
@@ -158,8 +166,19 @@ class CeldaDia(QGroupBox):
         orden_turno = {"mañana": 0, "tarde": 1}
         claves_ordenadas = sorted(grupos.keys(), key=lambda x: (orden_turno.get(x[0], 2), x[1]))
 
+        # Si tenemos zonas esperadas, agregar también los grupos sin guardias
+        if self.zonas_esperadas_por_recreo:
+            for clave in self.zonas_esperadas_por_recreo.keys():
+                if clave not in claves_ordenadas:
+                    claves_ordenadas.append(clave)
+            # Re-ordenar
+            claves_ordenadas = sorted(
+                claves_ordenadas,
+                key=lambda x: (orden_turno.get(x[0], 2), x[1])
+            )
+
         for turno, recreo in claves_ordenadas:
-            guardias_grupo = grupos[(turno, recreo)]
+            guardias_grupo = grupos.get((turno, recreo), [])
 
             # Ordenar guardias del grupo por zona (Z1, Z2, Z3, Z4)
             guardias_ordenadas = sorted(
@@ -180,9 +199,19 @@ class CeldaDia(QGroupBox):
             )
             layout.addWidget(label_grupo)
 
+            # Detectar zonas faltantes
+            zonas_con_guardia = {g.zona_id for g in guardias_ordenadas if g.zona_id}
+            zonas_esperadas = self.zonas_esperadas_por_recreo.get((turno, recreo), [])
+            zonas_faltantes = [z for z in zonas_esperadas if z.id not in zonas_con_guardia]
+
             # Guardias del grupo ordenadas por zona
             for guardia in guardias_ordenadas:
                 self._agregar_guardia_individual(layout, guardia)
+
+            # Mostrar zonas faltantes solo en días lectivos
+            if self.es_dia_lectivo:
+                for zona in zonas_faltantes:
+                    self._agregar_zona_sin_guardia(layout, zona)
 
     def _agregar_guardia_individual(self, layout: QVBoxLayout, guardia: Guardia):
         """Agregar una guardia individual con mejor diseño."""
@@ -252,6 +281,46 @@ class CeldaDia(QGroupBox):
 
         layout.addWidget(widget)
 
+    def _agregar_zona_sin_guardia(self, layout: QVBoxLayout, zona: Zona):
+        """Agregar un indicador visual de zona sin guardia asignada."""
+        # Crear widget contenedor con layout horizontal
+        widget = QWidget()
+        h_layout = QHBoxLayout(widget)
+        h_layout.setContentsMargins(3, 2, 3, 2)
+        h_layout.setSpacing(5)
+
+        # Badge de zona con color de advertencia
+        zona_label = QLabel(zona.nombre_zona)
+        zona_label.setStyleSheet("""
+            background-color: #D32F2F;
+            color: white;
+            font-size: 8px;
+            font-weight: bold;
+            padding: 2px 4px;
+            border-radius: 2px;
+            min-width: 18px;
+        """)
+        zona_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        h_layout.addWidget(zona_label)
+
+        # Texto indicando falta de guardia
+        texto_label = QLabel("⚠️ SIN GUARDIA ASIGNADA")
+        texto_label.setStyleSheet("font-size: 8px; color: #B71C1C; font-weight: bold;")
+        h_layout.addWidget(texto_label, 1)
+
+        # Estilo del widget con color de alerta
+        widget.setStyleSheet("""
+            QWidget {
+                background-color: #FFEBEE;
+                border-left: 3px solid #D32F2F;
+                border-radius: 3px;
+                margin: 1px 0px;
+            }
+        """)
+        widget.setToolTip(f"ALERTA: La zona {zona.nombre_zona} no tiene guardia asignada")
+
+        layout.addWidget(widget)
+
     def _agregar_ausencias(self, layout: QVBoxLayout):
         """Agregar información de ausencias."""
         label_titulo = QLabel("🏥 Ausencias:")
@@ -291,7 +360,21 @@ class CeldaDia(QGroupBox):
         tiene_ausencias = len(self.ausencias) > 0
         tiene_sustituciones = len(self.sustituciones) > 0
 
-        if self.es_hoy:
+        # Días no lectivos (festivos/fines de semana) tienen prioridad visual
+        if not self.es_dia_lectivo:
+            # Estilo para días no lectivos (sombreado gris)
+            estilo = """
+                QGroupBox {
+                    background-color: #F5F5F5;
+                    border: 1px solid #BDBDBD;
+                    border-radius: 6px;
+                    opacity: 0.7;
+                }
+                QLabel {
+                    color: #757575;
+                }
+            """
+        elif self.es_hoy:
             # Estilo para hoy
             estilo = """
                 QGroupBox {
@@ -367,9 +450,54 @@ class VistaCalendario(BaseForm):
         self.semana_mostrada = self.fecha_actual.isocalendar()[1]
         self.vista_actual = self.VISTA_MENSUAL
 
+        # Cache de días lectivos
+        self._dias_lectivos_cache = None
+
         self.setWindowTitle("📅 Calendario de Guardias")
         self.resize(1400, 900)
         self.setup_ui()
+
+    def showEvent(self, event):
+        """
+        Sobrescribe showEvent para refrescar el calendario cuando se muestra la vista.
+        
+        Esto garantiza que el calendario se actualice automáticamente al:
+        - Cambiar de curso escolar en el selector
+        - Volver a esta pestaña después de estar en otra vista
+        """
+        super().showEvent(event)
+        # Limpiar caché de días lectivos para forzar recarga
+        self._dias_lectivos_cache = None
+        # Refrescar calendario con datos del curso activo
+        self.actualizar_calendario()
+
+    def _obtener_dias_lectivos(self) -> set:
+        """
+        Obtiene el conjunto de días lectivos de la configuración (con caché).
+
+        Returns:
+            Set de fechas que son días lectivos
+        """
+        if self._dias_lectivos_cache is None:
+            config = self.session.query(Configuracion).first()
+            if config:
+                dias_list = listar_dias_lectivos(config)
+                self._dias_lectivos_cache = set(dias_list)
+            else:
+                self._dias_lectivos_cache = set()
+        return self._dias_lectivos_cache
+
+    def _es_dia_lectivo(self, fecha: date) -> bool:
+        """
+        Verifica si una fecha es un día lectivo.
+
+        Args:
+            fecha: Fecha a verificar
+
+        Returns:
+            True si es día lectivo, False si es festivo o fin de semana
+        """
+        return fecha in self._obtener_dias_lectivos()
 
     def setup_ui(self):
         """Construir la interfaz del widget."""
@@ -572,6 +700,8 @@ class VistaCalendario(BaseForm):
             ("🟧", "Con sustituciones", "#FFF3E0", "#FF9800"),
             ("🟥", "Con ausencias", "#FCE4EC", "#E91E63"),
             ("⬜", "Sin actividad", "#FAFAFA", "#E0E0E0"),
+            ("⬛", "No lectivo", "#F5F5F5", "#BDBDBD"),
+            ("⚠️", "Zona sin guardia", "#FFEBEE", "#D32F2F"),
         ]
 
         for emoji, texto, bg_color, border_color in items:
@@ -608,6 +738,109 @@ class VistaCalendario(BaseForm):
                 self.btn_siguiente.setText("Semana Siguiente ▶")
 
         self.actualizar_calendario()
+
+    def _obtener_zonas_esperadas_por_recreo(
+        self, fecha: date
+    ) -> Dict[Tuple[str, int], List[Zona]]:
+        """
+        Determina qué zonas deberían tener guardia para cada recreo/turno en una fecha.
+
+        Args:
+            fecha: Fecha para la cual calcular las zonas esperadas
+
+        Returns:
+            Diccionario con clave (turno, recreo) y valor lista de zonas esperadas
+        """
+        zonas_por_recreo = {}
+
+        # Obtener configuración
+        config = self.session.query(Configuracion).first()
+        if not config:
+            return zonas_por_recreo
+
+        # Obtener todas las zonas activas en esta fecha
+        zonas = self.session.query(Zona).all()
+        zonas_activas = []
+        for zona in zonas:
+            # Verificar si la zona está activa en esta fecha
+            zona_activa = True
+            if zona.fecha_inicio and fecha < zona.fecha_inicio:
+                zona_activa = False
+            if zona.fecha_fin and fecha > zona.fecha_fin:
+                zona_activa = False
+            if zona_activa:
+                zonas_activas.append(zona)
+
+        # Ordenar zonas por nombre (Z1, Z2, Z3, Z4)
+        zonas_activas = sorted(
+            zonas_activas,
+            key=lambda z: (
+                int(z.nombre_zona[1])
+                if z.nombre_zona and z.nombre_zona.startswith("Z")
+                else 999
+            )
+        )
+
+        # Parse recreos_config
+        recreos_list = self._parse_recreos_config(config)
+
+        # Para cada recreo, agregar las zonas que deberían tener guardia
+        for recreo_data in recreos_list:
+            recreo_id = recreo_data['id']
+            turno = recreo_data.get('turno', 'mañana')
+            num_zonas = recreo_data.get('zonas', len(zonas_activas))
+
+            # Limitar al número de zonas activas disponibles
+            zonas_para_recreo = zonas_activas[:min(num_zonas, len(zonas_activas))]
+            zonas_por_recreo[(turno, recreo_id)] = zonas_para_recreo
+
+        return zonas_por_recreo
+
+    def _parse_recreos_config(self, config: Configuracion) -> List[Dict]:
+        """Parse la configuración de recreos desde JSON."""
+        if config.recreos_config:
+            try:
+                return json.loads(config.recreos_config)
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        # Fallback: deducir de campos individuales
+        recreos = []
+        recreo_id = 0
+
+        if config.hora_recreo1_manana:
+            recreo_id += 1
+            recreos.append({
+                'id': recreo_id,
+                'turno': 'mañana',
+                'etiqueta': f'Recreo {recreo_id}',
+            })
+
+        if config.hora_recreo2_manana:
+            recreo_id += 1
+            recreos.append({
+                'id': recreo_id,
+                'turno': 'mañana',
+                'etiqueta': f'Recreo {recreo_id}',
+            })
+
+        if config.hora_recreo1_tarde:
+            recreo_id += 1
+            recreos.append({
+                'id': recreo_id,
+                'turno': 'tarde',
+                'etiqueta': f'Recreo {recreo_id}',
+            })
+
+        if config.hora_recreo2_tarde:
+            recreo_id += 1
+            recreos.append({
+                'id': recreo_id,
+                'turno': 'tarde',
+                'etiqueta': f'Recreo {recreo_id}',
+            })
+
+        return recreos
 
     def actualizar_calendario(self):
         """Actualizar el calendario según la vista actual."""
@@ -693,6 +926,8 @@ class VistaCalendario(BaseForm):
                 guardias=guardias_por_fecha.get(fecha_dia, []),
                 ausencias=ausencias_por_fecha.get(fecha_dia, []),
                 sustituciones=sustituciones_por_fecha.get(fecha_dia, []),
+                zonas_esperadas_por_recreo=self._obtener_zonas_esperadas_por_recreo(fecha_dia),
+                es_dia_lectivo=self._es_dia_lectivo(fecha_dia),
                 es_hoy=(fecha_dia == self.fecha_actual),
             )
             celda.dia_clicked.connect(self._dia_seleccionado)
@@ -770,6 +1005,8 @@ class VistaCalendario(BaseForm):
                 guardias=guardias_por_fecha.get(fecha_dia, []),
                 ausencias=ausencias_por_fecha.get(fecha_dia, []),
                 sustituciones=sustituciones_por_fecha.get(fecha_dia, []),
+                zonas_esperadas_por_recreo=self._obtener_zonas_esperadas_por_recreo(fecha_dia),
+                es_dia_lectivo=self._es_dia_lectivo(fecha_dia),
                 es_hoy=(fecha_dia == self.fecha_actual),
             )
             celda.dia_clicked.connect(self._dia_seleccionado)
@@ -941,10 +1178,27 @@ class VistaCalendario(BaseForm):
         Returns:
             Tupla de (guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha)
         """
-        # Guardias
+        # Obtener configuración activa para filtrar por curso
+        from models.models import CursoEscolar
+
+        curso_activo = (
+            self.session.query(CursoEscolar)
+            .filter_by(activo=True)
+            .first()
+        )
+
+        if not curso_activo:
+            # Si no hay curso activo, retornar datos vacíos
+            return defaultdict(list), defaultdict(list), defaultdict(list)
+
+        # Guardias del curso activo
         guardias = (
             self.session.query(Guardia)
-            .filter(Guardia.fecha >= fecha_inicio, Guardia.fecha <= fecha_fin)
+            .filter(
+                Guardia.curso_id == curso_activo.id,
+                Guardia.fecha >= fecha_inicio,
+                Guardia.fecha <= fecha_fin
+            )
             .all()
         )
 
@@ -996,6 +1250,8 @@ class VistaCalendario(BaseForm):
             guardias=guardias,
             ausencias=ausencias,
             sustituciones=sustituciones,
+            zonas_esperadas_por_recreo=self._obtener_zonas_esperadas_por_recreo(fecha),
+            es_dia_lectivo=self._es_dia_lectivo(fecha),
             parent=self,
         )
         dialog.exec()
@@ -1089,4 +1345,5 @@ class VistaCalendario(BaseForm):
     def refrescar(self):
         """Refrescar el calendario."""
         self.session.expire_all()  # Limpiar caché de SQLAlchemy
+        self._dias_lectivos_cache = None  # Limpiar caché de días lectivos
         self.actualizar_calendario()

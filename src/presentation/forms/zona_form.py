@@ -4,6 +4,16 @@ Formulario de gestión de zonas de recreo.
 Permite realizar operaciones CRUD sobre las zonas usando patrón MVP.
 """
 
+import ui_styles as styles
+from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
+from application.use_cases.zona import (
+    ActualizarZonaUseCase,
+    CrearZonaUseCase,
+    EliminarZonaUseCase,
+    ListarZonasUseCase,
+    ObtenerZonaUseCase,
+)
+from core.exceptions import BusinessLogicError, NotFoundError
 from pydantic import ValidationError
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -20,16 +30,6 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-import ui_styles as styles
-from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
-from application.use_cases.zona import (
-    ActualizarZonaUseCase,
-    CrearZonaUseCase,
-    EliminarZonaUseCase,
-    ListarZonasUseCase,
-    ObtenerZonaUseCase,
-)
-from core.exceptions import BusinessLogicError, NotFoundError
 from presentation.forms.base_form import BaseForm
 from presentation.forms.zona_widgets import DatosZonaWidget
 from presentation.widgets import TableManager
@@ -471,11 +471,32 @@ class ZonaForm(BaseForm):
 
             id_zona = int(item_id.text())
 
-            # Si no está en modo edición, primero mostrar los datos
-            if self.zona_editando_id is None:
-                self.mostrar_zona()
+            # Cargar datos directamente de la BD (sin caché) para datos actualizados
+            try:
+                from models.models import Zona
 
-            # Ahora activar modo edición
+                zona_model = self.session.query(Zona).filter_by(id=id_zona).first()
+
+                if not zona_model:
+                    self.mostrar_error("Error", f"No se encontró la zona con ID {id_zona}")
+                    return
+
+                # Limpiar formulario
+                self.limpiar_formulario()
+
+                # Cargar datos en el widget directamente desde el modelo de BD
+                self.datos_zona_widget.set_datos({
+                    "nombre": zona_model.nombre_zona or "",
+                    "descripcion": zona_model.descripcion or "",
+                    "fecha_inicio": zona_model.fecha_inicio,
+                    "fecha_fin": zona_model.fecha_fin,
+                })
+
+            except Exception as e:
+                self.manejar_excepcion(e, "cargar datos de la zona")
+                return
+
+            # Activar modo edición
             self.zona_editando_id = id_zona
             self.titulo_form.setText(f"✏️ EDITAR ZONA [ID: {id_zona}]")
             self.submit_btn.setText("💾 Actualizar Zona")

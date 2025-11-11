@@ -6,13 +6,12 @@ Permite cambiar entre cursos escolares de forma rápida desde la UI principal.
 
 from typing import Optional
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QMessageBox, QWidget
-from sqlalchemy.orm import Session
-
 from core.logging import get_logger
 from models.models import CursoEscolar
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QMessageBox, QWidget
 from services.gestor_cursos import GestorCursos
+from sqlalchemy.orm import Session
 
 logger = get_logger(__name__)
 
@@ -78,7 +77,13 @@ class SelectorCursoWidget(QWidget):
 
         except Exception as e:
             logger.error(f"Error al cargar cursos en selector: {e}")
-            QMessageBox.critical(self, "Error", f"No se pudieron cargar los cursos:\n{e}")
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Icon.Critical)
+            msg_box.setWindowTitle("Error")
+            msg_box.setText(f"No se pudieron cargar los cursos:\n{e}")
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg_box.setFixedSize(450, 200)
+            msg_box.exec()
 
     def _on_curso_seleccionado(self, index: int) -> None:
         """Maneja el cambio de curso en el combo."""
@@ -93,13 +98,18 @@ class SelectorCursoWidget(QWidget):
             if not curso:
                 return
 
-            respuesta = QMessageBox.question(
-                self,
-                "Cambiar Curso Escolar",
+            msg_confirmar = QMessageBox(self)
+            msg_confirmar.setIcon(QMessageBox.Icon.Question)
+            msg_confirmar.setWindowTitle("Cambiar Curso Escolar")
+            msg_confirmar.setText(
                 f"¿Cambiar al curso {curso.nombre}?\n\n"
-                "Las vistas se actualizarán para mostrar los datos de este curso.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                "Las vistas se actualizarán para mostrar los datos de este curso."
             )
+            msg_confirmar.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            msg_confirmar.setFixedSize(500, 250)
+            respuesta = msg_confirmar.exec()
 
             if respuesta == QMessageBox.StandardButton.Yes:
                 # Activar curso
@@ -112,16 +122,26 @@ class SelectorCursoWidget(QWidget):
                 # Emitir señal
                 self.curso_cambiado.emit(curso_id)
 
-                QMessageBox.information(
-                    self, "Curso Cambiado", f"Ahora estás trabajando con el curso {curso.nombre}"
-                )
+                msg_success = QMessageBox(self)
+                msg_success.setIcon(QMessageBox.Icon.Information)
+                msg_success.setWindowTitle("Curso Cambiado")
+                msg_success.setText(f"Ahora estás trabajando con el curso {curso.nombre}")
+                msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
+                msg_success.setFixedSize(450, 200)
+                msg_success.exec()
             else:
                 # Restaurar selección anterior
                 self._cargar_cursos()
 
         except Exception as e:
             logger.error(f"Error al cambiar curso: {e}")
-            QMessageBox.critical(self, "Error", f"No se pudo cambiar de curso:\n{e}")
+            msg_error = QMessageBox(self)
+            msg_error.setIcon(QMessageBox.Icon.Critical)
+            msg_error.setWindowTitle("Error")
+            msg_error.setText(f"No se pudo cambiar de curso:\n{e}")
+            msg_error.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg_error.setFixedSize(450, 200)
+            msg_error.exec()
             self._cargar_cursos()
 
     def refrescar(self) -> None:

@@ -7,8 +7,6 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from sqlalchemy.orm import Session
-
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
@@ -19,6 +17,7 @@ from services.optimizaciones_asignador import (
     IndiceSlots,
     estadisticas_rendimiento,
 )
+from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -407,6 +406,16 @@ def generar_calendario_guardias(
 
     reportar_progreso(0, "Validando configuración...")
 
+    # Obtener curso activo para asignar a las guardias
+    from services.gestor_cursos import GestorCursos
+    curso_activo = GestorCursos.obtener_curso_activo(session)
+    curso_id = curso_activo.id if curso_activo else None
+
+    if not curso_id:
+        logger.warning("⚠️ No hay curso activo - las guardias se crearán sin curso asignado")
+    else:
+        logger.info(f"✅ Guardias se asignarán al curso activo: {curso_activo.nombre} (ID: {curso_id})")
+
     config = session.query(Configuracion).first()
     if not config:
         logger.error("No existe configuración del curso")
@@ -691,7 +700,7 @@ def generar_calendario_guardias(
                         ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
                         zona_preferida_prof, guardias_por_slot_prof,
                         guardias_por_dia_prof
-                    )
+                    , curso_id=curso_id)
 
                     # CRÍTICO: Actualizar índice de slots
                     indice_slots.marcar_ocupado(
@@ -802,7 +811,7 @@ def generar_calendario_guardias(
             calendario, elegido, slot, asignadas,
             ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
             zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-        )
+        , curso_id=curso_id)
 
         # ALGORITMO v2.9: NO incrementar cuotas dinámicamente para mantener equidad
         # El ajuste dinámico rompía la equidad al permitir que profesores superen su cuota ideal
@@ -918,7 +927,7 @@ def generar_calendario_guardias(
                 calendario, elegido, slot, asignadas,
                 ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
                 zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-            )
+            , curso_id=curso_id)
 
             # ALGORITMO v2.9: NO actualizar cuotas dinámicas (eliminar ajuste)
             # cuotas_dinamicas[elegido.id] = cuotas_relajadas[elegido.id]
@@ -981,7 +990,7 @@ def generar_calendario_guardias(
                         calendario, prof_previo, slot, asignadas,
                         ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
                         zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-                    )
+                    , curso_id=curso_id)
 
                     csp_exitosos += 1
                     reasignaciones_csp += 1
@@ -1253,7 +1262,7 @@ def generar_calendario_guardias(
                     calendario, elegido, slot, asignadas,
                     ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
                     zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-                )
+                , curso_id=curso_id)
                 continue
 
             # ESTRATEGIA 2: SWAP - Buscar profesor con guardia en otro día que pueda hacer swap
@@ -1338,7 +1347,7 @@ def generar_calendario_guardias(
                             calendario, prof, slot, asignadas,
                             ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
                             zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-                        )
+                        , curso_id=curso_id)
 
                         swap_exitoso = True
                         swaps_fase5b += 1
@@ -1411,7 +1420,7 @@ def generar_calendario_guardias(
                             calendario, prof, slot, asignadas,
                             ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
                             zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-                        )
+                        , curso_id=curso_id)
                         correcciones_sin_guardias += 1
                         asignado = True
                         logger.info(f"  ✓ Corregido: {prof.nombre_completo} ahora tiene guardia")
@@ -1573,7 +1582,7 @@ def generar_calendario_guardias(
                     calendario, elegido, slot, asignadas,
                     ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
                     zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-                )
+                , curso_id=curso_id)
                 slots_pendientes.remove(slot)
                 profesores_sin_guardias_ids.discard(elegido.id)
                 asignados_pasada1 += 1
@@ -1628,7 +1637,7 @@ def generar_calendario_guardias(
                         calendario, elegido, slot, asignadas,
                         ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
                         zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-                    )
+                    , curso_id=curso_id)
                     slots_pendientes.remove(slot)
                     asignados_pasada2 += 1
 
@@ -1671,7 +1680,7 @@ def generar_calendario_guardias(
                         calendario, elegido, slot, asignadas,
                         ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
                         zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-                    )
+                    , curso_id=curso_id)
                     slots_pendientes.remove(slot)
                     asignados_pasada3 += 1
 
@@ -1757,7 +1766,7 @@ def generar_calendario_guardias(
                                 calendario, prof, slot, asignadas,
                                 ultimo_por_zona, ultimo_recreo_prof, ultimo_dia_prof,
                                 zona_preferida_prof, guardias_por_slot_prof, guardias_por_dia_prof
-                            )
+                            , curso_id=curso_id)
 
                             slots_pendientes.remove(slot)
                             asignados_pasada4 += 1
@@ -1845,6 +1854,76 @@ def generar_calendario_guardias(
         objetivos_cumplidos.append(f"⚠️ Desviación {desviacion_promedio:.1f}%")
 
     logger.info("Objetivos: " + " | ".join(objetivos_cumplidos))
+    logger.info("=" * 80)
+
+    # VERIFICACIÓN FINAL: Comprobar asignación correcta de guardias por profesor
+    logger.info("")
+    logger.info("VERIFICACIÓN FINAL DE ASIGNACIÓN")
+    logger.info("=" * 80)
+
+    profesores_con_error = []
+    profesores_con_deficit = []
+    profesores_con_exceso = []
+
+    for profesor in profesores:
+        if profesor.id not in cuotas_ideales or cuotas_ideales[profesor.id] == 0:
+            continue  # Saltar profesores sin cuota
+
+        guardias_asignadas = asignadas.get(profesor.id, 0)
+        cuota_esperada = cuotas_ideales[profesor.id]
+
+        if guardias_asignadas != cuota_esperada:
+            diferencia = guardias_asignadas - cuota_esperada
+            profesores_con_error.append((profesor, guardias_asignadas, cuota_esperada, diferencia))
+
+            if diferencia < 0:
+                profesores_con_deficit.append((profesor, guardias_asignadas, cuota_esperada, abs(diferencia)))
+            else:
+                profesores_con_exceso.append((profesor, guardias_asignadas, cuota_esperada, diferencia))
+
+    if not profesores_con_error:
+        logger.info("✅ TODOS los profesores tienen la cantidad correcta de guardias")
+    else:
+        logger.warning(f"⚠️  {len(profesores_con_error)} profesores con asignación incorrecta:")
+
+        if profesores_con_deficit:
+            logger.warning(f"\n  Profesores con DÉFICIT ({len(profesores_con_deficit)}):")
+            for profesor, asignadas_real, cuota, faltante in profesores_con_deficit:
+                logger.warning(f"    • {profesor.nombre_completo}: {asignadas_real}/{cuota} (faltan {faltante})")
+
+        if profesores_con_exceso:
+            logger.warning(f"\n  Profesores con EXCESO ({len(profesores_con_exceso)}):")
+            for profesor, asignadas_real, cuota, exceso in profesores_con_exceso:
+                logger.warning(f"    • {profesor.nombre_completo}: {asignadas_real}/{cuota} (sobran {exceso})")
+
+    logger.info("=" * 80)
+
+    # VERIFICACIÓN FINAL 2: Comprobar que ningún profesor tenga >1 guardia por día
+    logger.info("")
+    logger.info("VERIFICACIÓN DE GUARDIAS POR DÍA")
+    logger.info("=" * 80)
+
+    # Agrupar guardias por profesor y fecha
+    guardias_por_profesor_fecha: Dict[Tuple[int, date], int] = {}
+    for guardia in calendario:
+        key = (guardia.profesor_id, guardia.fecha)
+        guardias_por_profesor_fecha[key] = guardias_por_profesor_fecha.get(key, 0) + 1
+
+    # Buscar días con múltiples guardias
+    dias_multiples = []
+    for (profesor_id, fecha), count in guardias_por_profesor_fecha.items():
+        if count > 1:
+            profesor = next((p for p in profesores if p.id == profesor_id), None)
+            if profesor:
+                dias_multiples.append((profesor, fecha, count))
+
+    if not dias_multiples:
+        logger.info("✅ Ningún profesor tiene más de 1 guardia por día")
+    else:
+        logger.error(f"❌ PROBLEMA CRÍTICO: {len(dias_multiples)} días con múltiples guardias:")
+        for profesor, fecha, count in sorted(dias_multiples, key=lambda x: (x[1], x[0].nombre_completo)):
+            logger.error(f"    • {profesor.nombre_completo} el {fecha}: {count} guardias")
+
     logger.info("=" * 80)
 
     reportar_progreso(100, f"✓ Calendario generado: {cobertura_final:.1f}% cobertura")
@@ -2084,7 +2163,8 @@ def _registrar_guardia(
     ultimo_dia_prof: Dict[int, Optional[date]],
     zona_preferida_prof: Dict[int, Optional[int]],
     guardias_por_slot_prof: Dict[Tuple[int, date, str, int, int], bool],
-    guardias_por_dia_prof: Dict[Tuple[int, date], bool]
+    guardias_por_dia_prof: Dict[Tuple[int, date], bool],
+    curso_id: Optional[int] = None
 ) -> None:
     """
     Registra una guardia asignada y actualiza todas las estructuras de control.
@@ -2100,6 +2180,7 @@ def _registrar_guardia(
         zona_preferida_prof: Zona preferida por profesor (se modifica)
         guardias_por_slot_prof: Control de guardias por slot (se modifica)
         guardias_por_dia_prof: Control de guardias por día (se modifica)
+        curso_id: ID del curso escolar al que pertenece la guardia
     """
     calendario.append(
         Guardia(
@@ -2108,6 +2189,7 @@ def _registrar_guardia(
             turno=slot.turno,
             recreo=slot.recreo_id,
             zona_id=slot.zona_id,
+            curso_id=curso_id,
         )
     )
     asignadas[profesor.id] += 1

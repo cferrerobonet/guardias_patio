@@ -8,6 +8,16 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 import json
 from typing import Optional
 
+import ui_styles as styles
+from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
+from application.use_cases.profesor import (
+    ActualizarProfesorUseCase,
+    BuscarProfesoresUseCase,
+    CrearProfesorUseCase,
+    EliminarProfesorUseCase,
+    ListarProfesoresUseCase,
+    ObtenerProfesorUseCase,
+)
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -24,16 +34,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-import ui_styles as styles
-from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
-from application.use_cases.profesor import (
-    ActualizarProfesorUseCase,
-    BuscarProfesoresUseCase,
-    CrearProfesorUseCase,
-    EliminarProfesorUseCase,
-    ListarProfesoresUseCase,
-    ObtenerProfesorUseCase,
-)
 from presentation.forms.base_form import BaseForm
 from presentation.forms.profesor_widgets import (
     DatosBasicosWidget,
@@ -197,11 +197,13 @@ class ProfesorForm(BaseForm):
         header.setStretchLastSection(False)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Nombre - Stretch
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Email - Stretch
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Horas
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Turno
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # Tutor
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)  # Inicio
-        header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)  # Fin
+
+        # Columnas con ancho fijo más estrecho
+        self.tabla_profesores.setColumnWidth(2, 70)   # Horas - más estrecho
+        self.tabla_profesores.setColumnWidth(3, 80)   # Turno - más estrecho
+        self.tabla_profesores.setColumnWidth(4, 60)   # Tutor - más estrecho
+        self.tabla_profesores.setColumnWidth(5, 110)  # Inicio Guardias - más estrecho
+        self.tabla_profesores.setColumnWidth(6, 110)  # Fin Guardias - más estrecho
 
         self.tabla_profesores.setSortingEnabled(True)
         self.tabla_profesores.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -678,11 +680,53 @@ class ProfesorForm(BaseForm):
 
             id_profesor = id_item.data(Qt.ItemDataRole.UserRole)
 
-            # Si no está en modo edición, primero mostrar los datos
-            if self.profesor_editando_id is None:
-                self.mostrar_profesor()
+            # Cargar datos del profesor seleccionado
+            try:
+                # Obtener directamente de BD (sin caché) para datos actualizados
+                from models.models import Profesor
 
-            # Ahora activar modo edición
+                profesor_model = self.session.query(Profesor).filter_by(id=id_profesor).first()
+
+                if not profesor_model:
+                    self.mostrar_error("Error", f"No se encontró el profesor con ID {id_profesor}")
+                    return
+
+                # Limpiar formulario
+                self._limpiar_formulario()
+
+                # Cargar datos en widgets directamente desde el modelo de BD
+                self.datos_basicos_widget.set_datos(
+                    {
+                        "nombre_completo": profesor_model.nombre_completo or "",
+                        "email": profesor_model.email_corporativo or "",
+                        "es_tutor": profesor_model.tutor or False,
+                    }
+                )
+
+                self.horario_widget.set_datos(
+                    {
+                        "horas_contrato": profesor_model.horas_contrato,
+                        "turno": profesor_model.turno,
+                        "horas_manana": profesor_model.horas_manana,
+                        "horas_tarde": profesor_model.horas_tarde,
+                    }
+                )
+
+                self.restricciones_widget.set_datos(
+                    {
+                        "fecha_inicio": profesor_model.fecha_inicio_guardias,
+                        "fecha_fin": profesor_model.fecha_fin_guardias,
+                        "zona_preferida_id": profesor_model.zona_preferida_id,
+                        "recreos_permitidos": profesor_model.recreos_permitidos,
+                        "turno": profesor_model.turno,
+                    }
+                )
+
+            except Exception as e:
+                self.manejar_excepcion(e, "cargar datos del profesor")
+                return
+
+            # Activar modo edición
             self.profesor_editando_id = id_profesor
             self.titulo_seccion.setText(f"✏️ EDITAR PROFESOR [ID: {id_profesor}]")
             self.submit_btn.setText("💾 Actualizar Profesor")

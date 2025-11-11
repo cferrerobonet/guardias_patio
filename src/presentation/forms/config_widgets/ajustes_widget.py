@@ -4,13 +4,12 @@ Widget de configuración de ajustes adicionales.
 Combina:
 - Multiplicador para tutores (ajuste_tutores)
 - Multiplicador para no tutores (ajuste_no_tutores)
-- Selector de algoritmo de asignación
+- Información del algoritmo de asignación (solo lectura)
 """
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QComboBox, QGroupBox, QLabel, QLineEdit, QVBoxLayout
-
 import ui_styles as styles
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtWidgets import QGroupBox, QLabel, QLineEdit, QVBoxLayout
 
 
 class AjustesWidget(QGroupBox):
@@ -47,12 +46,16 @@ class AjustesWidget(QGroupBox):
 
         # ===== Multiplicador tutores =====
         label_tutores = QLabel("Multiplicador tutores:")
-        label_tutores.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
+        label_tutores.setStyleSheet(
+            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;"
+        )
         layout.addWidget(label_tutores)
 
         self.ajuste_tutores_input = QLineEdit()
         self.ajuste_tutores_input.setPlaceholderText("0.90")
-        self.ajuste_tutores_input.setStyleSheet(styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;")
+        self.ajuste_tutores_input.setStyleSheet(
+            styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;"
+        )
         self.ajuste_tutores_input.setToolTip(
             "Factor multiplicador para tutores (valores < 1.0 reducen su carga de guardias)\n"
             "Ejemplo: 0.90 = 10% menos guardias que un profesor normal"
@@ -62,12 +65,16 @@ class AjustesWidget(QGroupBox):
 
         # ===== Multiplicador no tutores =====
         label_no_tutores = QLabel("Multiplicador no tutores:")
-        label_no_tutores.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
+        label_no_tutores.setStyleSheet(
+            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;"
+        )
         layout.addWidget(label_no_tutores)
 
         self.ajuste_no_tutores_input = QLineEdit()
         self.ajuste_no_tutores_input.setPlaceholderText("1.00")
-        self.ajuste_no_tutores_input.setStyleSheet(styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;")
+        self.ajuste_no_tutores_input.setStyleSheet(
+            styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;"
+        )
         self.ajuste_no_tutores_input.setToolTip(
             "Factor multiplicador para no tutores (valores > 1.0 aumentan su carga)\n"
             "Ejemplo: 1.10 = 10% más guardias que un profesor normal"
@@ -75,25 +82,24 @@ class AjustesWidget(QGroupBox):
         self.ajuste_no_tutores_input.textChanged.connect(self.config_changed.emit)
         layout.addWidget(self.ajuste_no_tutores_input)
 
-        # ===== Selector de algoritmo =====
+        # ===== Información de algoritmo (solo lectura) =====
         label_algoritmo = QLabel("Algoritmo de asignación:")
-        label_algoritmo.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
+        label_algoritmo.setStyleSheet(
+            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;"
+        )
         layout.addWidget(label_algoritmo)
 
-        self.algoritmo_combo = QComboBox()
-        self.algoritmo_combo.addItem(
-            "v2.9 - Clásico (7 fases)", "v2.9"
+        # Label informativo en lugar de combo
+        self.algoritmo_info = QLabel("v3.0 - Simple Determinista ⚡")
+        self.algoritmo_info.setStyleSheet(
+            styles.STYLE_INPUT +
+            "padding: 6px; background-color: #f0f0f0; color: #666; font-weight: bold;"
         )
-        self.algoritmo_combo.addItem(
-            "v3.0 - Simple Determinista ⚡", "v3.0"
+        self.algoritmo_info.setToolTip(
+            "Algoritmo v3.0: Simple determinista que garantiza 100% cobertura.\n"
+            "Este algoritmo está optimizado para distribución equitativa."
         )
-        self.algoritmo_combo.setStyleSheet(styles.STYLE_INPUT + "padding: 3px;")
-        self.algoritmo_combo.setToolTip(
-            "v2.9: Algoritmo clásico de 7 fases (CSP, Simulated Annealing)\n"
-            "v3.0: Algoritmo simple determinista que garantiza 100% cobertura"
-        )
-        self.algoritmo_combo.currentIndexChanged.connect(self.config_changed.emit)
-        layout.addWidget(self.algoritmo_combo)
+        layout.addWidget(self.algoritmo_info)
 
         self.setLayout(layout)
 
@@ -107,19 +113,19 @@ class AjustesWidget(QGroupBox):
             dict: Diccionario con claves:
                 - tutores: float (multiplicador tutores)
                 - no_tutores: float (multiplicador no tutores)
-                - algoritmo: str (versión del algoritmo)
+                - algoritmo: str (siempre "v3.0", fijo)
         """
         return {
             "tutores": float(self.ajuste_tutores_input.text() or 1.0),
             "no_tutores": float(self.ajuste_no_tutores_input.text() or 1.0),
-            "algoritmo": self.algoritmo_combo.currentData()
+            "algoritmo": "v3.0"  # Siempre v3.0
         }
 
     def set_ajustes(
         self,
         tutores: float = 1.0,
         no_tutores: float = 1.0,
-        algoritmo: str = "v2.9"
+        algoritmo: str = "v3.0"  # Ignorado, siempre v3.0
     ) -> None:
         """
         Establece los valores de ajustes.
@@ -127,18 +133,11 @@ class AjustesWidget(QGroupBox):
         Args:
             tutores: Multiplicador para tutores (default: 1.0)
             no_tutores: Multiplicador para no tutores (default: 1.0)
-            algoritmo: Versión del algoritmo ("v2.9" o "v3.0")
+            algoritmo: Ignorado, el algoritmo siempre es v3.0
         """
         self.ajuste_tutores_input.setText(str(tutores))
         self.ajuste_no_tutores_input.setText(str(no_tutores))
-
-        # Buscar y seleccionar el algoritmo
-        index = self.algoritmo_combo.findData(algoritmo)
-        if index >= 0:
-            self.algoritmo_combo.setCurrentIndex(index)
-        else:
-            # Default a v2.9 si no se encuentra
-            self.algoritmo_combo.setCurrentIndex(0)
+        # No hacemos nada con el algoritmo, siempre es v3.0
 
     def validar(self) -> tuple[bool, str]:
         """
@@ -165,8 +164,6 @@ class AjustesWidget(QGroupBox):
         except ValueError:
             return False, "El multiplicador de no tutores debe ser un número válido"
 
-        # Validar que hay un algoritmo seleccionado
-        if self.algoritmo_combo.currentData() is None:
-            return False, "Debe seleccionar un algoritmo de asignación"
+        # El algoritmo siempre es v3.0, no hay nada que validar
 
         return True, ""
