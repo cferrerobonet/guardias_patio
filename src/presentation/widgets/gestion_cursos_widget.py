@@ -532,7 +532,7 @@ class GestionCursosWidget(QWidget):
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
             msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-            msg_box.setFixedSize(500, 250)
+            msg_box.setFixedSize(500, 300)
 
             respuesta = msg_box.exec()
 
@@ -591,7 +591,7 @@ class GestionCursosWidget(QWidget):
             msg_box.setDefaultButton(QMessageBox.StandardButton.No)
 
             # FORZAR tamaño fijo para que se vean los botones en macOS
-            msg_box.setFixedSize(550, 300)
+            msg_box.setFixedSize(550, 350)
 
             respuesta1 = msg_box.exec()
 
@@ -610,7 +610,7 @@ class GestionCursosWidget(QWidget):
             msg_box2.setDefaultButton(QMessageBox.StandardButton.Cancel)
 
             # FORZAR tamaño fijo para que se vean los botones en macOS
-            msg_box2.setFixedSize(500, 250)
+            msg_box2.setFixedSize(500, 300)
 
             respuesta2 = msg_box2.exec()
 

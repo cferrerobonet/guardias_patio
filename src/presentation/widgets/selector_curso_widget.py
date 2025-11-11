@@ -108,7 +108,7 @@ class SelectorCursoWidget(QWidget):
             msg_confirmar.setStandardButtons(
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            msg_confirmar.setFixedSize(500, 250)
+            msg_confirmar.setFixedSize(500, 300)
             respuesta = msg_confirmar.exec()
 
             if respuesta == QMessageBox.StandardButton.Yes:
