@@ -31,11 +31,12 @@ class SidebarMenu(QWidget):
 
     section_changed = pyqtSignal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, session=None):
         super().__init__(parent)
         self.setObjectName("sidebar")
         self.active_button = None
         self.logo_label = None  # Para actualizar el logo dinámicamente
+        self.session = session  # Guardar sesión para el selector de curso
         self.setup_ui()
 
     def setup_ui(self):
@@ -76,6 +77,70 @@ class SidebarMenu(QWidget):
 
         logo_section_layout.addWidget(self.logo_label)
         layout.addWidget(logo_section)
+
+        # ========== SELECTOR DE CURSO SIEMPRE VISIBLE ==========
+        if self.session:
+            from presentation.widgets import SelectorCursoWidget
+            
+            curso_section = QWidget()
+            curso_section.setStyleSheet(f"""
+                QWidget {{
+                    background-color: {SIDEBAR_BG};
+                    padding: 10px;
+                }}
+                QLabel {{
+                    color: rgba(255, 255, 255, 0.7);
+                    font-size: 11px;
+                    font-weight: bold;
+                    padding: 5px;
+                }}
+            """)
+            curso_layout = QVBoxLayout(curso_section)
+            curso_layout.setContentsMargins(10, 10, 10, 10)
+            curso_layout.setSpacing(5)
+            
+            # Etiqueta
+            curso_label = QLabel("📚 CURSO ACTIVO")
+            curso_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            curso_layout.addWidget(curso_label)
+            
+            # Selector
+            self.selector_curso = SelectorCursoWidget(self.session)
+            self.selector_curso.setStyleSheet("""
+                QComboBox {
+                    background-color: #3d566e;
+                    color: white;
+                    border: 1px solid #5dade2;
+                    border-radius: 5px;
+                    padding: 8px;
+                    font-size: 13px;
+                    font-weight: bold;
+                }
+                QComboBox:hover {
+                    background-color: #4a6584;
+                    border: 1px solid #74b9ff;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                    width: 20px;
+                }
+                QComboBox::down-arrow {
+                    image: none;
+                    border-left: 4px solid transparent;
+                    border-right: 4px solid transparent;
+                    border-top: 5px solid white;
+                    margin-right: 5px;
+                }
+                QComboBox QAbstractItemView {
+                    background-color: #34495e;
+                    color: white;
+                    selection-background-color: #3498db;
+                    border: 1px solid #5dade2;
+                }
+            """)
+            curso_layout.addWidget(self.selector_curso)
+            
+            layout.addWidget(curso_section)
 
         # ========== SECCIÓN INFERIOR: MENÚ ==========
         # Área de scroll para los menús

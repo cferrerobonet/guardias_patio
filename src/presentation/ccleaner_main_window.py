@@ -105,8 +105,8 @@ class CCleanerMainWindow(QMainWindow):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(0)
 
-        # Sidebar
-        self.sidebar = SidebarMenu()
+        # Sidebar con sesión para el selector de curso
+        self.sidebar = SidebarMenu(session=self.session)
         self.sidebar.section_changed.connect(self.on_section_changed)
         content_layout.addWidget(self.sidebar)
 
