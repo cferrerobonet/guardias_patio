@@ -63,25 +63,27 @@ class SidebarMenu(QWidget):
             }
         """)
         logo_section_layout = QVBoxLayout(logo_section)
-        logo_section_layout.setContentsMargins(0, 20, 0, 20)
+        logo_section_layout.setContentsMargins(15, 15, 15, 15)
         logo_section_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        logo_section_layout.setSpacing(10)
 
-        # Label para el logo
+        # Label para el logo (centrado)
         self.logo_label = QLabel()
         self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.logo_label.setFixedSize(120, 120)
+        self.logo_label.setFixedSize(100, 100)
         self.logo_label.setScaledContents(True)
 
         # Intentar cargar logo corporativo del usuario actual
         self.update_logo()
 
-        logo_section_layout.addWidget(self.logo_label)
+        logo_section_layout.addWidget(self.logo_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # ========== SELECTOR DE CURSO (en zona clara, sin etiqueta) ==========
+        # ========== SELECTOR DE CURSO (centrado en zona clara, sin etiqueta) ==========
         if self.session:
             from presentation.widgets import SelectorCursoWidget
 
             self.selector_curso = SelectorCursoWidget(self.session)
+            self.selector_curso.setMaximumWidth(230)
             self.selector_curso.setStyleSheet("""
                 QComboBox {
                     background-color: white;
@@ -116,7 +118,7 @@ class SidebarMenu(QWidget):
                     outline: none;
                 }
             """)
-            logo_section_layout.addWidget(self.selector_curso)
+            logo_section_layout.addWidget(self.selector_curso, alignment=Qt.AlignmentFlag.AlignCenter)
 
         layout.addWidget(logo_section)
 
@@ -128,11 +130,11 @@ class SidebarMenu(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setStyleSheet(f"background-color: {SIDEBAR_BG}; border: none;")
 
-        # Widget contenedor del menú
+        # Widget contenedor del menú (comprimido para que quepan todos los items)
         menu_widget = QWidget()
         menu_layout = QVBoxLayout(menu_widget)
-        menu_layout.setContentsMargins(0, SPACING_LG, 0, SPACING_SM)
-        menu_layout.setSpacing(2)
+        menu_layout.setContentsMargins(0, SPACING_SM, 0, SPACING_SM)
+        menu_layout.setSpacing(1)
 
         # ========== GESTIÓN ==========
         self.add_category(menu_layout, "GESTIÓN")
@@ -142,14 +144,14 @@ class SidebarMenu(QWidget):
         self.add_menu_item(menu_layout, "conectividad", "Conectividad", "conectividad", "email")
         self.add_menu_item(menu_layout, "perfiles", "Perfiles de Usuario", "perfiles", "account")
 
-        menu_layout.addSpacing(SPACING_MD)
+        menu_layout.addSpacing(SPACING_SM)
 
         # ========== GUARDIAS ==========
         self.add_category(menu_layout, "GUARDIAS")
         self.add_menu_item(menu_layout, "asignacion", "Asignación", "asignacion", "check-bold")
         self.add_menu_item(menu_layout, "calendario", "Calendario", "calendario", "calendar")
 
-        menu_layout.addSpacing(SPACING_MD)
+        menu_layout.addSpacing(SPACING_SM)
 
         # ========== PERSONAL ==========
         self.add_category(menu_layout, "PERSONAL")
@@ -158,7 +160,7 @@ class SidebarMenu(QWidget):
             menu_layout, "sustituciones", "Sustituciones", "sustituciones", "swap-horizontal"
         )
 
-        menu_layout.addSpacing(SPACING_MD)
+        menu_layout.addSpacing(SPACING_SM)
 
         # ========== HERRAMIENTAS ==========
         self.add_category(menu_layout, "HERRAMIENTAS")

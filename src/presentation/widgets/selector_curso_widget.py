@@ -36,8 +36,9 @@ class SelectorCursoWidget(QWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # Label
+        # Label (oculto para diseño limpio en sidebar)
         label = QLabel("Curso Escolar:")
+        label.setVisible(False)
         layout.addWidget(label)
 
         # ComboBox
