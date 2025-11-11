@@ -4,6 +4,7 @@ Ventana Principal Estilo CCleaner
 Layout profesional con sidebar oscuro y contenido blanco.
 """
 
+from core.logging import get_logger
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -36,6 +37,8 @@ from presentation.widgets import (
     PanelEstadisticas,
     VistaCalendario,
 )
+
+logger = get_logger(__name__)
 
 
 class ContentWrapper(QWidget):
@@ -191,4 +194,35 @@ class CCleanerMainWindow(QMainWindow):
 
     def connect_signals(self):
         """Conectar señales de los widgets"""
-        # Dashboard eliminado - ya no hay botones de acceso rápido que conectar
+        # Conectar cambio de curso del selector con refresco de todas las vistas
+        if hasattr(self.sidebar, 'selector_curso') and self.sidebar.selector_curso:
+            self.sidebar.selector_curso.curso_cambiado.connect(self._on_curso_cambiado)
+
+    def _on_curso_cambiado(self, curso_id: int):
+        """
+        Maneja el cambio de curso activo.
+        
+        Refresca la vista actual para mostrar datos del nuevo curso.
+        """
+        # Obtener el widget actual
+        current_widget = self.content_stack.currentWidget()
+        
+        if current_widget and hasattr(current_widget, 'content_widget'):
+            # Es un ContentWrapper, obtener el widget real dentro
+            widget = current_widget.content_widget
+            
+            # Intentar refrescar el widget si tiene método para ello
+            if hasattr(widget, 'cargar_datos'):
+                widget.cargar_datos()
+            elif hasattr(widget, 'actualizar_calendario'):
+                widget.actualizar_calendario()
+            elif hasattr(widget, 'cargar_profesores'):
+                widget.cargar_profesores()
+            elif hasattr(widget, 'cargar_zonas'):
+                widget.cargar_zonas()
+            elif hasattr(widget, 'cargar_guardias'):
+                widget.cargar_guardias()
+            elif hasattr(widget, 'refrescar'):
+                widget.refrescar()
+            
+            logger.info(f"Vista actual refrescada después de cambiar al curso {curso_id}")
