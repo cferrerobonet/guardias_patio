@@ -15,6 +15,7 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Tuple
 
+from core.logging import get_logger
 from models.models import Ausencia, Configuracion, Guardia, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
@@ -156,6 +157,10 @@ class CeldaDia(QGroupBox):
 
     def _agregar_guardias_agrupadas(self, layout: QVBoxLayout):
         """Agregar guardias agrupadas por turno y recreo, ordenadas por zona."""
+        # No mostrar nada en días no lectivos (festivos, fines de semana)
+        if not self.es_dia_lectivo:
+            return
+        
         # Agrupar guardias por turno y recreo
         grupos = defaultdict(list)
         for guardia in self.guardias:
@@ -444,6 +449,7 @@ class VistaCalendario(BaseForm):
             session: Sesión de base de datos
         """
         super().__init__(session)
+        self.logger = get_logger(__name__)
         self.fecha_actual = datetime.now().date()
         self.mes_mostrado = self.fecha_actual.month
         self.anio_mostrado = self.fecha_actual.year
@@ -473,6 +479,7 @@ class VistaCalendario(BaseForm):
 
     def cargar_datos(self):
         """Alias de refrescar() para compatibilidad con otras vistas."""
+        self.logger.info("🔄 VistaCalendario.cargar_datos() llamado - iniciando refresco")
         self.refrescar()
 
     def _obtener_dias_lectivos(self) -> set:
@@ -848,6 +855,8 @@ class VistaCalendario(BaseForm):
 
     def actualizar_calendario(self):
         """Actualizar el calendario según la vista actual."""
+        self.logger.info(f"📅 Actualizando calendario - Vista: {self.vista_actual}")
+        
         # Limpiar calendario anterior
         while self.calendario_layout.count():
             item = self.calendario_layout.takeAt(0)
@@ -861,6 +870,8 @@ class VistaCalendario(BaseForm):
             self._renderizar_vista_semanal()
         else:  # ANUAL
             self._renderizar_vista_anual()
+        
+        self.logger.info("✅ Calendario actualizado correctamente")
 
     def _renderizar_vista_mensual(self):
         """Renderizar vista mensual."""
@@ -1348,6 +1359,7 @@ class VistaCalendario(BaseForm):
 
     def refrescar(self):
         """Refrescar el calendario."""
+        self.logger.info("🔄 VistaCalendario.refrescar() llamado - limpiando caché y actualizando")
         self.session.expire_all()  # Limpiar caché de SQLAlchemy
         self._dias_lectivos_cache = None  # Limpiar caché de días lectivos
         self.actualizar_calendario()

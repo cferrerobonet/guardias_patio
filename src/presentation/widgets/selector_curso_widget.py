@@ -157,7 +157,9 @@ class SelectorCursoWidget(QWidget):
                 self._cargar_cursos()
 
                 # Emitir señal
+                logger.info(f"🔔 Emitiendo señal curso_cambiado con ID: {curso_id}")
                 self.curso_cambiado.emit(curso_id)
+                logger.info("✅ Señal curso_cambiado emitida correctamente")
 
                 msg_success = QMessageBox(self)
                 msg_success.setIcon(QMessageBox.Icon.Information)
