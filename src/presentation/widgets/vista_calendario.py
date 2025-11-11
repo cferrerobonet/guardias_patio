@@ -471,6 +471,10 @@ class VistaCalendario(BaseForm):
         # Refrescar calendario con datos del curso activo
         self.actualizar_calendario()
 
+    def cargar_datos(self):
+        """Alias de refrescar() para compatibilidad con otras vistas."""
+        self.refrescar()
+
     def _obtener_dias_lectivos(self) -> set:
         """
         Obtiene el conjunto de días lectivos de la configuración (con caché).

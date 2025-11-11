@@ -84,6 +84,20 @@ class SelectorCursoWidget(QWidget):
             msg_box.setText(f"No se pudieron cargar los cursos:\n{e}")
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg_box.setDefaultButton(QMessageBox.StandardButton.Ok)
+            msg_box.setStyleSheet("""
+                QPushButton {
+                    background-color: #e74c3c;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    min-width: 80px;
+                }
+                QPushButton:hover {
+                    background-color: #c0392b;
+                }
+            """)
             msg_box.setFixedSize(480, 220)
             msg_box.exec()
 
@@ -111,7 +125,27 @@ class SelectorCursoWidget(QWidget):
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
             msg_confirmar.setDefaultButton(QMessageBox.StandardButton.No)
-            msg_confirmar.setFixedSize(520, 280)
+            msg_confirmar.setStyleSheet("""
+                QPushButton {
+                    background-color: #3498db;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    min-width: 80px;
+                }
+                QPushButton:hover {
+                    background-color: #2980b9;
+                }
+                QPushButton:default {
+                    background-color: #e74c3c;
+                }
+                QPushButton:default:hover {
+                    background-color: #c0392b;
+                }
+            """)
+            msg_confirmar.setFixedSize(550, 320)
             respuesta = msg_confirmar.exec()
 
             if respuesta == QMessageBox.StandardButton.Yes:
@@ -131,6 +165,20 @@ class SelectorCursoWidget(QWidget):
                 msg_success.setText(f"Ahora estás trabajando con el curso {curso.nombre}")
                 msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
                 msg_success.setDefaultButton(QMessageBox.StandardButton.Ok)
+                msg_success.setStyleSheet("""
+                    QPushButton {
+                        background-color: #27ae60;
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 4px;
+                        font-weight: bold;
+                        min-width: 80px;
+                    }
+                    QPushButton:hover {
+                        background-color: #229954;
+                    }
+                """)
                 msg_success.setFixedSize(480, 220)
                 msg_success.exec()
             else:
@@ -145,6 +193,20 @@ class SelectorCursoWidget(QWidget):
             msg_error.setText(f"No se pudo cambiar de curso:\n{e}")
             msg_error.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg_error.setDefaultButton(QMessageBox.StandardButton.Ok)
+            msg_error.setStyleSheet("""
+                QPushButton {
+                    background-color: #e74c3c;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    min-width: 80px;
+                }
+                QPushButton:hover {
+                    background-color: #c0392b;
+                }
+            """)
             msg_error.setFixedSize(480, 220)
             msg_error.exec()
             self._cargar_cursos()
