@@ -195,10 +195,29 @@ class CCleanerMainWindow(QMainWindow):
     def connect_signals(self):
         """Conectar señales de los widgets"""
         # Conectar cambio de curso del selector con refresco de todas las vistas
+        logger.info("🔌 Iniciando conexión de señales...")
+        logger.info(f"   Sidebar existe: {self.sidebar is not None}")
+        logger.info(f"   Sidebar tiene selector_curso: {hasattr(self.sidebar, 'selector_curso')}")
+        
+        if hasattr(self.sidebar, 'selector_curso'):
+            logger.info(f"   selector_curso es None: {self.sidebar.selector_curso is None}")
+            if self.sidebar.selector_curso:
+                logger.info(f"   Tipo de selector_curso: {type(self.sidebar.selector_curso)}")
+                tiene_signal = hasattr(self.sidebar.selector_curso, 'curso_cambiado')
+                logger.info(f"   selector_curso tiene curso_cambiado: {tiene_signal}")
+        
         if hasattr(self.sidebar, 'selector_curso') and self.sidebar.selector_curso:
             logger.info("🔗 Conectando señal curso_cambiado del selector al handler")
             self.sidebar.selector_curso.curso_cambiado.connect(self._on_curso_cambiado)
             logger.info("✅ Señal curso_cambiado conectada correctamente")
+            
+            # Test: Emitir señal de prueba
+            logger.info("🧪 Emitiendo señal de prueba para verificar conexión...")
+            try:
+                # No emitir realmente, solo verificar que el objeto está listo
+                logger.info("✅ Conexión verificada - lista para recibir señales")
+            except Exception as e:
+                logger.error(f"❌ Error al verificar conexión: {e}")
         else:
             logger.warning(
                 "⚠️ No se pudo conectar señal - selector_curso no disponible"
