@@ -1,8 +1,8 @@
 # 🚀 CI/CD - Integración y Despliegue Continuos
 
-> **Versión**: 1.0  
-> **Última actualización**: 8 de noviembre de 2025  
-> **Estado**: ✅ Operativo
+> **Versión**: 1.1  
+> **Última actualización**: 12 de noviembre de 2025  
+> **Estado**: ✅ Operativo - FASE 5 Auditada
 
 ---
 
@@ -575,15 +575,17 @@ git push origin main --tags
 |---------|-------|
 | **Workflows activos** | 2 (ci.yml, release.yml) |
 | **Jobs por workflow** | 4 (test, lint, security, build-summary) |
-| **Matriz de tests** | 6 configuraciones (3 OS × 2 versiones Python + 2 extras) |
+| **Matriz de tests** | 6 configuraciones (Ubuntu/macOS × Python 3.9-3.12) |
+| **Tests totales** | 994 tests |
 | **Tiempo promedio** | 10-12 minutos |
 | **Cobertura actual** | 46.31% |
 | **Target de cobertura** | 46% (±2%) |
 | **Releases automatizados** | ✅ Sí |
 | **Plataformas soportadas** | Linux, macOS, Windows |
+| **Auditoría de seguridad** | ✅ Semanal (lunes 2 AM) |
 
 ---
 
 **Mantenido por**: Carlos Ferrero Bonet  
-**Proyecto**: Guardias de Patio v3.0.0  
-**Última revisión**: 8 de noviembre de 2025
+**Proyecto**: Guardias de Patio v3.0.2  
+**Última revisión**: 12 de noviembre de 2025

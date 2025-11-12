@@ -3,7 +3,7 @@
 <!-- Build & Quality Badges -->
 [![CI/CD Pipeline](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml/badge.svg)](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/cferrerobonet/guardias_patio/branch/main/graph/badge.svg)](https://codecov.io/gh/cferrerobonet/guardias_patio)
-![Tests](https://img.shields.io/badge/Tests-990_passed-success.svg)
+![Tests](https://img.shields.io/badge/Tests-994_total-success.svg)
 ![Coverage](https://img.shields.io/badge/Coverage-46.31%25-yellow.svg)
 
 <!-- Security & Release -->
