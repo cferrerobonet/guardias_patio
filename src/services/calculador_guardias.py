@@ -16,7 +16,8 @@ from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
-from models.models import Configuracion, Profesor, Zona
+from models.models import Configuracion, Guardia, Profesor, Zona
+from services.gestor_cursos import GestorCursos
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -303,7 +304,7 @@ def calcular_distribucion_cruda(
     session: Session
 ) -> Dict[int, float]:
     """
-    Calcula la distribución cruda de guardias por profesor.
+    Calcula la distribución cruda de guardias por profesor del curso activo.
 
     Args:
         session: Sesión de base de datos
@@ -313,22 +314,46 @@ def calcular_distribucion_cruda(
     """
     logger.info("Iniciando cálculo de distribución cruda de guardias")
 
-    # Obtener datos necesarios
-    config = session.query(Configuracion).first()
-    if not config:
-        logger.error("No existe configuración del curso")
-        raise ValueError("No existe configuración del curso")
+    # Obtener curso activo
+    curso_activo = GestorCursos.obtener_curso_activo(session)
+    if not curso_activo:
+        logger.error("No hay curso activo")
+        raise ValueError("No hay curso activo")
 
-    profesores = session.query(Profesor).all()
+    # Obtener configuración del curso activo
+    config = (
+        session.query(Configuracion)
+        .filter(Configuracion.curso_id == curso_activo.id)
+        .first()
+    )
+    if not config:
+        logger.error(f"No existe configuración para el curso {curso_activo.nombre}")
+        raise ValueError(f"No existe configuración para el curso {curso_activo.nombre}")
+
+    # Obtener profesores del curso activo (con guardias)
+    profesores = (
+        session.query(Profesor)
+        .join(Guardia, Profesor.id == Guardia.profesor_id)
+        .filter(Guardia.curso_id == curso_activo.id)
+        .distinct()
+        .all()
+    )
     if not profesores:
-        logger.error("No hay profesores registrados")
-        raise ValueError("No hay profesores registrados")
+        logger.error(f"No hay profesores registrados en el curso {curso_activo.nombre}")
+        raise ValueError(f"No hay profesores registrados en el curso {curso_activo.nombre}")
     logger.info(f"Profesores a considerar: {len(profesores)}")
 
-    zonas = session.query(Zona).all()
+    # Obtener zonas del curso activo (con guardias)
+    zonas = (
+        session.query(Zona)
+        .join(Guardia, Zona.id == Guardia.zona_id)
+        .filter(Guardia.curso_id == curso_activo.id)
+        .distinct()
+        .all()
+    )
     if not zonas:
-        logger.error("No hay zonas registradas")
-        raise ValueError("No hay zonas registradas")
+        logger.error(f"No hay zonas registradas en el curso {curso_activo.nombre}")
+        raise ValueError(f"No hay zonas registradas en el curso {curso_activo.nombre}")
     logger.info(f"Zonas disponibles: {len(zonas)}")
 
     # Calcular días lectivos con festivos
@@ -508,26 +533,60 @@ def calcular_guardias_por_profesor(session: Session) -> Dict[int, int]:
 
 def obtener_estadisticas(session: Session) -> Dict:
     """
-    Obtiene estadísticas del cálculo para verificación.
+    Obtiene estadísticas del cálculo para verificación filtradas por curso activo.
 
     Args:
         session: Sesión de base de datos
 
     Returns:
-        Diccionario con estadísticas del cálculo
+        Diccionario con estadísticas del cálculo del curso activo
     """
-    config = session.query(Configuracion).first()
+    # Obtener curso activo
+    curso_activo = GestorCursos.obtener_curso_activo(session)
+    if not curso_activo:
+        logger.warning("No hay curso activo para obtener estadísticas")
+        return {}
+
+    # Obtener configuración del curso activo
+    config = (
+        session.query(Configuracion)
+        .filter(Configuracion.curso_id == curso_activo.id)
+        .first()
+    )
     if not config:
+        logger.warning(f"No hay configuración para el curso {curso_activo.nombre}")
         return {}
 
     dias_lectivos = len(listar_dias_lectivos(config))
 
     recreos_manana, recreos_tarde = calcular_recreos_activos(session)
-    num_zonas = session.query(Zona).count()
-    num_profesores = session.query(Profesor).count()
+    
+    # Contar solo zonas del curso activo (con guardias asignadas)
+    num_zonas = (
+        session.query(Zona)
+        .join(Guardia, Zona.id == Guardia.zona_id)
+        .filter(Guardia.curso_id == curso_activo.id)
+        .distinct()
+        .count()
+    )
+    
+    # Contar solo profesores del curso activo (con guardias asignadas)
+    num_profesores = (
+        session.query(Profesor)
+        .join(Guardia, Profesor.id == Guardia.profesor_id)
+        .filter(Guardia.curso_id == curso_activo.id)
+        .distinct()
+        .count()
+    )
 
     # Calcular slots totales considerando fechas de disponibilidad de las zonas
     slots_totales = calcular_slots_reales(session, config)
+
+    logger.info(
+        f"Estadísticas del curso {curso_activo.nombre}: "
+        f"{num_profesores} profesores, {num_zonas} zonas, "
+        f"{slots_totales} slots"
+    )
 
     return {
         "dias_lectivos": dias_lectivos,

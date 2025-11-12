@@ -72,6 +72,17 @@ class AsignacionGuardiasForm(BaseForm):
         self.setup_ui()
         self.cargar_estadisticas()
 
+    def cargar_datos(self):
+        """
+        Recargar estadísticas cuando cambia el curso activo.
+        
+        Este método es llamado automáticamente por el sistema de señales
+        cuando el usuario cambia de curso escolar.
+        """
+        self.logger.info("🔄 Recargando estadísticas para el curso activo")
+        self.session.expire_all()  # Limpiar caché de SQLAlchemy
+        self.cargar_estadisticas()
+
     def setup_ui(self):
         """Configurar la interfaz de usuario del formulario"""
         # Layout principal
