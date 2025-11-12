@@ -24,7 +24,7 @@ from PyQt6.QtWidgets import (
 )
 
 import ui_styles as styles
-from models.models import Ausencia, Profesor
+from models.models import Ausencia, Guardia, Profesor
 from presentation.forms.base_form import BaseForm
 from services.gestor_ausencias import (
     desactivar_ausencia,
@@ -37,6 +37,7 @@ from services.gestor_ausencias import (
     reasignar_guardias_automaticamente,
     registrar_ausencia,
 )
+from services.gestor_cursos import GestorCursos
 from utils.ui_helpers import get_corporate_icon
 
 
@@ -72,6 +73,18 @@ class GestionarAusenciasForm(BaseForm):
         layout_principal.addLayout(layout_horizontal)
 
         # Cargar datos iniciales
+        self.cargar_profesores()
+        self.cargar_ausencias()
+
+    def cargar_datos(self):
+        """
+        Recargar datos cuando cambia el curso activo.
+        
+        Este método es llamado automáticamente por el sistema de señales
+        cuando el usuario cambia de curso escolar.
+        """
+        self.logger.info("🔄 Recargando ausencias para el curso activo")
+        self.session.expire_all()  # Limpiar caché de SQLAlchemy
         self.cargar_profesores()
         self.cargar_ausencias()
 
@@ -283,21 +296,62 @@ class GestionarAusenciasForm(BaseForm):
         return botones
 
     def cargar_profesores(self):
-        """Cargar la lista de profesores en el combo."""
+        """Cargar la lista de profesores del curso activo en el combo."""
         try:
             self.profesor_combo.clear()
-            profesores = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
+            
+            # Obtener curso activo
+            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            if not curso_activo:
+                self.logger.warning("No hay curso activo, no se cargan profesores")
+                return
+
+            # Solo profesores con guardias en el curso activo
+            profesores = (
+                self.session.query(Profesor)
+                .join(Guardia, Profesor.id == Guardia.profesor_id)
+                .filter(Guardia.curso_id == curso_activo.id)
+                .distinct()
+                .order_by(Profesor.nombre_completo)
+                .all()
+            )
+            
             for p in profesores:
                 self.profesor_combo.addItem(p.nombre_completo, p.id)
+
+            self.logger.info(
+                f"Cargados {len(profesores)} profesores del curso {curso_activo.nombre}"
+            )
         except Exception as e:
             self.manejar_excepcion(e, "cargar profesores")
 
     def cargar_ausencias(self):
-        """Cargar todas las ausencias en la tabla."""
+        """Cargar todas las ausencias en la tabla filtradas por curso activo."""
         try:
             self.tabla_ausencias.setRowCount(0)
 
-            ausencias = self.session.query(Ausencia).order_by(Ausencia.fecha_inicio.desc()).all()
+            # Obtener curso activo
+            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            if not curso_activo:
+                self.logger.warning("No hay curso activo, no se cargan ausencias")
+                return
+
+            # Filtrar ausencias de profesores que tienen guardias en el curso activo
+            # Subconsulta: IDs de profesores con guardias en el curso activo
+            profesores_con_guardias = (
+                self.session.query(Guardia.profesor_id)
+                .filter(Guardia.curso_id == curso_activo.id)
+                .distinct()
+                .subquery()
+            )
+
+            # Ausencias de esos profesores
+            ausencias = (
+                self.session.query(Ausencia)
+                .filter(Ausencia.profesor_id.in_(profesores_con_guardias))
+                .order_by(Ausencia.fecha_inicio.desc())
+                .all()
+            )
 
             for ausencia in ausencias:
                 row = self.tabla_ausencias.rowCount()
@@ -336,7 +390,10 @@ class GestionarAusenciasForm(BaseForm):
 
                 self.tabla_ausencias.setItem(row, 6, estado_item)
 
-            self.logger.info(f"Cargadas {self.tabla_ausencias.rowCount()} ausencias")
+            self.logger.info(
+                f"Cargadas {self.tabla_ausencias.rowCount()} ausencias "
+                f"del curso {curso_activo.nombre}"
+            )
 
         except Exception as e:
             self.manejar_excepcion(e, "cargar ausencias")
