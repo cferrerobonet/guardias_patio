@@ -153,10 +153,12 @@ class SelectorCursoWidget(QWidget):
                 GestorCursos.activar_curso(self.session, curso_id)
                 logger.info(f"Curso cambiado a: {curso.nombre}")
 
-                # Actualizar UI
+                # Actualizar UI - IMPORTANTE: bloquear señales durante recarga
+                self.combo_cursos.blockSignals(True)
                 self._cargar_cursos()
+                self.combo_cursos.blockSignals(False)
 
-                # Emitir señal
+                # Emitir señal DESPUÉS de actualizar UI
                 logger.info(f"🔔 Emitiendo señal curso_cambiado con ID: {curso_id}")
                 self.curso_cambiado.emit(curso_id)
                 logger.info("✅ Señal curso_cambiado emitida correctamente")
