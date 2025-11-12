@@ -465,6 +465,85 @@ grep -r "from presentation" src/domain/ --include="*.py"    # Debe estar vacío
 
 ---
 
-**Última revisión**: 7 de noviembre de 2025  
-**Fase**: 2 - Consolidación de Código  
-**Estado**: ✅ Arquitectura verificada y documentada
+## ⚠️ Deuda Técnica Arquitectónica
+
+### Violaciones Conocidas (Auditoría FASE 2 - 12 nov 2025)
+
+#### 1. Application → Infrastructure (Imports Directos)
+
+**Cantidad**: 6 violaciones en use cases  
+**Severidad**: Media  
+**Impacto**: Dificulta testing, rompe Dependency Inversion Principle (DIP)
+
+**Archivos afectados**:
+1. `application/use_cases/guardia/obtener_guardias.py`
+2. `application/use_cases/guardia/asignar_guardia.py`
+3. `application/use_cases/profesor/listar_profesores.py`
+4. `application/use_cases/profesor/obtener_profesor.py`
+5. `application/use_cases/profesor/crear_profesor.py` (2 imports)
+
+**Patrón actual** ❌:
+```python
+from infrastructure.repositories import SQLAlchemyProfesorRepository
+
+class ListarProfesores:
+    def __init__(self, session: Session):
+        self.repo = SQLAlchemyProfesorRepository(session)
+```
+
+**Patrón esperado** ✅:
+```python
+from domain.repositories import ProfesorRepositoryProtocol
+
+class ListarProfesores:
+    def __init__(self, repo: ProfesorRepositoryProtocol):
+        self.repo = repo
+```
+
+**Esfuerzo de corrección**: 2-4 horas  
+**Prioridad**: Media (no urgente, funciona correctamente)  
+**Roadmap**: Corregir en fase futura de refinamiento arquitectónico
+
+**Beneficios de corregir**:
+- ✅ Testing simplificado (mockear interfaces es fácil)
+- ✅ Cumplimiento DIP (depender de abstracciones)
+- ✅ Facilita cambio de backend (SQLite → PostgreSQL)
+
+#### 2. Ubicación de `/services`
+
+**Estado actual**: `src/services/` (raíz de src)  
+**Ubicación ideal**: `src/application/services/`  
+**Decisión**: **Mantener como está** (pragmatismo)
+
+**Justificación**:
+- ✅ Cohesión: 13 archivos (361KB) bien organizados
+- ✅ Separación clara: Distintos de use cases
+- ✅ Funcionan correctamente
+- ⚠️ Mover requiere actualizar 100+ imports sin beneficio inmediato
+
+**Recomendación**: Documentar como "Application Services Layer" y mantener ubicación actual.
+
+---
+
+## 📐 Diagrama de Dependencias Reales
+
+Ver diagrama completo en: `documentacion/diagramas/arquitectura_dependencias.md`
+
+**Conformidad por capa**:
+
+| Capa | Conformidad | Detalle |
+|------|-------------|---------|
+| **Domain** | ✅ 100% | Puro, sin dependencias externas |
+| **Application** | ⚠️ 85% | 6 imports directos a infrastructure |
+| **Infrastructure** | ✅ 95% | Correctamente separada |
+| **Presentation** | ✅ 100% | Solo usa Use Cases |
+| **Services** | ⚠️ N/A | Ubicación pragmática (src/services/) |
+
+**Puntuación Global**: ⭐⭐⭐⭐ (4/5) - **Muy Bueno**
+
+---
+
+**Última revisión**: 12 de noviembre de 2025  
+**Fase**: 4 - Consolidación de Documentación  
+**Estado**: ✅ Arquitectura auditada, violaciones documentadas  
+**Auditoría**: Ver `documentacion/auditoria/consolidacion_fase2.md`

@@ -169,25 +169,59 @@ python src/main.py
 
 ## 📚 Documentación
 
-### 📖 Guías Principales
+### 📖 Para Usuarios
 
-| Documento | Descripción | Audiencia |
-|-----------|-------------|-----------|
-| **[USER_GUIDE.md](documentacion/USER_GUIDE.md)** | Guía completa de usuario | 👤 Usuarios finales |
-| **[TECHNICAL_GUIDE.md](documentacion/TECHNICAL_GUIDE.md)** | Documentación técnica completa | 👨‍💻 Desarrolladores |
-| **[DEPLOYMENT.md](documentacion/DEPLOYMENT.md)** | Compilación y distribución | 🚀 DevOps |
-| **[CONTRIBUTING.md](documentacion/CONTRIBUTING.md)** | Cómo contribuir al proyecto | 🤝 Colaboradores |
-| **[CHANGELOG.md](documentacion/CHANGELOG.md)** | Historial de versiones | 📋 Todos |
-| **[SECURITY.md](documentacion/SECURITY.md)** | Política de seguridad | 🔒 Seguridad |
-| **[MAINTENANCE.md](documentacion/MAINTENANCE.md)** | Tareas de mantenimiento | 🛠️ Mantenedores |
+| Documento | Descripción |
+|-----------|-------------|
+| **[USER_GUIDE.md](documentacion/USER_GUIDE.md)** | Tutorial completo paso a paso |
+| **[KEYBOARD_SHORTCUTS.md](documentacion/guias/KEYBOARD_SHORTCUTS.md)** | 50+ atajos de teclado documentados |
 
-### � UX y Experiencia de Usuario (NUEVO v3.0.2)
+### �‍💻 Para Desarrolladores
 
-| Documento | Descripción | Audiencia |
-|-----------|-------------|-----------|
-| **[UX_AUDIT.md](documentacion/UX_AUDIT.md)** | Auditoría completa de UX (8.2/10) | 🎨 Diseñadores UX |
-| **[UX_PATTERNS.md](documentacion/guias/UX_PATTERNS.md)** | Patrones y convenciones UX | 👨‍💻 Desarrolladores |
-| **[KEYBOARD_SHORTCUTS.md](documentacion/guias/KEYBOARD_SHORTCUTS.md)** | 50+ atajos de teclado | 👤 Usuarios avanzados |
+| Documento | Descripción |
+|-----------|-------------|
+| **[ARCHITECTURE.md](documentacion/ARCHITECTURE.md)** | Clean Architecture - 4 capas, dependencias, patrones ⭐⭐⭐⭐ |
+| **[TECHNICAL_GUIDE.md](documentacion/TECHNICAL_GUIDE.md)** | Algoritmos, validaciones, cache, logging |
+| **[TESTING.md](documentacion/TESTING.md)** | 976 tests, 46% coverage, guía completa pytest |
+| **[CONTRIBUTING.md](documentacion/CONTRIBUTING.md)** | Workflow, estándares de código, PR guidelines |
+| **[UX_PATTERNS.md](documentacion/guias/UX_PATTERNS.md)** | Patrones UI/UX para desarrollo consistente |
+
+### 🚀 Para DevOps / Mantenedores
+
+| Documento | Descripción |
+|-----------|-------------|
+| **[DEPLOYMENT.md](documentacion/DEPLOYMENT.md)** | Build macOS/Windows, PyInstaller, DMG |
+| **[CI_CD.md](documentacion/CI_CD.md)** | GitHub Actions, workflows automáticos |
+| **[BRANCH_PROTECTION.md](documentacion/guias/BRANCH_PROTECTION_SETUP.md)** | Setup protección rama main |
+| **[MAINTENANCE.md](documentacion/MAINTENANCE.md)** | Backups, limpieza BD, checklists |
+| **[SECURITY.md](documentacion/SECURITY.md)** | Política seguridad, reporte vulnerabilidades |
+
+### 📊 Referencia
+
+| Documento | Descripción |
+|-----------|-------------|
+| **[CHANGELOG.md](documentacion/CHANGELOG.md)** | Historial completo de versiones |
+| **[PREMISAS_ASIGNACION.md](documentacion/PREMISAS_ASIGNACION_GUARDIAS.md)** | Reglas de negocio asignación |
+| **[UX_AUDIT.md](documentacion/UX_AUDIT.md)** | Auditoría UX completa (8.2/10) |
+| **[API Reference](documentacion/api/)** | Documentación técnica de la API |
+
+### 🎯 Por Caso de Uso
+
+**¿Quieres empezar a usar la app?**  
+→ [USER_GUIDE.md](documentacion/USER_GUIDE.md)
+
+**¿Vas a desarrollar o contribuir?**  
+→ [ARCHITECTURE.md](documentacion/ARCHITECTURE.md) + [CONTRIBUTING.md](documentacion/CONTRIBUTING.md)
+
+**¿Necesitas compilar/desplegar?**  
+→ [DEPLOYMENT.md](documentacion/DEPLOYMENT.md)
+
+**¿Configurar CI/CD?**  
+→ [CI_CD.md](documentacion/CI_CD.md) + [BRANCH_PROTECTION](documentacion/guias/BRANCH_PROTECTION_SETUP.md)
+
+### 📝 Índice Completo
+
+Ver [documentacion/README.md](documentacion/README.md) para el índice completo de toda la documentación.
 
 **Resultados de auditoría UX:**
 - ✅ 85% de campos con tooltip/placeholder (objetivo: ≥80%)
