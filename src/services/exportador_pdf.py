@@ -25,6 +25,7 @@ from reportlab.platypus import (
 from sqlalchemy.orm import Session, joinedload
 
 from models.models import Configuracion, Guardia, Profesor
+from services.gestor_cursos import GestorCursos
 from services.pdf_styles import PDFStyles
 from utils import get_logger
 
@@ -61,11 +62,18 @@ class ExportadorPDF:
             dias_en_mes = monthrange(anio, mes)[1]
             ultimo_dia = date(anio, mes, dias_en_mes)
 
+            # Obtener curso activo
+            curso_activo = GestorCursos.obtener_curso_activo(session)
+            if not curso_activo:
+                logger.warning("No hay curso activo para exportar PDF")
+                return False
+
             guardias = (
                 session.query(Guardia)
                 .options(joinedload(Guardia.zona))
                 .filter(
                     Guardia.profesor_id == profesor_id,
+                    Guardia.curso_id == curso_activo.id,
                     Guardia.fecha >= primer_dia,
                     Guardia.fecha <= ultimo_dia,
                 )
@@ -379,6 +387,12 @@ class ExportadorPDF:
         try:
             reportar_progreso(0, "Preparando exportación consolidada del mes...")
 
+            # Obtener curso activo
+            curso_activo = GestorCursos.obtener_curso_activo(session)
+            if not curso_activo:
+                logger.warning("No hay curso activo para exportar PDF consolidado")
+                return False
+
             # Obtener guardias del mes
             primer_dia = date(anio, mes, 1)
             dias_en_mes = monthrange(anio, mes)[1]
@@ -389,7 +403,11 @@ class ExportadorPDF:
             guardias = (
                 session.query(Guardia)
                 .options(joinedload(Guardia.zona), joinedload(Guardia.profesor))
-                .filter(Guardia.fecha >= primer_dia, Guardia.fecha <= ultimo_dia)
+                .filter(
+                    Guardia.curso_id == curso_activo.id,
+                    Guardia.fecha >= primer_dia,
+                    Guardia.fecha <= ultimo_dia
+                )
                 .order_by(Guardia.fecha, Guardia.turno, Guardia.recreo, Guardia.profesor_id)
                 .all()
             )
@@ -741,6 +759,12 @@ class ExportadorPDF:
                 mes_titulo = Paragraph(f"📅 {meses_nombres[mes]} {anio}", mes_style)
                 elements.append(mes_titulo)
 
+                # Obtener curso activo
+                curso_activo = GestorCursos.obtener_curso_activo(session)
+                if not curso_activo:
+                    logger.warning("No hay curso activo para exportar PDFs múltiples")
+                    return False
+
                 # Obtener todas las guardias del mes para los profesores seleccionados
                 primer_dia = date(anio, mes, 1)
                 dias_en_mes = monthrange(anio, mes)[1]
@@ -751,6 +775,7 @@ class ExportadorPDF:
                     .options(joinedload(Guardia.zona), joinedload(Guardia.profesor))
                     .filter(
                         Guardia.profesor_id.in_(profesor_ids),
+                        Guardia.curso_id == curso_activo.id,
                         Guardia.fecha >= primer_dia,
                         Guardia.fecha <= ultimo_dia,
                     )
@@ -1156,9 +1181,17 @@ class ExportadorPDF:
         try:
             reportar_progreso(0, "Preparando exportación individual...")
 
+            # Obtener curso activo
+            curso_activo = GestorCursos.obtener_curso_activo(session)
+            if not curso_activo:
+                logger.warning("No hay curso activo para exportar PDF individual")
+                return False
+
             # Obtener profesor y configuración
             profesor = session.query(Profesor).get(profesor_id)
-            config = session.query(Configuracion).first()
+            config = session.query(Configuracion).filter(
+                Configuracion.curso_id == curso_activo.id
+            ).first()
 
             if not profesor:
                 return False
@@ -1171,6 +1204,7 @@ class ExportadorPDF:
                 .options(joinedload(Guardia.zona))
                 .filter(
                     Guardia.profesor_id == profesor_id,
+                    Guardia.curso_id == curso_activo.id,
                     Guardia.fecha >= fecha_inicio,
                     Guardia.fecha <= fecha_fin,
                 )
