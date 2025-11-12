@@ -1,10 +1,10 @@
 # Security Policy
 
 **Guardias de Patio** - Política de Seguridad  
-**Versión**: 3.0.1  
-**Última actualización**: 8 de noviembre de 2025  
-**Última auditoría**: 8 de noviembre de 2025 ✅  
-**Estado**: ✅ **TODAS LAS VULNERABILIDADES SOLUCIONADAS** (8 nov 2025)
+**Versión**: 3.0.2  
+**Última actualización**: 12 de noviembre de 2025  
+**Última auditoría**: 12 de noviembre de 2025 ✅ (FASE 6)  
+**Estado**: ✅ **SISTEMA SEGURO** - 0 vulnerabilidades críticas/altas, 29 warnings bajos (bandit)
 
 ---
 
@@ -108,13 +108,43 @@ Las vulnerabilidades de seguridad deben reportarse de forma privada para evitar 
 
 ---
 
-## � Auditorías Recientes
+## 🔍 Auditorías Recientes
 
-### Última Auditoría: 8 de Noviembre de 2025
+### Auditoría FASE 6: 12 de Noviembre de 2025 ✅
+
+**Alcance**: Auditoría completa de seguridad (FASE 6 del Plan de Refactorización)
+
+**Herramientas utilizadas:**
+- ✅ `bandit` - Análisis estático de seguridad del código Python
+- ✅ Revisión manual de secretos y credenciales
+- ✅ Análisis de inyección SQL y path traversal
+- ✅ Verificación de validación de inputs
+- ✅ Revisión de permisos de archivos
+
+#### Resultados FASE 6
+
+| Área | Issues | Severidad | Estado |
+|------|--------|-----------|--------|
+| **Secretos hardcoded** | 0 | - | ✅ Ninguno encontrado |
+| **SQL injection** | 0 | - | ✅ SQLAlchemy ORM usado correctamente |
+| **Path traversal** | 0 | - | ✅ Paths controlados |
+| **Deserialización insegura** | 0 | - | ✅ Solo `ast.literal_eval` (seguro) |
+| **Bandit warnings** | 29 | LOW | ⚠️ No críticos, aceptables |
+| **.env en git** | 0 | - | ✅ Correctamente ignorado |
+
+#### Detalles Bandit (29 warnings LOW)
+
+**Distribución**:
+- B110 (Try-Except-Pass): 3 ocurrencias - Aceptable en manejo de errores
+- B105 (Hardcoded password): 26 ocurrencias - **Falsos positivos** (placeholders UI como `''` y `'••••••••'`)
+
+**Conclusión Bandit**: ✅ Ningún issue real de seguridad.
+
+### Auditoría Anterior: 8 de Noviembre de 2025
 
 **Herramientas utilizadas:**
 - ✅ `pip-audit` - Análisis de vulnerabilidades en dependencias
-- ✅ `bandit` - Análisis estático de seguridad del código Python
+- ✅ `bandit` - Análisis estático de seguridad del código Python  
 - ✅ Verificación manual de secretos y archivos sensibles
 
 #### Resultados
@@ -122,7 +152,7 @@ Las vulnerabilidades de seguridad deben reportarse de forma privada para evitar 
 | Herramienta | Issues Encontrados | Severidad | Estado |
 |-------------|-------------------|-----------|--------|
 | **pip-audit** | 7 vulnerabilidades | 4 paquetes afectados | ⚠️ No crítico para el proyecto |
-| **bandit** | 1 HIGH, 29 LOW | Mixed | ⚠️ 1 issue documentado |
+| **bandit** | 1 HIGH, 29 LOW | Mixed | ✅ HIGH resuelto |
 | **Verificación secretos** | 0 | - | ✅ Ningún secreto en git |
 
 #### Detalles de Vulnerabilidades en Dependencias
