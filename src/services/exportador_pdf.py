@@ -9,6 +9,7 @@ from datetime import date
 from pathlib import Path
 from typing import Callable, Optional
 
+from models.models import Configuracion, Guardia, Profesor
 from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
@@ -22,11 +23,9 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-from sqlalchemy.orm import Session, joinedload
-
-from models.models import Configuracion, Guardia, Profesor
 from services.gestor_cursos import GestorCursos
 from services.pdf_styles import PDFStyles
+from sqlalchemy.orm import Session, joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -1187,11 +1186,9 @@ class ExportadorPDF:
                 logger.warning("No hay curso activo para exportar PDF individual")
                 return False
 
-            # Obtener profesor y configuración
+            # Obtener profesor y configuración global
             profesor = session.query(Profesor).get(profesor_id)
-            config = session.query(Configuracion).filter(
-                Configuracion.curso_id == curso_activo.id
-            ).first()
+            config = session.query(Configuracion).first()
 
             if not profesor:
                 return False

@@ -14,10 +14,9 @@ import math
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
-
 from models.models import Configuracion, Guardia, Profesor, Zona
 from services.gestor_cursos import GestorCursos
+from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -320,15 +319,11 @@ def calcular_distribucion_cruda(
         logger.error("No hay curso activo")
         raise ValueError("No hay curso activo")
 
-    # Obtener configuración del curso activo
-    config = (
-        session.query(Configuracion)
-        .filter(Configuracion.curso_id == curso_activo.id)
-        .first()
-    )
+    # Obtener configuración global del sistema
+    config = session.query(Configuracion).first()
     if not config:
-        logger.error(f"No existe configuración para el curso {curso_activo.nombre}")
-        raise ValueError(f"No existe configuración para el curso {curso_activo.nombre}")
+        logger.error("No existe configuración del sistema")
+        raise ValueError("No existe configuración del sistema")
 
     # Obtener profesores del curso activo (con guardias)
     profesores = (
@@ -547,20 +542,16 @@ def obtener_estadisticas(session: Session) -> Dict:
         logger.warning("No hay curso activo para obtener estadísticas")
         return {}
 
-    # Obtener configuración del curso activo
-    config = (
-        session.query(Configuracion)
-        .filter(Configuracion.curso_id == curso_activo.id)
-        .first()
-    )
+    # Obtener configuración global del sistema
+    config = session.query(Configuracion).first()
     if not config:
-        logger.warning(f"No hay configuración para el curso {curso_activo.nombre}")
+        logger.warning("No hay configuración del sistema")
         return {}
 
     dias_lectivos = len(listar_dias_lectivos(config))
 
     recreos_manana, recreos_tarde = calcular_recreos_activos(session)
-    
+
     # Contar solo zonas del curso activo (con guardias asignadas)
     num_zonas = (
         session.query(Zona)
@@ -569,7 +560,7 @@ def obtener_estadisticas(session: Session) -> Dict:
         .distinct()
         .count()
     )
-    
+
     # Contar solo profesores del curso activo (con guardias asignadas)
     num_profesores = (
         session.query(Profesor)
