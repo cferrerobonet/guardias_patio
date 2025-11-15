@@ -133,8 +133,8 @@ class SidebarMenu(QWidget):
         # Widget contenedor del menú (comprimido para que quepan todos los items)
         menu_widget = QWidget()
         menu_layout = QVBoxLayout(menu_widget)
-        menu_layout.setContentsMargins(0, SPACING_SM, 0, SPACING_SM)
-        menu_layout.setSpacing(1)
+        menu_layout.setContentsMargins(0, 4, 0, 4)
+        menu_layout.setSpacing(0)
 
         # ========== GESTIÓN ==========
         self.add_category(menu_layout, "GESTIÓN")
@@ -144,14 +144,15 @@ class SidebarMenu(QWidget):
         self.add_menu_item(menu_layout, "conectividad", "Conectividad", "conectividad", "email")
         self.add_menu_item(menu_layout, "perfiles", "Perfiles de Usuario", "perfiles", "account")
 
-        menu_layout.addSpacing(SPACING_SM)
+        menu_layout.addSpacing(4)
 
         # ========== GUARDIAS ==========
         self.add_category(menu_layout, "GUARDIAS")
-        self.add_menu_item(menu_layout, "asignacion", "Asignación", "asignacion", "check-bold")
+        self.add_menu_item(menu_layout, "asignacion_calculo", "Cálculo y Distribución", "asignacion_calculo", "chart-line")
+        self.add_menu_item(menu_layout, "asignacion_resultados", "Generación y Resultados", "asignacion_resultados", "check-bold")
         self.add_menu_item(menu_layout, "calendario", "Calendario", "calendario", "calendar")
 
-        menu_layout.addSpacing(SPACING_SM)
+        menu_layout.addSpacing(4)
 
         # ========== PERSONAL ==========
         self.add_category(menu_layout, "PERSONAL")
@@ -160,7 +161,7 @@ class SidebarMenu(QWidget):
             menu_layout, "sustituciones", "Sustituciones", "sustituciones", "swap-horizontal"
         )
 
-        menu_layout.addSpacing(SPACING_SM)
+        menu_layout.addSpacing(4)
 
         # ========== HERRAMIENTAS ==========
         self.add_category(menu_layout, "HERRAMIENTAS")
@@ -224,11 +225,11 @@ class SidebarMenu(QWidget):
         label.setStyleSheet("""
             QLabel#categoryLabel {
                 color: rgba(255, 255, 255, 0.95);
-                font-size: 13px;
+                font-size: 11px;
                 font-weight: 700;
-                letter-spacing: 2px;
+                letter-spacing: 1.5px;
                 text-transform: uppercase;
-                padding: 20px 20px 8px 20px;
+                padding: 12px 20px 6px 20px;
                 background-color: transparent;
             }
         """)
@@ -241,7 +242,7 @@ class SidebarMenu(QWidget):
             QFrame {
                 background-color: rgba(255, 255, 255, 0.2);
                 max-height: 1px;
-                margin: 0px 16px 12px 16px;
+                margin: 0px 16px 8px 16px;
             }
         """)
         layout.addWidget(separator)
@@ -255,7 +256,7 @@ class SidebarMenu(QWidget):
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setProperty("section", section)
         btn.setProperty("active", "false")
-        btn.setMinimumHeight(44)  # Altura moderada
+        btn.setMinimumHeight(38)  # Altura moderada
 
         # Añadir icono si se proporciona
         if icon_name:
@@ -270,7 +271,7 @@ class SidebarMenu(QWidget):
                 color: rgba(255, 255, 255, 0.95);
                 background-color: transparent;
                 text-align: left;
-                padding: 12px 28px;
+                padding: 10px 28px;
                 border: none;
                 border-radius: 6px;
                 font-size: 14px;

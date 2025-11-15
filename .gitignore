@@ -49,6 +49,10 @@ guardias_patio.db
 *.db-shm
 *.db-wal
 
+# Directorio de datos locales (bases de datos, archivos de usuarios)
+data/
+!data/.gitkeep  # Mantener la estructura del directorio
+
 # Archivos de sincronización y sesión
 session.lock
 last_sync.json

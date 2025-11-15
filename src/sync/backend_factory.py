@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 
 from config import get_sftp_config, validate_sftp_config
+from core.paths import get_data_directory
 from sync.sync_manager import LocalSyncBackend, SFTPSyncBackend, SyncBackend
 
 logger = logging.getLogger(__name__)
@@ -28,8 +29,8 @@ def create_sync_backend(backend_type: str = "sftp") -> SyncBackend:
     if backend_type == "local":
         # Backend local para desarrollo/testing
         # NOTA: Solo se usa si SFTP no está configurado
-        # El directorio se crea automáticamente si es necesario
-        local_path = Path("cloud_storage_local")
+        # Usa el directorio data/ del proyecto para evitar duplicación
+        local_path = get_data_directory()
         logger.info(f"Creando LocalSyncBackend en: {local_path}")
         return LocalSyncBackend(local_path)
 

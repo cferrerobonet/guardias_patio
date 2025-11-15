@@ -50,9 +50,13 @@ class CalcularDistribucionUseCase:
         """
         # Validar que hay datos
         stats = obtener_estadisticas(self.session)
-        if not stats or stats.get("slots_totales", 0) == 0:
+        if not stats:
             raise BusinessLogicError(
-                "Debe configurar el curso, profesores y zonas antes de calcular."
+                "No hay un curso escolar activo.\n\nDebe activar un curso en Ajustes."
+            )
+        if stats.get("slots_totales", 0) == 0:
+            raise BusinessLogicError(
+                "Debe configurar profesores y zonas antes de calcular la distribución."
             )
 
         try:

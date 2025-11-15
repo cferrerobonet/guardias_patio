@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
-from core.paths import get_data_directory
+from core.paths import get_data_directory, get_user_data_directory
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class SessionLock:
 
     def _get_local_lock_path(self) -> Path:
         """Obtiene la ruta local del archivo de bloqueo."""
-        return get_data_directory() / self.user_hash / self.lock_filename
+        return get_user_data_directory() / self.user_hash / self.lock_filename
 
     def acquire_lock(self) -> bool:
         """

@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from core.paths import get_data_directory
+from core.paths import get_data_directory, get_user_data_directory
 
 # Configurar logger
 logger = logging.getLogger(__name__)
@@ -211,7 +211,7 @@ class SyncManager:
         self.backend = backend
         self.user_id = user_id
         self.user_hash = self._hash_user_id(user_id)
-        self.local_data_dir = get_data_directory() / self.user_hash
+        self.local_data_dir = get_user_data_directory() / self.user_hash
         self.local_data_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"SyncManager inicializado para usuario: {user_id}")

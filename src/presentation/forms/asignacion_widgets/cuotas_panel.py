@@ -138,14 +138,38 @@ class CuotasPanel(QGroupBox):
 
     def calcular_cuotas(self):
         """Calcula y muestra las cuotas usando el Use Case."""
+        # Obtener configuración activa
         if not self.configuracion_id:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.warning(
-                self,
-                "Sin Configuración",
-                "No hay una configuración activa para calcular cuotas."
-            )
-            return
+            from models.models import Configuracion
+            
+            # Obtener la configuración (solo hay una por usuario)
+            configuracion = self.session.query(Configuracion).first()
+            
+            if not configuracion:
+                from PyQt6.QtWidgets import QMessageBox
+                from utils.ui_helpers import MESSAGEBOX_STYLE
+                msg = QMessageBox(self)
+                msg.setWindowTitle("Sin Configuración")
+                msg.setText(
+                    "No hay una configuración para el sistema.\n\n"
+                    "Debe configurar los parámetros en Ajustes del Curso Escolar."
+                )
+                msg.setStyleSheet(MESSAGEBOX_STYLE)
+                msg.exec()
+                return
+            
+            # Verificar que haya un curso activo
+            if not configuracion.curso_activo_id:
+                from PyQt6.QtWidgets import QMessageBox
+                from utils.ui_helpers import MESSAGEBOX_STYLE
+                msg = QMessageBox(self)
+                msg.setWindowTitle("Sin Curso Activo")
+                msg.setText("No hay un curso escolar activo.\n\nDebe activar un curso en Ajustes.")
+                msg.setStyleSheet(MESSAGEBOX_STYLE)
+                msg.exec()
+                return
+            
+            self.configuracion_id = configuracion.id
 
         try:
             # Deshabilitar botón

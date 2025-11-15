@@ -5,7 +5,8 @@ Formularios principales de la aplicación.
 Cada form es un QWidget que representa una pantalla completa.
 """
 
-from .asignacion_guardias_form import AsignacionGuardiasForm
+from .asignacion_calculo_form import AsignacionCalculoForm
+from .asignacion_resultados_form import AsignacionResultadosForm
 from .base_form import BaseForm
 from .dashboard_form import DashboardForm
 from .import_export_form import ImportExportForm
@@ -15,7 +16,8 @@ from .zona_form import ZonaForm
 __all__ = [
     'BaseForm',
     'ZonaForm',
-    'AsignacionGuardiasForm',
+    'AsignacionCalculoForm',
+    'AsignacionResultadosForm',
     'ProfesorForm',
     'ImportExportForm',
     'DashboardForm',

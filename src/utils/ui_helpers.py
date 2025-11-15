@@ -14,31 +14,37 @@ from PyQt6.QtWidgets import QMessageBox, QWidget
 # Estilos consistentes para todos los QMessageBox
 MESSAGEBOX_STYLE = """
     QMessageBox {
-        background-color: white;
+        background-color: white !important;
+        min-width: 400px;
     }
-    QPushButton {
-        background-color: #059669;
-        color: white;
-        font-weight: 600;
-        font-size: 13px;
-        padding: 8px 24px;
-        border: 2px solid #047857;
-        border-radius: 6px;
-        min-width: 100px;
-        min-height: 35px;
+    QMessageBox QLabel {
+        color: #1f2937 !important;
+        font-size: 14px;
+        padding: 10px;
     }
-    QPushButton:hover {
-        background-color: #047857;
+    QMessageBox QPushButton {
+        background-color: #059669 !important;
+        color: white !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        padding: 8px 24px !important;
+        border: 2px solid #047857 !important;
+        border-radius: 6px !important;
+        min-width: 100px !important;
+        min-height: 35px !important;
     }
-    QPushButton:pressed {
-        background-color: #065f46;
+    QMessageBox QPushButton:hover {
+        background-color: #047857 !important;
     }
-    QPushButton:default {
-        background-color: #0284c7;
-        border: 2px solid #0369a1;
+    QMessageBox QPushButton:pressed {
+        background-color: #065f46 !important;
     }
-    QPushButton:default:hover {
-        background-color: #0369a1;
+    QMessageBox QPushButton:default {
+        background-color: #0284c7 !important;
+        border: 2px solid #0369a1 !important;
+    }
+    QMessageBox QPushButton:default:hover {
+        background-color: #0369a1 !important;
     }
 """
 

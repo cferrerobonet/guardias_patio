@@ -249,8 +249,11 @@ def delete_user_database(user_id: str) -> bool:
         return False
 
 
-# URL de la base de datos (fallback para compatibilidad)
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///guardias_patio.db')
+# URL de la base de datos (fallback para compatibilidad con scripts legacy)
+# NOTA: En producción siempre se debe usar initialize_user_database(user_id)
+# Este fallback usa ruta absoluta para evitar crear BD en directorios incorrectos
+from core.paths import get_database_path
+DATABASE_URL = os.getenv('DATABASE_URL', f'sqlite:///{get_database_path()}')
 
 # Detectar tipo de base de datos
 IS_SQLITE = DATABASE_URL.startswith('sqlite')

@@ -15,6 +15,7 @@ try:
         QComboBox,
         QDateEdit,
         QFrame,
+        QGroupBox,
         QHBoxLayout,
         QLabel,
         QLineEdit,
@@ -46,6 +47,7 @@ except ImportError:  # pragma: no cover
     QCheckBox = _stubs["QCheckBox"]
     QListWidget = _stubs["QListWidget"]
     QPushButton = _stubs["QPushButton"]
+    QGroupBox = _stubs["QWidget"]
     QHBoxLayout = _stubs["QHBoxLayout"]
     QVBoxLayout = _stubs["QVBoxLayout"]
     QTabWidget = _stubs["QTabWidget"]
@@ -76,6 +78,7 @@ __all__ = [
     "QCheckBox",
     "QListWidget",
     "QPushButton",
+    "QGroupBox",
     "QHBoxLayout",
     "QVBoxLayout",
     "QTabWidget",

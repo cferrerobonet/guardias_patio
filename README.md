@@ -7,7 +7,7 @@
 ![Coverage](https://img.shields.io/badge/Coverage-46.31%25-yellow.svg)
 
 <!-- Security & Release -->
-[![Security](https://img.shields.io/badge/Security-✅_0_vulnerabilities-success.svg)](documentacion/auditoria/SECURITY_FIX_20251108.md)
+[![Security](https://img.shields.io/badge/Security-✅_0_vulnerabilities-success.svg)](docs/archive/auditoria/SECURITY_FIX_20251108.md)
 [![Release](https://img.shields.io/github/v/release/cferrerobonet/guardias_patio)](https://github.com/cferrerobonet/guardias_patio/releases/latest)
 ![Version](https://img.shields.io/badge/Version-3.0.2-blue.svg)
 
@@ -24,10 +24,10 @@
 
 **Aplicación de escritorio profesional** para la gestión integral de guardias de patio en centros educativos. Asignación automática equitativa con algoritmo optimizado, gestión completa de ausencias y sustituciones, calendario interactivo, y arquitectura limpia con 46% de cobertura de tests.
 
-> � **v3.0.2 Released** - Ventana de detalle del día implementada: resumen completo de guardias, ausencias y sustituciones  
-> �🔒 **v3.0.1 Security Update** - Todas las vulnerabilidades corregidas: 0 issues críticos, SFTP seguro  
-> 🚀 **v3.0.0 Released** - Refactorización arquitectónica completa: Clean Architecture, -40% código, cache inteligente  
-> 📚 [Ver Changelog](documentacion/CHANGELOG.md) | [Guía de Usuario](documentacion/USER_GUIDE.md) | [Guía Técnica](documentacion/TECHNICAL_GUIDE.md)
+> 📊 **v3.1.0 Released** - Dashboard de Equidad + API REST con 8 endpoints (FastAPI)
+> 📈 **v3.0.2 Released** - Ventana de detalle del día implementada: resumen completo de guardias, ausencias y sustituciones  
+> 🔒 **v3.0.1 Security Update** - Todas las vulnerabilidades corregidas: 0 issues críticos, SFTP seguro  
+> 📚 [Ver Changelog](docs/CHANGELOG.md) | [Guía de Usuario](docs/user/USER_GUIDE.md) | [Guía Técnica](docs/dev/TECHNICAL_GUIDE.md)
 
 ---
 
@@ -67,10 +67,10 @@
 - ✅ **Fluent Design**: Interfaz moderna inspirada en Windows 11
 - ✅ **Responsive**: Validación automática de resolución (mínimo 1280x720)
 - ✅ **Feedback Visual**: Indicadores de progreso y confirmaciones contextuales
-- ✅ **Tooltips Intuitivos**: ~85% de campos con ayuda contextual ([Auditoría UX](documentacion/UX_AUDIT.md))
+- ✅ **Tooltips Intuitivos**: ~85% de campos con ayuda contextual
 - ✅ **Confirmaciones Inteligentes**: Solo en acciones destructivas (100% apropiadas)
-- ✅ **Atajos de Teclado**: 50+ shortcuts documentados ([Guía completa](documentacion/guias/KEYBOARD_SHORTCUTS.md))
-- ✅ **Patrones UX Consistentes**: [Guía de patrones](documentacion/guias/UX_PATTERNS.md) para desarrollo
+- ✅ **Atajos de Teclado**: 50+ shortcuts documentados
+- ✅ **Patrones UX Consistentes**: Guía de patrones para desarrollo
 - ✅ **Puntuación UX**: 8.2/10 según auditoría independiente
 
 ---
@@ -107,7 +107,7 @@ python src/main.py
 4. **Generar Guardias** → Ejecutar algoritmo de asignación
 5. **Visualizar** → Ver calendario y exportar PDFs
 
-📖 **Guía completa**: [USER_GUIDE.md](documentacion/USER_GUIDE.md)
+📖 **Guía completa**: [USER_GUIDE.md](docs/user/USER_GUIDE.md)
 
 ---
 
@@ -165,44 +165,45 @@ python src/main.py
 - ✅ Escalabilidad: Fácil añadir features
 - ✅ Independencia: Domain sin dependencias externas
 
-📚 **Documentación completa**: [TECHNICAL_GUIDE.md](documentacion/TECHNICAL_GUIDE.md)
+📚 **Documentación completa**: [TECHNICAL_GUIDE.md](docs/dev/TECHNICAL_GUIDE.md)
 
 ---
 
 ## 📚 Documentación
 
+📁 **[Documentación completa en docs/](docs/README.md)**
+
 ### 📖 Para Usuarios
 
 | Documento | Descripción |
 |-----------|-------------|
-| **[USER_GUIDE.md](documentacion/USER_GUIDE.md)** | Tutorial completo paso a paso |
-| **[KEYBOARD_SHORTCUTS.md](documentacion/guias/KEYBOARD_SHORTCUTS.md)** | 50+ atajos de teclado documentados |
+| **[USER_GUIDE.md](docs/user/USER_GUIDE.md)** | Tutorial completo paso a paso |
 
-### �‍💻 Para Desarrolladores
+### 👨‍💻 Para Desarrolladores
 
 | Documento | Descripción |
 |-----------|-------------|
-| **[ARCHITECTURE.md](documentacion/ARCHITECTURE.md)** | Clean Architecture - 4 capas, dependencias, patrones ⭐⭐⭐⭐ |
-| **[TECHNICAL_GUIDE.md](documentacion/TECHNICAL_GUIDE.md)** | Algoritmos, validaciones, cache, logging |
-| **[TESTING.md](documentacion/TESTING.md)** | 976 tests, 46% coverage, guía completa pytest |
-| **[CONTRIBUTING.md](documentacion/CONTRIBUTING.md)** | Workflow, estándares de código, PR guidelines |
-| **[UX_PATTERNS.md](documentacion/guias/UX_PATTERNS.md)** | Patrones UI/UX para desarrollo consistente |
+| **[ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)** | Clean Architecture - 4 capas, dependencias, patrones ⭐⭐⭐⭐ |
+| **[API_REST.md](docs/architecture/API_REST.md)** | API REST con FastAPI - 8 endpoints documentados |
+| **[TECHNICAL_GUIDE.md](docs/dev/TECHNICAL_GUIDE.md)** | Algoritmos, validaciones, cache, logging |
+| **[TESTING.md](docs/dev/TESTING.md)** | 976 tests, 46% coverage, guía completa pytest |
+| **[CONTRIBUTING.md](docs/dev/CONTRIBUTING.md)** | Workflow, estándares de código, PR guidelines |
+| **[REPOSITORY_PATTERN.md](docs/dev/REPOSITORY_PATTERN_GUIDE.md)** | Patrón Repository implementado |
 
 ### 🚀 Para DevOps / Mantenedores
 
 | Documento | Descripción |
 |-----------|-------------|
-| **[DEPLOYMENT.md](documentacion/DEPLOYMENT.md)** | Build macOS/Windows, PyInstaller, DMG |
-| **[CI_CD.md](documentacion/CI_CD.md)** | GitHub Actions, workflows automáticos |
-| **[BRANCH_PROTECTION.md](documentacion/guias/BRANCH_PROTECTION_SETUP.md)** | Setup protección rama main |
-| **[MAINTENANCE.md](documentacion/MAINTENANCE.md)** | Backups, limpieza BD, checklists |
-| **[SECURITY.md](documentacion/SECURITY.md)** | Política seguridad, reporte vulnerabilidades |
+| **[DEPLOYMENT.md](docs/dev/DEPLOYMENT.md)** | Build macOS/Windows, PyInstaller, DMG |
+| **[CI_CD.md](docs/dev/CI_CD.md)** | GitHub Actions, workflows automáticos |
+| **[MAINTENANCE.md](docs/dev/MAINTENANCE.md)** | Backups, limpieza BD, checklists |
+| **[SECURITY.md](docs/dev/SECURITY.md)** | Política seguridad, reporte vulnerabilidades |
 
 ### 📊 Referencia
 
 | Documento | Descripción |
 |-----------|-------------|
-| **[CHANGELOG.md](documentacion/CHANGELOG.md)** | Historial completo de versiones |
+| **[CHANGELOG.md](docs/CHANGELOG.md)** | Historial completo de versiones |
 | **[PREMISAS_ASIGNACION.md](documentacion/PREMISAS_ASIGNACION_GUARDIAS.md)** | Reglas de negocio asignación |
 | **[UX_AUDIT.md](documentacion/UX_AUDIT.md)** | Auditoría UX completa (8.2/10) |
 | **[API Reference](documentacion/api/)** | Documentación técnica de la API |

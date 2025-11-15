@@ -35,14 +35,20 @@ class GestorCursos:
         self.curso_repo = factory.create_curso_escolar_repository()
         self.profesor_repo = factory.create_profesor_repository()
 
-    def obtener_curso_activo(self) -> Optional[CursoEscolar]:
+    @staticmethod
+    def obtener_curso_activo(session: Session) -> Optional[CursoEscolar]:
         """
         Obtiene el curso escolar actualmente activo.
+
+        Args:
+            session: Sesión de SQLAlchemy
 
         Returns:
             CursoEscolar activo o None si no hay ninguno
         """
-        curso = self.curso_repo.find_active()
+        factory = RepositoryFactory(session)
+        curso_repo = factory.create_curso_escolar_repository()
+        curso = curso_repo.find_active()
 
         if curso:
             logger.info(

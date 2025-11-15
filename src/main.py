@@ -192,7 +192,7 @@ def main():
         msg.setText("No se pudo conectar al servidor de sincronización.")
         msg.setInformativeText(
             "La aplicación funcionará en modo local.\n\n"
-            "Detalles: [Errno 30] Read-only file system: 'cloud_storage_local'"
+            "Los datos se guardarán solo en este equipo."
         )
         msg.setStyleSheet(MESSAGEBOX_STYLE)
         msg.exec()
@@ -201,6 +201,8 @@ def main():
     # Ventana Principal
     # ==========================================
 
+    exit_code = 1  # Código de salida por defecto (error)
+    
     try:
         # Crear ventana principal
         logger.info("Creando ventana principal...")
@@ -227,7 +229,7 @@ def main():
         print("=" * 80)
         traceback.print_exc()
         print("=" * 80)
-        raise
+        exit_code = 1  # Código de error
 
     finally:
         # Detener heartbeat

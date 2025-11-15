@@ -40,6 +40,14 @@ class SQLAlchemyConfiguracionRepository(IConfiguracionRepository):
             return True
         return False
 
+    def exists(self, entity_id: int) -> bool:
+        """Verifica si existe una configuración con el ID dado."""
+        return self.session.query(Configuracion).filter_by(id=entity_id).count() > 0
+
+    def count(self) -> int:
+        """Cuenta el total de configuraciones."""
+        return self.session.query(Configuracion).count()
+
     def get_active(self) -> Optional[Configuracion]:
         """Obtiene la configuración activa."""
         return self.session.query(Configuracion).first()

@@ -41,6 +41,14 @@ class SQLAlchemyCursoEscolarRepository(ICursoEscolarRepository):
             return True
         return False
 
+    def exists(self, entity_id: int) -> bool:
+        """Verifica si existe un curso escolar con el ID dado."""
+        return self.session.query(CursoEscolar).filter_by(id=entity_id).count() > 0
+
+    def count(self) -> int:
+        """Cuenta el total de cursos escolares."""
+        return self.session.query(CursoEscolar).count()
+
     def find_active(self) -> Optional[CursoEscolar]:
         """Obtiene el curso escolar activo."""
         return self.session.query(CursoEscolar).filter_by(activo=True).first()

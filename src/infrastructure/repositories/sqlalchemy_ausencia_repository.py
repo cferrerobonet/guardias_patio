@@ -41,6 +41,14 @@ class SQLAlchemyAusenciaRepository(IAusenciaRepository):
             return True
         return False
 
+    def exists(self, entity_id: int) -> bool:
+        """Verifica si existe una ausencia con el ID dado."""
+        return self.session.query(Ausencia).filter_by(id=entity_id).count() > 0
+
+    def count(self) -> int:
+        """Cuenta el total de ausencias."""
+        return self.session.query(Ausencia).count()
+
     def find_by_profesor_and_date(
         self, profesor_id: int, fecha: date
     ) -> Optional[Ausencia]:
