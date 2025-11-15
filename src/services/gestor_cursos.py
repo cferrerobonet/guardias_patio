@@ -12,10 +12,10 @@ Este módulo proporciona la lógica de negocio para:
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy.orm import Session
-
 from core.logging import get_logger
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from models.models import CursoEscolar, Profesor
+from sqlalchemy.orm import Session
 
 logger = get_logger(__name__)
 
@@ -23,18 +23,26 @@ logger = get_logger(__name__)
 class GestorCursos:
     """Gestor para operaciones con cursos escolares."""
 
-    @staticmethod
-    def obtener_curso_activo(session: Session) -> Optional[CursoEscolar]:
+    def __init__(self, session: Session):
         """
-        Obtiene el curso escolar actualmente activo.
+        Inicializa el gestor con los repositorios necesarios.
 
         Args:
             session: Sesión de SQLAlchemy
+        """
+        self.session = session
+        factory = RepositoryFactory(session)
+        self.curso_repo = factory.create_curso_escolar_repository()
+        self.profesor_repo = factory.create_profesor_repository()
+
+    def obtener_curso_activo(self) -> Optional[CursoEscolar]:
+        """
+        Obtiene el curso escolar actualmente activo.
 
         Returns:
             CursoEscolar activo o None si no hay ninguno
         """
-        curso = session.query(CursoEscolar).filter_by(activo=True).first()
+        curso = self.curso_repo.find_active()
 
         if curso:
             logger.info(

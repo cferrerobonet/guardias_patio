@@ -38,12 +38,17 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List, Optional, Set, Tuple
 
+from domain.services import (
+    DistribucionCuotasService,
+    EquidadGuardiasService,
+)
 from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
     calcular_guardias_por_profesor,
     listar_dias_lectivos,
 )
+from services.estadisticas_service import EstadisticasService
 from services.optimizaciones_asignador import IndiceSlots
 from sqlalchemy.orm import Session
 from utils import get_logger
@@ -85,7 +90,12 @@ class ProfesorConCuota:
 
 
 def _profesor_ausente(session: Session, profesor_id: int, fecha: date) -> bool:
-    """Verifica si un profesor está ausente en una fecha."""
+    """
+    Verifica si un profesor está ausente en una fecha.
+    
+    DEPRECADO: Usar DisponibilidadProfesorService.esta_ausente() en nuevo código.
+    """
+    # Mantener compatibilidad temporal
     ausencia = (
         session.query(Ausencia)
         .filter(
@@ -104,6 +114,9 @@ def _cumple_restricciones(
 ) -> bool:
     """
     Verifica si un profesor puede cubrir un slot según sus restricciones.
+
+    DEPRECADO: Para nuevo código, usar DisponibilidadProfesorService.esta_disponible()
+    que centraliza todas las validaciones de disponibilidad.
 
     Restricciones:
     - No estar ausente en esa fecha
@@ -234,41 +247,66 @@ def _calcular_slots_posibles(
     return count
 
 
-def _calcular_prioridad_profesor(pc: ProfesorConCuota) -> float:
+def _calcular_prioridad_profesor(pc: ProfesorConCuota, config: Configuracion, dias_lectivos_totales: int) -> float:
     """
     Calcula prioridad de asignación (menor = más prioritario).
 
-    Criterios:
-    1. Profesores con menos slots disponibles primero (más restrictivos)
-    2. Profesores con mayor cuota primero (necesitan más slots)
-    3. Desempate por ID (determinismo)
+    Criterios MEJORADOS v3.1:
+    1. ⭐ URGENCIA POR FECHA_INICIO: Profesores con fecha_inicio tienen máxima prioridad
+       - Cuantos menos días disponibles, más urgente (deben empezar ya)
+    2. Profesores con menos slots disponibles primero (más restrictivos)
+    3. Profesores con mayor cuota primero (necesitan más slots)
+    4. Desempate por ID (determinismo)
     """
     if pc.slots_posibles == 0:
         return float("inf")  # No puede cubrir ningún slot
 
+    # ⭐ NUEVO: Factor de urgencia por fecha_inicio
+    factor_urgencia = 0.0
+    if pc.profesor.fecha_inicio_guardias:
+        # Calcular días disponibles desde fecha_inicio hasta fin de curso
+        dias_desde_inicio = (config.fecha_fin_curso - pc.profesor.fecha_inicio_guardias).days
+
+        # Proporción de tiempo disponible (menos días = más urgente)
+        if dias_lectivos_totales > 0:
+            proporcion_tiempo = dias_desde_inicio / dias_lectivos_totales
+            # Factor: menor proporción = más prioritario
+            # Rango: 0-1000 (0=muy urgente, 1000=todo el curso disponible)
+            factor_urgencia = proporcion_tiempo * 1000
+        else:
+            factor_urgencia = 500  # Valor medio si no hay días
+    else:
+        # Sin fecha_inicio: baja prioridad (alta penalización)
+        factor_urgencia = 2000
+
     # Ratio: cuota / slots_posibles (cuanto más cerca de 1, más restrictivo)
     ratio_restriccion = pc.cuota / pc.slots_posibles if pc.slots_posibles > 0 else 0
 
-    # Prioridad: mayor ratio = más prioritario (menor número)
-    # Multiplicamos por 1000 para tener rango amplio y añadimos ID para desempate
-    prioridad = (1.0 - ratio_restriccion) * 1000 + pc.profesor.id
+    # Prioridad combinada:
+    # - Factor urgencia (0-2000): menor = más urgente
+    # - Factor restricción (0-1000): menor ratio = más prioritario
+    # - ID para desempate
+    prioridad = factor_urgencia + (1.0 - ratio_restriccion) * 1000 + pc.profesor.id * 0.01
 
     return prioridad
 
 
 def _ordenar_profesores_por_prioridad(
     profesores_cuotas: List[ProfesorConCuota],
+    config: Configuracion,
+    dias_lectivos_totales: int
 ) -> List[ProfesorConCuota]:
     """
     Ordena profesores por prioridad de asignación.
 
-    Orden:
-    1. Más restrictivos primero (menos slots disponibles)
-    2. Mayor cuota primero
-    3. ID para determinismo
+    Orden MEJORADO v3.1:
+    1. ⭐ Profesores con fecha_inicio PRIMERO (urgencia por días disponibles)
+    2. Más restrictivos primero (menos slots disponibles)
+    3. Mayor cuota primero
+    4. ID para determinismo
     """
     for pc in profesores_cuotas:
-        pc.prioridad = _calcular_prioridad_profesor(pc)
+        pc.prioridad = _calcular_prioridad_profesor(pc, config, dias_lectivos_totales)
 
     # Ordenar por prioridad ascendente (menor = más prioritario)
     return sorted(profesores_cuotas, key=lambda pc: pc.prioridad)
@@ -468,7 +506,17 @@ def generar_guardias_v3_simple(
     reportar_progreso(7, f"Paso 1: {len(profesores)} profesores cargados")
 
     reportar_progreso(8, "Paso 1: Calculando cuotas...")
-    cuotas = calcular_guardias_por_profesor(session)
+
+    # Usar DistribucionCuotasService (Domain Service) si está disponible
+    # Mantener compatibilidad con calcular_guardias_por_profesor como fallback
+    try:
+        distribucion_service = DistribucionCuotasService(session)
+        cuotas = distribucion_service.calcular_cuotas(profesores)
+        logger.info("  ✓ Cuotas calculadas usando DistribucionCuotasService (Domain Service)")
+    except Exception as e:
+        logger.warning(f"  ⚠️ Error usando DistribucionCuotasService: {e}. Usando método legacy.")
+        cuotas = calcular_guardias_por_profesor(session)
+
     total_cuota = sum(cuotas.values())
     logger.info(f"  ✓ Cuota total a asignar: {total_cuota} guardias")
 
@@ -532,21 +580,24 @@ def generar_guardias_v3_simple(
                 f"Paso 3: Analizando profesor {procesados}/{len(profesores)}"
             )
 
-    # Ordenar por prioridad
-    reportar_progreso(28, "Paso 3: Ordenando profesores por prioridad...")
-    profesores_ordenados = _ordenar_profesores_por_prioridad(profesores_cuotas)
+    # Ordenar por prioridad con NUEVA ESTRATEGIA v3.1
+    reportar_progreso(28, "Paso 3: Ordenando profesores por prioridad (fecha_inicio primero)...")
+    profesores_ordenados = _ordenar_profesores_por_prioridad(
+        profesores_cuotas, config, len(dias_lectivos)
+    )
 
     logger.info("")
-    logger.info("  Orden de asignación (más restrictivos primero):")
+    logger.info("  Orden de asignación (⭐ fecha_inicio urgente primero):")
     for i, pc in enumerate(profesores_ordenados[:10], 1):
+        fecha_info = f", inicio={pc.profesor.fecha_inicio_guardias}" if pc.profesor.fecha_inicio_guardias else ""
         logger.info(
             f"    {i}. {pc.profesor.nombre_completo} "
-            f"(cuota={pc.cuota}, disponibles={pc.slots_posibles})"
+            f"(cuota={pc.cuota}, disponibles={pc.slots_posibles}{fecha_info}, prioridad={pc.prioridad:.1f})"
         )
     if len(profesores_ordenados) > 10:
         logger.info(f"    ... ({len(profesores_ordenados) - 10} más)")
 
-    reportar_progreso(30, "Paso 3: ✓ Profesores ordenados por prioridad")
+    reportar_progreso(30, "Paso 3: ✓ Profesores ordenados (fecha_inicio prioritaria)")
 
     # PASO 4: ASIGNAR GUARDIAS (30% - 90%)
     logger.info("")
@@ -663,17 +714,22 @@ def generar_guardias_v3_simple(
     logger.info("-" * 80)
     reportar_progreso(90, "Paso 5: Calculando estadísticas finales...")
 
+    # Usar EstadisticasService para calcular métricas
+    stats_service = EstadisticasService(session)
+    stats = stats_service.generar_resumen_completo(
+        guardias=session.query(Guardia).all(),
+        profesores=profesores,
+        cuotas=cuotas,
+        total_slots=total_slots,
+    )
+
+    cobertura = stats["cobertura"]
     slots_vacios = total_slots - guardias_asignadas
-    cobertura = (guardias_asignadas / total_slots * 100) if total_slots > 0 else 0
 
     reportar_progreso(92, f"Paso 5: Cobertura alcanzada: {cobertura:.1f}%")
 
-    logger.info(f"  ✓ Guardias asignadas: {guardias_asignadas}/{total_slots}")
-    logger.info(f"  ✓ Cobertura: {cobertura:.2f}%")
-    logger.info(f"  ✓ Slots vacíos: {slots_vacios}")
-    logger.info(
-        f"  ✓ Profesores con cuota incompleta: {len(profesores_incompletos)}"
-    )
+    # Mostrar resumen de estadísticas
+    stats_service.log_resumen(stats)
 
     reportar_progreso(
         95,
@@ -701,26 +757,52 @@ def generar_guardias_v3_simple(
     else:
         logger.info("  ✓ 100% de cobertura alcanzada")
 
-    # Calcular equidad
-    guardias_por_profesor = defaultdict(int)
-    for guardia in session.query(Guardia).all():
-        guardias_por_profesor[guardia.profesor_id] += 1
+    # Usar EstadisticasService para calcular guardias por profesor
+    guardias_por_profesor = stats_service.calcular_guardias_por_profesor(
+        session.query(Guardia).all()
+    )
 
-    # Agrupar por jornada
-    grupos_jornada = defaultdict(list)
-    for profesor in profesores:
-        guardias_real = guardias_por_profesor.get(profesor.id, 0)
-        grupos_jornada[profesor.porcentaje_jornada].append(guardias_real)
+    # Análisis de Equidad usando Domain Service
+    logger.info("")
+    logger.info("ANÁLISIS DE EQUIDAD (Domain Service)")
+    logger.info("=" * 80)
 
-    # Calcular inequidad
-    grupos_inequitativos = 0
-    for jornada, guardias_lista in grupos_jornada.items():
-        if len(guardias_lista) > 1:
-            rango = max(guardias_lista) - min(guardias_lista)
-            if rango > 1:
-                grupos_inequitativos += 1
+    try:
+        equidad_service = EquidadGuardiasService(session)
 
-    logger.info(f"  ✓ Grupos inequitativos: {grupos_inequitativos}")
+        # Log reporte completo de equidad
+        equidad_service.log_reporte_equidad(calendario_final, cuotas)
+
+        # Calcular índice de equidad
+        indice_equidad = equidad_service.calcular_indice_equidad(calendario_final, cuotas)
+        logger.info(f"📊 Índice de Equidad Global: {indice_equidad:.2%}")
+
+        # Identificar desbalances
+        desbalances = equidad_service.identificar_desbalances(calendario_final, cuotas)
+        if desbalances:
+            logger.warning(f"⚠️  Desbalances detectados: {len(desbalances)}")
+            for desbalance in desbalances[:5]:  # Mostrar solo primeros 5
+                logger.warning(f"    • {desbalance}")
+        else:
+            logger.info("✅ Sin desbalances significativos")
+
+    except Exception as e:
+        logger.warning(f"⚠️  Error en análisis de equidad con Domain Service: {e}")
+        # Fallback a cálculo manual simple
+        grupos_jornada = defaultdict(list)
+        for profesor in profesores:
+            guardias_real = guardias_por_profesor.get(profesor.id, 0)
+            grupos_jornada[profesor.porcentaje_jornada].append(guardias_real)
+
+        grupos_inequitativos = 0
+        for jornada, guardias_lista in grupos_jornada.items():
+            if len(guardias_lista) > 1:
+                rango = max(guardias_lista) - min(guardias_lista)
+                if rango > 1:
+                    grupos_inequitativos += 1
+        logger.info(f"  ✓ Grupos inequitativos (método legacy): {grupos_inequitativos}")
+
+    logger.info("=" * 80)
 
     # VERIFICACIÓN FINAL: Comprobar asignación correcta de guardias por profesor
     logger.info("")
@@ -795,7 +877,30 @@ def generar_guardias_v3_simple(
 
     logger.info("")
     logger.info("=" * 80)
-    logger.info("✓ ALGORITMO V3.0 COMPLETADO")
+    logger.info("✓ ALGORITMO V3.1 COMPLETADO")
+    logger.info("=" * 80)
+
+    # ⭐ NUEVO v3.1: VALIDACIÓN COMPLETA POST-ASIGNACIÓN
+    logger.info("")
+    logger.info("PASO FINAL: Validación completa de restricciones")
+    logger.info("=" * 80)
+
+    from services.validador_guardias import validar_guardias_completo
+
+    resultado_validacion = validar_guardias_completo(
+        session=session,
+        profesores=profesores,
+        cuotas_esperadas=cuotas
+    )
+
+    if resultado_validacion.es_valido():
+        logger.info("")
+        logger.info("✅ VALIDACIÓN EXITOSA: Todas las restricciones cumplidas")
+    else:
+        logger.warning("")
+        logger.warning(f"⚠️  VALIDACIÓN CON ERRORES: {len(resultado_validacion.errores_criticos)} problemas críticos")
+        logger.warning("   Ver reporte de validación arriba para detalles")
+
     logger.info("=" * 80)
 
     # Obtener lista de guardias de la BD (recién creadas en esta sesión)

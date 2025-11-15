@@ -16,10 +16,14 @@ from typing import Dict, List, Optional, Tuple
 
 from models.models import Configuracion, Guardia, Profesor, Zona
 from services.gestor_cursos import GestorCursos
+from services.validators import TurnoValidator
 from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
+
+# Instancia global del validador de turnos
+_turno_validator = TurnoValidator()
 
 
 def calcular_dias_lectivos(fecha_inicio: datetime, fecha_fin: datetime) -> int:
@@ -245,33 +249,16 @@ def calcular_factor_participacion(
     Returns:
         Factor de participación (proporción de recreos que puede cubrir)
     """
-    recreos_totales = recreos_manana + recreos_tarde
-    if recreos_totales == 0:
-        return 0.0
+    horas_manana = getattr(profesor, 'horas_manana', 0) or 0
+    horas_tarde = getattr(profesor, 'horas_tarde', 0) or 0
 
-    if profesor.turno == "mañana":
-        # Solo puede cubrir recreos de mañana
-        return recreos_manana / recreos_totales
-    elif profesor.turno == "tarde":
-        # Solo puede cubrir recreos de tarde
-        return recreos_tarde / recreos_totales
-    else:  # mixto
-        # Calcular proporción según horas en cada turno
-        horas_manana = getattr(profesor, 'horas_manana', 0) or 0
-        horas_tarde = getattr(profesor, 'horas_tarde', 0) or 0
-        horas_totales = horas_manana + horas_tarde
-
-        if horas_totales == 0:
-            # Si no tiene horas especificadas, asumir distribución equitativa
-            return 1.0
-
-        # Calcular factor ponderado por horas en cada turno
-        # Factor = (horas_mañana/total × recreos_mañana +
-        #           horas_tarde/total × recreos_tarde) / recreos_totales
-        factor_manana = (horas_manana / horas_totales) * (recreos_manana / recreos_totales)
-        factor_tarde = (horas_tarde / horas_totales) * (recreos_tarde / recreos_totales)
-
-        return factor_manana + factor_tarde
+    return _turno_validator.calcular_factor_participacion(
+        profesor.turno,
+        recreos_manana,
+        recreos_tarde,
+        horas_manana,
+        horas_tarde
+    )
 
 
 def calcular_slots_reales(session: Session, config: Configuracion) -> int:
@@ -325,30 +312,23 @@ def calcular_distribucion_cruda(
         logger.error("No existe configuración del sistema")
         raise ValueError("No existe configuración del sistema")
 
-    # Obtener profesores del curso activo (con guardias)
+    # Obtener profesores activos (no basarse en guardias existentes)
+    # Esto permite calcular distribución desde cero
     profesores = (
         session.query(Profesor)
-        .join(Guardia, Profesor.id == Guardia.profesor_id)
-        .filter(Guardia.curso_id == curso_activo.id)
-        .distinct()
+        .filter(Profesor.activo == True)  # noqa: E712
         .all()
     )
     if not profesores:
-        logger.error(f"No hay profesores registrados en el curso {curso_activo.nombre}")
-        raise ValueError(f"No hay profesores registrados en el curso {curso_activo.nombre}")
+        logger.error("No hay profesores activos en el sistema")
+        raise ValueError("No hay profesores activos en el sistema")
     logger.info(f"Profesores a considerar: {len(profesores)}")
 
-    # Obtener zonas del curso activo (con guardias)
-    zonas = (
-        session.query(Zona)
-        .join(Guardia, Zona.id == Guardia.zona_id)
-        .filter(Guardia.curso_id == curso_activo.id)
-        .distinct()
-        .all()
-    )
+    # Obtener todas las zonas activas
+    zonas = session.query(Zona).all()
     if not zonas:
-        logger.error(f"No hay zonas registradas en el curso {curso_activo.nombre}")
-        raise ValueError(f"No hay zonas registradas en el curso {curso_activo.nombre}")
+        logger.error("No hay zonas registradas en el sistema")
+        raise ValueError("No hay zonas registradas en el sistema")
     logger.info(f"Zonas disponibles: {len(zonas)}")
 
     # Calcular días lectivos con festivos
@@ -417,16 +397,18 @@ def calcular_distribucion_cruda(
 
             if dias_disponibles > 0:
                 proporcion_tiempo = dias_disponibles / dias_lectivos
-                logger.debug(
-                    f"Profesor {profesor.nombre_completo}: "
+                logger.info(
+                    f"  📅 {profesor.nombre_completo}: "
+                    f"fecha_inicio={profesor.fecha_inicio_guardias} → "
                     f"{dias_disponibles}/{dias_lectivos} días disponibles "
-                    f"({proporcion_tiempo:.2%})"
+                    f"({proporcion_tiempo:.1%}), cuota ajustada"
                 )
             else:
                 proporcion_tiempo = 0.0
                 logger.warning(
-                    f"Profesor {profesor.nombre_completo}: "
-                    f"sin días disponibles en el rango configurado"
+                    f"  ⚠️  {profesor.nombre_completo}: "
+                    f"sin días disponibles en el rango configurado "
+                    f"(inicio={inicio_prof}, fin={fin_prof})"
                 )
 
         # Participación total = turno × horas × tutoría × tiempo

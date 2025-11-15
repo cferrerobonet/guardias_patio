@@ -9,10 +9,9 @@ from datetime import date, time
 from unittest.mock import Mock, patch
 
 import pytest
-from sqlalchemy.orm import Session
-
 from models.models import Configuracion, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias
+from sqlalchemy.orm import Session
 
 # ============================================================================
 # FIXTURES
@@ -74,10 +73,14 @@ def zonas_mock():
     zona1 = Mock(spec=Zona)
     zona1.id = 1
     zona1.nombre_zona = "Patio Principal"
+    zona1.fecha_inicio = None
+    zona1.fecha_fin = None
 
     zona2 = Mock(spec=Zona)
     zona2.id = 2
     zona2.nombre_zona = "Patio Secundario"
+    zona2.fecha_inicio = None
+    zona2.fecha_fin = None
 
     return [zona1, zona2]
 
@@ -713,10 +716,14 @@ class TestBuclePrincipalAsignacion:
         zona1 = Mock(spec=Zona)
         zona1.id = 1
         zona1.nombre = "Patio Principal"
+        zona1.fecha_inicio = None
+        zona1.fecha_fin = None
 
         zona2 = Mock(spec=Zona)
         zona2.id = 2
         zona2.nombre = "Patio Secundario"
+        zona2.fecha_inicio = None
+        zona2.fecha_fin = None
 
         # Configurar queries
         def query_side_effect(model):
@@ -779,6 +786,8 @@ class TestBuclePrincipalAsignacion:
         zona = Mock(spec=Zona)
         zona.id = 1
         zona.nombre = "Patio"
+        zona.fecha_inicio = None
+        zona.fecha_fin = None
 
         def query_side_effect(model):
             mock_query = Mock()
@@ -844,6 +853,8 @@ class TestBuclePrincipalAsignacion:
         zona = Mock(spec=Zona)
         zona.id = 1
         zona.nombre = "Patio"
+        zona.fecha_inicio = None
+        zona.fecha_fin = None
 
         def query_side_effect(model):
             mock_query = Mock()
@@ -909,6 +920,8 @@ class TestBuclePrincipalAsignacion:
         zona = Mock(spec=Zona)
         zona.id = 1
         zona.nombre = "Patio"
+        zona.fecha_inicio = None
+        zona.fecha_fin = None
 
         def query_side_effect(model):
             mock_query = Mock()
@@ -974,6 +987,8 @@ class TestBuclePrincipalAsignacion:
 
         zona = Mock(spec=Zona)
         zona.id = 1
+        zona.fecha_inicio = None
+        zona.fecha_fin = None
 
         def query_side_effect(model):
             mock_query = Mock()
@@ -1034,6 +1049,8 @@ class TestBuclePrincipalAsignacion:
 
         zona = Mock(spec=Zona)
         zona.id = 1
+        zona.fecha_inicio = None
+        zona.fecha_fin = None
 
         def query_side_effect(model):
             mock_query = Mock()
@@ -1099,6 +1116,8 @@ class TestBuclePrincipalAsignacion:
 
         zona = Mock(spec=Zona)
         zona.id = 1
+        zona.fecha_inicio = None
+        zona.fecha_fin = None
 
         def query_side_effect(model):
             mock_query = Mock()
@@ -1168,8 +1187,13 @@ class TestBuclePrincipalAsignacion:
 
         zona1 = Mock(spec=Zona)
         zona1.id = 1
+        zona1.fecha_inicio = None
+        zona1.fecha_fin = None
+
         zona2 = Mock(spec=Zona)
         zona2.id = 2
+        zona2.fecha_inicio = None
+        zona2.fecha_fin = None
 
         def query_side_effect(model):
             mock_query = Mock()
@@ -1241,6 +1265,8 @@ class TestBuclePrincipalAsignacion:
 
         zona = Mock(spec=Zona)
         zona.id = 1
+        zona.fecha_inicio = None
+        zona.fecha_fin = None
 
         def query_side_effect(model):
             mock_query = Mock()
@@ -1304,8 +1330,12 @@ class TestBuclePrincipalAsignacion:
 
         zona1 = Mock(spec=Zona)
         zona1.id = 1
+        zona1.fecha_inicio = None
+        zona1.fecha_fin = None
         zona2 = Mock(spec=Zona)
         zona2.id = 2
+        zona2.fecha_inicio = None
+        zona2.fecha_fin = None
 
         def query_side_effect(model):
             mock_query = Mock()

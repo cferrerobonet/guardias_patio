@@ -7,7 +7,10 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
+# Domain Services (Phase 2.4)
+from domain.services.distribucion_cuotas_service import DistribucionCuotasService
+from domain.services.equidad_guardias_service import EquidadGuardiasService
+from models.models import Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
     calcular_guardias_por_profesor,
@@ -17,6 +20,7 @@ from services.optimizaciones_asignador import (
     IndiceSlots,
     estadisticas_rendimiento,
 )
+from services.validators import AusenciaChecker
 from sqlalchemy.orm import Session
 from utils import get_logger
 
@@ -43,6 +47,13 @@ def _limpiar_cache_elegibilidad() -> None:
 def profesor_ausente(session: Session, profesor_id: int, fecha: date) -> bool:
     """
     Verifica si un profesor está ausente en una fecha específica.
+    
+    DEPRECADO: Esta función está obsoleta. Para nuevo código, usar
+    DisponibilidadProfesorService.esta_ausente() que centraliza las validaciones.
+    
+    NOTA: Esta función ahora usa AusenciaChecker internamente.
+    Se mantiene por compatibilidad, pero se recomienda usar
+    AusenciaChecker directamente en código nuevo.
 
     Args:
         session: Sesión de SQLAlchemy
@@ -52,17 +63,8 @@ def profesor_ausente(session: Session, profesor_id: int, fecha: date) -> bool:
     Returns:
         True si el profesor tiene una ausencia activa en esa fecha, False en caso contrario
     """
-    ausencia = (
-        session.query(Ausencia)
-        .filter(
-            Ausencia.profesor_id == profesor_id,
-            Ausencia.fecha_inicio <= fecha,
-            Ausencia.fecha_fin >= fecha,
-            Ausencia.activa == True,  # noqa: E712
-        )
-        .first()
-    )
-    return ausencia is not None
+    checker = AusenciaChecker(session)
+    return checker.profesor_ausente(profesor_id, fecha)
 
 
 @dataclass
@@ -83,12 +85,11 @@ def _horario_permitido(
     1. Matriz completa: '{"0": [1, 2], "1": [1, 2], ...}' (día: recreos)
     2. Lista simple: '[1, 2]' (mismos recreos todos los días)
 
-    NOTA: Esta función SOLO valida recreos permitidos.
-    La validación de días de la semana se hace en _obtener_profesores_elegibles().
+    NOTA: Si no hay horario_json, valida solo días laborables (L-V).
     """
     if not horario_json:
-        # Por defecto: todos los recreos (1-4) permitidos
-        return 1 <= recreo_id <= 4
+        # Por defecto: solo días laborables (L-V), todos los recreos (1-4) permitidos
+        return fecha.weekday() < 5 and 1 <= recreo_id <= 4
 
     try:
         import json
@@ -117,12 +118,12 @@ def _horario_permitido(
             return recreo_id in datos
 
         else:
-            # Formato desconocido, permitir todos los recreos
-            return 1 <= recreo_id <= 4
+            # Formato desconocido, fallback a L-V
+            return fecha.weekday() < 5 and 1 <= recreo_id <= 4
 
     except (json.JSONDecodeError, ValueError, KeyError, TypeError):
-        # En caso de error, permitir todos los recreos
-        return 1 <= recreo_id <= 4
+        # En caso de error, fallback a L-V (días laborables)
+        return fecha.weekday() < 5 and 1 <= recreo_id <= 4
 
 
 def _turno_de_recreo(turno_prof: str, recreo_turno: str) -> bool:
@@ -181,9 +182,9 @@ def _build_slots(session: Session, config: Configuracion) -> List[Slot]:
 
                 # Verificar si la zona está activa en esta fecha
                 zona_activa = True
-                if zona.fecha_inicio and f < zona.fecha_inicio:
+                if hasattr(zona, 'fecha_inicio') and zona.fecha_inicio and f < zona.fecha_inicio:
                     zona_activa = False
-                if zona.fecha_fin and f > zona.fecha_fin:
+                if hasattr(zona, 'fecha_fin') and zona.fecha_fin and f > zona.fecha_fin:
                     zona_activa = False
 
                 # Solo crear slot si la zona está activa en esta fecha
@@ -440,8 +441,15 @@ def generar_calendario_guardias(
     reportar_progreso(15, f"{len(zonas)} zonas configuradas")
     reportar_progreso(20, "Calculando distribución óptima...")
 
-    # Calcular cuotas ideales
-    cuotas_ideales = calcular_guardias_por_profesor(session)
+    # Calcular cuotas ideales usando Domain Service
+    try:
+        distribucion_service = DistribucionCuotasService(session)
+        profesores_activos = session.query(Profesor).filter(Profesor.activo.is_(True)).all()
+        cuotas_ideales = distribucion_service.calcular_cuotas(profesores_activos)
+        logger.info("✓ Cuotas calculadas con DistribucionCuotasService (Domain Service)")
+    except Exception as e:
+        logger.warning(f"⚠️ Error con DistribucionCuotasService: {e}. Usando método legacy.")
+        cuotas_ideales = calcular_guardias_por_profesor(session)
 
     # Inicializar estructuras de datos
     asignadas = defaultdict(int)
@@ -1928,6 +1936,35 @@ def generar_calendario_guardias(
 
     reportar_progreso(100, f"✓ Calendario generado: {cobertura_final:.1f}% cobertura")
 
+    # Reporte de Equidad usando Domain Service
+    logger.info("")
+    logger.info("ANÁLISIS DE EQUIDAD (Domain Service)")
+    logger.info("=" * 80)
+
+    try:
+        equidad_service = EquidadGuardiasService(session)
+
+        # Log reporte completo de equidad
+        equidad_service.log_reporte_equidad(calendario, cuotas_ideales)
+
+        # Calcular índice de equidad
+        indice_equidad = equidad_service.calcular_indice_equidad(calendario, cuotas_ideales)
+        logger.info(f"📊 Índice de Equidad Global: {indice_equidad:.2%}")
+
+        # Identificar desbalances
+        desbalances = equidad_service.identificar_desbalances(calendario, cuotas_ideales)
+        if desbalances:
+            logger.warning(f"⚠️  Desbalances detectados: {len(desbalances)}")
+            for desbalance in desbalances[:5]:  # Mostrar solo primeros 5
+                logger.warning(f"    • {desbalance}")
+        else:
+            logger.info("✅ Sin desbalances significativos")
+
+    except Exception as e:
+        logger.warning(f"⚠️  Error en análisis de equidad: {e}")
+
+    logger.info("=" * 80)
+
     return (calendario, asignadas)
 
 
@@ -2026,7 +2063,8 @@ def _obtener_profesores_elegibles(
                         except ValueError:
                             pass
 
-                if dias_permitidos and isinstance(dias_permitidos, list):
+                # Verificar que sea lista o tupla válida
+                if dias_permitidos and isinstance(dias_permitidos, (list, tuple)):
                     if slot.fecha.weekday() not in dias_permitidos:
                         rechazados['dias_semana'] += 1
                         _rechazos_globales['dias_semana'] += 1

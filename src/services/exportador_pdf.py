@@ -796,7 +796,7 @@ class ExportadorPDF:
                         for i, guardia in enumerate(guardias_dia):
                             fecha_str = fecha.strftime("%d/%m") if i == 0 else ""
                             dia_semana = dias_semana[fecha.weekday()] if i == 0 else ""
-                            profesor_nombre = guardia.profesor.nombre if guardia.profesor else "N/A"
+                            profesor_nombre = guardia.profesor.nombre_completo if guardia.profesor else "N/A"
                             zona_nombre = guardia.zona.nombre_zona if guardia.zona else "N/A"
 
                             data.append(

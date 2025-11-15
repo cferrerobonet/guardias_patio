@@ -13,8 +13,10 @@ from core.qt_imports import (
     QWidget,
 )
 from database.db_manager import SessionLocal
+
 from presentation.forms import (
     AsignacionGuardiasForm,
+    DashboardForm,
     ImportExportForm,
     ProfesorForm,
     ZonaForm,
@@ -95,6 +97,10 @@ class MainWindow(QWidget):
         self.panel_estadisticas = PanelEstadisticas(self.session)
         self.tabs.addTab(self.panel_estadisticas, "📊 Estadísticas")
 
+        # Dashboard de métricas (Fase 4)
+        self.dashboard = DashboardForm(self.session)
+        self.tabs.addTab(self.dashboard, "📈 Dashboard Equidad")
+
         self.gestor_sustituciones = GestorSustituciones(self.session)
         self.tabs.addTab(self.gestor_sustituciones, "🔄 Sustituciones")
 
@@ -158,6 +164,9 @@ class MainWindow(QWidget):
         # Refrescar estadísticas si se muestran
         elif self.tabs.widget(index) == self.panel_estadisticas:
             self.panel_estadisticas.refrescar()
+        # Refrescar dashboard si se muestra
+        elif self.tabs.widget(index) == self.dashboard:
+            self.dashboard.refrescar()
         # Refrescar sustituciones si se muestran
         elif self.tabs.widget(index) == self.gestor_sustituciones:
             self.gestor_sustituciones.refrescar()
@@ -167,6 +176,7 @@ class MainWindow(QWidget):
         # Refrescar todos los widgets que dependan del curso
         self.vista_calendario.refrescar()
         self.panel_estadisticas.refrescar()
+        self.dashboard.refrescar()
         self.gestor_sustituciones.refrescar()
 
     def closeEvent(self, event):

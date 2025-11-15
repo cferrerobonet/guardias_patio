@@ -7,7 +7,7 @@ Permite calcular distribución y generar el calendario completo de guardias.
 import ui_styles as styles
 from application.use_cases.asignacion_guardias import (
     CalcularDistribucionUseCase,
-    GenerarGuardiasUseCase,
+    GenerarGuardiasHibridoUseCase,
     ObtenerEstadisticasUseCase,
 )
 from application.use_cases.guardia import LimpiarGuardiasUseCase
@@ -27,7 +27,9 @@ from PyQt6.QtWidgets import (
 from sqlalchemy.orm import Session
 
 from presentation.forms.asignacion_widgets import (
+    CuotasPanel,
     DistribucionPanel,
+    EquidadPanel,
     EstadisticasPanel,
     IncidenciasPanel,
     ResultadosPanel,
@@ -62,7 +64,8 @@ class AsignacionGuardiasForm(BaseForm):
         # Inicializar Use Cases
         self.obtener_estadisticas_uc = ObtenerEstadisticasUseCase(session)
         self.calcular_distribucion_uc = CalcularDistribucionUseCase(session)
-        self.generar_guardias_uc = GenerarGuardiasUseCase(session)
+        # Usar sistema híbrido (iterativo + ILP con diagnóstico)
+        self.generar_guardias_uc = GenerarGuardiasHibridoUseCase(session, parent_window=self)
 
         # Repositorio para limpiar guardias
         guardia_repo = SQLAlchemyGuardiaRepository(session)
@@ -129,6 +132,14 @@ class AsignacionGuardiasForm(BaseForm):
         self.distribucion_panel = DistribucionPanel(self.session)
         grid_layout.addWidget(self.distribucion_panel, 0, 1)
 
+        # ============ FILA CUOTAS ============
+
+        # Panel de cuotas (ancho completo)
+        self.cuotas_panel = CuotasPanel(self.session)
+        grid_layout.addWidget(self.cuotas_panel, 1, 0, 1, 2)  # span 2 columnas
+
+        # ============ FILA BOTÓN GENERAR ============
+
         # Botón generar
         self.generar_button = QPushButton("🎯 Generar Asignación")
         self.generar_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
@@ -136,17 +147,23 @@ class AsignacionGuardiasForm(BaseForm):
         self.generar_button.setMaximumHeight(34)
         self.generar_button.setEnabled(False)
         self.generar_button.clicked.connect(self.generar_guardias)
-        grid_layout.addWidget(self.generar_button, 1, 1)
+        grid_layout.addWidget(self.generar_button, 2, 1)
 
         # ============ FILA INFERIOR ============
 
         # Panel de resultados (izquierda)
         self.resultados_panel = ResultadosPanel(self.session)
-        grid_layout.addWidget(self.resultados_panel, 2, 0)
+        grid_layout.addWidget(self.resultados_panel, 3, 0)
 
         # Panel de incidencias (derecha)
         self.incidencias_panel = IncidenciasPanel(self.session)
-        grid_layout.addWidget(self.incidencias_panel, 2, 1)
+        grid_layout.addWidget(self.incidencias_panel, 3, 1)
+
+        # ============ FILA DE EQUIDAD (NUEVA - Phase 3) ============
+
+        # Panel de equidad (centrado, ancho completo)
+        self.equidad_panel = EquidadPanel(self.session)
+        grid_layout.addWidget(self.equidad_panel, 4, 0, 1, 2)  # span 2 columnas
 
         # Botón limpiar (centrado, abajo)
         button_container = QWidget()
@@ -164,7 +181,7 @@ class AsignacionGuardiasForm(BaseForm):
         button_layout.addWidget(self.limpiar_button)
         button_layout.addStretch()
 
-        grid_layout.addWidget(button_container, 3, 0, 1, 2)
+        grid_layout.addWidget(button_container, 5, 0, 1, 2)  # Movido a fila 5
 
         # Configurar proporciones de columnas
         grid_layout.setColumnStretch(0, 1)
@@ -271,6 +288,12 @@ class AsignacionGuardiasForm(BaseForm):
                 # Delegar a los widgets
                 self.resultados_panel.mostrar_resultados(resumen)
                 self.incidencias_panel.analizar_incidencias(resumen)
+
+                # NUEVO (Phase 3): Actualizar análisis de equidad automáticamente
+                self.equidad_panel.actualizar_despues_generacion()
+
+                # NUEVO (Phase 3): Actualizar estado de cuotas después de asignación
+                self.cuotas_panel.actualizar_estado_asignacion()
 
                 self.mostrar_exito(
                     "Asignación generada",

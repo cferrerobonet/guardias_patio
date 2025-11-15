@@ -352,6 +352,129 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "db: Database tests")
 
 
+# ============================================================================
+# FIXTURES PARA TESTS DE USE CASES Y DOMAIN SERVICES
+# ============================================================================
+
+
+@pytest.fixture
+def configuracion_base(session: Session):
+    """
+    Fixture de configuración básica para tests.
+    
+    Returns:
+        Configuracion: Configuración con datos mínimos
+    """
+    import json
+    from datetime import date, time
+
+    from models.models import Configuracion
+
+    config = Configuracion(
+        anio_inicio_curso=2024,
+        fecha_inicio_curso=date(2024, 9, 1),
+        fecha_fin_curso=date(2025, 6, 30),
+        hora_recreo1_manana=time(11, 0),
+        hora_recreo2_manana=time(12, 0),
+        hora_recreo1_tarde=time(16, 0),
+        hora_recreo2_tarde=time(17, 0),
+        algoritmo_asignacion="v2.9",
+        ajuste_tutores=1.0,
+        ajuste_no_tutores=1.0,
+        activar_festivos_automaticos=True,
+        recreos_config=json.dumps([
+            {"id": 1, "etiqueta": "Recreo 1 Mañana", "turno": "mañana", "hora": "11:00"},
+            {"id": 2, "etiqueta": "Recreo 2 Mañana", "turno": "mañana", "hora": "12:00"},
+            {"id": 3, "etiqueta": "Recreo 1 Tarde", "turno": "tarde", "hora": "16:00"},
+            {"id": 4, "etiqueta": "Recreo 2 Tarde", "turno": "tarde", "hora": "17:00"},
+        ]),
+    )
+    session.add(config)
+    session.commit()
+    return config
+
+
+@pytest.fixture
+def profesores_variados(session: Session):
+    """
+    Fixture con varios profesores de diferentes tipos.
+    
+    Returns:
+        List[Profesor]: Lista de profesores variados
+    """
+    from datetime import date
+
+    profesores = [
+        # Profesor jornada completa
+        Profesor(
+            nombre_completo="García López, María",
+            horas_contrato=25.0,
+            porcentaje_jornada=100.0,
+            turno="completo",
+            activo=True,
+            fecha_inicio_guardias=date(2024, 9, 1),
+            horas_manana=12.5,
+            horas_tarde=12.5
+        ),
+        # Profesor media jornada mañana
+        Profesor(
+            nombre_completo="Martínez Ruiz, Juan",
+            horas_contrato=12.5,
+            porcentaje_jornada=50.0,
+            turno="mañana",
+            activo=True,
+            fecha_inicio_guardias=date(2024, 9, 1),
+            horas_manana=12.5,
+            horas_tarde=0
+        ),
+        # Profesor jornada completa tarde
+        Profesor(
+            nombre_completo="Sánchez Pérez, Ana",
+            horas_contrato=25.0,
+            porcentaje_jornada=100.0,
+            turno="tarde",
+            activo=True,
+            fecha_inicio_guardias=date(2024, 9, 1),
+            horas_manana=0,
+            horas_tarde=25.0
+        ),
+        # Profesor turno mixto
+        Profesor(
+            nombre_completo="Rodríguez Gómez, Carlos",
+            horas_contrato=20.0,
+            porcentaje_jornada=80.0,
+            turno="mixto",
+            activo=True,
+            fecha_inicio_guardias=date(2024, 9, 1),
+            horas_manana=10.0,
+            horas_tarde=10.0
+        ),
+    ]
+
+    for prof in profesores:
+        session.add(prof)
+    session.commit()
+
+    return profesores
+
+
+@pytest.fixture
+def zona_patio(session: Session):
+    """
+    Fixture de zona de patio básica.
+    
+    Returns:
+        Zona: Zona de patio
+    """
+    zona = Zona(
+        nombre_zona="Patio Principal",
+        descripcion="Zona central del patio"
+    )
+    session.add(zona)
+    session.commit()
+    return zona
+
+
 def pytest_collection_modifyitems(config, items):
     """
     Modificar items de tests recolectados.

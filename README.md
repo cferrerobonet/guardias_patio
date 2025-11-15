@@ -50,6 +50,8 @@
 - ✅ **Asignación Automática Inteligente**: Algoritmo v3.0 con distribución equitativa según % de jornada
 - ✅ **Gestión de Ausencias**: Sistema completo de sustituciones con búsqueda automática de compatibles
 - ✅ **Calendario Interactivo**: Vista mensual con filtros por profesor, zona y turno
+- ✅ **Dashboard de Equidad**: Visualización con gráficos en tiempo real (matplotlib)
+- ✅ **API REST**: Endpoints FastAPI para integraciones externas y mobile
 - ✅ **Panel de Estadísticas**: Métricas en tiempo real de carga, balance y cobertura
 - ✅ **Exportación Múltiple**: PDF corporativo, iCalendar (.ics), JSON para backup
 

@@ -8,9 +8,10 @@ Sprint 8 - Task 8.7
 Migrado a presentation/widgets en Sprint 11 - Task 11.1.2
 """
 
+import time
 from typing import Callable, Optional
 
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
     QLabel,
@@ -20,7 +21,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
 from utils.ui_helpers import get_corporate_icon
 
 
@@ -94,6 +94,8 @@ class ProgressDialog(QDialog):
         self._cancelado = False
         self._cancelable = cancelable
         self._show_details = show_details
+        self._start_time = time.time()
+        self._timer = None
 
         # Layout principal
         layout = QVBoxLayout()
@@ -134,6 +136,18 @@ class ProgressDialog(QDialog):
             }
         """)
         layout.addWidget(self.progress_bar)
+
+        # Contador de tiempo (entre barra y detalle)
+        self.label_tiempo = QLabel("Tiempo: 00:00:00")
+        self.label_tiempo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label_tiempo.setStyleSheet("""
+            QLabel {
+                font-size: 11px;
+                color: #757575;
+                font-family: 'Courier New', monospace;
+            }
+        """)
+        layout.addWidget(self.label_tiempo)
 
         # Label de detalle (ej: "5/100 procesados")
         self.label_detalle = QLabel("")
@@ -201,6 +215,11 @@ class ProgressDialog(QDialog):
 
         self.setLayout(layout)
 
+        # Iniciar timer para actualizar contador de tiempo
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._actualizar_tiempo)
+        self._timer.start(1000)  # Actualizar cada segundo
+
     def actualizar_progreso(self, actual: int, total: int, detalle: str = ""):
         """
         Actualizar barra de progreso.
@@ -256,10 +275,22 @@ class ProgressDialog(QDialog):
 
     def _cancelar(self):
         """Manejar click en botón cancelar."""
+        # Detener el timer
+        if self._timer:
+            self._timer.stop()
+
         self._cancelado = True
         self.label_mensaje.setText("⏳ Cancelando operación...")
         if hasattr(self, 'btn_cancelar'):
             self.btn_cancelar.setEnabled(False)
+
+    def _actualizar_tiempo(self):
+        """Actualizar el contador de tiempo transcurrido."""
+        elapsed = int(time.time() - self._start_time)
+        horas = elapsed // 3600
+        minutos = (elapsed % 3600) // 60
+        segundos = elapsed % 60
+        self.label_tiempo.setText(f"Tiempo: {horas:02d}:{minutos:02d}:{segundos:02d}")
 
     def fue_cancelado(self) -> bool:
         """
@@ -277,6 +308,11 @@ class ProgressDialog(QDialog):
         Args:
             mensaje_final: Mensaje a mostrar al completar
         """
+        # Detener el timer
+        if self._timer:
+            self._timer.stop()
+            self._actualizar_tiempo()  # Última actualización
+
         self.progress_bar.setValue(self.progress_bar.maximum())
         self.label_mensaje.setText(mensaje_final)
 

@@ -14,11 +14,10 @@ import os
 from contextlib import contextmanager
 from pathlib import Path
 
-from sqlalchemy import create_engine, event, pool
-from sqlalchemy.orm import sessionmaker
-
 from core.paths import get_user_data_directory
 from models.models import Base
+from sqlalchemy import create_engine, event, pool
+from sqlalchemy.orm import sessionmaker
 from utils.constants import TIMEOUT_DB
 from utils.logger import get_logger
 
@@ -47,10 +46,10 @@ def _run_alembic_migrations(engine, db_path: Path):
         db_path: Ruta al archivo de base de datos
     """
     try:
-        from alembic.config import Config
         from sqlalchemy import inspect
 
         from alembic import command
+        from alembic.config import Config
 
         # Verificar si la base de datos ya tiene tablas
         inspector = inspect(engine)
@@ -145,7 +144,9 @@ def initialize_user_database(user_id: str):
         """Configura pragmas de optimización para SQLite."""
         cursor = dbapi_conn.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.execute("PRAGMA journal_mode=WAL")
+        # Usar DELETE mode en lugar de WAL para evitar problemas con OneDrive
+        # WAL crea archivos -wal y -shm que OneDrive puede bloquear
+        cursor.execute("PRAGMA journal_mode=DELETE")
         cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.execute("PRAGMA cache_size=10000")
         cursor.execute("PRAGMA temp_store=MEMORY")
@@ -273,7 +274,8 @@ if IS_SQLITE:
         """Configura pragmas de optimización para SQLite."""
         cursor = dbapi_conn.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.execute("PRAGMA journal_mode=WAL")
+        # Usar DELETE mode en lugar de WAL para evitar problemas con OneDrive
+        cursor.execute("PRAGMA journal_mode=DELETE")
         cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.execute("PRAGMA cache_size=10000")
         cursor.execute("PRAGMA temp_store=MEMORY")

@@ -1,8 +1,8 @@
 # 🏗️ Arquitectura de Guardias de Patio
 
-**Versión**: 3.0.0  
-**Última actualización**: 7 de noviembre de 2025  
-**Patrón**: Clean Architecture + Domain-Driven Design
+**Versión**: 4.0.0  
+**Última actualización**: Enero 2025  
+**Patrón**: Clean Architecture + Domain-Driven Design + Domain Services
 
 ---
 
@@ -10,24 +10,27 @@
 
 1. [Visión General](#visión-general)
 2. [Capas de la Arquitectura](#capas-de-la-arquitectura)
-3. [Estructura de Directorios](#estructura-de-directorios)
-4. [Flujo de Datos](#flujo-de-datos)
-5. [Patrones y Principios](#patrones-y-principios)
-6. [Dependencias entre Capas](#dependencias-entre-capas)
+3. [Domain Services](#domain-services)
+4. [Clean Architecture Phase 3](#clean-architecture-phase-3)
+5. [Estructura de Directorios](#estructura-de-directorios)
+6. [Flujo de Datos](#flujo-de-datos)
+7. [Patrones y Principios](#patrones-y-principios)
+8. [Dependencias entre Capas](#dependencias-entre-capas)
 
 ---
 
 ## 🎯 Visión General
 
-**Guardias de Patio** implementa una arquitectura limpia (Clean Architecture) que separa las responsabilidades en capas concéntricas, donde las capas internas no conocen las externas.
+**Guardias de Patio** implementa una arquitectura limpia (Clean Architecture) que separa las responsabilidades en capas concéntricas, donde las capas internas no conocen las externas. En la Fase 3, hemos completado la integración de **Domain Services**, **DTOs**, **Use Cases** y **UI Widgets** especializados.
 
 ### Principios Fundamentales
 
 1. **Independencia de Frameworks**: La lógica de negocio no depende de PyQt6 ni SQLAlchemy
-2. **Testeable**: Lógica de negocio testeada sin UI ni BD
-3. **Independencia de UI**: UI puede cambiar sin afectar lógica
+2. **Testeable**: Lógica de negocio testeada sin UI ni BD (11/12 tests passing)
+3. **Independencia de UI**: UI puede cambiar sin afectar lógica (Widgets consumen Use Cases)
 4. **Independencia de BD**: SQLite puede reemplazarse por PostgreSQL
 5. **Independencia de agentes externos**: Lógica no depende de servicios externos
+6. **Domain Services**: Lógica compleja encapsulada en servicios de dominio reutilizables
 
 ---
 

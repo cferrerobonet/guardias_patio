@@ -6,13 +6,15 @@ Permite registrar, editar y eliminar ausencias, así como encontrar y reasignar 
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
-
 from models.models import Ausencia, Guardia, Profesor
-from services.asignador_guardias import profesor_ausente
+from services.validators import AusenciaChecker, TurnoValidator
+from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
+
+# Instancia del validador de turnos
+_turno_validator = TurnoValidator()
 
 
 def registrar_ausencia(
@@ -273,16 +275,19 @@ def obtener_profesores_disponibles(
     """
     profesores = session.query(Profesor).all()
 
+    # Crear checker de ausencias
+    checker = AusenciaChecker(session)
+
     disponibles = []
     for p in profesores:
         # Excluir profesor específico si se indica
         if excluir_profesor_id and p.id == excluir_profesor_id:
             continue
 
-        # Verificar turno compatible
-        if p.turno == "mixto" or p.turno == turno:
+        # Verificar turno compatible usando el validador centralizado
+        if _turno_validator.es_compatible(p.turno, turno):
             # Verificar que no esté ausente
-            if not profesor_ausente(session, p.id, fecha):
+            if not checker.profesor_ausente(p.id, fecha):
                 # Contar guardias ya asignadas ese día
                 guardias_dia = (
                     session.query(Guardia)
@@ -331,8 +336,11 @@ def reasignar_guardia(
     if not nuevo_profesor:
         raise ValueError(f"No existe el profesor con ID {nuevo_profesor_id}")
 
+    # Crear checker de ausencias
+    checker = AusenciaChecker(session)
+
     # Validar disponibilidad
-    if profesor_ausente(session, nuevo_profesor_id, guardia.fecha):
+    if checker.profesor_ausente(nuevo_profesor_id, guardia.fecha):
         raise ValueError(
             f"El profesor {nuevo_profesor.nombre_completo} está ausente el {guardia.fecha}"
         )
