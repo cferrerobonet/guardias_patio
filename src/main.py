@@ -11,12 +11,11 @@ from pathlib import Path
 # Añadir el directorio raíz al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from presentation.ccleaner_main_window import CCleanerMainWindow
+from presentation.forms.login_dialog import LoginDialog
 from PyQt6.QtCore import QLibraryInfo, QLocale, QTranslator
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
-
-from presentation.ccleaner_main_window import CCleanerMainWindow
-from presentation.forms.login_dialog import LoginDialog
 from sync import SyncManager, get_default_backend
 from utils.corporate_branding import apply_corporate_branding
 
@@ -179,7 +178,6 @@ def main():
     except Exception as e:
         logger.error(f"Error al inicializar sincronización: {e}")
         from PyQt6.QtCore import Qt
-
         from utils.ui_helpers import MESSAGEBOX_STYLE, get_corporate_icon
 
         msg = QMessageBox()
@@ -202,7 +200,7 @@ def main():
     # ==========================================
 
     exit_code = 1  # Código de salida por defecto (error)
-    
+
     try:
         # Crear ventana principal
         logger.info("Creando ventana principal...")
@@ -238,65 +236,77 @@ def main():
 
         # Sincronizar datos al cerrar (exportar DB a JSON y subir a la nube)
         if sync_manager:
-            logger.info("Cerrando aplicación. Sincronizando cambios...")
+            # Verificar si el backend está disponible antes de intentar sincronizar
+            backend_disponible = True
+            if hasattr(sync_manager.backend, 'sftp'):
+                backend_disponible = sync_manager.backend.sftp is not None
+            elif hasattr(sync_manager.backend, 'base_path'):
+                backend_disponible = sync_manager.backend.base_path is not None
 
-            # Importar el diálogo de progreso
-            from presentation.widgets.sync_progress_dialog import SyncProgressDialog
+            if backend_disponible:
+                logger.info("Cerrando aplicación. Sincronizando cambios...")
 
-            # Crear diálogo de progreso
-            progress_dialog = SyncProgressDialog()
-            progress_dialog.show()
+                # Importar el diálogo de progreso
+                from presentation.widgets.sync_progress_dialog import SyncProgressDialog
 
-            # Callback de progreso
-            def on_progress(step: str, details: dict):
-                """Actualiza el diálogo según el paso de sincronización."""
-                if step == "exporting":
-                    # Contar registros (aproximado)
-                    from models.models import Ausencia, Guardia, Profesor, Zona
+                # Crear diálogo de progreso
+                progress_dialog = SyncProgressDialog()
+                progress_dialog.show()
 
-                    try:
-                        total = (
-                            session.query(Profesor).count()
-                            + session.query(Zona).count()
-                            + session.query(Guardia).count()
-                            + session.query(Ausencia).count()
-                        )
-                        progress_dialog.set_step_exporting(total)
-                    except Exception as e:
-                        logger.error(f"Error contando registros: {e}")
-                        progress_dialog.set_step_exporting(0)
+                # Callback de progreso
+                def on_progress(step: str, details: dict):
+                    """Actualiza el diálogo según el paso de sincronización."""
+                    if step == "exporting":
+                        # Contar registros (aproximado)
+                        from models.models import Ausencia, Guardia, Profesor, Zona
 
-                elif step == "connecting":
-                    progress_dialog.set_step_connecting()
+                        try:
+                            total = (
+                                session.query(Profesor).count()
+                                + session.query(Zona).count()
+                                + session.query(Guardia).count()
+                                + session.query(Ausencia).count()
+                            )
+                            progress_dialog.set_step_exporting(total)
+                        except Exception as e:
+                            logger.error(f"Error contando registros: {e}")
+                            progress_dialog.set_step_exporting(0)
 
-                elif step == "uploading":
-                    file_size_kb = details.get("file_size_kb", 0)
-                    progress_dialog.set_step_uploading(file_size_kb)
+                    elif step == "connecting":
+                        progress_dialog.set_step_connecting()
 
-                elif step == "complete":
-                    progress_dialog.set_step_complete(success=True)
+                    elif step == "uploading":
+                        file_size_kb = details.get("file_size_kb", 0)
+                        progress_dialog.set_step_uploading(file_size_kb)
 
-                elif step == "error":
-                    error_msg = details.get("message", "Error desconocido")
-                    progress_dialog.set_step_error(error_msg)
+                    elif step == "complete":
+                        progress_dialog.set_step_complete(success=True)
 
-            try:
-                # Ejecutar sincronización con callback de progreso
-                success = sync_manager.sync_on_shutdown(
-                    session=session, progress_callback=on_progress
+                    elif step == "error":
+                        error_msg = details.get("message", "Error desconocido")
+                        progress_dialog.set_step_error(error_msg)
+
+                try:
+                    # Ejecutar sincronización con callback de progreso
+                    success = sync_manager.sync_on_shutdown(
+                        session=session, progress_callback=on_progress
+                    )
+
+                    if success:
+                        logger.info("✓ Sincronización final completada")
+                    else:
+                        logger.warning("⚠ La sincronización final tuvo problemas")
+
+                except Exception as e:
+                    logger.error(f"Error en sincronización final: {e}")
+                    progress_dialog.set_step_error(str(e))
+
+                # Esperar a que el usuario cierre el diálogo
+                progress_dialog.exec()
+            else:
+                logger.info(
+                    "Backend de sincronización no disponible. Omitiendo sincronización final."
                 )
-
-                if success:
-                    logger.info("✓ Sincronización final completada")
-                else:
-                    logger.warning("⚠ La sincronización final tuvo problemas")
-
-            except Exception as e:
-                logger.error(f"Error en sincronización final: {e}")
-                progress_dialog.set_step_error(str(e))
-
-            # Esperar a que el usuario cierre el diálogo
-            progress_dialog.exec()
 
         # Liberar bloqueo de sesión
         if session_lock_manager:

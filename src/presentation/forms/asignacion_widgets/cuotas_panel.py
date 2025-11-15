@@ -141,10 +141,10 @@ class CuotasPanel(QGroupBox):
         # Obtener configuración activa
         if not self.configuracion_id:
             from models.models import Configuracion
-            
+
             # Obtener la configuración (solo hay una por usuario)
             configuracion = self.session.query(Configuracion).first()
-            
+
             if not configuracion:
                 from PyQt6.QtWidgets import QMessageBox
                 from utils.ui_helpers import MESSAGEBOX_STYLE
@@ -157,9 +157,11 @@ class CuotasPanel(QGroupBox):
                 msg.setStyleSheet(MESSAGEBOX_STYLE)
                 msg.exec()
                 return
-            
-            # Verificar que haya un curso activo
-            if not configuracion.curso_activo_id:
+
+            # Verificar que haya un curso activo usando el GestorCursos
+            from services.gestor_cursos import GestorCursos
+            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            if not curso_activo:
                 from PyQt6.QtWidgets import QMessageBox
                 from utils.ui_helpers import MESSAGEBOX_STYLE
                 msg = QMessageBox(self)
@@ -168,7 +170,7 @@ class CuotasPanel(QGroupBox):
                 msg.setStyleSheet(MESSAGEBOX_STYLE)
                 msg.exec()
                 return
-            
+
             self.configuracion_id = configuracion.id
 
         try:
@@ -262,7 +264,7 @@ class CuotasPanel(QGroupBox):
             item_cuota = self.tabla.item(row, 2)
 
             if item_cuota and item_estado:
-                cuota_esperada = int(item_cuota.text())
+                int(item_cuota.text())
                 # Aquí necesitaríamos el profesor_id real
                 # Por ahora, marcamos como completado genéricamente
                 item_estado.setText("✅ Asignado")

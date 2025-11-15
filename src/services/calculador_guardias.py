@@ -14,7 +14,7 @@ import math
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
-from models.models import Configuracion, Guardia, Profesor, Zona
+from models.models import Configuracion, Profesor, Zona
 from services.gestor_cursos import GestorCursos
 from services.validators import TurnoValidator
 from sqlalchemy.orm import Session
@@ -534,21 +534,13 @@ def obtener_estadisticas(session: Session) -> Dict:
 
     recreos_manana, recreos_tarde = calcular_recreos_activos(session)
 
-    # Contar solo zonas del curso activo (con guardias asignadas)
-    num_zonas = (
-        session.query(Zona)
-        .join(Guardia, Zona.id == Guardia.zona_id)
-        .filter(Guardia.curso_id == curso_activo.id)
-        .distinct()
-        .count()
-    )
+    # Contar zonas disponibles
+    num_zonas = session.query(Zona).count()
 
-    # Contar solo profesores del curso activo (con guardias asignadas)
+    # Contar profesores activos (disponibles para asignación)
     num_profesores = (
         session.query(Profesor)
-        .join(Guardia, Profesor.id == Guardia.profesor_id)
-        .filter(Guardia.curso_id == curso_activo.id)
-        .distinct()
+        .filter(Profesor.activo == True)  # noqa: E712
         .count()
     )
 

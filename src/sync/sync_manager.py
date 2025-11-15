@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from core.paths import get_data_directory, get_user_data_directory
+from core.paths import get_user_data_directory
 
 # Configurar logger
 logger = logging.getLogger(__name__)
@@ -109,6 +109,10 @@ class SFTPSyncBackend(SyncBackend):
         password: str,
         base_dir: str = "/guardias_patio",
     ):
+        self.sftp = None
+        self.client = None
+        self.base_dir = base_dir
+
         try:
             import paramiko
 
@@ -129,22 +133,21 @@ class SFTPSyncBackend(SyncBackend):
 
             self.client.connect(host, port=port, username=username, password=password)
             self.sftp = self.client.open_sftp()
-            self.base_dir = base_dir
             logger.info(f"SFTP conectado a {host}:{port} con verificación de host key ✅")
         except ImportError:
             logger.error("Paramiko no instalado. Ejecutar: pip install paramiko")
-            raise
-        except paramiko.SSHException as e:
-            logger.error(f"Error de host key: {e}")
-            logger.error("El servidor no está en known_hosts. Agregarlo con:")
-            logger.error(f"  ssh-keyscan -H {host} >> ~/.ssh/known_hosts")
-            raise
         except Exception as e:
             logger.error(f"Error conectando SFTP: {e}")
-            raise
+            if "paramiko" in str(type(e).__module__):
+                logger.error("El servidor no está en known_hosts. Agregarlo con:")
+                logger.error(f"  ssh-keyscan -H {host} >> ~/.ssh/known_hosts")
 
     def upload_file(self, local_path: Path, remote_path: str) -> bool:
         try:
+            if not hasattr(self, 'sftp') or self.sftp is None:
+                logger.error("Conexión SFTP no establecida")
+                return False
+
             full_path = f"{self.base_dir}/{remote_path}"
             # Crear directorios remotos si no existen
             self._mkdir_p(str(Path(full_path).parent))
@@ -157,6 +160,10 @@ class SFTPSyncBackend(SyncBackend):
 
     def download_file(self, remote_path: str, local_path: Path) -> bool:
         try:
+            if not hasattr(self, 'sftp') or self.sftp is None:
+                logger.error("Conexión SFTP no establecida")
+                return False
+
             full_path = f"{self.base_dir}/{remote_path}"
             local_path.parent.mkdir(parents=True, exist_ok=True)
             self.sftp.get(full_path, str(local_path))
@@ -170,6 +177,9 @@ class SFTPSyncBackend(SyncBackend):
 
     def file_exists(self, remote_path: str) -> bool:
         try:
+            if not hasattr(self, 'sftp') or self.sftp is None:
+                return False
+
             full_path = f"{self.base_dir}/{remote_path}"
             self.sftp.stat(full_path)
             return True
@@ -336,15 +346,21 @@ class SyncManager:
                     "file_size_kb": file_size_kb
                 })
 
-            if self.backend.upload_file(local_json_path, remote_path):
-                logger.info("✅ Datos sincronizados con la nube")
-                if progress_callback:
-                    progress_callback("complete", {"message": "Sincronización completada"})
-            else:
-                logger.error("❌ Error al subir datos a la nube")
+            try:
+                if self.backend.upload_file(local_json_path, remote_path):
+                    logger.info("✅ Datos sincronizados con la nube")
+                    if progress_callback:
+                        progress_callback("complete", {"message": "Sincronización completada"})
+                else:
+                    logger.error("❌ Error al subir datos a la nube")
+                    success = False
+                    if progress_callback:
+                        progress_callback("error", {"message": "Error al subir datos a la nube"})
+            except Exception as e:
+                logger.error(f"❌ Excepción al subir datos a la nube: {e}")
                 success = False
                 if progress_callback:
-                    progress_callback("error", {"message": "Error al subir datos a la nube"})
+                    progress_callback("error", {"message": f"Error de conexión: {str(e)}"})
         else:
             logger.warning(f"❌ {json_filename} no existe localmente")
             success = False
@@ -352,7 +368,10 @@ class SyncManager:
                 progress_callback("error", {"message": f"{json_filename} no existe"})
 
         # Guardar timestamp de última sincronización
-        self._save_sync_metadata()
+        try:
+            self._save_sync_metadata()
+        except Exception as e:
+            logger.warning(f"Error al guardar metadata de sincronización: {e}")
 
         return success
 
@@ -369,8 +388,11 @@ class SyncManager:
             json.dump(metadata, f, indent=2)
 
         # También subir metadata a la nube
-        remote_path = self.get_remote_path("last_sync.json")
-        self.backend.upload_file(metadata_path, remote_path)
+        try:
+            remote_path = self.get_remote_path("last_sync.json")
+            self.backend.upload_file(metadata_path, remote_path)
+        except Exception as e:
+            logger.warning(f"No se pudo subir metadata a la nube: {e}")
 
     def manual_sync(self) -> bool:
         """Sincronización manual (botón en la UI)."""
