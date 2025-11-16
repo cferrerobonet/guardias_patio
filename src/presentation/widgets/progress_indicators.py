@@ -540,10 +540,15 @@ def ejecutar_con_progreso(
         dialog.btn_cancelar.clicked.connect(on_cancelar)
 
     # Iniciar worker
+    from utils.logger import get_logger
+    logger = get_logger(__name__)
+    logger.info("🚀 Iniciando WorkerThread para ejecutar tarea")
     worker.start()
 
     # Mostrar diálogo (bloquea hasta cerrar)
+    logger.info("📊 Mostrando ProgressDialog (bloqueante)")
     dialog.exec()
+    logger.info("📊 ProgressDialog cerrado")
 
     # Esperar a que termine el worker
     worker.wait()

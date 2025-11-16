@@ -46,24 +46,32 @@ class IntegradorOrquestadorUI:
         logger = get_logger(__name__)
 
         try:
+            logger.info("📋 FASE 1: Obtener configuración")
             # 1. Obtener configuración
             config = self.db.query(Configuracion).first()
             if not config:
                 raise ValueError("No hay configuración disponible")
+            logger.info(f"✓ Configuración obtenida: {config.id}")
 
             # 2. Calcular días lectivos
+            logger.info("📋 FASE 2: Calcular días lectivos")
             if progress_callback:
                 progress_callback("Calculando días lectivos...", 10)
 
             dias_lectivos = listar_dias_lectivos(config)
+            logger.info(f"✓ Días lectivos calculados: {len(dias_lectivos)} días")
 
             # 3. Crear orquestador
+            logger.info("📋 FASE 3: Crear orquestador")
             if progress_callback:
                 progress_callback("Preparando sistema híbrido...", 20)
 
             orquestador = OrquestadorAsignacionGuardias(self.db, config, dias_lectivos)
+            logger.info("✓ Orquestador creado")
 
             # 4. Ejecutar con callback para decisión del usuario
+            logger.info("📋 FASE 4: Ejecutar generación con fallback")
+            logger.info("⚠️  PUNTO CRÍTICO: Iniciando orquestador.generar_guardias_con_fallback")
             resultado = orquestador.generar_guardias_con_fallback(
                 umbral_cobertura_minima=0.95,  # 95%
                 umbral_problemas_criticos=0,   # 0 problemas críticos

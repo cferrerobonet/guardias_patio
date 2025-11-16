@@ -125,10 +125,12 @@ class OrquestadorAsignacionGuardias:
         if progress_callback:
             progress_callback("Ejecutando algoritmo iterativo...", 40)
 
+        logger.info("⏳ Llamando a asignador_iterativo.generar_guardias_iterativo...")
         guardias_iterativo, metadatos_iterativo = self.asignador_iterativo.generar_guardias_iterativo(
             max_iteraciones=5,
             objetivo_cobertura_minima=umbral_cobertura_minima
         )
+        logger.info(f"✓ Asignación iterativa completada: {len(guardias_iterativo)} guardias")
 
         # FASE 2: Validar resultado iterativo
         logger.info("\n" + "=" * 80)

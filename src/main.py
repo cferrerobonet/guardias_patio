@@ -6,10 +6,25 @@ Ejecutar: python src/main_ccleaner.py
 
 import logging
 import sys
+from datetime import datetime
 from pathlib import Path
 
 # Añadir el directorio raíz al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Configurar logging ANTES de cualquier import
+log_dir = Path(__file__).parent.parent / "logs"
+log_dir.mkdir(exist_ok=True)
+log_file = log_dir / f"app_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
 from presentation.ccleaner_main_window import CCleanerMainWindow
 from presentation.forms.login_dialog import LoginDialog
@@ -21,10 +36,31 @@ from utils.corporate_branding import apply_corporate_branding
 
 # Configurar logging
 logger = logging.getLogger(__name__)
+logger.info(f"=== INICIO DE APLICACIÓN === Log: {log_file}")
 
 
 def main():
     """Función principal"""
+    # Instalar manejador global de excepciones
+    def exception_hook(exctype, value, tb):
+        """Captura excepciones no manejadas."""
+        import traceback
+        logger.critical("=" * 80)
+        logger.critical("🚨 EXCEPCIÓN NO MANEJADA DETECTADA")
+        logger.critical("=" * 80)
+        logger.critical(f"Tipo: {exctype.__name__}")
+        logger.critical(f"Valor: {value}")
+        logger.critical("Traceback:")
+        for line in traceback.format_tb(tb):
+            logger.critical(line.rstrip())
+        logger.critical("=" * 80)
+        
+        # Llamar al manejador original
+        sys.__excepthook__(exctype, value, tb)
+    
+    sys.excepthook = exception_hook
+    logger.info("✓ Manejador global de excepciones instalado")
+    
     # Crear la aplicación
     app = QApplication(sys.argv)
 
