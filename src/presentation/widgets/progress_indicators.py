@@ -549,6 +549,13 @@ def ejecutar_con_progreso(
     )
 
     # Crear worker
+    from utils.logger import get_logger
+    logger_worker = get_logger(__name__)
+    import traceback
+    logger_worker.error(
+        f"🔧 CREANDO WorkerThread para función: {funcion.__name__}\n"
+        f"   Stack trace de creación:\n{''.join(traceback.format_stack()[-5:])}"
+    )
     worker = WorkerThread(funcion, *args, **kwargs)
 
     # Variables para resultado
