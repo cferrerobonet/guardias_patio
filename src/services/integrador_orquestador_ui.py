@@ -39,32 +39,58 @@ class IntegradorOrquestadorUI:
         Returns:
             ResultadoOrquestacion con el resultado final
         """
-        # 1. Obtener configuración
-        config = self.db.query(Configuracion).first()
-        if not config:
-            raise ValueError("No hay configuración disponible")
+        import traceback
 
-        # 2. Calcular días lectivos
-        if progress_callback:
-            progress_callback("Calculando días lectivos...", 10)
+        from utils.logger import get_logger
 
-        dias_lectivos = listar_dias_lectivos(config)
+        logger = get_logger(__name__)
 
-        # 3. Crear orquestador
-        if progress_callback:
-            progress_callback("Preparando sistema híbrido...", 20)
+        try:
+            # 1. Obtener configuración
+            config = self.db.query(Configuracion).first()
+            if not config:
+                raise ValueError("No hay configuración disponible")
 
-        orquestador = OrquestadorAsignacionGuardias(self.db, config, dias_lectivos)
+            # 2. Calcular días lectivos
+            if progress_callback:
+                progress_callback("Calculando días lectivos...", 10)
 
-        # 4. Ejecutar con callback para decisión del usuario
-        resultado = orquestador.generar_guardias_con_fallback(
-            umbral_cobertura_minima=0.95,  # 95%
-            umbral_problemas_criticos=0,   # 0 problemas críticos
-            callback_decision_usuario=self._mostrar_dialogo_decision,
-            progress_callback=progress_callback  # Pasar callback de progreso
-        )
+            dias_lectivos = listar_dias_lectivos(config)
 
-        return resultado
+            # 3. Crear orquestador
+            if progress_callback:
+                progress_callback("Preparando sistema híbrido...", 20)
+
+            orquestador = OrquestadorAsignacionGuardias(self.db, config, dias_lectivos)
+
+            # 4. Ejecutar con callback para decisión del usuario
+            resultado = orquestador.generar_guardias_con_fallback(
+                umbral_cobertura_minima=0.95,  # 95%
+                umbral_problemas_criticos=0,   # 0 problemas críticos
+                callback_decision_usuario=self._mostrar_dialogo_decision,
+                progress_callback=progress_callback  # Pasar callback de progreso
+            )
+
+            return resultado
+
+        except Exception as e:
+            logger.error(f"❌ Error crítico en generar_guardias_inteligente: {str(e)}")
+            logger.error(f"Traceback completo: {traceback.format_exc()}")
+
+            # Crear resultado de error en lugar de propagar la excepción
+            from src.services.orquestador_asignacion_guardias import (
+                EstrategiaUsada,
+                ResultadoOrquestacion,
+            )
+
+            return ResultadoOrquestacion(
+                exitoso=False,
+                guardias=[],
+                estrategia_usada=EstrategiaUsada.NINGUNA,
+                mensaje_usuario=f"Error al generar guardias: {str(e)}",
+                requiere_intervencion_usuario=True,
+                diagnostico=None
+            )
 
     def _mostrar_dialogo_decision(self, diagnostico: DiagnosticoCompleto) -> str:
         """
@@ -76,12 +102,25 @@ class IntegradorOrquestadorUI:
         Returns:
             'ajustar', 'continuar_ilp' o 'cancelar'
         """
-        dialogo = DialogoDiagnosticoGuardias(diagnostico, self.parent_widget)
+        import traceback
 
-        if dialogo.exec():
-            return dialogo.get_accion_elegida()
-        else:
-            return 'cancelar'
+        from utils.logger import get_logger
+
+        logger = get_logger(__name__)
+
+        try:
+            dialogo = DialogoDiagnosticoGuardias(diagnostico, self.parent_widget)
+
+            if dialogo.exec():
+                return dialogo.get_accion_elegida()
+            else:
+                return 'cancelar'
+
+        except Exception as e:
+            logger.error(f"❌ Error al mostrar diálogo de diagnóstico: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            # En caso de error, retornar 'ajustar' por defecto (opción más segura)
+            return 'ajustar'
 
 
 # EJEMPLO DE USO DESDE UN FORMULARIO O VENTANA

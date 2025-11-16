@@ -32,6 +32,11 @@ class DialogoDiagnosticoGuardias(QDialog):
         super().__init__(parent)
         self.diagnostico = diagnostico
         self.accion_elegida = self.ACCION_CANCELAR
+
+        # Configurar atributos del diálogo ANTES de _init_ui
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
+
         self._init_ui()
 
     def _init_ui(self):
@@ -51,8 +56,10 @@ class DialogoDiagnosticoGuardias(QDialog):
         stats = self.diagnostico.estadisticas
         subtitulo = QLabel(
             f"Cobertura: {stats['cobertura_porcentaje']:.1f}% • "
-            f"Profesores: {stats['profesores_con_guardias']}/{stats['profesores_activos_totales']} • "
-            f"Guardias: {stats['total_guardias_asignadas']}/{stats['total_slots_esperados']}"
+            f"Profesores: {stats['profesores_con_guardias']}/"
+            f"{stats['profesores_activos_totales']} • "
+            f"Guardias: {stats['total_guardias_asignadas']}/"
+            f"{stats['total_slots_esperados']}"
         )
         subtitulo.setStyleSheet("font-size: 11pt; color: #7f8c8d; margin: 5px;")
         subtitulo.setAlignment(Qt.AlignmentFlag.AlignCenter)

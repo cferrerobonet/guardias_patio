@@ -84,12 +84,24 @@ class ProgressDialog(QDialog):
         self.setMinimumHeight(400 if show_details else 200)
 
         # Deshabilitar botón de maximizar (solo permitir cerrar y minimizar)
-        self.setWindowFlags(
-            Qt.WindowType.Dialog |
-            Qt.WindowType.WindowTitleHint |
-            Qt.WindowType.WindowCloseButtonHint |
-            Qt.WindowType.CustomizeWindowHint
-        )
+        # En macOS, usar WindowType.Sheet puede ser más estable
+        import platform
+        if platform.system() == 'Darwin':  # macOS
+            self.setWindowFlags(
+                Qt.WindowType.Sheet |
+                Qt.WindowType.WindowTitleHint |
+                Qt.WindowType.CustomizeWindowHint
+            )
+        else:
+            self.setWindowFlags(
+                Qt.WindowType.Dialog |
+                Qt.WindowType.WindowTitleHint |
+                Qt.WindowType.WindowCloseButtonHint |
+                Qt.WindowType.CustomizeWindowHint
+            )
+
+        # Prevenir cierre accidental
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
 
         self._cancelado = False
         self._cancelable = cancelable
@@ -335,6 +347,25 @@ class ProgressDialog(QDialog):
             self.btn_cancelar.clicked.connect(self.accept)
 
 
+    def closeEvent(self, event):
+        """
+        Manejar evento de cierre para evitar cierres accidentales durante operaciones.
+        """
+        from utils.logger import get_logger
+        logger = get_logger(__name__)
+
+        # Si el diálogo fue cancelado o completado, permitir cierre
+        if self._cancelado or self.progress_bar.value() >= self.progress_bar.maximum():
+            logger.info("Diálogo de progreso cerrado normalmente")
+            if self._timer:
+                self._timer.stop()
+            event.accept()
+        else:
+            # Operación en curso - prevenir cierre accidental
+            logger.warning("Intento de cerrar diálogo durante operación en curso")
+            event.ignore()
+
+
 class WorkerThread(QThread):
     """
     Thread worker para ejecutar operaciones largas en background.
@@ -394,7 +425,17 @@ class WorkerThread(QThread):
             # Emitir resultado
             self.finalizado.emit(resultado)
 
+        except InterruptedError as e:
+            # Cancelación del usuario
+            self.error.emit(e)
         except Exception as e:
+            # Log del error con traceback completo
+            import traceback
+
+            from utils.logger import get_logger
+            logger = get_logger(__name__)
+            logger.error(f"Error en WorkerThread: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             # Emitir error
             self.error.emit(e)
 
@@ -470,7 +511,22 @@ def ejecutar_con_progreso(
 
     def on_error(error):
         error_final[0] = error
-        dialog.close()
+        # Log del error
+        from utils.logger import get_logger
+        logger = get_logger(__name__)
+        logger.error(f"Error en worker: {type(error).__name__}: {str(error)}")
+        # Cerrar diálogo de forma segura
+        try:
+            if not isinstance(error, InterruptedError):
+                dialog.set_mensaje(f"❌ Error: {str(error)[:100]}...")
+                if hasattr(dialog, 'btn_cancelar'):
+                    dialog.btn_cancelar.setText("Cerrar")
+                    dialog.btn_cancelar.setEnabled(True)
+            else:
+                dialog.close()
+        except Exception as e:
+            logger.error(f"Error cerrando diálogo: {e}")
+            dialog.close()
 
     worker.finalizado.connect(on_finalizado)
     worker.error.connect(on_error)

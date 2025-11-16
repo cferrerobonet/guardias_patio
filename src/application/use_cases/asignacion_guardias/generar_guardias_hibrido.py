@@ -94,7 +94,8 @@ class GenerarGuardiasHibridoUseCase:
             logger.info("🚀 Iniciando generación con sistema híbrido")
 
             # Crear wrapper para el callback de progreso
-            # El integrador llama con (mensaje, porcentaje) pero progress_callback espera (mensaje, porcentaje)
+            # El integrador llama con (mensaje, porcentaje)
+            # pero progress_callback espera (mensaje, porcentaje)
             def callback_wrapper(mensaje: str, porcentaje: int):
                 if progress_callback:
                     # Escalar de 0-100 a 30-95 (65% del rango)
@@ -104,15 +105,26 @@ class GenerarGuardiasHibridoUseCase:
             # Usar el integrador
             integrador = IntegradorOrquestadorUI(self.session, self.parent_window)
 
-            resultado = integrador.generar_guardias_inteligente(
-                progress_callback=callback_wrapper
-            )
+            try:
+                resultado = integrador.generar_guardias_inteligente(
+                    progress_callback=callback_wrapper
+                )
+            except Exception as e:
+                logger.error(f"❌ Error en integrador: {str(e)}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                raise BusinessLogicError(
+                    f"Error crítico durante la generación: {str(e)}"
+                ) from e
 
             if not resultado.exitoso:
-                raise BusinessLogicError(
-                    "No se pudo generar un calendario válido. "
-                    f"Estrategia usada: {resultado.estrategia_usada}"
+                mensaje_error = (
+                    f"No se pudo generar un calendario válido.\n"
+                    f"Estrategia usada: {resultado.estrategia_usada}\n"
+                    f"{resultado.mensaje_usuario}"
                 )
+                logger.warning(mensaje_error)
+                raise BusinessLogicError(mensaje_error)
 
             guardias = resultado.guardias
 
