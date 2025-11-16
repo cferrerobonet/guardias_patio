@@ -54,13 +54,13 @@ def main():
         for line in traceback.format_tb(tb):
             logger.critical(line.rstrip())
         logger.critical("=" * 80)
-        
+
         # Llamar al manejador original
         sys.__excepthook__(exctype, value, tb)
-    
+
     sys.excepthook = exception_hook
     logger.info("✓ Manejador global de excepciones instalado")
-    
+
     # Crear la aplicación
     app = QApplication(sys.argv)
 
