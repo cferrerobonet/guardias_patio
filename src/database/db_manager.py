@@ -91,7 +91,9 @@ def _run_alembic_migrations(engine, db_path: Path):
                 "Verificando migraciones..."
             )
             # Intentar aplicar migraciones pendientes
+            logger.error("🔧 EJECUTANDO: command.upgrade(alembic_cfg, 'head')")
             command.upgrade(alembic_cfg, 'head')
+            logger.error("✅ POST-UPGRADE: Migraciones completadas sin crash")
             logger.info("✓ Migraciones de Alembic aplicadas/verificadas correctamente")
 
     except Exception as e:

@@ -144,6 +144,7 @@ def main():
     session = SessionFactory()
 
     # 🔄 Ejecutar migración automática al sistema Multi-Curso si es necesario
+    logger.error("🔧 INICIANDO: Migración Multi-Curso")
     try:
         from services.migrar_a_multi_curso import ejecutar_migracion_si_necesario
 
@@ -155,6 +156,7 @@ def main():
         logger.error(f"⚠ Error en migración Multi-Curso: {e}")
         # Continuar de todos modos - la migración no es crítica para funcionar
 
+    logger.error("🔧 INICIANDO: Sistema de sincronización")
     # Inicializar sistema de sincronización
     sync_manager = None
     session_lock_manager = None
