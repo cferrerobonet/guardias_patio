@@ -107,12 +107,21 @@ class GenerarGuardiasHibridoUseCase:
             try:
                 from PyQt6.QtCore import QThread
                 current_thread = QThread.currentThread()
+                thread_type = type(current_thread).__name__
+                logger.info(f"🔍 Thread actual: {current_thread} (tipo: {thread_type})")
                 from src.presentation.widgets.progress_indicators import WorkerThread
-                if isinstance(current_thread, WorkerThread):
+                logger.info(f"🔍 WorkerThread class: {WorkerThread}")
+                is_worker = isinstance(current_thread, WorkerThread)
+                logger.info(f"🔍 isinstance check: {is_worker}")
+                if is_worker:
                     worker_thread = current_thread
                     logger.info("🧵 Ejecutando desde WorkerThread, usando callback thread-safe")
+                else:
+                    logger.info("🏠 Ejecutando desde thread principal, usando diálogo directo")
             except Exception as e:
-                logger.debug(f"No se pudo detectar WorkerThread: {e}")
+                logger.error(f"❌ Error al detectar WorkerThread: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
 
             # Crear integrador con callback thread-safe si estamos en worker thread
             if worker_thread:
