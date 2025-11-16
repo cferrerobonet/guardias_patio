@@ -102,8 +102,29 @@ class GenerarGuardiasHibridoUseCase:
                     porcentaje_escalado = 30 + int(porcentaje * 0.65)
                     progress_callback(mensaje, porcentaje_escalado)
 
-            # Usar el integrador
-            integrador = IntegradorOrquestadorUI(self.session, self.parent_window)
+            # Obtener el worker thread si estamos ejecutando desde uno
+            worker_thread = None
+            try:
+                from PyQt6.QtCore import QThread
+                current_thread = QThread.currentThread()
+                from src.presentation.widgets.progress_indicators import WorkerThread
+                if isinstance(current_thread, WorkerThread):
+                    worker_thread = current_thread
+                    logger.info("🧵 Ejecutando desde WorkerThread, usando callback thread-safe")
+            except Exception as e:
+                logger.debug(f"No se pudo detectar WorkerThread: {e}")
+
+            # Crear integrador con callback thread-safe si estamos en worker thread
+            if worker_thread:
+                # Pasar el método thread-safe del worker para decisiones del usuario
+                integrador = IntegradorOrquestadorUI(
+                    self.session,
+                    self.parent_window,
+                    callback_decision_custom=worker_thread.solicitar_decision_usuario
+                )
+            else:
+                # Ejecutando desde thread principal, usar el método normal
+                integrador = IntegradorOrquestadorUI(self.session, self.parent_window)
 
             try:
                 resultado = integrador.generar_guardias_inteligente(

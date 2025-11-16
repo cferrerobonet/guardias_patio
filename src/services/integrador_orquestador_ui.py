@@ -22,9 +22,21 @@ class IntegradorOrquestadorUI:
     Integrador que conecta el orquestador con la interfaz de usuario.
     """
 
-    def __init__(self, db: Session, parent_widget: Optional[QWidget] = None):
+    def __init__(
+        self,
+        db: Session,
+        parent_widget: Optional[QWidget] = None,
+        callback_decision_custom: Optional[Callable] = None
+    ):
+        """
+        Args:
+            db: Sesión de base de datos
+            parent_widget: Widget padre para diálogos
+            callback_decision_custom: Callback personalizado para decisiones (para threading seguro)
+        """
         self.db = db
         self.parent_widget = parent_widget
+        self.callback_decision_custom = callback_decision_custom
 
     def generar_guardias_inteligente(
         self,
@@ -104,6 +116,9 @@ class IntegradorOrquestadorUI:
         """
         Muestra diálogo al usuario para decidir qué hacer.
 
+        IMPORTANTE: Este método NO debe ser llamado directamente desde un worker thread.
+        Use callback_decision_custom si está en un worker thread.
+
         Args:
             diagnostico: Diagnóstico completo de problemas
 
@@ -117,6 +132,13 @@ class IntegradorOrquestadorUI:
         logger = get_logger(__name__)
 
         try:
+            # Si hay un callback personalizado (para threading), usarlo
+            if self.callback_decision_custom:
+                logger.info("📞 Usando callback personalizado para decisión (thread-safe)")
+                return self.callback_decision_custom(diagnostico)
+
+            # De lo contrario, mostrar diálogo directamente (solo desde thread principal)
+            logger.info("📊 Mostrando DialogoDiagnosticoGuardias en thread principal")
             dialogo = DialogoDiagnosticoGuardias(diagnostico, self.parent_widget)
 
             if dialogo.exec():

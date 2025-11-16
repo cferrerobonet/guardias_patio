@@ -11,7 +11,7 @@ Migrado a presentation/widgets en Sprint 11 - Task 11.1.2
 import time
 from typing import Callable, Optional
 
-from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
+from PyQt6.QtCore import QMutex, Qt, QThread, QTimer, QWaitCondition, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
     QLabel,
@@ -390,6 +390,8 @@ class WorkerThread(QThread):
     progreso = pyqtSignal(int, int, str)  # (actual, total, detalle)
     finalizado = pyqtSignal(object)  # resultado
     error = pyqtSignal(Exception)  # excepción
+    # Señal para solicitar decisión al usuario (pasa diagnóstico)
+    solicitar_decision = pyqtSignal(object)
 
     def __init__(self, funcion: Callable, *args, **kwargs):
         """
@@ -405,6 +407,11 @@ class WorkerThread(QThread):
         self.args = args
         self.kwargs = kwargs
         self._debe_cancelar = False
+
+        # Para manejo de decisiones del usuario desde worker thread
+        self._decision_mutex = QMutex()
+        self._decision_condition = QWaitCondition()
+        self._decision_result = None
 
     def run(self):
         """Ejecutar función en thread separado."""
@@ -442,6 +449,54 @@ class WorkerThread(QThread):
     def cancelar(self):
         """Solicitar cancelación de la operación."""
         self._debe_cancelar = True
+
+    def solicitar_decision_usuario(self, diagnostico):
+        """
+        Solicitar decisión del usuario desde el worker thread de forma segura.
+        Emite señal y espera respuesta en el thread principal.
+
+        Args:
+            diagnostico: DiagnosticoCompleto a mostrar al usuario
+
+        Returns:
+            str: 'ajustar', 'continuar_ilp' o 'cancelar'
+        """
+        from utils.logger import get_logger
+        logger = get_logger(__name__)
+
+        logger.info("🔔 WorkerThread solicitando decisión del usuario...")
+
+        # Resetear resultado
+        self._decision_result = None
+
+        # Emitir señal al thread principal
+        self.solicitar_decision.emit(diagnostico)
+
+        # Esperar respuesta con timeout
+        self._decision_mutex.lock()
+        timeout_ms = 300000  # 5 minutos de timeout
+        if not self._decision_condition.wait(self._decision_mutex, timeout_ms):
+            logger.error("⏱️ Timeout esperando decisión del usuario")
+            self._decision_mutex.unlock()
+            return 'cancelar'
+
+        result = self._decision_result
+        self._decision_mutex.unlock()
+
+        logger.info(f"✅ Decisión del usuario recibida: {result}")
+        return result
+
+    def set_decision_resultado(self, resultado: str):
+        """
+        Establecer resultado de la decisión del usuario (llamado desde thread principal).
+
+        Args:
+            resultado: 'ajustar', 'continuar_ilp' o 'cancelar'
+        """
+        self._decision_mutex.lock()
+        self._decision_result = resultado
+        self._decision_condition.wakeOne()
+        self._decision_mutex.unlock()
 
 
 # ========== HELPER FUNCTIONS ==========
@@ -528,8 +583,41 @@ def ejecutar_con_progreso(
             logger.error(f"Error cerrando diálogo: {e}")
             dialog.close()
 
+    def on_solicitar_decision(diagnostico):
+        """Manejar solicitud de decisión del usuario desde el worker thread."""
+        from utils.logger import get_logger
+        logger = get_logger(__name__)
+
+        logger.info("🔔 Solicitud de decisión recibida en thread principal")
+
+        try:
+            # Mostrar diálogo en el thread principal
+            from src.presentation.dialogs.dialogo_diagnostico_guardias import (
+                DialogoDiagnosticoGuardias,
+            )
+
+            dialogo = DialogoDiagnosticoGuardias(diagnostico, dialog)
+
+            if dialogo.exec():
+                resultado_decision = dialogo.get_accion_elegida()
+            else:
+                resultado_decision = 'cancelar'
+
+            logger.info(f"✅ Usuario eligió: {resultado_decision}")
+
+            # Enviar resultado de vuelta al worker
+            worker.set_decision_resultado(resultado_decision)
+
+        except Exception as e:
+            logger.error(f"❌ Error mostrando diálogo de decisión: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            # En caso de error, cancelar
+            worker.set_decision_resultado('cancelar')
+
     worker.finalizado.connect(on_finalizado)
     worker.error.connect(on_error)
+    worker.solicitar_decision.connect(on_solicitar_decision)
 
     # Conectar cancelación
     def on_cancelar():
