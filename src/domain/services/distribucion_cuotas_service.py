@@ -5,10 +5,18 @@ Calcula y distribuye las cuotas de guardias entre profesores
 considerando múltiples factores de equidad.
 
 Factores considerados:
-- Porcentaje de jornada (tiempo completo, medio tiempo, etc.)
-- Turno (mañana, tarde, mixto)
-- Fecha de inicio de guardias
+- Turno (mañana, tarde, mixto) según recreos disponibles
+- Horas de contrato (proporción respecto a 30h jornada completa)
+- Factor de tutoría (ajuste_tutores / ajuste_no_tutores de configuración)
+- Fechas de inicio/fin de guardias (proporción de días disponibles)
 - Total de slots disponibles
+
+Fórmula de cálculo:
+    factor_total = factor_turno × factor_horas × factor_tutoria × proporcion_tiempo
+    cuota = round(total_slots × factor_profesor / suma_todos_factores)
+
+Este servicio implementa el mismo algoritmo que calculador_guardias.py
+pero siguiendo principios de Clean Architecture (Domain Service).
 """
 
 from collections import defaultdict
@@ -48,17 +56,20 @@ class DistribucionCuotasService:
 
     Algoritmo de distribución:
     1. Calcular slots totales (días × recreos × zonas)
-    2. Calcular factor de participación por profesor basado en:
-       - Porcentaje de jornada
-       - Turno (mañana/tarde reducen slots disponibles)
-    3. Distribuir slots proporcionalmente
-    4. Ajustar por fechas de inicio tardías
+    2. Calcular factor de participación por profesor:
+       - Factor turno: proporción de recreos según turno (mañana/tarde/mixto)
+       - Factor horas: horas_contrato / 30h (jornada completa)
+       - Factor tutoría: ajuste_tutores o ajuste_no_tutores (de configuración)
+       - Proporción tiempo: días disponibles según fechas inicio/fin
+    3. Factor total = turno × horas × tutoría × tiempo
+    4. Distribuir slots proporcionalmente según factor total
     5. Redondear y compensar diferencias
 
     Principios:
-    - Equidad: Mismo % jornada → misma cuota (aproximadamente)
-    - Flexibilidad: Ajustar por restricciones reales
-    - Transparencia: Explicar cómo se calculó cada cuota
+    - Equidad: Mismas condiciones → misma cuota (aproximadamente)
+    - Precisión: Considera todas las restricciones reales
+    - Transparencia: Explica cómo se calculó cada cuota
+    - Equivalencia: Produce resultados idénticos a calculador_guardias.py
     """
 
     def __init__(self, session: Session):
@@ -112,15 +123,10 @@ class DistribucionCuotasService:
         # Distribuir cuotas
         cuotas = self._distribuir_slots(profesores, factores, total_slots)
 
-        # Ajustar por fechas de inicio
-        cuotas_ajustadas = self._ajustar_por_fechas_inicio(
-            profesores, cuotas, config
-        )
-
         # Log de resumen
-        self._log_resumen_distribucion(profesores, cuotas_ajustadas, total_slots)
+        self._log_resumen_distribucion(profesores, cuotas, total_slots)
 
-        return cuotas_ajustadas
+        return cuotas
 
     def calcular_cuota_profesor(
         self, profesor: Profesor, total_slots: int, profesores_activos: List[Profesor]
@@ -141,7 +147,7 @@ class DistribucionCuotasService:
             raise ValueError("No se encontró configuración activa")
 
         factores = self._calcular_factores_participacion(profesores_activos, config)
-        factor_profesor = factores[profesor.id]
+        factor_profesor = factores.get(profesor.id, 0.0)
 
         # Calcular cuota proporcional
         suma_factores = sum(factores.values())
@@ -149,22 +155,6 @@ class DistribucionCuotasService:
             return 0
 
         cuota = int(round(total_slots * factor_profesor / suma_factores))
-
-        # Ajustar por fecha de inicio
-        if profesor.fecha_inicio_guardias and config.fecha_inicio_curso:
-            dias_lectivos = listar_dias_lectivos(config)
-            dias_totales = len(dias_lectivos)
-            dias_disponibles = len(
-                [d for d in dias_lectivos if d >= profesor.fecha_inicio_guardias]
-            )
-
-            if dias_totales > 0 and dias_disponibles < dias_totales:
-                factor_ajuste = dias_disponibles / dias_totales
-                cuota = int(round(cuota * factor_ajuste))
-                self.logger.info(
-                    f"Cuota ajustada para {profesor.nombre_completo}: "
-                    f"factor={factor_ajuste:.2f} ({dias_disponibles}/{dias_totales} días)"
-                )
 
         return max(0, cuota)
 
@@ -227,10 +217,17 @@ class DistribucionCuotasService:
         """
         Calcula el factor de participación de cada profesor.
 
-        Factor = porcentaje_jornada × multiplicador_turno
+        Factor completo = factor_turno × factor_horas × factor_tutoria × proporcion_tiempo
+
+        Considera:
+        - Turno (mañana/tarde/mixto) según recreos disponibles
+        - Horas de contrato (proporción respecto a 30h jornada completa)
+        - Factor de tutoría (ajuste_tutores / ajuste_no_tutores)
+        - Fechas de inicio/fin de guardias
         """
         factores = {}
         recreos = _parse_recreos_config(config)
+        dias_lectivos = listar_dias_lectivos(config)
 
         # Contar recreos por turno
         recreos_manana = sum(1 for r in recreos if r["turno"] == "mañana")
@@ -242,23 +239,64 @@ class DistribucionCuotasService:
                 factores[profesor.id] = 0.0
                 continue
 
-            # Factor base: porcentaje de jornada
-            factor_base = profesor.porcentaje_jornada / 100.0
-
-            # Multiplicador según turno
+            # 1. Factor por turno (proporción de recreos disponibles)
             if profesor.turno == "mañana":
-                multiplicador_turno = (
+                factor_turno = (
                     recreos_manana / total_recreos if total_recreos > 0 else 0.5
                 )
             elif profesor.turno == "tarde":
-                multiplicador_turno = (
+                factor_turno = (
                     recreos_tarde / total_recreos if total_recreos > 0 else 0.5
                 )
             else:  # mixto
-                multiplicador_turno = 1.0
+                factor_turno = 1.0
 
-            factor = factor_base * multiplicador_turno
+            # 2. Factor por horas de contrato (proporción respecto a 30h completas)
+            horas_jornada_completa = 30.0
+            factor_horas = min(profesor.horas_contrato / horas_jornada_completa, 1.0)
+
+            # 3. Factor de tutoría (desde configuración)
+            factor_tutoria = (
+                getattr(config, 'ajuste_tutores', 1.0)
+                if getattr(profesor, 'tutor', False)
+                else getattr(config, 'ajuste_no_tutores', 1.0)
+            )
+
+            # 4. Proporción de tiempo disponible (fechas inicio/fin)
+            proporcion_tiempo = 1.0
+            if len(dias_lectivos) > 0:
+                if profesor.fecha_inicio_guardias or profesor.fecha_fin_guardias:
+                    inicio_efectivo = (
+                        profesor.fecha_inicio_guardias
+                        if profesor.fecha_inicio_guardias
+                        else config.fecha_inicio_curso
+                    )
+                    fin_efectivo = (
+                        profesor.fecha_fin_guardias
+                        if profesor.fecha_fin_guardias
+                        else config.fecha_fin_curso
+                    )
+
+                    # Contar días lectivos disponibles para este profesor
+                    dias_disponibles = len(
+                        [d for d in dias_lectivos if inicio_efectivo <= d <= fin_efectivo]
+                    )
+                    proporcion_tiempo = dias_disponibles / len(dias_lectivos)
+
+                    self.logger.info(
+                        f"{profesor.nombre_completo}: disponible {dias_disponibles}/"
+                        f"{len(dias_lectivos)} días (factor: {proporcion_tiempo:.2f})"
+                    )
+
+            # Factor total combinado
+            factor = factor_turno * factor_horas * factor_tutoria * proporcion_tiempo
             factores[profesor.id] = factor
+
+            self.logger.debug(
+                f"{profesor.nombre_completo}: turno={factor_turno:.2f}, "
+                f"horas={factor_horas:.2f}, tutoria={factor_tutoria:.2f}, "
+                f"tiempo={proporcion_tiempo:.2f} → factor={factor:.4f}"
+            )
 
         return factores
 
@@ -301,58 +339,8 @@ class DistribucionCuotasService:
 
         return cuotas
 
-    def _ajustar_por_fechas_inicio(
-        self, profesores: List[Profesor], cuotas: Dict[int, int], config: Configuracion
-    ) -> Dict[int, int]:
-        """Ajusta cuotas según fechas de inicio de guardias."""
-        dias_lectivos = listar_dias_lectivos(config)
-        dias_totales = len(dias_lectivos)
-
-        if dias_totales == 0:
-            return cuotas
-
-        cuotas_ajustadas = {}
-        slots_liberados = 0
-
-        for profesor in profesores:
-            cuota_original = cuotas.get(profesor.id, 0)
-
-            if profesor.fecha_inicio_guardias:
-                dias_disponibles = len(
-                    [d for d in dias_lectivos if d >= profesor.fecha_inicio_guardias]
-                )
-
-                if dias_disponibles < dias_totales:
-                    factor_ajuste = dias_disponibles / dias_totales
-                    cuota_ajustada = int(round(cuota_original * factor_ajuste))
-                    slots_liberados += cuota_original - cuota_ajustada
-                    cuotas_ajustadas[profesor.id] = cuota_ajustada
-
-                    self.logger.info(
-                        f"Cuota ajustada para {profesor.nombre_completo}: "
-                        f"{cuota_original} → {cuota_ajustada} "
-                        f"(factor: {factor_ajuste:.2f})"
-                    )
-                else:
-                    cuotas_ajustadas[profesor.id] = cuota_original
-            else:
-                cuotas_ajustadas[profesor.id] = cuota_original
-
-        # Redistribuir slots liberados entre profesores sin restricción de fecha
-        if slots_liberados > 0:
-            profesores_sin_restriccion = [
-                p for p in profesores if not p.fecha_inicio_guardias
-            ]
-            if profesores_sin_restriccion:
-                extra_por_profesor = slots_liberados // len(profesores_sin_restriccion)
-                resto = slots_liberados % len(profesores_sin_restriccion)
-
-                for i, profesor in enumerate(profesores_sin_restriccion):
-                    cuotas_ajustadas[profesor.id] += extra_por_profesor
-                    if i < resto:
-                        cuotas_ajustadas[profesor.id] += 1
-
-        return cuotas_ajustadas
+    # NOTA: Método obsoleto - el ajuste por fechas ahora se hace en _calcular_factores_participacion
+    # def _ajustar_por_fechas_inicio(...) - ELIMINADO
 
     def _log_resumen_distribucion(
         self, profesores: List[Profesor], cuotas: Dict[int, int], total_slots: int
