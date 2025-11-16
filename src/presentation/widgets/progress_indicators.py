@@ -592,35 +592,53 @@ def ejecutar_con_progreso(
 
     def on_solicitar_decision(diagnostico):
         """Manejar solicitud de decisión del usuario desde el worker thread."""
+        from PyQt6.QtCore import QThread, QTimer
         from utils.logger import get_logger
         logger = get_logger(__name__)
 
-        logger.info("🔔 Solicitud de decisión recibida en thread principal")
+        current_thread = QThread.currentThread()
+        thread_name = (
+            current_thread.objectName() if current_thread.objectName()
+            else str(type(current_thread).__name__)
+        )
+        logger.error(f"🔔 Solicitud de decisión recibida en thread: {thread_name}")
 
-        try:
-            # Mostrar diálogo en el thread principal
-            from src.presentation.dialogs.dialogo_diagnostico_guardias import (
-                DialogoDiagnosticoGuardias,
+        def mostrar_dialogo_en_main_thread():
+            """Mostrar diálogo garantizando que está en el main thread."""
+            verify_thread = QThread.currentThread()
+            verify_name = (
+                verify_thread.objectName() if verify_thread.objectName()
+                else str(type(verify_thread).__name__)
             )
+            logger.error(f"📊 Mostrando diálogo en thread: {verify_name}")
 
-            dialogo = DialogoDiagnosticoGuardias(diagnostico, dialog)
+            try:
+                # Mostrar diálogo en el thread principal
+                from src.presentation.dialogs.dialogo_diagnostico_guardias import (
+                    DialogoDiagnosticoGuardias,
+                )
 
-            if dialogo.exec():
-                resultado_decision = dialogo.get_accion_elegida()
-            else:
-                resultado_decision = 'cancelar'
+                dialogo = DialogoDiagnosticoGuardias(diagnostico, dialog)
 
-            logger.info(f"✅ Usuario eligió: {resultado_decision}")
+                if dialogo.exec():
+                    resultado_decision = dialogo.get_accion_elegida()
+                else:
+                    resultado_decision = 'cancelar'
 
-            # Enviar resultado de vuelta al worker
-            worker.set_decision_resultado(resultado_decision)
+                logger.info(f"✅ Usuario eligió: {resultado_decision}")
 
-        except Exception as e:
-            logger.error(f"❌ Error mostrando diálogo de decisión: {str(e)}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            # En caso de error, cancelar
-            worker.set_decision_resultado('cancelar')
+                # Enviar resultado de vuelta al worker
+                worker.set_decision_resultado(resultado_decision)
+
+            except Exception as e:
+                logger.error(f"❌ Error mostrando diálogo de decisión: {str(e)}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                # En caso de error, cancelar
+                worker.set_decision_resultado('cancelar')
+
+        # Forzar ejecución en main thread usando QTimer
+        QTimer.singleShot(0, mostrar_dialogo_en_main_thread)
 
     worker.finalizado.connect(on_finalizado)
     worker.error.connect(on_error)
