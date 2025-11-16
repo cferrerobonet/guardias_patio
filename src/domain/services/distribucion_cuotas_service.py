@@ -251,9 +251,10 @@ class DistribucionCuotasService:
             else:  # mixto
                 factor_turno = 1.0
 
-            # 2. Factor por horas de contrato (proporción respecto a 30h completas)
-            horas_jornada_completa = 30.0
-            factor_horas = min(profesor.horas_contrato / horas_jornada_completa, 1.0)
+            # 2. Factor por porcentaje de jornada (ya normalizado 0-100%)
+            # Usar porcentaje_jornada en lugar de horas_contrato para evitar
+            # problemas con datos incorrectos (ej: 60h cuando máximo es 30h)
+            factor_horas = profesor.porcentaje_jornada / 100.0
 
             # 3. Factor de tutoría (desde configuración)
             factor_tutoria = (
@@ -294,8 +295,9 @@ class DistribucionCuotasService:
 
             self.logger.debug(
                 f"{profesor.nombre_completo}: turno={factor_turno:.2f}, "
-                f"horas={factor_horas:.2f}, tutoria={factor_tutoria:.2f}, "
-                f"tiempo={proporcion_tiempo:.2f} → factor={factor:.4f}"
+                f"jornada={factor_horas:.2f} ({profesor.porcentaje_jornada}%), "
+                f"tutoria={factor_tutoria:.2f}, tiempo={proporcion_tiempo:.2f} → "
+                f"factor={factor:.4f}"
             )
 
         return factores

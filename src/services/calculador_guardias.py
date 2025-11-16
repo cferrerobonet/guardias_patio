@@ -365,10 +365,10 @@ def calcular_distribucion_cruda(
             recreos_tarde
         )
 
-        # 2. Factor por horas contratadas (proporción respecto a 30h)
-        # Si tiene 30h -> 100%, si tiene 15h -> 50%, si tiene 22.5h -> 75%
-        horas_jornada_completa = 30.0
-        factor_horas = min(profesor.horas_contrato / horas_jornada_completa, 1.0)
+        # 2. Factor por porcentaje de jornada (ya normalizado 0-100%)
+        # Usar porcentaje_jornada en lugar de horas_contrato para evitar
+        # problemas con datos incorrectos (ej: 60h cuando máximo es 30h)
+        factor_horas = profesor.porcentaje_jornada / 100.0
 
         # 3. Factor de multiplicación según tutoría (de configuración)
         factor_tutoria = (
@@ -418,8 +418,8 @@ def calcular_distribucion_cruda(
 
         logger.debug(
             f"Profesor {profesor.nombre_completo}: "
-            f"turno={factor_turno:.2f}, horas={factor_horas:.2f} "
-            f"({profesor.horas_contrato}h), tutoría={factor_tutoria:.2f}, "
+            f"turno={factor_turno:.2f}, jornada={factor_horas:.2f} "
+            f"({profesor.porcentaje_jornada}%), tutoría={factor_tutoria:.2f}, "
             f"tiempo={proporcion_tiempo:.2f} → participación={participacion:.4f}"
         )
 
