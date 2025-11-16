@@ -109,11 +109,10 @@ class GenerarGuardiasHibridoUseCase:
                 current_thread = QThread.currentThread()
                 thread_type = type(current_thread).__name__
                 logger.info(f"🔍 Thread actual: {current_thread} (tipo: {thread_type})")
-                from src.presentation.widgets.progress_indicators import WorkerThread
-                logger.info(f"🔍 WorkerThread class: {WorkerThread}")
-                is_worker = isinstance(current_thread, WorkerThread)
-                logger.info(f"🔍 isinstance check: {is_worker}")
-                if is_worker:
+
+                # CRÍTICO: Comparar por nombre de clase, no por isinstance
+                # porque pueden ser módulos diferentes (src.presentation vs presentation)
+                if thread_type == 'WorkerThread':
                     worker_thread = current_thread
                     logger.info("🧵 Ejecutando desde WorkerThread, usando callback thread-safe")
                 else:
