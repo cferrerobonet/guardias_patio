@@ -41,6 +41,15 @@ logger.info(f"=== INICIO DE APLICACIÓN === Log: {log_file}")
 
 def main():
     """Función principal"""
+    # Limpiar threads residuales de PyQt antes de crear la aplicación
+    from PyQt6.QtCore import QThread
+    import threading
+    
+    logger.error(f"🧹 Threads activos al inicio: {threading.active_count()}")
+    for thread in threading.enumerate():
+        thread_name = getattr(thread, 'name', 'Unknown')
+        logger.error(f"   - Thread: {thread_name} (tipo: {type(thread).__name__})")
+    
     # Instalar manejador global de excepciones
     def exception_hook(exctype, value, tb):
         """Captura excepciones no manejadas."""
