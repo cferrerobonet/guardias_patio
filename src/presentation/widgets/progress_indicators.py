@@ -592,7 +592,7 @@ def ejecutar_con_progreso(
 
     def on_solicitar_decision(diagnostico):
         """Manejar solicitud de decisión del usuario desde el worker thread."""
-        from PyQt6.QtCore import QThread, QTimer
+        from PyQt6.QtCore import QThread
         from utils.logger import get_logger
         logger = get_logger(__name__)
 
@@ -603,48 +603,49 @@ def ejecutar_con_progreso(
         )
         logger.error(f"🔔 Solicitud de decisión recibida en thread: {thread_name}")
 
-        def mostrar_dialogo_en_main_thread():
-            """Mostrar diálogo garantizando que está en el main thread."""
-            verify_thread = QThread.currentThread()
-            verify_name = (
-                verify_thread.objectName() if verify_thread.objectName()
-                else str(type(verify_thread).__name__)
+        # CRÍTICO: Este callback SE EJECUTA en el main thread por la señal Qt,
+        # pero QTimer.singleShot NO garantiza ejecución en main thread.
+        # Debemos ejecutar DIRECTAMENTE aquí ya que estamos en el main thread.
+        verify_thread = QThread.currentThread()
+        verify_name = (
+            verify_thread.objectName() if verify_thread.objectName()
+            else str(type(verify_thread).__name__)
+        )
+        logger.error(f"📊 Mostrando diálogo en thread: {verify_name}")
+
+        try:
+            # Mostrar diálogo en el thread principal
+            from src.presentation.dialogs.dialogo_diagnostico_guardias import (
+                DialogoDiagnosticoGuardias,
             )
-            logger.error(f"📊 Mostrando diálogo en thread: {verify_name}")
 
-            try:
-                # Mostrar diálogo en el thread principal
-                from src.presentation.dialogs.dialogo_diagnostico_guardias import (
-                    DialogoDiagnosticoGuardias,
-                )
+            dialogo = DialogoDiagnosticoGuardias(diagnostico, dialog)
 
-                dialogo = DialogoDiagnosticoGuardias(diagnostico, dialog)
+            if dialogo.exec():
+                resultado_decision = dialogo.get_accion_elegida()
+            else:
+                resultado_decision = 'cancelar'
 
-                if dialogo.exec():
-                    resultado_decision = dialogo.get_accion_elegida()
-                else:
-                    resultado_decision = 'cancelar'
+            logger.info(f"✅ Usuario eligió: {resultado_decision}")
 
-                logger.info(f"✅ Usuario eligió: {resultado_decision}")
+            # Enviar resultado de vuelta al worker
+            worker.set_decision_resultado(resultado_decision)
 
-                # Enviar resultado de vuelta al worker
-                worker.set_decision_resultado(resultado_decision)
-
-            except Exception as e:
-                logger.error(f"❌ Error mostrando diálogo de decisión: {str(e)}")
-                import traceback
-                logger.error(f"Traceback: {traceback.format_exc()}")
-                # En caso de error, cancelar
-                worker.set_decision_resultado('cancelar')
-
-        # Forzar ejecución en main thread usando QTimer
-        QTimer.singleShot(0, mostrar_dialogo_en_main_thread)
+        except Exception as e:
+            logger.error(f"❌ Error mostrando diálogo de decisión: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            # En caso de error, cancelar
+            worker.set_decision_resultado('cancelar')
 
     worker.finalizado.connect(on_finalizado)
     worker.error.connect(on_error)
-    worker.solicitar_decision.connect(on_solicitar_decision)
-
-    # Conectar cancelación
+    # CRÍTICO: Usar BlockingQueuedConnection para GARANTIZAR ejecución en main thread
+    from PyQt6.QtCore import Qt
+    worker.solicitar_decision.connect(
+        on_solicitar_decision,
+        Qt.ConnectionType.BlockingQueuedConnection
+    )    # Conectar cancelación
     def on_cancelar():
         if dialog.fue_cancelado():
             worker.cancelar()
