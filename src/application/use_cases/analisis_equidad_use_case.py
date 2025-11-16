@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class AnalisisEquidadUseCase:
     """
     Use Case para analizar equidad de guardias asignadas.
-    
+
     Responsabilidades:
     - Obtener guardias actuales
     - Calcular cuotas esperadas
@@ -43,10 +43,10 @@ class AnalisisEquidadUseCase:
     def execute(self, request: AnalisisEquidadRequest) -> AnalisisEquidadResponse:
         """
         Ejecuta el análisis de equidad.
-        
+
         Args:
             request: Parámetros del análisis
-            
+
         Returns:
             Response con métricas y recomendaciones
         """

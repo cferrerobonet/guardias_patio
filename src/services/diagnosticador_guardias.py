@@ -92,7 +92,7 @@ class DiagnosticadorGuardias:
         problemas = []
 
         profesores_activos = self.db.query(Profesor).filter(
-            Profesor.activo == True
+            Profesor.activo
         ).all()
 
         profesores_con_guardias = {g.profesor_id for g in guardias}
@@ -122,7 +122,7 @@ class DiagnosticadorGuardias:
                     descripcion=f"{len(profs)} profesor(es) sin guardias en turno '{turno}'",
                     detalles={
                         'turno': turno,
-                        'profesores': [{'nombre': p.nombre, 'id': p.id} for p in profs],
+                        'profesores': [{'nombre': p.nombre_completo, 'id': p.id} for p in profs],
                         'causas': causas
                     },
                     sugerencias=self._generar_sugerencias_profesores_sin_guardias(causas, turno)
@@ -193,7 +193,7 @@ class DiagnosticadorGuardias:
         if profesores_retrasados:
             # Agrupar por nivel de retraso
             retrasos_criticos = [p for p in profesores_retrasados if p['dias_retraso'] > 60]
-            retrasos_moderados = [p for p in profesores_retrasados if 30 < p['dias_retraso'] <= 60]
+            [p for p in profesores_retrasados if 30 < p['dias_retraso'] <= 60]
 
             if retrasos_criticos:
                 problema = ProblemaDetectado(
@@ -203,7 +203,7 @@ class DiagnosticadorGuardias:
                     detalles={
                         'profesores_retrasados': [
                             {
-                                'nombre': p['profesor'].nombre,
+                                'nombre': p['profesor'].nombre_completo,
                                 'fecha_inicio': p['fecha_inicio_esperada'].isoformat(),
                                 'primera_guardia': p['primera_guardia'].isoformat(),
                                 'dias_retraso': p['dias_retraso']
@@ -259,7 +259,7 @@ class DiagnosticadorGuardias:
                 detalles={
                     'profesores': [
                         {
-                            'nombre': p['profesor'].nombre,
+                            'nombre': p['profesor'].nombre_completo,
                             'esperadas': p['esperadas'],
                             'asignadas': p['asignadas'],
                             'deficit': p['deficit'],
@@ -331,7 +331,7 @@ class DiagnosticadorGuardias:
         slots_disponibles = len(self.dias_lectivos) * len(recreos_turno) * len(self.config.zonas)
 
         profesores_turno = self.db.query(Profesor).filter(
-            Profesor.activo == True,
+            Profesor.activo,
             # Filtrar profesores que pueden hacer este turno
             # (turno completo/mixto pueden ambos, o turno específico coincide)
             or_(
@@ -350,7 +350,7 @@ class DiagnosticadorGuardias:
                 ausencias_count = len(prof.ausencias)
                 if ausencias_count > len(self.dias_lectivos) * 0.5:
                     causas['ausencias_excesivas'].append({
-                        'nombre': prof.nombre,
+                        'nombre': prof.nombre_completo,
                         'ausencias': ausencias_count,
                         'dias_totales': len(self.dias_lectivos)
                     })
@@ -363,7 +363,7 @@ class DiagnosticadorGuardias:
             # Verificar si el profesor puede hacer este turno
             puede_turno = prof.turno in ('completo', 'mixto') or prof.turno == turno
             if not puede_turno:
-                causas['sin_disponibilidad_turno'].append(prof.nombre)
+                causas['sin_disponibilidad_turno'].append(prof.nombre_completo)
 
         return causas
 
@@ -487,7 +487,7 @@ class DiagnosticadorGuardias:
         total_slots = total_dias * len(self.config.recreos) * len(self.config.zonas)
 
         profesores_con_guardias = len(set(g.profesor_id for g in guardias))
-        profesores_activos = self.db.query(Profesor).filter(Profesor.activo == True).count()
+        profesores_activos = self.db.query(Profesor).filter(Profesor.activo).count()
 
         return {
             'total_guardias_asignadas': len(guardias),

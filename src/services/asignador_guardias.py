@@ -47,10 +47,10 @@ def _limpiar_cache_elegibilidad() -> None:
 def profesor_ausente(session: Session, profesor_id: int, fecha: date) -> bool:
     """
     Verifica si un profesor está ausente en una fecha específica.
-    
+
     DEPRECADO: Esta función está obsoleta. Para nuevo código, usar
     DisponibilidadProfesorService.esta_ausente() que centraliza las validaciones.
-    
+
     NOTA: Esta función ahora usa AusenciaChecker internamente.
     Se mantiene por compatibilidad, pero se recomienda usar
     AusenciaChecker directamente en código nuevo.

@@ -92,7 +92,7 @@ class ProfesorConCuota:
 def _profesor_ausente(session: Session, profesor_id: int, fecha: date) -> bool:
     """
     Verifica si un profesor está ausente en una fecha.
-    
+
     DEPRECADO: Usar DisponibilidadProfesorService.esta_ausente() en nuevo código.
     """
     # Mantener compatibilidad temporal

@@ -76,7 +76,7 @@ class AsignacionResultadosForm(BaseForm):
         """
         self.logger.info("🔄 Recargando resultados para el curso activo")
         self.session.expire_all()  # Limpiar caché de SQLAlchemy
-        
+
         # Los paneles se actualizarán cuando se generen guardias
         # Por ahora solo limpiamos si no hay guardias
         count_guardias = self.session.query(Guardia).count()

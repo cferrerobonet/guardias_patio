@@ -10,6 +10,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
+    QLabel,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
@@ -80,10 +81,21 @@ class CuotasPanel(QGroupBox):
         self.calcular_button.clicked.connect(self.calcular_cuotas)
         button_layout.addWidget(self.calcular_button)
 
-        self.total_label = QPushButton("Total: -- guardias")
-        self.total_label.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
+        # Etiqueta de total (no es botón)
+        self.total_label = QLabel("Total: -- guardias")
+        self.total_label.setStyleSheet("""
+            QLabel {
+                background-color: #ecfdf5;
+                color: #059669;
+                font-weight: bold;
+                font-size: 14px;
+                padding: 8px 16px;
+                border-radius: 6px;
+                border: 2px solid #10b981;
+            }
+        """)
         self.total_label.setMinimumHeight(35)
-        self.total_label.setEnabled(False)
+        self.total_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         button_layout.addWidget(self.total_label)
 
         layout.addLayout(button_layout)
@@ -108,22 +120,34 @@ class CuotasPanel(QGroupBox):
             }
             QTableWidget::item {
                 padding: 5px;
+                font-size: 12px;
             }
             QHeaderView::section {
                 background-color: #f3f4f6;
-                padding: 6px;
+                padding: 8px;
                 border: none;
                 border-right: 1px solid #e5e7eb;
-                border-bottom: 1px solid #e5e7eb;
+                border-bottom: 2px solid #d1d5db;
                 font-weight: bold;
+                font-size: 12px;
             }
         """)
 
-        # Ajustar tamaño de columnas
-        self.tabla.setColumnWidth(0, 200)  # Profesor
-        self.tabla.setColumnWidth(1, 100)  # Jornada
-        self.tabla.setColumnWidth(2, 120)  # Cuota
-        self.tabla.setColumnWidth(3, 100)  # Estado
+        # Ajustar tamaño y comportamiento de columnas
+        header = self.tabla.horizontalHeader()
+        header.setStretchLastSection(False)
+
+        self.tabla.setColumnWidth(0, 320)  # Profesor (más ancho para nombres completos)
+        self.tabla.setColumnWidth(1, 100)  # Jornada %
+        self.tabla.setColumnWidth(2, 120)  # Cuota Esperada
+        self.tabla.setColumnWidth(3, 120)  # Estado
+
+        # Permitir que la última columna se ajuste
+        from PyQt6.QtWidgets import QHeaderView
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
 
         layout.addWidget(self.tabla)
         self.setLayout(layout)
@@ -217,8 +241,8 @@ class CuotasPanel(QGroupBox):
             item_nombre.setFlags(item_nombre.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.tabla.setItem(i, 0, item_nombre)
 
-            # Jornada (placeholder - necesitaríamos agregarlo al DTO)
-            item_jornada = QTableWidgetItem("--")
+            # Jornada
+            item_jornada = QTableWidgetItem(f"{cuota_dto.porcentaje_jornada:.0f}%")
             item_jornada.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             item_jornada.setFlags(item_jornada.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.tabla.setItem(i, 1, item_jornada)

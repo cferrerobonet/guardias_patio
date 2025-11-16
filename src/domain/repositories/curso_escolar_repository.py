@@ -18,7 +18,7 @@ class ICursoEscolarRepository(IBaseRepository):
     def find_active(self):
         """
         Obtiene el curso escolar activo.
-        
+
         Returns:
             Curso activo o None
         """
@@ -28,10 +28,10 @@ class ICursoEscolarRepository(IBaseRepository):
     def find_by_year(self, anio_inicio: int):
         """
         Busca curso por año de inicio.
-        
+
         Args:
             anio_inicio: Año de inicio del curso
-            
+
         Returns:
             Curso escolar o None
         """
@@ -48,11 +48,11 @@ class ICursoEscolarRepository(IBaseRepository):
     def find_by_date_range(self, fecha_inicio: str, fecha_fin: str) -> list:
         """
         Busca cursos que se solapen con un rango de fechas.
-        
+
         Args:
             fecha_inicio: Fecha inicio (YYYY-MM-DD)
             fecha_fin: Fecha fin (YYYY-MM-DD)
-            
+
         Returns:
             Lista de cursos que se solapan
         """

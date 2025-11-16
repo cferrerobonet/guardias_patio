@@ -129,11 +129,11 @@ class SistemaSugerenciasAutomaticas:
             for prof in candidatos_ampliar[:2]:
                 cambios.append(CambioSugerido(
                     tipo='ampliar_turno_profesor',
-                    descripcion=f"Ampliar turnos de '{prof.nombre}' para incluir '{turno}'",
+                    descripcion=f"Ampliar turnos de '{prof.nombre_completo}' para incluir '{turno}'",
                     impacto_estimado='MEDIO',
                     detalles={
                         'profesor_id': prof.id,
-                        'profesor_nombre': prof.nombre,
+                        'profesor_nombre': prof.nombre_completo,
                         'turnos_actuales': prof.turnos or [],
                         'turno_nuevo': turno
                     }
@@ -192,11 +192,11 @@ class SistemaSugerenciasAutomaticas:
             for prof in candidatos:
                 cambios.append(CambioSugerido(
                     tipo='activar_profesor',
-                    descripcion=f"Activar '{prof.nombre}' para cubrir slots en turno '{turno}'",
+                    descripcion=f"Activar '{prof.nombre_completo}' para cubrir slots en turno '{turno}'",
                     impacto_estimado='ALTO',
                     detalles={
                         'profesor_id': prof.id,
-                        'profesor_nombre': prof.nombre,
+                        'profesor_nombre': prof.nombre_completo,
                         'turno_objetivo': turno,
                         'huecos_a_cubrir': num_huecos
                     }
@@ -223,11 +223,11 @@ class SistemaSugerenciasAutomaticas:
                 for prof in candidatos:
                     cambios.append(CambioSugerido(
                         tipo='asignar_zona_profesor',
-                        descripcion=f"Asignar zona '{zona_nombre}' a profesor '{prof.nombre}'",
+                        descripcion=f"Asignar zona '{zona_nombre}' a profesor '{prof.nombre_completo}'",
                         impacto_estimado='MEDIO',
                         detalles={
                             'profesor_id': prof.id,
-                            'profesor_nombre': prof.nombre,
+                            'profesor_nombre': prof.nombre_completo,
                             'zona_id': zona_obj.id,
                             'zona_nombre': zona_nombre,
                             'huecos_a_cubrir': num_huecos
@@ -370,7 +370,7 @@ class SistemaSugerenciasAutomaticas:
             if profesor:
                 profesor.activo = True
                 self.db.commit()
-                return f"Profesor activado: {profesor.nombre}"
+                return f"Profesor activado: {profesor.nombre_completo}"
 
         elif cambio.tipo == 'ampliar_turno_profesor':
             profesor_id = cambio.detalles['profesor_id']
@@ -381,7 +381,7 @@ class SistemaSugerenciasAutomaticas:
                 if turno_nuevo not in turnos_actuales:
                     profesor.turnos = turnos_actuales + [turno_nuevo]
                     self.db.commit()
-                return f"Turno '{turno_nuevo}' añadido a {profesor.nombre}"
+                return f"Turno '{turno_nuevo}' añadido a {profesor.nombre_completo}"
 
         elif cambio.tipo == 'asignar_zona_profesor':
             profesor_id = cambio.detalles['profesor_id']

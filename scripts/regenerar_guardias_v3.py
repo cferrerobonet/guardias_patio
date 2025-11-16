@@ -49,7 +49,7 @@ def main():
         print(f"🆔 Configuración ID: {config.id}")
 
         # Verificar profesores
-        profesores = session.query(Profesor).filter(Profesor.activo == True).all()
+        profesores = session.query(Profesor).filter(Profesor.activo).all()
         print(f"👥 Profesores activos: {len(profesores)}")
 
         profesores_con_fecha = [p for p in profesores if p.fecha_inicio_guardias]

@@ -12,7 +12,7 @@ from domain.repositories.base_repository import IBaseRepository
 class IConfiguracionRepository(IBaseRepository):
     """
     Interfaz del repositorio de configuración.
-    
+
     La configuración es un singleton en el sistema.
     """
 
@@ -20,7 +20,7 @@ class IConfiguracionRepository(IBaseRepository):
     def get_active(self):
         """
         Obtiene la configuración activa del sistema.
-        
+
         Returns:
             Configuración activa o None
         """
@@ -30,7 +30,7 @@ class IConfiguracionRepository(IBaseRepository):
     def get_first(self):
         """
         Obtiene la primera configuración (normalmente la única).
-        
+
         Returns:
             Primera configuración o None
         """

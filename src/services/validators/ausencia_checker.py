@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 class AusenciaChecker:
     """
     Verificador de ausencias de profesores.
-    
+
     Centraliza toda la lógica de verificación de ausencias para evitar
     código duplicado en múltiples servicios.
-    
+
     Ejemplos:
         >>> checker = AusenciaChecker(session)
         >>> esta_ausente = checker.profesor_ausente(profesor_id=5, fecha=date(2025, 11, 14))
@@ -34,7 +34,7 @@ class AusenciaChecker:
     def __init__(self, session: Session):
         """
         Inicializar checker de ausencias.
-        
+
         Args:
             session: Sesión de SQLAlchemy para consultas a BD
         """
@@ -47,14 +47,14 @@ class AusenciaChecker:
     ) -> bool:
         """
         Verificar si un profesor está ausente en una fecha específica.
-        
+
         Args:
             profesor_id: ID del profesor a verificar
             fecha: Fecha a verificar
-            
+
         Returns:
             bool: True si está ausente, False si está disponible
-            
+
         Examples:
             >>> checker = AusenciaChecker(session)
             >>> checker.profesor_ausente(5, date(2025, 11, 14))
@@ -80,11 +80,11 @@ class AusenciaChecker:
     ) -> Optional[Ausencia]:
         """
         Obtener la ausencia de un profesor en una fecha específica.
-        
+
         Args:
             profesor_id: ID del profesor
             fecha: Fecha a verificar
-            
+
         Returns:
             Ausencia si existe, None si no hay ausencia
         """
@@ -105,12 +105,12 @@ class AusenciaChecker:
     ) -> List[Profesor]:
         """
         Obtener lista de profesores ausentes en una fecha.
-        
+
         Args:
             fecha: Fecha a verificar
             profesor_ids: Lista opcional de IDs de profesores a verificar.
                          Si es None, verifica todos los profesores.
-            
+
         Returns:
             Lista de profesores ausentes en esa fecha
         """
@@ -135,11 +135,11 @@ class AusenciaChecker:
     ) -> List[Profesor]:
         """
         Obtener lista de profesores disponibles (no ausentes) en una fecha.
-        
+
         Args:
             fecha: Fecha a verificar
             solo_activos: Si True, solo incluye profesores activos
-            
+
         Returns:
             Lista de profesores disponibles
         """
@@ -166,12 +166,12 @@ class AusenciaChecker:
     ) -> int:
         """
         Contar el número de ausencias de un profesor en un período.
-        
+
         Args:
             profesor_id: ID del profesor
             fecha_inicio: Fecha de inicio del período (opcional)
             fecha_fin: Fecha de fin del período (opcional)
-            
+
         Returns:
             Número de ausencias registradas
         """
@@ -195,12 +195,12 @@ class AusenciaChecker:
     ) -> int:
         """
         Calcular el número de días que un profesor estuvo ausente en un período.
-        
+
         Args:
             profesor_id: ID del profesor
             fecha_inicio: Fecha de inicio del período
             fecha_fin: Fecha de fin del período
-            
+
         Returns:
             Número de días ausente (aproximado)
         """
@@ -234,11 +234,11 @@ class AusenciaChecker:
     ) -> bool:
         """
         Verificar si un profesor tiene ausencias programadas a futuro.
-        
+
         Args:
             profesor_id: ID del profesor
             desde_fecha: Fecha desde la cual buscar (por defecto hoy)
-            
+
         Returns:
             bool: True si tiene ausencias futuras, False si no
         """

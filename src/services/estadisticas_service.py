@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 class EstadisticasService:
     """
     Servicio centralizado para cálculos estadísticos.
-    
+
     Elimina duplicación de lógica de estadísticas en múltiples archivos.
     """
 

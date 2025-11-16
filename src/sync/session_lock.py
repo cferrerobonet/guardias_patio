@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
-from core.paths import get_data_directory, get_user_data_directory
+from core.paths import get_user_data_directory
 
 logger = logging.getLogger(__name__)
 

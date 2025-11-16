@@ -143,7 +143,6 @@ class ScoreCalculator:
         penalizacion = 0.0
 
         for dia_offset in range(1, 4):
-            fecha_anterior = slot.fecha
             # TODO: Restar días para verificar guardias recientes
             # Por ahora, score neutro
             pass

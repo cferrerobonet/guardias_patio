@@ -111,11 +111,11 @@ class ValidadorGuardias:
     ) -> ResultadoValidacion:
         """
         Ejecuta todas las validaciones.
-        
+
         Args:
             profesores: Lista de profesores activos
             cuotas_esperadas: Dict[profesor_id, cuota] con guardias esperadas
-        
+
         Returns:
             ResultadoValidacion con errores, warnings y métricas
         """
@@ -385,12 +385,12 @@ def validar_guardias_completo(
 ) -> ResultadoValidacion:
     """
     Función helper para validar guardias.
-    
+
     Args:
         session: Sesión de base de datos
         profesores: Lista de profesores activos
         cuotas_esperadas: Dict[profesor_id, cuota] con guardias esperadas
-    
+
     Returns:
         ResultadoValidacion con estado, errores y métricas
     """

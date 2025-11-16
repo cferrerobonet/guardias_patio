@@ -253,6 +253,7 @@ def delete_user_database(user_id: str) -> bool:
 # NOTA: En producción siempre se debe usar initialize_user_database(user_id)
 # Este fallback usa ruta absoluta para evitar crear BD en directorios incorrectos
 from core.paths import get_database_path
+
 DATABASE_URL = os.getenv('DATABASE_URL', f'sqlite:///{get_database_path()}')
 
 # Detectar tipo de base de datos

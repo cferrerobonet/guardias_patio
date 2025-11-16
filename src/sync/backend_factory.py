@@ -3,10 +3,10 @@ Factory para crear backends de sincronización según configuración.
 """
 
 import logging
-from pathlib import Path
 
 from config import get_sftp_config, validate_sftp_config
 from core.paths import get_data_directory
+
 from sync.sync_manager import LocalSyncBackend, SFTPSyncBackend, SyncBackend
 
 logger = logging.getLogger(__name__)

@@ -78,7 +78,7 @@ class AsignacionGuardiasForm(BaseForm):
     def cargar_datos(self):
         """
         Recargar estadísticas cuando cambia el curso activo.
-        
+
         Este método es llamado automáticamente por el sistema de señales
         cuando el usuario cambia de curso escolar.
         """

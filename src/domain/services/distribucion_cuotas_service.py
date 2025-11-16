@@ -90,7 +90,7 @@ class DistribucionCuotasService:
         """
         if profesores is None:
             profesores = (
-                self.session.query(Profesor).filter(Profesor.activo == True).all()
+                self.session.query(Profesor).filter(Profesor.activo).all()
             )
 
         if not profesores:
@@ -183,7 +183,7 @@ class DistribucionCuotasService:
             raise ValueError("No se encontró configuración activa")
 
         profesores = (
-            self.session.query(Profesor).filter(Profesor.activo == True).all()
+            self.session.query(Profesor).filter(Profesor.activo).all()
         )
         total_slots = self._calcular_total_slots(config)
         factores = self._calcular_factores_participacion(profesores, config)

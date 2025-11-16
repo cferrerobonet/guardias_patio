@@ -230,7 +230,7 @@ class VisualizadorConflictosGuardias:
         counts = []
         for prof_id, count in top_profesores:
             profesor = self.db.query(Profesor).get(prof_id)
-            nombre = profesor.nombre[:15] if profesor else f"ID {prof_id}"
+            nombre = profesor.nombre_completo[:15] if profesor else f"ID {prof_id}"
             nombres.append(nombre)
             counts.append(count)
 
@@ -379,7 +379,7 @@ class VisualizadorConflictosGuardias:
         # Añadir valores en las celdas
         for i in range(len(turnos)):
             for j in range(len(zonas)):
-                texto = ax.text(j, i, int(matriz_vacios[i, j]),
+                ax.text(j, i, int(matriz_vacios[i, j]),
                                ha="center", va="center", color="black", fontweight='bold')
 
         plt.colorbar(im, ax=ax, label='Slots Vacíos')

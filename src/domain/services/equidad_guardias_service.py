@@ -377,13 +377,13 @@ class EquidadGuardiasService:
             Mejora esperada (delta positivo en índice de equidad)
         """
         # Simular reasignación
-        guardias_simuladas = guardias.copy()
+        guardias.copy()
 
         # Encontrar una guardia del profesor con exceso y simular cambio
         # (versión simplificada, en producción sería más elaborado)
 
         # Calcular índices antes y después
-        indice_antes = self.calcular_indice_equidad(guardias, cuotas)
+        self.calcular_indice_equidad(guardias, cuotas)
 
         # Para la simulación, simplemente reducimos desviación
         mejora_estimada = (

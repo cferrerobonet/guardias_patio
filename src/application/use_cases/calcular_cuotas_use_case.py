@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class CalcularCuotasUseCase:
     """
     Use Case para calcular distribución de cuotas de guardias.
-    
+
     Responsabilidades:
     - Validar request
     - Obtener datos necesarios (profesores activos)
@@ -40,10 +40,10 @@ class CalcularCuotasUseCase:
     def execute(self, request: CalcularCuotasRequest) -> CalcularCuotasResponse:
         """
         Ejecuta el caso de uso.
-        
+
         Args:
             request: Parámetros de la operación
-            
+
         Returns:
             Response con cuotas calculadas
         """
@@ -119,6 +119,7 @@ class CalcularCuotasUseCase:
                     profesor_id=profesor_id,
                     profesor_nombre=profesor.nombre_completo,
                     cuota_esperada=cuota,
+                    porcentaje_jornada=profesor.porcentaje_jornada,
                     cuota_asignada=0  # Se llenará cuando haya guardias asignadas
                 ))
 

@@ -361,7 +361,7 @@ def pytest_configure(config):
 def configuracion_base(session: Session):
     """
     Fixture de configuración básica para tests.
-    
+
     Returns:
         Configuracion: Configuración con datos mínimos
     """
@@ -398,7 +398,7 @@ def configuracion_base(session: Session):
 def profesores_variados(session: Session):
     """
     Fixture con varios profesores de diferentes tipos.
-    
+
     Returns:
         List[Profesor]: Lista de profesores variados
     """
@@ -462,7 +462,7 @@ def profesores_variados(session: Session):
 def zona_patio(session: Session):
     """
     Fixture de zona de patio básica.
-    
+
     Returns:
         Zona: Zona de patio
     """

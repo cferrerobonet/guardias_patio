@@ -160,7 +160,7 @@ class CeldaDia(QGroupBox):
         # No mostrar nada en días no lectivos (festivos, fines de semana)
         if not self.es_dia_lectivo:
             return
-        
+
         # Agrupar guardias por turno y recreo
         grupos = defaultdict(list)
         for guardia in self.guardias:
@@ -466,7 +466,7 @@ class VistaCalendario(BaseForm):
     def showEvent(self, event):
         """
         Sobrescribe showEvent para refrescar el calendario cuando se muestra la vista.
-        
+
         Esto garantiza que el calendario se actualice automáticamente al:
         - Cambiar de curso escolar en el selector
         - Volver a esta pestaña después de estar en otra vista
@@ -856,7 +856,7 @@ class VistaCalendario(BaseForm):
     def actualizar_calendario(self):
         """Actualizar el calendario según la vista actual."""
         self.logger.info(f"📅 Actualizando calendario - Vista: {self.vista_actual}")
-        
+
         # Limpiar calendario anterior
         while self.calendario_layout.count():
             item = self.calendario_layout.takeAt(0)
@@ -870,7 +870,7 @@ class VistaCalendario(BaseForm):
             self._renderizar_vista_semanal()
         else:  # ANUAL
             self._renderizar_vista_anual()
-        
+
         self.logger.info("✅ Calendario actualizado correctamente")
 
     def _renderizar_vista_mensual(self):

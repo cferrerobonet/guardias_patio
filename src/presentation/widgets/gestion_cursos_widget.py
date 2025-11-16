@@ -33,7 +33,7 @@ logger = get_logger(__name__)
 def _fix_messagebox_size(msgbox: QMessageBox) -> None:
     """
     Fix para QMessageBox en macOS que no muestra botones correctamente.
-    
+
     Fuerza un tamaño mínimo para que los botones sean visibles.
     """
     # Programar el resize después de que el diálogo se muestre

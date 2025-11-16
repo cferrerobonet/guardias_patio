@@ -15,15 +15,12 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from utils.icon_manager import get_icon
 
 from presentation.themes.ccleaner_theme import (
     SIDEBAR_BG,
-    SPACING_LG,
-    SPACING_MD,
-    SPACING_SM,
     get_sidebar_style,
 )
-from utils.icon_manager import get_icon
 
 
 class SidebarMenu(QWidget):
@@ -184,9 +181,8 @@ class SidebarMenu(QWidget):
 
         # Buscar logo corporativo del usuario actual
         try:
-            from PyQt6.QtGui import QPixmap
-
             from database.db_manager import get_current_user_id
+            from PyQt6.QtGui import QPixmap
             current_user = get_current_user_id()
             logo_path = Path("imagenes") / f"{current_user}.png"
 

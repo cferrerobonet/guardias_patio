@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 class GenerarGuardiasHibridoUseCase:
     """
     Caso de uso para generar guardias usando el sistema híbrido.
-    
+
     Utiliza el OrquestadorAsignacionGuardias que:
     1. Intenta algoritmo iterativo (rápido)
     2. Si falla, muestra diagnóstico al usuario

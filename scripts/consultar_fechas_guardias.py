@@ -34,7 +34,7 @@ def consultar_fechas_guardias(db_path: str = "data/guardias_patio.db"):
 
         # Profesores activos
         profesores_activos = session.query(func.count(Profesor.id)).filter(
-            Profesor.activo == True
+            Profesor.activo
         ).scalar()
         print(f"✅ Profesores activos: {profesores_activos}")
 
@@ -55,7 +55,7 @@ def consultar_fechas_guardias(db_path: str = "data/guardias_patio.db"):
 
         # Profesores activos con fecha de inicio
         activos_con_fecha_inicio = session.query(func.count(Profesor.id)).filter(
-            Profesor.activo == True,
+            Profesor.activo,
             Profesor.fecha_inicio_guardias.isnot(None)
         ).scalar()
         print(f"✓ Profesores activos con fecha_inicio_guardias: {activos_con_fecha_inicio}")
@@ -68,7 +68,7 @@ def consultar_fechas_guardias(db_path: str = "data/guardias_patio.db"):
 
         # Profesores activos sin fecha de inicio
         activos_sin_fecha_inicio = session.query(func.count(Profesor.id)).filter(
-            Profesor.activo == True,
+            Profesor.activo,
             Profesor.fecha_inicio_guardias.is_(None)
         ).scalar()
         print(f"✗ Profesores activos sin fecha_inicio_guardias: {activos_sin_fecha_inicio}")
@@ -86,7 +86,7 @@ def consultar_fechas_guardias(db_path: str = "data/guardias_patio.db"):
 
         # Profesores activos con fecha de fin
         activos_con_fecha_fin = session.query(func.count(Profesor.id)).filter(
-            Profesor.activo == True,
+            Profesor.activo,
             Profesor.fecha_fin_guardias.isnot(None)
         ).scalar()
         print(f"✓ Profesores activos con fecha_fin_guardias: {activos_con_fecha_fin}")
@@ -99,7 +99,7 @@ def consultar_fechas_guardias(db_path: str = "data/guardias_patio.db"):
 
         # Profesores activos sin fecha de fin
         activos_sin_fecha_fin = session.query(func.count(Profesor.id)).filter(
-            Profesor.activo == True,
+            Profesor.activo,
             Profesor.fecha_fin_guardias.is_(None)
         ).scalar()
         print(f"✗ Profesores activos sin fecha_fin_guardias: {activos_sin_fecha_fin}")

@@ -303,15 +303,23 @@ class GestorCursos:
         for prof_viejo in profesores_antiguos:
             # Verificar si ya existe un profesor con ese email en el nuevo curso
             # TODO: Cuando Profesor tenga curso_id, filtrar por curso también
-            existe = session.query(Profesor).filter_by(email=prof_viejo.email).first()
+            existe = session.query(Profesor).filter_by(email_corporativo=prof_viejo.email_corporativo).first()
 
             if not existe:
                 # Crear copia del profesor
                 nuevo_prof = Profesor(
-                    nombre=prof_viejo.nombre,
-                    apellidos=prof_viejo.apellidos,
-                    email=prof_viejo.email,
-                    # TODO: curso_id=curso_nuevo_id cuando se añada
+                    nombre_completo=prof_viejo.nombre_completo,
+                    email_corporativo=prof_viejo.email_corporativo,
+                    horas_contrato=prof_viejo.horas_contrato,
+                    porcentaje_jornada=prof_viejo.porcentaje_jornada,
+                    turno=prof_viejo.turno,
+                    horas_manana=prof_viejo.horas_manana,
+                    horas_tarde=prof_viejo.horas_tarde,
+                    tutor=prof_viejo.tutor,
+                    activo=prof_viejo.activo,
+                    zona_preferida_id=prof_viejo.zona_preferida_id,
+                    dias_semana_permitidos=prof_viejo.dias_semana_permitidos,
+                    recreos_permitidos=prof_viejo.recreos_permitidos
                 )
                 session.add(nuevo_prof)
                 contador += 1

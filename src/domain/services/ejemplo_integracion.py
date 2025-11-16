@@ -47,7 +47,8 @@ def generar_guardias_con_servicios_dominio(
         Tupla (guardias_generadas, cuotas_asignadas)
     """
     if reportar_progreso is None:
-        reportar_progreso = lambda p, m: None
+        def reportar_progreso(p, m):
+            return None
 
     logger.info("=" * 80)
     logger.info("GENERACIÓN DE GUARDIAS - USANDO DOMAIN SERVICES")
@@ -71,7 +72,7 @@ def generar_guardias_con_servicios_dominio(
     if not config:
         raise ValueError(f"Configuración {configuracion_id} no encontrada")
 
-    profesores = session.query(Profesor).filter(Profesor.activo == True).all()
+    profesores = session.query(Profesor).filter(Profesor.activo).all()
     zonas = session.query(Zona).all()
 
     logger.info(f"  ✓ Profesores activos: {len(profesores)}")
@@ -230,7 +231,7 @@ def ejemplo_integracion_caso_uso(session: Session):
     )
 
     # Caso de uso: Asignar guardia manual
-    profesor = session.query(Profesor).filter(Profesor.activo == True).first()
+    profesor = session.query(Profesor).filter(Profesor.activo).first()
     fecha = date.today()
     turno = "mañana"
     recreo_id = 1
@@ -286,7 +287,7 @@ def ejemplo_testing_con_mock():
     from unittest.mock import Mock
 
     # Mock de session
-    mock_session = Mock()
+    Mock()
 
     # Mock de servicios
     mock_disponibilidad = Mock(spec=DisponibilidadProfesorService)

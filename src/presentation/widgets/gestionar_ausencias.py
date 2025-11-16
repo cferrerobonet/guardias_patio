@@ -6,6 +6,8 @@ Permite registrar, editar, eliminar y visualizar ausencias.
 
 from datetime import date
 
+import ui_styles as styles
+from models.models import Ausencia, Guardia, Profesor
 from PyQt6.QtCore import QDate, Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -22,10 +24,6 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
-
-import ui_styles as styles
-from models.models import Ausencia, Guardia, Profesor
-from presentation.forms.base_form import BaseForm
 from services.gestor_ausencias import (
     desactivar_ausencia,
     editar_ausencia,
@@ -39,6 +37,8 @@ from services.gestor_ausencias import (
 )
 from services.gestor_cursos import GestorCursos
 from utils.ui_helpers import get_corporate_icon
+
+from presentation.forms.base_form import BaseForm
 
 
 class GestionarAusenciasForm(BaseForm):
@@ -79,7 +79,7 @@ class GestionarAusenciasForm(BaseForm):
     def cargar_datos(self):
         """
         Recargar datos cuando cambia el curso activo.
-        
+
         Este método es llamado automáticamente por el sistema de señales
         cuando el usuario cambia de curso escolar.
         """
@@ -299,7 +299,7 @@ class GestionarAusenciasForm(BaseForm):
         """Cargar la lista de profesores del curso activo en el combo."""
         try:
             self.profesor_combo.clear()
-            
+
             # Obtener curso activo
             curso_activo = GestorCursos.obtener_curso_activo(self.session)
             if not curso_activo:
@@ -315,7 +315,7 @@ class GestionarAusenciasForm(BaseForm):
                 .order_by(Profesor.nombre_completo)
                 .all()
             )
-            
+
             for p in profesores:
                 self.profesor_combo.addItem(p.nombre_completo, p.id)
 

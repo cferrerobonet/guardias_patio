@@ -128,7 +128,7 @@ try:
         config_ok = False
 
     # Verificar profesores
-    count_profesores = db.query(Profesor).filter(Profesor.activo == True).count()
+    count_profesores = db.query(Profesor).filter(Profesor.activo).count()
     print(f"   ✅ Profesores activos: {count_profesores}")
 
     db.close()

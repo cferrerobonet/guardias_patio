@@ -29,6 +29,7 @@ class CuotaProfesorDTO:
     profesor_id: int
     profesor_nombre: str
     cuota_esperada: int
+    porcentaje_jornada: float = 100.0
     cuota_asignada: int = 0
 
     @property

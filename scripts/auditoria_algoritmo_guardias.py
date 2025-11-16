@@ -563,8 +563,8 @@ class AuditoriaAlgoritmoGuardias:
             SELECT p.nombre_completo, a.fecha_inicio, a.fecha_fin, a.tipo, COUNT(g.id) as guardias
             FROM ausencias a
             INNER JOIN profesores p ON a.profesor_id = p.id
-            LEFT JOIN guardias g ON g.profesor_id = p.id 
-                AND g.fecha >= a.fecha_inicio 
+            LEFT JOIN guardias g ON g.profesor_id = p.id
+                AND g.fecha >= a.fecha_inicio
                 AND g.fecha <= a.fecha_fin
             WHERE a.activa = 1
             GROUP BY a.id, p.nombre_completo, a.fecha_inicio, a.fecha_fin, a.tipo
