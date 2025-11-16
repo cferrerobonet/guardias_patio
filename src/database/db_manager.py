@@ -90,11 +90,14 @@ def _run_alembic_migrations(engine, db_path: Path):
                 f"Base de datos existente con {len(existing_tables)} tablas. "
                 "Verificando migraciones..."
             )
+            # TEMPORALMENTE DESHABILITADO PARA DEBUGGING
+            logger.warning("⚠️ MIGRACIONES DE ALEMBIC DESHABILITADAS TEMPORALMENTE")
+            logger.warning("⚠️ Saltando command.upgrade() para aislar el problema")
             # Intentar aplicar migraciones pendientes
-            logger.error("🔧 EJECUTANDO: command.upgrade(alembic_cfg, 'head')")
-            command.upgrade(alembic_cfg, 'head')
-            logger.error("✅ POST-UPGRADE: Migraciones completadas sin crash")
-            logger.info("✓ Migraciones de Alembic aplicadas/verificadas correctamente")
+            # logger.error("🔧 EJECUTANDO: command.upgrade(alembic_cfg, 'head')")
+            # command.upgrade(alembic_cfg, 'head')
+            # logger.error("✅ POST-UPGRADE: Migraciones completadas sin crash")
+            # logger.info("✓ Migraciones de Alembic aplicadas/verificadas correctamente")
 
     except Exception as e:
         logger.warning(f"No se pudieron ejecutar migraciones de Alembic: {e}")
