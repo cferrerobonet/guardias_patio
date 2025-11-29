@@ -338,11 +338,11 @@ class GestionarAusenciasForm(BaseForm):
 
             # Filtrar ausencias de profesores que tienen guardias en el curso activo
             # Subconsulta: IDs de profesores con guardias en el curso activo
+            # Obtener IDs de profesores con guardias
             profesores_con_guardias = (
                 self.session.query(Guardia.profesor_id)
                 .filter(Guardia.curso_id == curso_activo.id)
                 .distinct()
-                .subquery()
             )
 
             # Ausencias de esos profesores

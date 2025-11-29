@@ -1,10 +1,3 @@
-"""Pytest conftest to ensure project root is on sys.path so tests can import `src` package."""
-import sys
-from pathlib import Path
-
-# Insert project root (two levels up from tests/) to sys.path so `import src` resolves.
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
 """
 Configuración compartida para tests con pytest.
 
@@ -21,8 +14,10 @@ from PyQt6.QtWidgets import QApplication
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-# Agregar src al path para imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Insertar raíz del proyecto y src en sys.path para imports
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "src"))
 
 from models.models import Ausencia, Base, Guardia, Profesor, Zona  # noqa: E402
 
@@ -61,9 +56,11 @@ def session(engine) -> Generator[Session, None, None]:
 
     yield session
 
-    # Cleanup
-    session.close()
-    transaction.rollback()
+    # Cleanup - orden correcto para evitar SAWarning
+    session.rollback()  # Rollback de la sesión primero
+    session.close()     # Cerrar sesión
+    if transaction.is_active:
+        transaction.rollback()  # Rollback de transacción solo si está activa
     connection.close()
 
 

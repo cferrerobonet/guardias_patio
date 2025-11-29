@@ -217,18 +217,18 @@ class SyncManager:
     Gestor principal de sincronización multi-usuario.
     """
 
-    def __init__(self, backend: SyncBackend, user_id: str):
+    def __init__(self, backend: SyncBackend, username: str):
         self.backend = backend
-        self.user_id = user_id
-        self.user_hash = self._hash_user_id(user_id)
+        self.username = username
+        self.user_hash = self._hash_username(username)
         self.local_data_dir = get_user_data_directory() / self.user_hash
         self.local_data_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"SyncManager inicializado para usuario: {user_id}")
+        logger.info(f"SyncManager inicializado para usuario: {username}")
 
-    def _hash_user_id(self, user_id: str) -> str:
-        """Genera un hash del user_id para nombres de archivo."""
-        return hashlib.sha256(user_id.encode()).hexdigest()[:16]
+    def _hash_username(self, username: str) -> str:
+        """Genera un hash del nombre de usuario para nombres de archivo."""
+        return hashlib.sha256(username.encode()).hexdigest()[:16]
 
     def get_remote_path(self, filename: str) -> str:
         """Obtiene la ruta remota para un archivo del usuario."""
@@ -378,7 +378,7 @@ class SyncManager:
     def _save_sync_metadata(self):
         """Guarda metadata de sincronización."""
         metadata = {
-            "user_id": self.user_id,
+            "username": self.username,
             "user_hash": self.user_hash,
             "last_sync": datetime.now().isoformat(),
         }

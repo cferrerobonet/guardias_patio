@@ -13,7 +13,6 @@ no reimplementan la lógica compleja.
 from datetime import date, time
 
 import pytest
-
 from application.use_cases.asignacion_guardias.calcular_distribucion import (
     CalcularDistribucionUseCase,
 )
@@ -47,6 +46,7 @@ class TestObtenerEstadisticasUseCase:
         """Obtener estadísticas cuando hay configuración básica."""
         # Crear configuración
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 30),  # Un mes para simplificar
             hora_recreo1_manana=time(10, 30),
@@ -80,6 +80,7 @@ class TestObtenerEstadisticasUseCase:
         """Verificar que el DTO tiene la estructura correcta."""
         # Setup mínimo
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 5),
             hora_recreo1_manana=time(10, 30),
@@ -127,6 +128,7 @@ class TestCalcularDistribucionUseCase:
         """Calcular distribución con datos básicos."""
         # Configuración
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 30),
             hora_recreo1_manana=time(10, 30),
@@ -166,6 +168,7 @@ class TestCalcularDistribucionUseCase:
         """Verificar propiedades calculadas del DTO."""
         # Setup
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 10),
             hora_recreo1_manana=time(10, 30),
@@ -212,6 +215,7 @@ class TestGenerarGuardiasUseCase:
         """Verificar que elimina guardias existentes cuando se solicita."""
         # Setup mínimo
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 5),
             hora_recreo1_manana=time(10, 30),
@@ -263,6 +267,7 @@ class TestGenerarGuardiasUseCase:
         """Verificar que no elimina guardias si se indica."""
         # Setup
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 5),
             hora_recreo1_manana=time(10, 30),
@@ -309,6 +314,7 @@ class TestGenerarGuardiasUseCase:
         """Verificar estructura del DTO de resultado."""
         # Setup mínimo
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 5),
             hora_recreo1_manana=time(10, 30),
@@ -351,6 +357,7 @@ class TestGenerarGuardiasUseCase:
         """Verificar que el callback de progreso funciona."""
         # Setup
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 3),
             hora_recreo1_manana=time(10, 30),
@@ -400,6 +407,7 @@ class TestAsignacionGuardiasIntegracion:
         """Flujo completo: obtener stats → calcular distribución → generar guardias."""
         # Setup completo
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 10),
             hora_recreo1_manana=time(10, 30),
@@ -458,6 +466,7 @@ class TestAsignacionGuardiasIntegracion:
         """Generar guardias múltiples veces eliminando las anteriores."""
         # Setup
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 5),
             hora_recreo1_manana=time(10, 30),

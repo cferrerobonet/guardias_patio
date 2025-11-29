@@ -3,6 +3,7 @@ Asignador de guardias usando Integer Linear Programming (ILP) con OR-Tools.
 Implementa la Opción B: solución matemáticamente óptima garantizada.
 """
 import logging
+import os
 from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List, Optional
@@ -131,6 +132,11 @@ class AsignadorILP:
         self.solver.parameters.max_time_in_seconds = limite_tiempo_segundos
         self.solver.parameters.log_search_progress = True
 
+        # Configurar paralelización para usar todos los cores disponibles
+        num_cores = os.cpu_count() or 1
+        self.solver.parameters.num_search_workers = num_cores
+        logger.info(f"⚡ Usando {num_cores} cores para la búsqueda paralela")
+
         status = self.solver.Solve(self.model)
 
         tiempo_total = time.time() - tiempo_inicio
@@ -249,12 +255,15 @@ class AsignadorILP:
         for profesor in profesores:
             if hasattr(profesor, 'ausencias') and profesor.ausencias:
                 for ausencia in profesor.ausencias:
-                    if ausencia.fecha in self.dias_lectivos:
-                        for recreo in recreos:
-                            for zona in zonas:
-                                self.model.Add(
-                                    self.variables[profesor.id][ausencia.fecha][recreo.numero][zona.id] == 0
-                                )
+                    # Iterar sobre todas las fechas en el rango de la ausencia
+                    for dia in self.dias_lectivos:
+                        # Verificar si el día cae dentro del rango de ausencia
+                        if ausencia.fecha_inicio <= dia <= ausencia.fecha_fin:
+                            for recreo in recreos:
+                                for zona in zonas:
+                                    self.model.Add(
+                                        self.variables[profesor.id][dia][recreo.numero][zona.id] == 0
+                                    )
 
         # R4: Respetar incompatibilidades de turno
         logger.info("  • R4: Compatibilidad de turnos")
@@ -389,10 +398,11 @@ class AsignadorILP:
         zona
     ) -> bool:
         """Verifica si un profesor es compatible con un slot."""
-        # Verificar ausencias
+        # Verificar ausencias (chequear si el día cae en el rango de alguna ausencia)
         if hasattr(profesor, 'ausencias') and profesor.ausencias:
-            if any(a.fecha == dia for a in profesor.ausencias):
-                return False
+            for ausencia in profesor.ausencias:
+                if ausencia.fecha_inicio <= dia <= ausencia.fecha_fin:
+                    return False
 
         # Verificar turno
         puede_hacer_turno = (profesor.turno in ('completo', 'mixto') or
@@ -511,24 +521,27 @@ class AsignadorILP:
             if profs_disponibles == 0:
                 lineas.append(f"     ❌ CRÍTICO: No hay profesores para turno '{turno}'")
 
-        # Analizar zonas
-        lineas.append("\n2. Disponibilidad por zona:")
-        for zona in zonas:
-            profs_zona = sum(
-                1 for p in profesores
-                if p.zonas and zona.id in [z.id for z in p.zonas]
-            )
-            lineas.append(f"   • Zona '{zona.nombre}': {profs_zona} profesores compatibles")
+        # Analizar zonas (NOTA: Todos los profesores pueden trabajar en todas las zonas)
+        lineas.append("\n2. Análisis de zonas:")
+        total_profesores_activos = len([p for p in profesores if p.activo])
+        lineas.append(f"   • Total de zonas: {len(zonas)}")
+        lineas.append(f"   • Profesores activos: {total_profesores_activos}")
+        lineas.append("   • Nota: Los profesores pueden trabajar en TODAS las zonas activas")
 
-            if profs_zona == 0:
-                lineas.append(f"     ❌ CRÍTICO: No hay profesores para zona '{zona.nombre}'")
+        if total_profesores_activos == 0:
+            lineas.append("     ❌ CRÍTICO: No hay profesores activos en el sistema")
 
-        lineas.append("\n3. Sugerencias:")
-        lineas.append("   • Aumentar número de profesores activos")
-        lineas.append("   • Ampliar disponibilidad de turnos de profesores")
-        lineas.append("   • Ampliar compatibilidad de zonas")
-        lineas.append("   • Reducir número de recreos o zonas")
-        lineas.append("   • Revisar ausencias excesivas")
+        lineas.append("\n3. Causas más comunes:")
+        lineas.append("   • Profesores insuficientes para cubrir todos los slots")
+        lineas.append("   • Mismatch entre turnos de profesores y recreos")
+        lineas.append("   • Demasiadas ausencias que impiden cobertura completa")
+        lineas.append("   • Max guardias/día muy restrictivo")
+        lineas.append("\n4. Sugerencias:")
+        lineas.append("   ✓ Verificar que hay suficientes profesores activos")
+        lineas.append("   ✓ Revisar que los turnos de profesores coinciden con los de recreos")
+        lineas.append("   ✓ Verificar ausencias (especialmente si muchos profesores ausentes el mismo día)")
+        lineas.append("   ✓ Considerar aumentar max_guardias_por_dia en configuración")
+        lineas.append("   ✓ Como última opción: reducir número de zonas por recreo")
 
         lineas.append("=" * 70)
 

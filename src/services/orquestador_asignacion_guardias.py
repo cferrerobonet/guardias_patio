@@ -87,6 +87,10 @@ class OrquestadorAsignacionGuardias:
 
         # Crear objetos simples para recreos
         from types import SimpleNamespace
+        # IMPORTANTE: Agregar 'numero' que es usado por el asignador ILP
+        for r in recreos_data:
+            if 'numero' not in r:
+                r['numero'] = r['id']  # numero = id por compatibilidad
         self.config.recreos = [SimpleNamespace(**r) for r in recreos_data]
 
         # Cargar zonas desde la BD
@@ -193,7 +197,15 @@ class OrquestadorAsignacionGuardias:
             )
 
         # Llamar al callback para obtener decisión del usuario
-        decision = callback_decision_usuario(diagnostico)
+        try:
+            logger.info("⏳ Esperando decisión del usuario...")
+            decision = callback_decision_usuario(diagnostico)
+            logger.info(f"✓ Decisión recibida del usuario: {decision}")
+        except Exception as e:
+            logger.error(f"❌ Error al obtener decisión del usuario: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            decision = 'error'
 
         logger.info(f"Decisión del usuario: {decision}")
 
@@ -213,6 +225,36 @@ class OrquestadorAsignacionGuardias:
         elif decision == 'continuar_ilp':
             # Usuario quiere intentar con ILP
             return self._ejecutar_fase_ilp(guardias_iterativo, diagnostico, metadatos_iterativo, progress_callback)
+
+        elif decision == 'timeout':
+            logger.error("❌ Timeout esperando respuesta del usuario")
+            return ResultadoOrquestacion(
+                exitoso=False,
+                guardias=guardias_iterativo,
+                estrategia_usada=EstrategiaUsada.NINGUNA,
+                diagnostico=diagnostico,
+                metadatos=metadatos_iterativo,
+                requiere_intervencion_usuario=True,
+                mensaje_usuario=(
+                    "El sistema no recibió respuesta del diálogo de decisión en 5 minutos.\n\n"
+                    "Cierra otros diálogos en pantalla e inténtalo nuevamente."
+                )
+            )
+
+        elif decision == 'error':
+            logger.error("❌ No se pudo mostrar el diálogo de decisión")
+            return ResultadoOrquestacion(
+                exitoso=False,
+                guardias=guardias_iterativo,
+                estrategia_usada=EstrategiaUsada.NINGUNA,
+                diagnostico=diagnostico,
+                metadatos=metadatos_iterativo,
+                requiere_intervencion_usuario=True,
+                mensaje_usuario=(
+                    "Ocurrió un error al mostrar el diagnóstico para tomar una decisión.\n\n"
+                    "Reinicia la aplicación e inténtalo de nuevo."
+                )
+            )
 
         else:  # 'cancelar'
             logger.info("Usuario canceló la operación")

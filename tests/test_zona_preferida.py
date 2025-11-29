@@ -32,6 +32,7 @@ def test_zona_preferida():
     try:
         # Configuración del curso
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 2),
             fecha_fin_curso=date(2024, 9, 30),  # 1 mes para facilitar test
             hora_recreo1_manana=time(11, 0),

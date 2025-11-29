@@ -32,9 +32,9 @@ _current_engine = None
 _current_session_factory = None
 
 
-def _hash_user_id(user_id: str) -> str:
-    """Genera un hash del user_id para usar como nombre de carpeta."""
-    return hashlib.sha256(user_id.encode()).hexdigest()[:16]
+def _hash_username(username: str) -> str:
+    """Genera un hash del nombre de usuario para usar como nombre de carpeta."""
+    return hashlib.sha256(username.encode()).hexdigest()[:16]
 
 
 def _run_alembic_migrations(engine, db_path: Path):
@@ -91,9 +91,9 @@ def _run_alembic_migrations(engine, db_path: Path):
                 "Verificando migraciones..."
             )
             # Intentar aplicar migraciones pendientes
-            logger.error("🔧 EJECUTANDO: command.upgrade(alembic_cfg, 'head')")
+            logger.debug("🔧 EJECUTANDO: command.upgrade(alembic_cfg, 'head')")
             command.upgrade(alembic_cfg, 'head')
-            logger.error("✅ POST-UPGRADE: Migraciones completadas sin crash")
+            logger.debug("✅ POST-UPGRADE: Migraciones completadas sin crash")
             logger.info("✓ Migraciones de Alembic aplicadas/verificadas correctamente")
 
     except Exception as e:
@@ -102,20 +102,20 @@ def _run_alembic_migrations(engine, db_path: Path):
 
 
 
-def initialize_user_database(user_id: str):
+def initialize_user_database(username: str):
     """
     Inicializa la base de datos para un usuario específico.
 
     Args:
-        user_id: Identificador único del usuario
+        username: Nombre de usuario (ej: 'Jefatura_FpBach')
 
     Returns:
         tuple: (engine, SessionLocal) para el usuario
     """
     global _current_user_id, _current_engine, _current_session_factory
 
-    # Crear hash del usuario
-    user_hash = _hash_user_id(user_id)
+    # Crear hash del nombre de usuario
+    user_hash = _hash_username(username)
 
     # Crear directorio del usuario
     user_dir = USER_DATA_DIR / user_hash
@@ -125,7 +125,7 @@ def initialize_user_database(user_id: str):
     db_path = user_dir / "guardias_patio.db"
     database_url = f"sqlite:///{db_path}"
 
-    logger.info(f"Inicializando BD para usuario: {user_id} (hash: {user_hash})")
+    logger.info(f"Inicializando BD para usuario: {username} (hash: {user_hash})")
     logger.info(f"Database path: {db_path}")
 
     # Crear engine específico para este usuario
@@ -170,11 +170,11 @@ def initialize_user_database(user_id: str):
     )
 
     # Guardar referencias globales
-    _current_user_id = user_id
+    _current_user_id = username
     _current_engine = engine
     _current_session_factory = session_factory
 
-    logger.info(f"Base de datos inicializada para usuario: {user_id}")
+    logger.info(f"Base de datos inicializada para usuario: {username}")
 
     return engine, session_factory
 
@@ -184,24 +184,24 @@ def get_current_user_id() -> str:
     return _current_user_id
 
 
-def get_user_database_path(user_id: str) -> Path:
+def get_user_database_path(username: str) -> Path:
     """Obtiene el path de la base de datos de un usuario."""
-    user_hash = _hash_user_id(user_id)
+    user_hash = _hash_username(username)
     return USER_DATA_DIR / user_hash / "guardias_patio.db"
 
 
-def create_user_database(user_id: str) -> bool:
+def create_user_database(username: str) -> bool:
     """
     Crea una nueva base de datos para un usuario con la estructura completa.
 
     Args:
-        user_id: Identificador del usuario
+        username: Nombre de usuario
 
     Returns:
         bool: True si se creó correctamente
     """
     try:
-        db_path = get_user_database_path(user_id)
+        db_path = get_user_database_path(username)
 
         # Crear directorio si no existe
         db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -210,44 +210,44 @@ def create_user_database(user_id: str) -> bool:
         engine = create_engine(f"sqlite:///{db_path}")
         Base.metadata.create_all(engine)
 
-        logger.info(f"Base de datos creada para usuario: {user_id}")
+        logger.info(f"Base de datos creada para usuario: {username}")
         return True
 
     except Exception as e:
-        logger.error(f"Error creando base de datos para usuario {user_id}: {e}")
+        logger.error(f"Error creando base de datos para usuario {username}: {e}")
         return False
 
 
-def user_has_database(user_id: str) -> bool:
+def user_has_database(username: str) -> bool:
     """Verifica si un usuario tiene una base de datos creada."""
-    db_path = get_user_database_path(user_id)
+    db_path = get_user_database_path(username)
     return db_path.exists()
 
 
-def delete_user_database(user_id: str) -> bool:
+def delete_user_database(username: str) -> bool:
     """
     Elimina completamente la base de datos y archivos de un usuario.
 
     Args:
-        user_id: Identificador del usuario
+        username: Nombre de usuario
 
     Returns:
         bool: True si se eliminó correctamente
     """
     try:
-        user_hash = _hash_user_id(user_id)
+        user_hash = _hash_username(username)
         user_dir = USER_DATA_DIR / user_hash
 
         if user_dir.exists():
             import shutil
             shutil.rmtree(user_dir)
-            logger.info(f"Base de datos eliminada para usuario: {user_id}")
+            logger.info(f"Base de datos eliminada para usuario: {username}")
             return True
         else:
-            logger.warning(f"No existe base de datos para usuario: {user_id}")
+            logger.warning(f"No existe base de datos para usuario: {username}")
             return False
     except Exception as e:
-        logger.error(f"Error eliminando base de datos de usuario {user_id}: {e}")
+        logger.error(f"Error eliminando base de datos de usuario {username}: {e}")
         return False
 
 

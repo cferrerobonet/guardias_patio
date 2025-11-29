@@ -49,7 +49,7 @@ from presentation.themes.ccleaner_theme import (
     SPACING_SM,
     TEXT_SECONDARY,
 )
-from presentation.widgets import TableManager
+from presentation.widgets.table_manager import TableManager
 
 
 class ProfesorForm(BaseForm):

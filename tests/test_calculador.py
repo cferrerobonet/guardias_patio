@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 # Añadir src al path para imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from models.models import Base, Configuracion, Profesor, Zona
+from models.models import Base, Configuracion, CursoEscolar, Profesor, Zona
 from services.calculador_guardias import (
     _easter_sunday,
     _festivos_automaticos_en_rango,
@@ -40,9 +40,27 @@ def session():
 
 
 @pytest.fixture
+def curso_activo(session):
+    """Crea un curso escolar activo."""
+    curso = CursoEscolar(
+        anio_inicio=2025,
+        anio_fin=2026,
+        fecha_inicio=date(2025, 9, 1),
+        fecha_fin=date(2026, 6, 30),
+        nombre="Curso 2025/2026",
+        activo=True,
+        cerrado=False,
+    )
+    session.add(curso)
+    session.commit()
+    return curso
+
+
+@pytest.fixture
 def config_basica(session):
     """Crea una configuración básica del curso."""
     config = Configuracion(
+        anio_inicio_curso=2025,
         fecha_inicio_curso=date(2025, 9, 1),
         fecha_fin_curso=date(2026, 6, 30),
         hora_recreo1_manana=time(10, 30),
@@ -143,8 +161,8 @@ class TestFestivosAutomaticos:
         inicio = date(2025, 12, 1)
         fin = date(2026, 1, 15)
         festivos = _festivos_automaticos_en_rango(inicio, fin)
-        # Rango 22/12 a 06/01
-        assert date(2025, 12, 22) in festivos
+        # Rango 23/12 a 06/01 (22/12 es LECTIVO según la implementación)
+        assert date(2025, 12, 23) in festivos  # Inicio de vacaciones
         assert date(2025, 12, 31) in festivos
         assert date(2026, 1, 6) in festivos
         assert date(2026, 1, 7) not in festivos
@@ -255,7 +273,7 @@ class TestAjusteRedondeo:
 
 class TestDistribucionBase:
     def test_distribucion_con_tutores(
-        self, session, config_basica, profesores_basicos, zonas_basicas
+        self, session, curso_activo, config_basica, profesores_basicos, zonas_basicas
     ):
         """Verifica que tutores tienen multiplicador aplicado."""
         config_basica.ajuste_tutores = 0.9
@@ -272,7 +290,7 @@ class TestDistribucionBase:
         assert distribucion[profesores_basicos[0].id] < distribucion[profesores_basicos[1].id]
 
     def test_distribucion_mixta_turnos(
-        self, session, config_basica, zonas_basicas
+        self, session, curso_activo, config_basica, zonas_basicas
     ):
         """Profesor mixto participa en ambos turnos."""
         config_basica.hora_recreo1_tarde = time(15, 30)
@@ -305,7 +323,7 @@ class TestDistribucionBase:
 
 class TestObtenerEstadisticas:
     def test_estadisticas_completas(
-        self, session, config_basica, profesores_basicos, zonas_basicas
+        self, session, curso_activo, config_basica, profesores_basicos, zonas_basicas
     ):
         """Obtiene estadísticas del curso."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
@@ -323,7 +341,7 @@ class TestObtenerEstadisticas:
         assert stats["slots_totales"] == 88
 
     def test_estadisticas_con_recreos_config(
-        self, session, config_basica, profesores_basicos, zonas_basicas
+        self, session, curso_activo, config_basica, profesores_basicos, zonas_basicas
     ):
         """Calcula slots con recreos_config."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
@@ -342,7 +360,7 @@ class TestObtenerEstadisticas:
 
 class TestCalculoCompleto:
     def test_calculo_guardias_suma_exacta(
-        self, session, config_basica, profesores_basicos, zonas_basicas
+        self, session, curso_activo, config_basica, profesores_basicos, zonas_basicas
     ):
         """La distribución final suma exactamente los slots totales."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
@@ -356,15 +374,15 @@ class TestCalculoCompleto:
 
     def test_error_sin_configuracion(self, session):
         """Lanza error si no hay configuración."""
-        with pytest.raises(ValueError, match="No existe configuración"):
+        with pytest.raises(ValueError, match="No hay curso activo"):
             calcular_guardias_por_profesor(session)
 
-    def test_error_sin_profesores(self, session, config_basica):
+    def test_error_sin_profesores(self, session, curso_activo, config_basica):
         """Lanza error si no hay profesores."""
         with pytest.raises(ValueError, match="No hay profesores"):
             calcular_guardias_por_profesor(session)
 
-    def test_error_sin_zonas(self, session, config_basica, profesores_basicos):
+    def test_error_sin_zonas(self, session, curso_activo, config_basica, profesores_basicos):
         """Lanza error si no hay zonas."""
         with pytest.raises(ValueError, match="No hay zonas"):
             calcular_guardias_por_profesor(session)
@@ -373,7 +391,7 @@ class TestCalculoCompleto:
 class TestProfesoresConFechasLimite:
     """Tests para profesores con fecha_inicio_guardias y fecha_fin_guardias."""
 
-    def test_profesor_con_fecha_inicio_posterior(self, session, config_basica, zonas_basicas):
+    def test_profesor_con_fecha_inicio_posterior(self, session, curso_activo, config_basica, zonas_basicas):
         """Profesor que empieza guardias después del inicio del curso."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 30)  # 22 días lectivos
@@ -402,7 +420,7 @@ class TestProfesoresConFechasLimite:
         # prof2 tiene menos días disponibles, debe tener menos guardias
         assert distribucion[prof2.id] < distribucion[prof1.id]
 
-    def test_profesor_con_fecha_fin_anticipada(self, session, config_basica, zonas_basicas):
+    def test_profesor_con_fecha_fin_anticipada(self, session, curso_activo, config_basica, zonas_basicas):
         """Profesor que termina guardias antes del fin del curso."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 30)
@@ -431,7 +449,7 @@ class TestProfesoresConFechasLimite:
         # prof2 tiene menos días disponibles
         assert distribucion[prof2.id] < distribucion[prof1.id]
 
-    def test_profesor_rango_completo_fuera_curso(self, session, config_basica, zonas_basicas):
+    def test_profesor_rango_completo_fuera_curso(self, session, curso_activo, config_basica, zonas_basicas):
         """Profesor con rango completamente fuera del curso."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 30)
@@ -462,7 +480,7 @@ class TestProfesoresConFechasLimite:
         assert distribucion[prof2.id] == 0.0
         assert distribucion[prof1.id] > 0.0
 
-    def test_profesor_solo_fecha_inicio(self, session, config_basica, zonas_basicas):
+    def test_profesor_solo_fecha_inicio(self, session, curso_activo, config_basica, zonas_basicas):
         """Profesor con solo fecha_inicio_guardias (sin fin)."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 30)
@@ -485,7 +503,7 @@ class TestProfesoresConFechasLimite:
         # Debe tener guardias proporcionales a días disponibles
         assert distribucion[prof.id] > 0.0
 
-    def test_profesor_solo_fecha_fin(self, session, config_basica, zonas_basicas):
+    def test_profesor_solo_fecha_fin(self, session, curso_activo, config_basica, zonas_basicas):
         """Profesor con solo fecha_fin_guardias (sin inicio)."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 30)
@@ -512,7 +530,7 @@ class TestProfesoresConFechasLimite:
 class TestCasosEdge:
     """Tests para casos edge y extremos."""
 
-    def test_porcentaje_jornada_cero(self, session, config_basica, zonas_basicas):
+    def test_porcentaje_jornada_cero(self, session, curso_activo, config_basica, zonas_basicas):
         """Profesor con porcentaje_jornada 0 no recibe guardias."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 5)
@@ -541,7 +559,7 @@ class TestCasosEdge:
         assert distribucion[prof2.id] == 0.0
         assert distribucion[prof1.id] > 0.0
 
-    def test_porcentajes_jornada_extremos(self, session, config_basica, zonas_basicas):
+    def test_porcentajes_jornada_extremos(self, session, curso_activo, config_basica, zonas_basicas):
         """Test con porcentajes de jornada muy variados."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 5)
@@ -581,7 +599,7 @@ class TestCasosEdge:
         assert distribucion[profesores[1].id] > distribucion[profesores[2].id]
 
     def test_todos_profesores_turno_tarde_sin_recreos_tarde(
-        self, session, config_basica, zonas_basicas
+        self, session, curso_activo, config_basica, zonas_basicas
     ):
         """Todos profesores de tarde pero sin recreos de tarde."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
@@ -615,7 +633,7 @@ class TestCasosEdge:
             calcular_distribucion_cruda(session)
 
     def test_error_dias_lectivos_cero(
-        self, session, config_basica, profesores_basicos, zonas_basicas
+        self, session, curso_activo, config_basica, profesores_basicos, zonas_basicas
     ):
         """Error cuando no hay días lectivos."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
@@ -625,7 +643,7 @@ class TestCasosEdge:
         with pytest.raises(ValueError, match="No hay días lectivos"):
             calcular_guardias_por_profesor(session)
 
-    def test_error_suma_participacion_cero(self, session, config_basica, zonas_basicas):
+    def test_error_suma_participacion_cero(self, session, curso_activo, config_basica, zonas_basicas):
         """Error cuando suma de participación es cero."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 5)
@@ -645,7 +663,7 @@ class TestCasosEdge:
         with pytest.raises(ValueError, match="La suma de participación ponderada es 0"):
             calcular_guardias_por_profesor(session)
 
-    def test_redondeo_con_minimo_una_guardia(self, session, config_basica, zonas_basicas):
+    def test_redondeo_con_minimo_una_guardia(self, session, curso_activo, config_basica, zonas_basicas):
         """Verifica que profesores con participación mínima reciben al menos 1 guardia."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 5)
@@ -762,7 +780,7 @@ class TestRecreoConfigAvanzado:
     """Tests para configuración avanzada de recreos con zonas variables."""
 
     def test_recreos_con_diferentes_zonas_por_recreo(
-        self, session, config_basica, profesores_basicos
+        self, session, curso_activo, config_basica, profesores_basicos
     ):
         """Test con recreos que tienen diferente número de zonas."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
@@ -786,7 +804,7 @@ class TestRecreoConfigAvanzado:
         assert stats["num_zonas"] == 5
 
     def test_recreos_zonas_limitadas_por_zonas_reales(
-        self, session, config_basica, profesores_basicos
+        self, session, curso_activo, config_basica, profesores_basicos
     ):
         """Test donde recreos_config pide más zonas de las disponibles."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)

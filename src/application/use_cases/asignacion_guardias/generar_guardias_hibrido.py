@@ -147,13 +147,46 @@ class GenerarGuardiasHibridoUseCase:
                 ) from e
 
             if not resultado.exitoso:
-                mensaje_error = (
-                    f"No se pudo generar un calendario válido.\n"
-                    f"Estrategia usada: {resultado.estrategia_usada}\n"
-                    f"{resultado.mensaje_usuario}"
-                )
-                logger.warning(mensaje_error)
-                raise BusinessLogicError(mensaje_error)
+                # Verificar el tipo de error según la estrategia usada
+                from services.orquestador_asignacion_guardias import EstrategiaUsada
+
+                # CASO 1: Usuario canceló o timeout (NINGUNA estrategia)
+                if resultado.estrategia_usada == EstrategiaUsada.NINGUNA:
+                    logger.warning("⚠️  Generación cancelada o interrumpida")
+                    raise BusinessLogicError(
+                        f"Operación interrumpida.\n\n{resultado.mensaje_usuario}"
+                    )
+
+                # CASO 2: ILP falló (problema infactible o error técnico)
+                elif resultado.estrategia_usada == EstrategiaUsada.ILP:
+                    # Si el mensaje contiene "INFACTIBLE", es un problema de configuración
+                    if 'INFACTIBLE' in resultado.mensaje_usuario.upper():
+                        logger.error("❌ Problema matemáticamente infactible")
+                        raise BusinessLogicError(
+                            "No se pudo generar un calendario válido.\n\n"
+                            "El problema es matemáticamente INFACTIBLE: "
+                            "no existe ninguna asignación que cumpla todas las restricciones.\n\n"
+                            "💡 Sugerencias:\n"
+                            "• Aumenta el número de profesores disponibles\n"
+                            "• Reduce el número de zonas por recreo\n"
+                            "• Revisa las restricciones de disponibilidad\n\n"
+                            f"{resultado.mensaje_usuario}"
+                        )
+                    else:
+                        # Error técnico en ILP
+                        logger.error(f"❌ Error técnico en ILP: {resultado.mensaje_usuario}")
+                        raise BusinessLogicError(
+                            f"Error durante la optimización ILP.\n\n{resultado.mensaje_usuario}"
+                        )
+
+                # CASO 3: Iterativo falló y usuario no continuó con ILP
+                else:
+                    logger.warning("⚠️  Resultado iterativo insuficiente")
+                    raise BusinessLogicError(
+                        f"No se pudo generar un calendario válido.\n\n"
+                        f"Estrategia: {resultado.estrategia_usada.value}\n\n"
+                        f"{resultado.mensaje_usuario}"
+                    )
 
             guardias = resultado.guardias
 

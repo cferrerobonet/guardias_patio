@@ -30,6 +30,7 @@ def session():
 def config_basica(session):
     """Crea una configuración básica del curso."""
     config = Configuracion(
+        anio_inicio_curso=2025,
         fecha_inicio_curso=date(2025, 9, 1),
         fecha_fin_curso=date(2026, 6, 30),
         hora_recreo1_manana=time(10, 30),

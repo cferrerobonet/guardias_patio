@@ -12,10 +12,9 @@ from datetime import date, time
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtWidgets import QCheckBox, QComboBox, QMessageBox, QPushButton, QTextEdit
-
 from models.models import Configuracion, Guardia
 from presentation.forms.import_export_form import ImportExportForm
+from PyQt6.QtWidgets import QCheckBox, QComboBox, QMessageBox, QPushButton, QTextEdit
 
 
 @pytest.fixture
@@ -31,6 +30,7 @@ def datos_completos(session, profesor_factory, zona_factory):
 
     # Crear configuración
     config = Configuracion(
+        anio_inicio_curso=2024,
         fecha_inicio_curso=date(2024, 9, 1),
         fecha_fin_curso=date(2025, 6, 30),
         hora_recreo1_manana=time(11, 0),

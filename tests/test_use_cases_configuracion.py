@@ -6,7 +6,6 @@ Tests completos: ActualizarConfiguracionUseCase, ObtenerConfiguracionUseCase.
 from datetime import date, time
 
 import pytest
-
 from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
 from application.use_cases.configuracion.actualizar_configuracion import (
     ActualizarConfiguracionUseCase,
@@ -59,6 +58,7 @@ class TestActualizarConfiguracionUseCase:
         """Actualizar configuración cuando ya existe una."""
         # Crear configuración inicial
         config_inicial = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2025, 6, 30),
             hora_recreo1_manana=time(10, 30),
@@ -95,6 +95,7 @@ class TestActualizarConfiguracionUseCase:
         """Actualizar solo algunos campos de la configuración."""
         # Crear configuración inicial
         config_inicial = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2025, 6, 30),
             hora_recreo1_manana=time(10, 30),
@@ -139,6 +140,7 @@ class TestActualizarConfiguracionUseCase:
         """Actualizar campos opcionales como horas de tarde."""
         # Crear configuración inicial sin horas de tarde
         config_inicial = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2025, 6, 30),
             hora_recreo1_manana=time(10, 30),
@@ -163,6 +165,7 @@ class TestActualizarConfiguracionUseCase:
     def test_actualizar_configuracion_festivos_automaticos(self, session):
         """Actualizar solo campo activar_festivos_automaticos."""
         config_inicial = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2025, 6, 30),
             hora_recreo1_manana=time(10, 30),
@@ -184,6 +187,7 @@ class TestActualizarConfiguracionUseCase:
     def test_actualizar_configuracion_dias_no_lectivos(self, session):
         """Actualizar campo dias_no_lectivos_personalizados."""
         config_inicial = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2025, 6, 30),
             hora_recreo1_manana=time(10, 30),
@@ -206,6 +210,7 @@ class TestActualizarConfiguracionUseCase:
     def test_actualizar_configuracion_recreos_config(self, session):
         """Actualizar campo recreos_config."""
         config_inicial = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2025, 6, 30),
             hora_recreo1_manana=time(10, 30),
@@ -257,6 +262,7 @@ class TestObtenerConfiguracionUseCase:
         """Obtener configuración cuando existe."""
         # Crear configuración
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2025, 6, 30),
             hora_recreo1_manana=time(10, 30),
@@ -288,7 +294,7 @@ class TestObtenerConfiguracionUseCase:
         """Error al obtener configuración cuando no existe."""
         use_case = ObtenerConfiguracionUseCase(session)
 
-        with pytest.raises(NotFoundError, match="No existe configuración"):
+        with pytest.raises(NotFoundError, match="No existe configuración. Por favor, créela primero."):
             use_case.execute()
 
 

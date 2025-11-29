@@ -34,6 +34,7 @@ def test_max_una_guardia_por_dia(session):
     """
     # Configuración básica con 2 recreos en mañana y 2 en tarde
     config = Configuracion(
+        anio_inicio_curso=2024,
         fecha_inicio_curso=date(2024, 9, 1),
         fecha_fin_curso=date(2024, 9, 5),  # 5 días lectivos (L-V)
         hora_recreo1_manana=time(10, 30),
@@ -100,6 +101,7 @@ def test_distribucion_equilibrada_con_limite_diario(session):
     siga distribuyendo guardias de forma equilibrada.
     """
     config = Configuracion(
+        anio_inicio_curso=2024,
         fecha_inicio_curso=date(2024, 9, 1),
         fecha_fin_curso=date(2024, 9, 30),  # Mes completo (aprox. 22 días lectivos)
         hora_recreo1_manana=time(10, 30),

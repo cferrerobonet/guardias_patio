@@ -10,8 +10,6 @@ Tests unitarios para SQLAlchemy repositories:
 from datetime import date
 
 import pytest
-
-from database.db_manager import SessionLocal
 from domain.entities import ProfesorEntity, ZonaEntity
 from domain.value_objects import (
     HorasContrato,
@@ -25,32 +23,25 @@ from infrastructure.repositories import (
 )
 from models.models import Guardia, Profesor, Zona
 
-
-@pytest.fixture
-def db_session():
-    """Fixture para crear una sesión de BD para tests."""
-    session = SessionLocal()
-    yield session
-    session.rollback()  # Rollback para no afectar la BD
-    session.close()
+# Usa session de conftest.py (no session)
 
 
 @pytest.fixture
-def profesor_repository(db_session):
+def profesor_repository(session):
     """Fixture para crear un repositorio de profesores."""
-    return SQLAlchemyProfesorRepository(db_session)
+    return SQLAlchemyProfesorRepository(session)
 
 
 @pytest.fixture
-def zona_repository(db_session):
+def zona_repository(session):
     """Fixture para crear un repositorio de zonas."""
-    return SQLAlchemyZonaRepository(db_session)
+    return SQLAlchemyZonaRepository(session)
 
 
 @pytest.fixture
-def guardia_repository(db_session):
+def guardia_repository(session):
     """Fixture para crear un repositorio de guardias."""
-    return SQLAlchemyGuardiaRepository(db_session)
+    return SQLAlchemyGuardiaRepository(session)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -60,7 +51,7 @@ def guardia_repository(db_session):
 class TestProfesorRepository:
     """Tests para SQLAlchemyProfesorRepository."""
 
-    def test_save_profesor(self, profesor_repository, db_session):
+    def test_save_profesor(self, profesor_repository, session):
         """Test que save() crea un nuevo profesor."""
         # Crear entidad sin horas específicas (turno simple)
         entity = ProfesorEntity(
@@ -74,13 +65,13 @@ class TestProfesorRepository:
 
         # Guardar
         saved = profesor_repository.save(entity)
-        db_session.commit()
+        session.commit()
 
         # Verificar
         assert saved.id is not None
         assert saved.nombre_completo == "Profesor Test"
 
-    def test_find_by_id(self, profesor_repository, db_session):
+    def test_find_by_id(self, profesor_repository, session):
         """Test que get_by_id() encuentra un profesor."""
         # Crear profesor directamente en BD
         profesor = Profesor(
@@ -93,8 +84,8 @@ class TestProfesorRepository:
             horas_tarde=0.0,
             tutor=True,
         )
-        db_session.add(profesor)
-        db_session.commit()
+        session.add(profesor)
+        session.commit()
 
         # Buscar
         found = profesor_repository.get_by_id(profesor.id)
@@ -104,7 +95,7 @@ class TestProfesorRepository:
         assert found.id == profesor.id
         assert found.nombre_completo == "Buscar Test"
 
-    def test_find_by_nombre(self, profesor_repository, db_session):
+    def test_find_by_nombre(self, profesor_repository, session):
         """Test que find_by_nombre() encuentra profesores por nombre."""
         # Crear profesor
         profesor = Profesor(
@@ -116,8 +107,8 @@ class TestProfesorRepository:
             horas_tarde=0.0,
             tutor=False,
         )
-        db_session.add(profesor)
-        db_session.commit()
+        session.add(profesor)
+        session.commit()
 
         # Buscar (retorna lista)
         found_list = profesor_repository.find_by_nombre("Nombre Único Test")
@@ -133,7 +124,7 @@ class TestProfesorRepository:
         assert isinstance(found, list)
         assert len(found) == 0
 
-    def test_get_all(self, profesor_repository, db_session):
+    def test_get_all(self, profesor_repository, session):
         """Test que get_all() retorna todos los profesores."""
         # Crear profesores con datos correctos (sin horas para turno simple)
         for i in range(3):
@@ -146,8 +137,8 @@ class TestProfesorRepository:
                 horas_tarde=None,
                 tutor=False,
             )
-            db_session.add(p)
-        db_session.commit()
+            session.add(p)
+        session.commit()
 
         # Obtener todos
         all_profesores = profesor_repository.get_all()
@@ -159,7 +150,7 @@ class TestProfesorRepository:
         for i in range(3):
             assert f"Profesor Get All {i}" in nombres
 
-    def test_delete_profesor(self, profesor_repository, db_session):
+    def test_delete_profesor(self, profesor_repository, session):
         """Test que delete() elimina un profesor."""
         # Crear profesor
         profesor = Profesor(
@@ -171,19 +162,19 @@ class TestProfesorRepository:
             horas_tarde=0.0,
             tutor=False,
         )
-        db_session.add(profesor)
-        db_session.commit()
+        session.add(profesor)
+        session.commit()
         profesor_id = profesor.id
 
         # Eliminar
         profesor_repository.delete(profesor_id)
-        db_session.commit()
+        session.commit()
 
         # Verificar que no existe
         found = profesor_repository.get_by_id(profesor_id)
         assert found is None
 
-    def test_exists_profesor(self, profesor_repository, db_session):
+    def test_exists_profesor(self, profesor_repository, session):
         """Test que exists() verifica existencia de profesor."""
         # Crear profesor
         profesor = Profesor(
@@ -195,15 +186,15 @@ class TestProfesorRepository:
             horas_tarde=0.0,
             tutor=False,
         )
-        db_session.add(profesor)
-        db_session.commit()
+        session.add(profesor)
+        session.commit()
 
         # Verificar que existe
         assert profesor_repository.exists(profesor.id) is True
         # Verificar que ID inexistente no existe
         assert profesor_repository.exists(99999) is False
 
-    def test_count_profesores(self, profesor_repository, db_session):
+    def test_count_profesores(self, profesor_repository, session):
         """Test que count() retorna cantidad de profesores."""
         # Obtener count inicial
         count_inicial = profesor_repository.count()
@@ -219,14 +210,14 @@ class TestProfesorRepository:
                 horas_tarde=0.0,
                 tutor=False,
             )
-            db_session.add(p)
-        db_session.commit()
+            session.add(p)
+        session.commit()
 
         # Verificar que count aumentó
         nuevo_count = profesor_repository.count()
         assert nuevo_count >= count_inicial + 3
 
-    def test_find_by_email(self, profesor_repository, db_session):
+    def test_find_by_email(self, profesor_repository, session):
         """Test que find_by_email() encuentra profesor por email."""
         # Crear profesor con email único
         profesor = Profesor(
@@ -239,8 +230,8 @@ class TestProfesorRepository:
             horas_tarde=0.0,
             tutor=False,
         )
-        db_session.add(profesor)
-        db_session.commit()
+        session.add(profesor)
+        session.commit()
 
         # Buscar por email
         found = profesor_repository.find_by_email("unico123@test.com")
@@ -254,7 +245,7 @@ class TestProfesorRepository:
         found = profesor_repository.find_by_email("noexiste@test.com")
         assert found is None
 
-    def test_find_by_turno(self, profesor_repository, db_session):
+    def test_find_by_turno(self, profesor_repository, session):
         """Test que find_by_turno() encuentra profesores por turno."""
         # Crear profesores de tarde
         for i in range(2):
@@ -267,8 +258,8 @@ class TestProfesorRepository:
                 horas_tarde=18.0,
                 tutor=False,
             )
-            db_session.add(p)
-        db_session.commit()
+            session.add(p)
+        session.commit()
 
         # Buscar profesores de tarde
         profesores_tarde = profesor_repository.find_by_turno("tarde")
@@ -276,7 +267,7 @@ class TestProfesorRepository:
         # Verificar que hay al menos los 2 que creamos
         assert len(profesores_tarde) >= 2
 
-    def test_find_tutores(self, profesor_repository, db_session):
+    def test_find_tutores(self, profesor_repository, session):
         """Test que find_tutores() encuentra solo tutores."""
         # Crear tutor
         tutor = Profesor(
@@ -288,8 +279,8 @@ class TestProfesorRepository:
             horas_tarde=0.0,
             tutor=True,
         )
-        db_session.add(tutor)
-        db_session.commit()
+        session.add(tutor)
+        session.commit()
 
         # Buscar tutores
         tutores = profesor_repository.find_tutores()
@@ -297,7 +288,7 @@ class TestProfesorRepository:
         # Verificar que hay al menos 1
         assert len(tutores) >= 1
 
-    def test_find_disponibles_en_fecha(self, profesor_repository, db_session):
+    def test_find_disponibles_en_fecha(self, profesor_repository, session):
         """Test que find_disponibles_en_fecha() encuentra profesores disponibles."""
         # Crear profesor disponible todo el año
         profesor = Profesor(
@@ -311,8 +302,8 @@ class TestProfesorRepository:
             fecha_inicio_guardias=date(2025, 9, 1),
             fecha_fin_guardias=date(2026, 6, 30),
         )
-        db_session.add(profesor)
-        db_session.commit()
+        session.add(profesor)
+        session.commit()
 
         # Buscar disponibles en fecha dentro del rango (requiere turno y recreo)
         disponibles = profesor_repository.find_disponibles_en_fecha(
@@ -324,7 +315,7 @@ class TestProfesorRepository:
         # Verificar que retorna lista
         assert isinstance(disponibles, list)
 
-    def test_find_con_menos_guardias(self, profesor_repository, db_session):
+    def test_find_con_menos_guardias(self, profesor_repository, session):
         """Test que find_con_menos_guardias() retorna profesores ordenados."""
         # Crear profesor sin guardias
         profesor = Profesor(
@@ -336,8 +327,8 @@ class TestProfesorRepository:
             horas_tarde=0.0,
             tutor=False,
         )
-        db_session.add(profesor)
-        db_session.commit()
+        session.add(profesor)
+        session.commit()
 
         # Buscar con menos guardias
         profesores = profesor_repository.find_con_menos_guardias(limite=5)
@@ -346,7 +337,7 @@ class TestProfesorRepository:
         assert isinstance(profesores, list)
         assert len(profesores) <= 5
 
-    def test_contar_guardias_profesor(self, profesor_repository, db_session):
+    def test_contar_guardias_profesor(self, profesor_repository, session):
         """Test que contar_guardias_profesor() cuenta guardias correctamente."""
         # Crear profesor y zona
         profesor = Profesor(
@@ -359,9 +350,9 @@ class TestProfesorRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Contar", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         # Crear guardias
         for i in range(3):
@@ -372,8 +363,8 @@ class TestProfesorRepository:
                 profesor_id=profesor.id,
                 zona_id=zona.id,
             )
-            db_session.add(g)
-        db_session.commit()
+            session.add(g)
+        session.commit()
 
         # Contar guardias
         count = profesor_repository.contar_guardias_profesor(profesor.id)
@@ -381,7 +372,7 @@ class TestProfesorRepository:
         # Verificar
         assert count == 3
 
-    def test_contar_guardias_profesor_en_fecha(self, profesor_repository, db_session):
+    def test_contar_guardias_profesor_en_fecha(self, profesor_repository, session):
         """Test que contar_guardias_profesor_en_fecha() cuenta guardias en fecha específica."""
         # Crear datos
         profesor = Profesor(
@@ -394,9 +385,9 @@ class TestProfesorRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Fecha Count", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         # Crear 2 guardias en la misma fecha
         fecha_test = date(2025, 10, 25)
@@ -408,8 +399,8 @@ class TestProfesorRepository:
                 profesor_id=profesor.id,
                 zona_id=zona.id,
             )
-            db_session.add(g)
-        db_session.commit()
+            session.add(g)
+        session.commit()
 
         # Contar en esa fecha
         count = profesor_repository.contar_guardias_profesor_en_fecha(profesor.id, fecha_test)
@@ -425,7 +416,7 @@ class TestProfesorRepository:
 class TestZonaRepository:
     """Tests para SQLAlchemyZonaRepository."""
 
-    def test_save_zona(self, zona_repository, db_session):
+    def test_save_zona(self, zona_repository, session):
         """Test que save() crea una nueva zona."""
         # Crear entidad con nombre_zona correcto
         entity = ZonaEntity(
@@ -436,21 +427,21 @@ class TestZonaRepository:
 
         # Guardar
         saved = zona_repository.save(entity)
-        db_session.commit()
+        session.commit()
 
         # Verificar
         assert saved.id is not None
         assert saved.nombre_zona == "Zona Test"
 
-    def test_find_by_id(self, zona_repository, db_session):
+    def test_find_by_id(self, zona_repository, session):
         """Test que get_by_id() encuentra una zona."""
         # Crear zona
         zona = Zona(
             nombre_zona="Zona Buscar",
             descripcion="Test",
         )
-        db_session.add(zona)
-        db_session.commit()
+        session.add(zona)
+        session.commit()
 
         # Buscar
         found = zona_repository.get_by_id(zona.id)
@@ -460,15 +451,15 @@ class TestZonaRepository:
         assert found.id == zona.id
         assert found.nombre_zona == "Zona Buscar"
 
-    def test_find_by_nombre(self, zona_repository, db_session):
+    def test_find_by_nombre(self, zona_repository, session):
         """Test que find_by_nombre() encuentra una zona."""
         # Crear zona
         zona = Zona(
             nombre_zona="Zona Única XYZ",
             descripcion="Test",
         )
-        db_session.add(zona)
-        db_session.commit()
+        session.add(zona)
+        session.commit()
 
         # Buscar (retorna Optional[ZonaEntity] no lista)
         found = zona_repository.find_by_nombre("Zona Única XYZ")
@@ -477,7 +468,7 @@ class TestZonaRepository:
         assert found is not None
         assert found.nombre_zona == "Zona Única XYZ"
 
-    def test_get_all(self, zona_repository, db_session):
+    def test_get_all(self, zona_repository, session):
         """Test que get_all() retorna todas las zonas."""
         # Crear zonas
         for i in range(2):
@@ -485,8 +476,8 @@ class TestZonaRepository:
                 nombre_zona=f"Zona All {i}",
                 descripcion="Test",
             )
-            db_session.add(z)
-        db_session.commit()
+            session.add(z)
+        session.commit()
 
         # Obtener todas
         all_zonas = zona_repository.get_all()
@@ -494,45 +485,45 @@ class TestZonaRepository:
         # Verificar
         assert len(all_zonas) >= 2
 
-    def test_delete_zona(self, zona_repository, db_session):
+    def test_delete_zona(self, zona_repository, session):
         """Test que delete() elimina una zona."""
         # Crear zona
         zona = Zona(
             nombre_zona="Zona Delete",
             descripcion="Test",
         )
-        db_session.add(zona)
-        db_session.commit()
+        session.add(zona)
+        session.commit()
         zona_id = zona.id
 
         # Eliminar
         zona_repository.delete(zona_id)
-        db_session.commit()
+        session.commit()
 
         # Verificar
         found = zona_repository.get_by_id(zona_id)
         assert found is None
 
-    def test_exists_zona(self, zona_repository, db_session):
+    def test_exists_zona(self, zona_repository, session):
         """Test que exists() verifica existencia de zona."""
         # Crear zona
         zona = Zona(nombre_zona="Zona Exists", descripcion="Test")
-        db_session.add(zona)
-        db_session.commit()
+        session.add(zona)
+        session.commit()
 
         # Verificar
         assert zona_repository.exists(zona.id) is True
         assert zona_repository.exists(99999) is False
 
-    def test_count_zonas(self, zona_repository, db_session):
+    def test_count_zonas(self, zona_repository, session):
         """Test que count() retorna cantidad de zonas."""
         count_inicial = zona_repository.count()
 
         # Agregar zonas
         for i in range(3):
             z = Zona(nombre_zona=f"Zona Count {i}", descripcion="Test")
-            db_session.add(z)
-        db_session.commit()
+            session.add(z)
+        session.commit()
 
         # Verificar
         nuevo_count = zona_repository.count()
@@ -543,15 +534,15 @@ class TestZonaRepository:
         found = zona_repository.find_by_nombre("Zona Inexistente XYZ")
         assert found is None
 
-    def test_find_activas(self, zona_repository, db_session):
+    def test_find_activas(self, zona_repository, session):
         """Test que find_activas() encuentra zonas activas."""
         # Crear zona (por defecto está activa)
         zona = Zona(
             nombre_zona="Zona Activa Test",
             descripcion="Test",
         )
-        db_session.add(zona)
-        db_session.commit()
+        session.add(zona)
+        session.commit()
 
         # Buscar activas
         activas = zona_repository.find_activas()
@@ -568,7 +559,7 @@ class TestZonaRepository:
 class TestGuardiaRepository:
     """Tests para SQLAlchemyGuardiaRepository."""
 
-    def test_save_guardia(self, guardia_repository, db_session):
+    def test_save_guardia(self, guardia_repository, session):
         """Test que save() crea una nueva guardia."""
         # Crear profesor y zona necesarios
         profesor = Profesor(
@@ -581,9 +572,9 @@ class TestGuardiaRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Guardia", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         # Crear guardia directamente en BD (más simple que entity)
         guardia = Guardia(
@@ -593,15 +584,15 @@ class TestGuardiaRepository:
             profesor_id=profesor.id,
             zona_id=zona.id,
         )
-        db_session.add(guardia)
-        db_session.commit()
+        session.add(guardia)
+        session.commit()
 
         # Verificar
         assert guardia.id is not None
         assert guardia.profesor_id == profesor.id
         assert guardia.zona_id == zona.id
 
-    def test_find_by_id(self, guardia_repository, db_session):
+    def test_find_by_id(self, guardia_repository, session):
         """Test que find_by_id() encuentra una guardia."""
         # Crear datos necesarios
         profesor = Profesor(
@@ -614,9 +605,9 @@ class TestGuardiaRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Find", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         guardia = Guardia(
             fecha=date(2025, 10, 21),
@@ -625,8 +616,8 @@ class TestGuardiaRepository:
             profesor_id=profesor.id,
             zona_id=zona.id,
         )
-        db_session.add(guardia)
-        db_session.commit()
+        session.add(guardia)
+        session.commit()
 
         # Buscar
         found = guardia_repository.get_by_id(guardia.id)
@@ -635,7 +626,7 @@ class TestGuardiaRepository:
         assert found is not None
         assert found.id == guardia.id
 
-    def test_delete_guardia(self, guardia_repository, db_session):
+    def test_delete_guardia(self, guardia_repository, session):
         """Test que delete() elimina una guardia."""
         # Crear datos
         profesor = Profesor(
@@ -648,9 +639,9 @@ class TestGuardiaRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Delete G", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         guardia = Guardia(
             fecha=date(2025, 10, 22),
@@ -659,19 +650,19 @@ class TestGuardiaRepository:
             profesor_id=profesor.id,
             zona_id=zona.id,
         )
-        db_session.add(guardia)
-        db_session.commit()
+        session.add(guardia)
+        session.commit()
         guardia_id = guardia.id
 
         # Eliminar
         guardia_repository.delete(guardia_id)
-        db_session.commit()
+        session.commit()
 
         # Verificar
         found = guardia_repository.get_by_id(guardia_id)
         assert found is None
 
-    def test_exists_guardia(self, guardia_repository, db_session):
+    def test_exists_guardia(self, guardia_repository, session):
         """Test que exists() verifica existencia de guardia."""
         # Crear datos
         profesor = Profesor(
@@ -684,9 +675,9 @@ class TestGuardiaRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Exists G", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         guardia = Guardia(
             fecha=date(2025, 10, 23),
@@ -695,14 +686,14 @@ class TestGuardiaRepository:
             profesor_id=profesor.id,
             zona_id=zona.id,
         )
-        db_session.add(guardia)
-        db_session.commit()
+        session.add(guardia)
+        session.commit()
 
         # Verificar
         assert guardia_repository.exists(guardia.id) is True
         assert guardia_repository.exists(99999) is False
 
-    def test_count_guardias(self, guardia_repository, db_session):
+    def test_count_guardias(self, guardia_repository, session):
         """Test que count() retorna cantidad de guardias."""
         count_inicial = guardia_repository.count()
 
@@ -717,9 +708,9 @@ class TestGuardiaRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Count G", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         # Agregar guardias
         for i in range(3):
@@ -730,14 +721,14 @@ class TestGuardiaRepository:
                 profesor_id=profesor.id,
                 zona_id=zona.id,
             )
-            db_session.add(g)
-        db_session.commit()
+            session.add(g)
+        session.commit()
 
         # Verificar
         nuevo_count = guardia_repository.count()
         assert nuevo_count >= count_inicial + 3
 
-    def test_find_by_fecha(self, guardia_repository, db_session):
+    def test_find_by_fecha(self, guardia_repository, session):
         """Test que find_by_fecha() encuentra guardias por fecha."""
         # Crear datos
         profesor = Profesor(
@@ -750,9 +741,9 @@ class TestGuardiaRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Fecha", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         # Crear guardias en fecha específica
         fecha_test = date(2025, 11, 1)
@@ -764,8 +755,8 @@ class TestGuardiaRepository:
                 profesor_id=profesor.id,
                 zona_id=zona.id,
             )
-            db_session.add(g)
-        db_session.commit()
+            session.add(g)
+        session.commit()
 
         # Buscar por fecha
         guardias = guardia_repository.find_by_fecha(fecha_test)
@@ -773,7 +764,7 @@ class TestGuardiaRepository:
         # Verificar
         assert len(guardias) >= 2
 
-    def test_find_by_profesor(self, guardia_repository, db_session):
+    def test_find_by_profesor(self, guardia_repository, session):
         """Test que find_by_profesor() encuentra guardias de un profesor."""
         # Crear datos
         profesor = Profesor(
@@ -786,9 +777,9 @@ class TestGuardiaRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Buscar", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         # Crear guardias
         for i in range(3):
@@ -799,8 +790,8 @@ class TestGuardiaRepository:
                 profesor_id=profesor.id,
                 zona_id=zona.id,
             )
-            db_session.add(g)
-        db_session.commit()
+            session.add(g)
+        session.commit()
 
         # Buscar por profesor
         guardias = guardia_repository.find_by_profesor(profesor.id)
@@ -808,7 +799,7 @@ class TestGuardiaRepository:
         # Verificar
         assert len(guardias) >= 3
 
-    def test_find_by_zona(self, guardia_repository, db_session):
+    def test_find_by_zona(self, guardia_repository, session):
         """Test que find_by_zona() encuentra guardias de una zona."""
         # Crear datos
         profesor = Profesor(
@@ -821,9 +812,9 @@ class TestGuardiaRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Buscar Guardias", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         # Crear guardias
         for i in range(2):
@@ -834,8 +825,8 @@ class TestGuardiaRepository:
                 profesor_id=profesor.id,
                 zona_id=zona.id,
             )
-            db_session.add(g)
-        db_session.commit()
+            session.add(g)
+        session.commit()
 
         # Buscar por zona
         guardias = guardia_repository.find_by_zona(zona.id)
@@ -843,7 +834,7 @@ class TestGuardiaRepository:
         # Verificar
         assert len(guardias) >= 2
 
-    def test_find_by_rango_fechas(self, guardia_repository, db_session):
+    def test_find_by_rango_fechas(self, guardia_repository, session):
         """Test que find_by_rango_fechas() encuentra guardias en rango."""
         # Crear datos
         profesor = Profesor(
@@ -856,9 +847,9 @@ class TestGuardiaRepository:
             tutor=False,
         )
         zona = Zona(nombre_zona="Zona Rango", descripcion="Test")
-        db_session.add(profesor)
-        db_session.add(zona)
-        db_session.commit()
+        session.add(profesor)
+        session.add(zona)
+        session.commit()
 
         # Crear guardias en rango
         for i in range(3):
@@ -869,8 +860,8 @@ class TestGuardiaRepository:
                 profesor_id=profesor.id,
                 zona_id=zona.id,
             )
-            db_session.add(g)
-        db_session.commit()
+            session.add(g)
+        session.commit()
 
         # Buscar en rango
         guardias = guardia_repository.find_by_rango_fechas(
@@ -881,7 +872,7 @@ class TestGuardiaRepository:
         # Verificar
         assert len(guardias) >= 3
 
-    def test_get_all_guardias(self, guardia_repository, db_session):
+    def test_get_all_guardias(self, guardia_repository, session):
         """Test que get_all() retorna todas las guardias."""
         # Verificar que retorna lista
         all_guardias = guardia_repository.get_all()

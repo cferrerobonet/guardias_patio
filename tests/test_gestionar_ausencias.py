@@ -7,11 +7,10 @@ from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PyQt6.QtCore import QDate
-from PyQt6.QtWidgets import QMessageBox
-
 from models.models import Ausencia
 from presentation.widgets.gestionar_ausencias import DialogoReasignacion, GestionarAusenciasForm
+from PyQt6.QtCore import QDate
+from PyQt6.QtWidgets import QMessageBox
 
 # ============================================================================
 # FIXTURES
@@ -21,8 +20,7 @@ from presentation.widgets.gestionar_ausencias import DialogoReasignacion, Gestio
 @pytest.fixture
 def form(qtbot, session):
     """Fixture que crea el formulario de ausencias."""
-    widget = GestionarAusenciasForm()
-    widget.session = session  # Inyectar sesión de prueba
+    widget = GestionarAusenciasForm(session)
     qtbot.addWidget(widget)
     return widget
 
@@ -31,13 +29,13 @@ def form(qtbot, session):
 def datos_completos(session, profesor_factory, zona_factory, guardia_factory):
     """Fixture con profesores, zonas, guardias y ausencias."""
     # 3 profesores
-    prof1 = profesor_factory(nombre="Profesor 1", email="prof1@test.com")
-    prof2 = profesor_factory(nombre="Profesor 2", email="prof2@test.com")
-    prof3 = profesor_factory(nombre="Profesor 3", email="prof3@test.com")
+    prof1 = profesor_factory(nombre_completo="Profesor 1", email_corporativo="prof1@test.com")
+    prof2 = profesor_factory(nombre_completo="Profesor 2", email_corporativo="prof2@test.com")
+    prof3 = profesor_factory(nombre_completo="Profesor 3", email_corporativo="prof3@test.com")
 
     # 2 zonas
-    zona1 = zona_factory(nombre="Zona A")
-    zona2 = zona_factory(nombre="Zona B")
+    zona1 = zona_factory(nombre_zona="Zona A")
+    zona2 = zona_factory(nombre_zona="Zona B")
 
     # Guardias para los próximos 10 días
     hoy = date.today()
@@ -47,30 +45,30 @@ def datos_completos(session, profesor_factory, zona_factory, guardia_factory):
         # Prof1: mañana días pares, Prof2: tarde días impares
         if i % 2 == 0:
             g = guardia_factory(
-                profesor_id=prof1.id, zona_id=zona1.id, dia_semana=dia, turno="mañana"
+                profesor_id=prof1.id, zona_id=zona1.id, fecha=dia, turno="mañana"
             )
         else:
             g = guardia_factory(
-                profesor_id=prof2.id, zona_id=zona2.id, dia_semana=dia, turno="tarde"
+                profesor_id=prof2.id, zona_id=zona2.id, fecha=dia, turno="tarde"
             )
         guardias.append(g)
 
     # 2 ausencias existentes
     ausencia1 = Ausencia(
         profesor_id=prof1.id,
-        tipo_ausencia="baja_medica",
+        tipo="baja_medica",
         fecha_inicio=hoy - timedelta(days=5),
         fecha_fin=hoy - timedelta(days=1),
         motivo="Gripe",
-        activo=True,
+        activa=True,
     )
     ausencia2 = Ausencia(
         profesor_id=prof2.id,
-        tipo_ausencia="vacaciones",
+        tipo="vacaciones",
         fecha_inicio=hoy + timedelta(days=20),
         fecha_fin=hoy + timedelta(days=25),
         motivo="Vacaciones verano",
-        activo=False,  # Desactivada
+        activa=False,  # Desactivada
     )
 
     session.add_all([ausencia1, ausencia2])
@@ -310,7 +308,7 @@ class TestGestionarAusenciasFormGuardar:
         ausencia1_actualizada = form.session.query(Ausencia).filter_by(
             id=form.ausencia_actual.id
         ).first()
-        assert ausencia1_actualizada.tipo_ausencia == "otros"
+        assert ausencia1_actualizada.tipo == "otros"
 
 
 # ============================================================================
@@ -386,7 +384,7 @@ class TestGestionarAusenciasFormDesactivar:
                 form.desactivar_ausencia_seleccionada()
 
         # Verificar que sigue en BD pero con activo=False
-        ausencias_activas = form.session.query(Ausencia).filter_by(activo=True).all()
+        ausencias_activas = form.session.query(Ausencia).filter_by(activa=True).all()
         assert len(ausencias_activas) == 0  # Ya no hay activas (ausencia1 desactivada)
 
     def test_desactivar_sin_seleccion(self, form, datos_completos, qtbot):
@@ -602,7 +600,7 @@ class TestGestionarAusenciasFormIntegracion:
         # Verificar en BD
         ausencia_id = form.ausencia_actual.id
         ausencia_actualizada = form.session.query(Ausencia).get(ausencia_id)
-        assert ausencia_actualizada.tipo_ausencia == nuevo_tipo
+        assert ausencia_actualizada.tipo == nuevo_tipo
 
     def test_flujo_completo_eliminar_ausencia(self, form, datos_completos, qtbot):
         """Flujo: seleccionar ausencia → eliminar → verificar tabla."""
@@ -637,14 +635,13 @@ class TestGestionarAusenciasFormRendimiento:
         """La carga inicial del formulario debe ser rápida."""
         # Crear 30 profesores
         for i in range(30):
-            profesor_factory(nombre=f"Profesor {i}", email=f"prof{i}@test.com")
+            profesor_factory(nombre_completo=f"Profesor {i}", email_corporativo=f"prof{i}@test.com")
 
         import time
 
         inicio = time.time()
 
-        form = GestionarAusenciasForm()
-        form.session = session
+        form = GestionarAusenciasForm(session)
         qtbot.addWidget(form)
         form.cargar_profesores()
 
@@ -655,17 +652,17 @@ class TestGestionarAusenciasFormRendimiento:
     def test_cargar_muchas_ausencias_rapido(self, form, session, profesor_factory):
         """Cargar 100 ausencias debe ser rápido."""
         # Crear 100 ausencias
-        prof = profesor_factory(nombre="Profesor Test")
+        prof = profesor_factory(nombre_completo="Profesor Test")
         hoy = date.today()
 
         for i in range(100):
             ausencia = Ausencia(
                 profesor_id=prof.id,
-                tipo_ausencia="permiso",
+                tipo="permiso",
                 fecha_inicio=hoy + timedelta(days=i * 2),
                 fecha_fin=hoy + timedelta(days=i * 2 + 1),
                 motivo=f"Ausencia {i}",
-                activo=True,
+                activa=True,
             )
             session.add(ausencia)
 

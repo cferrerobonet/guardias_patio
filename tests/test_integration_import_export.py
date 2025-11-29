@@ -18,12 +18,11 @@ from datetime import date, time
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from models.models import Configuracion, Guardia, Profesor, Zona
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 @pytest.fixture
@@ -57,6 +56,7 @@ def datos_base(session):
     """Crear datos base para tests de exportación."""
     # Configuración
     config = Configuracion(
+        anio_inicio_curso=2024,
         fecha_inicio_curso=date(2024, 9, 9),
         fecha_fin_curso=date(2024, 9, 13),
         hora_recreo1_manana=time(10, 30),

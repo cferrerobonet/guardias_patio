@@ -27,6 +27,7 @@ from PyQt6.QtWidgets import QMessageBox
 def configuracion(session):
     """Crear configuración básica para tests"""
     config = Configuracion(
+        anio_inicio_curso=2024,
         fecha_inicio_curso=date(2024, 9, 1),
         fecha_fin_curso=date(2025, 6, 30),
         hora_recreo1_manana=time(11, 0),

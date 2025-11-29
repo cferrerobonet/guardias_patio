@@ -13,9 +13,7 @@ Valida que el sistema maneje correctamente:
 from datetime import date
 
 import pytest
-
-from database.db_manager import SessionLocal
-from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
+from models.models import Ausencia, Configuracion, CursoEscolar, Guardia, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias
 from utils.validators import (
     validar_dias_semana,
@@ -31,18 +29,7 @@ from utils.validators import (
 # ============================================================================
 
 
-@pytest.fixture
-def session():
-    """Proporciona una sesión de base de datos limpia para tests E2E."""
-    session = SessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
+# Usa el fixture 'session' de conftest.py (no redefinir)
 
 
 @pytest.fixture
@@ -54,6 +41,7 @@ def limpiar_bd(session):
     session.query(Profesor).delete()
     session.query(Zona).delete()
     session.query(Configuracion).delete()
+    session.query(CursoEscolar).delete()
     session.commit()
 
     yield
@@ -64,7 +52,25 @@ def limpiar_bd(session):
     session.query(Profesor).delete()
     session.query(Zona).delete()
     session.query(Configuracion).delete()
+    session.query(CursoEscolar).delete()
     session.commit()
+
+
+@pytest.fixture
+def curso_activo(session, limpiar_bd):
+    """Crea un curso escolar activo."""
+    curso = CursoEscolar(
+        anio_inicio=2025,
+        anio_fin=2026,
+        fecha_inicio=date(2025, 9, 1),
+        fecha_fin=date(2026, 6, 30),
+        nombre="Curso 2025/2026",
+        activo=True,
+        cerrado=False,
+    )
+    session.add(curso)
+    session.commit()
+    return curso
 
 
 @pytest.fixture
@@ -75,6 +81,7 @@ def configuracion_basica(session):
     # Usar fecha actual para que los tests generen guardias
     # Configuración para octubre 2025
     config = Configuracion(
+        anio_inicio_curso=2025,
         fecha_inicio_curso=date(2025, 9, 1),
         fecha_fin_curso=date(2026, 6, 30),
         hora_recreo1_manana=time(11, 0),
@@ -209,7 +216,7 @@ class TestEscenariosValidacionNegocio:
     """Tests para validaciones de lógica de negocio."""
 
     def test_profesor_sin_disponibilidad_no_puede_recibir_guardias(
-        self, session, limpiar_bd, configuracion_basica
+        self, session, curso_activo, limpiar_bd, configuracion_basica
     ):
         """
         Profesor sin disponibilidad (horas=0) debe tener cuota calculada como 0.
@@ -635,6 +642,7 @@ class TestIntegracionValidadores:
 
         # Crear configuración
         config = Configuracion(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=fecha_inicio,
             fecha_fin_curso=fecha_fin,
             hora_recreo1_manana=time(11, 0),

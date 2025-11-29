@@ -25,17 +25,17 @@ class SessionLock:
     el acceso exclusivo entre múltiples clientes.
     """
 
-    def __init__(self, backend, user_id: str, user_hash: str):
+    def __init__(self, backend, username: str, user_hash: str):
         """
         Inicializa el sistema de bloqueo de sesión.
 
         Args:
             backend: Backend de sincronización (SFTP o Local)
-            user_id: Identificador del usuario (email)
-            user_hash: Hash del user_id para nombres de archivo
+            username: Nombre de usuario
+            user_hash: Hash del nombre de usuario para nombres de archivo
         """
         self.backend = backend
-        self.user_id = user_id
+        self.username = username
         self.user_hash = user_hash
         self.lock_filename = "session.lock"
         self.heartbeat_interval = 30  # segundos
@@ -43,7 +43,7 @@ class SessionLock:
 
         # Información de esta sesión
         self.session_info = {
-            "user_id": user_id,
+            "username": username,
             "hostname": socket.gethostname(),
             "ip_address": self._get_local_ip(),
             "pid": None,  # Se establecerá al adquirir el lock
@@ -98,7 +98,7 @@ class SessionLock:
                 if time_since_heartbeat < self.lock_timeout:
                     # Bloqueo activo válido
                     logger.warning(
-                        f"❌ Sesión bloqueada. Usuario '{self.user_id}' ya está activo en:\n"
+                        f"❌ Sesión bloqueada. Usuario '{self.username}' ya está activo en:\n"
                         f"   Equipo: {existing_lock.get('hostname')}\n"
                         f"   IP: {existing_lock.get('ip_address')}\n"
                         f"   Desde: {existing_lock.get('started_at')}\n"
@@ -124,13 +124,17 @@ class SessionLock:
         # Subir al servidor
         if self.backend.upload_file(local_path, remote_path):
             logger.info(
-                f"✅ Bloqueo de sesión adquirido para '{self.user_id}'\n"
+                f"✅ Bloqueo de sesión adquirido para '{self.username}'\n"
                 f"   Equipo: {self.session_info['hostname']}\n"
                 f"   IP: {self.session_info['ip_address']}"
             )
             return True
         else:
-            logger.error("❌ Error al subir archivo de bloqueo al servidor")
+            logger.warning(
+                f"⚠️  No se pudo subir el archivo de bloqueo al servidor.\n"
+                f"   Ruta remota: {remote_path}\n"
+                f"   La aplicación continuará pero puede haber sesiones concurrentes."
+            )
             return False
 
     def update_heartbeat(self) -> bool:
@@ -156,10 +160,10 @@ class SessionLock:
 
         # Subir al servidor
         if self.backend.upload_file(local_path, remote_path):
-            logger.debug(f"💓 Heartbeat actualizado para '{self.user_id}'")
+            logger.debug(f"💓 Heartbeat actualizado para '{self.username}'")
             return True
         else:
-            logger.warning("⚠️  Error al actualizar heartbeat en el servidor")
+            logger.debug("⚠️  No se pudo actualizar heartbeat en el servidor")
             return False
 
     def release_lock(self) -> bool:
@@ -181,7 +185,7 @@ class SessionLock:
         # Nota: La interfaz actual de SyncBackend no tiene método delete()
         # Por ahora, solo eliminamos local y dejamos que expire en el servidor
         logger.info(
-            f"✅ Bloqueo de sesión liberado para '{self.user_id}'\n"
+            f"✅ Bloqueo de sesión liberado para '{self.username}'\n"
             f"   El bloqueo remoto expirará en {self.lock_timeout}s"
         )
 

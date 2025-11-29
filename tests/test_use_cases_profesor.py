@@ -11,8 +11,6 @@ Target Coverage: >90% para cada Use Case
 from datetime import date
 
 import pytest
-from sqlalchemy.orm import Session
-
 from application.dtos import ActualizarProfesorDTO, CrearProfesorDTO, ProfesorDTO
 from application.use_cases.profesor.actualizar_profesor import ActualizarProfesorUseCase
 from application.use_cases.profesor.buscar_profesores import BuscarProfesoresUseCase
@@ -21,6 +19,7 @@ from application.use_cases.profesor.eliminar_profesor import EliminarProfesorUse
 from application.use_cases.profesor.listar_profesores import ListarProfesoresUseCase
 from application.use_cases.profesor.obtener_profesor import ObtenerProfesorUseCase
 from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
+from sqlalchemy.orm import Session
 
 # ============================
 # Tests: CrearProfesorUseCase
@@ -55,8 +54,8 @@ class TestCrearProfesorUseCase:
         assert resultado.tutor is True
         assert resultado.dias_semana_permitidos == [0, 1, 2, 3, 4]
 
-        # Verificar en BD
-        session.rollback()  # Refresh para ver datos de otros tests
+        # Verificar en BD - usar expire_all para refrescar objetos en cache
+        session.expire_all()
         from models.models import Profesor
         profesor_bd = session.query(Profesor).filter_by(nombre_completo="Juan Pérez García").first()
         assert profesor_bd is not None
@@ -113,8 +112,8 @@ class TestCrearProfesorUseCase:
         """Test: rollback si hay error en la BD."""
         use_case = CrearProfesorUseCase(session)
 
-        # Simular error en commit
-        mocker.patch.object(session, 'commit', side_effect=Exception("DB Error"))
+        # Simular error en flush (el repositorio usa flush, no commit)
+        mocker.patch.object(session, 'flush', side_effect=Exception("DB Error"))
 
         dto = CrearProfesorDTO(
             nombre_completo="Test Error",

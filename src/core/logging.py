@@ -198,6 +198,63 @@ def setup_logging():
 
 
 # ============================================================================
+# LOGGER WRAPPER PARA LOGGING ESTÁNDAR
+# ============================================================================
+
+
+class StructlogCompatibleLogger:
+    """
+    Wrapper para logging.Logger que acepta kwargs estilo structlog.
+    
+    Permite usar la misma sintaxis que structlog:
+        logger.info("mensaje", key="value", error=str(e))
+    
+    Convierte automáticamente los kwargs a un formato legible en el mensaje.
+    """
+
+    def __init__(self, logger: logging.Logger):
+        self._logger = logger
+
+    def _format_message(self, msg: str, **kwargs) -> str:
+        """Formatea el mensaje incluyendo los kwargs."""
+        if not kwargs:
+            return msg
+        # Formatear kwargs como key=value separados por espacios
+        extras = " | ".join(f"{k}={v}" for k, v in kwargs.items())
+        return f"{msg} | {extras}"
+
+    def debug(self, msg: str, *args, **kwargs) -> None:
+        self._logger.debug(self._format_message(msg, **kwargs), *args)
+
+    def info(self, msg: str, *args, **kwargs) -> None:
+        self._logger.info(self._format_message(msg, **kwargs), *args)
+
+    def warning(self, msg: str, *args, **kwargs) -> None:
+        self._logger.warning(self._format_message(msg, **kwargs), *args)
+
+    def error(self, msg: str, *args, **kwargs) -> None:
+        self._logger.error(self._format_message(msg, **kwargs), *args)
+
+    def critical(self, msg: str, *args, **kwargs) -> None:
+        self._logger.critical(self._format_message(msg, **kwargs), *args)
+
+    def exception(self, msg: str, *args, **kwargs) -> None:
+        self._logger.exception(self._format_message(msg, **kwargs), *args)
+
+    def bind(self, **kwargs):
+        """Compatibilidad con structlog bind (no-op para logger estándar)."""
+        return self
+
+    def unbind(self, *keys):
+        """Compatibilidad con structlog unbind (no-op para logger estándar)."""
+        return self
+
+    @property
+    def name(self) -> str:
+        return self._logger.name
+
+
+# ============================================================================
 # LOGGER FACTORY
 # ============================================================================
 
@@ -210,7 +267,7 @@ def get_logger(name: str):
         name: Nombre del logger (típicamente __name__)
 
     Returns:
-        Logger configurado (structlog o logging estándar)
+        Logger configurado (structlog o logging estándar con wrapper compatible)
 
     Example:
         logger = get_logger(__name__)
@@ -220,7 +277,7 @@ def get_logger(name: str):
     if config.structured_logging:
         return structlog.get_logger(name)
     else:
-        return logging.getLogger(name)
+        return StructlogCompatibleLogger(logging.getLogger(name))
 
 
 # ============================================================================

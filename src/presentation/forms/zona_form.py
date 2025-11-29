@@ -32,7 +32,7 @@ from sqlalchemy.orm import Session
 
 from presentation.forms.base_form import BaseForm
 from presentation.forms.zona_widgets import DatosZonaWidget
-from presentation.widgets import TableManager
+from presentation.widgets.table_manager import TableManager
 
 
 class ZonaForm(BaseForm):

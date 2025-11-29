@@ -8,12 +8,23 @@ Sprint 8 - Task 8.7
 Migrado a presentation/widgets en Sprint 11 - Task 11.1.2
 """
 
+import logging
 import time
 from typing import Callable, Optional
 
-from PyQt6.QtCore import QMutex, Qt, QThread, QTimer, QWaitCondition, pyqtSignal
+from PyQt6.QtCore import (
+    QMutex,
+    QObject,
+    Qt,
+    QThread,
+    QTimer,
+    QWaitCondition,
+    pyqtSignal,
+    pyqtSlot,
+)
 from PyQt6.QtWidgets import (
     QDialog,
+    QHBoxLayout,
     QLabel,
     QProgressBar,
     QPushButton,
@@ -24,14 +35,80 @@ from PyQt6.QtWidgets import (
 from utils.ui_helpers import get_corporate_icon
 
 
+class ProgressLogHandler(logging.Handler):
+    """Handler de logging que redirige mensajes al diálogo de progreso."""
+
+    def __init__(self, progress_dialog):
+        super().__init__()
+        self.progress_dialog = progress_dialog
+        self.setLevel(logging.INFO)
+
+        # Filtrar solo mensajes relevantes para el usuario
+        self.keywords = [
+            'ITERACIÓN', 'Cobertura', 'guardias asignadas', 'Solución',
+            'Ejecutando', 'Calculando', 'Preparando', 'Validando',
+            'Generando', 'Procesando', 'Analizando', 'Optimizando',
+            'ILP', 'algoritmo', 'cores', 'slots', 'profesores'
+        ]
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+
+            # Filtrar mensajes técnicos no relevantes
+            if any(keyword in msg for keyword in self.keywords):
+                # Limpiar formato para mejor visualización
+                msg_clean = msg.replace('=' * 70, '').strip()
+                if msg_clean and self.progress_dialog.text_log:
+                    self.progress_dialog.agregar_al_log(msg_clean)
+        except Exception:
+            pass
+
+
+class DecisionDialogHandler(QObject):
+    """Maneja la visualización del diálogo de diagnóstico en el hilo principal."""
+
+    def __init__(self, parent_dialog: QDialog, worker: "WorkerThread"):
+        super().__init__(parent_dialog)
+        self.parent_dialog = parent_dialog
+        self.worker = worker
+
+    @pyqtSlot(object)
+    def handle_decision(self, diagnostico):
+        from utils.logger import get_logger
+
+        logger = get_logger(__name__)
+        logger.info("🔔 Mostrando diálogo de diagnóstico al usuario")
+
+        try:
+            from src.presentation.dialogs.dialogo_diagnostico_guardias import (
+                DialogoDiagnosticoGuardias,
+            )
+
+            dialogo = DialogoDiagnosticoGuardias(diagnostico, self.parent_dialog)
+            if dialogo.exec():
+                resultado_decision = dialogo.get_accion_elegida()
+            else:
+                resultado_decision = 'cancelar'
+
+            logger.info(f"✅ Usuario eligió: {resultado_decision}")
+            self.worker.set_decision_resultado(resultado_decision)
+
+        except Exception as e:
+            logger.error(f"❌ Error mostrando diálogo de decisión: {str(e)}")
+            import traceback
+
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            self.worker.set_decision_resultado('error')
+
+
 class ProgressDialog(QDialog):
     """
     Diálogo de progreso para operaciones largas con cancelación.
 
     Muestra:
-    - Título de la operación
-    - Mensaje descriptivo
-    - Barra de progreso (0-100%)
+    - Barra de progreso
+    - Contador de tiempo
     - Log detallado de la operación
     - Botón de cancelación
 
@@ -108,6 +185,10 @@ class ProgressDialog(QDialog):
         self._show_details = show_details
         self._start_time = time.time()
         self._timer = None
+        self._last_progress = 0
+        self._progress_history = []  # Para calcular tiempo estimado
+        self._cpu_percent = 0.0
+        self._log_handler = None  # Handler para capturar logs
 
         # Layout principal
         layout = QVBoxLayout()
@@ -160,6 +241,39 @@ class ProgressDialog(QDialog):
             }
         """)
         layout.addWidget(self.label_tiempo)
+
+        # Métricas de sistema (CPU y tiempo estimado)
+        metrics_layout = QHBoxLayout()
+        metrics_layout.setSpacing(20)
+
+        # CPU Usage
+        self.label_cpu = QLabel("💻 CPU: 0%")
+        self.label_cpu.setStyleSheet("""
+            QLabel {
+                font-size: 10px;
+                color: #666;
+                padding: 4px 8px;
+                background-color: #f0f0f0;
+                border-radius: 3px;
+            }
+        """)
+        metrics_layout.addWidget(self.label_cpu)
+
+        # Tiempo estimado
+        self.label_eta = QLabel("⏱️ ETA: calculando...")
+        self.label_eta.setStyleSheet("""
+            QLabel {
+                font-size: 10px;
+                color: #666;
+                padding: 4px 8px;
+                background-color: #f0f0f0;
+                border-radius: 3px;
+            }
+        """)
+        metrics_layout.addWidget(self.label_eta)
+
+        metrics_layout.addStretch()
+        layout.addLayout(metrics_layout)
 
         # Label de detalle (ej: "5/100 procesados")
         self.label_detalle = QLabel("")
@@ -232,6 +346,49 @@ class ProgressDialog(QDialog):
         self._timer.timeout.connect(self._actualizar_tiempo)
         self._timer.start(1000)  # Actualizar cada segundo
 
+        # Si show_details, instalar handler de logging
+        if show_details:
+            self._instalar_log_handler()
+
+    def _instalar_log_handler(self):
+        """Instala un handler de logging para capturar logs en tiempo real."""
+        try:
+            self._log_handler = ProgressLogHandler(self)
+            # Añadir a los loggers relevantes
+            loggers_to_capture = [
+                logging.getLogger('services.asignador_iterativo'),
+                logging.getLogger('services.asignador_ilp'),
+                logging.getLogger('services.orquestador_asignacion_guardias'),
+                logging.getLogger('services.asignador_guardias_v3_simple'),
+            ]
+            for logger in loggers_to_capture:
+                logger.addHandler(self._log_handler)
+        except Exception:
+            pass
+
+    def _desinstalar_log_handler(self):
+        """Desinstala el handler de logging."""
+        if self._log_handler:
+            try:
+                loggers = [
+                    logging.getLogger('services.asignador_iterativo'),
+                    logging.getLogger('services.asignador_ilp'),
+                    logging.getLogger('services.orquestador_asignacion_guardias'),
+                    logging.getLogger('services.asignador_guardias_v3_simple'),
+                ]
+                for logger in loggers:
+                    logger.removeHandler(self._log_handler)
+                self._log_handler = None
+            except Exception:
+                pass
+
+    def closeEvent(self, event):
+        """Override closeEvent para limpiar handlers."""
+        self._desinstalar_log_handler()
+        if self._timer:
+            self._timer.stop()
+        super().closeEvent(event)
+
     def actualizar_progreso(self, actual: int, total: int, detalle: str = ""):
         """
         Actualizar barra de progreso.
@@ -244,6 +401,17 @@ class ProgressDialog(QDialog):
         if total > 0:
             porcentaje = int((actual / total) * 100)
             self.progress_bar.setValue(porcentaje)
+
+            # Actualizar historial de progreso para ETA
+            current_time = time.time()
+            self._progress_history.append((current_time, porcentaje))
+
+            # Mantener solo últimos 10 puntos
+            if len(self._progress_history) > 10:
+                self._progress_history.pop(0)
+
+            # Calcular ETA si tenemos suficientes datos
+            self._actualizar_eta(porcentaje)
 
         # Actualizar label de detalle
         if detalle:
@@ -297,12 +465,100 @@ class ProgressDialog(QDialog):
             self.btn_cancelar.setEnabled(False)
 
     def _actualizar_tiempo(self):
-        """Actualizar el contador de tiempo transcurrido."""
+        """Actualizar el contador de tiempo transcurrido y métricas del sistema."""
         elapsed = int(time.time() - self._start_time)
         horas = elapsed // 3600
         minutos = (elapsed % 3600) // 60
         segundos = elapsed % 60
         self.label_tiempo.setText(f"Tiempo: {horas:02d}:{minutos:02d}:{segundos:02d}")
+
+        # Actualizar CPU usage
+        self._actualizar_cpu()
+
+    def _actualizar_cpu(self):
+        """Actualizar el uso de CPU y número de cores activos."""
+        try:
+            import os
+
+            import psutil
+
+            # Obtener uso de CPU total (no bloqueante)
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            self._cpu_percent = cpu_percent
+
+            # Obtener uso por core para calcular cores activos
+            cpu_per_core = psutil.cpu_percent(interval=0, percpu=True)
+            total_cores = os.cpu_count() or 1
+
+            # Contar cores activos (> 50% de uso)
+            cores_activos = sum(1 for usage in cpu_per_core if usage > 50)
+
+            # Calcular cores equivalentes basados en el uso total
+            cores_equivalentes = cpu_percent / 100 * total_cores
+
+            # Actualizar label con color según uso
+            if cpu_percent < 30:
+                color = "#4CAF50"  # Verde
+                emoji = "💻"
+            elif cpu_percent < 70:
+                color = "#FF9800"  # Naranja
+                emoji = "⚡"
+            else:
+                color = "#F44336"  # Rojo
+                emoji = "🔥"
+
+            # Mostrar: % total, cores activos y cores equivalentes
+            self.label_cpu.setText(
+                f"{emoji} CPU: {cpu_percent:.0f}% ({cores_activos}/{total_cores} cores, ~{cores_equivalentes:.1f} equiv.)"
+            )
+            self.label_cpu.setStyleSheet(f"""
+                QLabel {{
+                    font-size: 10px;
+                    color: {color};
+                    font-weight: bold;
+                    padding: 4px 8px;
+                    background-color: #f0f0f0;
+                    border-radius: 3px;
+                }}
+            """)
+        except ImportError:
+            # psutil no disponible
+            self.label_cpu.setText("💻 CPU: N/A")
+        except:
+            pass
+
+    def _actualizar_eta(self, porcentaje_actual: int):
+        """Calcular y actualizar el tiempo estimado de finalización."""
+        if len(self._progress_history) < 2 or porcentaje_actual >= 100:
+            return
+
+        # Calcular velocidad promedio (porcentaje por segundo)
+        tiempo_inicio, porcentaje_inicio = self._progress_history[0]
+        tiempo_actual, _ = self._progress_history[-1]
+
+        tiempo_transcurrido = tiempo_actual - tiempo_inicio
+        progreso_realizado = porcentaje_actual - porcentaje_inicio
+
+        if progreso_realizado > 0 and tiempo_transcurrido > 0:
+            velocidad = progreso_realizado / tiempo_transcurrido  # % por segundo
+            porcentaje_restante = 100 - porcentaje_actual
+            segundos_restantes = int(porcentaje_restante / velocidad)
+
+            # Formatear ETA
+            if segundos_restantes < 60:
+                eta_text = f"{segundos_restantes}s"
+            elif segundos_restantes < 3600:
+                minutos = segundos_restantes // 60
+                segundos = segundos_restantes % 60
+                eta_text = f"{minutos}m {segundos}s"
+            else:
+                horas = segundos_restantes // 3600
+                minutos = (segundos_restantes % 3600) // 60
+                eta_text = f"{horas}h {minutos}m"
+
+            self.label_eta.setText(f"⏱️ ETA: {eta_text}")
+        else:
+            self.label_eta.setText("⏱️ ETA: calculando...")
 
     def fue_cancelado(self) -> bool:
         """
@@ -464,27 +720,44 @@ class WorkerThread(QThread):
         from utils.logger import get_logger
         logger = get_logger(__name__)
 
-        logger.info("🔔 WorkerThread solicitando decisión del usuario...")
+        try:
+            logger.info("🔔 WorkerThread solicitando decisión del usuario...")
 
-        # Resetear resultado
-        self._decision_result = None
+            # Resetear resultado
+            self._decision_result = None
 
-        # Emitir señal al thread principal
-        self.solicitar_decision.emit(diagnostico)
+            # Emitir señal al thread principal
+            self.solicitar_decision.emit(diagnostico)
 
-        # Esperar respuesta con timeout
-        self._decision_mutex.lock()
-        timeout_ms = 300000  # 5 minutos de timeout
-        if not self._decision_condition.wait(self._decision_mutex, timeout_ms):
-            logger.error("⏱️ Timeout esperando decisión del usuario")
+            # Esperar respuesta con timeout
+            self._decision_mutex.lock()
+            timeout_ms = 300000  # 5 minutos de timeout
+            logger.info(f"⏳ Esperando decisión del usuario (timeout: {timeout_ms/1000}s)...")
+
+            if not self._decision_condition.wait(self._decision_mutex, timeout_ms):
+                logger.error("⏱️ TIMEOUT esperando decisión del usuario (5 minutos)")
+                logger.error("   El diálogo probablemente no se mostró o el usuario no respondió")
+                self._decision_mutex.unlock()
+                return 'cancelar'
+
+            result = self._decision_result
             self._decision_mutex.unlock()
-            return 'cancelar'
 
-        result = self._decision_result
-        self._decision_mutex.unlock()
+            logger.info(f"✅ Decisión del usuario recibida: {result}")
+            return result
 
-        logger.info(f"✅ Decisión del usuario recibida: {result}")
-        return result
+        except Exception as e:
+            logger.error(f"❌ Error en solicitar_decision_usuario: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+
+            # Intentar desbloquear mutex si quedó bloqueado
+            try:
+                self._decision_mutex.unlock()
+            except:
+                pass
+
+            return 'error'
 
     def set_decision_resultado(self, resultado: str):
         """
@@ -552,7 +825,7 @@ def ejecutar_con_progreso(
     from utils.logger import get_logger
     logger_worker = get_logger(__name__)
     import traceback
-    logger_worker.error(
+    logger_worker.debug(
         f"🔧 CREANDO WorkerThread para función: {funcion.__name__}\n"
         f"   Stack trace de creación:\n{''.join(traceback.format_stack()[-5:])}"
     )
@@ -577,75 +850,54 @@ def ejecutar_con_progreso(
         from utils.logger import get_logger
         logger = get_logger(__name__)
         logger.error(f"Error en worker: {type(error).__name__}: {str(error)}")
+
         # Cerrar diálogo de forma segura
         try:
+            # CRITICAL FIX: Detener el timer para evitar que siga contando
+            if hasattr(dialog, '_timer') and dialog._timer:
+                dialog._timer.stop()
+                logger.info("⏹️ Timer del diálogo detenido")
+
             if not isinstance(error, InterruptedError):
+                # Mostrar mensaje de error
                 dialog.set_mensaje(f"❌ Error: {str(error)[:100]}...")
+
+                # Marcar como completado (con error) para permitir cierre
+                dialog._cancelado = True
+
+                # Cambiar botón a "Cerrar" y reconectarlo
                 if hasattr(dialog, 'btn_cancelar'):
                     dialog.btn_cancelar.setText("Cerrar")
                     dialog.btn_cancelar.setEnabled(True)
+                    # Desconectar la función anterior y conectar a close
+                    try:
+                        dialog.btn_cancelar.clicked.disconnect()
+                    except TypeError:
+                        pass  # No había conexión previa
+                    dialog.btn_cancelar.clicked.connect(dialog.close)
+                    logger.info("🔘 Botón cambiado a 'Cerrar'")
             else:
+                # Si fue cancelación del usuario, simplemente cerrar
                 dialog.close()
         except Exception as e:
             logger.error(f"Error cerrando diálogo: {e}")
-            dialog.close()
-
-    def on_solicitar_decision(diagnostico):
-        """Manejar solicitud de decisión del usuario desde el worker thread."""
-        from PyQt6.QtCore import QThread
-        from utils.logger import get_logger
-        logger = get_logger(__name__)
-
-        current_thread = QThread.currentThread()
-        thread_name = (
-            current_thread.objectName() if current_thread.objectName()
-            else str(type(current_thread).__name__)
-        )
-        logger.error(f"🔔 Solicitud de decisión recibida en thread: {thread_name}")
-
-        # CRÍTICO: Este callback SE EJECUTA en el main thread por la señal Qt,
-        # pero QTimer.singleShot NO garantiza ejecución en main thread.
-        # Debemos ejecutar DIRECTAMENTE aquí ya que estamos en el main thread.
-        verify_thread = QThread.currentThread()
-        verify_name = (
-            verify_thread.objectName() if verify_thread.objectName()
-            else str(type(verify_thread).__name__)
-        )
-        logger.error(f"📊 Mostrando diálogo en thread: {verify_name}")
-
-        try:
-            # Mostrar diálogo en el thread principal
-            from src.presentation.dialogs.dialogo_diagnostico_guardias import (
-                DialogoDiagnosticoGuardias,
-            )
-
-            dialogo = DialogoDiagnosticoGuardias(diagnostico, dialog)
-
-            if dialogo.exec():
-                resultado_decision = dialogo.get_accion_elegida()
-            else:
-                resultado_decision = 'cancelar'
-
-            logger.info(f"✅ Usuario eligió: {resultado_decision}")
-
-            # Enviar resultado de vuelta al worker
-            worker.set_decision_resultado(resultado_decision)
-
-        except Exception as e:
-            logger.error(f"❌ Error mostrando diálogo de decisión: {str(e)}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            # En caso de error, cancelar
-            worker.set_decision_resultado('cancelar')
+            # Forzar cierre en caso de error
+            try:
+                dialog.close()
+            except:
+                pass
 
     worker.finalizado.connect(on_finalizado)
     worker.error.connect(on_error)
-    # CRÍTICO: Usar BlockingQueuedConnection para GARANTIZAR ejecución en main thread
     from PyQt6.QtCore import Qt
+    decision_handler = DecisionDialogHandler(dialog, worker)
+    dialog._decision_handler = decision_handler
     worker.solicitar_decision.connect(
-        on_solicitar_decision,
-        Qt.ConnectionType.BlockingQueuedConnection
-    )    # Conectar cancelación
+        decision_handler.handle_decision,
+        Qt.ConnectionType.QueuedConnection
+    )
+
+    # Conectar cancelación
     def on_cancelar():
         if dialog.fue_cancelado():
             worker.cancelar()

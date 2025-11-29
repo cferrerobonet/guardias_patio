@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 # Añadir src al path para imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from models.models import Base, Configuracion, Guardia, Profesor, Zona
+from models.models import Base, Configuracion, CursoEscolar, Guardia, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias, guardar_guardias_en_bd
 
 
@@ -28,9 +28,27 @@ def session():
 
 
 @pytest.fixture
+def curso_activo(session):
+    """Crea un curso escolar activo."""
+    curso = CursoEscolar(
+        anio_inicio=2025,
+        anio_fin=2026,
+        fecha_inicio=date(2025, 9, 1),
+        fecha_fin=date(2026, 6, 30),
+        nombre="Curso 2025/2026",
+        activo=True,
+        cerrado=False,
+    )
+    session.add(curso)
+    session.commit()
+    return curso
+
+
+@pytest.fixture
 def config_completa(session):
     """Crea una configuración completa del curso."""
     config = Configuracion(
+        anio_inicio_curso=2025,
         fecha_inicio_curso=date(2025, 9, 1),
         fecha_fin_curso=date(2025, 9, 5),  # 5 días lectivos (L-V)
         hora_recreo1_manana=time(10, 30),
@@ -136,7 +154,7 @@ class TestGeneracionCalendario:
                 f"Zonas asignadas: {[g.zona_id for g in guardias_en_slot]}"
             )
 
-    def test_respeta_cuotas(self, session, config_completa, profesores_multiples, zonas_multiples):
+    def test_respeta_cuotas(self, session, curso_activo, config_completa, profesores_multiples, zonas_multiples):
         """Verifica que ningún profesor supera su cuota asignada."""
         from services.calculador_guardias import calcular_guardias_por_profesor
 
@@ -232,17 +250,17 @@ class TestGeneracionCalendario:
 
     def test_error_sin_configuracion(self, session):
         """Lanza error si no hay configuración."""
-        with pytest.raises(ValueError, match="No existe configuración"):
+        with pytest.raises(ValueError, match="No existe configuración del curso"):
             generar_calendario_guardias(session)
 
     def test_error_sin_profesores(self, session, config_completa):
         """Lanza error si no hay profesores."""
-        with pytest.raises(ValueError, match="No hay profesores"):
+        with pytest.raises(ValueError, match="No hay profesores registrados"):
             generar_calendario_guardias(session)
 
     def test_error_sin_zonas(self, session, config_completa, profesores_multiples):
         """Lanza error si no hay zonas."""
-        with pytest.raises(ValueError, match="No hay zonas"):
+        with pytest.raises(ValueError, match="No hay zonas registradas"):
             generar_calendario_guardias(session)
 
 

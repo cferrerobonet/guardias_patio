@@ -83,21 +83,37 @@ class AjustesWidget(QGroupBox):
         layout.addWidget(self.ajuste_no_tutores_input)
 
         # ===== Información de algoritmo (solo lectura) =====
-        label_algoritmo = QLabel("Algoritmo de asignación:")
+        label_algoritmo = QLabel("Algoritmos disponibles:")
         label_algoritmo.setStyleSheet(
-            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;"
+            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px; margin-top: 4px;"
         )
         layout.addWidget(label_algoritmo)
 
-        # Label informativo en lugar de combo
-        self.algoritmo_info = QLabel("v3.0 - Simple Determinista ⚡")
+        # Label informativo con todos los algoritmos
+        self.algoritmo_info = QLabel(
+            "• v3.0 Iterativo Simple (actual)\n"
+            "• v2.9 Multi-fase Clásico\n"
+            "• Híbrido + ILP (casos complejos)"
+        )
         self.algoritmo_info.setStyleSheet(
             styles.STYLE_INPUT +
-            "padding: 6px; background-color: #f0f0f0; color: #666; font-weight: bold;"
+            "padding: 5px; background-color: #f8f8f8; color: #555; "
+            "font-size: 9px; line-height: 1.3;"
         )
         self.algoritmo_info.setToolTip(
-            "Algoritmo v3.0: Simple determinista que garantiza 100% cobertura.\n"
-            "Este algoritmo está optimizado para distribución equitativa."
+            "ALGORITMOS DISPONIBLES:\n\n"
+            "• v3.0 Iterativo Simple\n"
+            "  Rápido y predecible. Garantiza 100% cobertura.\n"
+            "  Usado en generación estándar.\n\n"
+            "• v2.9 Multi-fase Clásico\n"
+            "  7 fases de asignación. Algoritmo legacy.\n"
+            "  Configurable en base de datos.\n\n"
+            "• Sistema Híbrido + ILP\n"
+            "  1. Intenta iterativo primero (rápido)\n"
+            "  2. Si falla, muestra diagnóstico\n"
+            "  3. Permite usar ILP (OR-Tools optimización)\n"
+            "  Usado en casos complejos o cuando el iterativo no converge.\n"
+            "  Aprovecha todos los cores del procesador."
         )
         layout.addWidget(self.algoritmo_info)
 
