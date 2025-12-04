@@ -49,64 +49,41 @@ class ProfesorSchema(BaseModel):
         ...,
         min_length=3,
         max_length=200,
-        description="Nombre completo del profesor (formato: APELLIDOS, NOMBRE)"
+        description="Nombre completo del profesor (formato: APELLIDOS, NOMBRE)",
     )
-    email_corporativo: Optional[str] = Field(
-        None,
-        description="Email corporativo del profesor"
-    )
+    email_corporativo: Optional[str] = Field(None, description="Email corporativo del profesor")
 
     # Contrato y jornada
-    horas_contrato: float = Field(
-        ...,
-        ge=0.0,
-        le=40.0,
-        description="Horas de contrato semanales"
-    )
+    horas_contrato: float = Field(..., ge=0.0, le=40.0, description="Horas de contrato semanales")
     porcentaje_jornada: float = Field(
-        ...,
-        ge=0.0,
-        le=100.0,
-        description="Porcentaje de jornada (calculado)"
+        ..., ge=0.0, le=100.0, description="Porcentaje de jornada (calculado)"
     )
-    turno: str = Field(
-        ...,
-        pattern="^(mañana|tarde)$",
-        description="Turno de trabajo"
-    )
+    turno: str = Field(..., pattern="^(mañana|tarde)$", description="Turno de trabajo")
 
     # Características
-    es_tutor: bool = Field(
-        False,
-        description="Indica si es tutor de un grupo"
-    )
+    es_tutor: bool = Field(False, description="Indica si es tutor de un grupo")
 
     # Disponibilidad temporal
     fecha_inicio_guardias: Optional[date] = Field(
-        None,
-        description="Fecha desde la que puede hacer guardias"
+        None, description="Fecha desde la que puede hacer guardias"
     )
     fecha_fin_guardias: Optional[date] = Field(
-        None,
-        description="Fecha hasta la que puede hacer guardias"
+        None, description="Fecha hasta la que puede hacer guardias"
     )
 
     # Preferencias (listas simplificadas)
     zona_preferida_id: Optional[int] = Field(
-        None,
-        ge=0,
-        description="ID de la zona preferida (0 = sin preferencia)"
+        None, ge=0, description="ID de la zona preferida (0 = sin preferencia)"
     )
     dias_semana_permitidos: list[int] = Field(
         default_factory=lambda: list(range(5)),  # Solo días laborables (0-4: Lun-Vie)
-        description="Lista de días permitidos (0=Lunes, 4=Viernes)"
+        description="Lista de días permitidos (0=Lunes, 4=Viernes)",
     )
     recreos_permitidos: list[int] = Field(
-        default_factory=lambda: [1, 2],
-        description="Lista de recreos permitidos (1, 2, etc.)"
+        default_factory=lambda: [1, 2], description="Lista de recreos permitidos (1, 2, etc.)"
     )
 
-    @field_validator("dias_semana_permitidos", mode='before')
+    @field_validator("dias_semana_permitidos", mode="before")
     @classmethod
     def validar_dias_semana(cls, v) -> list[int]:
         """Valida que los días estén en rango 0-6."""
@@ -118,7 +95,7 @@ class ProfesorSchema(BaseModel):
             raise ValueError("Los días de la semana deben estar entre 0 (Lunes) y 6 (Domingo)")
         return v
 
-    @field_validator("recreos_permitidos", mode='before')
+    @field_validator("recreos_permitidos", mode="before")
     @classmethod
     def validar_recreos(cls, v) -> list[int]:
         """Valida que los recreos sean positivos."""
@@ -169,30 +146,15 @@ class ProfesorCreateSchema(BaseModel):
 
     # Campos requeridos
     nombre_completo: str = Field(
-        ...,
-        min_length=3,
-        max_length=200,
-        description="Nombre completo del profesor"
+        ..., min_length=3, max_length=200, description="Nombre completo del profesor"
     )
-    horas_contrato: float = Field(
-        ...,
-        ge=0.0,
-        le=40.0,
-        description="Horas de contrato semanales"
-    )
-    turno: str = Field(
-        default="mañana",
-        pattern="^(mañana|tarde)$",
-        description="Turno de trabajo"
-    )
+    horas_contrato: float = Field(..., ge=0.0, le=40.0, description="Horas de contrato semanales")
+    turno: str = Field(default="mañana", pattern="^(mañana|tarde)$", description="Turno de trabajo")
 
     # Campos opcionales
     email_corporativo: Optional[str] = None
     porcentaje_jornada: Optional[float] = Field(
-        None,
-        ge=0.0,
-        le=100.0,
-        description="Se calcula automáticamente si no se proporciona"
+        None, ge=0.0, le=100.0, description="Se calcula automáticamente si no se proporciona"
     )
     es_tutor: bool = False
     fecha_inicio_guardias: Optional[date] = None
@@ -202,7 +164,7 @@ class ProfesorCreateSchema(BaseModel):
     dias_semana_permitidos: list[int] = Field(default_factory=lambda: list(range(5)))
     recreos_permitidos: list[int] = Field(default_factory=lambda: [1, 2])
 
-    @field_validator("dias_semana_permitidos", mode='before')
+    @field_validator("dias_semana_permitidos", mode="before")
     @classmethod
     def validar_dias_semana(cls, v) -> list[int]:
         """Valida que los días estén en rango 0-6."""
@@ -214,7 +176,7 @@ class ProfesorCreateSchema(BaseModel):
             raise ValueError("Los días de la semana deben estar entre 0 (Lunes) y 6 (Domingo)")
         return v
 
-    @field_validator("recreos_permitidos", mode='before')
+    @field_validator("recreos_permitidos", mode="before")
     @classmethod
     def validar_recreos(cls, v) -> list[int]:
         """Valida que los recreos sean positivos."""

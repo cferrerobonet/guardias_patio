@@ -31,7 +31,9 @@ def aplicar_migracion_multi_curso():
     """Aplica la migración del sistema Multi-Curso a la base de datos."""
 
     # Usar la ruta directa a la base de datos existente
-    db_path = Path(__file__).parent.parent / "data" / "users" / "0db13e2857239ed8" / "guardias_patio.db"
+    db_path = (
+        Path(__file__).parent.parent / "data" / "users" / "0db13e2857239ed8" / "guardias_patio.db"
+    )
 
     logger.info(f"Conectando a base de datos: {db_path}")
     engine = create_engine(f"sqlite:///{db_path}")
@@ -42,7 +44,8 @@ def aplicar_migracion_multi_curso():
         try:
             # 1. Crear tabla cursos_escolares
             logger.info("1. Creando tabla cursos_escolares...")
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS cursos_escolares (
                     id INTEGER PRIMARY KEY,
                     anio_inicio INTEGER NOT NULL,
@@ -55,17 +58,20 @@ def aplicar_migracion_multi_curso():
                     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(anio_inicio, anio_fin)
                 )
-            """))
+            """)
+            )
             logger.info("   ✓ Tabla cursos_escolares creada")
 
             # 2. Añadir curso_activo_id a configuracion
             logger.info("2. Añadiendo curso_activo_id a configuracion...")
             try:
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     ALTER TABLE configuracion
                     ADD COLUMN curso_activo_id INTEGER
                     REFERENCES cursos_escolares(id)
-                """))
+                """)
+                )
                 logger.info("   ✓ Columna curso_activo_id añadida")
             except Exception as e:
                 if "duplicate column" in str(e).lower():
@@ -76,11 +82,13 @@ def aplicar_migracion_multi_curso():
             # 3. Añadir curso_id a guardias
             logger.info("3. Añadiendo curso_id a guardias...")
             try:
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     ALTER TABLE guardias
                     ADD COLUMN curso_id INTEGER
                     REFERENCES cursos_escolares(id)
-                """))
+                """)
+                )
                 logger.info("   ✓ Columna curso_id añadida a guardias")
             except Exception as e:
                 if "duplicate column" in str(e).lower():

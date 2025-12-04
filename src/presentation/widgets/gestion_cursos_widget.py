@@ -8,7 +8,7 @@ from typing import Optional
 
 import ui_styles as styles
 from core.logging import get_logger
-from models.models import CursoEscolar, Guardia
+from infrastructure.database.models import CursoEscolar, Guardia
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
@@ -38,6 +38,7 @@ def _fix_messagebox_size(msgbox: QMessageBox) -> None:
     """
     # Programar el resize después de que el diálogo se muestre
     QTimer.singleShot(0, lambda: msgbox.setMinimumSize(400, 200))
+
 
 class GestionCursosWidget(QWidget):
     """Widget para gestionar cursos escolares."""
@@ -130,19 +131,21 @@ class GestionCursosWidget(QWidget):
         # Tabla de cursos con scroll automático
         self.tabla_cursos = QTableWidget()
         self.tabla_cursos.setColumnCount(11)
-        self.tabla_cursos.setHorizontalHeaderLabels([
-            "Curso",
-            "Inicio",
-            "Fin",
-            "Estado",
-            "Días Lect.",
-            "G. Calc.",
-            "G. Asig.",
-            "G. Sin Asig.",
-            "Profs.",
-            "Zonas",
-            "Creado"
-        ])
+        self.tabla_cursos.setHorizontalHeaderLabels(
+            [
+                "Curso",
+                "Inicio",
+                "Fin",
+                "Estado",
+                "Días Lect.",
+                "G. Calc.",
+                "G. Asig.",
+                "G. Sin Asig.",
+                "Profs.",
+                "Zonas",
+                "Creado",
+            ]
+        )
 
         # Configurar header para que las columnas se ajusten proporcionalmente
         header = self.tabla_cursos.horizontalHeader()
@@ -221,22 +224,22 @@ class GestionCursosWidget(QWidget):
                 stats = self._calcular_estadisticas_curso(curso.id)
 
                 # Días Lectivos
-                item_dias = QTableWidgetItem(str(stats['dias_lectivos']))
+                item_dias = QTableWidgetItem(str(stats["dias_lectivos"]))
                 item_dias.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_cursos.setItem(i, 4, item_dias)
 
                 # Guardias Calculadas
-                item_calc = QTableWidgetItem(str(stats['guardias_calculadas']))
+                item_calc = QTableWidgetItem(str(stats["guardias_calculadas"]))
                 item_calc.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_cursos.setItem(i, 5, item_calc)
 
                 # Guardias Asignadas
-                item_asig = QTableWidgetItem(str(stats['guardias_asignadas']))
+                item_asig = QTableWidgetItem(str(stats["guardias_asignadas"]))
                 item_asig.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_cursos.setItem(i, 6, item_asig)
 
                 # Guardias Sin Asignar
-                sin_asignar = stats['guardias_calculadas'] - stats['guardias_asignadas']
+                sin_asignar = stats["guardias_calculadas"] - stats["guardias_asignadas"]
                 item_sin = QTableWidgetItem(str(sin_asignar))
                 item_sin.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 # Resaltar si hay guardias sin asignar
@@ -246,12 +249,12 @@ class GestionCursosWidget(QWidget):
                 self.tabla_cursos.setItem(i, 7, item_sin)
 
                 # Profesores
-                item_prof = QTableWidgetItem(str(stats['profesores']))
+                item_prof = QTableWidgetItem(str(stats["profesores"]))
                 item_prof.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_cursos.setItem(i, 8, item_prof)
 
                 # Zonas
-                item_zonas = QTableWidgetItem(str(stats['zonas']))
+                item_zonas = QTableWidgetItem(str(stats["zonas"]))
                 item_zonas.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_cursos.setItem(i, 9, item_zonas)
 
@@ -286,30 +289,27 @@ class GestionCursosWidget(QWidget):
             if not curso:
                 logger.warning(f"No se encontró el curso con id={curso_id}")
                 return {
-                    'dias_lectivos': 0,
-                    'guardias_calculadas': 0,
-                    'guardias_asignadas': 0,
-                    'profesores': 0,
-                    'zonas': 0,
+                    "dias_lectivos": 0,
+                    "guardias_calculadas": 0,
+                    "guardias_asignadas": 0,
+                    "profesores": 0,
+                    "zonas": 0,
                 }
 
             # Días lectivos del curso
             from datetime import timedelta
 
-            from models.models import Configuracion
+            from infrastructure.database.models import Configuracion
 
             dias_lectivos = 0
 
             # Buscar configuración que tenga este curso como activo
-            config = (
-                self.session.query(Configuracion)
-                .filter_by(curso_activo_id=curso_id)
-                .first()
-            )
+            config = self.session.query(Configuracion).filter_by(curso_activo_id=curso_id).first()
 
             if config:
                 # Usar la función de cálculo de días lectivos
                 from services.calculador_guardias import listar_dias_lectivos
+
                 dias_lectivos = len(listar_dias_lectivos(config))
                 logger.debug(f"Curso {curso.nombre}: {dias_lectivos} días lectivos (desde config)")
             else:
@@ -323,20 +323,12 @@ class GestionCursosWidget(QWidget):
                 logger.debug(f"Curso {curso.nombre}: {dias_lectivos} días laborables (calculados)")
 
             # Guardias asignadas (todas las guardias del curso)
-            guardias_asignadas = (
-                self.session.query(Guardia)
-                .filter_by(curso_id=curso_id)
-                .count()
-            )
+            guardias_asignadas = self.session.query(Guardia).filter_by(curso_id=curso_id).count()
             logger.debug(f"Curso {curso.nombre}: {guardias_asignadas} guardias asignadas")
 
             # Guardias calculadas: contar slots únicos (fecha, turno, recreo, zona)
             # que deberían tener guardia según la configuración
-            guardias_totales = (
-                self.session.query(Guardia)
-                .filter_by(curso_id=curso_id)
-                .count()
-            )
+            guardias_totales = self.session.query(Guardia).filter_by(curso_id=curso_id).count()
             # Por ahora, guardias calculadas = guardias asignadas
             # (para calcular correctamente necesitaríamos la configuración del curso)
             guardias_calculadas = guardias_totales
@@ -352,29 +344,26 @@ class GestionCursosWidget(QWidget):
 
             # Zonas únicas usadas en este curso
             zonas = (
-                self.session.query(Guardia.zona_id)
-                .filter_by(curso_id=curso_id)
-                .distinct()
-                .count()
+                self.session.query(Guardia.zona_id).filter_by(curso_id=curso_id).distinct().count()
             )
             logger.debug(f"Curso {curso.nombre}: {zonas} zonas únicas")
 
             return {
-                'dias_lectivos': dias_lectivos,
-                'guardias_calculadas': guardias_calculadas,
-                'guardias_asignadas': guardias_asignadas,
-                'profesores': profesores,
-                'zonas': zonas,
+                "dias_lectivos": dias_lectivos,
+                "guardias_calculadas": guardias_calculadas,
+                "guardias_asignadas": guardias_asignadas,
+                "profesores": profesores,
+                "zonas": zonas,
             }
 
         except Exception as e:
             logger.error(f"Error al calcular estadísticas del curso {curso_id}: {e}", exc_info=True)
             return {
-                'dias_lectivos': 0,
-                'guardias_calculadas': 0,
-                'guardias_asignadas': 0,
-                'profesores': 0,
-                'zonas': 0,
+                "dias_lectivos": 0,
+                "guardias_calculadas": 0,
+                "guardias_asignadas": 0,
+                "profesores": 0,
+                "zonas": 0,
             }
 
     def _on_seleccion_cambiada(self) -> None:
@@ -406,7 +395,7 @@ class GestionCursosWidget(QWidget):
     def _crear_curso(self) -> None:
         """Abre el diálogo de creación de curso."""
         try:
-            print("="*80)
+            print("=" * 80)
             print("DEBUG: Iniciando _crear_curso()")
             print(f"DEBUG: Session type: {type(self.session)}")
             print(f"DEBUG: Session is None: {self.session is None}")
@@ -429,19 +418,15 @@ class GestionCursosWidget(QWidget):
                 self.curso_modificado.emit()
                 logger.info("Cursos recargados correctamente")
             print("DEBUG: _crear_curso() completado exitosamente")
-            print("="*80)
+            print("=" * 80)
         except Exception as e:
             print(f"DEBUG ERROR: {type(e).__name__}: {e}")
             import traceback
+
             traceback.print_exc()
-            logger.error(
-                f"Error al abrir diálogo: {type(e).__name__}: {e}",
-                exc_info=True
-            )
+            logger.error(f"Error al abrir diálogo: {type(e).__name__}: {e}", exc_info=True)
             QMessageBox.critical(
-                self,
-                "Error",
-                f"Error al abrir el diálogo:\n{type(e).__name__}: {e}"
+                self, "Error", f"Error al abrir el diálogo:\n{type(e).__name__}: {e}"
             )
 
     def _activar_curso_seleccionado(self) -> None:
@@ -462,8 +447,7 @@ class GestionCursosWidget(QWidget):
                 )
             else:
                 mensaje = (
-                    f"¿Activar el curso {curso.nombre}?\n\n"
-                    "El curso activo actual se desactivará."
+                    f"¿Activar el curso {curso.nombre}?\n\nEl curso activo actual se desactivará."
                 )
 
             # Usar QMessageBox explícito para control de tamaño

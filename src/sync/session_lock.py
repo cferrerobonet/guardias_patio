@@ -88,7 +88,7 @@ class SessionLock:
         if self.backend.file_exists(remote_path):
             # Descargar archivo de bloqueo
             if self.backend.download_file(remote_path, local_path):
-                with open(local_path, 'r') as f:
+                with open(local_path, "r") as f:
                     existing_lock = json.load(f)
 
                 # Verificar si el bloqueo está expirado
@@ -118,7 +118,7 @@ class SessionLock:
         self.session_info["last_heartbeat"] = datetime.now().isoformat()
 
         # Guardar localmente
-        with open(local_path, 'w') as f:
+        with open(local_path, "w") as f:
             json.dump(self.session_info, f, indent=2)
 
         # Subir al servidor
@@ -155,7 +155,7 @@ class SessionLock:
         self.session_info["last_heartbeat"] = datetime.now().isoformat()
 
         # Guardar localmente
-        with open(local_path, 'w') as f:
+        with open(local_path, "w") as f:
             json.dump(self.session_info, f, indent=2)
 
         # Subir al servidor
@@ -206,7 +206,7 @@ class SessionLock:
 
         # Descargar y leer
         if self.backend.download_file(remote_path, local_path):
-            with open(local_path, 'r') as f:
+            with open(local_path, "r") as f:
                 return json.load(f)
 
         return None
@@ -237,8 +237,7 @@ class SessionLockManager:
         self.heartbeat_timer.start(self.session_lock.heartbeat_interval * 1000)  # ms
 
         logger.info(
-            f"💓 Sistema de heartbeat iniciado "
-            f"(cada {self.session_lock.heartbeat_interval}s)"
+            f"💓 Sistema de heartbeat iniciado (cada {self.session_lock.heartbeat_interval}s)"
         )
 
     def _on_heartbeat(self):

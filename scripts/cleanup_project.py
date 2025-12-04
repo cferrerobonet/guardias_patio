@@ -22,13 +22,13 @@ def get_size(path: Path) -> int:
     if path.is_file():
         return path.stat().st_size
     elif path.is_dir():
-        return sum(f.stat().st_size for f in path.rglob('*') if f.is_file())
+        return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
     return 0
 
 
 def format_size(bytes_size: int) -> str:
     """Formatea el tamaño en bytes a formato legible."""
-    for unit in ['B', 'KB', 'MB', 'GB']:
+    for unit in ["B", "KB", "MB", "GB"]:
         if bytes_size < 1024.0:
             return f"{bytes_size:.2f} {unit}"
         bytes_size /= 1024.0
@@ -37,9 +37,9 @@ def format_size(bytes_size: int) -> str:
 
 def analyze_project_size(project_root: Path):
     """Analiza qué carpetas ocupan más espacio."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("📊 ANÁLISIS DE ESPACIO DEL PROYECTO")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     folders_to_check = [
         ("__pycache__", "**/__pycache__"),
@@ -175,7 +175,9 @@ def clean_pytest_mypy(project_root: Path, dry_run: bool = True):
             if not dry_run:
                 shutil.rmtree(cache_path)
             freed_space += size
-            print(f"  {'[DRY RUN] ' if dry_run else ''}Eliminado: {cache_dir}/ ({format_size(size)})")
+            print(
+                f"  {'[DRY RUN] ' if dry_run else ''}Eliminado: {cache_dir}/ ({format_size(size)})"
+            )
 
     print(f"\n  Espacio liberado: {format_size(freed_space)}")
 
@@ -184,9 +186,9 @@ def main():
     """Función principal."""
     project_root = Path(__file__).parent.parent
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🧹 LIMPIEZA DEL PROYECTO - Guardias de Patio")
-    print("="*60)
+    print("=" * 60)
 
     # Analizar tamaño actual
     analyze_project_size(project_root)
@@ -201,19 +203,21 @@ def main():
     opcion = input("\nSelecciona una opción (1-4): ").strip()
 
     if opcion == "2":
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("🔍 SIMULACIÓN DE LIMPIEZA (Dry Run)")
-        print("="*60)
+        print("=" * 60)
         clean_pycache(project_root, dry_run=True)
         clean_build_htmlcov(project_root, dry_run=True)
         clean_pytest_mypy(project_root, dry_run=True)
 
     elif opcion == "3":
-        confirmar = input("\n⚠️  ¿Estás seguro de que quieres ELIMINAR estos archivos? (escribe 'SI' para confirmar): ")
+        confirmar = input(
+            "\n⚠️  ¿Estás seguro de que quieres ELIMINAR estos archivos? (escribe 'SI' para confirmar): "
+        )
         if confirmar == "SI":
-            print("\n" + "="*60)
+            print("\n" + "=" * 60)
             print("🗑️  EJECUTANDO LIMPIEZA")
-            print("="*60)
+            print("=" * 60)
             clean_pycache(project_root, dry_run=False)
             clean_build_htmlcov(project_root, dry_run=False)
             clean_pytest_mypy(project_root, dry_run=False)

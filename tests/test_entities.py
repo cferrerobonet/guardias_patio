@@ -6,10 +6,10 @@ Tests para las entidades del dominio:
 
 Comprueban construcción, igualdad por valor y reglas de validación comunes.
 """
+
 from datetime import date, timedelta
 
 import pytest
-
 from config import settings
 from core.exceptions import (
     GuardiaConflictError,
@@ -17,6 +17,7 @@ from core.exceptions import (
     MaxGuardiasDiaExceededError,
     ProfesorAusenteError,
 )
+
 from src.domain.entities import GuardiaEntity, ProfesorEntity, ZonaEntity
 from src.domain.value_objects import Email, HorasContrato, Turno, TurnoEnum, ZonaPreferida
 
@@ -903,5 +904,3 @@ class TestGuardiaEntity:
         assert "id=1" in resultado
         assert "profesor_id=1" in resultado
         assert "zona_id=2" in resultado
-
-

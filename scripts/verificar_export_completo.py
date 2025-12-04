@@ -24,7 +24,7 @@ def verificar_json_export(json_path: str) -> None:
         return
 
     try:
-        with open(json_path, 'r', encoding='utf-8') as f:
+        with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         print("✅ JSON válido\n")
@@ -89,10 +89,9 @@ def verificar_json_export(json_path: str) -> None:
                     print(f"  ❌ {campo}: FALTA")
 
         # Resumen final
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         total_items = sum(
-            len(data[k]) for k in claves_requeridas
-            if k in data and isinstance(data[k], list)
+            len(data[k]) for k in claves_requeridas if k in data and isinstance(data[k], list)
         )
         print(f"📊 RESUMEN: {total_items} elementos exportados en total")
 
@@ -101,7 +100,7 @@ def verificar_json_export(json_path: str) -> None:
         else:
             print("🔐 Configuración SMTP: ⚠️  No incluida (puede ser normal)")
 
-        print("="*60)
+        print("=" * 60)
 
     except json.JSONDecodeError as e:
         print(f"❌ ERROR: El archivo no es un JSON válido: {e}")
@@ -142,17 +141,17 @@ def verificar_smtp_en_env() -> None:
 
 
 if __name__ == "__main__":
-    print("="*60)
+    print("=" * 60)
     print("🧪 VERIFICADOR DE EXPORTACIÓN COMPLETA DE DATOS")
-    print("="*60)
+    print("=" * 60)
 
     # Verificar SMTP en .env
     verificar_smtp_en_env()
 
     # Buscar archivos JSON de exportación
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("📁 Buscando archivos JSON de exportación...")
-    print("="*60)
+    print("=" * 60)
 
     # Buscar en el directorio actual y subdirectorios comunes
     rutas_busqueda = [
@@ -180,6 +179,6 @@ if __name__ == "__main__":
         print("\n   O exportar datos desde la aplicación en:")
         print("   Menú → Import/Export → Exportar Datos")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("✅ Verificación completada")
-    print("="*60)
+    print("=" * 60)

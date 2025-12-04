@@ -46,11 +46,7 @@ class TurnoValidator:
         """Inicializar validador de turnos."""
         pass
 
-    def es_compatible(
-        self,
-        turno_profesor: Optional[str],
-        turno_recreo: str
-    ) -> bool:
+    def es_compatible(self, turno_profesor: Optional[str], turno_recreo: str) -> bool:
         """
         Verificar si un profesor puede cubrir un recreo según su turno.
 
@@ -84,11 +80,7 @@ class TurnoValidator:
         # Turnos específicos deben coincidir
         return turno_profesor == turno_recreo
 
-    def filtrar_profesores_compatibles(
-        self,
-        profesores: List,
-        turno_recreo: str
-    ) -> List:
+    def filtrar_profesores_compatibles(self, profesores: List, turno_recreo: str) -> List:
         """
         Filtrar lista de profesores que sean compatibles con un turno.
 
@@ -103,16 +95,9 @@ class TurnoValidator:
             >>> profesores = [prof1, prof2, prof3]
             >>> compatibles = validator.filtrar_profesores_compatibles(profesores, 'mañana')
         """
-        return [
-            p for p in profesores
-            if self.es_compatible(p.turno, turno_recreo)
-        ]
+        return [p for p in profesores if self.es_compatible(p.turno, turno_recreo)]
 
-    def contar_profesores_por_turno(
-        self,
-        profesores: List,
-        turno: str
-    ) -> int:
+    def contar_profesores_por_turno(self, profesores: List, turno: str) -> int:
         """
         Contar cuántos profesores pueden trabajar en un turno específico.
 
@@ -123,10 +108,7 @@ class TurnoValidator:
         Returns:
             Número de profesores compatibles con ese turno
         """
-        return sum(
-            1 for p in profesores
-            if self.es_compatible(p.turno, turno)
-        )
+        return sum(1 for p in profesores if self.es_compatible(p.turno, turno))
 
     def calcular_factor_participacion(
         self,
@@ -134,7 +116,7 @@ class TurnoValidator:
         recreos_manana: int,
         recreos_tarde: int,
         horas_manana: int = 0,
-        horas_tarde: int = 0
+        horas_tarde: int = 0,
     ) -> float:
         """
         Calcular el factor de participación de un profesor.
@@ -206,12 +188,7 @@ class TurnoValidator:
             return True
 
         turno = turno.lower().strip()
-        return turno in {
-            self.TURNO_MANANA,
-            self.TURNO_TARDE,
-            self.TURNO_MIXTO,
-            self.TURNO_COMPLETO
-        }
+        return turno in {self.TURNO_MANANA, self.TURNO_TARDE, self.TURNO_MIXTO, self.TURNO_COMPLETO}
 
     def obtener_turnos_validos(self) -> List[str]:
         """
@@ -220,9 +197,4 @@ class TurnoValidator:
         Returns:
             Lista de strings con turnos válidos
         """
-        return [
-            self.TURNO_MANANA,
-            self.TURNO_TARDE,
-            self.TURNO_MIXTO,
-            self.TURNO_COMPLETO
-        ]
+        return [self.TURNO_MANANA, self.TURNO_TARDE, self.TURNO_MIXTO, self.TURNO_COMPLETO]

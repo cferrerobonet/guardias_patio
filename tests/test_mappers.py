@@ -5,6 +5,7 @@ Tests unitarios para los mappers de infraestructura:
 - GuardiaMapper
 Valida conversiones bidireccionales y edge cases.
 """
+
 from datetime import date
 
 from src.domain.entities import ProfesorEntity
@@ -63,6 +64,7 @@ class TestProfesorMapper:
         assert entity2.turno.horas_manana == 15.0
         assert entity2.turno.horas_tarde == 15.0
 
+
 class TestZonaMapper:
     def test_to_entity_and_to_model(self):
         # Crear modelo
@@ -78,6 +80,7 @@ class TestZonaMapper:
         model2 = ZonaMapper.to_model(entity)
         assert model2.nombre_zona == "Patio Central"
         assert model2.descripcion == "Zona principal"
+
 
 class TestGuardiaMapper:
     def test_to_entity_and_to_model(self):
@@ -103,4 +106,3 @@ class TestGuardiaMapper:
         assert model2.recreo == 1
         assert model2.profesor_id == 1
         assert model2.zona_id == 2
-

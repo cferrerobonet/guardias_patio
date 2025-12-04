@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List
 
-from models.models import Guardia, Profesor
+from infrastructure.database.models import Guardia, Profesor
 from services.estadisticas_service import EstadisticasService
 from sqlalchemy.orm import Session
 from utils import get_logger
@@ -72,9 +72,7 @@ class EquidadGuardiasService:
         self.stats_service = EstadisticasService(session)
         self.logger = logger
 
-    def calcular_indice_equidad(
-        self, guardias: List[Guardia], cuotas: Dict[int, int]
-    ) -> float:
+    def calcular_indice_equidad(self, guardias: List[Guardia], cuotas: Dict[int, int]) -> float:
         """
         Calcula un índice global de equidad (0-1, donde 1 es perfecto).
 
@@ -245,9 +243,7 @@ class EquidadGuardiasService:
                 break
 
             # Obtener sus guardias
-            guardias_exceso = [
-                g for g in guardias if g.profesor_id == prof_exceso.profesor_id
-            ]
+            guardias_exceso = [g for g in guardias if g.profesor_id == prof_exceso.profesor_id]
 
             # Por cada guardia, ver si se puede reasignar a alguien con déficit
             for guardia in guardias_exceso:
@@ -287,9 +283,7 @@ class EquidadGuardiasService:
 
         return sugerencias[:max_sugerencias]
 
-    def generar_reporte_equidad(
-        self, guardias: List[Guardia], cuotas: Dict[int, int]
-    ) -> dict:
+    def generar_reporte_equidad(self, guardias: List[Guardia], cuotas: Dict[int, int]) -> dict:
         """
         Genera un reporte completo de equidad.
 
@@ -327,9 +321,7 @@ class EquidadGuardiasService:
             "profesores_sin_problemas": profesores_ok,
         }
 
-    def log_reporte_equidad(
-        self, guardias: List[Guardia], cuotas: Dict[int, int]
-    ) -> None:
+    def log_reporte_equidad(self, guardias: List[Guardia], cuotas: Dict[int, int]) -> None:
         """Genera y muestra en log un reporte de equidad."""
         reporte = self.generar_reporte_equidad(guardias, cuotas)
 
@@ -339,16 +331,10 @@ class EquidadGuardiasService:
         self.logger.info("=" * 70)
         self.logger.info(f"Índice de equidad: {reporte['indice_equidad']:.2%}")
         self.logger.info(f"Total desbalances: {reporte['total_desbalances']}")
-        self.logger.info(
-            f"  • Críticos: {reporte['desbalances_criticos']}"
-        )
-        self.logger.info(
-            f"  • Moderados: {reporte['desbalances_moderados']}"
-        )
+        self.logger.info(f"  • Críticos: {reporte['desbalances_criticos']}")
+        self.logger.info(f"  • Moderados: {reporte['desbalances_moderados']}")
         self.logger.info(f"  • Leves: {reporte['desbalances_leves']}")
-        self.logger.info(
-            f"Profesores con cuota exacta: {reporte['profesores_perfectos']}"
-        )
+        self.logger.info(f"Profesores con cuota exacta: {reporte['profesores_perfectos']}")
 
         if reporte["detalle_criticos"]:
             self.logger.warning("")
@@ -386,8 +372,8 @@ class EquidadGuardiasService:
         self.calcular_indice_equidad(guardias, cuotas)
 
         # Para la simulación, simplemente reducimos desviación
-        mejora_estimada = (
-            abs(prof_exceso.diferencia) + abs(prof_deficit.diferencia)
-        ) / (sum(cuotas.values()) or 1)
+        mejora_estimada = (abs(prof_exceso.diferencia) + abs(prof_deficit.diferencia)) / (
+            sum(cuotas.values()) or 1
+        )
 
         return mejora_estimada

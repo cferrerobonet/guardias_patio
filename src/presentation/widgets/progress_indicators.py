@@ -45,10 +45,23 @@ class ProgressLogHandler(logging.Handler):
 
         # Filtrar solo mensajes relevantes para el usuario
         self.keywords = [
-            'ITERACIÓN', 'Cobertura', 'guardias asignadas', 'Solución',
-            'Ejecutando', 'Calculando', 'Preparando', 'Validando',
-            'Generando', 'Procesando', 'Analizando', 'Optimizando',
-            'ILP', 'algoritmo', 'cores', 'slots', 'profesores'
+            "ITERACIÓN",
+            "Cobertura",
+            "guardias asignadas",
+            "Solución",
+            "Ejecutando",
+            "Calculando",
+            "Preparando",
+            "Validando",
+            "Generando",
+            "Procesando",
+            "Analizando",
+            "Optimizando",
+            "ILP",
+            "algoritmo",
+            "cores",
+            "slots",
+            "profesores",
         ]
 
     def emit(self, record):
@@ -58,7 +71,7 @@ class ProgressLogHandler(logging.Handler):
             # Filtrar mensajes técnicos no relevantes
             if any(keyword in msg for keyword in self.keywords):
                 # Limpiar formato para mejor visualización
-                msg_clean = msg.replace('=' * 70, '').strip()
+                msg_clean = msg.replace("=" * 70, "").strip()
                 if msg_clean and self.progress_dialog.text_log:
                     self.progress_dialog.agregar_al_log(msg_clean)
         except Exception:
@@ -89,7 +102,7 @@ class DecisionDialogHandler(QObject):
             if dialogo.exec():
                 resultado_decision = dialogo.get_accion_elegida()
             else:
-                resultado_decision = 'cancelar'
+                resultado_decision = "cancelar"
 
             logger.info(f"✅ Usuario eligió: {resultado_decision}")
             self.worker.set_decision_resultado(resultado_decision)
@@ -99,7 +112,7 @@ class DecisionDialogHandler(QObject):
             import traceback
 
             logger.error(f"Traceback: {traceback.format_exc()}")
-            self.worker.set_decision_resultado('error')
+            self.worker.set_decision_resultado("error")
 
 
 class ProgressDialog(QDialog):
@@ -138,7 +151,7 @@ class ProgressDialog(QDialog):
         cancelable: bool = True,
         minimum: int = 0,
         maximum: int = 100,
-        show_details: bool = True
+        show_details: bool = True,
     ):
         """
         Inicializar diálogo de progreso.
@@ -163,18 +176,19 @@ class ProgressDialog(QDialog):
         # Deshabilitar botón de maximizar (solo permitir cerrar y minimizar)
         # En macOS, usar WindowType.Sheet puede ser más estable
         import platform
-        if platform.system() == 'Darwin':  # macOS
+
+        if platform.system() == "Darwin":  # macOS
             self.setWindowFlags(
-                Qt.WindowType.Sheet |
-                Qt.WindowType.WindowTitleHint |
-                Qt.WindowType.CustomizeWindowHint
+                Qt.WindowType.Sheet
+                | Qt.WindowType.WindowTitleHint
+                | Qt.WindowType.CustomizeWindowHint
             )
         else:
             self.setWindowFlags(
-                Qt.WindowType.Dialog |
-                Qt.WindowType.WindowTitleHint |
-                Qt.WindowType.WindowCloseButtonHint |
-                Qt.WindowType.CustomizeWindowHint
+                Qt.WindowType.Dialog
+                | Qt.WindowType.WindowTitleHint
+                | Qt.WindowType.WindowCloseButtonHint
+                | Qt.WindowType.CustomizeWindowHint
             )
 
         # Prevenir cierre accidental
@@ -356,10 +370,10 @@ class ProgressDialog(QDialog):
             self._log_handler = ProgressLogHandler(self)
             # Añadir a los loggers relevantes
             loggers_to_capture = [
-                logging.getLogger('services.asignador_iterativo'),
-                logging.getLogger('services.asignador_ilp'),
-                logging.getLogger('services.orquestador_asignacion_guardias'),
-                logging.getLogger('services.asignador_guardias_v3_simple'),
+                logging.getLogger("services.asignador_iterativo"),
+                logging.getLogger("services.asignador_ilp"),
+                logging.getLogger("services.orquestador_asignacion_guardias"),
+                logging.getLogger("services.asignador_guardias_v3_simple"),
             ]
             for logger in loggers_to_capture:
                 logger.addHandler(self._log_handler)
@@ -371,10 +385,10 @@ class ProgressDialog(QDialog):
         if self._log_handler:
             try:
                 loggers = [
-                    logging.getLogger('services.asignador_iterativo'),
-                    logging.getLogger('services.asignador_ilp'),
-                    logging.getLogger('services.orquestador_asignacion_guardias'),
-                    logging.getLogger('services.asignador_guardias_v3_simple'),
+                    logging.getLogger("services.asignador_iterativo"),
+                    logging.getLogger("services.asignador_ilp"),
+                    logging.getLogger("services.orquestador_asignacion_guardias"),
+                    logging.getLogger("services.asignador_guardias_v3_simple"),
                 ]
                 for logger in loggers:
                     logger.removeHandler(self._log_handler)
@@ -432,14 +446,13 @@ class ProgressDialog(QDialog):
         if self.text_log is not None:
             # Añadir con timestamp visual
             import datetime
+
             timestamp = datetime.datetime.now().strftime("%H:%M:%S")
             linea = f"[{timestamp}] {mensaje}"
 
             self.text_log.append(linea)
             # Auto-scroll al final
-            self.text_log.verticalScrollBar().setValue(
-                self.text_log.verticalScrollBar().maximum()
-            )
+            self.text_log.verticalScrollBar().setValue(self.text_log.verticalScrollBar().maximum())
 
     def set_mensaje(self, mensaje: str):
         """
@@ -461,7 +474,7 @@ class ProgressDialog(QDialog):
 
         self._cancelado = True
         self.label_mensaje.setText("⏳ Cancelando operación...")
-        if hasattr(self, 'btn_cancelar'):
+        if hasattr(self, "btn_cancelar"):
             self.btn_cancelar.setEnabled(False)
 
     def _actualizar_tiempo(self):
@@ -584,7 +597,7 @@ class ProgressDialog(QDialog):
         self.progress_bar.setValue(self.progress_bar.maximum())
         self.label_mensaje.setText(mensaje_final)
 
-        if hasattr(self, 'btn_cancelar'):
+        if hasattr(self, "btn_cancelar"):
             self.btn_cancelar.setText("Cerrar")
             self.btn_cancelar.setStyleSheet("""
                 QPushButton {
@@ -602,12 +615,12 @@ class ProgressDialog(QDialog):
             self.btn_cancelar.clicked.disconnect()
             self.btn_cancelar.clicked.connect(self.accept)
 
-
     def closeEvent(self, event):
         """
         Manejar evento de cierre para evitar cierres accidentales durante operaciones.
         """
         from utils.logger import get_logger
+
         logger = get_logger(__name__)
 
         # Si el diálogo fue cancelado o completado, permitir cierre
@@ -679,11 +692,7 @@ class WorkerThread(QThread):
                 self.progreso.emit(actual, total, detalle)
 
             # Ejecutar función
-            resultado = self.funcion(
-                callback_progreso,
-                *self.args,
-                **self.kwargs
-            )
+            resultado = self.funcion(callback_progreso, *self.args, **self.kwargs)
 
             # Emitir resultado
             self.finalizado.emit(resultado)
@@ -696,6 +705,7 @@ class WorkerThread(QThread):
             import traceback
 
             from utils.logger import get_logger
+
             logger = get_logger(__name__)
             logger.error(f"Error en WorkerThread: {str(e)}")
             logger.error(f"Traceback: {traceback.format_exc()}")
@@ -718,6 +728,7 @@ class WorkerThread(QThread):
             str: 'ajustar', 'continuar_ilp' o 'cancelar'
         """
         from utils.logger import get_logger
+
         logger = get_logger(__name__)
 
         try:
@@ -732,13 +743,13 @@ class WorkerThread(QThread):
             # Esperar respuesta con timeout
             self._decision_mutex.lock()
             timeout_ms = 300000  # 5 minutos de timeout
-            logger.info(f"⏳ Esperando decisión del usuario (timeout: {timeout_ms/1000}s)...")
+            logger.info(f"⏳ Esperando decisión del usuario (timeout: {timeout_ms / 1000}s)...")
 
             if not self._decision_condition.wait(self._decision_mutex, timeout_ms):
                 logger.error("⏱️ TIMEOUT esperando decisión del usuario (5 minutos)")
                 logger.error("   El diálogo probablemente no se mostró o el usuario no respondió")
                 self._decision_mutex.unlock()
-                return 'cancelar'
+                return "cancelar"
 
             result = self._decision_result
             self._decision_mutex.unlock()
@@ -749,6 +760,7 @@ class WorkerThread(QThread):
         except Exception as e:
             logger.error(f"❌ Error en solicitar_decision_usuario: {str(e)}")
             import traceback
+
             logger.error(f"Traceback: {traceback.format_exc()}")
 
             # Intentar desbloquear mutex si quedó bloqueado
@@ -757,7 +769,7 @@ class WorkerThread(QThread):
             except:
                 pass
 
-            return 'error'
+            return "error"
 
     def set_decision_resultado(self, resultado: str):
         """
@@ -774,13 +786,14 @@ class WorkerThread(QThread):
 
 # ========== HELPER FUNCTIONS ==========
 
+
 def ejecutar_con_progreso(
     parent: QWidget,
     funcion: Callable,
     titulo: str = "Procesando...",
     mensaje: str = "Por favor espere...",
     *args,
-    **kwargs
+    **kwargs,
 ) -> Optional[object]:
     """
     Helper para ejecutar función con diálogo de progreso automático.
@@ -818,13 +831,15 @@ def ejecutar_con_progreso(
         titulo,
         mensaje,
         cancelable=True,
-        show_details=True  # Habilitar área de log detallado
+        show_details=True,  # Habilitar área de log detallado
     )
 
     # Crear worker
     from utils.logger import get_logger
+
     logger_worker = get_logger(__name__)
     import traceback
+
     logger_worker.debug(
         f"🔧 CREANDO WorkerThread para función: {funcion.__name__}\n"
         f"   Stack trace de creación:\n{''.join(traceback.format_stack()[-5:])}"
@@ -848,13 +863,14 @@ def ejecutar_con_progreso(
         error_final[0] = error
         # Log del error
         from utils.logger import get_logger
+
         logger = get_logger(__name__)
         logger.error(f"Error en worker: {type(error).__name__}: {str(error)}")
 
         # Cerrar diálogo de forma segura
         try:
             # CRITICAL FIX: Detener el timer para evitar que siga contando
-            if hasattr(dialog, '_timer') and dialog._timer:
+            if hasattr(dialog, "_timer") and dialog._timer:
                 dialog._timer.stop()
                 logger.info("⏹️ Timer del diálogo detenido")
 
@@ -866,7 +882,7 @@ def ejecutar_con_progreso(
                 dialog._cancelado = True
 
                 # Cambiar botón a "Cerrar" y reconectarlo
-                if hasattr(dialog, 'btn_cancelar'):
+                if hasattr(dialog, "btn_cancelar"):
                     dialog.btn_cancelar.setText("Cerrar")
                     dialog.btn_cancelar.setEnabled(True)
                     # Desconectar la función anterior y conectar a close
@@ -890,11 +906,11 @@ def ejecutar_con_progreso(
     worker.finalizado.connect(on_finalizado)
     worker.error.connect(on_error)
     from PyQt6.QtCore import Qt
+
     decision_handler = DecisionDialogHandler(dialog, worker)
     dialog._decision_handler = decision_handler
     worker.solicitar_decision.connect(
-        decision_handler.handle_decision,
-        Qt.ConnectionType.QueuedConnection
+        decision_handler.handle_decision, Qt.ConnectionType.QueuedConnection
     )
 
     # Conectar cancelación
@@ -902,11 +918,12 @@ def ejecutar_con_progreso(
         if dialog.fue_cancelado():
             worker.cancelar()
 
-    if hasattr(dialog, 'btn_cancelar'):
+    if hasattr(dialog, "btn_cancelar"):
         dialog.btn_cancelar.clicked.connect(on_cancelar)
 
     # Iniciar worker
     from utils.logger import get_logger
+
     logger = get_logger(__name__)
     logger.info("🚀 Iniciando WorkerThread para ejecutar tarea")
     worker.start()
@@ -923,18 +940,12 @@ def ejecutar_con_progreso(
     if error_final[0]:
         if isinstance(error_final[0], InterruptedError):
             from utils.ui_helpers import show_info
-            show_info(
-                parent,
-                "Operación Cancelada",
-                "La operación fue cancelada por el usuario."
-            )
+
+            show_info(parent, "Operación Cancelada", "La operación fue cancelada por el usuario.")
         else:
             from utils.ui_helpers import show_error
-            show_error(
-                parent,
-                "Error",
-                f"Error durante la operación:\n\n{str(error_final[0])}"
-            )
+
+            show_error(parent, "Error", f"Error durante la operación:\n\n{str(error_final[0])}")
         return None
 
     return resultado_final[0]

@@ -17,7 +17,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
 from sync.sync_manager import UserAuth
 from utils.ui_helpers import get_corporate_icon
 
@@ -47,10 +46,10 @@ class ChangePasswordDialog(QDialog):
 
         # Configurar flags para quitar el botón de maximizar
         self.setWindowFlags(
-            Qt.WindowType.Dialog |
-            Qt.WindowType.CustomizeWindowHint |
-            Qt.WindowType.WindowTitleHint |
-            Qt.WindowType.WindowCloseButtonHint
+            Qt.WindowType.Dialog
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowTitleHint
+            | Qt.WindowType.WindowCloseButtonHint
         )
 
         layout = QVBoxLayout(self)
@@ -159,36 +158,24 @@ class ChangePasswordDialog(QDialog):
 
         # Validar campos vacíos
         if not current_password:
-            QMessageBox.warning(
-                self,
-                "Campo vacío",
-                "Por favor introduce tu contraseña actual"
-            )
+            QMessageBox.warning(self, "Campo vacío", "Por favor introduce tu contraseña actual")
             return
 
         if not new_password:
-            QMessageBox.warning(
-                self,
-                "Campo vacío",
-                "Por favor introduce la nueva contraseña"
-            )
+            QMessageBox.warning(self, "Campo vacío", "Por favor introduce la nueva contraseña")
             return
 
         # Validar longitud de nueva contraseña
         if len(new_password) < 4:
             QMessageBox.warning(
-                self,
-                "Contraseña débil",
-                "La nueva contraseña debe tener al menos 4 caracteres"
+                self, "Contraseña débil", "La nueva contraseña debe tener al menos 4 caracteres"
             )
             return
 
         # Validar confirmación
         if new_password != confirm_password:
             QMessageBox.warning(
-                self,
-                "Contraseñas no coinciden",
-                "Las contraseñas nuevas no son iguales"
+                self, "Contraseñas no coinciden", "Las contraseñas nuevas no son iguales"
             )
             self.confirm_password_input.clear()
             return
@@ -196,9 +183,7 @@ class ChangePasswordDialog(QDialog):
         # Verificar contraseña actual
         if not self.user_auth.authenticate(self.username, current_password):
             QMessageBox.warning(
-                self,
-                "Contraseña incorrecta",
-                "La contraseña actual no es correcta"
+                self, "Contraseña incorrecta", "La contraseña actual no es correcta"
             )
             self.current_password_input.clear()
             return
@@ -220,8 +205,9 @@ class ChangePasswordDialog(QDialog):
             msg.setWindowTitle("✅ Contraseña cambiada")
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
-                Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
-                Qt.WindowType.WindowTitleHint
+                Qt.WindowType.Dialog
+                | Qt.WindowType.CustomizeWindowHint
+                | Qt.WindowType.WindowTitleHint
             )
             msg.setText(
                 f"La contraseña de <span style='color: #007ACC; font-style: italic;'>"
@@ -257,8 +243,4 @@ class ChangePasswordDialog(QDialog):
             self.accept()
 
         except Exception as e:
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Error al cambiar la contraseña: {str(e)}"
-            )
+            QMessageBox.critical(self, "Error", f"Error al cambiar la contraseña: {str(e)}")

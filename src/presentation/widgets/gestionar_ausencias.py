@@ -7,7 +7,7 @@ Permite registrar, editar, eliminar y visualizar ausencias.
 from datetime import date
 
 import ui_styles as styles
-from models.models import Ausencia, Guardia, Profesor
+from infrastructure.database.models import Ausencia, Guardia, Profesor
 from PyQt6.QtCore import QDate, Qt
 from PyQt6.QtWidgets import (
     QComboBox,

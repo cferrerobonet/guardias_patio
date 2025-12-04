@@ -8,7 +8,7 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from models.models import Guardia, Profesor, Zona
+from infrastructure.database.models import Guardia, Profesor, Zona
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -19,6 +19,7 @@ router = APIRouter(prefix="/guardias", tags=["guardias"])
 
 class GuardiaResponse(BaseModel):
     """Schema de respuesta para guardia."""
+
     id: int
     fecha: date
     recreo: int
@@ -43,7 +44,7 @@ def obtener_guardias(
     turno: Optional[str] = None,
     limit: int = Query(default=100, le=1000),
     offset: int = 0,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Obtiene guardias con filtros opcionales.
@@ -87,17 +88,19 @@ def obtener_guardias(
             zona = db.query(Zona).get(guardia.zona_id)
             profesor = db.query(Profesor).get(guardia.profesor_id) if guardia.profesor_id else None
 
-            result.append(GuardiaResponse(
-                id=guardia.id,
-                fecha=guardia.fecha,
-                recreo=guardia.recreo,
-                turno=guardia.turno,
-                zona_id=guardia.zona_id,
-                zona_nombre=zona.nombre if zona else None,
-                profesor_id=guardia.profesor_id,
-                profesor_nombre=profesor.nombre_completo if profesor else None,
-                curso_id=guardia.curso_id
-            ))
+            result.append(
+                GuardiaResponse(
+                    id=guardia.id,
+                    fecha=guardia.fecha,
+                    recreo=guardia.recreo,
+                    turno=guardia.turno,
+                    zona_id=guardia.zona_id,
+                    zona_nombre=zona.nombre if zona else None,
+                    profesor_id=guardia.profesor_id,
+                    profesor_nombre=profesor.nombre_completo if profesor else None,
+                    curso_id=guardia.curso_id,
+                )
+            )
 
         return result
 
@@ -113,7 +116,7 @@ def contar_guardias(
     profesor_id: Optional[int] = None,
     zona_id: Optional[int] = None,
     turno: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Cuenta guardias con filtros opcionales.

@@ -40,50 +40,23 @@ class GuardiaSchema(BaseModel):
     id: int = Field(..., gt=0, description="ID único de la guardia")
 
     # Asignación
-    profesor_id: int = Field(
-        ...,
-        gt=0,
-        description="ID del profesor asignado"
-    )
-    zona_id: int = Field(
-        ...,
-        gt=0,
-        description="ID de la zona asignada"
-    )
+    profesor_id: int = Field(..., gt=0, description="ID del profesor asignado")
+    zona_id: int = Field(..., gt=0, description="ID de la zona asignada")
 
     # Temporalidad
-    fecha: date = Field(
-        ...,
-        description="Fecha de la guardia"
-    )
-    turno: str = Field(
-        ...,
-        pattern="^(mañana|tarde)$",
-        description="Turno de la guardia"
-    )
-    recreo: int = Field(
-        ...,
-        gt=0,
-        le=3,
-        description="Número del recreo (1, 2, 3)"
-    )
+    fecha: date = Field(..., description="Fecha de la guardia")
+    turno: str = Field(..., pattern="^(mañana|tarde)$", description="Turno de la guardia")
+    recreo: int = Field(..., gt=0, le=3, description="Número del recreo (1, 2, 3)")
 
     # Sustitución
-    es_sustitucion: bool = Field(
-        False,
-        description="Indica si es una guardia de sustitución"
-    )
+    es_sustitucion: bool = Field(False, description="Indica si es una guardia de sustitución")
     profesor_sustituido_id: Optional[int] = Field(
-        None,
-        gt=0,
-        description="ID del profesor sustituido (si aplica)"
+        None, gt=0, description="ID del profesor sustituido (si aplica)"
     )
 
     # Metadatos
     notas: Optional[str] = Field(
-        None,
-        max_length=500,
-        description="Notas adicionales sobre la guardia"
+        None, max_length=500, description="Notas adicionales sobre la guardia"
     )
 
     @field_validator("profesor_sustituido_id")
@@ -94,15 +67,11 @@ class GuardiaSchema(BaseModel):
 
         # Si es sustitución, debe tener profesor_sustituido_id
         if es_sustitucion and v is None:
-            raise ValueError(
-                "Si es_sustitucion=True, debe proporcionar profesor_sustituido_id"
-            )
+            raise ValueError("Si es_sustitucion=True, debe proporcionar profesor_sustituido_id")
 
         # Si no es sustitución, no debe tener profesor_sustituido_id
         if not es_sustitucion and v is not None:
-            raise ValueError(
-                "Si es_sustitucion=False, no puede tener profesor_sustituido_id"
-            )
+            raise ValueError("Si es_sustitucion=False, no puede tener profesor_sustituido_id")
 
         return v
 
@@ -134,11 +103,7 @@ class GuardiaCreateSchema(BaseModel):
     profesor_id: int = Field(..., gt=0, description="ID del profesor asignado")
     zona_id: int = Field(..., gt=0, description="ID de la zona asignada")
     fecha: date = Field(..., description="Fecha de la guardia")
-    turno: str = Field(
-        ...,
-        pattern="^(mañana|tarde)$",
-        description="Turno de la guardia"
-    )
+    turno: str = Field(..., pattern="^(mañana|tarde)$", description="Turno de la guardia")
     recreo: int = Field(..., gt=0, le=3, description="Número del recreo")
 
     # Campos opcionales
@@ -153,14 +118,10 @@ class GuardiaCreateSchema(BaseModel):
         es_sustitucion = info.data.get("es_sustitucion", False)
 
         if es_sustitucion and v is None:
-            raise ValueError(
-                "Si es_sustitucion=True, debe proporcionar profesor_sustituido_id"
-            )
+            raise ValueError("Si es_sustitucion=True, debe proporcionar profesor_sustituido_id")
 
         if not es_sustitucion and v is not None:
-            raise ValueError(
-                "Si es_sustitucion=False, no puede tener profesor_sustituido_id"
-            )
+            raise ValueError("Si es_sustitucion=False, no puede tener profesor_sustituido_id")
 
         return v
 
@@ -171,9 +132,7 @@ class GuardiaCreateSchema(BaseModel):
         if v is not None:
             profesor_id = info.data.get("profesor_id")
             if v == profesor_id:
-                raise ValueError(
-                    "Un profesor no puede sustituirse a sí mismo"
-                )
+                raise ValueError("Un profesor no puede sustituirse a sí mismo")
         return v
 
 
@@ -218,13 +177,9 @@ class GuardiaUpdateSchema(BaseModel):
             es_sustitucion = info.data["es_sustitucion"]
 
             if es_sustitucion and v is None:
-                raise ValueError(
-                    "Si es_sustitucion=True, debe proporcionar profesor_sustituido_id"
-                )
+                raise ValueError("Si es_sustitucion=True, debe proporcionar profesor_sustituido_id")
 
             if not es_sustitucion and v is not None:
-                raise ValueError(
-                    "Si es_sustitucion=False, no puede tener profesor_sustituido_id"
-                )
+                raise ValueError("Si es_sustitucion=False, no puede tener profesor_sustituido_id")
 
         return v

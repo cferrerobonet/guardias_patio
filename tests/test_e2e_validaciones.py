@@ -13,7 +13,14 @@ Valida que el sistema maneje correctamente:
 from datetime import date
 
 import pytest
-from models.models import Ausencia, Configuracion, CursoEscolar, Guardia, Profesor, Zona
+from infrastructure.database.models import (
+    Ausencia,
+    Configuracion,
+    CursoEscolar,
+    Guardia,
+    Profesor,
+    Zona,
+)
 from services.asignador_guardias import generar_calendario_guardias
 from utils.validators import (
     validar_dias_semana,
@@ -149,17 +156,13 @@ class TestValidadoresEntrada:
 
     def test_validar_rango_fechas_correcto(self):
         """Rango con inicio < fin debe ser válido."""
-        valido, error = validar_rango_fechas(
-            date(2024, 9, 1), date(2025, 6, 30)
-        )
+        valido, error = validar_rango_fechas(date(2024, 9, 1), date(2025, 6, 30))
         assert valido is True
         assert error is None
 
     def test_validar_rango_fechas_incorrecto(self):
         """Rango con inicio >= fin debe ser inválido."""
-        valido, error = validar_rango_fechas(
-            date(2025, 6, 30), date(2024, 9, 1)
-        )
+        valido, error = validar_rango_fechas(date(2025, 6, 30), date(2024, 9, 1))
         assert valido is False
         assert "anterior" in error.lower()
 
@@ -265,9 +268,7 @@ class TestEscenariosValidacionNegocio:
 
         # Verificar que el profesor con disponibilidad tiene cuota > 0
         cuota_con_disponibilidad = cuotas.get(profesor_con_disponibilidad.id, 0)
-        assert cuota_con_disponibilidad > 0, (
-            "Profesor con disponibilidad debe tener cuota > 0"
-        )
+        assert cuota_con_disponibilidad > 0, "Profesor con disponibilidad debe tener cuota > 0"
 
     def test_zona_sin_profesores_no_genera_guardias(
         self, session, limpiar_bd, configuracion_basica
@@ -310,13 +311,9 @@ class TestEscenariosValidacionNegocio:
 
         # Verificar que la zona sin profesores NO tiene guardias
         guardias_zona_vacia = (
-            session.query(Guardia)
-            .filter_by(zona_id=zona_sin_profesores.id)
-            .count()
+            session.query(Guardia).filter_by(zona_id=zona_sin_profesores.id).count()
         )
-        assert guardias_zona_vacia == 0, (
-            "Zona sin profesores no debe tener guardias generadas"
-        )
+        assert guardias_zona_vacia == 0, "Zona sin profesores no debe tener guardias generadas"
 
         # Si se generaron guardias, verificar que NO fueron para la zona vacía
         total_guardias = session.query(Guardia).count()
@@ -326,9 +323,7 @@ class TestEscenariosValidacionNegocio:
                 "Las guardias generadas no deben estar en zona sin profesores"
             )
 
-    def test_ausencia_bloquea_asignacion_guardia(
-        self, session, limpiar_bd, configuracion_basica
-    ):
+    def test_ausencia_bloquea_asignacion_guardia(self, session, limpiar_bd, configuracion_basica):
         """
         Profesor con ausencia registrada no debe recibir guardias ese día.
 
@@ -372,17 +367,11 @@ class TestEscenariosValidacionNegocio:
 
         # Verificar que NO hay guardias para el profesor en la fecha de ausencia
         guardias_dia_ausencia = (
-            session.query(Guardia)
-            .filter_by(profesor_id=profesor.id, fecha=fecha_ausencia)
-            .count()
+            session.query(Guardia).filter_by(profesor_id=profesor.id, fecha=fecha_ausencia).count()
         )
-        assert guardias_dia_ausencia == 0, (
-            "Profesor con ausencia no debe tener guardias ese día"
-        )
+        assert guardias_dia_ausencia == 0, "Profesor con ausencia no debe tener guardias ese día"
 
-    def test_maximo_una_guardia_por_dia_respetado(
-        self, session, limpiar_bd, configuracion_basica
-    ):
+    def test_maximo_una_guardia_por_dia_respetado(self, session, limpiar_bd, configuracion_basica):
         """
         Validar que un profesor no tenga más de 1 guardia por día.
 
@@ -411,11 +400,7 @@ class TestEscenariosValidacionNegocio:
         generar_calendario_guardias(session)
 
         # Obtener todas las guardias del profesor
-        guardias = (
-            session.query(Guardia)
-            .filter_by(profesor_id=profesor.id)
-            .all()
-        )
+        guardias = session.query(Guardia).filter_by(profesor_id=profesor.id).all()
 
         # Agrupar por fecha y verificar máximo 1 por día
         guardias_por_fecha = {}
@@ -425,13 +410,10 @@ class TestEscenariosValidacionNegocio:
 
         for fecha, cantidad in guardias_por_fecha.items():
             assert cantidad <= 1, (
-                f"Profesor tiene {cantidad} guardias el {fecha}, "
-                f"máximo permitido es 1"
+                f"Profesor tiene {cantidad} guardias el {fecha}, máximo permitido es 1"
             )
 
-    def test_no_guardias_duplicadas_mismo_slot(
-        self, session, limpiar_bd, configuracion_basica
-    ):
+    def test_no_guardias_duplicadas_mismo_slot(self, session, limpiar_bd, configuracion_basica):
         """
         Validar que no existan guardias duplicadas (mismo profesor, fecha, turno, recreo).
 
@@ -469,9 +451,7 @@ class TestEscenariosValidacionNegocio:
                 guardia.turno,
                 guardia.recreo,
             )
-            assert slot not in slots, (
-                f"Guardia duplicada detectada: {slot}"
-            )
+            assert slot not in slots, f"Guardia duplicada detectada: {slot}"
             slots.add(slot)
 
     def test_profesor_turno_tarde_no_recibe_guardias_manana(
@@ -516,13 +496,9 @@ class TestEscenariosValidacionNegocio:
 
         # Verificar que profesor de tarde NO tiene guardias de mañana
         guardias_manana = (
-            session.query(Guardia)
-            .filter_by(profesor_id=profesor_tarde.id, turno="mañana")
-            .count()
+            session.query(Guardia).filter_by(profesor_id=profesor_tarde.id, turno="mañana").count()
         )
-        assert guardias_manana == 0, (
-            "Profesor de turno tarde no debe tener guardias de mañana"
-        )
+        assert guardias_manana == 0, "Profesor de turno tarde no debe tener guardias de mañana"
 
     def test_creacion_profesor_con_email_invalido_falla(self, session, limpiar_bd):
         """

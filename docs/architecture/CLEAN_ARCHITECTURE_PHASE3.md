@@ -1079,7 +1079,7 @@ def test_calcular_cuotas_sin_profesores(session, configuracion_base):
     assert "No hay profesores activos" in response.error
 ```
 
-#### test_calcular_cuotas_use_case_exitoso (⚠️ NEEDS FIX)
+#### test_calcular_cuotas_use_case_exitoso ✅ FIXED
 ```python
 def test_calcular_cuotas_use_case_exitoso(session, configuracion_base, profesores_variados):
     """Testea cálculo exitoso de cuotas."""
@@ -1087,15 +1087,14 @@ def test_calcular_cuotas_use_case_exitoso(session, configuracion_base, profesore
     response = use_case.execute(CalcularCuotasRequest())
     
     assert response.exitoso is True
-    assert response.total_guardias > 0  # ❌ FALLA: total_guardias = 0
-    # Problema: falta recreos_config en configuracion_base
+    assert response.total_guardias > 0  # ✅ Ahora pasa
 ```
 
-**Fix requerido**: Agregar `recreos_config='[{...}]'` en fixture `configuracion_base`
+**Estado**: ✅ Corregido (enero 2025)
 
 ---
 
-#### test_analisis_equidad_sin_guardias (⚠️ NEEDS FIX)
+#### test_analisis_equidad_sin_guardias ✅ FIXED
 ```python
 def test_analisis_equidad_sin_guardias(session, configuracion_base, profesores_variados):
     """Testea análisis sin guardias."""
@@ -1103,47 +1102,32 @@ def test_analisis_equidad_sin_guardias(session, configuracion_base, profesores_v
     response = use_case.execute(AnalisisEquidadRequest())
     
     assert response.exitoso is False
-    assert "No hay guardias" in response.mensaje  # ❌ FALLA: SQL error instead
-    # Problema: Query SQL intenta join con Configuracion sin select_from()
+    assert "No hay guardias" in response.mensaje  # ✅ Ahora pasa
 ```
 
-**Fix requerido**: Ajustar query en `AnalisisEquidadUseCase.execute()`:
-```python
-# Antes:
-guardias = session.query(Guardia).join(Configuracion).filter(...)
-
-# Después:
-guardias = session.query(Guardia).select_from(Guardia).join(...)
-```
+**Estado**: ✅ Corregido (enero 2025)
 
 ---
 
-#### test_analisis_equidad_con_guardias (⚠️ NEEDS FIX)
+#### test_analisis_equidad_con_guardias ✅ FIXED
 ```python
 def test_analisis_equidad_con_guardias(session, configuracion_base, profesores_variados, zona_patio):
     """Testea análisis con guardias reales."""
-    # Crear 20 guardias de prueba
+    # Crear 20 guardias de prueba con campo turno
     for i in range(20):
         guardia = Guardia(
             profesor_id=profesores_variados[i % 4].id,
             fecha=date(2024, 9, 2) + timedelta(days=i),
             recreo=1,
-            zona_id=zona_patio.id
-            # ❌ FALLA: falta campo 'turno' (NOT NULL)
+            zona_id=zona_patio.id,
+            turno="mañana"  # ✅ Campo agregado
         )
         session.add(guardia)
     session.commit()
-    
-    # ... resto del test
+    # ... resto del test pasa correctamente
 ```
 
-**Fix requerido**: Agregar campo `turno` al crear Guardia:
-```python
-guardia = Guardia(
-    # ... campos existentes ...
-    turno="mañana"  # ✅ Agregar esto
-)
-```
+**Estado**: ✅ Corregido (enero 2025)
 
 ---
 
@@ -1197,7 +1181,7 @@ guardia = Guardia(
 ✅ **Domain Services testeables**:
 - Tests unitarios sin BD (mockeando session)
 - Tests de integración con fixtures
-- 11/12 tests passing, 1 skipped
+- 18/19 tests passing, 1 skipped (razones válidas)
 
 ✅ **Use Cases testeables**:
 - Fixtures reutilizables
@@ -1537,7 +1521,7 @@ class Cuota:
 
 ### Próximos Hitos
 
-1. **Sprint actual**: Completar 4 tests fallidos (⏳ 2-3 horas)
+1. ~~**Sprint actual**: Completar 4 tests fallidos (⏳ 2-3 horas)~~ ✅ COMPLETADO
 2. **Sprint +1**: Dashboard con métricas visuales (⏳ 1-2 días)
 3. **Sprint +2**: API REST (FastAPI) (⏳ 2-3 días)
 4. **Largo plazo**: Domain Events, CQRS, Event Sourcing (⏳ 1-3 meses)
@@ -1546,8 +1530,8 @@ class Cuota:
 
 **Última actualización**: Enero 2025  
 **Autor**: Equipo Guardias de Patio  
-**Estado**: ✅ Phase 3 COMPLETADA (95%)  
-**Siguiente revisión**: Después de completar tests fallidos
+**Estado**: ✅ Phase 3 COMPLETADA (100%)  
+**Siguiente revisión**: Sprint +1 (Dashboard)
 
 ---
 

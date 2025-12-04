@@ -56,9 +56,7 @@ class ScreenValidator:
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Icon.Critical)
             msg_box.setWindowTitle("Resolución Insuficiente")
-            msg_box.setText(
-                "<h3>⚠️ Resolución de Pantalla Insuficiente</h3>"
-            )
+            msg_box.setText("<h3>⚠️ Resolución de Pantalla Insuficiente</h3>")
             msg_box.setInformativeText(
                 f"<p>La resolución actual de tu pantalla es "
                 f"<b>{width}x{height}</b> píxeles.</p>"
@@ -82,6 +80,7 @@ class ScreenValidator:
 
             # Aplicar estilo corporativo
             from utils.ui_helpers import get_corporate_icon
+
             msg_box.setWindowIcon(get_corporate_icon())
 
             msg_box.exec()
@@ -92,9 +91,7 @@ class ScreenValidator:
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Icon.Warning)
             msg_box.setWindowTitle("Resolución por debajo de lo recomendado")
-            msg_box.setText(
-                "<h3>ℹ️ Resolución por debajo de lo recomendado</h3>"
-            )
+            msg_box.setText("<h3>ℹ️ Resolución por debajo de lo recomendado</h3>")
             msg_box.setInformativeText(
                 f"<p>Tu resolución actual es "
                 f"<b>{width}x{height}</b> píxeles.</p>"
@@ -114,6 +111,7 @@ class ScreenValidator:
 
             # Aplicar estilo corporativo
             from utils.ui_helpers import get_corporate_icon
+
             msg_box.setWindowIcon(get_corporate_icon())
 
             result = msg_box.exec()

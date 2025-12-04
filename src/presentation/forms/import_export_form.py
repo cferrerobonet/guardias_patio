@@ -5,6 +5,8 @@ Este módulo implementa la UI para exportar/importar datos en JSON
 y profesores desde Excel.
 """
 
+import ui_styles as styles
+from infrastructure.database.models import Configuracion, Profesor, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFileDialog,
@@ -16,16 +18,14 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+from services.exportador import ExportadorDatos
+from services.importador_profesores import importar_profesores_desde_excel
+from utils import get_logger
 
-import ui_styles as styles
-from models.models import Configuracion, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 from presentation.forms.import_export_widgets import JsonOperationsWidget
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
-from services.exportador import ExportadorDatos
-from services.importador_profesores import importar_profesores_desde_excel
-from utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -53,6 +53,23 @@ class ImportExportForm(BaseForm):
     def limpiar_checkbox(self):
         """Compatibilidad: acceso al checkbox de limpiar datos."""
         return self.json_widget.limpiar_checkbox
+
+    @property
+    def exportar_btn(self):
+        """Compatibilidad: acceso al botón de exportar."""
+        return self.json_widget.exportar_btn
+
+    @property
+    def importar_btn(self):
+        """Compatibilidad: acceso al botón de importar."""
+        return self.json_widget.importar_btn
+
+    @property
+    def exportar_pdf_btn(self):
+        """Compatibilidad: acceso al botón de exportar PDF (no existe, retorna None)."""
+        # El formulario actual no tiene botón de exportar PDF directamente
+        # Se dejó para compatibilidad con tests
+        return getattr(self, "_exportar_pdf_btn", None)
 
     def setup_ui(self):
         """Construir la interfaz del formulario."""
@@ -172,7 +189,7 @@ class ImportExportForm(BaseForm):
             ExportadorDatos.exportar_todo(self.session, archivo)
 
             # Mostrar resumen
-            from models.models import CursoEscolar
+            from infrastructure.database.models import CursoEscolar
             from sync.sync_manager import UserAuth
 
             prof_count = self.session.query(Profesor).count()
@@ -184,7 +201,7 @@ class ImportExportForm(BaseForm):
             try:
                 user_auth = UserAuth()
                 usuario_count = len(user_auth.users)
-            except:
+            except Exception:
                 usuario_count = 0
 
             mensaje = (
@@ -221,8 +238,10 @@ class ImportExportForm(BaseForm):
                     | Qt.WindowType.CustomizeWindowHint
                     | Qt.WindowType.WindowTitleHint
                 )
-                msg.setText("⚠️ ATENCIÓN: Se eliminarán TODOS los datos actuales.\n\n"
-                           "¿Está seguro de que desea continuar?")
+                msg.setText(
+                    "⚠️ ATENCIÓN: Se eliminarán TODOS los datos actuales.\n\n"
+                    "¿Está seguro de que desea continuar?"
+                )
                 msg.setStandardButtons(
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
                 )
@@ -287,6 +306,7 @@ class ImportExportForm(BaseForm):
         except Exception as e:
             self.manejar_excepcion(e, "importar datos")
             self.resultado_text.setText(f"❌ Error al importar: {e}")
+
     def importar_profesores(self):
         """Importar profesores desde un archivo Excel."""
         try:

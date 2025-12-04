@@ -7,6 +7,124 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.1.1] - 2025-01-13
+
+### 🎯 Resumen
+
+Refactorización arquitectónica completa: migración de modelos ORM a su ubicación canónica, corrección de violaciones DIP, separación UI/Lógica en panel de estadísticas, y actualización de imports en capas Clean Architecture.
+
+### Changed
+
+#### Arquitectura - Separación UI/Lógica (14 ene 2025)
+- **panel_estadisticas.py**: Refactorizado para usar Use Case en lugar de queries directas
+  - ❌ Eliminadas 14 queries SQLAlchemy del widget
+  - ✅ Usa `ObtenerEstadisticasPanelUseCase` para obtener datos
+  - ✅ Widget solo maneja presentación, no lógica de BD
+
+#### Nuevos DTOs y Use Cases
+- **application/dtos/asignacion_guardias_dto.py**: Nuevos DTOs para panel:
+  - `ResumenPanelDTO`: Métricas generales
+  - `EstadisticaProfesorDTO`: Stats por profesor
+  - `EstadisticaZonaDTO`: Stats por zona
+  - `DatosGraficoDTO`: Datos para gráficos
+  - `EstadisticasPanelCompletoDTO`: DTO completo agregado
+- **application/use_cases/asignacion_guardias/obtener_estadisticas_panel.py**: 
+  - Nuevo Use Case que centraliza toda la lógica de estadísticas del panel
+
+#### Arquitectura - Migración Completa de Imports (2 dic 2025)
+- **113 archivos migrados** de `models.models` a `infrastructure.database.models`:
+  - 54 archivos en `src/`
+  - 44 archivos en `tests/`
+  - 15 archivos en `scripts/`
+- **models/models.py**: Ahora es solo re-export de backup, ya no se usa
+
+#### Arquitectura - Migración de Modelos ORM
+- **infrastructure/database/models.py**: Nueva ubicación canónica de modelos SQLAlchemy
+- **models/models.py**: Convertido a re-export para backward compatibility (deprecado)
+- **28 archivos migrados** a usar nueva ubicación:
+  - `infrastructure/mappers/*` (3 archivos)
+  - `infrastructure/repositories/*` (6 archivos)
+  - `domain/services/*` (5 archivos)
+  - `application/use_cases/*` (14 archivos)
+
+#### Arquitectura - Dependency Injection
+- **application/factories.py**: Nuevo archivo con factory functions para crear Use Cases con DI
+- **5 Use Cases refactorizados** para aceptar interfaces de repositorio como parámetros:
+  - `guardia/obtener_guardias.py`: Acepta `IGuardiaRepository`, `IProfesorRepository`, `IZonaRepository`
+  - `guardia/asignar_guardia.py`: Acepta `IGuardiaRepository`, `IProfesorRepository`, `IZonaRepository`
+  - `profesor/listar_profesores.py`: Acepta `IProfesorRepository`
+  - `profesor/obtener_profesor.py`: Acepta `IProfesorRepository`
+  - `profesor/crear_profesor.py`: Acepta `IProfesorRepository`
+
+#### Patrón de Imports Recomendado
+```python
+# Nueva ubicación canónica (recomendado para nuevo código):
+from infrastructure.database.models import Profesor, Guardia, Zona
+
+# Backward compatibility (deprecado, funciona pero no recomendado):
+from models.models import Profesor, Guardia, Zona  # Re-export
+```
+
+### Fixed
+
+#### Documentación Actualizada
+- **ARCHITECTURE.md**: 
+  - Mejoras arquitectónicas marcadas como completadas
+  - Documentación de distinción Use Cases vs Services
+- **CLEAN_ARCHITECTURE_PHASE3.md**: Tests marcados como ✅ FIXED, Phase 3 al 100%
+
+### Metrics
+
+- **Violaciones DIP corregidas**: 6 → 0
+- **Archivos migrados a nueva ubicación**: 113 (src: 54, tests: 44, scripts: 15)
+- **Widget panel_estadisticas.py**: 14 queries eliminadas → 0 queries directas
+- **Tests**: 1012 passed, 36 skipped (+22 nuevos tests de use case)
+- **Cobertura**: 39.93%
+
+---
+
+## [3.1.0] - 2025-11-30
+
+### 🎯 Resumen
+
+Mejora significativa de la suite de tests. Se corrigieron 33 tests que fallaban y se redujeron los tests saltados de 80 a 36. Cobertura estable en ~40%.
+
+### Fixed
+
+#### Tests de Presentación
+- **test_gestionar_ausencias.py**: Reescrito completamente
+  - Corregido orden de fixtures (`curso_activo` → `datos_completos` → `form`)
+  - 24 tests ahora pasan (antes todos saltados)
+  - Actualizado para usar API actual del widget
+
+- **test_progress_indicators.py**: Corregidos tests de threading Qt
+  - 8 tests reescritos usando `qtbot.waitSignal()` 
+  - Añadido fixture `cleanup_threads` para limpieza
+  - Todos los 20 tests ahora pasan (antes 11)
+
+#### Tests de Vista Calendario
+- **test_vista_calendario.py**: Revisados y documentados
+  - 27 tests pasan correctamente
+  - 12 tests apropiadamente marcados como skip (APIs internas obsoletas)
+
+### Changed
+
+#### Métricas de Tests
+| Métrica | Antes | Después | Cambio |
+|---------|-------|---------|--------|
+| Tests pasando | 957 | **990** | +33 |
+| Tests saltados | 80 | **36** | -44 |
+| Cobertura | 38.44% | **39.75%** | +1.31% |
+
+### Testing
+
+- **Total tests**: 1026 (990 passed, 36 skipped)
+- **Archivos corregidos**: 3 (gestionar_ausencias, progress_indicators, vista_calendario)
+- **Tests recuperados**: 33 tests que antes fallaban o estaban saltados
+- **Mejora en manejo de Qt threading**: Uso de `qtbot.waitSignal()` en lugar de `wait()` y verificaciones inmediatas
+
+---
+
 ## [3.0.2] - 2025-11-08
 
 ### 🎯 Resumen
@@ -461,6 +579,6 @@ Formato: `MAJOR.MINOR.PATCH`
 
 ---
 
-**Última actualización**: 8 de noviembre de 2025  
-**Versión actual**: 3.0.0  
+**Última actualización**: 30 de noviembre de 2025  
+**Versión actual**: 3.1.0  
 **Mantenido por**: Equipo Guardias de Patio

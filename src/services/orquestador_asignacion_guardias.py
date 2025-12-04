@@ -3,13 +3,14 @@ Orquestador de asignación de guardias con fallback automático inteligente.
 Intenta primero con algoritmo iterativo (rápido) y si falla ofrece al usuario
 usar ILP (óptimo) o ajustar manualmente la configuración.
 """
+
 import logging
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
 from typing import Dict, List, Optional
 
-from models.models import Configuracion, Guardia, Zona
+from infrastructure.database.models import Configuracion, Guardia, Zona
 from sqlalchemy.orm import Session
 
 from src.services.asignador_iterativo import AsignadorIterativo
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class EstrategiaUsada(Enum):
     """Estrategia de asignación utilizada."""
+
     ITERATIVO = "iterativo"
     ILP = "ilp"
     NINGUNA = "ninguna"
@@ -30,6 +32,7 @@ class EstrategiaUsada(Enum):
 @dataclass
 class ResultadoOrquestacion:
     """Resultado completo de la orquestación."""
+
     exitoso: bool
     guardias: List[Guardia]
     estrategia_usada: EstrategiaUsada
@@ -74,23 +77,24 @@ class OrquestadorAsignacionGuardias:
             rid = 0
             if self.config.hora_recreo1_manana:
                 rid += 1
-                recreos_data.append({'id': rid, 'turno': 'mañana', 'zonas': 1})
+                recreos_data.append({"id": rid, "turno": "mañana", "zonas": 1})
             if self.config.hora_recreo2_manana:
                 rid += 1
-                recreos_data.append({'id': rid, 'turno': 'mañana', 'zonas': 1})
+                recreos_data.append({"id": rid, "turno": "mañana", "zonas": 1})
             if self.config.hora_recreo1_tarde:
                 rid += 1
-                recreos_data.append({'id': rid, 'turno': 'tarde', 'zonas': 1})
+                recreos_data.append({"id": rid, "turno": "tarde", "zonas": 1})
             if self.config.hora_recreo2_tarde:
                 rid += 1
-                recreos_data.append({'id': rid, 'turno': 'tarde', 'zonas': 1})
+                recreos_data.append({"id": rid, "turno": "tarde", "zonas": 1})
 
         # Crear objetos simples para recreos
         from types import SimpleNamespace
+
         # IMPORTANTE: Agregar 'numero' que es usado por el asignador ILP
         for r in recreos_data:
-            if 'numero' not in r:
-                r['numero'] = r['id']  # numero = id por compatibilidad
+            if "numero" not in r:
+                r["numero"] = r["id"]  # numero = id por compatibilidad
         self.config.recreos = [SimpleNamespace(**r) for r in recreos_data]
 
         # Cargar zonas desde la BD
@@ -101,7 +105,7 @@ class OrquestadorAsignacionGuardias:
         umbral_cobertura_minima: float = 0.95,  # 95%
         umbral_problemas_criticos: int = 0,  # 0 problemas críticos permitidos
         callback_decision_usuario=None,  # Función que retorna decisión del usuario
-        progress_callback=None  # Función opcional para reportar progreso
+        progress_callback=None,  # Función opcional para reportar progreso
     ) -> ResultadoOrquestacion:
         """
         Genera guardias intentando primero iterativo, luego ILP si es necesario.
@@ -130,9 +134,10 @@ class OrquestadorAsignacionGuardias:
             progress_callback("Ejecutando algoritmo iterativo...", 40)
 
         logger.info("⏳ Llamando a asignador_iterativo.generar_guardias_iterativo...")
-        guardias_iterativo, metadatos_iterativo = self.asignador_iterativo.generar_guardias_iterativo(
-            max_iteraciones=5,
-            objetivo_cobertura_minima=umbral_cobertura_minima
+        guardias_iterativo, metadatos_iterativo = (
+            self.asignador_iterativo.generar_guardias_iterativo(
+                max_iteraciones=5, objetivo_cobertura_minima=umbral_cobertura_minima
+            )
         )
         logger.info(f"✓ Asignación iterativa completada: {len(guardias_iterativo)} guardias")
 
@@ -150,18 +155,21 @@ class OrquestadorAsignacionGuardias:
         print("\n" + diagnostico.mensaje_resumen)
 
         # Decidir si el resultado es aceptable
-        cobertura = diagnostico.estadisticas['cobertura_porcentaje'] / 100
+        cobertura = diagnostico.estadisticas["cobertura_porcentaje"] / 100
         num_criticos = len(diagnostico.problemas_criticos)
 
         resultado_aceptable = (
-            cobertura >= umbral_cobertura_minima and
-            num_criticos <= umbral_problemas_criticos
+            cobertura >= umbral_cobertura_minima and num_criticos <= umbral_problemas_criticos
         )
 
         if resultado_aceptable:
             logger.info("\n✅ Resultado iterativo es ACEPTABLE")
-            logger.info(f"   Cobertura: {cobertura*100:.1f}% (objetivo: {umbral_cobertura_minima*100:.0f}%)")
-            logger.info(f"   Problemas críticos: {num_criticos} (máximo: {umbral_problemas_criticos})")
+            logger.info(
+                f"   Cobertura: {cobertura * 100:.1f}% (objetivo: {umbral_cobertura_minima * 100:.0f}%)"
+            )
+            logger.info(
+                f"   Problemas críticos: {num_criticos} (máximo: {umbral_problemas_criticos})"
+            )
 
             return ResultadoOrquestacion(
                 exitoso=True,
@@ -171,17 +179,17 @@ class OrquestadorAsignacionGuardias:
                 metadatos=metadatos_iterativo,
                 requiere_intervencion_usuario=False,
                 mensaje_usuario=self._generar_mensaje_exito(
-                    EstrategiaUsada.ITERATIVO,
-                    diagnostico,
-                    metadatos_iterativo
-                )
+                    EstrategiaUsada.ITERATIVO, diagnostico, metadatos_iterativo
+                ),
             )
 
         # FASE 3: Resultado no aceptable - Solicitar decisión al usuario
         logger.info("\n" + "=" * 80)
         logger.info("FASE 3: RESULTADO NO ACEPTABLE - SOLICITAR DECISIÓN USUARIO")
         logger.info("=" * 80)
-        logger.info(f"⚠️  Cobertura: {cobertura*100:.1f}% (objetivo: {umbral_cobertura_minima*100:.0f}%)")
+        logger.info(
+            f"⚠️  Cobertura: {cobertura * 100:.1f}% (objetivo: {umbral_cobertura_minima * 100:.0f}%)"
+        )
         logger.info(f"⚠️  Problemas críticos: {num_criticos}")
 
         if callback_decision_usuario is None:
@@ -193,7 +201,7 @@ class OrquestadorAsignacionGuardias:
                 diagnostico=diagnostico,
                 metadatos=metadatos_iterativo,
                 requiere_intervencion_usuario=True,
-                mensaje_usuario=self._generar_mensaje_requiere_intervencion(diagnostico)
+                mensaje_usuario=self._generar_mensaje_requiere_intervencion(diagnostico),
             )
 
         # Llamar al callback para obtener decisión del usuario
@@ -204,12 +212,13 @@ class OrquestadorAsignacionGuardias:
         except Exception as e:
             logger.error(f"❌ Error al obtener decisión del usuario: {str(e)}")
             import traceback
+
             logger.error(f"Traceback: {traceback.format_exc()}")
-            decision = 'error'
+            decision = "error"
 
         logger.info(f"Decisión del usuario: {decision}")
 
-        if decision == 'ajustar':
+        if decision == "ajustar":
             # Usuario quiere ajustar manualmente
             logger.info("Usuario eligió ajustar configuración manualmente")
             return ResultadoOrquestacion(
@@ -219,14 +228,16 @@ class OrquestadorAsignacionGuardias:
                 diagnostico=diagnostico,
                 metadatos=metadatos_iterativo,
                 requiere_intervencion_usuario=True,
-                mensaje_usuario="Por favor, ajuste la configuración según las sugerencias del diagnóstico."
+                mensaje_usuario="Por favor, ajuste la configuración según las sugerencias del diagnóstico.",
             )
 
-        elif decision == 'continuar_ilp':
+        elif decision == "continuar_ilp":
             # Usuario quiere intentar con ILP
-            return self._ejecutar_fase_ilp(guardias_iterativo, diagnostico, metadatos_iterativo, progress_callback)
+            return self._ejecutar_fase_ilp(
+                guardias_iterativo, diagnostico, metadatos_iterativo, progress_callback
+            )
 
-        elif decision == 'timeout':
+        elif decision == "timeout":
             logger.error("❌ Timeout esperando respuesta del usuario")
             return ResultadoOrquestacion(
                 exitoso=False,
@@ -238,10 +249,10 @@ class OrquestadorAsignacionGuardias:
                 mensaje_usuario=(
                     "El sistema no recibió respuesta del diálogo de decisión en 5 minutos.\n\n"
                     "Cierra otros diálogos en pantalla e inténtalo nuevamente."
-                )
+                ),
             )
 
-        elif decision == 'error':
+        elif decision == "error":
             logger.error("❌ No se pudo mostrar el diálogo de decisión")
             return ResultadoOrquestacion(
                 exitoso=False,
@@ -253,7 +264,7 @@ class OrquestadorAsignacionGuardias:
                 mensaje_usuario=(
                     "Ocurrió un error al mostrar el diagnóstico para tomar una decisión.\n\n"
                     "Reinicia la aplicación e inténtalo de nuevo."
-                )
+                ),
             )
 
         else:  # 'cancelar'
@@ -265,7 +276,7 @@ class OrquestadorAsignacionGuardias:
                 diagnostico=diagnostico,
                 metadatos={},
                 requiere_intervencion_usuario=False,
-                mensaje_usuario="Operación cancelada por el usuario."
+                mensaje_usuario="Operación cancelada por el usuario.",
             )
 
     def _ejecutar_fase_ilp(
@@ -273,7 +284,7 @@ class OrquestadorAsignacionGuardias:
         guardias_iterativo: List[Guardia],
         diagnostico_previo: DiagnosticoCompleto,
         metadatos_previos: Dict,
-        progress_callback=None
+        progress_callback=None,
     ) -> ResultadoOrquestacion:
         """Ejecuta la fase ILP del orquestador."""
         logger.info("\n" + "=" * 80)
@@ -294,7 +305,7 @@ class OrquestadorAsignacionGuardias:
             resultado_ilp = self.asignador_ilp.generar_guardias_ilp(
                 limite_tiempo_segundos=300,  # 5 minutos
                 priorizar_fecha_inicio=True,
-                priorizar_equidad=True
+                priorizar_equidad=True,
             )
 
             if progress_callback:
@@ -312,16 +323,14 @@ class OrquestadorAsignacionGuardias:
                     estrategia_usada=EstrategiaUsada.ILP,
                     diagnostico=diagnostico_ilp,
                     metadatos={
-                        'iterativo': metadatos_previos,
-                        'ilp': resultado_ilp.estadisticas,
-                        'tiempo_ilp': resultado_ilp.tiempo_solucion_segundos
+                        "iterativo": metadatos_previos,
+                        "ilp": resultado_ilp.estadisticas,
+                        "tiempo_ilp": resultado_ilp.tiempo_solucion_segundos,
                     },
                     requiere_intervencion_usuario=False,
                     mensaje_usuario=self._generar_mensaje_exito(
-                        EstrategiaUsada.ILP,
-                        diagnostico_ilp,
-                        resultado_ilp.estadisticas
-                    )
+                        EstrategiaUsada.ILP, diagnostico_ilp, resultado_ilp.estadisticas
+                    ),
                 )
             else:
                 # ILP también falló - problema es infactible
@@ -334,16 +343,16 @@ class OrquestadorAsignacionGuardias:
                     estrategia_usada=EstrategiaUsada.ILP,
                     diagnostico=diagnostico_previo,
                     metadatos={
-                        'iterativo': metadatos_previos,
-                        'ilp_infactible': True,
-                        'diagnostico_infactibilidad': resultado_ilp.diagnostico_infactibilidad
+                        "iterativo": metadatos_previos,
+                        "ilp_infactible": True,
+                        "diagnostico_infactibilidad": resultado_ilp.diagnostico_infactibilidad,
                     },
                     requiere_intervencion_usuario=True,
                     mensaje_usuario=(
                         "El problema es matemáticamente INFACTIBLE. "
                         "No existe asignación que cumpla todas las restricciones. "
                         "Revise el diagnóstico y ajuste la configuración."
-                    )
+                    ),
                 )
 
         except ImportError as e:
@@ -359,7 +368,7 @@ class OrquestadorAsignacionGuardias:
                     "ILP no disponible (falta instalar OR-Tools). "
                     "Instalar con: pip install ortools\n"
                     "Por ahora, se usa resultado iterativo con problemas."
-                )
+                ),
             )
         except Exception as e:
             logger.error(f"Error inesperado en ILP: {e}", exc_info=True)
@@ -370,14 +379,11 @@ class OrquestadorAsignacionGuardias:
                 diagnostico=diagnostico_previo,
                 metadatos=metadatos_previos,
                 requiere_intervencion_usuario=True,
-                mensaje_usuario=f"Error en ILP: {str(e)}"
+                mensaje_usuario=f"Error en ILP: {str(e)}",
             )
 
     def _generar_mensaje_exito(
-        self,
-        estrategia: EstrategiaUsada,
-        diagnostico: DiagnosticoCompleto,
-        metadatos: Dict
+        self, estrategia: EstrategiaUsada, diagnostico: DiagnosticoCompleto, metadatos: Dict
     ) -> str:
         """Genera mensaje de éxito para el usuario."""
         lineas = []
@@ -387,23 +393,29 @@ class OrquestadorAsignacionGuardias:
 
         if estrategia == EstrategiaUsada.ITERATIVO:
             lineas.append("🚀 Estrategia: Algoritmo Iterativo (Rápido)")
-            if 'iteracion_exitosa' in metadatos:
+            if "iteracion_exitosa" in metadatos:
                 lineas.append(f"   Iteración exitosa: {metadatos['iteracion_exitosa']}")
         else:
             lineas.append("🎯 Estrategia: ILP - Solución Óptima Matemática")
-            if 'tiempo_solucion' in metadatos:
+            if "tiempo_solucion" in metadatos:
                 lineas.append(f"   Tiempo de cálculo: {metadatos['tiempo_solucion']:.1f}s")
 
         lineas.append("")
         stats = diagnostico.estadisticas
         lineas.append("📊 Resultado:")
-        lineas.append(f"   • Guardias asignadas: {stats['total_guardias_asignadas']} de {stats['total_slots_esperados']}")
+        lineas.append(
+            f"   • Guardias asignadas: {stats['total_guardias_asignadas']} de {stats['total_slots_esperados']}"
+        )
         lineas.append(f"   • Cobertura: {stats['cobertura_porcentaje']:.1f}%")
-        lineas.append(f"   • Participación: {stats['profesores_con_guardias']}/{stats['profesores_activos_totales']} profesores")
+        lineas.append(
+            f"   • Participación: {stats['profesores_con_guardias']}/{stats['profesores_activos_totales']} profesores"
+        )
 
         if diagnostico.problemas_medios:
             lineas.append("")
-            lineas.append(f"ℹ️  Se detectaron {len(diagnostico.problemas_medios)} problema(s) menor(es)")
+            lineas.append(
+                f"ℹ️  Se detectaron {len(diagnostico.problemas_medios)} problema(s) menor(es)"
+            )
             lineas.append("   (no afectan la validez de la asignación)")
 
         return "\n".join(lineas)
@@ -416,10 +428,14 @@ class OrquestadorAsignacionGuardias:
         lineas.append("")
 
         if diagnostico.problemas_criticos:
-            lineas.append(f"🔴 {len(diagnostico.problemas_criticos)} problema(s) crítico(s) detectado(s)")
+            lineas.append(
+                f"🔴 {len(diagnostico.problemas_criticos)} problema(s) crítico(s) detectado(s)"
+            )
 
         if diagnostico.problemas_altos:
-            lineas.append(f"🟠 {len(diagnostico.problemas_altos)} problema(s) importante(s) detectado(s)")
+            lineas.append(
+                f"🟠 {len(diagnostico.problemas_altos)} problema(s) importante(s) detectado(s)"
+            )
 
         lineas.append("")
         lineas.append("Opciones:")

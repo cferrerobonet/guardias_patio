@@ -2,6 +2,7 @@
 Sistema de caché de soluciones de guardias.
 Guarda soluciones exitosas y las reutiliza cuando la configuración es similar.
 """
+
 import hashlib
 import json
 import logging
@@ -10,7 +11,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from models.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ConfiguracionHash:
     """Representa un hash de configuración para comparación."""
+
     num_profesores_activos: int
     num_dias_lectivos: int
     num_recreos: int
@@ -34,6 +36,7 @@ class ConfiguracionHash:
 @dataclass
 class SolucionCacheada:
     """Solución guardada en caché."""
+
     id_cache: str
     fecha_creacion: datetime
     config_hash: ConfiguracionHash
@@ -55,9 +58,7 @@ class CacheSolucionesGuardias:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def calcular_hash_configuracion(
-        self,
-        config: Configuracion,
-        dias_lectivos: List[date]
+        self, config: Configuracion, dias_lectivos: List[date]
     ) -> ConfiguracionHash:
         """
         Calcula hash único de la configuración actual.
@@ -81,11 +82,11 @@ class CacheSolucionesGuardias:
         profesores_data = []
         for prof in sorted(profesores, key=lambda p: p.id):
             prof_data = {
-                'turno': prof.turno,  # turno es string, no array
-                'zona_preferida_id': prof.zona_preferida_id,  # ID de zona preferida (no lista)
-                'horas_contrato': prof.horas_contrato,
-                'tutor': prof.tutor,
-                'num_ausencias': 0  # TODO: implementar conteo de ausencias si es necesario
+                "turno": prof.turno,  # turno es string, no array
+                "zona_preferida_id": prof.zona_preferida_id,  # ID de zona preferida (no lista)
+                "horas_contrato": prof.horas_contrato,
+                "tutor": prof.tutor,
+                "num_ausencias": 0,  # TODO: implementar conteo de ausencias si es necesario
             }
             profesores_data.append(prof_data)
 
@@ -95,15 +96,15 @@ class CacheSolucionesGuardias:
 
         # Hash completo
         config_completa = {
-            'num_profesores': num_profesores,
-            'num_dias': num_dias,
-            'num_recreos': num_recreos,
-            'num_zonas': num_zonas,
-            'turnos': turnos_unicos,
-            'zonas': zonas_unicas,
-            'fecha_inicio': config.fecha_inicio_curso.isoformat(),
-            'fecha_fin': config.fecha_fin_curso.isoformat(),
-            'profesores': profesores_data
+            "num_profesores": num_profesores,
+            "num_dias": num_dias,
+            "num_recreos": num_recreos,
+            "num_zonas": num_zonas,
+            "turnos": turnos_unicos,
+            "zonas": zonas_unicas,
+            "fecha_inicio": config.fecha_inicio_curso.isoformat(),
+            "fecha_fin": config.fecha_fin_curso.isoformat(),
+            "profesores": profesores_data,
         }
 
         hash_completo = hashlib.sha256(
@@ -120,7 +121,7 @@ class CacheSolucionesGuardias:
             fecha_inicio=config.fecha_inicio_curso.isoformat(),
             fecha_fin=config.fecha_fin_curso.isoformat(),
             hash_profesores=hash_profesores,
-            hash_completo=hash_completo
+            hash_completo=hash_completo,
         )
 
     def guardar_solucion(
@@ -130,7 +131,7 @@ class CacheSolucionesGuardias:
         dias_lectivos: List[date],
         estadisticas: Dict,
         estrategia: str,
-        tiempo_generacion: float
+        tiempo_generacion: float,
     ) -> str:
         """
         Guarda una solución exitosa en caché.
@@ -144,13 +145,15 @@ class CacheSolucionesGuardias:
         # Serializar guardias
         guardias_data = []
         for guardia in guardias:
-            guardias_data.append({
-                'profesor_id': guardia.profesor_id,
-                'fecha': guardia.fecha.isoformat(),
-                'recreo': guardia.recreo,
-                'zona': guardia.zona,
-                'turno': guardia.turno
-            })
+            guardias_data.append(
+                {
+                    "profesor_id": guardia.profesor_id,
+                    "fecha": guardia.fecha.isoformat(),
+                    "recreo": guardia.recreo,
+                    "zona": guardia.zona,
+                    "turno": guardia.turno,
+                }
+            )
 
         # Crear solución
         solucion = SolucionCacheada(
@@ -160,12 +163,12 @@ class CacheSolucionesGuardias:
             guardias=guardias_data,
             estadisticas=estadisticas,
             estrategia_usada=estrategia,
-            tiempo_generacion=tiempo_generacion
+            tiempo_generacion=tiempo_generacion,
         )
 
         # Guardar en archivo
         cache_file = self.cache_dir / f"{solucion.id_cache}.json"
-        with open(cache_file, 'w', encoding='utf-8') as f:
+        with open(cache_file, "w", encoding="utf-8") as f:
             json.dump(asdict(solucion), f, indent=2, default=str)
 
         logger.info(f"✅ Solución guardada en caché: {solucion.id_cache}")
@@ -175,10 +178,7 @@ class CacheSolucionesGuardias:
         return solucion.id_cache
 
     def buscar_solucion_similar(
-        self,
-        config: Configuracion,
-        dias_lectivos: List[date],
-        umbral_similitud: float = 0.90
+        self, config: Configuracion, dias_lectivos: List[date], umbral_similitud: float = 0.90
     ) -> Optional[SolucionCacheada]:
         """
         Busca una solución cacheada similar a la configuración actual.
@@ -198,23 +198,20 @@ class CacheSolucionesGuardias:
             return self._cargar_solucion_desde_archivo(cache_exacto)
 
         # Buscar soluciones similares
-        logger.info(f"🔍 Buscando soluciones similares (umbral: {umbral_similitud*100:.0f}%)...")
+        logger.info(f"🔍 Buscando soluciones similares (umbral: {umbral_similitud * 100:.0f}%)...")
 
         mejores_candidatos = []
 
         for cache_file in self.cache_dir.glob("*.json"):
             try:
                 solucion = self._cargar_solucion_desde_archivo(cache_file)
-                similitud = self._calcular_similitud(
-                    config_hash_actual,
-                    solucion.config_hash
-                )
+                similitud = self._calcular_similitud(config_hash_actual, solucion.config_hash)
 
                 if similitud >= umbral_similitud:
                     mejores_candidatos.append((similitud, solucion))
                     logger.info(
                         f"   Candidato encontrado: {solucion.id_cache} "
-                        f"(similitud: {similitud*100:.1f}%)"
+                        f"(similitud: {similitud * 100:.1f}%)"
                     )
 
             except Exception as e:
@@ -228,18 +225,14 @@ class CacheSolucionesGuardias:
 
             logger.info(
                 f"✅ Solución similar encontrada: {mejor_solucion.id_cache} "
-                f"(similitud: {mejor_similitud*100:.1f}%)"
+                f"(similitud: {mejor_similitud * 100:.1f}%)"
             )
             return mejor_solucion
 
         logger.info("❌ No se encontraron soluciones similares en caché")
         return None
 
-    def _calcular_similitud(
-        self,
-        hash1: ConfiguracionHash,
-        hash2: ConfiguracionHash
-    ) -> float:
+    def _calcular_similitud(self, hash1: ConfiguracionHash, hash2: ConfiguracionHash) -> float:
         """
         Calcula similitud entre dos configuraciones (0.0-1.0).
         """
@@ -248,10 +241,10 @@ class CacheSolucionesGuardias:
 
         # Comparar características numéricas (peso: 40%)
         caracteristicas = [
-            ('num_profesores_activos', 10),
-            ('num_dias_lectivos', 10),
-            ('num_recreos', 10),
-            ('num_zonas', 10),
+            ("num_profesores_activos", 10),
+            ("num_dias_lectivos", 10),
+            ("num_recreos", 10),
+            ("num_zonas", 10),
         ]
 
         for campo, peso in caracteristicas:
@@ -292,24 +285,21 @@ class CacheSolucionesGuardias:
 
     def _cargar_solucion_desde_archivo(self, archivo: Path) -> SolucionCacheada:
         """Carga una solución desde archivo JSON."""
-        with open(archivo, 'r', encoding='utf-8') as f:
+        with open(archivo, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         # Reconstruir objetos de dataclass
         return SolucionCacheada(
-            id_cache=data['id_cache'],
-            fecha_creacion=datetime.fromisoformat(data['fecha_creacion']),
-            config_hash=ConfiguracionHash(**data['config_hash']),
-            guardias=data['guardias'],
-            estadisticas=data['estadisticas'],
-            estrategia_usada=data['estrategia_usada'],
-            tiempo_generacion=data['tiempo_generacion']
+            id_cache=data["id_cache"],
+            fecha_creacion=datetime.fromisoformat(data["fecha_creacion"]),
+            config_hash=ConfiguracionHash(**data["config_hash"]),
+            guardias=data["guardias"],
+            estadisticas=data["estadisticas"],
+            estrategia_usada=data["estrategia_usada"],
+            tiempo_generacion=data["tiempo_generacion"],
         )
 
-    def aplicar_solucion_cacheada(
-        self,
-        solucion: SolucionCacheada
-    ) -> List[Guardia]:
+    def aplicar_solucion_cacheada(self, solucion: SolucionCacheada) -> List[Guardia]:
         """
         Convierte una solución cacheada en objetos Guardia.
         """
@@ -317,11 +307,11 @@ class CacheSolucionesGuardias:
 
         for guardia_data in solucion.guardias:
             guardia = Guardia(
-                profesor_id=guardia_data['profesor_id'],
-                fecha=date.fromisoformat(guardia_data['fecha']),
-                recreo=guardia_data['recreo'],
-                zona=guardia_data['zona'],
-                turno=guardia_data['turno']
+                profesor_id=guardia_data["profesor_id"],
+                fecha=date.fromisoformat(guardia_data["fecha"]),
+                recreo=guardia_data["recreo"],
+                zona=guardia_data["zona"],
+                turno=guardia_data["turno"],
             )
             guardias.append(guardia)
 
@@ -355,10 +345,10 @@ class CacheSolucionesGuardias:
 
         if not cache_files:
             return {
-                'total_soluciones': 0,
-                'espacio_usado_mb': 0,
-                'solucion_mas_reciente': None,
-                'solucion_mas_antigua': None
+                "total_soluciones": 0,
+                "espacio_usado_mb": 0,
+                "solucion_mas_reciente": None,
+                "solucion_mas_antigua": None,
             }
 
         # Calcular tamaño
@@ -374,8 +364,8 @@ class CacheSolucionesGuardias:
                 continue
 
         return {
-            'total_soluciones': len(cache_files),
-            'espacio_usado_mb': espacio_bytes / (1024 * 1024),
-            'solucion_mas_reciente': max(fechas).isoformat() if fechas else None,
-            'solucion_mas_antigua': min(fechas).isoformat() if fechas else None
+            "total_soluciones": len(cache_files),
+            "espacio_usado_mb": espacio_bytes / (1024 * 1024),
+            "solucion_mas_reciente": max(fechas).isoformat() if fechas else None,
+            "solucion_mas_antigua": min(fechas).isoformat() if fechas else None,
         }

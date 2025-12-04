@@ -7,7 +7,7 @@ manteniendo compatibilidad con la interfaz existente.
 
 from typing import Callable, Dict, List, Optional, Tuple
 
-from models.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from services.assignment import AssignmentExecutor
 from services.estadisticas_service import EstadisticasService
 from sqlalchemy.orm import Session
@@ -92,9 +92,7 @@ def generar_calendario_guardias_v4(
     return calendario, incidencias
 
 
-def calcular_estadisticas_asignacion(
-    session: Session, calendario: List[Guardia]
-) -> Dict[str, any]:
+def calcular_estadisticas_asignacion(session: Session, calendario: List[Guardia]) -> Dict[str, any]:
     """
     Calcula estadísticas de una asignación usando EstadisticasService.
 

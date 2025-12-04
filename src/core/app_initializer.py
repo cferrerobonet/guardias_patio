@@ -30,9 +30,7 @@ def configure_qt_plugins() -> None:
     try:
         import PyQt6
 
-        qt_plugin_path = os.path.join(
-            os.path.dirname(PyQt6.__file__), "Qt", "plugins"
-        )
+        qt_plugin_path = os.path.join(os.path.dirname(PyQt6.__file__), "Qt", "plugins")
         os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = qt_plugin_path
         print(f"Setting QT_QPA_PLATFORM_PLUGIN_PATH to: {qt_plugin_path}")
     except Exception as e:

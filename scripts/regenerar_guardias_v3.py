@@ -11,7 +11,7 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from models.models import Configuracion, Profesor
+from infrastructure.database.models import Configuracion, Profesor
 from services.asignador_guardias_v3_simple import generar_guardias_v3_simple
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -63,11 +63,7 @@ def main():
 
         # Ejecutar algoritmo v3.1 con callback de progreso
         # Parámetros: session, configuracion_id, reportar_progreso (opcional)
-        guardias, resumen = generar_guardias_v3_simple(
-            session,
-            config.id,
-            callback_progreso
-        )
+        guardias, resumen = generar_guardias_v3_simple(session, config.id, callback_progreso)
 
         print()
         print("=" * 80)
@@ -75,7 +71,9 @@ def main():
         print("=" * 80)
         print()
         print(f"📊 Total guardias generadas: {len(guardias)}")
-        print(f"👥 Profesores con guardias: {sum(1 for v in resumen.values() if v > 0)}/{len(profesores)}")
+        print(
+            f"👥 Profesores con guardias: {sum(1 for v in resumen.values() if v > 0)}/{len(profesores)}"
+        )
         print()
 
         return 0
@@ -87,6 +85,7 @@ def main():
         print("=" * 80)
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

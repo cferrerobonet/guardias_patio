@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List, Optional
 
-from models.models import Configuracion, Profesor, Zona
+from infrastructure.database.models import Configuracion, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
     listar_dias_lectivos,
@@ -82,9 +82,7 @@ class DistribucionCuotasService:
         self.session = session
         self.logger = logger
 
-    def calcular_cuotas(
-        self, profesores: Optional[List[Profesor]] = None
-    ) -> Dict[int, int]:
+    def calcular_cuotas(self, profesores: Optional[List[Profesor]] = None) -> Dict[int, int]:
         """
         Calcula cuotas para todos los profesores activos.
 
@@ -100,9 +98,7 @@ class DistribucionCuotasService:
             >>> print(f"Profesor 1: {cuotas[1]} guardias")
         """
         if profesores is None:
-            profesores = (
-                self.session.query(Profesor).filter(Profesor.activo).all()
-            )
+            profesores = self.session.query(Profesor).filter(Profesor.activo).all()
 
         if not profesores:
             self.logger.warning("No hay profesores activos para calcular cuotas")
@@ -172,9 +168,7 @@ class DistribucionCuotasService:
         if not config:
             raise ValueError("No se encontró configuración activa")
 
-        profesores = (
-            self.session.query(Profesor).filter(Profesor.activo).all()
-        )
+        profesores = self.session.query(Profesor).filter(Profesor.activo).all()
         total_slots = self._calcular_total_slots(config)
         factores = self._calcular_factores_participacion(profesores, config)
 
@@ -182,9 +176,7 @@ class DistribucionCuotasService:
 
         observaciones = []
         if profesor.fecha_inicio_guardias:
-            observaciones.append(
-                f"Fecha inicio: {profesor.fecha_inicio_guardias}"
-            )
+            observaciones.append(f"Fecha inicio: {profesor.fecha_inicio_guardias}")
         if profesor.turno != "mixto":
             observaciones.append(f"Turno restringido: {profesor.turno}")
 
@@ -241,13 +233,9 @@ class DistribucionCuotasService:
 
             # 1. Factor por turno (proporción de recreos disponibles)
             if profesor.turno == "mañana":
-                factor_turno = (
-                    recreos_manana / total_recreos if total_recreos > 0 else 0.5
-                )
+                factor_turno = recreos_manana / total_recreos if total_recreos > 0 else 0.5
             elif profesor.turno == "tarde":
-                factor_turno = (
-                    recreos_tarde / total_recreos if total_recreos > 0 else 0.5
-                )
+                factor_turno = recreos_tarde / total_recreos if total_recreos > 0 else 0.5
             else:  # mixto
                 factor_turno = 1.0
 
@@ -258,9 +246,9 @@ class DistribucionCuotasService:
 
             # 3. Factor de tutoría (desde configuración)
             factor_tutoria = (
-                getattr(config, 'ajuste_tutores', 1.0)
-                if getattr(profesor, 'tutor', False)
-                else getattr(config, 'ajuste_no_tutores', 1.0)
+                getattr(config, "ajuste_tutores", 1.0)
+                if getattr(profesor, "tutor", False)
+                else getattr(config, "ajuste_no_tutores", 1.0)
             )
 
             # 4. Proporción de tiempo disponible (fechas inicio/fin)
@@ -324,13 +312,9 @@ class DistribucionCuotasService:
         # Ajustar diferencia por redondeo
         diferencia = total_slots - slots_asignados
         if diferencia != 0:
-            self.logger.info(
-                f"Ajustando {abs(diferencia)} slots por redondeo"
-            )
+            self.logger.info(f"Ajustando {abs(diferencia)} slots por redondeo")
             # Distribuir diferencia entre profesores con mayor factor
-            profesores_ordenados = sorted(
-                profesores, key=lambda p: factores[p.id], reverse=True
-            )
+            profesores_ordenados = sorted(profesores, key=lambda p: factores[p.id], reverse=True)
 
             for i in range(abs(diferencia)):
                 profesor = profesores_ordenados[i % len(profesores_ordenados)]
@@ -366,9 +350,7 @@ class DistribucionCuotasService:
 
         for jornada in sorted(grupos.keys(), reverse=True):
             self.logger.info(f"Jornada {jornada}%:")
-            for profesor, cuota in sorted(
-                grupos[jornada], key=lambda x: x[1], reverse=True
-            ):
+            for profesor, cuota in sorted(grupos[jornada], key=lambda x: x[1], reverse=True):
                 self.logger.info(
                     f"  • {profesor.nombre_completo:30} {cuota:3} guardias "
                     f"(turno: {profesor.turno})"

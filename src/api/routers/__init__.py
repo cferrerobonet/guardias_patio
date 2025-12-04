@@ -1,4 +1,5 @@
 """API routers package."""
+
 from .cuotas import router as cuotas_router
 from .equidad import router as equidad_router
 from .estadisticas import router as estadisticas_router

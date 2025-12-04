@@ -25,6 +25,7 @@ print("\n1️⃣ VERIFICANDO DEPENDENCIAS...")
 
 try:
     from ortools.sat.python import cp_model
+
     print("   ✅ OR-Tools instalado correctamente")
     ortools_ok = True
 except ImportError as e:
@@ -33,6 +34,7 @@ except ImportError as e:
 
 try:
     import sklearn
+
     print(f"   ✅ scikit-learn {sklearn.__version__}")
     sklearn_ok = True
 except ImportError as e:
@@ -41,6 +43,7 @@ except ImportError as e:
 
 try:
     import numpy as np
+
     print(f"   ✅ numpy {np.__version__}")
     numpy_ok = True
 except ImportError as e:
@@ -49,6 +52,7 @@ except ImportError as e:
 
 try:
     import matplotlib
+
     print(f"   ✅ matplotlib {matplotlib.__version__}")
     matplotlib_ok = True
 except ImportError as e:
@@ -102,6 +106,7 @@ print("\n4️⃣ VERIFICANDO USE CASE HÍBRIDO...")
 
 try:
     from application.use_cases.asignacion_guardias import GenerarGuardiasHibridoUseCase
+
     print("   ✅ GenerarGuardiasHibridoUseCase importado correctamente")
     usecase_ok = True
 except ImportError as e:
@@ -112,7 +117,7 @@ except ImportError as e:
 print("\n5️⃣ VERIFICANDO CONEXIÓN A BASE DE DATOS...")
 
 try:
-    from models.models import Configuracion, Profesor
+    from infrastructure.database.models import Configuracion, Profesor
 
     from src.database.session import SessionLocal
 

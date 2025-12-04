@@ -8,7 +8,7 @@ profesor candidato para cada slot.
 from datetime import date
 from typing import Dict, List, Set, Tuple
 
-from models.models import Profesor
+from infrastructure.database.models import Profesor
 from services.assignment.slot_builder import Slot
 from utils import get_logger
 
@@ -56,9 +56,7 @@ class ScoreCalculator:
         score = 0.0
 
         # Criterio 1: Equilibrio (priorizar quien va más atrasado)
-        score += self._score_equilibrio(
-            profesor, asignaciones_profesor, cuotas
-        )
+        score += self._score_equilibrio(profesor, asignaciones_profesor, cuotas)
 
         # Criterio 2: Zona preferida
         score += self._score_zona_preferida(profesor, slot)
@@ -67,9 +65,7 @@ class ScoreCalculator:
         score += self._score_turno_preferido(profesor, slot)
 
         # Criterio 4: Diversidad (evitar repetir mismo profesor)
-        score += self._score_diversidad(
-            profesor, slot, guardias_en_fecha
-        )
+        score += self._score_diversidad(profesor, slot, guardias_en_fecha)
 
         return score
 

@@ -4,18 +4,15 @@ Use Case: Obtener Guardias
 Caso de uso para obtener guardias con filtros opcionales.
 """
 
-from sqlalchemy.orm import Session
+from typing import Optional, Union
 
-from application.dtos import FiltroGuardiasDTO, GuardiaDTO
 from core.logging import get_logger
 from core.observability import with_metrics
 from domain.entities import GuardiaEntity
 from domain.repositories import IGuardiaRepository, IProfesorRepository, IZonaRepository
-from infrastructure.repositories import (
-    SQLAlchemyGuardiaRepository,
-    SQLAlchemyProfesorRepository,
-    SQLAlchemyZonaRepository,
-)
+from sqlalchemy.orm import Session
+
+from application.dtos import FiltroGuardiasDTO, GuardiaDTO
 
 logger = get_logger(__name__)
 
@@ -27,17 +24,37 @@ class ObtenerGuardiasUseCase:
     Permite filtrar por fecha, profesor, zona, turno, etc.
     """
 
-    def __init__(self, session: Session):
+    def __init__(
+        self,
+        guardia_repo_or_session: Union[IGuardiaRepository, Session],
+        profesor_repo: Optional[IProfesorRepository] = None,
+        zona_repo: Optional[IZonaRepository] = None,
+    ):
         """
         Inicializa el caso de uso.
 
         Args:
-            session: Sesión de SQLAlchemy
+            guardia_repo_or_session: Repositorio de guardias o Session (legacy)
+            profesor_repo: Repositorio de profesores (si se usa inyección)
+            zona_repo: Repositorio de zonas (si se usa inyección)
         """
-        self.session = session
-        self.guardia_repo: IGuardiaRepository = SQLAlchemyGuardiaRepository(session)
-        self.profesor_repo: IProfesorRepository = SQLAlchemyProfesorRepository(session)
-        self.zona_repo: IZonaRepository = SQLAlchemyZonaRepository(session)
+        if isinstance(guardia_repo_or_session, Session):
+            # Compatibilidad hacia atrás: crear repositorios internamente
+            from infrastructure.repositories import (
+                SQLAlchemyGuardiaRepository,
+                SQLAlchemyProfesorRepository,
+                SQLAlchemyZonaRepository,
+            )
+
+            session = guardia_repo_or_session
+            self.guardia_repo: IGuardiaRepository = SQLAlchemyGuardiaRepository(session)
+            self.profesor_repo: IProfesorRepository = SQLAlchemyProfesorRepository(session)
+            self.zona_repo: IZonaRepository = SQLAlchemyZonaRepository(session)
+        else:
+            # Nueva forma: inyección de dependencias
+            self.guardia_repo = guardia_repo_or_session
+            self.profesor_repo = profesor_repo
+            self.zona_repo = zona_repo
 
     @with_metrics("obtener_guardias")
     def execute(self, filtros: FiltroGuardiasDTO) -> list[GuardiaDTO]:

@@ -3,13 +3,14 @@ Servicio de exportación e importación de datos de la aplicación.
 Permite exportar/importar todos los datos (profesores, zonas, configuración, guardias)
 en formato JSON para portabilidad entre equipos.
 """
+
 import base64
 import json
 from datetime import date, time
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
+from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session, joinedload
 
 
@@ -29,7 +30,7 @@ class ExportadorDatos:
         """
         if not password:
             return ""
-        return base64.b64encode(password.encode('utf-8')).decode('utf-8')
+        return base64.b64encode(password.encode("utf-8")).decode("utf-8")
 
     @staticmethod
     def _desencriptar_password(encrypted_password: str) -> str:
@@ -45,7 +46,7 @@ class ExportadorDatos:
         if not encrypted_password:
             return ""
         try:
-            return base64.b64decode(encrypted_password.encode('utf-8')).decode('utf-8')
+            return base64.b64decode(encrypted_password.encode("utf-8")).decode("utf-8")
         except Exception:
             # Si falla, asumir que ya está desencriptada (compatibilidad con exports antiguos)
             return encrypted_password
@@ -89,9 +90,7 @@ class ExportadorDatos:
                 "horas_tarde": p.horas_tarde,  # Campo añadido
                 "tutor": p.tutor,
                 "activo": p.activo,  # Campo añadido
-                "fecha_inicio_guardias": ExportadorDatos._serializar_fecha(
-                    p.fecha_inicio_guardias
-                ),
+                "fecha_inicio_guardias": ExportadorDatos._serializar_fecha(p.fecha_inicio_guardias),
                 "fecha_fin_guardias": ExportadorDatos._serializar_fecha(
                     p.fecha_fin_guardias
                 ),  # Campo añadido
@@ -126,22 +125,12 @@ class ExportadorDatos:
 
         return {
             "id": config.id,  # ID necesario para restauración completa
-            "fecha_inicio_curso": ExportadorDatos._serializar_fecha(
-                config.fecha_inicio_curso
-            ),
+            "fecha_inicio_curso": ExportadorDatos._serializar_fecha(config.fecha_inicio_curso),
             "fecha_fin_curso": ExportadorDatos._serializar_fecha(config.fecha_fin_curso),
-            "hora_recreo1_manana": ExportadorDatos._serializar_hora(
-                config.hora_recreo1_manana
-            ),
-            "hora_recreo2_manana": ExportadorDatos._serializar_hora(
-                config.hora_recreo2_manana
-            ),
-            "hora_recreo1_tarde": ExportadorDatos._serializar_hora(
-                config.hora_recreo1_tarde
-            ),
-            "hora_recreo2_tarde": ExportadorDatos._serializar_hora(
-                config.hora_recreo2_tarde
-            ),
+            "hora_recreo1_manana": ExportadorDatos._serializar_hora(config.hora_recreo1_manana),
+            "hora_recreo2_manana": ExportadorDatos._serializar_hora(config.hora_recreo2_manana),
+            "hora_recreo1_tarde": ExportadorDatos._serializar_hora(config.hora_recreo1_tarde),
+            "hora_recreo2_tarde": ExportadorDatos._serializar_hora(config.hora_recreo2_tarde),
             "activar_festivos_automaticos": config.activar_festivos_automaticos,
             "dias_no_lectivos_personalizados": config.dias_no_lectivos_personalizados,
             "recreos_config": config.recreos_config,
@@ -153,10 +142,11 @@ class ExportadorDatos:
     @staticmethod
     def exportar_guardias(session: Session) -> list[dict[str, Any]]:
         """Exporta todas las guardias a diccionario."""
-        guardias = session.query(Guardia).options(
-            joinedload(Guardia.profesor),
-            joinedload(Guardia.zona)
-        ).all()
+        guardias = (
+            session.query(Guardia)
+            .options(joinedload(Guardia.profesor), joinedload(Guardia.zona))
+            .all()
+        )
         return [
             {
                 "id": g.id,  # ID necesario para restauración completa
@@ -175,9 +165,7 @@ class ExportadorDatos:
     @staticmethod
     def exportar_ausencias(session: Session) -> list[dict[str, Any]]:
         """Exporta todas las ausencias a diccionario."""
-        ausencias = session.query(Ausencia).options(
-            joinedload(Ausencia.profesor)
-        ).all()
+        ausencias = session.query(Ausencia).options(joinedload(Ausencia.profesor)).all()
         return [
             {
                 "id": a.id,  # ID necesario para restauración completa
@@ -210,17 +198,16 @@ class ExportadorDatos:
             usuarios_export = []
 
             for username, user_data in user_auth.users.items():
-                usuarios_export.append({
-                    "username": username,
-                    "email": user_data.get("email", ""),
-                    "password_hash": user_data.get("password_hash", ""),
-                    "created_at": user_data.get("created_at", ""),
-                })
+                usuarios_export.append(
+                    {
+                        "username": username,
+                        "email": user_data.get("email", ""),
+                        "password_hash": user_data.get("password_hash", ""),
+                        "created_at": user_data.get("created_at", ""),
+                    }
+                )
 
-            return {
-                "count": len(usuarios_export),
-                "usuarios": usuarios_export
-            }
+            return {"count": len(usuarios_export), "usuarios": usuarios_export}
         except Exception as e:
             print(f"Error al exportar usuarios: {e}")
             return None
@@ -236,7 +223,7 @@ class ExportadorDatos:
         Returns:
             Diccionario con datos de cursos o None si hay error
         """
-        from models.models import CursoEscolar
+        from infrastructure.database.models import CursoEscolar
 
         try:
             cursos = session.query(CursoEscolar).all()
@@ -248,18 +235,24 @@ class ExportadorDatos:
                 if curso.activo and not curso.cerrado:
                     curso_actual = curso.nombre
 
-                cursos_export.append({
-                    "nombre": curso.nombre,
-                    "activo": curso.activo,
-                    "cerrado": curso.cerrado,
-                    "fecha_creacion": curso.fecha_creacion.isoformat() if curso.fecha_creacion else None,
-                    "fecha_cierre": curso.fecha_cierre.isoformat() if curso.fecha_cierre else None,
-                })
+                cursos_export.append(
+                    {
+                        "nombre": curso.nombre,
+                        "activo": curso.activo,
+                        "cerrado": curso.cerrado,
+                        "fecha_creacion": (
+                            curso.fecha_creacion.isoformat() if curso.fecha_creacion else None
+                        ),
+                        "fecha_cierre": (
+                            curso.fecha_cierre.isoformat() if curso.fecha_cierre else None
+                        ),
+                    }
+                )
 
             return {
                 "count": len(cursos_export),
                 "curso_actual": curso_actual,
-                "cursos": cursos_export
+                "cursos": cursos_export,
             }
         except Exception as e:
             print(f"Error al exportar cursos escolares: {e}")
@@ -354,8 +347,8 @@ class ExportadorDatos:
             session.flush()
             # Ahora eliminar profesores
             session.query(Profesor).delete()
-            session.flush()
-            session.expire_all()
+            session.commit()  # Commit para finalizar la transacción de borrado
+            session.expunge_all()  # Limpiar identity map
 
         count = 0
         for p_data in profesores_data:
@@ -487,9 +480,7 @@ class ExportadorDatos:
                         fecha_inicio=ExportadorDatos._deserializar_fecha(
                             z_data.get("fecha_inicio")
                         ),
-                        fecha_fin=ExportadorDatos._deserializar_fecha(
-                            z_data.get("fecha_fin")
-                        ),
+                        fecha_fin=ExportadorDatos._deserializar_fecha(z_data.get("fecha_fin")),
                     )
                     session.add(zona)
             else:
@@ -497,12 +488,8 @@ class ExportadorDatos:
                 zona = Zona(
                     nombre_zona=z_data["nombre_zona"],
                     descripcion=z_data.get("descripcion"),
-                    fecha_inicio=ExportadorDatos._deserializar_fecha(
-                        z_data.get("fecha_inicio")
-                    ),
-                    fecha_fin=ExportadorDatos._deserializar_fecha(
-                        z_data.get("fecha_fin")
-                    ),
+                    fecha_inicio=ExportadorDatos._deserializar_fecha(z_data.get("fecha_inicio")),
+                    fecha_fin=ExportadorDatos._deserializar_fecha(z_data.get("fecha_fin")),
                 )
                 session.add(zona)
             count += 1
@@ -568,11 +555,18 @@ class ExportadorDatos:
                 existing.algoritmo_asignacion = config_data.get("algoritmo_asignacion", "v2.9")
             else:
                 # Crear nueva con ID específico
+                # Calcular anio_inicio_curso de fecha_inicio_curso si no está
+                fecha_inicio = ExportadorDatos._deserializar_fecha(
+                    config_data["fecha_inicio_curso"]
+                )
+                anio_inicio = config_data.get("anio_inicio_curso")
+                if anio_inicio is None and fecha_inicio:
+                    anio_inicio = fecha_inicio.year
+
                 config = Configuracion(
                     id=config_data["id"],
-                    fecha_inicio_curso=ExportadorDatos._deserializar_fecha(
-                        config_data["fecha_inicio_curso"]
-                    ),
+                    anio_inicio_curso=anio_inicio,
+                    fecha_inicio_curso=fecha_inicio,
                     fecha_fin_curso=ExportadorDatos._deserializar_fecha(
                         config_data["fecha_fin_curso"]
                     ),
@@ -602,13 +596,15 @@ class ExportadorDatos:
                 session.add(config)
         else:
             # Formato antiguo sin ID, crear nueva (autoincrementado)
+            fecha_inicio = ExportadorDatos._deserializar_fecha(config_data["fecha_inicio_curso"])
+            anio_inicio = config_data.get("anio_inicio_curso")
+            if anio_inicio is None and fecha_inicio:
+                anio_inicio = fecha_inicio.year
+
             config = Configuracion(
-                fecha_inicio_curso=ExportadorDatos._deserializar_fecha(
-                    config_data["fecha_inicio_curso"]
-                ),
-                fecha_fin_curso=ExportadorDatos._deserializar_fecha(
-                    config_data["fecha_fin_curso"]
-                ),
+                anio_inicio_curso=anio_inicio,
+                fecha_inicio_curso=fecha_inicio,
+                fecha_fin_curso=ExportadorDatos._deserializar_fecha(config_data["fecha_fin_curso"]),
                 hora_recreo1_manana=ExportadorDatos._deserializar_hora(
                     config_data["hora_recreo1_manana"]
                 ),
@@ -621,12 +617,8 @@ class ExportadorDatos:
                 hora_recreo2_tarde=ExportadorDatos._deserializar_hora(
                     config_data.get("hora_recreo2_tarde")
                 ),
-                activar_festivos_automaticos=config_data.get(
-                    "activar_festivos_automaticos", True
-                ),
-                dias_no_lectivos_personalizados=config_data.get(
-                    "dias_no_lectivos_personalizados"
-                ),
+                activar_festivos_automaticos=config_data.get("activar_festivos_automaticos", True),
+                dias_no_lectivos_personalizados=config_data.get("dias_no_lectivos_personalizados"),
                 recreos_config=config_data.get("recreos_config"),
                 ajuste_tutores=config_data.get("ajuste_tutores", 1.0),
                 ajuste_no_tutores=config_data.get("ajuste_no_tutores", 1.0),
@@ -673,18 +665,12 @@ class ExportadorDatos:
                     # Compatibilidad con formato antiguo
                     nombre_completo = f"{g_data['profesor_apellidos']}, {g_data['profesor_nombre']}"
                     profesor = (
-                        session.query(Profesor)
-                        .filter_by(nombre_completo=nombre_completo)
-                        .first()
+                        session.query(Profesor).filter_by(nombre_completo=nombre_completo).first()
                     )
                     profesor_id = profesor.id if profesor else None
 
             if not zona_id and g_data.get("zona_nombre"):
-                zona = (
-                    session.query(Zona)
-                    .filter_by(nombre_zona=g_data["zona_nombre"])
-                    .first()
-                )
+                zona = session.query(Zona).filter_by(nombre_zona=g_data["zona_nombre"]).first()
                 zona_id = zona.id if zona else None
 
             if profesor_id and zona_id:  # Solo crear si tenemos ambos IDs
@@ -815,9 +801,7 @@ class ExportadorDatos:
                     # Formato antiguo, crear con autoincremento
                     ausencia = Ausencia(
                         profesor_id=profesor_id,
-                        fecha_inicio=ExportadorDatos._deserializar_fecha(
-                            a_data["fecha_inicio"]
-                        ),
+                        fecha_inicio=ExportadorDatos._deserializar_fecha(a_data["fecha_inicio"]),
                         fecha_fin=ExportadorDatos._deserializar_fecha(a_data["fecha_fin"]),
                         tipo=a_data["tipo"],
                         motivo=a_data.get("motivo"),
@@ -1040,7 +1024,7 @@ class ExportadorDatos:
 
         from datetime import datetime
 
-        from models.models import CursoEscolar
+        from infrastructure.database.models import CursoEscolar
 
         try:
             if limpiar:
@@ -1064,12 +1048,22 @@ class ExportadorDatos:
                         existe.fecha_cierre = datetime.fromisoformat(curso["fecha_cierre"])
                 else:
                     # Crear nuevo
+                    fecha_creacion = (
+                        datetime.fromisoformat(curso["fecha_creacion"])
+                        if curso.get("fecha_creacion")
+                        else datetime.now()
+                    )
+                    fecha_cierre = (
+                        datetime.fromisoformat(curso["fecha_cierre"])
+                        if curso.get("fecha_cierre")
+                        else None
+                    )
                     nuevo_curso = CursoEscolar(
                         nombre=nombre,
                         activo=curso.get("activo", False),
                         cerrado=curso.get("cerrado", False),
-                        fecha_creacion=datetime.fromisoformat(curso["fecha_creacion"]) if curso.get("fecha_creacion") else datetime.now(),
-                        fecha_cierre=datetime.fromisoformat(curso["fecha_cierre"]) if curso.get("fecha_cierre") else None,
+                        fecha_creacion=fecha_creacion,
+                        fecha_cierre=fecha_cierre,
                     )
                     session.add(nuevo_curso)
 
@@ -1125,9 +1119,7 @@ class ExportadorDatos:
 
         # Importar usuarios (perfiles)
         if "usuarios" in datos:
-            resultado["usuarios"] = ExportadorDatos.importar_usuarios(
-                datos["usuarios"], limpiar
-            )
+            resultado["usuarios"] = ExportadorDatos.importar_usuarios(datos["usuarios"], limpiar)
 
         # Importar cursos escolares
         if "cursos_escolares" in datos:
@@ -1142,16 +1134,12 @@ class ExportadorDatos:
             )
 
         if "zonas" in datos:
-            resultado["zonas"] = ExportadorDatos.importar_zonas(
-                session, datos["zonas"], limpiar
-            )
+            resultado["zonas"] = ExportadorDatos.importar_zonas(session, datos["zonas"], limpiar)
 
         if "configuracion" in datos:
             resultado["configuracion"] = (
                 1
-                if ExportadorDatos.importar_configuracion(
-                    session, datos["configuracion"], limpiar
-                )
+                if ExportadorDatos.importar_configuracion(session, datos["configuracion"], limpiar)
                 else 0
             )
 

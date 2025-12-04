@@ -5,10 +5,9 @@ Clase base para todos los formularios de la aplicación.
 Proporciona funcionalidad común y establece el patrón MVP.
 """
 
+from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from PyQt6.QtWidgets import QMessageBox, QWidget
 from sqlalchemy.orm import Session
-
-from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
 from utils.ui_helpers import (
     MESSAGEBOX_STYLE,
@@ -164,9 +163,7 @@ class BaseForm(QWidget):
         # Aplicar icono corporativo
         apply_corporate_icon_to_messagebox(msg_box)
 
-        msg_box.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
 
         # Aplicar estilos directamente a los botones
@@ -176,8 +173,12 @@ class BaseForm(QWidget):
         self.logger.info(f"Confirmación solicitada: {titulo} - Confirmado: {confirmado}")
         return confirmado
 
-    def mostrar_pregunta(self, titulo: str, mensaje: str,
-                         botones=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No):
+    def mostrar_pregunta(
+        self,
+        titulo: str,
+        mensaje: str,
+        botones=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+    ):
         """
         Muestra una pregunta al usuario con icono corporativo.
 
@@ -221,23 +222,19 @@ class BaseForm(QWidget):
         """
         if isinstance(exception, ValidationError):
             self.mostrar_error(
-                "Error de Validación",
-                f"Los datos ingresados no son válidos:\n\n{str(exception)}"
+                "Error de Validación", f"Los datos ingresados no son válidos:\n\n{str(exception)}"
             )
         elif isinstance(exception, NotFoundError):
             self.mostrar_error(
-                "No Encontrado",
-                f"El elemento solicitado no existe:\n\n{str(exception)}"
+                "No Encontrado", f"El elemento solicitado no existe:\n\n{str(exception)}"
             )
         elif isinstance(exception, BusinessLogicError):
             self.mostrar_error(
-                "Error de Negocio",
-                f"No se puede completar la operación:\n\n{str(exception)}"
+                "Error de Negocio", f"No se puede completar la operación:\n\n{str(exception)}"
             )
         else:
             self.mostrar_error(
-                f"Error en {operacion}",
-                f"Ha ocurrido un error inesperado:\n\n{str(exception)}"
+                f"Error en {operacion}", f"Ha ocurrido un error inesperado:\n\n{str(exception)}"
             )
             self.logger.exception(
                 f"Excepción no manejada en {operacion}: {type(exception).__name__}"

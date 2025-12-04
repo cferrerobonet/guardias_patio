@@ -27,32 +27,36 @@ def find_n1_patterns(file_path: Path) -> List[Tuple[int, str, str]]:
     """
     patterns = []
 
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
     for i, line in enumerate(lines, 1):
         # Patrón 1: session.query().get() dentro de un loop
-        if re.search(r'session\.query\(.*\)\.get\(', line):
+        if re.search(r"session\.query\(.*\)\.get\(", line):
             # Buscar si está en un loop (for/while en líneas anteriores cercanas)
             context_start = max(0, i - 5)
-            context = ''.join(lines[context_start:i])
-            if re.search(r'\b(for|while)\b', context):
+            context = "".join(lines[context_start:i])
+            if re.search(r"\b(for|while)\b", context):
                 patterns.append((i, "session.query().get() en loop", line.strip()))
 
         # Patrón 2: Acceso a relaciones sin eager loading
-        if re.search(r'\.(profesor|zona|guardia|ausencia)\b(?!\s*=)', line):
+        if re.search(r"\.(profesor|zona|guardia|ausencia)\b(?!\s*=)", line):
             # Verificar si está después de un .all() o .filter()
             context_start = max(0, i - 10)
-            context = ''.join(lines[context_start:i])
-            if re.search(r'\.(all|filter)\(\)', context) and 'joinedload' not in context and 'selectinload' not in context:
+            context = "".join(lines[context_start:i])
+            if (
+                re.search(r"\.(all|filter)\(\)", context)
+                and "joinedload" not in context
+                and "selectinload" not in context
+            ):
                 patterns.append((i, "Acceso a relación sin eager loading", line.strip()))
 
         # Patrón 3: Loop sobre resultados con acceso a FK
-        if 'for ' in line and re.search(r'\b(guardias|profesores|ausencias|zonas)\b', line):
+        if "for " in line and re.search(r"\b(guardias|profesores|ausencias|zonas)\b", line):
             # Buscar accesos a relaciones en las siguientes líneas
             context_end = min(len(lines), i + 10)
-            next_context = ''.join(lines[i:context_end])
-            if re.search(r'\.(profesor|zona|guardia)\.', next_context):
+            next_context = "".join(lines[i:context_end])
+            if re.search(r"\.(profesor|zona|guardia)\.", next_context):
                 patterns.append((i, "Loop con acceso a FK sin eager loading", line.strip()))
 
     return patterns
@@ -151,9 +155,11 @@ def main():
 
     # Resumen
     total_files = len(repo_results) + len(uc_results) + len(service_results)
-    total_patterns = sum(len(p) for p in repo_results.values()) + \
-                     sum(len(p) for p in uc_results.values()) + \
-                     sum(len(p) for p in service_results.values())
+    total_patterns = (
+        sum(len(p) for p in repo_results.values())
+        + sum(len(p) for p in uc_results.values())
+        + sum(len(p) for p in service_results.values())
+    )
 
     print(f"\n{BLUE}📊 RESUMEN{RESET}")
     print("=" * 80)

@@ -68,8 +68,7 @@ class GuardiaEntity:
         """Validación post-construcción."""
         if not self.es_valida():
             raise GuardiaInvalidaError(
-                guardia_id=self.id,
-                message="La guardia no es válida: faltan datos requeridos"
+                guardia_id=self.id, message="La guardia no es válida: faltan datos requeridos"
             )
 
     @property
@@ -115,7 +114,7 @@ class GuardiaEntity:
             and self.recreo > 0
         )
 
-    def es_mismo_momento(self, otra: 'GuardiaEntity') -> bool:
+    def es_mismo_momento(self, otra: "GuardiaEntity") -> bool:
         """
         Verifica si dos guardias son en el mismo momento.
 
@@ -125,13 +124,9 @@ class GuardiaEntity:
         Returns:
             True si son en la misma fecha, turno y recreo
         """
-        return (
-            self.fecha == otra.fecha
-            and self.turno == otra.turno
-            and self.recreo == otra.recreo
-        )
+        return self.fecha == otra.fecha and self.turno == otra.turno and self.recreo == otra.recreo
 
-    def conflicto_con(self, otra: 'GuardiaEntity') -> bool:
+    def conflicto_con(self, otra: "GuardiaEntity") -> bool:
         """
         Verifica si hay conflicto con otra guardia.
 
@@ -164,7 +159,7 @@ class GuardiaEntity:
 
         return False
 
-    def verificar_sin_conflicto(self, otra: 'GuardiaEntity') -> None:
+    def verificar_sin_conflicto(self, otra: "GuardiaEntity") -> None:
         """
         Verifica que no haya conflicto con otra guardia.
 
@@ -179,13 +174,13 @@ class GuardiaEntity:
                 raise GuardiaConflictError(
                     guardia_id=self.id,
                     fecha=self.fecha,
-                    message=f"El profesor {self.profesor_id} ya tiene guardia en este momento"
+                    message=f"El profesor {self.profesor_id} ya tiene guardia en este momento",
                 )
             if self.zona_id == otra.zona_id:
                 raise GuardiaConflictError(
                     guardia_id=self.id,
                     fecha=self.fecha,
-                    message=f"La zona {self.zona_id} ya está ocupada en este momento"
+                    message=f"La zona {self.zona_id} ya está ocupada en este momento",
                 )
 
     def marcar_como_sustitucion(self, profesor_sustituido_id: int) -> None:

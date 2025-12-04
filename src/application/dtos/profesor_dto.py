@@ -5,10 +5,14 @@ Data Transfer Objects para operaciones con profesores.
 Validan datos de entrada/salida sin exponer entidades de dominio.
 """
 
+import re
 from datetime import date
 from typing import Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
+
+# Patrón RFC 5322 simplificado para validar emails
+EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 
 class ProfesorDTO(BaseModel):
@@ -39,6 +43,7 @@ class ProfesorDTO(BaseModel):
 
     class Config:
         """Configuración de Pydantic."""
+
         from_attributes = True  # Permite crear desde objetos con atributos
 
 
@@ -62,7 +67,7 @@ class CrearProfesorDTO(BaseModel):
         default_factory=lambda: [1, 2, 3, 4]
     )
 
-    @field_validator("dias_semana_permitidos", mode='before')
+    @field_validator("dias_semana_permitidos", mode="before")
     @classmethod
     def validar_dias_semana(cls, v) -> list[int]:
         """Valida que los días de la semana estén entre 0 y 4 (solo días laborables)."""
@@ -74,7 +79,7 @@ class CrearProfesorDTO(BaseModel):
             raise ValueError("Los días de la semana deben estar entre 0 (lunes) y 6 (domingo)")
         return v
 
-    @field_validator("recreos_permitidos", mode='before')
+    @field_validator("recreos_permitidos", mode="before")
     @classmethod
     def validar_recreos(cls, v) -> Union[list[int], dict[int, list[int]]]:
         """Valida recreos (lista simple o diccionario por día)."""
@@ -104,7 +109,6 @@ class CrearProfesorDTO(BaseModel):
             return v
         raise ValueError("recreos_permitidos debe ser lista o diccionario")
 
-
     @field_validator("horas_manana", "horas_tarde")
     @classmethod
     def validar_horas_turno(cls, v: Optional[float], info) -> Optional[float]:
@@ -130,6 +134,14 @@ class ActualizarProfesorDTO(BaseModel):
     dias_semana_permitidos: Optional[list[int]] = None
     # Acepta lista [1,2,3,4] o dict {"0": [1,2], "1": [3,4]} para restricciones por día
     recreos_permitidos: Optional[Union[list[int], dict[int, list[int]]]] = None
+
+    @field_validator("email_corporativo")
+    @classmethod
+    def validar_email(cls, v: Optional[str]) -> Optional[str]:
+        """Valida que el email tenga formato válido."""
+        if v is not None and not EMAIL_PATTERN.match(v):
+            raise ValueError(f"El email '{v}' no tiene un formato válido")
+        return v
 
     @field_validator("dias_semana_permitidos")
     @classmethod

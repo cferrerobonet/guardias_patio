@@ -20,14 +20,14 @@ class TestInfraestructura:
         """Verificar que la fixture de sesión funciona."""
         assert session is not None
         # La sesión debe estar vacía al inicio
-        from models.models import Profesor
+        from infrastructure.database.models import Profesor
 
         count = session.query(Profesor).count()
         assert count == 0
 
     def test_fixture_db_with_data(self, db_with_data):
         """Verificar que la fixture con datos funciona."""
-        from models.models import Profesor, Zona
+        from infrastructure.database.models import Profesor, Zona
 
         # Debe tener 3 profesores
         profesores = db_with_data.query(Profesor).all()

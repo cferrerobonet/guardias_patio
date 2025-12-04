@@ -9,10 +9,9 @@ Este widget encapsula los campos fundamentales del profesor:
 
 from typing import Tuple
 
+import ui_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QGroupBox, QLabel, QLineEdit, QVBoxLayout
-
-import ui_styles as styles
 from utils.validators import validar_email, validar_nombre_completo
 
 
@@ -77,7 +76,9 @@ class DatosBasicosWidget(QGroupBox):
 
         # Tutor
         self.tutor_checkbox = QCheckBox("✓ Es tutor/a")
-        self.tutor_checkbox.setStyleSheet("font-size: 13px; margin-top: 2px;")  # Reducido de 5px a 2px
+        self.tutor_checkbox.setStyleSheet(
+            "font-size: 13px; margin-top: 2px;"
+        )  # Reducido de 5px a 2px
         self.tutor_checkbox.setToolTip(
             "Marca si el profesor es tutor de un grupo\n"
             "Los tutores pueden tener un ajuste de carga diferente"

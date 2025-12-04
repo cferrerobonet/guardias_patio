@@ -8,8 +8,7 @@ from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
-
-from models.models import Guardia
+from infrastructure.database.models import Guardia
 from presentation.widgets.panel_estadisticas import MplCanvas, PanelEstadisticas
 
 # ============================================================================
@@ -29,13 +28,12 @@ def datos_completos(session, profesor_factory, zona_factory):
     """Fixture con profesores, zonas y guardias para tests completos."""
     # Crear 5 profesores
     profesores = [
-        profesor_factory(nombre_completo=f"Profesor {i}", horas_contrato=25.0)
-        for i in range(1, 6)
+        profesor_factory(nombre_completo=f"Profesor {i}", horas_contrato=25.0) for i in range(1, 6)
     ]
     session.add_all(profesores)
 
     # Crear 3 zonas
-    zonas = [zona_factory(nombre_zona=f"Zona {chr(65+i)}") for i in range(3)]
+    zonas = [zona_factory(nombre_zona=f"Zona {chr(65 + i)}") for i in range(3)]
     session.add_all(zonas)
     session.commit()
 
@@ -123,7 +121,7 @@ class TestPanelEstadisticasBasico:
     def test_tiene_tablas(self, panel):
         """Test que tiene las tablas de profesores y zonas."""
         assert panel.tabla_profesores is not None
-        assert panel.tabla_profesores.columnCount() == 6
+        assert panel.tabla_profesores.columnCount() == 8
 
         assert panel.tabla_zonas is not None
         assert panel.tabla_zonas.columnCount() == 4
@@ -146,7 +144,7 @@ class TestPanelEstadisticasResumen:
 
     def test_actualizar_resumen_sin_datos(self, panel):
         """Test resumen cuando no hay datos."""
-        panel.actualizar_resumen()
+        panel.actualizar_estadisticas()
 
         assert "Total Guardias: 0" in panel.label_total_guardias.text()
         assert "Profesores Activos: 0" in panel.label_total_profesores.text()
@@ -156,7 +154,7 @@ class TestPanelEstadisticasResumen:
 
     def test_actualizar_resumen_con_datos(self, panel, datos_completos):
         """Test resumen con datos completos."""
-        panel.actualizar_resumen()
+        panel.actualizar_estadisticas()
 
         # Total guardias: 10 + 6 + 4 = 20
         assert "Total Guardias: 20" in panel.label_total_guardias.text()
@@ -172,7 +170,7 @@ class TestPanelEstadisticasResumen:
 
     def test_actualizar_resumen_info_detalles(self, panel, datos_completos):
         """Test que muestra detalles de mañana/tarde."""
-        panel.actualizar_resumen()
+        panel.actualizar_estadisticas()
 
         info = panel.label_info.text()
 
@@ -187,7 +185,7 @@ class TestPanelEstadisticasResumen:
 
     def test_actualizar_resumen_porcentajes(self, panel, datos_completos):
         """Test que calcula porcentajes correctamente."""
-        panel.actualizar_resumen()
+        panel.actualizar_estadisticas()
 
         info = panel.label_info.text()
 
@@ -208,20 +206,20 @@ class TestPanelEstadisticasTablaProfesores:
 
     def test_actualizar_tabla_profesores_vacia(self, panel):
         """Test tabla cuando no hay profesores."""
-        panel.actualizar_tabla_profesores()
+        panel.actualizar_estadisticas()
 
         assert panel.tabla_profesores.rowCount() == 0
 
     def test_actualizar_tabla_profesores_con_datos(self, panel, datos_completos):
         """Test tabla con datos."""
-        panel.actualizar_tabla_profesores()
+        panel.actualizar_estadisticas()
 
         # Debe haber 5 profesores
         assert panel.tabla_profesores.rowCount() == 5
 
     def test_tabla_profesores_columnas_correctas(self, panel, datos_completos):
         """Test que las columnas tienen datos correctos."""
-        panel.actualizar_tabla_profesores()
+        panel.actualizar_estadisticas()
 
         # Verificar primera fila (Profesor 1: 10 guardias)
         assert "Profesor 1" in panel.tabla_profesores.item(0, 0).text()
@@ -231,7 +229,7 @@ class TestPanelEstadisticasTablaProfesores:
 
     def test_tabla_profesores_porcentajes(self, panel, datos_completos):
         """Test que calcula porcentajes correctamente."""
-        panel.actualizar_tabla_profesores()
+        panel.actualizar_estadisticas()
 
         # Profesor 1: 10 de 20 = 50%
         porcentaje = panel.tabla_profesores.item(0, 4).text()
@@ -243,7 +241,7 @@ class TestPanelEstadisticasTablaProfesores:
 
     def test_tabla_profesores_estados(self, panel, datos_completos):
         """Test que asigna estados correctamente."""
-        panel.actualizar_tabla_profesores()
+        panel.actualizar_estadisticas()
 
         # Profesor 1: 10 guardias → "✅ Asignado"
         assert "✅" in panel.tabla_profesores.item(0, 5).text()
@@ -272,7 +270,7 @@ class TestPanelEstadisticasTablaProfesores:
             session.add(g)
         session.commit()
 
-        panel.actualizar_tabla_profesores()
+        panel.actualizar_estadisticas()
 
         # Debe tener estado "⚠️ Pocas guardias"
         encontrado = False
@@ -295,25 +293,22 @@ class TestPanelEstadisticasTablaZonas:
 
     def test_actualizar_tabla_zonas_vacia(self, panel):
         """Test tabla cuando no hay zonas."""
-        panel.actualizar_tabla_zonas()
+        panel.actualizar_estadisticas()
 
         assert panel.tabla_zonas.rowCount() == 0
 
     def test_actualizar_tabla_zonas_con_datos(self, panel, datos_completos):
         """Test tabla con datos."""
-        panel.actualizar_tabla_zonas()
+        panel.actualizar_estadisticas()
 
         # Debe haber 3 zonas
         assert panel.tabla_zonas.rowCount() == 3
 
     def test_tabla_zonas_nombre(self, panel, datos_completos):
         """Test que muestra nombres de zonas."""
-        panel.actualizar_tabla_zonas()
+        panel.actualizar_estadisticas()
 
-        nombres = [
-            panel.tabla_zonas.item(i, 0).text()
-            for i in range(panel.tabla_zonas.rowCount())
-        ]
+        nombres = [panel.tabla_zonas.item(i, 0).text() for i in range(panel.tabla_zonas.rowCount())]
 
         assert "Zona A" in nombres
         assert "Zona B" in nombres
@@ -321,7 +316,7 @@ class TestPanelEstadisticasTablaZonas:
 
     def test_tabla_zonas_total_guardias(self, panel, datos_completos):
         """Test que cuenta guardias por zona correctamente."""
-        panel.actualizar_tabla_zonas()
+        panel.actualizar_estadisticas()
 
         # Cada zona debería tener ~6-7 guardias (20 total / 3 zonas)
         totales = []
@@ -336,7 +331,7 @@ class TestPanelEstadisticasTablaZonas:
 
     def test_tabla_zonas_profesores_diferentes(self, panel, datos_completos):
         """Test que cuenta profesores diferentes por zona."""
-        panel.actualizar_tabla_zonas()
+        panel.actualizar_estadisticas()
 
         # Cada zona debe tener 3 profesores diferentes (prof1, prof2, prof3)
         for i in range(panel.tabla_zonas.rowCount()):
@@ -355,11 +350,11 @@ class TestPanelEstadisticasGraficos:
     def test_actualizar_graficos_sin_datos(self, panel):
         """Test que maneja gráficos sin datos."""
         # No debería crashear
-        panel.actualizar_graficos()
+        panel.actualizar_estadisticas()
 
     def test_actualizar_graficos_con_datos(self, panel, datos_completos):
         """Test que genera gráficos con datos."""
-        panel.actualizar_graficos()
+        panel.actualizar_estadisticas()
 
         # Verificar que los canvas tienen datos
         assert panel.canvas_profesores.axes is not None
@@ -367,21 +362,21 @@ class TestPanelEstadisticasGraficos:
 
     def test_grafico_profesores_tipo_barras(self, panel, datos_completos):
         """Test que el gráfico de profesores es de barras."""
-        panel.actualizar_graficos()
+        panel.actualizar_estadisticas()
 
         # Verificar que hay barras (containers)
         assert len(panel.canvas_profesores.axes.containers) > 0
 
     def test_grafico_zonas_tipo_pastel(self, panel, datos_completos):
         """Test que el gráfico de zonas es de pastel."""
-        panel.actualizar_graficos()
+        panel.actualizar_estadisticas()
 
         # Verificar que hay un gráfico de pastel (patches)
         assert len(panel.canvas_zonas.axes.patches) > 0
 
     def test_grafico_profesores_solo_con_guardias(self, panel, datos_completos):
         """Test que solo muestra profesores con guardias."""
-        panel.actualizar_graficos()
+        panel.actualizar_estadisticas()
 
         # Debería mostrar solo 3 profesores (los que tienen guardias)
         bars = panel.canvas_profesores.axes.containers[0]
@@ -407,7 +402,7 @@ class TestPanelEstadisticasGraficos:
         session.add(g)
         session.commit()
 
-        panel.actualizar_graficos()
+        panel.actualizar_estadisticas()
 
         # Nombres deben estar truncados a 15 caracteres
         labels = [tick.get_text() for tick in panel.canvas_profesores.axes.get_xticklabels()]
@@ -438,7 +433,7 @@ class TestPanelEstadisticasActualizar:
 
     def test_actualizar_estadisticas_maneja_excepciones(self, panel):
         """Test que maneja excepciones al actualizar."""
-        with patch.object(panel, "actualizar_resumen", side_effect=Exception("Error")):
+        with patch.object(panel._use_case, "execute", side_effect=Exception("Error")):
             with patch.object(panel, "manejar_excepcion") as mock_manejar:
                 panel.actualizar_estadisticas()
                 mock_manejar.assert_called_once()
@@ -554,8 +549,7 @@ class TestPanelEstadisticasRendimiento:
 
         # Crear muchos datos
         profesores = [
-            profesor_factory(nombre_completo=f"Prof {i}", horas_contrato=25.0)
-            for i in range(20)
+            profesor_factory(nombre_completo=f"Prof {i}", horas_contrato=25.0) for i in range(20)
         ]
         zonas = [zona_factory(nombre_zona=f"Zona {i}") for i in range(5)]
         session.add_all(profesores + zonas)
@@ -590,8 +584,7 @@ class TestPanelEstadisticasRendimiento:
 
         # Crear datos
         profesores = [
-            profesor_factory(nombre_completo=f"Prof {i}", horas_contrato=25.0)
-            for i in range(30)
+            profesor_factory(nombre_completo=f"Prof {i}", horas_contrato=25.0) for i in range(30)
         ]
         zonas = [zona_factory(nombre_zona=f"Zona {i}") for i in range(10)]
         session.add_all(profesores + zonas)

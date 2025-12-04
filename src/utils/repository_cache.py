@@ -50,13 +50,16 @@ def cache_repository_query(ttl: int = 300, cache_key_prefix: str = ""):
         def obtener_configuracion(self):
             return self.session.query(Configuracion).first()
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Aplicar cache_query subyacente
             cached_func = cache_query(ttl=ttl)(func)
             return cached_func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 

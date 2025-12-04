@@ -47,7 +47,7 @@ def convertir_recreo_string_a_int(recreo_str: str) -> int:
         "1" -> 1
     """
     # Intentar extraer el número del string
-    match = re.search(r'\d+', recreo_str)
+    match = re.search(r"\d+", recreo_str)
     if match:
         return int(match.group())
 
@@ -130,9 +130,9 @@ def corregir_recreos_permitidos(recreos_json: str) -> tuple[str, bool]:
 
 def migrar_base_datos(db_path: str):
     """Ejecuta la migración en una base de datos específica."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"Migrando base de datos: {db_path}")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
     # Crear engine y sesión
     engine = create_engine(f"sqlite:///{db_path}")
@@ -141,13 +141,15 @@ def migrar_base_datos(db_path: str):
 
     try:
         # Obtener todos los profesores con recreos_permitidos
-        result = session.execute(text("""
+        result = session.execute(
+            text("""
             SELECT id, nombre_completo, recreos_permitidos
             FROM profesores
             WHERE recreos_permitidos IS NOT NULL
             AND recreos_permitidos != ''
             ORDER BY id
-        """))
+        """)
+        )
 
         profesores = result.fetchall()
         total = len(profesores)
@@ -172,7 +174,7 @@ def migrar_base_datos(db_path: str):
                 try:
                     session.execute(
                         text("UPDATE profesores SET recreos_permitidos = :nuevo WHERE id = :id"),
-                        {"nuevo": nuevo_json, "id": profesor_id}
+                        {"nuevo": nuevo_json, "id": profesor_id},
                     )
                     modificados += 1
                 except Exception as e:
@@ -187,24 +189,25 @@ def migrar_base_datos(db_path: str):
         # Confirmar cambios
         if modificados > 0:
             session.commit()
-            print(f"\n{'='*80}")
+            print(f"\n{'=' * 80}")
             print("✅ Migración completada exitosamente")
-            print(f"{'='*80}")
+            print(f"{'=' * 80}")
             print("📊 Resumen:")
             print(f"   - Total procesados: {total}")
             print(f"   - Modificados: {modificados}")
             print(f"   - Sin cambios: {sin_cambios}")
             print(f"   - Errores: {errores}")
-            print(f"{'='*80}\n")
+            print(f"{'=' * 80}\n")
         else:
-            print(f"\n{'='*80}")
+            print(f"\n{'=' * 80}")
             print("ℹ️  No se encontraron registros para modificar")
-            print(f"{'='*80}\n")
+            print(f"{'=' * 80}\n")
 
     except Exception as e:
         session.rollback()
         print(f"\n❌ ERROR durante la migración: {e}")
         import traceback
+
         traceback.print_exc()
     finally:
         session.close()
@@ -212,12 +215,13 @@ def migrar_base_datos(db_path: str):
 
 def main():
     """Función principal."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("🔧 MIGRACIÓN: Recreos de strings a enteros")
-    print("="*80)
+    print("=" * 80)
 
     # Detectar usuario actual (usando el mismo método que el sistema)
     import getpass
+
     username = getpass.getuser()
     user_hash = calcular_hash_usuario(username)
 
@@ -238,7 +242,7 @@ def main():
 
     # Confirmar antes de proceder
     respuesta = input("\n¿Proceder con la migración? (s/N): ").strip().lower()
-    if respuesta not in ['s', 'si', 'sí', 'y', 'yes']:
+    if respuesta not in ["s", "si", "sí", "y", "yes"]:
         print("\n❌ Migración cancelada por el usuario")
         return
 

@@ -7,15 +7,15 @@ Implementación del repositorio de Guardia usando SQLAlchemy.
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import and_
-from sqlalchemy.orm import Session, joinedload
-
 from core.exceptions import DatabaseError, NotFoundError
 from core.logging import get_logger, log_function_call
 from domain.entities import GuardiaEntity
 from domain.repositories import IGuardiaRepository
+from sqlalchemy import and_
+from sqlalchemy.orm import Session, joinedload
+
+from infrastructure.database.models import Guardia
 from infrastructure.mappers import GuardiaMapper
-from models.models import Guardia
 
 logger = get_logger(__name__)
 
@@ -55,10 +55,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
         try:
             models = (
                 self.session.query(Guardia)
-                .options(
-                    joinedload(Guardia.profesor),
-                    joinedload(Guardia.zona)
-                )
+                .options(joinedload(Guardia.profesor), joinedload(Guardia.zona))
                 .all()
             )
             return self.mapper.to_entities(models)
@@ -114,16 +111,11 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
         """Verifica si existe una guardia por ID."""
         try:
             return (
-                self.session.query(Guardia.id)
-                .filter(Guardia.id == entity_id)
-                .first()
-                is not None
+                self.session.query(Guardia.id).filter(Guardia.id == entity_id).first() is not None
             )
         except Exception as e:
             logger.error(
-                "Error al verificar existencia de guardia",
-                guardia_id=entity_id,
-                error=str(e)
+                "Error al verificar existencia de guardia", guardia_id=entity_id, error=str(e)
             )
             raise DatabaseError(f"Error al verificar guardia {entity_id}: {e}") from e
 
@@ -143,10 +135,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
         try:
             models = (
                 self.session.query(Guardia)
-                .options(
-                    joinedload(Guardia.profesor),
-                    joinedload(Guardia.zona)
-                )
+                .options(joinedload(Guardia.profesor), joinedload(Guardia.zona))
                 .filter(Guardia.fecha == fecha)
                 .all()
             )
@@ -168,9 +157,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             return self.mapper.to_entities(models)
         except Exception as e:
             logger.error(
-                "Error al buscar guardias por profesor",
-                profesor_id=profesor_id,
-                error=str(e)
+                "Error al buscar guardias por profesor", profesor_id=profesor_id, error=str(e)
             )
             raise DatabaseError(f"Error al buscar guardias por profesor: {e}") from e
 
@@ -186,30 +173,19 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             )
             return self.mapper.to_entities(models)
         except Exception as e:
-            logger.error(
-                "Error al buscar guardias por zona",
-                zona_id=zona_id,
-                error=str(e)
-            )
+            logger.error("Error al buscar guardias por zona", zona_id=zona_id, error=str(e))
             raise DatabaseError(f"Error al buscar guardias por zona: {e}") from e
 
     @log_function_call()
     def find_by_fecha_turno_recreo(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int
+        self, fecha: date, turno: str, recreo: int
     ) -> list[GuardiaEntity]:
         """Obtiene todas las guardias de un momento específico."""
         try:
             models = (
                 self.session.query(Guardia)
                 .filter(
-                    and_(
-                        Guardia.fecha == fecha,
-                        Guardia.turno == turno,
-                        Guardia.recreo == recreo
-                    )
+                    and_(Guardia.fecha == fecha, Guardia.turno == turno, Guardia.recreo == recreo)
                 )
                 .all()
             )
@@ -220,26 +196,17 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 fecha=fecha,
                 turno=turno,
                 recreo=recreo,
-                error=str(e)
+                error=str(e),
             )
             raise DatabaseError(f"Error al buscar guardias por momento: {e}") from e
 
     @log_function_call()
-    def find_by_rango_fechas(
-        self,
-        fecha_inicio: date,
-        fecha_fin: date
-    ) -> list[GuardiaEntity]:
+    def find_by_rango_fechas(self, fecha_inicio: date, fecha_fin: date) -> list[GuardiaEntity]:
         """Obtiene guardias en un rango de fechas."""
         try:
             models = (
                 self.session.query(Guardia)
-                .filter(
-                    and_(
-                        Guardia.fecha >= fecha_inicio,
-                        Guardia.fecha <= fecha_fin
-                    )
-                )
+                .filter(and_(Guardia.fecha >= fecha_inicio, Guardia.fecha <= fecha_fin))
                 .order_by(Guardia.fecha, Guardia.turno, Guardia.recreo)
                 .all()
             )
@@ -249,16 +216,12 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 "Error al buscar guardias por rango",
                 fecha_inicio=fecha_inicio,
                 fecha_fin=fecha_fin,
-                error=str(e)
+                error=str(e),
             )
             raise DatabaseError(f"Error al buscar guardias por rango: {e}") from e
 
     def existe_guardia_profesor_en_momento(
-        self,
-        profesor_id: int,
-        fecha: date,
-        turno: str,
-        recreo: int
+        self, profesor_id: int, fecha: date, turno: str, recreo: int
     ) -> bool:
         """Verifica si un profesor tiene guardia en un momento específico."""
         try:
@@ -269,7 +232,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                         Guardia.profesor_id == profesor_id,
                         Guardia.fecha == fecha,
                         Guardia.turno == turno,
-                        Guardia.recreo == recreo
+                        Guardia.recreo == recreo,
                     )
                 )
                 .first()
@@ -282,16 +245,12 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 fecha=fecha,
                 turno=turno,
                 recreo=recreo,
-                error=str(e)
+                error=str(e),
             )
             raise DatabaseError(f"Error al verificar guardia de profesor: {e}") from e
 
     def existe_guardia_zona_en_momento(
-        self,
-        zona_id: int,
-        fecha: date,
-        turno: str,
-        recreo: int
+        self, zona_id: int, fecha: date, turno: str, recreo: int
     ) -> bool:
         """Verifica si una zona tiene alguna guardia en un momento específico."""
         try:
@@ -302,7 +261,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                         Guardia.zona_id == zona_id,
                         Guardia.fecha == fecha,
                         Guardia.turno == turno,
-                        Guardia.recreo == recreo
+                        Guardia.recreo == recreo,
                     )
                 )
                 .first()
@@ -315,7 +274,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 fecha=fecha,
                 turno=turno,
                 recreo=recreo,
-                error=str(e)
+                error=str(e),
             )
             raise DatabaseError(f"Error al verificar guardia de zona: {e}") from e
 
@@ -323,35 +282,20 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
     def contar_guardias_profesor(self, profesor_id: int) -> int:
         """Cuenta el total de guardias de un profesor."""
         try:
-            return (
-                self.session.query(Guardia)
-                .filter(Guardia.profesor_id == profesor_id)
-                .count()
-            )
+            return self.session.query(Guardia).filter(Guardia.profesor_id == profesor_id).count()
         except Exception as e:
             logger.error(
-                "Error al contar guardias de profesor",
-                profesor_id=profesor_id,
-                error=str(e)
+                "Error al contar guardias de profesor", profesor_id=profesor_id, error=str(e)
             )
             raise DatabaseError(f"Error al contar guardias de profesor: {e}") from e
 
     @log_function_call()
-    def contar_guardias_profesor_en_fecha(
-        self,
-        profesor_id: int,
-        fecha: date
-    ) -> int:
+    def contar_guardias_profesor_en_fecha(self, profesor_id: int, fecha: date) -> int:
         """Cuenta las guardias de un profesor en una fecha específica."""
         try:
             return (
                 self.session.query(Guardia)
-                .filter(
-                    and_(
-                        Guardia.profesor_id == profesor_id,
-                        Guardia.fecha == fecha
-                    )
-                )
+                .filter(and_(Guardia.profesor_id == profesor_id, Guardia.fecha == fecha))
                 .count()
             )
         except Exception as e:
@@ -359,17 +303,12 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 "Error al contar guardias de profesor en fecha",
                 profesor_id=profesor_id,
                 fecha=fecha,
-                error=str(e)
+                error=str(e),
             )
             raise DatabaseError(f"Error al contar guardias de profesor en fecha: {e}") from e
 
     @log_function_call()
-    def delete_by_fecha_turno_recreo(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int
-    ) -> int:
+    def delete_by_fecha_turno_recreo(self, fecha: date, turno: str, recreo: int) -> int:
         """
         Elimina todas las guardias de un momento específico.
 
@@ -380,11 +319,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             count = (
                 self.session.query(Guardia)
                 .filter(
-                    and_(
-                        Guardia.fecha == fecha,
-                        Guardia.turno == turno,
-                        Guardia.recreo == recreo
-                    )
+                    and_(Guardia.fecha == fecha, Guardia.turno == turno, Guardia.recreo == recreo)
                 )
                 .delete()
             )
@@ -396,7 +331,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 fecha=fecha,
                 turno=turno,
                 recreo=recreo,
-                error=str(e)
+                error=str(e),
             )
             raise DatabaseError(f"Error al eliminar guardias por momento: {e}") from e
 

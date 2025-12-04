@@ -24,9 +24,7 @@ class SessionLockedDialog(QDialog):
         self.setModal(True)
         self.setMinimumWidth(550)
         self.setWindowFlags(
-            Qt.WindowType.Dialog |
-            Qt.WindowType.CustomizeWindowHint |
-            Qt.WindowType.WindowTitleHint
+            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )
 
         self._setup_ui()
@@ -139,6 +137,7 @@ class SessionLockedDialog(QDialog):
 
         try:
             from datetime import datetime
+
             dt = datetime.fromisoformat(iso_string)
             return dt.strftime("%d/%m/%Y %H:%M:%S")
         except Exception:

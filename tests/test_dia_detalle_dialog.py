@@ -4,7 +4,7 @@ Tests para DiaDetalleDialog - ventana de detalle de guardias del día.
 
 from datetime import date
 
-from models.models import Ausencia, Guardia
+from infrastructure.database.models import Ausencia, Guardia
 from presentation.dialogs.dia_detalle_dialog import DiaDetalleDialog
 
 
@@ -51,9 +51,7 @@ class TestDiaDetalleDialogBasico:
 class TestDiaDetalleDialogConDatos:
     """Tests con datos reales de guardias, ausencias y sustituciones."""
 
-    def test_crear_dialogo_con_guardias(
-        self, qapp, session, profesor_factory, zona_factory
-    ):
+    def test_crear_dialogo_con_guardias(self, qapp, session, profesor_factory, zona_factory):
         """Crear diálogo con guardias."""
         fecha_test = date(2024, 11, 8)
 
@@ -112,9 +110,7 @@ class TestDiaDetalleDialogConDatos:
         assert len(dialog.ausencias) == 1
         assert dialog.ausencias[0].motivo == "Test ausencia"
 
-    def test_crear_dialogo_con_sustituciones(
-        self, qapp, session, profesor_factory, zona_factory
-    ):
+    def test_crear_dialogo_con_sustituciones(self, qapp, session, profesor_factory, zona_factory):
         """Crear diálogo con sustituciones."""
         fecha_test = date(2024, 11, 8)
 
@@ -147,9 +143,7 @@ class TestDiaDetalleDialogConDatos:
 class TestDiaDetalleDialogResumen:
     """Tests para el resumen estadístico del diálogo."""
 
-    def test_resumen_con_multiples_guardias(
-        self, qapp, session, profesor_factory, zona_factory
-    ):
+    def test_resumen_con_multiples_guardias(self, qapp, session, profesor_factory, zona_factory):
         """Verificar resumen con múltiples guardias."""
         fecha_test = date(2024, 11, 8)
 

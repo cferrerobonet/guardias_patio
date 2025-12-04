@@ -24,10 +24,9 @@ sys.path.insert(0, str(root_dir / "src"))
 
 import hashlib
 
+from database.db_manager import USER_DATA_DIR
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-
-from database.db_manager import USER_DATA_DIR
 
 
 def obtener_recreos_por_defecto(turno: str) -> dict:
@@ -115,9 +114,9 @@ def migrar_recreos_profesores():
         ya_tenian_datos = 0
         errores = []
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("MIGRACIÓN DE RECREOS PERMITIDOS PARA PROFESORES")
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")
         print(f"Total de profesores en BD: {len(profesores_data)}\n")
 
         for prof_id, nombre, turno, recreos_actual in profesores_data:
@@ -162,10 +161,10 @@ def migrar_recreos_profesores():
 
         # Confirmar cambios
         if actualizados > 0:
-            print(f"\n{'-'*70}")
+            print(f"\n{'-' * 70}")
             respuesta = input(f"\n¿Confirmar actualización de {actualizados} profesor(es)? (s/N): ")
 
-            if respuesta.lower() in ['s', 'si', 'sí', 'yes', 'y']:
+            if respuesta.lower() in ["s", "si", "sí", "yes", "y"]:
                 session.commit()
                 print("\n✅ MIGRACIÓN COMPLETADA EXITOSAMENTE")
                 print(f"   • Profesores actualizados: {actualizados}")
@@ -181,7 +180,7 @@ def migrar_recreos_profesores():
             print("\n✓ No hay profesores para actualizar")
             print(f"  Todos los {ya_tenian_datos} profesores ya tienen datos de recreos")
 
-        print(f"\n{'='*70}\n")
+        print(f"\n{'=' * 70}\n")
 
     except Exception as e:
         session.rollback()

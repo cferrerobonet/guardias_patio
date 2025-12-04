@@ -36,7 +36,7 @@ from application.use_cases.asignacion_guardias import (
 from application.use_cases.configuracion import ActualizarConfiguracionUseCase
 from application.use_cases.profesor import CrearProfesorUseCase
 from application.use_cases.zona import CrearZonaUseCase
-from models.models import Base, Guardia
+from infrastructure.database.models import Base, CursoEscolar, Guardia
 
 
 @pytest.fixture
@@ -54,6 +54,22 @@ def session(engine):
     session = SessionLocal()
     yield session
     session.close()
+
+
+@pytest.fixture(autouse=True)
+def curso_activo(session):
+    """Fixture que crea un curso escolar activo."""
+    curso = CursoEscolar(
+        nombre="Curso 2024-2025",
+        anio_inicio=2024,
+        anio_fin=2025,
+        fecha_inicio=date(2024, 9, 1),
+        fecha_fin=date(2025, 6, 30),
+        activo=True,
+    )
+    session.add(curso)
+    session.commit()
+    return curso
 
 
 @pytest.fixture
@@ -428,9 +444,7 @@ class TestIntegrationDistribucion:
 
         # Si hay diferencia, verificar que es razonable (máximo 10% menos)
         if guardias_no_tutor > guardias_tutor:
-            diferencia_porcentaje = (
-                (guardias_no_tutor - guardias_tutor) / guardias_no_tutor * 100
-            )
+            diferencia_porcentaje = (guardias_no_tutor - guardias_tutor) / guardias_no_tutor * 100
             assert diferencia_porcentaje <= 10
 
 
@@ -550,16 +564,8 @@ class TestIntegrationValidacionesAsignador:
         generar_uc.execute()
 
         # Verificar guardias
-        guardias_manana = (
-            session.query(Guardia)
-            .filter(Guardia.profesor_id == prof_manana.id)
-            .all()
-        )
-        guardias_tarde = (
-            session.query(Guardia)
-            .filter(Guardia.profesor_id == prof_tarde.id)
-            .all()
-        )
+        guardias_manana = session.query(Guardia).filter(Guardia.profesor_id == prof_manana.id).all()
+        guardias_tarde = session.query(Guardia).filter(Guardia.profesor_id == prof_tarde.id).all()
 
         # Todas las guardias del profesor de mañana deben ser turno mañana
         for g in guardias_manana:
@@ -621,9 +627,7 @@ class TestIntegrationValidacionesAsignador:
         # Verificar cuotas
         for prof in profs:
             guardias_asignadas = (
-                session.query(Guardia)
-                .filter(Guardia.profesor_id == prof.id)
-                .count()
+                session.query(Guardia).filter(Guardia.profesor_id == prof.id).count()
             )
             cuota = distribucion.distribucion[prof.id]
 
@@ -676,11 +680,7 @@ class TestIntegrationValidacionesAsignador:
         generar_uc.execute()
 
         # Verificar: no debe haber 2 guardias del mismo profesor en la misma fecha
-        guardias = (
-            session.query(Guardia)
-            .filter(Guardia.profesor_id == prof.id)
-            .all()
-        )
+        guardias = session.query(Guardia).filter(Guardia.profesor_id == prof.id).all()
 
         fechas_usadas = set()
         for g in guardias:
@@ -735,11 +735,7 @@ class TestIntegrationValidacionesAsignador:
         generar_uc.execute()
 
         # Verificar no simultaneidad
-        guardias = (
-            session.query(Guardia)
-            .filter(Guardia.profesor_id == prof.id)
-            .all()
-        )
+        guardias = session.query(Guardia).filter(Guardia.profesor_id == prof.id).all()
 
         slots_usados = set()
         for g in guardias:
@@ -960,11 +956,7 @@ class TestIntegrationZonasMultiples:
 
         # Verificar que todas las zonas tienen guardias
         for zona in zonas:
-            count = (
-                session.query(Guardia)
-                .filter(Guardia.zona_id == zona.id)
-                .count()
-            )
+            count = session.query(Guardia).filter(Guardia.zona_id == zona.id).count()
             assert count > 0, f"Zona {zona.nombre_zona} no tiene guardias"
 
     def test_zona_preferida_profesor(
@@ -1013,11 +1005,7 @@ class TestIntegrationZonasMultiples:
         generar_uc.execute()
 
         # Analizar guardias del profesor
-        guardias = (
-            session.query(Guardia)
-            .filter(Guardia.profesor_id == prof.id)
-            .all()
-        )
+        guardias = session.query(Guardia).filter(Guardia.profesor_id == prof.id).all()
 
         # Contar por zona
         zonas_count = {}

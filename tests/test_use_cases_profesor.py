@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 # Tests: CrearProfesorUseCase
 # ============================
 
+
 class TestCrearProfesorUseCase:
     """Tests para el caso de uso de crear profesor."""
 
@@ -56,7 +57,8 @@ class TestCrearProfesorUseCase:
 
         # Verificar en BD - usar expire_all para refrescar objetos en cache
         session.expire_all()
-        from models.models import Profesor
+        from infrastructure.database.models import Profesor
+
         profesor_bd = session.query(Profesor).filter_by(nombre_completo="Juan Pérez García").first()
         assert profesor_bd is not None
         assert profesor_bd.email_corporativo == "juan.perez@colegio.edu"
@@ -113,7 +115,7 @@ class TestCrearProfesorUseCase:
         use_case = CrearProfesorUseCase(session)
 
         # Simular error en flush (el repositorio usa flush, no commit)
-        mocker.patch.object(session, 'flush', side_effect=Exception("DB Error"))
+        mocker.patch.object(session, "flush", side_effect=Exception("DB Error"))
 
         dto = CrearProfesorDTO(
             nombre_completo="Test Error",
@@ -129,6 +131,7 @@ class TestCrearProfesorUseCase:
 # Tests: ActualizarProfesorUseCase
 # ================================
 
+
 class TestActualizarProfesorUseCase:
     """Tests para el caso de uso de actualizar profesor."""
 
@@ -140,9 +143,7 @@ class TestActualizarProfesorUseCase:
 
         use_case = ActualizarProfesorUseCase(session)
 
-        dto = ActualizarProfesorDTO(
-            nombre_completo="Ana María Martínez García"
-        )
+        dto = ActualizarProfesorDTO(nombre_completo="Ana María Martínez García")
 
         resultado = use_case.execute(profesor.id, dto)
 
@@ -152,9 +153,7 @@ class TestActualizarProfesorUseCase:
     def test_actualizar_profesor_email_y_horas(self, session: Session, profesor_factory):
         """Test: actualizar email y horas de contrato."""
         profesor = profesor_factory(
-            nombre_completo="Pedro González",
-            horas_contrato=18.0,
-            email_corporativo=None
+            nombre_completo="Pedro González", horas_contrato=18.0, email_corporativo=None
         )
         session.add(profesor)
         session.commit()
@@ -162,8 +161,7 @@ class TestActualizarProfesorUseCase:
         use_case = ActualizarProfesorUseCase(session)
 
         dto = ActualizarProfesorDTO(
-            email_corporativo="pedro.gonzalez@colegio.edu",
-            horas_contrato=25.0
+            email_corporativo="pedro.gonzalez@colegio.edu", horas_contrato=25.0
         )
 
         resultado = use_case.execute(profesor.id, dto)
@@ -175,21 +173,14 @@ class TestActualizarProfesorUseCase:
     def test_actualizar_profesor_turno(self, session: Session, profesor_factory):
         """Test: actualizar turno de profesor."""
         profesor = profesor_factory(
-            nombre_completo="Laura Fernández",
-            turno="mañana",
-            horas_manana=25.0,
-            horas_tarde=0.0
+            nombre_completo="Laura Fernández", turno="mañana", horas_manana=25.0, horas_tarde=0.0
         )
         session.add(profesor)
         session.commit()
 
         use_case = ActualizarProfesorUseCase(session)
 
-        dto = ActualizarProfesorDTO(
-            turno="mixto",
-            horas_manana=15.0,
-            horas_tarde=10.0
-        )
+        dto = ActualizarProfesorDTO(turno="mixto", horas_manana=15.0, horas_tarde=10.0)
 
         resultado = use_case.execute(profesor.id, dto)
 
@@ -201,9 +192,7 @@ class TestActualizarProfesorUseCase:
         """Test: error al actualizar profesor que no existe."""
         use_case = ActualizarProfesorUseCase(session)
 
-        dto = ActualizarProfesorDTO(
-            nombre_completo="No Existe"
-        )
+        dto = ActualizarProfesorDTO(nombre_completo="No Existe")
 
         with pytest.raises(NotFoundError):
             use_case.execute(9999, dto)
@@ -234,7 +223,7 @@ class TestActualizarProfesorUseCase:
 
         dto = ActualizarProfesorDTO(
             nombre_completo="Mismo Nombre",  # Mismo nombre
-            horas_contrato=20.0  # Cambiar otra cosa
+            horas_contrato=20.0,  # Cambiar otra cosa
         )
 
         resultado = use_case.execute(profesor.id, dto)
@@ -281,8 +270,7 @@ class TestActualizarProfesorUseCase:
         use_case = ActualizarProfesorUseCase(session)
 
         dto = ActualizarProfesorDTO(
-            fecha_inicio_guardias=date(2024, 10, 1),
-            fecha_fin_guardias=date(2025, 5, 31)
+            fecha_inicio_guardias=date(2024, 10, 1), fecha_fin_guardias=date(2025, 5, 31)
         )
 
         resultado = use_case.execute(profesor.id, dto)
@@ -330,9 +318,7 @@ class TestActualizarProfesorUseCase:
 
         use_case = ActualizarProfesorUseCase(session)
 
-        dto = ActualizarProfesorDTO(
-            tutor=True
-        )
+        dto = ActualizarProfesorDTO(tutor=True)
 
         resultado = use_case.execute(profesor.id, dto)
 
@@ -347,11 +333,9 @@ class TestActualizarProfesorUseCase:
         use_case = ActualizarProfesorUseCase(session)
 
         # Simular error en commit
-        mocker.patch.object(session, 'commit', side_effect=Exception("DB Error"))
+        mocker.patch.object(session, "commit", side_effect=Exception("DB Error"))
 
-        dto = ActualizarProfesorDTO(
-            nombre_completo="Nombre Actualizado"
-        )
+        dto = ActualizarProfesorDTO(nombre_completo="Nombre Actualizado")
 
         with pytest.raises(BusinessLogicError, match="Error al actualizar el profesor"):
             use_case.execute(profesor.id, dto)
@@ -360,6 +344,7 @@ class TestActualizarProfesorUseCase:
 # ================================
 # Tests: EliminarProfesorUseCase
 # ================================
+
 
 class TestEliminarProfesorUseCase:
     """Tests para el caso de uso de eliminar profesor."""
@@ -375,7 +360,8 @@ class TestEliminarProfesorUseCase:
         use_case.execute(profesor_id)
 
         # Verificar que fue eliminado
-        from models.models import Profesor
+        from infrastructure.database.models import Profesor
+
         profesor_bd = session.query(Profesor).filter_by(id=profesor_id).first()
         assert profesor_bd is None
 
@@ -410,6 +396,7 @@ class TestEliminarProfesorUseCase:
 # Tests: ObtenerProfesorUseCase
 # ===============================
 
+
 class TestObtenerProfesorUseCase:
     """Tests para el caso de uso de obtener profesor."""
 
@@ -419,7 +406,7 @@ class TestObtenerProfesorUseCase:
             nombre_completo="Profesor a Obtener",
             email_corporativo="obtener@test.com",
             horas_contrato=25.0,
-            turno="mañana"
+            turno="mañana",
         )
         session.add(profesor)
         session.commit()
@@ -444,6 +431,7 @@ class TestObtenerProfesorUseCase:
 # ================================
 # Tests: ListarProfesoresUseCase
 # ================================
+
 
 class TestListarProfesoresUseCase:
     """Tests para el caso de uso de listar profesores."""
@@ -491,6 +479,7 @@ class TestListarProfesoresUseCase:
 # Tests: BuscarProfesoresUseCase
 # =================================
 
+
 class TestBuscarProfesoresUseCase:
     """Tests para el caso de uso de buscar profesores."""
 
@@ -513,12 +502,10 @@ class TestBuscarProfesoresUseCase:
     def test_buscar_profesor_por_email(self, session: Session, profesor_factory):
         """Test: buscar profesor por email (case-insensitive)."""
         prof1 = profesor_factory(
-            nombre_completo="Ana Martínez",
-            email_corporativo="ana@colegio.edu"
+            nombre_completo="Ana Martínez", email_corporativo="ana@colegio.edu"
         )
         prof2 = profesor_factory(
-            nombre_completo="Luis González",
-            email_corporativo="luis@colegio.edu"
+            nombre_completo="Luis González", email_corporativo="luis@colegio.edu"
         )
         session.add_all([prof1, prof2])
         session.commit()
@@ -557,6 +544,7 @@ class TestBuscarProfesoresUseCase:
 # Tests: Integración Profesor
 # ====================================
 
+
 class TestProfesorUseCasesIntegracion:
     """Tests de integración para flujos completos de Profesor."""
 
@@ -586,9 +574,7 @@ class TestProfesorUseCasesIntegracion:
 
         # 4. ACTUALIZAR
         actualizar_use_case = ActualizarProfesorUseCase(session)
-        dto_actualizar = ActualizarProfesorDTO(
-            nombre_completo="Profesor Integración Actualizado"
-        )
+        dto_actualizar = ActualizarProfesorDTO(nombre_completo="Profesor Integración Actualizado")
         profesor_actualizado = actualizar_use_case.execute(profesor_id, dto_actualizar)
         assert profesor_actualizado.nombre_completo == "Profesor Integración Actualizado"
 
@@ -597,7 +583,8 @@ class TestProfesorUseCasesIntegracion:
         eliminar_use_case.execute(profesor_id)
 
         # Verificar eliminación
-        from models.models import Profesor
+        from infrastructure.database.models import Profesor
+
         profesor_bd = session.query(Profesor).filter_by(id=profesor_id).first()
         assert profesor_bd is None
 
@@ -606,21 +593,15 @@ class TestProfesorUseCasesIntegracion:
         crear_use_case = CrearProfesorUseCase(session)
 
         # Crear varios profesores
-        crear_use_case.execute(CrearProfesorDTO(
-            nombre_completo="Alberto Ramírez",
-            horas_contrato=25.0,
-            turno="mañana"
-        ))
-        crear_use_case.execute(CrearProfesorDTO(
-            nombre_completo="Alberto Sánchez",
-            horas_contrato=18.0,
-            turno="tarde"
-        ))
-        crear_use_case.execute(CrearProfesorDTO(
-            nombre_completo="María Torres",
-            horas_contrato=25.0,
-            turno="mañana"
-        ))
+        crear_use_case.execute(
+            CrearProfesorDTO(nombre_completo="Alberto Ramírez", horas_contrato=25.0, turno="mañana")
+        )
+        crear_use_case.execute(
+            CrearProfesorDTO(nombre_completo="Alberto Sánchez", horas_contrato=18.0, turno="tarde")
+        )
+        crear_use_case.execute(
+            CrearProfesorDTO(nombre_completo="María Torres", horas_contrato=25.0, turno="mañana")
+        )
 
         # Buscar por "Alberto"
         buscar_use_case = BuscarProfesoresUseCase(session)
@@ -636,11 +617,9 @@ class TestProfesorUseCasesIntegracion:
         # Crear 5 profesores
         nombres = ["Zoe", "Ana", "María", "Carlos", "Beatriz"]
         for nombre in nombres:
-            crear_use_case.execute(CrearProfesorDTO(
-                nombre_completo=nombre,
-                horas_contrato=25.0,
-                turno="mañana"
-            ))
+            crear_use_case.execute(
+                CrearProfesorDTO(nombre_completo=nombre, horas_contrato=25.0, turno="mañana")
+            )
 
         # Listar
         listar_use_case = ListarProfesoresUseCase(session)

@@ -3,13 +3,13 @@
 <!-- Build & Quality Badges -->
 [![CI/CD Pipeline](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml/badge.svg)](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/cferrerobonet/guardias_patio/branch/main/graph/badge.svg)](https://codecov.io/gh/cferrerobonet/guardias_patio)
-![Tests](https://img.shields.io/badge/Tests-994_total-success.svg)
-![Coverage](https://img.shields.io/badge/Coverage-46.31%25-yellow.svg)
+![Tests](https://img.shields.io/badge/Tests-990_passed-success.svg)
+![Coverage](https://img.shields.io/badge/Coverage-39.75%25-yellow.svg)
 
 <!-- Security & Release -->
 [![Security](https://img.shields.io/badge/Security-✅_0_vulnerabilities-success.svg)](docs/archive/auditoria/SECURITY_FIX_20251108.md)
 [![Release](https://img.shields.io/github/v/release/cferrerobonet/guardias_patio)](https://github.com/cferrerobonet/guardias_patio/releases/latest)
-![Version](https://img.shields.io/badge/Version-3.0.2-blue.svg)
+![Version](https://img.shields.io/badge/Version-3.1.0-blue.svg)
 
 <!-- Tech Stack -->
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)
@@ -22,11 +22,11 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Linting: ruff](https://img.shields.io/badge/linting-ruff-blueviolet.svg)](https://github.com/astral-sh/ruff)
 
-**Aplicación de escritorio profesional** para la gestión integral de guardias de patio en centros educativos. Asignación automática equitativa con algoritmo optimizado, gestión completa de ausencias y sustituciones, calendario interactivo, y arquitectura limpia con 46% de cobertura de tests.
+**Aplicación de escritorio profesional** para la gestión integral de guardias de patio en centros educativos. Asignación automática equitativa con algoritmo optimizado, gestión completa de ausencias y sustituciones, calendario interactivo, y arquitectura limpia con ~40% de cobertura de tests.
 
-> 📊 **v3.1.0 Released** - Dashboard de Equidad + API REST con 8 endpoints (FastAPI)
-> 📈 **v3.0.2 Released** - Ventana de detalle del día implementada: resumen completo de guardias, ausencias y sustituciones  
-> 🔒 **v3.0.1 Security Update** - Todas las vulnerabilidades corregidas: 0 issues críticos, SFTP seguro  
+> 🧪 **v3.1.0 Released** - Mejora suite de tests: 990 passed, 36 skipped (+33 tests recuperados)
+> 📊 **v3.0.2** - Dashboard de Equidad + API REST con 8 endpoints (FastAPI)
+> 📈 **v3.0.1** - Seguridad: 0 vulnerabilidades, SFTP seguro  
 > 📚 [Ver Changelog](docs/CHANGELOG.md) | [Guía de Usuario](docs/user/USER_GUIDE.md) | [Guía Técnica](docs/dev/TECHNICAL_GUIDE.md)
 
 ---
@@ -57,7 +57,7 @@
 
 ### 🏗️ Arquitectura Profesional
 - ✅ **Clean Architecture**: 4 capas bien separadas (Domain, Application, Infrastructure, Presentation)
-- ✅ **976 Tests**: 46.31% cobertura con tests unitarios y de integración
+- ✅ **990 Tests**: 39.75% cobertura con tests unitarios y de integración
 - ✅ **Type Safety**: Validación automática con Pydantic en todas las capas
 - ✅ **Cache Inteligente**: 90-98% reducción de queries en operaciones frecuentes
 - ✅ **12 Widgets Reutilizables**: -40% código en formularios
@@ -160,7 +160,7 @@ python src/main.py
 **Flujo de Datos**: `UI → Use Cases → Services → Repositories → Database`
 
 **Beneficios**:
-- ✅ Testabilidad: 976 tests, 46.31% cobertura
+- ✅ Testabilidad: 990 tests, 39.75% cobertura
 - ✅ Mantenibilidad: Cambios aislados por capa
 - ✅ Escalabilidad: Fácil añadir features
 - ✅ Independencia: Domain sin dependencias externas
@@ -186,7 +186,7 @@ python src/main.py
 | **[ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)** | Clean Architecture - 4 capas, dependencias, patrones ⭐⭐⭐⭐ |
 | **[API_REST.md](docs/architecture/API_REST.md)** | API REST con FastAPI - 8 endpoints documentados |
 | **[TECHNICAL_GUIDE.md](docs/dev/TECHNICAL_GUIDE.md)** | Algoritmos, validaciones, cache, logging |
-| **[TESTING.md](docs/dev/TESTING.md)** | 976 tests, 46% coverage, guía completa pytest |
+| **[TESTING.md](docs/dev/TESTING.md)** | 990 tests, 40% coverage, guía completa pytest |
 | **[CONTRIBUTING.md](docs/dev/CONTRIBUTING.md)** | Workflow, estándares de código, PR guidelines |
 | **[REPOSITORY_PATTERN.md](docs/dev/REPOSITORY_PATTERN_GUIDE.md)** | Patrón Repository implementado |
 
@@ -334,15 +334,15 @@ MIT License - Copyright (c) 2024-2025 Carlos Ferrero Bonet
 ## 📊 Estadísticas del Proyecto
 
 | Métrica | Valor | Descripción |
-|---------|-------|-------------|
-| **Versión** | 3.0.0 | Release actual |
-| **Tests** | 976 | Tests pasando |
-| **Cobertura** | 46.31% | Cobertura de código |
+|---------|-------|-----------|
+| **Versión** | 3.1.0 | Release actual |
+| **Tests** | 990 | Tests pasando |
+| **Cobertura** | 39.75% | Cobertura de código |
 | **Líneas de código** | ~12,250 | Total líneas Python |
 | **Archivos Python** | 93 | Módulos del proyecto |
 | **Widgets** | 12 | Componentes reutilizables |
 | **Reducción código** | -40% | En formularios (v3.0) |
-| **Última actualización** | 8 nov 2025 | Fecha release |
+| **Última actualización** | 30 nov 2025 | Fecha release |
 
 ---
 

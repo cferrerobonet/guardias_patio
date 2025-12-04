@@ -16,7 +16,7 @@ sys.path.insert(0, str(src_path))
 
 def crear_datos_prueba():
     """Crea datos de prueba en memoria (sin base de datos)."""
-    from models.models import Configuracion, Guardia, Profesor, Zona
+    from infrastructure.database.models import Configuracion, Guardia, Profesor, Zona
 
     # Crear profesor de prueba
     profesor = Profesor()
@@ -165,5 +165,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Error inesperado: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

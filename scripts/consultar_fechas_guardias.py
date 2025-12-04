@@ -9,7 +9,7 @@ from pathlib import Path
 # Añadir src al path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from models.models import Profesor
+from infrastructure.database.models import Profesor
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 
@@ -33,9 +33,7 @@ def consultar_fechas_guardias(db_path: str = "data/guardias_patio.db"):
         print(f"📋 Total de profesores en BD: {total_profesores}")
 
         # Profesores activos
-        profesores_activos = session.query(func.count(Profesor.id)).filter(
-            Profesor.activo
-        ).scalar()
+        profesores_activos = session.query(func.count(Profesor.id)).filter(Profesor.activo).scalar()
         print(f"✅ Profesores activos: {profesores_activos}")
 
         # Profesores inactivos
@@ -48,29 +46,35 @@ def consultar_fechas_guardias(db_path: str = "data/guardias_patio.db"):
         print("-" * 80)
 
         # Profesores con fecha de inicio
-        con_fecha_inicio = session.query(func.count(Profesor.id)).filter(
-            Profesor.fecha_inicio_guardias.isnot(None)
-        ).scalar()
+        con_fecha_inicio = (
+            session.query(func.count(Profesor.id))
+            .filter(Profesor.fecha_inicio_guardias.isnot(None))
+            .scalar()
+        )
         print(f"✓ Profesores con fecha_inicio_guardias: {con_fecha_inicio}")
 
         # Profesores activos con fecha de inicio
-        activos_con_fecha_inicio = session.query(func.count(Profesor.id)).filter(
-            Profesor.activo,
-            Profesor.fecha_inicio_guardias.isnot(None)
-        ).scalar()
+        activos_con_fecha_inicio = (
+            session.query(func.count(Profesor.id))
+            .filter(Profesor.activo, Profesor.fecha_inicio_guardias.isnot(None))
+            .scalar()
+        )
         print(f"✓ Profesores activos con fecha_inicio_guardias: {activos_con_fecha_inicio}")
 
         # Profesores sin fecha de inicio
-        sin_fecha_inicio = session.query(func.count(Profesor.id)).filter(
-            Profesor.fecha_inicio_guardias.is_(None)
-        ).scalar()
+        sin_fecha_inicio = (
+            session.query(func.count(Profesor.id))
+            .filter(Profesor.fecha_inicio_guardias.is_(None))
+            .scalar()
+        )
         print(f"✗ Profesores sin fecha_inicio_guardias: {sin_fecha_inicio}")
 
         # Profesores activos sin fecha de inicio
-        activos_sin_fecha_inicio = session.query(func.count(Profesor.id)).filter(
-            Profesor.activo,
-            Profesor.fecha_inicio_guardias.is_(None)
-        ).scalar()
+        activos_sin_fecha_inicio = (
+            session.query(func.count(Profesor.id))
+            .filter(Profesor.activo, Profesor.fecha_inicio_guardias.is_(None))
+            .scalar()
+        )
         print(f"✗ Profesores activos sin fecha_inicio_guardias: {activos_sin_fecha_inicio}")
 
         print()
@@ -79,29 +83,35 @@ def consultar_fechas_guardias(db_path: str = "data/guardias_patio.db"):
         print("-" * 80)
 
         # Profesores con fecha de fin
-        con_fecha_fin = session.query(func.count(Profesor.id)).filter(
-            Profesor.fecha_fin_guardias.isnot(None)
-        ).scalar()
+        con_fecha_fin = (
+            session.query(func.count(Profesor.id))
+            .filter(Profesor.fecha_fin_guardias.isnot(None))
+            .scalar()
+        )
         print(f"✓ Profesores con fecha_fin_guardias: {con_fecha_fin}")
 
         # Profesores activos con fecha de fin
-        activos_con_fecha_fin = session.query(func.count(Profesor.id)).filter(
-            Profesor.activo,
-            Profesor.fecha_fin_guardias.isnot(None)
-        ).scalar()
+        activos_con_fecha_fin = (
+            session.query(func.count(Profesor.id))
+            .filter(Profesor.activo, Profesor.fecha_fin_guardias.isnot(None))
+            .scalar()
+        )
         print(f"✓ Profesores activos con fecha_fin_guardias: {activos_con_fecha_fin}")
 
         # Profesores sin fecha de fin
-        sin_fecha_fin = session.query(func.count(Profesor.id)).filter(
-            Profesor.fecha_fin_guardias.is_(None)
-        ).scalar()
+        sin_fecha_fin = (
+            session.query(func.count(Profesor.id))
+            .filter(Profesor.fecha_fin_guardias.is_(None))
+            .scalar()
+        )
         print(f"✗ Profesores sin fecha_fin_guardias: {sin_fecha_fin}")
 
         # Profesores activos sin fecha de fin
-        activos_sin_fecha_fin = session.query(func.count(Profesor.id)).filter(
-            Profesor.activo,
-            Profesor.fecha_fin_guardias.is_(None)
-        ).scalar()
+        activos_sin_fecha_fin = (
+            session.query(func.count(Profesor.id))
+            .filter(Profesor.activo, Profesor.fecha_fin_guardias.is_(None))
+            .scalar()
+        )
         print(f"✗ Profesores activos sin fecha_fin_guardias: {activos_sin_fecha_fin}")
 
         print()
@@ -122,7 +132,9 @@ def consultar_fechas_guardias(db_path: str = "data/guardias_patio.db"):
             if pct_inicio > 80:
                 print("✅ EXCELENTE: >80% de profesores activos tienen fecha de inicio configurada")
             elif pct_inicio > 50:
-                print("⚠️  ACEPTABLE: 50-80% de profesores activos tienen fecha de inicio configurada")
+                print(
+                    "⚠️  ACEPTABLE: 50-80% de profesores activos tienen fecha de inicio configurada"
+                )
             elif pct_inicio > 0:
                 print("❌ BAJO: <50% de profesores activos tienen fecha de inicio configurada")
             else:
@@ -135,16 +147,27 @@ def consultar_fechas_guardias(db_path: str = "data/guardias_patio.db"):
         print()
 
         # Listar profesores con fechas
-        profesores_con_fechas = session.query(Profesor).filter(
-            (Profesor.fecha_inicio_guardias.isnot(None)) |
-            (Profesor.fecha_fin_guardias.isnot(None))
-        ).order_by(Profesor.nombre_completo).all()
+        profesores_con_fechas = (
+            session.query(Profesor)
+            .filter(
+                (Profesor.fecha_inicio_guardias.isnot(None))
+                | (Profesor.fecha_fin_guardias.isnot(None))
+            )
+            .order_by(Profesor.nombre_completo)
+            .all()
+        )
 
         if profesores_con_fechas:
             for prof in profesores_con_fechas:
                 estado = "✅" if prof.activo else "❌"
-                inicio = prof.fecha_inicio_guardias.strftime("%d/%m/%Y") if prof.fecha_inicio_guardias else "-"
-                fin = prof.fecha_fin_guardias.strftime("%d/%m/%Y") if prof.fecha_fin_guardias else "-"
+                inicio = (
+                    prof.fecha_inicio_guardias.strftime("%d/%m/%Y")
+                    if prof.fecha_inicio_guardias
+                    else "-"
+                )
+                fin = (
+                    prof.fecha_fin_guardias.strftime("%d/%m/%Y") if prof.fecha_fin_guardias else "-"
+                )
                 print(f"{estado} {prof.nombre_completo:40} | Inicio: {inicio:10} | Fin: {fin:10}")
         else:
             print("No hay profesores con fechas de inicio/fin configuradas")

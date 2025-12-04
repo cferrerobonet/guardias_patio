@@ -2,6 +2,7 @@
 Asignador de guardias usando Integer Linear Programming (ILP) con OR-Tools.
 Implementa la Opción B: solución matemáticamente óptima garantizada.
 """
+
 import logging
 import os
 from dataclasses import dataclass
@@ -11,7 +12,7 @@ from typing import Dict, List, Optional
 # Domain Services (Phase 2.4)
 from domain.services.distribucion_cuotas_service import DistribucionCuotasService
 from domain.services.equidad_guardias_service import EquidadGuardiasService
-from models.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from services.validators import TurnoValidator
 from sqlalchemy.orm import Session
 
@@ -23,6 +24,7 @@ _turno_validator = TurnoValidator()
 # Importación condicional de OR-Tools
 try:
     from ortools.sat.python import cp_model
+
     ORTOOLS_DISPONIBLE = True
 except ImportError:
     ORTOOLS_DISPONIBLE = False
@@ -35,6 +37,7 @@ except ImportError:
 @dataclass
 class ResultadoILP:
     """Resultado de la asignación ILP."""
+
     exitoso: bool
     guardias: List[Guardia]
     estadisticas: Dict
@@ -50,9 +53,7 @@ class AsignadorILP:
 
     def __init__(self, db: Session, config: Configuracion, dias_lectivos: List[date]):
         if not ORTOOLS_DISPONIBLE:
-            raise ImportError(
-                "OR-Tools no está instalado. Instalar con: pip install ortools"
-            )
+            raise ImportError("OR-Tools no está instalado. Instalar con: pip install ortools")
 
         self.db = db
         self.config = config
@@ -67,7 +68,7 @@ class AsignadorILP:
         self,
         limite_tiempo_segundos: int = 300,  # 5 minutos por defecto
         priorizar_fecha_inicio: bool = True,
-        priorizar_equidad: bool = True
+        priorizar_equidad: bool = True,
     ) -> ResultadoILP:
         """
         Genera guardias usando ILP con CP-SAT solver de OR-Tools.
@@ -85,6 +86,7 @@ class AsignadorILP:
         logger.info("=" * 70)
 
         import time
+
         tiempo_inicio = time.time()
 
         # Crear modelo
@@ -103,6 +105,7 @@ class AsignadorILP:
         except Exception as e:
             logger.warning(f"⚠️ Error con DistribucionCuotasService: {e}. Usando método legacy.")
             from services.calculador_guardias import calcular_guardias_por_profesor
+
             cuotas = calcular_guardias_por_profesor(self.db)
 
         logger.info(f"Profesores activos: {len(profesores)}")
@@ -122,8 +125,7 @@ class AsignadorILP:
         # 3. Restricciones SUAVES (preferencias, se optimizan)
         logger.info("⚙️  Agregando restricciones suaves y función objetivo...")
         self._agregar_funcion_objetivo(
-            profesores, recreos, zonas, cuotas,
-            priorizar_fecha_inicio, priorizar_equidad
+            profesores, recreos, zonas, cuotas, priorizar_fecha_inicio, priorizar_equidad
         )
 
         # 4. Resolver
@@ -183,7 +185,7 @@ class AsignadorILP:
                 exitoso=True,
                 guardias=guardias,
                 estadisticas=estadisticas,
-                tiempo_solucion_segundos=tiempo_total
+                tiempo_solucion_segundos=tiempo_total,
             )
 
         else:
@@ -196,7 +198,7 @@ class AsignadorILP:
                 guardias=[],
                 estadisticas={},
                 diagnostico_infactibilidad=diagnostico,
-                tiempo_solucion_segundos=tiempo_total
+                tiempo_solucion_segundos=tiempo_total,
             )
 
     def _crear_variables_decision(self, profesores: List[Profesor], recreos, zonas):
@@ -215,11 +217,13 @@ class AsignadorILP:
                     for zona in zonas:
                         # Variable booleana
                         var = self.model.NewBoolVar(
-                            f'x_p{profesor.id}_d{dia}_r{recreo.numero}_z{zona.id}'
+                            f"x_p{profesor.id}_d{dia}_r{recreo.numero}_z{zona.id}"
                         )
                         self.variables[profesor.id][dia][recreo.numero][zona.id] = var
 
-        logger.info(f"Variables creadas: {len(profesores)} × {len(self.dias_lectivos)} × {len(recreos)} × {len(zonas)}")
+        logger.info(
+            f"Variables creadas: {len(profesores)} × {len(self.dias_lectivos)} × {len(recreos)} × {len(zonas)}"
+        )
 
     def _agregar_restricciones_duras(self, profesores: List[Profesor], recreos, zonas):
         """Agrega restricciones que DEBEN cumplirse."""
@@ -235,7 +239,8 @@ class AsignadorILP:
                             self.variables[p.id][dia][recreo.numero][zona.id]
                             for p in profesores
                             if self._profesor_compatible_slot(p, dia, recreo, zona)
-                        ) == 1
+                        )
+                        == 1
                     )
 
         # R2: Un profesor no puede estar en dos zonas el mismo recreo del mismo día
@@ -247,13 +252,14 @@ class AsignadorILP:
                         sum(
                             self.variables[profesor.id][dia][recreo.numero][zona.id]
                             for zona in zonas
-                        ) <= 1
+                        )
+                        <= 1
                     )
 
         # R3: Respetar ausencias
         logger.info("  • R3: Respeto de ausencias")
         for profesor in profesores:
-            if hasattr(profesor, 'ausencias') and profesor.ausencias:
+            if hasattr(profesor, "ausencias") and profesor.ausencias:
                 for ausencia in profesor.ausencias:
                     # Iterar sobre todas las fechas en el rango de la ausencia
                     for dia in self.dias_lectivos:
@@ -262,7 +268,8 @@ class AsignadorILP:
                             for recreo in recreos:
                                 for zona in zonas:
                                     self.model.Add(
-                                        self.variables[profesor.id][dia][recreo.numero][zona.id] == 0
+                                        self.variables[profesor.id][dia][recreo.numero][zona.id]
+                                        == 0
                                     )
 
         # R4: Respetar incompatibilidades de turno
@@ -273,8 +280,9 @@ class AsignadorILP:
             # - su turno coincide con el turno del recreo
             for dia in self.dias_lectivos:
                 for recreo in recreos:
-                    puede_hacer_turno = (profesor.turno in ('completo', 'mixto') or
-                                        profesor.turno == recreo.turno)
+                    puede_hacer_turno = (
+                        profesor.turno in ("completo", "mixto") or profesor.turno == recreo.turno
+                    )
                     if not puede_hacer_turno:
                         for zona in zonas:
                             self.model.Add(
@@ -293,7 +301,7 @@ class AsignadorILP:
         # que bloqueaba zonas, pero profesor.zonas no existe en el modelo
 
         # R6: No exceder guardias máximas por día (si está configurado)
-        max_guardias_dia = getattr(self.config, 'max_guardias_por_dia', 2)
+        max_guardias_dia = getattr(self.config, "max_guardias_por_dia", 2)
         logger.info(f"  • R6: Máximo {max_guardias_dia} guardias por profesor por día")
         for profesor in profesores:
             for dia in self.dias_lectivos:
@@ -302,7 +310,8 @@ class AsignadorILP:
                         self.variables[profesor.id][dia][recreo.numero][zona.id]
                         for recreo in recreos
                         for zona in zonas
-                    ) <= max_guardias_dia
+                    )
+                    <= max_guardias_dia
                 )
 
     def _agregar_funcion_objetivo(
@@ -312,7 +321,7 @@ class AsignadorILP:
         zonas,
         cuotas: Dict[int, int],
         priorizar_fecha_inicio: bool,
-        priorizar_equidad: bool
+        priorizar_equidad: bool,
     ):
         """
         Define la función objetivo que se maximiza.
@@ -333,10 +342,12 @@ class AsignadorILP:
                 )
 
                 # Variable auxiliar para la desviación absoluta
-                desviacion_pos = self.model.NewIntVar(0, 1000, f'dev_pos_p{profesor.id}')
-                desviacion_neg = self.model.NewIntVar(0, 1000, f'dev_neg_p{profesor.id}')
+                desviacion_pos = self.model.NewIntVar(0, 1000, f"dev_pos_p{profesor.id}")
+                desviacion_neg = self.model.NewIntVar(0, 1000, f"dev_neg_p{profesor.id}")
 
-                self.model.Add(guardias_asignadas - cuota_esperada == desviacion_pos - desviacion_neg)
+                self.model.Add(
+                    guardias_asignadas - cuota_esperada == desviacion_pos - desviacion_neg
+                )
 
                 # Penalizar desviación (peso negativo = minimizar)
                 objetivo_terminos.append(-10 * desviacion_pos)
@@ -346,7 +357,10 @@ class AsignadorILP:
         if priorizar_fecha_inicio:
             logger.info("  • Objetivo: Priorizar fechas de inicio tempranas")
             for profesor in profesores:
-                if profesor.fecha_inicio_guardias and profesor.fecha_inicio_guardias in self.dias_lectivos:
+                if (
+                    profesor.fecha_inicio_guardias
+                    and profesor.fecha_inicio_guardias in self.dias_lectivos
+                ):
                     idx_inicio = self.dias_lectivos.index(profesor.fecha_inicio_guardias)
 
                     # Premiar guardias cercanas a la fecha de inicio
@@ -358,7 +372,8 @@ class AsignadorILP:
                             for recreo in recreos:
                                 for zona in zonas:
                                     objetivo_terminos.append(
-                                        peso * self.variables[profesor.id][dia][recreo.numero][zona.id]
+                                        peso
+                                        * self.variables[profesor.id][dia][recreo.numero][zona.id]
                                     )
 
         # Objetivo 3: Favorecer fechas consecutivas (agrupamiento)
@@ -380,7 +395,9 @@ class AsignadorILP:
                     )
 
                     # Variable para detectar ambos días
-                    ambos_dias = self.model.NewBoolVar(f'consec_p{profesor.id}_d{i}_r{recreo.numero}')
+                    ambos_dias = self.model.NewBoolVar(
+                        f"consec_p{profesor.id}_d{i}_r{recreo.numero}"
+                    )
                     self.model.AddMultiplicationEquality(ambos_dias, [tiene_hoy, tiene_manana])
 
                     # Bonus por consecutivos
@@ -390,23 +407,18 @@ class AsignadorILP:
         if objetivo_terminos:
             self.model.Maximize(sum(objetivo_terminos))
 
-    def _profesor_compatible_slot(
-        self,
-        profesor: Profesor,
-        dia: date,
-        recreo,
-        zona
-    ) -> bool:
+    def _profesor_compatible_slot(self, profesor: Profesor, dia: date, recreo, zona) -> bool:
         """Verifica si un profesor es compatible con un slot."""
         # Verificar ausencias (chequear si el día cae en el rango de alguna ausencia)
-        if hasattr(profesor, 'ausencias') and profesor.ausencias:
+        if hasattr(profesor, "ausencias") and profesor.ausencias:
             for ausencia in profesor.ausencias:
                 if ausencia.fecha_inicio <= dia <= ausencia.fecha_fin:
                     return False
 
         # Verificar turno
-        puede_hacer_turno = (profesor.turno in ('completo', 'mixto') or
-                            profesor.turno == recreo.turno)
+        puede_hacer_turno = (
+            profesor.turno in ("completo", "mixto") or profesor.turno == recreo.turno
+        )
         if not puede_hacer_turno:
             return False
 
@@ -417,10 +429,7 @@ class AsignadorILP:
         return True
 
     def _extraer_guardias_de_solucion(
-        self,
-        profesores: List[Profesor],
-        recreos,
-        zonas
+        self, profesores: List[Profesor], recreos, zonas
     ) -> List[Guardia]:
         """Extrae las guardias de la solución del solver."""
         guardias = []
@@ -436,7 +445,7 @@ class AsignadorILP:
                                 fecha=dia,
                                 recreo=recreo.numero,
                                 zona=zona.id,
-                                turno=recreo.turno
+                                turno=recreo.turno,
                             )
                             guardias.append(guardia)
 
@@ -444,17 +453,16 @@ class AsignadorILP:
         return guardias
 
     def _calcular_estadisticas_solucion(
-        self,
-        guardias: List[Guardia],
-        cuotas: Dict[int, int]
+        self, guardias: List[Guardia], cuotas: Dict[int, int]
     ) -> Dict:
         """Calcula estadísticas de la solución."""
         total_slots = len(self.dias_lectivos) * len(self.config.recreos) * len(self.config.zonas)
 
         guardias_por_profesor = {}
         for guardia in guardias:
-            guardias_por_profesor[guardia.profesor_id] = \
+            guardias_por_profesor[guardia.profesor_id] = (
                 guardias_por_profesor.get(guardia.profesor_id, 0) + 1
+            )
 
         # Desviaciones de cuota
         desviaciones = []
@@ -465,21 +473,19 @@ class AsignadorILP:
                 desviaciones.append(desv)
 
         return {
-            'total_guardias': len(guardias),
-            'total_slots': total_slots,
-            'cobertura': len(guardias) / total_slots if total_slots > 0 else 0,
-            'profesores_con_guardias': len(guardias_por_profesor),
-            'desviacion_cuota_promedio': sum(desviaciones) / len(desviaciones) if desviaciones else 0,
-            'desviacion_cuota_maxima': max(desviaciones) if desviaciones else 0,
-            'tiempo_solucion': self.solver.WallTime()
+            "total_guardias": len(guardias),
+            "total_slots": total_slots,
+            "cobertura": len(guardias) / total_slots if total_slots > 0 else 0,
+            "profesores_con_guardias": len(guardias_por_profesor),
+            "desviacion_cuota_promedio": sum(desviaciones) / len(desviaciones)
+            if desviaciones
+            else 0,
+            "desviacion_cuota_maxima": max(desviaciones) if desviaciones else 0,
+            "tiempo_solucion": self.solver.WallTime(),
         }
 
     def _diagnosticar_infactibilidad(
-        self,
-        status,
-        profesores: List[Profesor],
-        recreos,
-        zonas
+        self, status, profesores: List[Profesor], recreos, zonas
     ) -> str:
         """
         Intenta diagnosticar por qué el modelo es infactible.
@@ -512,11 +518,11 @@ class AsignadorILP:
 
         for turno, slots in slots_por_turno.items():
             # Contar profesores disponibles en este turno usando el validador
-            profs_disponibles = _turno_validator.contar_profesores_por_turno(
-                profesores, turno
-            )
+            profs_disponibles = _turno_validator.contar_profesores_por_turno(profesores, turno)
 
-            lineas.append(f"   • Turno '{turno}': {slots} slots, {profs_disponibles} profesores disponibles")
+            lineas.append(
+                f"   • Turno '{turno}': {slots} slots, {profs_disponibles} profesores disponibles"
+            )
 
             if profs_disponibles == 0:
                 lineas.append(f"     ❌ CRÍTICO: No hay profesores para turno '{turno}'")
@@ -539,7 +545,9 @@ class AsignadorILP:
         lineas.append("\n4. Sugerencias:")
         lineas.append("   ✓ Verificar que hay suficientes profesores activos")
         lineas.append("   ✓ Revisar que los turnos de profesores coinciden con los de recreos")
-        lineas.append("   ✓ Verificar ausencias (especialmente si muchos profesores ausentes el mismo día)")
+        lineas.append(
+            "   ✓ Verificar ausencias (especialmente si muchos profesores ausentes el mismo día)"
+        )
         lineas.append("   ✓ Considerar aumentar max_guardias_por_dia en configuración")
         lineas.append("   ✓ Como última opción: reducir número de zonas por recreo")
 

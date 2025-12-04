@@ -20,15 +20,14 @@ from presentation.themes.ccleaner_theme import (
 )
 
 __all__ = [
-    'PRIMARY_BLUE',
-    'SUCCESS_GREEN',
-    'ERROR_RED',
-    'WARNING_ORANGE',
-    'CONTENT_BG',
-    'TEXT_PRIMARY',
-    'get_complete_stylesheet',
-    'get_button_primary_style',
-    'get_button_secondary_style',
-    'get_input_style',
+    "PRIMARY_BLUE",
+    "SUCCESS_GREEN",
+    "ERROR_RED",
+    "WARNING_ORANGE",
+    "CONTENT_BG",
+    "TEXT_PRIMARY",
+    "get_complete_stylesheet",
+    "get_button_primary_style",
+    "get_button_secondary_style",
+    "get_input_style",
 ]
-

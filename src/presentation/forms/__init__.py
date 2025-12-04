@@ -14,11 +14,11 @@ from .profesor_form import ProfesorForm
 from .zona_form import ZonaForm
 
 __all__ = [
-    'BaseForm',
-    'ZonaForm',
-    'AsignacionCalculoForm',
-    'AsignacionResultadosForm',
-    'ProfesorForm',
-    'ImportExportForm',
-    'DashboardForm',
+    "BaseForm",
+    "ZonaForm",
+    "AsignacionCalculoForm",
+    "AsignacionResultadosForm",
+    "ProfesorForm",
+    "ImportExportForm",
+    "DashboardForm",
 ]

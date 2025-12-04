@@ -169,8 +169,7 @@ class PerformanceMonitor:
         for pattern, count in self._query_patterns.items():
             if count > 50:  # Más de 50 queries similares en 1 minuto
                 alert = (
-                    f"⚠️  Posible N+1 query detectado: {pattern} "
-                    f"ejecutado {count} veces en 1 minuto"
+                    f"⚠️  Posible N+1 query detectado: {pattern} ejecutado {count} veces en 1 minuto"
                 )
                 self._alerts.append(alert)
                 logger.warning(
@@ -178,9 +177,7 @@ class PerformanceMonitor:
                     extra={"pattern": pattern, "count": count},
                 )
 
-    def get_slow_operations(
-        self, limit: int = 10, minutes: int = 60
-    ) -> List[PerformanceRecord]:
+    def get_slow_operations(self, limit: int = 10, minutes: int = 60) -> List[PerformanceRecord]:
         """
         Obtiene las operaciones más lentas recientes.
 
@@ -194,9 +191,7 @@ class PerformanceMonitor:
         cutoff = datetime.now() - timedelta(minutes=minutes)
 
         slow_ops = [
-            record
-            for record in self._records
-            if record.is_slow and record.timestamp >= cutoff
+            record for record in self._records if record.is_slow and record.timestamp >= cutoff
         ]
 
         # Ordenar por duración descendente
@@ -234,9 +229,7 @@ class PerformanceMonitor:
             p50_duration_ms=sorted_durations[int(count * 0.50)],
             p95_duration_ms=sorted_durations[int(count * 0.95)],
             p99_duration_ms=sorted_durations[int(count * 0.99)],
-            slow_operations=sum(
-                1 for d in durations if d >= self.slow_threshold_ms
-            ),
+            slow_operations=sum(1 for d in durations if d >= self.slow_threshold_ms),
         )
 
     def get_all_operations_stats(self) -> List[PerformanceStats]:
@@ -272,9 +265,7 @@ class PerformanceMonitor:
             self._alerts.clear()
         return alerts
 
-    def check_degradation(
-        self, operation: str, current_duration_ms: float
-    ) -> bool:
+    def check_degradation(self, operation: str, current_duration_ms: float) -> bool:
         """
         Verifica si hay degradación de performance en una operación.
 
@@ -306,9 +297,7 @@ class PerformanceMonitor:
                     "operation": operation,
                     "current_ms": current_duration_ms,
                     "avg_ms": stats.avg_duration_ms,
-                    "degradation_pct": (
-                        (current_duration_ms / stats.avg_duration_ms - 1) * 100
-                    ),
+                    "degradation_pct": ((current_duration_ms / stats.avg_duration_ms - 1) * 100),
                 },
             )
 
@@ -325,17 +314,13 @@ class PerformanceMonitor:
         slow_records = sum(1 for r in self._records if r.is_slow)
 
         recent_records = [
-            r
-            for r in self._records
-            if (datetime.now() - r.timestamp).total_seconds() < 300
+            r for r in self._records if (datetime.now() - r.timestamp).total_seconds() < 300
         ]  # Últimos 5 min
 
         return {
             "total_operations": total_records,
             "slow_operations": slow_records,
-            "slow_percentage": (
-                (slow_records / total_records * 100) if total_records > 0 else 0
-            ),
+            "slow_percentage": ((slow_records / total_records * 100) if total_records > 0 else 0),
             "recent_operations_5min": len(recent_records),
             "tracked_operation_types": len(self._operation_stats),
             "active_alerts": len(self._alerts),

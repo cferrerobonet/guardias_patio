@@ -6,9 +6,8 @@ Permite a los profesores importar sus guardias a calendarios digitales.
 from datetime import datetime, timedelta
 from typing import List, Optional
 
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from sqlalchemy.orm import Session, joinedload
-
-from models.models import Configuracion, Guardia, Profesor
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -120,9 +119,7 @@ class ICalendarService:
             )
 
             if not guardias:
-                logger.warning(
-                    f"No hay guardias para {profesor.nombre_completo}"
-                )
+                logger.warning(f"No hay guardias para {profesor.nombre_completo}")
                 return False
 
             # Generar archivo iCalendar
@@ -137,10 +134,7 @@ class ICalendarService:
             with open(ruta_salida, "w", encoding="utf-8") as f:
                 f.write(ical_content)
 
-            logger.info(
-                f"Archivo iCalendar generado: {ruta_salida} "
-                f"({len(guardias)} guardias)"
-            )
+            logger.info(f"Archivo iCalendar generado: {ruta_salida} ({len(guardias)} guardias)")
             return True
 
         except Exception as e:
@@ -174,8 +168,7 @@ class ICalendarService:
             "CALSCALE:GREGORIAN",
             "METHOD:PUBLISH",
             f"X-WR-CALNAME:Guardias de Patio - {profesor.nombre_completo}",
-            f"X-WR-CALDESC:Calendario de guardias de patio para "
-            f"{profesor.nombre_completo}",
+            f"X-WR-CALDESC:Calendario de guardias de patio para {profesor.nombre_completo}",
             "X-WR-TIMEZONE:Europe/Madrid",
         ]
 
@@ -212,33 +205,22 @@ class ICalendarService:
             Lista de líneas del evento o None si no se puede generar
         """
         # Obtener hora del recreo
-        hora_recreo = ICalendarService._obtener_hora_recreo(
-            config, guardia.turno, guardia.recreo
-        )
+        hora_recreo = ICalendarService._obtener_hora_recreo(config, guardia.turno, guardia.recreo)
 
         if not hora_recreo:
-            logger.warning(
-                f"No se encontró hora para {guardia.turno} "
-                f"recreo {guardia.recreo}"
-            )
+            logger.warning(f"No se encontró hora para {guardia.turno} recreo {guardia.recreo}")
             return None
 
         # Crear fecha/hora de inicio
         dt_inicio = datetime.combine(guardia.fecha, hora_recreo)
 
         # Calcular fecha/hora de fin (recreo + duración)
-        dt_fin = dt_inicio + timedelta(
-            minutes=ICalendarService.DURACION_RECREO_MINUTOS
-        )
+        dt_fin = dt_inicio + timedelta(minutes=ICalendarService.DURACION_RECREO_MINUTOS)
 
         # Información de la zona
-        zona_nombre = (
-            guardia.zona.nombre_zona if guardia.zona else "Sin zona asignada"
-        )
+        zona_nombre = guardia.zona.nombre_zona if guardia.zona else "Sin zona asignada"
         zona_descripcion = (
-            guardia.zona.descripcion
-            if guardia.zona and guardia.zona.descripcion
-            else ""
+            guardia.zona.descripcion if guardia.zona and guardia.zona.descripcion else ""
         )
 
         # Título del evento

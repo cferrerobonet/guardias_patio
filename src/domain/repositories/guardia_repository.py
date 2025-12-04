@@ -59,10 +59,7 @@ class IGuardiaRepository(IBaseRepository[GuardiaEntity]):
 
     @abstractmethod
     def find_by_fecha_turno_recreo(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int
+        self, fecha: date, turno: str, recreo: int
     ) -> list[GuardiaEntity]:
         """
         Obtiene guardias de un momento específico.
@@ -78,11 +75,7 @@ class IGuardiaRepository(IBaseRepository[GuardiaEntity]):
         pass
 
     @abstractmethod
-    def find_by_rango_fechas(
-        self,
-        fecha_inicio: date,
-        fecha_fin: date
-    ) -> list[GuardiaEntity]:
+    def find_by_rango_fechas(self, fecha_inicio: date, fecha_fin: date) -> list[GuardiaEntity]:
         """
         Obtiene guardias en un rango de fechas.
 
@@ -97,11 +90,7 @@ class IGuardiaRepository(IBaseRepository[GuardiaEntity]):
 
     @abstractmethod
     def existe_guardia_profesor_en_momento(
-        self,
-        profesor_id: int,
-        fecha: date,
-        turno: str,
-        recreo: int
+        self, profesor_id: int, fecha: date, turno: str, recreo: int
     ) -> bool:
         """
         Verifica si un profesor tiene guardia en un momento específico.
@@ -119,11 +108,7 @@ class IGuardiaRepository(IBaseRepository[GuardiaEntity]):
 
     @abstractmethod
     def existe_guardia_zona_en_momento(
-        self,
-        zona_id: int,
-        fecha: date,
-        turno: str,
-        recreo: int
+        self, zona_id: int, fecha: date, turno: str, recreo: int
     ) -> bool:
         """
         Verifica si una zona tiene guardia asignada en un momento específico.
@@ -153,11 +138,7 @@ class IGuardiaRepository(IBaseRepository[GuardiaEntity]):
         pass
 
     @abstractmethod
-    def contar_guardias_profesor_en_fecha(
-        self,
-        profesor_id: int,
-        fecha: date
-    ) -> int:
+    def contar_guardias_profesor_en_fecha(self, profesor_id: int, fecha: date) -> int:
         """
         Cuenta las guardias de un profesor en una fecha.
 
@@ -171,12 +152,7 @@ class IGuardiaRepository(IBaseRepository[GuardiaEntity]):
         pass
 
     @abstractmethod
-    def delete_by_fecha_turno_recreo(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int
-    ) -> int:
+    def delete_by_fecha_turno_recreo(self, fecha: date, turno: str, recreo: int) -> int:
         """
         Elimina todas las guardias de un momento específico.
 

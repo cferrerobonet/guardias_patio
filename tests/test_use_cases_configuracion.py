@@ -14,7 +14,7 @@ from application.use_cases.configuracion.obtener_configuracion import (
     ObtenerConfiguracionUseCase,
 )
 from core.exceptions import NotFoundError
-from models.models import Configuracion
+from infrastructure.database.models import Configuracion
 
 # ============================================================================
 # TEST: ACTUALIZAR CONFIGURACIÓN
@@ -205,7 +205,7 @@ class TestActualizarConfiguracionUseCase:
 
         resultado = use_case.execute(dto)
 
-        assert '2024-12-25' in resultado.dias_no_lectivos_personalizados
+        assert "2024-12-25" in resultado.dias_no_lectivos_personalizados
 
     def test_actualizar_configuracion_recreos_config(self, session):
         """Actualizar campo recreos_config."""
@@ -228,7 +228,7 @@ class TestActualizarConfiguracionUseCase:
 
         resultado = use_case.execute(dto)
 
-        assert 'zonas' in resultado.recreos_config
+        assert "zonas" in resultado.recreos_config
 
     def test_actualizar_configuracion_error_bd(self, session, mocker):
         """Manejar error de base de datos al actualizar configuración."""
@@ -288,13 +288,15 @@ class TestObtenerConfiguracionUseCase:
         assert resultado.hora_recreo1_manana == time(10, 30)
         assert resultado.ajuste_tutores == 1.2
         assert resultado.activar_festivos_automaticos is True
-        assert '2024-12-25' in resultado.dias_no_lectivos_personalizados
+        assert "2024-12-25" in resultado.dias_no_lectivos_personalizados
 
     def test_obtener_configuracion_no_existe(self, session):
         """Error al obtener configuración cuando no existe."""
         use_case = ObtenerConfiguracionUseCase(session)
 
-        with pytest.raises(NotFoundError, match="No existe configuración. Por favor, créela primero."):
+        with pytest.raises(
+            NotFoundError, match="No existe configuración. Por favor, créela primero."
+        ):
             use_case.execute()
 
 
@@ -384,9 +386,7 @@ class TestConfiguracionUseCasesIntegracion:
         id1 = config1.id
 
         # "Crear" segunda configuración (en realidad debe actualizar la primera)
-        dto2 = ActualizarConfiguracionDTO(
-            fecha_inicio_curso=date(2024, 9, 15), ajuste_tutores=1.5
-        )
+        dto2 = ActualizarConfiguracionDTO(fecha_inicio_curso=date(2024, 9, 15), ajuste_tutores=1.5)
         config2 = actualizar_uc.execute(dto2)
 
         # Debe ser la misma configuración (mismo ID)

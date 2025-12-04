@@ -13,7 +13,7 @@ Valida que el sistema de múltiples cursos escolares funciona correctamente:
 from datetime import date
 
 import pytest
-from models.models import CursoEscolar, Guardia, Profesor, Zona
+from infrastructure.database.models import CursoEscolar, Guardia, Profesor, Zona
 from services.gestor_cursos import GestorCursos
 from sqlalchemy.orm import Session
 
@@ -262,9 +262,7 @@ class TestCRUDCursos:
         # SQLAlchemy con cascade="all, delete-orphan" eliminará las guardias también
         # Este test verifica que la relación está configurada correctamente
         guardias_antes = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2025_2026.id)
-            .count()
+            session.query(Guardia).filter(Guardia.curso_id == curso_2025_2026.id).count()
         )
         assert guardias_antes > 0  # Confirmar que hay guardias
 
@@ -273,9 +271,7 @@ class TestCRUDCursos:
         session.commit()
 
         guardias_despues = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2025_2026.id)
-            .count()
+            session.query(Guardia).filter(Guardia.curso_id == curso_2025_2026.id).count()
         )
         assert guardias_despues == 0  # Cascade delete funcionó
 
@@ -379,11 +375,7 @@ class TestFiltradoGuardias:
         assert curso_activo.id == curso_2025_2026.id
 
         # Act
-        guardias = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_activo.id)
-            .all()
-        )
+        guardias = session.query(Guardia).filter(Guardia.curso_id == curso_activo.id).all()
 
         # Assert
         assert len(guardias) == 2
@@ -425,16 +417,8 @@ class TestFiltradoGuardias:
     ):
         """Test: Contar guardias de cada curso."""
         # Act
-        count_2024 = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2024_2025.id)
-            .count()
-        )
-        count_2025 = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2025_2026.id)
-            .count()
-        )
+        count_2024 = session.query(Guardia).filter(Guardia.curso_id == curso_2024_2025.id).count()
+        count_2025 = session.query(Guardia).filter(Guardia.curso_id == curso_2025_2026.id).count()
 
         # Assert
         assert count_2024 == 2
@@ -488,14 +472,10 @@ class TestAislamientoDatos:
         """Test: Cambiar curso activo no modifica las guardias existentes."""
         # Arrange
         guardias_2025_antes = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2025_2026.id)
-            .count()
+            session.query(Guardia).filter(Guardia.curso_id == curso_2025_2026.id).count()
         )
         guardias_2024_antes = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2024_2025.id)
-            .count()
+            session.query(Guardia).filter(Guardia.curso_id == curso_2024_2025.id).count()
         )
 
         # Act: Cambiar curso activo
@@ -503,14 +483,10 @@ class TestAislamientoDatos:
 
         # Assert: Las guardias siguen igual
         guardias_2025_despues = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2025_2026.id)
-            .count()
+            session.query(Guardia).filter(Guardia.curso_id == curso_2025_2026.id).count()
         )
         guardias_2024_despues = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2024_2025.id)
-            .count()
+            session.query(Guardia).filter(Guardia.curso_id == curso_2024_2025.id).count()
         )
 
         assert guardias_2025_antes == guardias_2025_despues
@@ -526,27 +502,19 @@ class TestAislamientoDatos:
         """Test: Eliminar guardias de un curso no afecta a otros."""
         # Arrange
         guardias_2025_antes = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2025_2026.id)
-            .count()
+            session.query(Guardia).filter(Guardia.curso_id == curso_2025_2026.id).count()
         )
 
         # Act: Eliminar guardias del curso 2024/2025
-        session.query(Guardia).filter(
-            Guardia.curso_id == curso_2024_2025.id
-        ).delete()
+        session.query(Guardia).filter(Guardia.curso_id == curso_2024_2025.id).delete()
         session.commit()
 
         # Assert
         guardias_2024_despues = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2024_2025.id)
-            .count()
+            session.query(Guardia).filter(Guardia.curso_id == curso_2024_2025.id).count()
         )
         guardias_2025_despues = (
-            session.query(Guardia)
-            .filter(Guardia.curso_id == curso_2025_2026.id)
-            .count()
+            session.query(Guardia).filter(Guardia.curso_id == curso_2025_2026.id).count()
         )
 
         assert guardias_2024_despues == 0

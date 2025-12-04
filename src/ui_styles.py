@@ -7,8 +7,8 @@ Define estilos CSS consistentes para toda la interfaz.
 COLOR_PRIMARY = "#2196F3"  # Azul principal
 COLOR_SUCCESS = "#4CAF50"  # Verde para acciones positivas
 COLOR_WARNING = "#FF9800"  # Naranja para ediciones
-COLOR_DANGER = "#f44336"   # Rojo para acciones destructivas
-COLOR_INFO = "#00BCD4"     # Cyan para información
+COLOR_DANGER = "#f44336"  # Rojo para acciones destructivas
+COLOR_INFO = "#00BCD4"  # Cyan para información
 
 COLOR_BG_LIGHT = "#f5f5f5"  # Fondo claro
 COLOR_BG_MEDIUM = "#e0e0e0"  # Fondo medio
@@ -242,6 +242,7 @@ STYLE_TERMINAL_RETRO = """
 
 # ========== FUNCIONES DE UTILIDAD ==========
 
+
 def create_title_label(text: str, level: str = "main") -> str:
     """
     Crea un QLabel con estilo de título.
@@ -284,6 +285,7 @@ def apply_compact_layout(layout):
 
 
 # ========== FUNCIONES DE FORMATEO TERMINAL ==========
+
 
 def wrap_terminal_html(content: str) -> str:
     """
@@ -347,4 +349,3 @@ def format_terminal_number(text: str) -> str:
 def format_terminal_prompt(text: str) -> str:
     """Formatea un prompt de terminal (verde oscuro)."""
     return f'<span style="color: #00AA00;">$</span> <span style="color: #00FF00;">{text}</span>'
-

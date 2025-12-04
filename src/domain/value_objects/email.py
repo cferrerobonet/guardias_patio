@@ -37,33 +37,27 @@ class Email:
     value: str
 
     # Patrón RFC 5322 simplificado
-    EMAIL_PATTERN = re.compile(
-        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    )
+    EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
     def __post_init__(self) -> None:
         """Valida el email después de la inicialización."""
         if not self.value:
-            raise InvalidEmailError(
-                email=self.value,
-                message="El email no puede estar vacío"
-            )
+            raise InvalidEmailError(email=self.value, message="El email no puede estar vacío")
 
         if not self.EMAIL_PATTERN.match(self.value):
             raise InvalidEmailError(
-                email=self.value,
-                message=f"El email '{self.value}' no tiene un formato válido"
+                email=self.value, message=f"El email '{self.value}' no tiene un formato válido"
             )
 
     @property
     def domain(self) -> str:
         """Retorna el dominio del email."""
-        return self.value.split('@')[1] if '@' in self.value else ''
+        return self.value.split("@")[1] if "@" in self.value else ""
 
     @property
     def local_part(self) -> str:
         """Retorna la parte local del email (antes del @)."""
-        return self.value.split('@')[0] if '@' in self.value else self.value
+        return self.value.split("@")[0] if "@" in self.value else self.value
 
     def __str__(self) -> str:
         """Representación en string del email."""
@@ -74,7 +68,7 @@ class Email:
         return f"Email('{self.value}')"
 
     @classmethod
-    def from_optional(cls, value: Optional[str]) -> Optional['Email']:
+    def from_optional(cls, value: Optional[str]) -> Optional["Email"]:
         """
         Crea un Email desde un valor opcional.
 

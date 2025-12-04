@@ -7,7 +7,8 @@ Convierte entre el modelo SQLAlchemy Zona y la entidad ZonaEntity.
 from typing import Optional
 
 from domain.entities import ZonaEntity
-from models.models import Zona
+
+from infrastructure.database.models import Zona
 
 
 class ZonaMapper:

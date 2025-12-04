@@ -14,7 +14,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from database.db_manager import SessionLocal
-from models.models import Profesor
+from infrastructure.database.models import Profesor
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -82,9 +82,7 @@ def importar_profesores_desde_excel(archivo_path: str, skip_rows: int = 9) -> di
                     # Verificar si el profesor ya existe (por nombre)
                     profesor_existente = (
                         session.query(Profesor)
-                        .filter(
-                            Profesor.nombre_completo.ilike(f"%{nombre_completo}%")
-                        )
+                        .filter(Profesor.nombre_completo.ilike(f"%{nombre_completo}%"))
                         .first()
                     )
 
@@ -99,9 +97,7 @@ def importar_profesores_desde_excel(archivo_path: str, skip_rows: int = 9) -> di
                     # Crear nuevo profesor
                     # Validar email
                     email_valido = (
-                        email
-                        if email and email.lower() not in ["nan", "none", ""]
-                        else None
+                        email if email and email.lower() not in ["nan", "none", ""] else None
                     )
 
                     nuevo_profesor = Profesor(

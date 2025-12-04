@@ -10,7 +10,6 @@ Para tests más detallados, ver archivos test_*_form_detallado.py
 """
 
 import pytest
-
 from presentation.forms.profesor_form import ProfesorForm
 from presentation.forms.zona_form import ZonaForm
 
@@ -32,7 +31,7 @@ class TestProfesorFormBasico:
         form = ProfesorForm(session)
         qtbot.addWidget(form)
 
-        assert hasattr(form, 'tabla_profesores')
+        assert hasattr(form, "tabla_profesores")
         assert form.tabla_profesores.rowCount() == 0
 
     def test_cargar_tabla_con_datos(self, qtbot, db_with_data):
@@ -71,8 +70,8 @@ class TestZonaFormBasico:
         form = ZonaForm(session)
         qtbot.addWidget(form)
 
-        assert hasattr(form, 'lista_zonas')
-        assert form.lista_zonas.count() == 0
+        assert hasattr(form, "tabla_zonas")
+        assert form.tabla_zonas.rowCount() == 0
 
     def test_cargar_tabla_con_datos(self, qtbot, db_with_data):
         """Verificar carga con datos existentes."""
@@ -80,7 +79,7 @@ class TestZonaFormBasico:
         qtbot.addWidget(form)
 
         # db_with_data tiene 3 zonas
-        assert form.lista_zonas.count() == 3
+        assert form.tabla_zonas.rowCount() == 3
 
     def test_use_cases_inicializados(self, qtbot, session):
         """Verificar que los use cases existen."""
@@ -106,7 +105,7 @@ class TestFormulariosCargaMasiva:
                 email_corporativo=f"prof{i}@example.com",
                 horas_contrato=20.0 + i,
                 porcentaje_jornada=100.0,
-                turno="mañana"
+                turno="mañana",
             )
         session.commit()
 
@@ -119,16 +118,13 @@ class TestFormulariosCargaMasiva:
         """Verificar que el formulario maneja muchas zonas."""
         # Crear 30 zonas
         for i in range(30):
-            zona_factory(
-                nombre_zona=f"Zona {i}",
-                descripcion=f"Descripción de zona {i}"
-            )
+            zona_factory(nombre_zona=f"Zona {i}", descripcion=f"Descripción de zona {i}")
         session.commit()
 
         form = ZonaForm(session)
         qtbot.addWidget(form)
 
-        assert form.lista_zonas.count() == 30
+        assert form.tabla_zonas.rowCount() == 30
 
 
 @pytest.mark.integration
@@ -145,9 +141,7 @@ class TestFormulariosIntegracion:
 
         assert form_profesor.session is form_zona.session
 
-    def test_zona_disponible_para_profesor(
-        self, qtbot, session, zona_factory, profesor_factory
-    ):
+    def test_zona_disponible_para_profesor(self, qtbot, session, zona_factory, profesor_factory):
         """Verificar que las zonas creadas están disponibles para profesores."""
         # Crear zona
         zona_factory(nombre_zona="Patio Principal")
@@ -160,7 +154,8 @@ class TestFormulariosIntegracion:
         # La zona debería estar en el sistema
         # (no podemos verificar el combo fácilmente, pero al menos
         # verificamos que la zona existe en BD)
-        from models.models import Zona
+        from infrastructure.database.models import Zona
+
         zonas_bd = session.query(Zona).all()
         assert len(zonas_bd) > 0
         assert any(z.nombre_zona == "Patio Principal" for z in zonas_bd)

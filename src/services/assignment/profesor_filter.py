@@ -11,7 +11,7 @@ from collections import defaultdict
 from datetime import date
 from typing import Dict, List, Set, Tuple
 
-from models.models import Profesor
+from infrastructure.database.models import Profesor
 from services.assignment.slot_builder import Slot
 from services.validators import AusenciaChecker, TurnoValidator
 from sqlalchemy.orm import Session
@@ -152,9 +152,7 @@ class ProfesorFilter:
             )
             return True
 
-    def _recreo_permitido(
-        self, profesor: Profesor, fecha: date, recreo_id: int
-    ) -> bool:
+    def _recreo_permitido(self, profesor: Profesor, fecha: date, recreo_id: int) -> bool:
         """Valida si el profesor puede hacer guardias en este recreo."""
         if not profesor.recreos_permitidos:
             return True
@@ -175,9 +173,7 @@ class ProfesorFilter:
             return True
 
         except (json.JSONDecodeError, KeyError, TypeError) as e:
-            logger.warning(
-                f"Error parseando recreos_permitidos para profesor {profesor.id}: {e}"
-            )
+            logger.warning(f"Error parseando recreos_permitidos para profesor {profesor.id}: {e}")
             return True
 
     def get_estadisticas(self) -> dict:

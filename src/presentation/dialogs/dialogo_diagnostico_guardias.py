@@ -78,21 +78,18 @@ class DialogoDiagnosticoGuardias(QDialog):
             layout_problemas,
             "🔴 PROBLEMAS CRÍTICOS",
             self.diagnostico.problemas_criticos,
-            "#e74c3c"
+            "#e74c3c",
         )
 
         self._agregar_seccion_problemas(
             layout_problemas,
             "🟠 PROBLEMAS IMPORTANTES",
             self.diagnostico.problemas_altos,
-            "#e67e22"
+            "#e67e22",
         )
 
         self._agregar_seccion_problemas(
-            layout_problemas,
-            "🟡 PROBLEMAS MENORES",
-            self.diagnostico.problemas_medios,
-            "#f39c12"
+            layout_problemas, "🟡 PROBLEMAS MENORES", self.diagnostico.problemas_medios, "#f39c12"
         )
 
         layout_problemas.addStretch()
@@ -117,8 +114,7 @@ class DialogoDiagnosticoGuardias(QDialog):
 
         btn_ajustar = QPushButton("📝 Ajustar Manualmente")
         btn_ajustar.setToolTip(
-            "Volver a la configuración para modificar disponibilidades, "
-            "zonas, recreos o días"
+            "Volver a la configuración para modificar disponibilidades, zonas, recreos o días"
         )
         btn_ajustar.clicked.connect(self._on_ajustar_manual)
         btn_ajustar.setStyleSheet(
@@ -143,8 +139,7 @@ class DialogoDiagnosticoGuardias(QDialog):
         if not self.diagnostico.puede_continuar_ilp:
             btn_continuar_ilp.setEnabled(False)
             btn_continuar_ilp.setToolTip(
-                "Los problemas detectados son menores. "
-                "No es necesario usar el algoritmo ILP."
+                "Los problemas detectados son menores. No es necesario usar el algoritmo ILP."
             )
 
         btn_cancelar = QPushButton("❌ Cancelar")
@@ -165,11 +160,7 @@ class DialogoDiagnosticoGuardias(QDialog):
         self.setLayout(layout)
 
     def _agregar_seccion_problemas(
-        self,
-        layout: QVBoxLayout,
-        titulo: str,
-        problemas: list[ProblemaDetectado],
-        color: str
+        self, layout: QVBoxLayout, titulo: str, problemas: list[ProblemaDetectado], color: str
     ):
         """Agrega una sección de problemas al layout."""
         if not problemas:
@@ -205,15 +196,13 @@ class DialogoDiagnosticoGuardias(QDialog):
                     layout_grupo.addWidget(lbl_sugerencia)
 
             # Detalles adicionales (si son relevantes para el usuario)
-            if 'profesores' in problema.detalles:
-                profesores = problema.detalles['profesores']
+            if "profesores" in problema.detalles:
+                profesores = problema.detalles["profesores"]
                 if len(profesores) <= 5:
                     # Mostrar nombres si son pocos
-                    nombres = [p['nombre'] for p in profesores]
+                    nombres = [p["nombre"] for p in profesores]
                     lbl_detalle = QLabel(f"   Afectados: {', '.join(nombres)}")
-                    lbl_detalle.setStyleSheet(
-                        "font-size: 9pt; color: #95a5a6; margin-left: 30px;"
-                    )
+                    lbl_detalle.setStyleSheet("font-size: 9pt; color: #95a5a6; margin-left: 30px;")
                     layout_grupo.addWidget(lbl_detalle)
 
             # Espaciado entre problemas

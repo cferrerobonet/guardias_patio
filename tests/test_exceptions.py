@@ -193,7 +193,9 @@ class TestMaxGuardiasExceededError:
     def test_crear_con_context(self):
         """Crear excepción con contexto"""
         exc = MaxGuardiasExceededError(profesor_id=1, fecha="2025-10-16")
-        assert exc.context.get("profesor_id") == 1 or exc.context.get("fecha") == "2025-10-16" or True
+        assert (
+            exc.context.get("profesor_id") == 1 or exc.context.get("fecha") == "2025-10-16" or True
+        )
         # El código puede pasar valores en code o en context
 
     def test_herencia(self):

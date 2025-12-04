@@ -15,12 +15,13 @@ from core.exceptions import ValidationError
 
 class TurnoEnum(str, Enum):
     """Enumeración de turnos válidos."""
+
     MANANA = "mañana"
     TARDE = "tarde"
     MIXTO = "mixto"  # Turno mixto (mañana y tarde)
 
     @classmethod
-    def from_string(cls, value: str) -> 'TurnoEnum':
+    def from_string(cls, value: str) -> "TurnoEnum":
         """Convierte un string a TurnoEnum."""
         value_lower = value.lower().strip()
         for turno in cls:
@@ -68,8 +69,7 @@ class Turno:
         if self.value.value not in self.TURNOS_VALIDOS:
             raise ValidationError(
                 message=(
-                    f"Turno '{self.value.value}' no está en turnos válidos: "
-                    f"{self.TURNOS_VALIDOS}"
+                    f"Turno '{self.value.value}' no está en turnos válidos: {self.TURNOS_VALIDOS}"
                 )
             )
 
@@ -170,11 +170,8 @@ class Turno:
 
     @classmethod
     def from_string(
-        cls,
-        value: str,
-        horas_manana: Optional[float] = None,
-        horas_tarde: Optional[float] = None
-    ) -> 'Turno':
+        cls, value: str, horas_manana: Optional[float] = None, horas_tarde: Optional[float] = None
+    ) -> "Turno":
         """
         Crea un Turno desde un string.
 

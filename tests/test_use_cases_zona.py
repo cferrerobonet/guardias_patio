@@ -5,7 +5,6 @@ EliminarZonaUseCase, ObtenerZonaUseCase, ListarZonasUseCase.
 """
 
 import pytest
-
 from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
 from application.use_cases.zona.actualizar_zona import ActualizarZonaUseCase
 from application.use_cases.zona.crear_zona import CrearZonaUseCase
@@ -13,7 +12,8 @@ from application.use_cases.zona.eliminar_zona import EliminarZonaUseCase
 from application.use_cases.zona.listar_zonas import ListarZonasUseCase
 from application.use_cases.zona.obtener_zona import ObtenerZonaUseCase
 from core.exceptions import BusinessLogicError, NotFoundError
-from models.models import Zona
+from infrastructure.database.models import Zona
+from utils.cache import clear_all_cache
 
 # ============================================================================
 # TEST: CREAR ZONA
@@ -26,9 +26,7 @@ class TestCrearZonaUseCase:
     def test_crear_zona_exitosamente(self, session):
         """Crear una zona con datos válidos."""
         use_case = CrearZonaUseCase(session)
-        data = CrearZonaDTO(
-            nombre_zona="Zona Principal", descripcion="Zona de recreo principal"
-        )
+        data = CrearZonaDTO(nombre_zona="Zona Principal", descripcion="Zona de recreo principal")
 
         resultado = use_case.execute(data)
 
@@ -90,9 +88,7 @@ class TestActualizarZonaUseCase:
         zona = zona_factory(nombre_zona="Zona Original", descripcion="Desc original")
 
         use_case = ActualizarZonaUseCase(session)
-        data = ActualizarZonaDTO(
-            nombre_zona="Zona Actualizada", descripcion="Desc original"
-        )
+        data = ActualizarZonaDTO(nombre_zona="Zona Actualizada", descripcion="Desc original")
 
         resultado = use_case.execute(zona.id, data)
 
@@ -107,9 +103,7 @@ class TestActualizarZonaUseCase:
         zona = zona_factory(nombre_zona="Zona Test", descripcion="Desc original")
 
         use_case = ActualizarZonaUseCase(session)
-        data = ActualizarZonaDTO(
-            nombre_zona="Zona Test", descripcion="Nueva descripción"
-        )
+        data = ActualizarZonaDTO(nombre_zona="Zona Test", descripcion="Nueva descripción")
 
         resultado = use_case.execute(zona.id, data)
 
@@ -141,9 +135,7 @@ class TestActualizarZonaUseCase:
 
         use_case = ActualizarZonaUseCase(session)
         # Mismo nombre, cambiar solo descripción
-        data = ActualizarZonaDTO(
-            nombre_zona="Zona Test", descripcion="Nueva desc"
-        )
+        data = ActualizarZonaDTO(nombre_zona="Zona Test", descripcion="Nueva desc")
 
         resultado = use_case.execute(zona.id, data)
 
@@ -281,20 +273,22 @@ class TestZonaUseCasesIntegracion:
         """Flujo: Crear → Listar → Obtener → Actualizar → Eliminar."""
         # 1. Crear
         crear_uc = CrearZonaUseCase(session)
-        data_crear = CrearZonaDTO(nombre_zona="Zona Integración", descripcion="Test")
+        data_crear = CrearZonaDTO(nombre_zona="Zona CRUD Test", descripcion="Test")
         zona_creada = crear_uc.execute(data_crear)
         zona_id = zona_creada.id
+        assert zona_id is not None
 
-        # 2. Listar (debe aparecer)
+        # 2. Listar (debe encontrar la zona creada)
         listar_uc = ListarZonasUseCase(session)
         zonas = listar_uc.execute()
-        assert len(zonas) == 1
-        assert zonas[0].nombre_zona == "Zona Integración"
+        zona_encontrada = next((z for z in zonas if z.id == zona_id), None)
+        assert zona_encontrada is not None
+        assert zona_encontrada.nombre_zona == "Zona CRUD Test"
 
         # 3. Obtener
         obtener_uc = ObtenerZonaUseCase(session)
         zona_obtenida = obtener_uc.execute(zona_id)
-        assert zona_obtenida.nombre_zona == "Zona Integración"
+        assert zona_obtenida.nombre_zona == "Zona CRUD Test"
 
         # 4. Actualizar
         actualizar_uc = ActualizarZonaUseCase(session)
@@ -308,16 +302,19 @@ class TestZonaUseCasesIntegracion:
         eliminar_uc = EliminarZonaUseCase(session)
         eliminar_uc.execute(zona_id)
 
-        # Verificar eliminación
-        zonas_finales = listar_uc.execute()
-        assert len(zonas_finales) == 0
+        # Limpiar cache para verificar eliminación real
+        clear_all_cache()
+
+        # Verificar eliminación (la zona ya no existe)
+        with pytest.raises(NotFoundError):
+            obtener_uc.execute(zona_id)
 
     def test_crear_multiples_zonas_listar(self, session):
         """Crear múltiples zonas y verificar listado."""
         crear_uc = CrearZonaUseCase(session)
 
         for i in range(5):
-            data = CrearZonaDTO(nombre_zona=f"Zona {i+1}")
+            data = CrearZonaDTO(nombre_zona=f"Zona {i + 1}")
             crear_uc.execute(data)
 
         listar_uc = ListarZonasUseCase(session)

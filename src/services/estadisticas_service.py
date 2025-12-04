@@ -9,7 +9,7 @@ from collections import defaultdict
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
-from models.models import Guardia, Profesor
+from infrastructure.database.models import Guardia, Profesor
 from sqlalchemy.orm import Session
 from utils import get_logger
 
@@ -26,9 +26,7 @@ class EstadisticasService:
     def __init__(self, session: Session):
         self.session = session
 
-    def calcular_guardias_por_profesor(
-        self, guardias: List[Guardia]
-    ) -> Dict[int, int]:
+    def calcular_guardias_por_profesor(self, guardias: List[Guardia]) -> Dict[int, int]:
         """
         Cuenta guardias asignadas por profesor.
 
@@ -43,9 +41,7 @@ class EstadisticasService:
             contador[guardia.profesor_id] += 1
         return dict(contador)
 
-    def calcular_cobertura(
-        self, guardias_asignadas: int, total_slots: int
-    ) -> float:
+    def calcular_cobertura(self, guardias_asignadas: int, total_slots: int) -> float:
         """
         Calcula porcentaje de cobertura.
 
@@ -60,9 +56,7 @@ class EstadisticasService:
             return 0.0
         return guardias_asignadas / total_slots
 
-    def calcular_participacion(
-        self, guardias: List[Guardia], total_profesores: int
-    ) -> float:
+    def calcular_participacion(self, guardias: List[Guardia], total_profesores: int) -> float:
         """
         Calcula porcentaje de profesores participantes.
 
@@ -76,14 +70,10 @@ class EstadisticasService:
         if total_profesores == 0:
             return 0.0
 
-        profesores_con_guardias = len(
-            set(g.profesor_id for g in guardias)
-        )
+        profesores_con_guardias = len(set(g.profesor_id for g in guardias))
         return profesores_con_guardias / total_profesores
 
-    def calcular_promedio_guardias(
-        self, guardias: List[Guardia]
-    ) -> float:
+    def calcular_promedio_guardias(self, guardias: List[Guardia]) -> float:
         """
         Calcula promedio de guardias por profesor participante.
 
@@ -139,9 +129,7 @@ class EstadisticasService:
 
         return promedio, maxima
 
-    def calcular_balance(
-        self, guardias: List[Guardia]
-    ) -> float:
+    def calcular_balance(self, guardias: List[Guardia]) -> float:
         """
         Calcula coeficiente de variación de la distribución.
 
@@ -166,7 +154,7 @@ class EstadisticasService:
 
         # Desviación estándar
         varianza = sum((x - promedio) ** 2 for x in valores) / len(valores)
-        desviacion = varianza ** 0.5
+        desviacion = varianza**0.5
 
         # Coeficiente de variación
         return desviacion / promedio
@@ -187,14 +175,9 @@ class EstadisticasService:
             Lista de profesores sin guardias
         """
         ids_con_guardias = set(g.profesor_id for g in guardias)
-        return [
-            p for p in profesores
-            if p.activo and p.id not in ids_con_guardias
-        ]
+        return [p for p in profesores if p.activo and p.id not in ids_con_guardias]
 
-    def calcular_guardias_por_fecha(
-        self, guardias: List[Guardia]
-    ) -> Dict[date, int]:
+    def calcular_guardias_por_fecha(self, guardias: List[Guardia]) -> Dict[date, int]:
         """
         Cuenta guardias por fecha.
 
@@ -209,9 +192,7 @@ class EstadisticasService:
             contador[guardia.fecha] += 1
         return dict(contador)
 
-    def calcular_guardias_por_zona(
-        self, guardias: List[Guardia]
-    ) -> Dict[int, int]:
+    def calcular_guardias_por_zona(self, guardias: List[Guardia]) -> Dict[int, int]:
         """
         Cuenta guardias por zona.
 
@@ -274,12 +255,8 @@ class EstadisticasService:
             Dict con todas las métricas
         """
         guardias_por_prof = self.calcular_guardias_por_profesor(guardias)
-        sin_guardias = self.identificar_profesores_sin_guardias(
-            guardias, profesores
-        )
-        conflictos = self.detectar_profesores_con_multiples_guardias_mismo_dia(
-            guardias
-        )
+        sin_guardias = self.identificar_profesores_sin_guardias(guardias, profesores)
+        conflictos = self.detectar_profesores_con_multiples_guardias_mismo_dia(guardias)
 
         resumen = {
             "total_guardias": len(guardias),
@@ -301,36 +278,24 @@ class EstadisticasService:
 
         # Cobertura si se proporciona total_slots
         if total_slots is not None:
-            resumen["cobertura"] = self.calcular_cobertura(
-                len(guardias), total_slots
-            )
+            resumen["cobertura"] = self.calcular_cobertura(len(guardias), total_slots)
             resumen["cobertura_porcentaje"] = resumen["cobertura"] * 100
 
         # Participación
         total_activos = len([p for p in profesores if p.activo])
         if total_activos > 0:
-            resumen["participacion"] = self.calcular_participacion(
-                guardias, total_activos
-            )
-            resumen["participacion_porcentaje"] = (
-                resumen["participacion"] * 100
-            )
+            resumen["participacion"] = self.calcular_participacion(guardias, total_activos)
+            resumen["participacion_porcentaje"] = resumen["participacion"] * 100
 
         # Desviación de cuotas si se proporcionan
         if cuotas:
-            desv_prom, desv_max = self.calcular_desviacion_cuotas(
-                guardias, cuotas
-            )
+            desv_prom, desv_max = self.calcular_desviacion_cuotas(guardias, cuotas)
             resumen["desviacion_promedio"] = desv_prom
             resumen["desviacion_maxima"] = desv_max
 
         # Distribución por fecha y zona
-        resumen["guardias_por_fecha"] = self.calcular_guardias_por_fecha(
-            guardias
-        )
-        resumen["guardias_por_zona"] = self.calcular_guardias_por_zona(
-            guardias
-        )
+        resumen["guardias_por_fecha"] = self.calcular_guardias_por_fecha(guardias)
+        resumen["guardias_por_zona"] = self.calcular_guardias_por_zona(guardias)
 
         return resumen
 
@@ -345,24 +310,17 @@ class EstadisticasService:
         logger.info("RESUMEN DE ASIGNACIÓN")
         logger.info("═" * 60)
 
-        logger.info(
-            f"📊 Total guardias: {resumen['total_guardias']}"
-        )
+        logger.info(f"📊 Total guardias: {resumen['total_guardias']}")
         logger.info(
             f"👥 Profesores participantes: "
             f"{resumen['profesores_con_guardias']}/{resumen['total_profesores']}"
         )
 
         if resumen.get("participacion_porcentaje"):
-            logger.info(
-                f"📈 Participación: "
-                f"{resumen['participacion_porcentaje']:.1f}%"
-            )
+            logger.info(f"📈 Participación: {resumen['participacion_porcentaje']:.1f}%")
 
         if resumen.get("cobertura_porcentaje"):
-            logger.info(
-                f"🎯 Cobertura: {resumen['cobertura_porcentaje']:.1f}%"
-            )
+            logger.info(f"🎯 Cobertura: {resumen['cobertura_porcentaje']:.1f}%")
 
         logger.info(
             f"📉 Guardias/profesor: {resumen['promedio_guardias']:.1f} "
@@ -370,10 +328,7 @@ class EstadisticasService:
         )
 
         if resumen.get("desviacion_promedio"):
-            logger.info(
-                f"⚖️  Desviación promedio: "
-                f"{resumen['desviacion_promedio']*100:.1f}%"
-            )
+            logger.info(f"⚖️  Desviación promedio: {resumen['desviacion_promedio'] * 100:.1f}%")
 
         logger.info(
             f"⚠️  Balance: {resumen['balance']:.3f} "
@@ -381,10 +336,7 @@ class EstadisticasService:
         )
 
         if resumen["profesores_sin_guardias"] > 0:
-            logger.warning(
-                f"⚠️  {resumen['profesores_sin_guardias']} "
-                f"profesores sin guardias"
-            )
+            logger.warning(f"⚠️  {resumen['profesores_sin_guardias']} profesores sin guardias")
 
         if resumen["conflictos_mismo_dia"] > 0:
             logger.error(

@@ -208,9 +208,9 @@ class PerfilesUsuarioForm(BaseForm):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Email - más espacio
 
         # Columnas con ancho fijo estrecho
-        self.tabla.setColumnWidth(2, 60)   # BD - más estrecho
-        self.tabla.setColumnWidth(3, 70)   # Logo - más estrecho
-        self.tabla.setColumnWidth(4, 80)   # Actual - más estrecho
+        self.tabla.setColumnWidth(2, 60)  # BD - más estrecho
+        self.tabla.setColumnWidth(3, 70)  # Logo - más estrecho
+        self.tabla.setColumnWidth(4, 80)  # Actual - más estrecho
         self.tabla.setColumnWidth(5, 100)  # Acciones - ancho legible
 
         # Configurar tabla
@@ -307,7 +307,7 @@ class PerfilesUsuarioForm(BaseForm):
                     self,
                     "✅ Perfil Creado",
                     f"El perfil '{perfil.username}' se ha creado correctamente.\n"
-                    f"Se creó su base de datos automáticamente."
+                    f"Se creó su base de datos automáticamente.",
                 )
 
         except ValidationError as e:
@@ -339,7 +339,7 @@ class PerfilesUsuarioForm(BaseForm):
                 QMessageBox.information(
                     self,
                     "✅ Perfil Actualizado",
-                    f"El email de '{perfil.username}' se ha actualizado correctamente."
+                    f"El email de '{perfil.username}' se ha actualizado correctamente.",
                 )
 
         except ValidationError as e:
@@ -373,7 +373,7 @@ class PerfilesUsuarioForm(BaseForm):
                 f"</ul>"
                 f"<p><b>Esta acción NO se puede deshacer.</b></p>",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.No,
             )
 
             if respuesta == QMessageBox.StandardButton.Yes:
@@ -387,7 +387,7 @@ class PerfilesUsuarioForm(BaseForm):
                 QMessageBox.information(
                     self,
                     "✅ Perfil Eliminado",
-                    f"El perfil '{username}' y todos sus datos han sido eliminados."
+                    f"El perfil '{username}' y todos sus datos han sido eliminados.",
                 )
 
         except ValidationError as e:
@@ -408,10 +408,7 @@ class PerfilesUsuarioForm(BaseForm):
 
             # Seleccionar archivo
             archivo, _ = QFileDialog.getOpenFileName(
-                self,
-                "Seleccionar Logo Corporativo",
-                "",
-                "Imágenes (*.png *.jpg *.jpeg *.bmp)"
+                self, "Seleccionar Logo Corporativo", "", "Imágenes (*.png *.jpg *.jpeg *.bmp)"
             )
 
             if not archivo:
@@ -428,7 +425,7 @@ class PerfilesUsuarioForm(BaseForm):
                 self,
                 "✅ Logo Actualizado",
                 f"El logo del perfil '{username}' se ha actualizado correctamente.\n"
-                f"Guardado en: {ruta_guardada}"
+                f"Guardado en: {ruta_guardada}",
             )
 
         except ValidationError as e:
@@ -450,9 +447,7 @@ class PerfilesUsuarioForm(BaseForm):
             # Verificar que es el usuario actual
             if username != self.current_username:
                 QMessageBox.warning(
-                    self,
-                    "⚠️ No Permitido",
-                    "Solo puedes cambiar la contraseña de tu propio perfil."
+                    self, "⚠️ No Permitido", "Solo puedes cambiar la contraseña de tu propio perfil."
                 )
                 return
 
@@ -468,7 +463,7 @@ class PerfilesUsuarioForm(BaseForm):
                     self,
                     "✅ Contraseña Cambiada",
                     "Tu contraseña se ha cambiado correctamente.\n"
-                    "Usa la nueva contraseña en tu próximo inicio de sesión."
+                    "Usa la nueva contraseña en tu próximo inicio de sesión.",
                 )
 
         except ValidationError as e:

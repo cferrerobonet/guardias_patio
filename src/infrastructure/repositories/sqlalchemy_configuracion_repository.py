@@ -5,8 +5,9 @@ SQLAlchemy Configuracion Repository Implementation
 from typing import Optional
 
 from domain.repositories.configuracion_repository import IConfiguracionRepository
-from models.models import Configuracion
 from sqlalchemy.orm import Session
+
+from infrastructure.database.models import Configuracion
 
 
 class SQLAlchemyConfiguracionRepository(IConfiguracionRepository):

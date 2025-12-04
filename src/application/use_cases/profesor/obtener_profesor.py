@@ -5,29 +5,38 @@ Caso de uso para obtener un profesor por ID.
 Con caching para optimizar lecturas frecuentes.
 """
 
-from sqlalchemy.orm import Session
+from typing import Union
 
-from application.dtos import ProfesorDTO
 from core.exceptions import NotFoundError
 from core.observability import with_metrics
 from domain.entities import ProfesorEntity
 from domain.repositories import IProfesorRepository
-from infrastructure.repositories import SQLAlchemyProfesorRepository
+from sqlalchemy.orm import Session
 from utils.repository_cache import cache_profesores
+
+from application.dtos import ProfesorDTO
 
 
 class ObtenerProfesorUseCase:
     """Caso de uso para obtener un profesor por ID."""
 
-    def __init__(self, session: Session):
+    def __init__(self, repository_or_session: Union[IProfesorRepository, Session]):
         """
         Inicializa el caso de uso.
 
         Args:
-            session: Sesión de SQLAlchemy
+            repository_or_session: Repositorio de profesores o Session (legacy)
         """
-        self.session = session
-        self.repository: IProfesorRepository = SQLAlchemyProfesorRepository(session)
+        if isinstance(repository_or_session, Session):
+            # Compatibilidad hacia atrás: crear repositorio internamente
+            from infrastructure.repositories import SQLAlchemyProfesorRepository
+
+            self.repository: IProfesorRepository = SQLAlchemyProfesorRepository(
+                repository_or_session
+            )
+        else:
+            # Nueva forma: inyección de dependencias
+            self.repository = repository_or_session
 
     @with_metrics("obtener_profesor")
     @cache_profesores(ttl=180)  # Cache por 3 minutos

@@ -88,7 +88,7 @@ class ZonaPreferida:
         return self.tiene_preferencia
 
     @classmethod
-    def sin_preferencia(cls) -> 'ZonaPreferida':
+    def sin_preferencia(cls) -> "ZonaPreferida":
         """
         Crea una instancia sin preferencia de zona.
 
@@ -103,7 +103,7 @@ class ZonaPreferida:
         return cls(zona_id=None, zona_nombre=None)
 
     @classmethod
-    def from_id(cls, zona_id: int, zona_nombre: Optional[str] = None) -> 'ZonaPreferida':
+    def from_id(cls, zona_id: int, zona_nombre: Optional[str] = None) -> "ZonaPreferida":
         """
         Crea una instancia con una zona específica.
 

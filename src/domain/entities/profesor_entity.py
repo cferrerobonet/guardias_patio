@@ -14,6 +14,7 @@ from core.exceptions import (
     MaxGuardiasDiaExceededError,
     ProfesorAusenteError,
 )
+
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
 
 
@@ -116,7 +117,7 @@ class ProfesorEntity:
                 message=(
                     f"El profesor aún no ha comenzado guardias "
                     f"(inicio: {self.fecha_inicio_guardias})"
-                )
+                ),
             )
 
         # Verificar fecha de fin
@@ -124,7 +125,7 @@ class ProfesorEntity:
             raise ProfesorAusenteError(
                 profesor_id=self.id,
                 fecha=fecha,
-                message=f"El profesor ya terminó guardias (fin: {self.fecha_fin_guardias})"
+                message=f"El profesor ya terminó guardias (fin: {self.fecha_fin_guardias})",
             )
 
         # Verificar día de la semana
@@ -159,11 +160,7 @@ class ProfesorEntity:
         return numero_recreo in self.recreos_permitidos
 
     def puede_asignar_guardia(
-        self,
-        fecha: date,
-        turno_recreo: str,
-        numero_recreo: int,
-        zona_id: Optional[int] = None
+        self, fecha: date, turno_recreo: str, numero_recreo: int, zona_id: Optional[int] = None
     ) -> tuple[bool, Optional[str]]:
         """
         Verifica de forma completa si se puede asignar una guardia.
@@ -226,7 +223,7 @@ class ProfesorEntity:
             raise MaxGuardiasDiaExceededError(
                 profesor_id=self.id,
                 guardias_actuales=self.guardias_asignadas_dia,
-                message=f"El profesor ya tiene {self.guardias_asignadas_dia} guardias asignadas hoy"
+                message=f"El profesor ya tiene {self.guardias_asignadas_dia} guardias asignadas hoy",
             )
 
         self.guardias_asignadas_dia += 1

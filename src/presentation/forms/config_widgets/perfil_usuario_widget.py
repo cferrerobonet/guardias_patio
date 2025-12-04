@@ -7,10 +7,9 @@ Muestra y permite editar información del usuario actual:
 - Botón cambiar contraseña
 """
 
+import ui_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout
-
-import ui_styles as styles
 
 
 class PerfilUsuarioWidget(QGroupBox):
@@ -54,7 +53,9 @@ class PerfilUsuarioWidget(QGroupBox):
 
         # ===== Nombre de usuario (solo lectura) =====
         label_username = QLabel("Usuario:")
-        label_username.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
+        label_username.setStyleSheet(
+            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;"
+        )
         layout.addWidget(label_username)
 
         self.username_display = QLineEdit()

@@ -6,6 +6,7 @@ Tests unitarios para los Value Objects:
 - ZonaPreferida
 Valida construcción, validaciones y edge cases.
 """
+
 import pytest
 
 from src.domain.value_objects import Email, HorasContrato, Turno, TurnoEnum, ZonaPreferida
@@ -49,6 +50,7 @@ class TestEmail:
         assert Email("user@example.com").value == "user@example.com"
         assert Email("user.name@example.com").value == "user.name@example.com"
         assert Email("user+tag@example.co.uk").value == "user+tag@example.co.uk"
+
 
 class TestTurno:
     def test_turno_manana(self):
@@ -130,6 +132,7 @@ class TestTurno:
                 turno = Turno(valor)
             assert turno.value == valor
 
+
 class TestHorasContrato:
     def test_horas_valido(self):
         horas = HorasContrato(20.0)
@@ -193,6 +196,7 @@ class TestHorasContrato:
         horas = HorasContrato(25.0)
         assert "25.0" in repr(horas) or "HorasContrato" in repr(horas)
 
+
 class TestZonaPreferida:
     def test_sin_preferencia(self):
         zp = ZonaPreferida.sin_preferencia()
@@ -229,13 +233,7 @@ class TestZonaPreferida:
 
     def test_zona_diferentes_nombres(self):
         """Test: diferentes nombres de zona."""
-        zonas = [
-            "Patio Central",
-            "Entrada Principal",
-            "Biblioteca",
-            "Cafetería",
-            "Zona Deportiva"
-        ]
+        zonas = ["Patio Central", "Entrada Principal", "Biblioteca", "Cafetería", "Zona Deportiva"]
 
         for nombre in zonas:
             zona = ZonaPreferida(nombre)

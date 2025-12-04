@@ -431,30 +431,70 @@ grep -r "from presentation" src/domain/ --include="*.py"    # Debe estar vacío
 
 | Capa             | Archivos | Líneas de Código | Cobertura Tests |
 |------------------|----------|------------------|-----------------|
-| Domain           | ~30      | ~3,000          | ~95%            |
-| Application      | ~40      | ~5,000          | ~90%            |
-| Infrastructure   | ~25      | ~3,500          | ~85%            |
-| Presentation     | ~60      | ~18,000         | ~60%            |
-| Services         | ~10      | ~8,000          | ~70%            |
-| **TOTAL**        | **~165** | **~41,000**     | **~75%**        |
+| Domain           | ~30      | ~3,000          | ~92%            |
+| Application      | ~40      | ~5,000          | ~85%            |
+| Infrastructure   | ~25      | ~3,500          | ~70%            |
+| Presentation     | ~60      | ~18,000         | ~15%            |
+| Services         | ~10      | ~8,000          | ~60%            |
+| **TOTAL**        | **~165** | **~41,000**     | **~40%**        |
+
+**Estado de Tests (30 Nov 2025)**:
+- **990 tests pasando** (96%)
+- **36 tests saltados** (4%)  
+- **0 tests fallando**
+- **Cobertura**: 39.75%
 
 ---
 
 ## 🚀 Próximos Pasos
 
-### Mejoras Arquitectónicas Pendientes
+### ✅ Mejoras Arquitectónicas Completadas (v3.1.1)
 
-1. **Eliminar carpeta `/models` legacy**
-   - Migrar modelos ORM a `infrastructure/database/models.py`
-   - Deprecar imports de `models.models`
+1. ~~**Eliminar carpeta `/models` legacy**~~ ✅ COMPLETADO
+   - Modelos ORM movidos a `infrastructure/database/models.py`
+   - Re-export en `models/models.py` para backward compatibility
+   - 28 archivos migrados a nueva ubicación (infrastructure/*, domain/services/*, application/*)
 
-2. **Consolidar `/services` en `/application`**
-   - Evaluar si algunos servicios son use cases
-   - Documentar claramente cuándo usar services vs use cases
+2. ~~**Consolidar `/services` en `/application`**~~ ✅ DOCUMENTADO
+   - **Decisión**: Mantener `/services` como "Application Services Layer"
+   - **Razón**: Son servicios de orquestación complejos, no simples Use Cases
+   - Ver documentación de distinción abajo
 
-3. **Mejorar separación UI/Lógica**
-   - Algunos widgets tienen lógica de negocio
-   - Extraer a use cases cuando corresponda
+3. **Mejorar separación UI/Lógica** 🔄 EN PROGRESO
+   
+   **Análisis (14 ene 2025)**: 24 archivos en `presentation/` con acceso directo a BD:
+   
+   | Archivo | Queries | Estado | Notas |
+   |---------|---------|--------|-------|
+   | `widgets/panel_estadisticas.py` | 14→0 | ✅ **REFACTORIZADO** | Usa `ObtenerEstadisticasPanelUseCase` |
+   | `widgets/gestion_cursos_widget.py` | 11 | 🔴 Pendiente | CRUD de cursos |
+   | `widgets/gestor_sustituciones.py` | 9 | 🔴 Pendiente | Lógica compleja de sustituciones |
+   | `widgets/vista_calendario.py` | 7 | 🟡 Pendiente | Consultas de visualización |
+   | `forms/dashboard_form.py` | 5 | 🟡 Pendiente | Estadísticas dashboard |
+   | `widgets/gestionar_ausencias.py` | 4 | 🟡 Pendiente | CRUD de ausencias |
+   | `forms/profesor_form.py` | 4 | 🟢 Baja | CRUD simple |
+   | Otros 17 archivos | 1-4 c/u | 🟢 Baja | Queries simples de lookup |
+   
+   **Progreso**: 1/24 archivos refactorizados (panel_estadisticas)
+   
+   **Estrategia**:
+   - Refactorizar progresivamente empezando por archivos de alta prioridad
+   - Reutilizar servicios existentes (`EstadisticasService`, etc.)
+   - Crear Use Cases/DTOs solo cuando sea necesario
+
+### 📝 Distinción: Use Cases vs Services
+
+| Aspecto | Use Cases (`application/use_cases/`) | Services (`services/`) |
+|---------|--------------------------------------|------------------------|
+| **Propósito** | Orquestar una acción de usuario específica | Lógica de negocio compleja reutilizable |
+| **Complejidad** | Simple (coordina, valida, delega) | Compleja (algoritmos, cálculos) |
+| **Estado** | Stateless, una operación | Puede tener estado interno |
+| **Ejemplo** | `CrearProfesorUseCase` | `AsignadorGuardias`, `CalculadorGuardias` |
+| **Dependencias** | Repositorios, DTOs | Otros services, BD directa |
+| **Testing** | Unit tests con mocks | Integration tests |
+
+**Conclusión**: Los servicios en `/services/` son legítimos "Application Services" de Clean Architecture,
+no Use Cases. La separación actual es correcta y pragmática.
 
 ---
 
@@ -468,49 +508,45 @@ grep -r "from presentation" src/domain/ --include="*.py"    # Debe estar vacío
 
 ---
 
-## ⚠️ Deuda Técnica Arquitectónica
+## ✅ Deuda Técnica Arquitectónica (RESUELTA)
 
-### Violaciones Conocidas (Auditoría FASE 2 - 12 nov 2025)
+### Violaciones Corregidas (Refactorización v3.1.0 - 13 ene 2025)
 
-#### 1. Application → Infrastructure (Imports Directos)
+#### 1. Application → Infrastructure (Imports Directos) ✅ CORREGIDO
 
-**Cantidad**: 6 violaciones en use cases  
-**Severidad**: Media  
-**Impacto**: Dificulta testing, rompe Dependency Inversion Principle (DIP)
+**Cantidad anterior**: 6 violaciones en use cases  
+**Estado actual**: ✅ **Corregido mediante Dependency Injection**
 
-**Archivos afectados**:
-1. `application/use_cases/guardia/obtener_guardias.py`
-2. `application/use_cases/guardia/asignar_guardia.py`
-3. `application/use_cases/profesor/listar_profesores.py`
-4. `application/use_cases/profesor/obtener_profesor.py`
-5. `application/use_cases/profesor/crear_profesor.py` (2 imports)
+**Solución implementada**:
+1. Creado `application/factories.py` como punto centralizado de DI
+2. Use Cases ahora aceptan interfaces de repositorio como parámetros opcionales
+3. Fallback con lazy import para backward compatibility
 
-**Patrón actual** ❌:
+**Archivos refactorizados**:
+1. `application/use_cases/guardia/obtener_guardias.py` ✅
+2. `application/use_cases/guardia/asignar_guardia.py` ✅
+3. `application/use_cases/profesor/listar_profesores.py` ✅
+4. `application/use_cases/profesor/obtener_profesor.py` ✅
+5. `application/use_cases/profesor/crear_profesor.py` ✅
+
+**Patrón implementado** ✅:
 ```python
-from infrastructure.repositories import SQLAlchemyProfesorRepository
+from domain.repositories import IProfesorRepository
 
 class ListarProfesores:
-    def __init__(self, session: Session):
-        self.repo = SQLAlchemyProfesorRepository(session)
+    def __init__(self, session: Session, repository: IProfesorRepository | None = None):
+        if repository is None:
+            # Lazy import para backward compatibility
+            from infrastructure.repositories import SQLAlchemyProfesorRepository
+            repository = SQLAlchemyProfesorRepository(session)
+        self.repo = repository
 ```
 
-**Patrón esperado** ✅:
-```python
-from domain.repositories import ProfesorRepositoryProtocol
-
-class ListarProfesores:
-    def __init__(self, repo: ProfesorRepositoryProtocol):
-        self.repo = repo
-```
-
-**Esfuerzo de corrección**: 2-4 horas  
-**Prioridad**: Media (no urgente, funciona correctamente)  
-**Roadmap**: Corregir en fase futura de refinamiento arquitectónico
-
-**Beneficios de corregir**:
+**Beneficios obtenidos**:
 - ✅ Testing simplificado (mockear interfaces es fácil)
 - ✅ Cumplimiento DIP (depender de abstracciones)
 - ✅ Facilita cambio de backend (SQLite → PostgreSQL)
+- ✅ Backward compatibility garantizada
 
 #### 2. Ubicación de `/services`
 
@@ -546,7 +582,8 @@ Ver diagrama completo en: `documentacion/diagramas/arquitectura_dependencias.md`
 
 ---
 
-**Última revisión**: 12 de noviembre de 2025  
+**Última revisión**: 30 de noviembre de 2025  
 **Fase**: 4 - Consolidación de Documentación  
 **Estado**: ✅ Arquitectura auditada, violaciones documentadas  
+**Tests**: 990 passed, 36 skipped, 39.75% coverage
 **Auditoría**: Ver `documentacion/auditoria/consolidacion_fase2.md`

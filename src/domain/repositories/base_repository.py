@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, Optional, TypeVar
 
 # TypeVar para Entity genérica
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class IBaseRepository(ABC, Generic[T]):

@@ -17,7 +17,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 import pytest
-from models.models import Configuracion, Guardia, Profesor, Zona
+from infrastructure.database.models import Configuracion, Guardia, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias, guardar_guardias_en_bd
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
@@ -111,6 +111,7 @@ class TestFlujCompletoUsuario:
 
         # FASE 2.5: Crear configuración del curso
         from datetime import time
+
         config = Configuracion(
             anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
@@ -168,9 +169,7 @@ class TestFlujCompletoUsuario:
         guardias_por_profesor = {}
         for guardia in guardias:
             profesor_id = guardia.profesor_id
-            guardias_por_profesor[profesor_id] = (
-                guardias_por_profesor.get(profesor_id, 0) + 1
-            )
+            guardias_por_profesor[profesor_id] = guardias_por_profesor.get(profesor_id, 0) + 1
 
         # Todos los profesores deberían tener guardias
         assert len(guardias_por_profesor) > 0
@@ -184,7 +183,9 @@ class TestFlujCompletoUsuario:
 
         logger.info("✅ Fase 4: Distribución equitativa verificada")
 
-    @pytest.mark.skip(reason="API de ExportadorDatos.importar_todo cambió - pendiente de actualización")
+    @pytest.mark.skip(
+        reason="API de ExportadorDatos.importar_todo cambió - pendiente de actualización"
+    )
     def test_flujo_exportacion_importacion_json(self, session_e2e, limpiar_bd):
         """
         Test E2E: Exportar e importar datos completos en JSON.
@@ -216,6 +217,7 @@ class TestFlujCompletoUsuario:
         session_e2e.add_all([zona1, zona2])
 
         from datetime import time
+
         config = Configuracion(
             anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
@@ -254,9 +256,7 @@ class TestFlujCompletoUsuario:
         )
 
         # FASE 2: Exportar a JSON
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as tmp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
@@ -290,9 +290,7 @@ class TestFlujCompletoUsuario:
             logger.info("✅ BD limpiada")
 
             # FASE 4: Importar desde JSON
-            resultado = ExportadorDatos.importar_todo(
-                session_e2e, tmp_path, limpiar_antes=False
-            )
+            resultado = ExportadorDatos.importar_todo(session_e2e, tmp_path, limpiar_antes=False)
             logger.info(f"✅ Datos importados: {resultado}")
 
             # FASE 5: Verificar que todo se restauró
@@ -302,17 +300,13 @@ class TestFlujCompletoUsuario:
 
             # Verificar contenido específico
             prof_restaurado = (
-                session_e2e.query(Profesor)
-                .filter_by(nombre_completo="Test Profesor 1")
-                .first()
+                session_e2e.query(Profesor).filter_by(nombre_completo="Test Profesor 1").first()
             )
             assert prof_restaurado is not None
             assert prof_restaurado.horas_contrato == 30
             assert prof_restaurado.turno == "completo"
 
-            zona_restaurada = (
-                session_e2e.query(Zona).filter_by(nombre_zona="Zona Test 1").first()
-            )
+            zona_restaurada = session_e2e.query(Zona).filter_by(nombre_zona="Zona Test 1").first()
             assert zona_restaurada is not None
 
             logger.info("✅ Todos los datos restaurados correctamente")
@@ -322,7 +316,9 @@ class TestFlujCompletoUsuario:
             if Path(tmp_path).exists():
                 Path(tmp_path).unlink()
 
-    @pytest.mark.skip(reason="API de generar_calendario_guardias cambió - ya no acepta parámetros mes/anio")
+    @pytest.mark.skip(
+        reason="API de generar_calendario_guardias cambió - ya no acepta parámetros mes/anio"
+    )
     def test_flujo_generacion_multiple_meses(self, session_e2e, limpiar_bd):
         """
         Test E2E: Generar guardias para múltiples meses.
@@ -334,7 +330,7 @@ class TestFlujCompletoUsuario:
         profesores = []
         for i in range(3):
             prof = Profesor(
-                nombre_completo=f"Profesor Test {i+1}",
+                nombre_completo=f"Profesor Test {i + 1}",
                 horas_contrato=30,
                 turno="completo",
                 porcentaje_jornada=100.0,
@@ -377,9 +373,7 @@ class TestFlujCompletoUsuario:
 
         # Verificar que no hay solapamientos (cada fecha única)
         guardias_total = session_e2e.query(Guardia).all()
-        fechas_turnos_recreos = [
-            (g.fecha, g.turno, g.recreo, g.zona_id) for g in guardias_total
-        ]
+        fechas_turnos_recreos = [(g.fecha, g.turno, g.recreo, g.zona_id) for g in guardias_total]
         # Cada combinación fecha+turno+recreo+zona debe aparecer máx 1 vez
         assert len(fechas_turnos_recreos) == len(set(fechas_turnos_recreos))
 
@@ -434,7 +428,9 @@ class TestFlujCompletoUsuario:
 class TestValidacionesIntegradas:
     """Tests E2E que verifican validaciones en flujos completos."""
 
-    @pytest.mark.skip(reason="API de generar_calendario_guardias cambió - ya no acepta parámetros mes/anio")
+    @pytest.mark.skip(
+        reason="API de generar_calendario_guardias cambió - ya no acepta parámetros mes/anio"
+    )
     def test_no_se_generan_guardias_sin_profesores(self, session_e2e, limpiar_bd):
         """
         Test E2E: El sistema no debe generar guardias si no hay profesores.
@@ -457,7 +453,9 @@ class TestValidacionesIntegradas:
         assert guardias_count == 0
         logger.info("✅ Correctamente no se generaron guardias sin profesores")
 
-    @pytest.mark.skip(reason="API de generar_calendario_guardias cambió - ya no acepta parámetros mes/anio/eliminar_existentes")
+    @pytest.mark.skip(
+        reason="API de generar_calendario_guardias cambió - ya no acepta parámetros mes/anio/eliminar_existentes"
+    )
     def test_regeneracion_elimina_guardias_previas(self, session_e2e, limpiar_bd):
         """
         Test E2E: Regenerar guardias debe eliminar las existentes.
@@ -488,6 +486,4 @@ class TestValidacionesIntegradas:
         # El count puede ser similar pero no deberían ser las mismas guardias
         # (los IDs serían diferentes si se eliminaron y recrearon)
         assert count_segunda > 0
-        logger.info(
-            f"✅ Regeneración exitosa: {count_primera} → {count_segunda} guardias"
-        )
+        logger.info(f"✅ Regeneración exitosa: {count_primera} → {count_segunda} guardias")

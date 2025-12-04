@@ -205,14 +205,14 @@ class CCleanerMainWindow(QMainWindow):
         logger.info(f"   Sidebar existe: {self.sidebar is not None}")
         logger.info(f"   Sidebar tiene selector_curso: {hasattr(self.sidebar, 'selector_curso')}")
 
-        if hasattr(self.sidebar, 'selector_curso'):
+        if hasattr(self.sidebar, "selector_curso"):
             logger.info(f"   selector_curso es None: {self.sidebar.selector_curso is None}")
             if self.sidebar.selector_curso:
                 logger.info(f"   Tipo de selector_curso: {type(self.sidebar.selector_curso)}")
-                tiene_signal = hasattr(self.sidebar.selector_curso, 'curso_cambiado')
+                tiene_signal = hasattr(self.sidebar.selector_curso, "curso_cambiado")
                 logger.info(f"   selector_curso tiene curso_cambiado: {tiene_signal}")
 
-        if hasattr(self.sidebar, 'selector_curso') and self.sidebar.selector_curso:
+        if hasattr(self.sidebar, "selector_curso") and self.sidebar.selector_curso:
             logger.info("🔗 Conectando señal curso_cambiado del selector al handler")
             self.sidebar.selector_curso.curso_cambiado.connect(self._on_curso_cambiado)
             logger.info("✅ Señal curso_cambiado conectada correctamente")
@@ -225,9 +225,7 @@ class CCleanerMainWindow(QMainWindow):
             except Exception as e:
                 logger.error(f"❌ Error al verificar conexión: {e}")
         else:
-            logger.warning(
-                "⚠️ No se pudo conectar señal - selector_curso no disponible"
-            )
+            logger.warning("⚠️ No se pudo conectar señal - selector_curso no disponible")
 
     def _on_curso_cambiado(self, curso_id: int):
         """
@@ -240,7 +238,7 @@ class CCleanerMainWindow(QMainWindow):
         # Obtener el widget actual
         current_widget = self.content_stack.currentWidget()
 
-        if current_widget and hasattr(current_widget, 'content_widget'):
+        if current_widget and hasattr(current_widget, "content_widget"):
             # Es un ContentWrapper, obtener el widget real dentro
             widget = current_widget.content_widget
             widget_name = widget.__class__.__name__
@@ -248,22 +246,22 @@ class CCleanerMainWindow(QMainWindow):
             logger.info(f"   Widget actual: {widget_name}")
 
             # Intentar refrescar el widget si tiene método para ello
-            if hasattr(widget, 'cargar_datos'):
+            if hasattr(widget, "cargar_datos"):
                 logger.info(f"   → Llamando a {widget_name}.cargar_datos()")
                 widget.cargar_datos()
-            elif hasattr(widget, 'actualizar_calendario'):
+            elif hasattr(widget, "actualizar_calendario"):
                 logger.info(f"   → Llamando a {widget_name}.actualizar_calendario()")
                 widget.actualizar_calendario()
-            elif hasattr(widget, 'cargar_profesores'):
+            elif hasattr(widget, "cargar_profesores"):
                 logger.info(f"   → Llamando a {widget_name}.cargar_profesores()")
                 widget.cargar_profesores()
-            elif hasattr(widget, 'cargar_zonas'):
+            elif hasattr(widget, "cargar_zonas"):
                 logger.info(f"   → Llamando a {widget_name}.cargar_zonas()")
                 widget.cargar_zonas()
-            elif hasattr(widget, 'cargar_guardias'):
+            elif hasattr(widget, "cargar_guardias"):
                 logger.info(f"   → Llamando a {widget_name}.cargar_guardias()")
                 widget.cargar_guardias()
-            elif hasattr(widget, 'refrescar'):
+            elif hasattr(widget, "refrescar"):
                 logger.info(f"   → Llamando a {widget_name}.refrescar()")
                 widget.refrescar()
             else:

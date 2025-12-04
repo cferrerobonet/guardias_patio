@@ -2,6 +2,7 @@
 Sistema de Machine Learning Predictivo para optimizar asignación de guardias.
 Aprende de soluciones pasadas y predice mejor estrategia inicial.
 """
+
 import json
 import logging
 import pickle
@@ -11,7 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-from models.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sqlalchemy.orm import Session
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class HistoricoSolucion:
     """Registro histórico de una solución."""
+
     fecha: datetime
     caracteristicas_config: Dict
     estrategia_usada: str  # 'iterativo' o 'ilp'
@@ -62,7 +64,7 @@ class MLPredictorEstrategia:
         estrategia_usada: str,
         iteraciones_necesarias: int,
         tiempo_segundos: float,
-        parametros_usados: Dict
+        parametros_usados: Dict,
     ):
         """
         Registra una solución en el histórico para entrenamiento futuro.
@@ -83,21 +85,18 @@ class MLPredictorEstrategia:
             tiempo_segundos=tiempo_segundos,
             cobertura_final=cobertura,
             exito=cobertura >= 0.95,
-            parametros_usados=parametros_usados
+            parametros_usados=parametros_usados,
         )
 
         # Guardar en archivo
         self._append_historico(registro)
 
         logger.info(
-            f"📚 Solución registrada para ML: {estrategia_usada}, "
-            f"cobertura {cobertura*100:.1f}%"
+            f"📚 Solución registrada para ML: {estrategia_usada}, cobertura {cobertura * 100:.1f}%"
         )
 
     def predecir_estrategia_optima(
-        self,
-        config: Configuracion,
-        dias_lectivos: List[date]
+        self, config: Configuracion, dias_lectivos: List[date]
     ) -> Tuple[str, Dict]:
         """
         Predice la mejor estrategia y parámetros iniciales basándose en ML.
@@ -119,26 +118,25 @@ class MLPredictorEstrategia:
         estrategia_pred = self.modelo_estrategia.predict(X)[0]
 
         # Predecir iteraciones necesarias
-        iteraciones_pred = int(self.modelo_iteraciones.predict(X)[0]) if self.modelo_iteraciones else 3
+        iteraciones_pred = (
+            int(self.modelo_iteraciones.predict(X)[0]) if self.modelo_iteraciones else 3
+        )
 
         # Determinar parámetros basados en predicción
-        if estrategia_pred == 'iterativo':
+        if estrategia_pred == "iterativo":
             parametros = {
-                'max_iteraciones': min(5, iteraciones_pred + 1),
-                'objetivo_cobertura': 0.95,
-                'usar_cache': True
+                "max_iteraciones": min(5, iteraciones_pred + 1),
+                "objetivo_cobertura": 0.95,
+                "usar_cache": True,
             }
         else:  # ilp
             parametros = {
-                'limite_tiempo': 300,
-                'priorizar_fecha_inicio': True,
-                'priorizar_equidad': True
+                "limite_tiempo": 300,
+                "priorizar_fecha_inicio": True,
+                "priorizar_equidad": True,
             }
 
-        logger.info(
-            f"🤖 ML predice: {estrategia_pred} "
-            f"(iteraciones estimadas: {iteraciones_pred})"
-        )
+        logger.info(f"🤖 ML predice: {estrategia_pred} (iteraciones estimadas: {iteraciones_pred})")
 
         return estrategia_pred, parametros
 
@@ -151,10 +149,7 @@ class MLPredictorEstrategia:
         historico = self._cargar_historico()
 
         if len(historico) < 20:
-            logger.warning(
-                f"⚠️  Insuficientes datos para entrenar ML "
-                f"({len(historico)}/20 mínimo)"
-            )
+            logger.warning(f"⚠️  Insuficientes datos para entrenar ML ({len(historico)}/20 mínimo)")
             return False
 
         logger.info(f"🤖 Entrenando modelos ML con {len(historico)} soluciones...")
@@ -168,7 +163,7 @@ class MLPredictorEstrategia:
             if solucion.exito:  # Solo aprender de soluciones exitosas
                 features = self._dict_to_features(solucion.caracteristicas_config)
                 X.append(features)
-                y_estrategia.append(1 if solucion.estrategia_usada == 'ilp' else 0)
+                y_estrategia.append(1 if solucion.estrategia_usada == "ilp" else 0)
                 y_iteraciones.append(solucion.iteraciones_necesarias)
 
         if len(X) < 10:
@@ -185,18 +180,15 @@ class MLPredictorEstrategia:
 
         # Entrenar modelo de estrategia (clasificación)
         self.modelo_estrategia = RandomForestClassifier(
-            n_estimators=100,
-            max_depth=10,
-            random_state=42
+            n_estimators=100, max_depth=10, random_state=42
         )
         self.modelo_estrategia.fit(X_scaled, y_estrategia)
 
         # Entrenar modelo de iteraciones (regresión)
         from sklearn.ensemble import RandomForestRegressor
+
         self.modelo_iteraciones = RandomForestRegressor(
-            n_estimators=100,
-            max_depth=10,
-            random_state=42
+            n_estimators=100, max_depth=10, random_state=42
         )
         self.modelo_iteraciones.fit(X_scaled, y_iteraciones)
 
@@ -207,14 +199,10 @@ class MLPredictorEstrategia:
         return True
 
     def _extraer_caracteristicas_config(
-        self,
-        config: Configuracion,
-        dias_lectivos: List[date]
+        self, config: Configuracion, dias_lectivos: List[date]
     ) -> Dict:
         """Extrae características relevantes de la configuración."""
-        profesores = self.db.query(Profesor).filter(
-            Profesor.activo.is_(True)
-        ).all()
+        profesores = self.db.query(Profesor).filter(Profesor.activo.is_(True)).all()
 
         # Características numéricas básicas
         num_profesores = len(profesores)
@@ -227,49 +215,45 @@ class MLPredictorEstrategia:
         ratio_profesor_slots = num_profesores / total_slots if total_slots > 0 else 0
 
         # Ausencias promedio
-        ausencias_promedio = np.mean([
-            len(p.ausencias) if hasattr(p, 'ausencias') else 0
-            for p in profesores
-        ])
+        ausencias_promedio = np.mean(
+            [len(p.ausencias) if hasattr(p, "ausencias") else 0 for p in profesores]
+        )
 
         # Distribución de turnos
-        profesores_manana = sum(1 for p in profesores if 'mañana' in (p.turnos or []))
-        profesores_tarde = sum(1 for p in profesores if 'tarde' in (p.turnos or []))
+        profesores_manana = sum(1 for p in profesores if "mañana" in (p.turnos or []))
+        profesores_tarde = sum(1 for p in profesores if "tarde" in (p.turnos or []))
 
         # Distribución de zonas
-        zonas_promedio_prof = np.mean([
-            len(p.zonas) if p.zonas else 0
-            for p in profesores
-        ])
+        zonas_promedio_prof = np.mean([len(p.zonas) if p.zonas else 0 for p in profesores])
 
         return {
-            'num_profesores': num_profesores,
-            'num_dias': num_dias,
-            'num_recreos': num_recreos,
-            'num_zonas': num_zonas,
-            'total_slots': total_slots,
-            'ratio_profesor_slots': ratio_profesor_slots,
-            'ausencias_promedio': ausencias_promedio,
-            'profesores_manana': profesores_manana,
-            'profesores_tarde': profesores_tarde,
-            'zonas_promedio_prof': zonas_promedio_prof,
-            'complejidad': total_slots / num_profesores if num_profesores > 0 else 0
+            "num_profesores": num_profesores,
+            "num_dias": num_dias,
+            "num_recreos": num_recreos,
+            "num_zonas": num_zonas,
+            "total_slots": total_slots,
+            "ratio_profesor_slots": ratio_profesor_slots,
+            "ausencias_promedio": ausencias_promedio,
+            "profesores_manana": profesores_manana,
+            "profesores_tarde": profesores_tarde,
+            "zonas_promedio_prof": zonas_promedio_prof,
+            "complejidad": total_slots / num_profesores if num_profesores > 0 else 0,
         }
 
     def _dict_to_features(self, caracteristicas: Dict) -> List[float]:
         """Convierte diccionario de características a vector numpy."""
         return [
-            caracteristicas.get('num_profesores', 0),
-            caracteristicas.get('num_dias', 0),
-            caracteristicas.get('num_recreos', 0),
-            caracteristicas.get('num_zonas', 0),
-            caracteristicas.get('total_slots', 0),
-            caracteristicas.get('ratio_profesor_slots', 0),
-            caracteristicas.get('ausencias_promedio', 0),
-            caracteristicas.get('profesores_manana', 0),
-            caracteristicas.get('profesores_tarde', 0),
-            caracteristicas.get('zonas_promedio_prof', 0),
-            caracteristicas.get('complejidad', 0)
+            caracteristicas.get("num_profesores", 0),
+            caracteristicas.get("num_dias", 0),
+            caracteristicas.get("num_recreos", 0),
+            caracteristicas.get("num_zonas", 0),
+            caracteristicas.get("total_slots", 0),
+            caracteristicas.get("ratio_profesor_slots", 0),
+            caracteristicas.get("ausencias_promedio", 0),
+            caracteristicas.get("profesores_manana", 0),
+            caracteristicas.get("profesores_tarde", 0),
+            caracteristicas.get("zonas_promedio_prof", 0),
+            caracteristicas.get("complejidad", 0),
         ]
 
     def _preparar_features(self, caracteristicas_list: List[Dict]) -> np.ndarray:
@@ -281,29 +265,22 @@ class MLPredictorEstrategia:
 
         return X
 
-    def _predecir_heuristico(
-        self,
-        caracteristicas: Dict
-    ) -> Tuple[str, Dict]:
+    def _predecir_heuristico(self, caracteristicas: Dict) -> Tuple[str, Dict]:
         """Predicción heurística cuando no hay modelo entrenado."""
-        complejidad = caracteristicas.get('complejidad', 0)
-        ratio = caracteristicas.get('ratio_profesor_slots', 0)
+        complejidad = caracteristicas.get("complejidad", 0)
+        ratio = caracteristicas.get("ratio_profesor_slots", 0)
 
         # Si la complejidad es alta o el ratio es bajo, recomendar ILP
         if complejidad > 40 or ratio < 0.05:
-            estrategia = 'ilp'
+            estrategia = "ilp"
             parametros = {
-                'limite_tiempo': 300,
-                'priorizar_fecha_inicio': True,
-                'priorizar_equidad': True
+                "limite_tiempo": 300,
+                "priorizar_fecha_inicio": True,
+                "priorizar_equidad": True,
             }
         else:
-            estrategia = 'iterativo'
-            parametros = {
-                'max_iteraciones': 5,
-                'objetivo_cobertura': 0.95,
-                'usar_cache': True
-            }
+            estrategia = "iterativo"
+            parametros = {"max_iteraciones": 5, "objetivo_cobertura": 0.95, "usar_cache": True}
 
         logger.info(f"📊 Heurística predice: {estrategia} (complejidad: {complejidad:.1f})")
         return estrategia, parametros
@@ -316,13 +293,8 @@ class MLPredictorEstrategia:
         # Guardar (mantener últimas 1000 soluciones)
         historico_reciente = historico[-1000:]
 
-        with open(self.archivo_historico, 'w', encoding='utf-8') as f:
-            json.dump(
-                [asdict(r) for r in historico_reciente],
-                f,
-                indent=2,
-                default=str
-            )
+        with open(self.archivo_historico, "w", encoding="utf-8") as f:
+            json.dump([asdict(r) for r in historico_reciente], f, indent=2, default=str)
 
     def _cargar_historico(self) -> List[HistoricoSolucion]:
         """Carga el histórico desde archivo."""
@@ -330,19 +302,19 @@ class MLPredictorEstrategia:
             return []
 
         try:
-            with open(self.archivo_historico, 'r', encoding='utf-8') as f:
+            with open(self.archivo_historico, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             return [
                 HistoricoSolucion(
-                    fecha=datetime.fromisoformat(r['fecha']),
-                    caracteristicas_config=r['caracteristicas_config'],
-                    estrategia_usada=r['estrategia_usada'],
-                    iteraciones_necesarias=r['iteraciones_necesarias'],
-                    tiempo_segundos=r['tiempo_segundos'],
-                    cobertura_final=r['cobertura_final'],
-                    exito=r['exito'],
-                    parametros_usados=r['parametros_usados']
+                    fecha=datetime.fromisoformat(r["fecha"]),
+                    caracteristicas_config=r["caracteristicas_config"],
+                    estrategia_usada=r["estrategia_usada"],
+                    iteraciones_necesarias=r["iteraciones_necesarias"],
+                    tiempo_segundos=r["tiempo_segundos"],
+                    cobertura_final=r["cobertura_final"],
+                    exito=r["exito"],
+                    parametros_usados=r["parametros_usados"],
                 )
                 for r in data
             ]
@@ -358,15 +330,15 @@ class MLPredictorEstrategia:
     def _guardar_modelos(self):
         """Guarda los modelos entrenados en disco."""
         if self.modelo_estrategia:
-            with open(self.modelo_dir / "modelo_estrategia.pkl", 'wb') as f:
+            with open(self.modelo_dir / "modelo_estrategia.pkl", "wb") as f:
                 pickle.dump(self.modelo_estrategia, f)
 
         if self.modelo_iteraciones:
-            with open(self.modelo_dir / "modelo_iteraciones.pkl", 'wb') as f:
+            with open(self.modelo_dir / "modelo_iteraciones.pkl", "wb") as f:
                 pickle.dump(self.modelo_iteraciones, f)
 
         if self.scaler:
-            with open(self.modelo_dir / "scaler.pkl", 'wb') as f:
+            with open(self.modelo_dir / "scaler.pkl", "wb") as f:
                 pickle.dump(self.scaler, f)
 
     def _cargar_modelos(self):
@@ -377,17 +349,17 @@ class MLPredictorEstrategia:
             archivo_scaler = self.modelo_dir / "scaler.pkl"
 
             if archivo_estrategia.exists():
-                with open(archivo_estrategia, 'rb') as f:
+                with open(archivo_estrategia, "rb") as f:
                     self.modelo_estrategia = pickle.load(f)
                 logger.info("✅ Modelo de estrategia cargado")
 
             if archivo_iteraciones.exists():
-                with open(archivo_iteraciones, 'rb') as f:
+                with open(archivo_iteraciones, "rb") as f:
                     self.modelo_iteraciones = pickle.load(f)
                 logger.info("✅ Modelo de iteraciones cargado")
 
             if archivo_scaler.exists():
-                with open(archivo_scaler, 'rb') as f:
+                with open(archivo_scaler, "rb") as f:
                     self.scaler = pickle.load(f)
 
         except Exception as e:
@@ -398,26 +370,23 @@ class MLPredictorEstrategia:
         historico = self._cargar_historico()
 
         if not historico:
-            return {
-                'total_soluciones': 0,
-                'soluciones_exitosas': 0,
-                'modelos_entrenados': False
-            }
+            return {"total_soluciones": 0, "soluciones_exitosas": 0, "modelos_entrenados": False}
 
         exitosas = [s for s in historico if s.exito]
 
         estrategias_usadas = {}
         for s in exitosas:
-            estrategias_usadas[s.estrategia_usada] = \
+            estrategias_usadas[s.estrategia_usada] = (
                 estrategias_usadas.get(s.estrategia_usada, 0) + 1
+            )
 
         return {
-            'total_soluciones': len(historico),
-            'soluciones_exitosas': len(exitosas),
-            'tasa_exito': len(exitosas) / len(historico) if historico else 0,
-            'estrategias_usadas': estrategias_usadas,
-            'tiempo_promedio': np.mean([s.tiempo_segundos for s in exitosas]) if exitosas else 0,
-            'cobertura_promedio': np.mean([s.cobertura_final for s in exitosas]) if exitosas else 0,
-            'modelos_entrenados': self.modelo_estrategia is not None,
-            'datos_suficientes_entrenamiento': self._tiene_datos_suficientes()
+            "total_soluciones": len(historico),
+            "soluciones_exitosas": len(exitosas),
+            "tasa_exito": len(exitosas) / len(historico) if historico else 0,
+            "estrategias_usadas": estrategias_usadas,
+            "tiempo_promedio": np.mean([s.tiempo_segundos for s in exitosas]) if exitosas else 0,
+            "cobertura_promedio": np.mean([s.cobertura_final for s in exitosas]) if exitosas else 0,
+            "modelos_entrenados": self.modelo_estrategia is not None,
+            "datos_suficientes_entrenamiento": self._tiene_datos_suficientes(),
         }

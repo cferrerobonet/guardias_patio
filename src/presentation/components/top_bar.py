@@ -10,6 +10,7 @@ from core.qt_imports import (
     QPushButton,
     QWidget,
 )
+
 from presentation.themes.ccleaner_theme import (
     SPACING_M,
     SPACING_S,
@@ -86,6 +87,6 @@ class TopBar(QWidget):
         for i, item in enumerate(items):
             if i > 0:
                 breadcrumb_html += ' <span style="color: #A19F9D;">›</span> '
-            breadcrumb_html += f'<span>{item}</span>'
+            breadcrumb_html += f"<span>{item}</span>"
 
         self.breadcrumb_label.setText(breadcrumb_html)

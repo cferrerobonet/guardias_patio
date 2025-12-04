@@ -5,13 +5,13 @@ Crea o actualiza la configuración del curso escolar.
 Con invalidación de cache automática.
 """
 
-from sqlalchemy.orm import Session
-
-from application.dtos.configuracion_dto import ActualizarConfiguracionDTO, ConfiguracionDTO
 from core.logging import get_logger
 from core.observability import with_metrics
-from models.models import Configuracion
+from infrastructure.database.models import Configuracion
+from sqlalchemy.orm import Session
 from utils.repository_cache import invalidate_configuracion_cache
+
+from application.dtos.configuracion_dto import ActualizarConfiguracionDTO, ConfiguracionDTO
 
 logger = get_logger(__name__)
 
@@ -52,6 +52,8 @@ class ActualizarConfiguracionUseCase:
                 # Actualizar existente
                 logger.info(f"Actualizando configuración existente (ID: {config.id})")
 
+                if dto.anio_inicio_curso is not None:
+                    config.anio_inicio_curso = dto.anio_inicio_curso
                 if dto.fecha_inicio_curso is not None:
                     config.fecha_inicio_curso = dto.fecha_inicio_curso
                 if dto.fecha_fin_curso is not None:
@@ -82,7 +84,13 @@ class ActualizarConfiguracionUseCase:
                 # Crear nueva
                 logger.info("Creando nueva configuración")
 
+                # Calcular anio_inicio_curso si no se proporciona
+                anio = dto.anio_inicio_curso
+                if anio is None and dto.fecha_inicio_curso:
+                    anio = dto.fecha_inicio_curso.year
+
                 config = Configuracion(
+                    anio_inicio_curso=anio,
                     fecha_inicio_curso=dto.fecha_inicio_curso,
                     fecha_fin_curso=dto.fecha_fin_curso,
                     hora_recreo1_manana=dto.hora_recreo1_manana,
@@ -116,6 +124,7 @@ class ActualizarConfiguracionUseCase:
             # Retornar DTO
             return ConfiguracionDTO(
                 id=config.id,
+                anio_inicio_curso=config.anio_inicio_curso,
                 fecha_inicio_curso=config.fecha_inicio_curso,
                 fecha_fin_curso=config.fecha_fin_curso,
                 hora_recreo1_manana=config.hora_recreo1_manana,

@@ -14,6 +14,7 @@ class ConfiguracionDTO(BaseModel):
     """DTO de salida para Configuración (lectura)."""
 
     id: int
+    anio_inicio_curso: int  # Año de inicio del curso (ej: 2025)
     fecha_inicio_curso: date
     fecha_fin_curso: date
     hora_recreo1_manana: time
@@ -29,12 +30,14 @@ class ConfiguracionDTO(BaseModel):
 
     class Config:
         """Configuración de Pydantic."""
+
         from_attributes = True
 
 
 class ActualizarConfiguracionDTO(BaseModel):
     """DTO de entrada para actualizar la configuración."""
 
+    anio_inicio_curso: Optional[int] = None  # Año de inicio del curso (ej: 2025)
     fecha_inicio_curso: Optional[date] = None
     fecha_fin_curso: Optional[date] = None
     hora_recreo1_manana: Optional[time] = None
@@ -50,5 +53,6 @@ class ActualizarConfiguracionDTO(BaseModel):
 
     class Config:
         """Configuración de Pydantic."""
+
         # Permite valores time de Python
         arbitrary_types_allowed = True

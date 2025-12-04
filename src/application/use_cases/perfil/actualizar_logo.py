@@ -40,9 +40,7 @@ class ActualizarLogoUseCase:
         # Verificar extensión válida
         extensiones_validas = {".png", ".jpg", ".jpeg", ".bmp"}
         if archivo_origen.suffix.lower() not in extensiones_validas:
-            raise ValidationError(
-                f"Formato no válido. Use: {', '.join(extensiones_validas)}"
-            )
+            raise ValidationError(f"Formato no válido. Use: {', '.join(extensiones_validas)}")
 
         # Crear carpeta si no existe
         carpeta_imagenes = Path("imagenes")

@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List, Optional, Set, Tuple
 
-from models.models import Guardia, Profesor
+from infrastructure.database.models import Guardia, Profesor
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -34,6 +34,7 @@ class SlotKey:
 
     Usa frozen=True para permitir uso como key en diccionarios/sets.
     """
+
     fecha: date
     turno: str
     recreo: int
@@ -57,35 +58,17 @@ class IndiceSlots:
     def __init__(self):
         self._ocupados: Set[SlotKey] = set()
 
-    def marcar_ocupado(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int,
-        zona_id: int
-    ) -> None:
+    def marcar_ocupado(self, fecha: date, turno: str, recreo: int, zona_id: int) -> None:
         """Marca un slot como ocupado."""
         key = SlotKey(fecha, turno, recreo, zona_id)
         self._ocupados.add(key)
 
-    def esta_ocupado(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int,
-        zona_id: int
-    ) -> bool:
+    def esta_ocupado(self, fecha: date, turno: str, recreo: int, zona_id: int) -> bool:
         """Verifica si un slot está ocupado (O(1))."""
         key = SlotKey(fecha, turno, recreo, zona_id)
         return key in self._ocupados
 
-    def desmarcar(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int,
-        zona_id: int
-    ) -> None:
+    def desmarcar(self, fecha: date, turno: str, recreo: int, zona_id: int) -> None:
         """Desmarca un slot (útil para backtracking)."""
         key = SlotKey(fecha, turno, recreo, zona_id)
         self._ocupados.discard(key)
@@ -95,10 +78,7 @@ class IndiceSlots:
         return len(self._ocupados)
 
     @classmethod
-    def desde_calendario(
-        cls,
-        calendario: List[Guardia]
-    ) -> 'IndiceSlots':
+    def desde_calendario(cls, calendario: List[Guardia]) -> "IndiceSlots":
         """
         Crea un índice a partir de un calendario existente.
 
@@ -110,12 +90,7 @@ class IndiceSlots:
         """
         indice = cls()
         for guardia in calendario:
-            indice.marcar_ocupado(
-                guardia.fecha,
-                guardia.turno,
-                guardia.recreo,
-                guardia.zona_id
-            )
+            indice.marcar_ocupado(guardia.fecha, guardia.turno, guardia.recreo, guardia.zona_id)
         return indice
 
 
@@ -182,7 +157,7 @@ class FiltroProfesores:
         asignadas: Dict[int, int],
         cuotas: Dict[int, int],
         minimo: Optional[int] = None,
-        maximo: Optional[int] = None
+        maximo: Optional[int] = None,
     ) -> List[Profesor]:
         """
         Filtra profesores por rango de guardias asignadas vs cuota.
@@ -230,13 +205,7 @@ class CacheElegibilidad:
         self._hits = 0
         self._misses = 0
 
-    def obtener(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int,
-        zona_id: int
-    ) -> Optional[List[int]]:
+    def obtener(self, fecha: date, turno: str, recreo: int, zona_id: int) -> Optional[List[int]]:
         """
         Obtiene profesores elegibles cacheados.
 
@@ -251,12 +220,7 @@ class CacheElegibilidad:
         return None
 
     def guardar(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int,
-        zona_id: int,
-        profesor_ids: List[int]
+        self, fecha: date, turno: str, recreo: int, zona_id: int, profesor_ids: List[int]
     ) -> None:
         """Guarda resultado en caché."""
         key = (fecha, turno, recreo, zona_id)
@@ -279,18 +243,16 @@ class CacheElegibilidad:
         hit_rate = (self._hits / total * 100) if total > 0 else 0.0
 
         return {
-            'hits': self._hits,
-            'misses': self._misses,
-            'total': total,
-            'hit_rate': hit_rate,
-            'cache_size': len(self._cache)
+            "hits": self._hits,
+            "misses": self._misses,
+            "total": total,
+            "hit_rate": hit_rate,
+            "cache_size": len(self._cache),
         }
 
 
 def agrupar_slots_por_fecha(
-    slots: List,
-    fecha_inicio: Optional[date] = None,
-    fecha_fin: Optional[date] = None
+    slots: List, fecha_inicio: Optional[date] = None, fecha_fin: Optional[date] = None
 ) -> Dict[date, List]:
     """
     Agrupa slots por fecha para procesamiento en batch.
@@ -321,7 +283,7 @@ def ordenar_profesores_equitativamente(
     profesores: List[Profesor],
     asignadas: Dict[int, int],
     cuotas: Dict[int, int],
-    zona_actual: Optional[int] = None
+    zona_actual: Optional[int] = None,
 ) -> List[Profesor]:
     """
     Ordena profesores priorizando equidad y zona preferida.
@@ -340,6 +302,7 @@ def ordenar_profesores_equitativamente(
     Returns:
         Lista ordenada de profesores
     """
+
     def clave_ordenacion(prof: Profesor) -> Tuple:
         asignadas_prof = asignadas.get(prof.id, 0)
         cuota_prof = cuotas.get(prof.id, 1)
@@ -347,20 +310,14 @@ def ordenar_profesores_equitativamente(
 
         # Menor ratio = más prioritario (menos guardias relativas)
         # Zona preferida = más prioritario (si coincide)
-        zona_match = (
-            0 if zona_actual and prof.zona_preferida_id == zona_actual
-            else 1
-        )
+        zona_match = 0 if zona_actual and prof.zona_preferida_id == zona_actual else 1
 
         return (ratio, zona_match, prof.id)
 
     return sorted(profesores, key=clave_ordenacion)
 
 
-def validar_indices(
-    indice_slots: IndiceSlots,
-    calendario: List[Guardia]
-) -> bool:
+def validar_indices(indice_slots: IndiceSlots, calendario: List[Guardia]) -> bool:
     """
     Valida que el índice de slots esté sincronizado con el calendario.
 
@@ -384,10 +341,7 @@ def validar_indices(
     # Verificar cada guardia del calendario
     for guardia in calendario:
         if not indice_slots.esta_ocupado(
-            guardia.fecha,
-            guardia.turno,
-            guardia.recreo,
-            guardia.zona_id
+            guardia.fecha, guardia.turno, guardia.recreo, guardia.zona_id
         ):
             logger.error(
                 f"Guardia en calendario no está en índice: "
@@ -401,7 +355,7 @@ def validar_indices(
 def estadisticas_rendimiento(
     indice_slots: IndiceSlots,
     cache_elegibilidad: Optional[CacheElegibilidad] = None,
-    total_slots: int = 0
+    total_slots: int = 0,
 ) -> Dict[str, any]:
     """
     Recopila estadísticas de rendimiento de las estructuras optimizadas.
@@ -415,12 +369,11 @@ def estadisticas_rendimiento(
         Diccionario con estadísticas
     """
     stats = {
-        'slots_ocupados': indice_slots.total_ocupados(),
-        'slots_totales': total_slots,
-        'cobertura': (
-            indice_slots.total_ocupados() / total_slots * 100
-            if total_slots > 0 else 0.0
-        )
+        "slots_ocupados": indice_slots.total_ocupados(),
+        "slots_totales": total_slots,
+        "cobertura": (
+            indice_slots.total_ocupados() / total_slots * 100 if total_slots > 0 else 0.0
+        ),
     }
 
     if cache_elegibilidad:

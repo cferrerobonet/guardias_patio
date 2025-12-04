@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from database.db_manager import SessionLocal, engine
-from models.models import Base, Guardia, Profesor, Zona
+from infrastructure.database.models import Base, Guardia, Profesor, Zona
 from services.exportador import ExportadorDatos
 
 
@@ -37,7 +37,7 @@ def setup_test_db():
                 horas_contrato=25.0,
                 porcentaje_jornada=100.0,
                 turno="mañana" if i % 2 == 0 else "tarde",
-                tutor=False
+                tutor=False,
             )
             profesores.append(prof)
             session.add(prof)
@@ -59,14 +59,13 @@ def setup_test_db():
                 fecha=hoy + timedelta(days=i // 4),
                 turno="mañana" if i % 2 == 0 else "tarde",
                 recreo=1 if i % 4 == 0 else 2,
-                zona_id=zonas[i % len(zonas)].id
+                zona_id=zonas[i % len(zonas)].id,
             )
             session.add(guardia)
 
         session.commit()
 
-        print(f"✅ Creados: {len(profesores)} profesores, "
-              f"{len(zonas)} zonas, 100 guardias\n")
+        print(f"✅ Creados: {len(profesores)} profesores, {len(zonas)} zonas, 100 guardias\n")
 
     finally:
         session.close()
@@ -80,6 +79,7 @@ def count_queries(func):
         query_count[0] += 1
 
     from sqlalchemy import event
+
     event.listen(engine, "before_cursor_execute", count_sql)
 
     try:
@@ -178,11 +178,13 @@ def benchmark_calendar_generation():
             if fecha_key not in calendario:
                 calendario[fecha_key] = []
 
-            calendario[fecha_key].append({
-                "profesor": g.profesor.nombre_completo if g.profesor else "N/A",
-                "zona": g.zona.nombre_zona if g.zona else "N/A",
-                "turno": g.turno,
-            })
+            calendario[fecha_key].append(
+                {
+                    "profesor": g.profesor.nombre_completo if g.profesor else "N/A",
+                    "zona": g.zona.nombre_zona if g.zona else "N/A",
+                    "turno": g.turno,
+                }
+            )
 
         return len(guardias)
 

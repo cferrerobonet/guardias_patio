@@ -68,10 +68,11 @@ Se mantiene por referencia histórica, pero no refleja el estado actual del proy
   - ✅ Clean Architecture (Phase 3)
   - ✅ Multi-usuario con sincronización
   - ✅ Exportación a PDF e iCalendar
-  - ✅ Tests automatizados (7/7 pasando)
+  - ✅ Tests automatizados (990 pasando, 36 skipped)
+  - ✅ Cobertura de código: 39.75%
 
 ---
 
 **Proyecto**: Guardias de Patio  
 **Licencia**: Escuelas Profesionales Luis Amigó  
-**Última revisión documental**: Noviembre 2025
+**Última revisión documental**: 30 de Noviembre 2025

@@ -15,7 +15,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
 from sync.sync_manager import UserAuth
 from utils.ui_helpers import get_corporate_icon
 
@@ -128,34 +127,22 @@ class ResetPasswordDialog(QDialog):
 
         if not code:
             QMessageBox.warning(
-                self,
-                "Campo vacío",
-                "Por favor introduce el código de recuperación"
+                self, "Campo vacío", "Por favor introduce el código de recuperación"
             )
             return
 
         if not new_password:
-            QMessageBox.warning(
-                self,
-                "Campo vacío",
-                "Por favor introduce la nueva contraseña"
-            )
+            QMessageBox.warning(self, "Campo vacío", "Por favor introduce la nueva contraseña")
             return
 
         if len(new_password) < 4:
             QMessageBox.warning(
-                self,
-                "Contraseña débil",
-                "La contraseña debe tener al menos 4 caracteres"
+                self, "Contraseña débil", "La contraseña debe tener al menos 4 caracteres"
             )
             return
 
         if new_password != confirm_password:
-            QMessageBox.warning(
-                self,
-                "Contraseñas no coinciden",
-                "Las contraseñas no son iguales"
-            )
+            QMessageBox.warning(self, "Contraseñas no coinciden", "Las contraseñas no son iguales")
             self.confirm_password_input.clear()
             return
 
@@ -167,11 +154,7 @@ class ResetPasswordDialog(QDialog):
 
         code_hash = hashlib.sha256(code.encode()).hexdigest()
         if user_data.get("recovery_code_hash") != code_hash:
-            QMessageBox.warning(
-                self,
-                "Código inválido",
-                "El código de recuperación no es correcto"
-            )
+            QMessageBox.warning(self, "Código inválido", "El código de recuperación no es correcto")
             return
 
         # Cambiar contraseña
@@ -191,8 +174,7 @@ class ResetPasswordDialog(QDialog):
         msg.setWindowTitle("✅ Contraseña cambiada")
         msg.setTextFormat(Qt.TextFormat.RichText)
         msg.setWindowFlags(
-            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
-            Qt.WindowType.WindowTitleHint
+            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )
         msg.setText(
             f"La contraseña de <span style='color: #007ACC; font-style: italic;'>"

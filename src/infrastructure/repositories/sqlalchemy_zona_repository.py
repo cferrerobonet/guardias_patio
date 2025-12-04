@@ -6,14 +6,14 @@ Implementación del repositorio de Zona usando SQLAlchemy.
 
 from typing import Optional
 
-from sqlalchemy.orm import Session
-
 from core.exceptions import DatabaseError, NotFoundError
 from core.logging import get_logger, log_function_call
 from domain.entities import ZonaEntity
 from domain.repositories import IZonaRepository
+from sqlalchemy.orm import Session
+
+from infrastructure.database.models import Zona
 from infrastructure.mappers import ZonaMapper
-from models.models import Zona
 
 logger = get_logger(__name__)
 
@@ -104,12 +104,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
     def exists(self, entity_id: int) -> bool:
         """Verifica si existe una zona por ID."""
         try:
-            return (
-                self.session.query(Zona.id)
-                .filter(Zona.id == entity_id)
-                .first()
-                is not None
-            )
+            return self.session.query(Zona.id).filter(Zona.id == entity_id).first() is not None
         except Exception as e:
             logger.error("Error al verificar existencia de zona", zona_id=entity_id, error=str(e))
             raise DatabaseError(f"Error al verificar zona {entity_id}: {e}") from e
@@ -128,11 +123,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
     def find_by_nombre(self, nombre: str) -> Optional[ZonaEntity]:
         """Busca una zona por nombre exacto."""
         try:
-            model = (
-                self.session.query(Zona)
-                .filter(Zona.nombre_zona == nombre)
-                .first()
-            )
+            model = self.session.query(Zona).filter(Zona.nombre_zona == nombre).first()
             if model:
                 return self.mapper.to_entity(model)
             return None
@@ -182,6 +173,6 @@ class SQLAlchemyZonaRepository(IZonaRepository):
                 fecha=fecha,
                 turno=turno,
                 recreo=recreo,
-                error=str(e)
+                error=str(e),
             )
             raise DatabaseError(f"Error al buscar zonas con capacidad: {e}") from e

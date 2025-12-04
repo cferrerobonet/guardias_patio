@@ -33,19 +33,23 @@ def _apply_corporate_icon(msg_box: QMessageBox) -> None:
 # Wrapper para los métodos estáticos
 def _wrap_static_method(original_method):
     """Crea un wrapper que aplica branding a métodos estáticos."""
+
     def wrapper(parent, *args, **kwargs):
         # Crear el message box usando el método original
         result = original_method(parent, *args, **kwargs)
         return result
+
     return wrapper
 
 
 # Wrapper para exec y show
 def _wrap_exec(original_exec):
     """Wrapper para exec() que aplica el icono antes de mostrar."""
+
     def wrapper(self, *args, **kwargs):
         _apply_corporate_icon(self)
         return original_exec(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -62,8 +66,8 @@ def apply_corporate_branding():
         return
 
     # Guardar y reemplazar el método exec
-    _original_methods['exec'] = QMessageBox.exec
-    QMessageBox.exec = _wrap_exec(_original_methods['exec'])
+    _original_methods["exec"] = QMessageBox.exec
+    QMessageBox.exec = _wrap_exec(_original_methods["exec"])
 
     # Nota: Los métodos estáticos (information, warning, critical, question)
     # crean su propio QMessageBox internamente y llaman a exec(),
@@ -79,5 +83,5 @@ def restore_original_methods():
     global _original_methods
 
     if _original_methods:
-        QMessageBox.exec = _original_methods['exec']
+        QMessageBox.exec = _original_methods["exec"]
         _original_methods.clear()

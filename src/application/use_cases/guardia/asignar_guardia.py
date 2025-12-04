@@ -4,19 +4,16 @@ Use Case: Asignar Guardia
 Caso de uso para asignar una guardia a un profesor en una zona específica.
 """
 
-from sqlalchemy.orm import Session
+from typing import Optional, Union
 
-from application.dtos import CrearGuardiaDTO, GuardiaDTO
 from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from core.logging import get_logger
 from core.observability import with_metrics
 from domain.entities import GuardiaEntity, ProfesorEntity, ZonaEntity
 from domain.repositories import IGuardiaRepository, IProfesorRepository, IZonaRepository
-from infrastructure.repositories import (
-    SQLAlchemyGuardiaRepository,
-    SQLAlchemyProfesorRepository,
-    SQLAlchemyZonaRepository,
-)
+from sqlalchemy.orm import Session
+
+from application.dtos import CrearGuardiaDTO, GuardiaDTO
 
 logger = get_logger(__name__)
 
@@ -29,17 +26,46 @@ class AsignarGuardiaUseCase:
     que no haya conflictos, y la asigna.
     """
 
-    def __init__(self, session: Session):
+    def __init__(
+        self,
+        session_or_profesor_repo: Union[Session, IProfesorRepository],
+        profesor_repo: Optional[IProfesorRepository] = None,
+        zona_repo: Optional[IZonaRepository] = None,
+        guardia_repo: Optional[IGuardiaRepository] = None,
+    ):
         """
         Inicializa el caso de uso.
 
         Args:
-            session: Sesión de SQLAlchemy para transacciones
+            session_or_profesor_repo: Session (legacy) o repositorio profesor
+            profesor_repo: Repositorio de profesores (si se pasa session primero)
+            zona_repo: Repositorio de zonas
+            guardia_repo: Repositorio de guardias
         """
-        self.session = session
-        self.profesor_repo: IProfesorRepository = SQLAlchemyProfesorRepository(session)
-        self.zona_repo: IZonaRepository = SQLAlchemyZonaRepository(session)
-        self.guardia_repo: IGuardiaRepository = SQLAlchemyGuardiaRepository(session)
+        if isinstance(session_or_profesor_repo, Session):
+            self.session = session_or_profesor_repo
+            if profesor_repo is not None:
+                # Nueva forma con inyección
+                self.profesor_repo: IProfesorRepository = profesor_repo
+                self.zona_repo: IZonaRepository = zona_repo
+                self.guardia_repo: IGuardiaRepository = guardia_repo
+            else:
+                # Compatibilidad hacia atrás
+                from infrastructure.repositories import (
+                    SQLAlchemyGuardiaRepository,
+                    SQLAlchemyProfesorRepository,
+                    SQLAlchemyZonaRepository,
+                )
+
+                self.profesor_repo = SQLAlchemyProfesorRepository(self.session)
+                self.zona_repo = SQLAlchemyZonaRepository(self.session)
+                self.guardia_repo = SQLAlchemyGuardiaRepository(self.session)
+        else:
+            # session_or_profesor_repo es el profesor_repo directamente
+            self.session = None
+            self.profesor_repo = session_or_profesor_repo
+            self.zona_repo = profesor_repo  # Shift de argumentos
+            self.guardia_repo = zona_repo
 
     @with_metrics("asignar_guardia")
     def execute(self, dto: CrearGuardiaDTO) -> GuardiaDTO:

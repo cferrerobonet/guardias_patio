@@ -15,7 +15,7 @@ from domain.services import (
     DistribucionCuotasService,
     EquidadGuardiasService,
 )
-from models.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from services.assignment.profesor_filter import ProfesorFilter, _limpiar_cache_elegibilidad
 from services.assignment.score_calculator import ScoreCalculator
 from services.assignment.slot_builder import SlotBuilder
@@ -166,24 +166,18 @@ class AssignmentExecutor:
 
         # Evaluar equidad usando Domain Service
         if calendario:
-            logger.info("\n" + "="*60)
+            logger.info("\n" + "=" * 60)
             logger.info("ANÁLISIS DE EQUIDAD")
-            logger.info("="*60)
+            logger.info("=" * 60)
             self.equidad_service.log_reporte_equidad(calendario, cuotas)
-            indice_equidad = self.equidad_service.calcular_indice_equidad(
-                calendario, cuotas
-            )
+            indice_equidad = self.equidad_service.calcular_indice_equidad(calendario, cuotas)
             logger.info(f"\n📊 Índice de Equidad Global: {indice_equidad:.2%}")
 
             # Identificar desbalances
-            desbalances = self.equidad_service.identificar_desbalances(
-                calendario, cuotas
-            )
+            desbalances = self.equidad_service.identificar_desbalances(calendario, cuotas)
             if desbalances:
-                logger.warning(
-                    f"⚠️  Se identificaron {len(desbalances)} desbalances"
-                )
-            logger.info("="*60 + "\n")
+                logger.warning(f"⚠️  Se identificaron {len(desbalances)} desbalances")
+            logger.info("=" * 60 + "\n")
 
         return calendario, incidencias
 

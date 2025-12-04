@@ -14,7 +14,7 @@ import math
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
-from models.models import Configuracion, Profesor, Zona
+from infrastructure.database.models import Configuracion, Profesor, Zona
 from services.gestor_cursos import GestorCursos
 from services.validators import TurnoValidator
 from sqlalchemy.orm import Session
@@ -134,12 +134,12 @@ def _parse_custom_no_lectivos(csv_text: Optional[str]) -> set:
     fechas = set()
     if not csv_text:
         return fechas
-    for token in csv_text.split(','):
+    for token in csv_text.split(","):
         t = token.strip()
         if not t:
             continue
         try:
-            y, m, d = [int(x) for x in t.split('-')]
+            y, m, d = [int(x) for x in t.split("-")]
             fechas.add(date(y, m, d))
         except Exception:
             continue
@@ -156,10 +156,10 @@ def listar_dias_lectivos(config: Configuracion) -> List[date]:
 
     autom = (
         _festivos_automaticos_en_rango(inicio, fin)
-        if getattr(config, 'activar_festivos_automaticos', True)
+        if getattr(config, "activar_festivos_automaticos", True)
         else set()
     )
-    custom = _parse_custom_no_lectivos(getattr(config, 'dias_no_lectivos_personalizados', None))
+    custom = _parse_custom_no_lectivos(getattr(config, "dias_no_lectivos_personalizados", None))
     no_lectivos = autom | custom
 
     curr = inicio
@@ -172,7 +172,7 @@ def listar_dias_lectivos(config: Configuracion) -> List[date]:
 
 def _parse_recreos_config(config: Configuracion) -> List[dict]:
     """Parsea recreos_config JSON en una lista de dicts normalizados."""
-    raw = getattr(config, 'recreos_config', None)
+    raw = getattr(config, "recreos_config", None)
     if not raw:
         return []
     try:
@@ -181,10 +181,10 @@ def _parse_recreos_config(config: Configuracion) -> List[dict]:
         for r in data:
             out.append(
                 {
-                    'id': int(r.get('id')),
-                    'etiqueta': r.get('etiqueta', ''),
-                    'turno': r.get('turno', 'mañana'),
-                    'zonas': int(r.get('zonas', 1)),
+                    "id": int(r.get("id")),
+                    "etiqueta": r.get("etiqueta", ""),
+                    "turno": r.get("turno", "mañana"),
+                    "zonas": int(r.get("zonas", 1)),
                 }
             )
         return out
@@ -209,8 +209,8 @@ def calcular_recreos_activos(session: Session) -> Tuple[int, int]:
     # Si hay recreos_config, usarlo
     lista = _parse_recreos_config(config)
     if lista:
-        rm = sum(1 for r in lista if r.get('turno') == 'mañana')
-        rt = sum(1 for r in lista if r.get('turno') == 'tarde')
+        rm = sum(1 for r in lista if r.get("turno") == "mañana")
+        rt = sum(1 for r in lista if r.get("turno") == "tarde")
         return (rm, rt)
 
     # Fallback a campos de horas
@@ -230,9 +230,7 @@ def calcular_recreos_activos(session: Session) -> Tuple[int, int]:
 
 
 def calcular_factor_participacion(
-    profesor: Profesor,
-    recreos_manana: int,
-    recreos_tarde: int
+    profesor: Profesor, recreos_manana: int, recreos_tarde: int
 ) -> float:
     """
     Calcula el factor de participación de un profesor según su turno y horas.
@@ -249,15 +247,11 @@ def calcular_factor_participacion(
     Returns:
         Factor de participación (proporción de recreos que puede cubrir)
     """
-    horas_manana = getattr(profesor, 'horas_manana', 0) or 0
-    horas_tarde = getattr(profesor, 'horas_tarde', 0) or 0
+    horas_manana = getattr(profesor, "horas_manana", 0) or 0
+    horas_tarde = getattr(profesor, "horas_tarde", 0) or 0
 
     return _turno_validator.calcular_factor_participacion(
-        profesor.turno,
-        recreos_manana,
-        recreos_tarde,
-        horas_manana,
-        horas_tarde
+        profesor.turno, recreos_manana, recreos_tarde, horas_manana, horas_tarde
     )
 
 
@@ -286,9 +280,7 @@ def calcular_slots_reales(session: Session, config: Configuracion) -> int:
         return 0
 
 
-def calcular_distribucion_cruda(
-    session: Session
-) -> Dict[int, float]:
+def calcular_distribucion_cruda(session: Session) -> Dict[int, float]:
     """
     Calcula la distribución cruda de guardias por profesor del curso activo.
 
@@ -359,11 +351,7 @@ def calcular_distribucion_cruda(
 
     for profesor in profesores:
         # 1. Factor por turno (proporción de recreos disponibles)
-        factor_turno = calcular_factor_participacion(
-            profesor,
-            recreos_manana,
-            recreos_tarde
-        )
+        factor_turno = calcular_factor_participacion(profesor, recreos_manana, recreos_tarde)
 
         # 2. Factor por porcentaje de jornada (ya normalizado 0-100%)
         # Usar porcentaje_jornada en lugar de horas_contrato para evitar
@@ -372,8 +360,9 @@ def calcular_distribucion_cruda(
 
         # 3. Factor de multiplicación según tutoría (de configuración)
         factor_tutoria = (
-            getattr(config, 'ajuste_tutores', 1.0) if getattr(profesor, 'tutor', False)
-            else getattr(config, 'ajuste_no_tutores', 1.0)
+            getattr(config, "ajuste_tutores", 1.0)
+            if getattr(profesor, "tutor", False)
+            else getattr(config, "ajuste_no_tutores", 1.0)
         )
 
         # 4. Proporción de días disponibles si tiene fechas límite
@@ -412,9 +401,7 @@ def calcular_distribucion_cruda(
                 )
 
         # Participación total = turno × horas × tutoría × tiempo
-        participacion = (
-            factor_turno * factor_horas * factor_tutoria * proporcion_tiempo
-        )
+        participacion = factor_turno * factor_horas * factor_tutoria * proporcion_tiempo
 
         logger.debug(
             f"Profesor {profesor.nombre_completo}: "
@@ -427,10 +414,7 @@ def calcular_distribucion_cruda(
         suma_ponderada += participacion
 
     if suma_ponderada == 0:
-        raise ValueError(
-            "La suma de participación ponderada es 0 "
-            "(verificar turnos y porcentajes)"
-        )
+        raise ValueError("La suma de participación ponderada es 0 (verificar turnos y porcentajes)")
 
     # Distribuir slots proporcionalmente
     distribucion = {}
@@ -475,11 +459,7 @@ def ajustar_redondeo(distribucion_cruda: Dict[int, float]) -> Dict[int, int]:
     slots_sobrantes = round(suma_total) - suma_floor
 
     # Ordenar profesores por residuo (mayor a menor)
-    profesores_ordenados = sorted(
-        residuos.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )
+    profesores_ordenados = sorted(residuos.items(), key=lambda x: x[1], reverse=True)
 
     # Asignar slots sobrantes
     for i in range(slots_sobrantes):

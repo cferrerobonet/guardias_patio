@@ -23,7 +23,7 @@ from application.use_cases.guardia.asignar_guardia import AsignarGuardiaUseCase
 from application.use_cases.profesor.actualizar_profesor import ActualizarProfesorUseCase
 from application.use_cases.profesor.crear_profesor import CrearProfesorUseCase
 from application.use_cases.zona.crear_zona import CrearZonaUseCase
-from models.models import Configuracion, Guardia, Profesor, Zona
+from infrastructure.database.models import Configuracion, CursoEscolar, Guardia, Profesor, Zona
 
 # ============================================================================
 # INTEGRATION: FLUJO COMPLETO SETUP INICIAL DEL SISTEMA
@@ -184,9 +184,7 @@ class TestIntegrationSetupInicial:
 class TestIntegrationAsignacionGuardias:
     """Tests del flujo completo de asignación de guardias."""
 
-    def test_flujo_completo_asignar_guardia(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_flujo_completo_asignar_guardia(self, session, profesor_factory, zona_factory):
         """
         Flujo completo: asignar una guardia manualmente.
 
@@ -241,9 +239,7 @@ class TestIntegrationAsignacionGuardias:
         assert guardia_bd.zona is not None
         assert guardia_bd.zona.nombre_zona == "Patio"
 
-    def test_flujo_multiples_guardias_mismo_dia(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_flujo_multiples_guardias_mismo_dia(self, session, profesor_factory, zona_factory):
         """
         Flujo: Asignar múltiples guardias en el mismo día.
 
@@ -304,9 +300,7 @@ class TestIntegrationAsignacionGuardias:
         assert guardia1.id != guardia2.id
         assert guardia1.id != guardia3.id
 
-        guardias_bd = session.query(Guardia).filter_by(
-            fecha=date(2024, 10, 15)
-        ).all()
+        guardias_bd = session.query(Guardia).filter_by(fecha=date(2024, 10, 15)).all()
         assert len(guardias_bd) == 3
 
 
@@ -318,9 +312,7 @@ class TestIntegrationAsignacionGuardias:
 class TestIntegrationModificacionEliminacion:
     """Tests de flujos de modificación y eliminación con cascada."""
 
-    def test_eliminar_profesor_sin_guardias(
-        self, session, profesor_factory
-    ):
+    def test_eliminar_profesor_sin_guardias(self, session, profesor_factory):
         """
         Flujo: Eliminar profesor que no tiene guardias asignadas.
 
@@ -364,9 +356,7 @@ class TestIntegrationModificacionEliminacion:
         # Verificar eliminación
         assert session.query(Zona).filter_by(id=zona_id).count() == 0
 
-    def test_actualizar_profesor_con_guardias(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_actualizar_profesor_con_guardias(self, session, profesor_factory, zona_factory):
         """
         Flujo: Actualizar datos de profesor que tiene guardias.
 
@@ -420,9 +410,7 @@ class TestIntegrationModificacionEliminacion:
 class TestIntegrationConServicios:
     """Tests de integración que usan servicios de negocio."""
 
-    def test_calcular_estadisticas_sistema_completo(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_calcular_estadisticas_sistema_completo(self, session, profesor_factory, zona_factory):
         """
         Flujo: Calcular estadísticas del sistema con datos reales.
 
@@ -435,15 +423,33 @@ class TestIntegrationConServicios:
             ObtenerEstadisticasUseCase,
         )
 
+        # Crear curso escolar activo
+        curso = CursoEscolar(
+            nombre="2024-2025",
+            anio_inicio=2024,
+            anio_fin=2025,
+            fecha_inicio=date(2024, 9, 1),
+            fecha_fin=date(2024, 9, 30),
+            activo=True,
+        )
+        session.add(curso)
+        session.commit()
+
         # PASO 1: Configurar
         config_uc = ActualizarConfiguracionUseCase(session)
         config_dto = ActualizarConfiguracionDTO(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 30),  # Un mes
             hora_recreo1_manana=time(10, 30),
             hora_recreo2_manana=time(12, 30),
         )
         config_uc.execute(config_dto)
+
+        # Vincular curso activo a configuración
+        config = session.query(Configuracion).first()
+        config.curso_activo_id = curso.id
+        session.commit()
 
         # PASO 2: Crear datos
         profesor_factory(nombre_completo="Prof 1", turno="mañana")
@@ -463,9 +469,7 @@ class TestIntegrationConServicios:
         assert stats.dias_lectivos > 0
         assert stats.slots_totales > 0
 
-    def test_calcular_distribucion_con_datos_reales(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_calcular_distribucion_con_datos_reales(self, session, profesor_factory, zona_factory):
         """
         Flujo: Calcular distribución de guardias con profesores reales.
 
@@ -475,15 +479,33 @@ class TestIntegrationConServicios:
             CalcularDistribucionUseCase,
         )
 
+        # Crear curso escolar activo
+        curso = CursoEscolar(
+            nombre="2024-2025",
+            anio_inicio=2024,
+            anio_fin=2025,
+            fecha_inicio=date(2024, 9, 1),
+            fecha_fin=date(2024, 9, 15),
+            activo=True,
+        )
+        session.add(curso)
+        session.commit()
+
         # Configurar
         config_uc = ActualizarConfiguracionUseCase(session)
         config_dto = ActualizarConfiguracionDTO(
+            anio_inicio_curso=2024,
             fecha_inicio_curso=date(2024, 9, 1),
             fecha_fin_curso=date(2024, 9, 15),
             hora_recreo1_manana=time(10, 30),
             hora_recreo2_manana=time(12, 30),
         )
         config_uc.execute(config_dto)
+
+        # Vincular curso activo a configuración
+        config = session.query(Configuracion).first()
+        config.curso_activo_id = curso.id
+        session.commit()
 
         # Crear profesores con diferentes características
         prof1 = profesor_factory(
@@ -541,9 +563,7 @@ class TestIntegrationConsistenciaDatos:
         assert profesor in session
 
         # Verificar que está en la BD
-        prof_bd = session.query(Profesor).filter_by(
-            nombre_completo="Test Factory"
-        ).first()
+        prof_bd = session.query(Profesor).filter_by(nombre_completo="Test Factory").first()
         assert prof_bd is not None
         assert prof_bd.id == profesor.id
 
@@ -555,15 +575,11 @@ class TestIntegrationConsistenciaDatos:
         assert zona in session
 
         # Verificar que está en la BD
-        zona_bd = session.query(Zona).filter_by(
-            nombre_zona="Test Factory Zona"
-        ).first()
+        zona_bd = session.query(Zona).filter_by(nombre_zona="Test Factory Zona").first()
         assert zona_bd is not None
         assert zona_bd.id == zona.id
 
-    def test_relaciones_orm_bidireccionales(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_relaciones_orm_bidireccionales(self, session, profesor_factory, zona_factory):
         """
         Verificar que las relaciones ORM funcionan en ambas direcciones.
 

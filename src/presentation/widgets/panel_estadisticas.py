@@ -2,14 +2,15 @@
 Panel de estadísticas para analizar la distribución de guardias.
 
 Muestra métricas, gráficos y análisis de cobertura.
+Utiliza ObtenerEstadisticasPanelUseCase para separar lógica de presentación.
 """
-
-from collections import defaultdict
 
 import matplotlib
 
 matplotlib.use("QtAgg")
 
+import ui_styles as styles
+from application.use_cases.asignacion_guardias import ObtenerEstadisticasPanelUseCase
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
 from PyQt6.QtCore import Qt
@@ -24,10 +25,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy import func
 
-import ui_styles as styles
-from models.models import Guardia, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import (
     CONTENT_BG_ALT,
@@ -50,6 +48,8 @@ class PanelEstadisticas(BaseForm):
         """
         super().__init__(session)
         self.setWindowTitle("Estadísticas de Guardias")
+        # Use Case para obtener estadísticas - separa lógica de BD de UI
+        self._use_case = ObtenerEstadisticasPanelUseCase(session)
         self.setup_ui()
 
     def setup_ui(self):
@@ -199,122 +199,83 @@ class PanelEstadisticas(BaseForm):
         return widget
 
     def actualizar_estadisticas(self):
-        """Actualizar todas las estadísticas."""
+        """Actualizar todas las estadísticas usando el Use Case."""
         try:
-            self.actualizar_resumen()
-            self.actualizar_tabla_profesores()
-            self.actualizar_tabla_zonas()
-            self.actualizar_graficos()
+            # Obtener todas las estadísticas de forma centralizada
+            self._datos = self._use_case.execute()
+
+            # Actualizar cada sección de la UI
+            self._actualizar_resumen_ui()
+            self._actualizar_tabla_profesores_ui()
+            self._actualizar_tabla_zonas_ui()
+            self._actualizar_graficos_ui()
         except Exception as e:
             self.manejar_excepcion(e, "actualizar estadísticas")
 
-    def actualizar_resumen(self):
-        """Actualizar el resumen general."""
-        # Total guardias
-        total_guardias = self.session.query(Guardia).count()
-        self.label_total_guardias.setText(f"Total Guardias: {total_guardias}")
+    def _actualizar_resumen_ui(self):
+        """Actualizar el resumen general con datos del DTO."""
+        resumen = self._datos.resumen
 
-        # Total profesores con guardias
-        profesores_con_guardias = self.session.query(
-            func.count(func.distinct(Guardia.profesor_id))
-        ).scalar()
-        total_profesores = self.session.query(Profesor).count()
+        self.label_total_guardias.setText(f"Total Guardias: {resumen.total_guardias}")
         self.label_total_profesores.setText(
-            f"Profesores Activos: {profesores_con_guardias} / {total_profesores}"
+            f"Profesores Activos: {resumen.profesores_con_guardias} / {resumen.total_profesores}"
         )
+        self.label_total_zonas.setText(f"Zonas Configuradas: {resumen.total_zonas}")
 
-        # Total zonas
-        total_zonas = self.session.query(Zona).count()
-        self.label_total_zonas.setText(f"Zonas Configuradas: {total_zonas}")
-
-        # Cobertura (estimada)
-        if total_guardias > 0 and profesores_con_guardias > 0:
-            promedio_por_profesor = total_guardias / profesores_con_guardias
-            cobertura = min(100, int((promedio_por_profesor / 50) * 100))
-            self.label_cobertura.setText(f"Cobertura Estimada: {cobertura}%")
+        if resumen.total_guardias > 0 and resumen.profesores_con_guardias > 0:
+            self.label_cobertura.setText(f"Cobertura Estimada: {resumen.cobertura_estimada}%")
 
             # Info adicional
-            guardias_manana = self.session.query(Guardia).filter(Guardia.turno == "mañana").count()
-            guardias_tarde = self.session.query(Guardia).filter(Guardia.turno == "tarde").count()
-
-            porcentaje_manana = int(guardias_manana / total_guardias * 100)
-            porcentaje_tarde = int(guardias_tarde / total_guardias * 100)
+            porcentaje_manana = int(resumen.guardias_manana / resumen.total_guardias * 100)
+            porcentaje_tarde = int(resumen.guardias_tarde / resumen.total_guardias * 100)
 
             info = f"""
             📊 Detalles:
-            • Guardias de Mañana: {guardias_manana} ({porcentaje_manana}%)
-            • Guardias de Tarde: {guardias_tarde} ({porcentaje_tarde}%)
-            • Promedio por profesor: {promedio_por_profesor:.1f} guardias
+            • Guardias de Mañana: {resumen.guardias_manana} ({porcentaje_manana}%)
+            • Guardias de Tarde: {resumen.guardias_tarde} ({porcentaje_tarde}%)
+            • Promedio por profesor: {resumen.promedio_por_profesor:.1f} guardias
             """
             self.label_info.setText(info)
         else:
             self.label_cobertura.setText("Cobertura Estimada: 0%")
             self.label_info.setText("No hay guardias generadas todavía.")
 
-    def actualizar_tabla_profesores(self):
-        """Actualizar la tabla de estadísticas por profesor."""
-        # Consultar guardias agrupadas por profesor
-        guardias_por_prof = defaultdict(lambda: {"total": 0, "mañana": 0, "tarde": 0})
+    def _actualizar_tabla_profesores_ui(self):
+        """Actualizar la tabla de estadísticas por profesor con datos del DTO."""
+        datos_profesor = self._datos.por_profesor
 
-        guardias = self.session.query(Guardia).all()
-        for g in guardias:
-            guardias_por_prof[g.profesor_id]["total"] += 1
-            if g.turno == "mañana":
-                guardias_por_prof[g.profesor_id]["mañana"] += 1
-            else:
-                guardias_por_prof[g.profesor_id]["tarde"] += 1
+        self.tabla_profesores.setRowCount(len(datos_profesor))
 
-        # Obtener todos los profesores
-        profesores = self.session.query(Profesor).all()
-
-        # Calcular total para porcentajes
-        total_guardias = sum(stats["total"] for stats in guardias_por_prof.values())
-
-        # Llenar tabla
-        self.tabla_profesores.setRowCount(len(profesores))
-
-        for i, profesor in enumerate(profesores):
-            stats = guardias_por_prof.get(profesor.id, {"total": 0, "mañana": 0, "tarde": 0})
-
-            self.tabla_profesores.setItem(i, 0, QTableWidgetItem(profesor.nombre_completo))
+        for i, prof_dto in enumerate(datos_profesor):
+            self.tabla_profesores.setItem(i, 0, QTableWidgetItem(prof_dto.nombre_completo))
 
             # Total (centrado)
-            total_item = QTableWidgetItem(str(stats["total"]))
+            total_item = QTableWidgetItem(str(prof_dto.total))
             total_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tabla_profesores.setItem(i, 1, total_item)
 
             # Mañana (centrado)
-            manana_item = QTableWidgetItem(str(stats["mañana"]))
+            manana_item = QTableWidgetItem(str(prof_dto.manana))
             manana_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tabla_profesores.setItem(i, 2, manana_item)
 
             # Tarde (centrado)
-            tarde_item = QTableWidgetItem(str(stats["tarde"]))
+            tarde_item = QTableWidgetItem(str(prof_dto.tarde))
             tarde_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tabla_profesores.setItem(i, 3, tarde_item)
 
             # Porcentaje (centrado)
-            if total_guardias > 0:
-                porcentaje = (stats["total"] / total_guardias) * 100
-                porcentaje_item = QTableWidgetItem(f"{porcentaje:.1f}%")
-            else:
-                porcentaje_item = QTableWidgetItem("0%")
+            porcentaje_item = QTableWidgetItem(f"{prof_dto.porcentaje:.1f}%")
             porcentaje_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tabla_profesores.setItem(i, 4, porcentaje_item)
 
             # Estado
-            if stats["total"] == 0:
-                estado = "❌ Sin guardias"
-            elif stats["total"] < 5:
-                estado = "⚠️ Pocas guardias"
-            else:
-                estado = "✅ Asignado"
-            self.tabla_profesores.setItem(i, 5, QTableWidgetItem(estado))
+            self.tabla_profesores.setItem(i, 5, QTableWidgetItem(prof_dto.estado))
 
             # Fecha Inicio Guardias (centrado)
             fecha_inicio_text = (
-                profesor.fecha_inicio_guardias.strftime("%d/%m/%Y")
-                if profesor.fecha_inicio_guardias
+                prof_dto.fecha_inicio_guardias.strftime("%d/%m/%Y")
+                if prof_dto.fecha_inicio_guardias
                 else "-"
             )
             fecha_inicio_item = QTableWidgetItem(fecha_inicio_text)
@@ -323,60 +284,36 @@ class PanelEstadisticas(BaseForm):
 
             # Fecha Fin Guardias (centrado)
             fecha_fin_text = (
-                profesor.fecha_fin_guardias.strftime("%d/%m/%Y")
-                if profesor.fecha_fin_guardias
+                prof_dto.fecha_fin_guardias.strftime("%d/%m/%Y")
+                if prof_dto.fecha_fin_guardias
                 else "-"
             )
             fecha_fin_item = QTableWidgetItem(fecha_fin_text)
             fecha_fin_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tabla_profesores.setItem(i, 7, fecha_fin_item)
 
-    def actualizar_tabla_zonas(self):
-        """Actualizar la tabla de estadísticas por zona."""
-        zonas = self.session.query(Zona).all()
-        self.tabla_zonas.setRowCount(len(zonas))
+    def _actualizar_tabla_zonas_ui(self):
+        """Actualizar la tabla de estadísticas por zona con datos del DTO."""
+        datos_zona = self._datos.por_zona
 
-        for i, zona in enumerate(zonas):
-            self.tabla_zonas.setItem(i, 0, QTableWidgetItem(zona.nombre_zona))
+        self.tabla_zonas.setRowCount(len(datos_zona))
 
-            total = self.session.query(Guardia).filter(Guardia.zona_id == zona.id).count()
-            self.tabla_zonas.setItem(i, 1, QTableWidgetItem(str(total)))
+        for i, zona_dto in enumerate(datos_zona):
+            self.tabla_zonas.setItem(i, 0, QTableWidgetItem(zona_dto.nombre_zona))
+            self.tabla_zonas.setItem(i, 1, QTableWidgetItem(str(zona_dto.total_guardias)))
+            self.tabla_zonas.setItem(i, 2, QTableWidgetItem(str(zona_dto.profesores_diferentes)))
+            self.tabla_zonas.setItem(i, 3, QTableWidgetItem(zona_dto.porcentaje_cobertura))
 
-            profesores_diferentes = (
-                self.session.query(func.count(func.distinct(Guardia.profesor_id)))
-                .filter(Guardia.zona_id == zona.id)
-                .scalar()
-            )
-            self.tabla_zonas.setItem(i, 2, QTableWidgetItem(str(profesores_diferentes)))
-            self.tabla_zonas.setItem(i, 3, QTableWidgetItem("N/A"))
-
-    def actualizar_graficos(self):
-        """Actualizar los gráficos."""
+    def _actualizar_graficos_ui(self):
+        """Actualizar los gráficos con datos del DTO."""
         # Gráfico de distribución por profesor
-        guardias_por_prof = defaultdict(int)
-        guardias = self.session.query(Guardia).all()
-        for g in guardias:
-            guardias_por_prof[g.profesor_id] += 1
+        grafico_prof = self._datos.grafico_profesores
 
-        if guardias_por_prof:
-            profesores = self.session.query(Profesor).all()
-            nombres = []
-            cantidades = []
-
-            for prof in profesores:
-                count = guardias_por_prof.get(prof.id, 0)
-                if count > 0:  # Solo mostrar profesores con guardias
-                    nombre = prof.nombre_completo
-                    if "," in nombre:
-                        apellido = nombre.split(",")[0]
-                        nombres.append(apellido[:15])
-                    else:
-                        nombres.append(nombre[:15])
-                    cantidades.append(count)
-
-            # Dibujar gráfico de barras
+        if grafico_prof.cantidades:
             self.canvas_profesores.axes.clear()
-            self.canvas_profesores.axes.bar(nombres, cantidades, color=SUCCESS_GREEN)
+            self.canvas_profesores.axes.bar(
+                grafico_prof.nombres, grafico_prof.cantidades, color=SUCCESS_GREEN
+            )
             self.canvas_profesores.axes.set_xlabel("Profesor")
             self.canvas_profesores.axes.set_ylabel("Guardias")
             self.canvas_profesores.axes.set_title("Distribución de Guardias por Profesor")
@@ -385,26 +322,13 @@ class PanelEstadisticas(BaseForm):
             self.canvas_profesores.draw()
 
         # Gráfico de distribución por zona
-        guardias_por_zona = defaultdict(int)
-        for g in guardias:
-            guardias_por_zona[g.zona_id] += 1
+        grafico_zonas = self._datos.grafico_zonas
 
-        if guardias_por_zona:
-            zonas = self.session.query(Zona).all()
-            nombres_zonas = []
-            cantidades_zonas = []
-
-            for zona in zonas:
-                count = guardias_por_zona.get(zona.id, 0)
-                if count > 0:
-                    nombres_zonas.append(zona.nombre_zona[:20])
-                    cantidades_zonas.append(count)
-
-            # Dibujar gráfico de pastel
+        if grafico_zonas.cantidades:
             self.canvas_zonas.axes.clear()
             self.canvas_zonas.axes.pie(
-                cantidades_zonas,
-                labels=nombres_zonas,
+                grafico_zonas.cantidades,
+                labels=grafico_zonas.nombres,
                 autopct="%1.1f%%",
                 startangle=90,
             )

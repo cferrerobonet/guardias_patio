@@ -9,7 +9,7 @@ from datetime import date
 from pathlib import Path
 from typing import Callable, Optional
 
-from models.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
@@ -405,7 +405,7 @@ class ExportadorPDF:
                 .filter(
                     Guardia.curso_id == curso_activo.id,
                     Guardia.fecha >= primer_dia,
-                    Guardia.fecha <= ultimo_dia
+                    Guardia.fecha <= ultimo_dia,
                 )
                 .order_by(Guardia.fecha, Guardia.turno, Guardia.recreo, Guardia.profesor_id)
                 .all()
@@ -796,7 +796,9 @@ class ExportadorPDF:
                         for i, guardia in enumerate(guardias_dia):
                             fecha_str = fecha.strftime("%d/%m") if i == 0 else ""
                             dia_semana = dias_semana[fecha.weekday()] if i == 0 else ""
-                            profesor_nombre = guardia.profesor.nombre_completo if guardia.profesor else "N/A"
+                            profesor_nombre = (
+                                guardia.profesor.nombre_completo if guardia.profesor else "N/A"
+                            )
                             zona_nombre = guardia.zona.nombre_zona if guardia.zona else "N/A"
 
                             data.append(

@@ -58,7 +58,7 @@ def track_time(operation_name: Optional[str] = None):
                 )
 
                 logger.debug(
-                    f"⏱️  {op_name} ejecutado en {duration*1000:.2f}ms",
+                    f"⏱️  {op_name} ejecutado en {duration * 1000:.2f}ms",
                     extra={
                         "operation": op_name,
                         "duration_ms": duration * 1000,
@@ -88,7 +88,7 @@ def track_time(operation_name: Optional[str] = None):
                 )
 
                 logger.error(
-                    f"❌ {op_name} falló después de {duration*1000:.2f}ms",
+                    f"❌ {op_name} falló después de {duration * 1000:.2f}ms",
                     extra={
                         "operation": op_name,
                         "duration_ms": duration * 1000,
@@ -118,7 +118,6 @@ def count_calls(metric_name: Optional[str] = None):
     """
 
     def decorator(func: Callable) -> Callable:
-
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             metrics = get_metrics()

@@ -7,7 +7,8 @@ Convierte entre el modelo SQLAlchemy Guardia y la entidad GuardiaEntity.
 from typing import Optional
 
 from domain.entities import GuardiaEntity
-from models.models import Guardia
+
+from infrastructure.database.models import Guardia
 
 
 class GuardiaMapper:

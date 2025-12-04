@@ -205,10 +205,10 @@ def setup_logging():
 class StructlogCompatibleLogger:
     """
     Wrapper para logging.Logger que acepta kwargs estilo structlog.
-    
+
     Permite usar la misma sintaxis que structlog:
         logger.info("mensaje", key="value", error=str(e))
-    
+
     Convierte automáticamente los kwargs a un formato legible en el mensaje.
     """
 

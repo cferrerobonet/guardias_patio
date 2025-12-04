@@ -16,12 +16,12 @@ from domain.value_objects import (
     Turno,
 )
 from domain.value_objects.turno import TurnoEnum
+from infrastructure.database.models import Guardia, Profesor, Zona
 from infrastructure.repositories import (
     SQLAlchemyGuardiaRepository,
     SQLAlchemyProfesorRepository,
     SQLAlchemyZonaRepository,
 )
-from models.models import Guardia, Profesor, Zona
 
 # Usa session de conftest.py (no session)
 
@@ -47,6 +47,7 @@ def guardia_repository(session):
 # ═══════════════════════════════════════════════════════════════════
 # TESTS DE PROFESOR REPOSITORY
 # ═══════════════════════════════════════════════════════════════════
+
 
 class TestProfesorRepository:
     """Tests para SQLAlchemyProfesorRepository."""
@@ -307,9 +308,7 @@ class TestProfesorRepository:
 
         # Buscar disponibles en fecha dentro del rango (requiere turno y recreo)
         disponibles = profesor_repository.find_disponibles_en_fecha(
-            fecha=date(2025, 10, 15),
-            turno="mañana",
-            recreo=1
+            fecha=date(2025, 10, 15), turno="mañana", recreo=1
         )
 
         # Verificar que retorna lista
@@ -412,6 +411,7 @@ class TestProfesorRepository:
 # ═══════════════════════════════════════════════════════════════════
 # TESTS DE ZONA REPOSITORY
 # ═══════════════════════════════════════════════════════════════════
+
 
 class TestZonaRepository:
     """Tests para SQLAlchemyZonaRepository."""
@@ -555,6 +555,7 @@ class TestZonaRepository:
 # ═══════════════════════════════════════════════════════════════════
 # TESTS DE GUARDIA REPOSITORY
 # ═══════════════════════════════════════════════════════════════════
+
 
 class TestGuardiaRepository:
     """Tests para SQLAlchemyGuardiaRepository."""
@@ -865,8 +866,7 @@ class TestGuardiaRepository:
 
         # Buscar en rango
         guardias = guardia_repository.find_by_rango_fechas(
-            fecha_inicio=date(2025, 11, 10),
-            fecha_fin=date(2025, 11, 12)
+            fecha_inicio=date(2025, 11, 10), fecha_fin=date(2025, 11, 12)
         )
 
         # Verificar

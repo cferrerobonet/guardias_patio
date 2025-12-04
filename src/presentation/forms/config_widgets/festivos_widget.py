@@ -6,10 +6,9 @@ Combina:
 - Días no lectivos personalizados (lista de fechas)
 """
 
+import ui_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QGroupBox, QLabel, QLineEdit, QVBoxLayout
-
-import ui_styles as styles
 
 
 class FestivosWidget(QGroupBox):
@@ -51,7 +50,9 @@ class FestivosWidget(QGroupBox):
 
         self.festivos_auto_input = QLineEdit()
         self.festivos_auto_input.setPlaceholderText("1 (sí) / 0 (no)")
-        self.festivos_auto_input.setStyleSheet(styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;")
+        self.festivos_auto_input.setStyleSheet(
+            styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;"
+        )
         self.festivos_auto_input.setToolTip(
             "Activar festivos nacionales automáticos:\n"
             "1 = Aplicar festivos oficiales de España\n"
@@ -62,7 +63,9 @@ class FestivosWidget(QGroupBox):
 
         # ===== Días no lectivos personalizados =====
         label_custom = QLabel("Días no lectivos (YYYY-MM-DD):")
-        label_custom.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
+        label_custom.setStyleSheet(
+            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;"
+        )
         layout.addWidget(label_custom)
 
         self.no_lectivos_input = QLineEdit()

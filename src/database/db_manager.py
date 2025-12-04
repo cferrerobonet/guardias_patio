@@ -15,7 +15,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from core.paths import get_user_data_directory
-from models.models import Base
+from infrastructure.database.models import Base
 from sqlalchemy import create_engine, event, pool
 from sqlalchemy.orm import sessionmaker
 from utils.constants import TIMEOUT_DB
@@ -60,15 +60,15 @@ def _run_alembic_migrations(engine, db_path: Path):
         from pathlib import Path
 
         # Obtener ruta al alembic.ini
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, "frozen", False):
             # Aplicación empaquetada
-            if hasattr(sys, '_MEIPASS'):
-                alembic_ini_path = Path(sys._MEIPASS) / 'alembic.ini'
+            if hasattr(sys, "_MEIPASS"):
+                alembic_ini_path = Path(sys._MEIPASS) / "alembic.ini"
             else:
-                alembic_ini_path = Path(sys.executable).parent / 'alembic.ini'
+                alembic_ini_path = Path(sys.executable).parent / "alembic.ini"
         else:
             # Modo desarrollo
-            alembic_ini_path = Path(__file__).parent.parent.parent / 'alembic.ini'
+            alembic_ini_path = Path(__file__).parent.parent.parent / "alembic.ini"
 
         if not alembic_ini_path.exists():
             logger.warning(f"alembic.ini no encontrado en {alembic_ini_path}")
@@ -77,13 +77,13 @@ def _run_alembic_migrations(engine, db_path: Path):
 
         # Configurar Alembic
         alembic_cfg = Config(str(alembic_ini_path))
-        alembic_cfg.set_main_option('sqlalchemy.url', str(engine.url))
+        alembic_cfg.set_main_option("sqlalchemy.url", str(engine.url))
 
         if not existing_tables:
             logger.info("Base de datos nueva detectada. Inicializando esquema completo...")
             # Marcar la base de datos en la versión head sin ejecutar migraciones
             # ya que vamos a crear todo desde cero con create_all()
-            command.stamp(alembic_cfg, 'head')
+            command.stamp(alembic_cfg, "head")
             logger.info("✓ Base de datos marcada con la versión actual del esquema")
         else:
             logger.info(
@@ -92,14 +92,13 @@ def _run_alembic_migrations(engine, db_path: Path):
             )
             # Intentar aplicar migraciones pendientes
             logger.debug("🔧 EJECUTANDO: command.upgrade(alembic_cfg, 'head')")
-            command.upgrade(alembic_cfg, 'head')
+            command.upgrade(alembic_cfg, "head")
             logger.debug("✅ POST-UPGRADE: Migraciones completadas sin crash")
             logger.info("✓ Migraciones de Alembic aplicadas/verificadas correctamente")
 
     except Exception as e:
         logger.warning(f"No se pudieron ejecutar migraciones de Alembic: {e}")
         logger.info("La aplicación continuará usando create_all() para el esquema")
-
 
 
 def initialize_user_database(username: str):
@@ -135,9 +134,9 @@ def initialize_user_database(username: str):
         future=True,
         poolclass=pool.NullPool,
         connect_args={
-            'check_same_thread': False,
-            'timeout': TIMEOUT_DB,
-        }
+            "check_same_thread": False,
+            "timeout": TIMEOUT_DB,
+        },
     )
 
     # Pragmas de optimización para SQLite
@@ -158,15 +157,13 @@ def initialize_user_database(username: str):
     _run_alembic_migrations(engine, db_path)
 
     # Como fallback, crear tablas con SQLAlchemy si Alembic falló
-    from models.models import Base
+    from infrastructure.database.models import Base
+
     Base.metadata.create_all(bind=engine)
 
     # Session factory para este usuario
     session_factory = sessionmaker(
-        autocommit=False,
-        autoflush=False,
-        bind=engine,
-        expire_on_commit=False
+        autocommit=False, autoflush=False, bind=engine, expire_on_commit=False
     )
 
     # Guardar referencias globales
@@ -240,6 +237,7 @@ def delete_user_database(username: str) -> bool:
 
         if user_dir.exists():
             import shutil
+
             shutil.rmtree(user_dir)
             logger.info(f"Base de datos eliminada para usuario: {username}")
             return True
@@ -256,11 +254,11 @@ def delete_user_database(username: str) -> bool:
 # Este fallback usa ruta absoluta para evitar crear BD en directorios incorrectos
 from core.paths import get_database_path
 
-DATABASE_URL = os.getenv('DATABASE_URL', f'sqlite:///{get_database_path()}')
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{get_database_path()}")
 
 # Detectar tipo de base de datos
-IS_SQLITE = DATABASE_URL.startswith('sqlite')
-IS_POSTGRESQL = DATABASE_URL.startswith('postgresql')
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
+IS_POSTGRESQL = DATABASE_URL.startswith("postgresql")
 
 # Engine y SessionLocal por defecto (se sobrescribirán al iniciar sesión)
 if IS_SQLITE:
@@ -270,9 +268,9 @@ if IS_SQLITE:
         future=True,
         poolclass=pool.NullPool,
         connect_args={
-            'check_same_thread': False,
-            'timeout': TIMEOUT_DB,
-        }
+            "check_same_thread": False,
+            "timeout": TIMEOUT_DB,
+        },
     )
 
     @event.listens_for(engine, "connect")
@@ -301,10 +299,7 @@ elif IS_POSTGRESQL:
         pool_pre_ping=True,
     )
 
-    logger.info(
-        "Engine PostgreSQL creado: "
-        "pool_size=10, max_overflow=20, timeout=30s"
-    )
+    logger.info("Engine PostgreSQL creado: pool_size=10, max_overflow=20, timeout=30s")
 
 else:
     engine = create_engine(
@@ -320,12 +315,7 @@ else:
     logger.warning(f"Base de datos no reconocida: {DATABASE_URL[:20]}...")
 
 # Session factory
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-    expire_on_commit=False
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
 
 logger.info(f"Database manager inicializado: {DATABASE_URL[:50]}")
 
@@ -407,17 +397,14 @@ def get_pool_status():
         print(f"Conexiones activas: {status['checked_out']}")
     """
     if IS_SQLITE:
-        return {
-            'type': 'NullPool',
-            'note': 'SQLite no usa connection pool'
-        }
+        return {"type": "NullPool", "note": "SQLite no usa connection pool"}
 
     return {
-        'type': engine.pool.__class__.__name__,
-        'size': engine.pool.size(),
-        'checked_out': engine.pool.checkedout(),
-        'overflow': engine.pool.overflow(),
-        'total': engine.pool.size() + engine.pool.overflow(),
+        "type": engine.pool.__class__.__name__,
+        "size": engine.pool.size(),
+        "checked_out": engine.pool.checkedout(),
+        "overflow": engine.pool.overflow(),
+        "total": engine.pool.size() + engine.pool.overflow(),
     }
 
 
@@ -444,7 +431,7 @@ def print_pool_status():
     print("Connection Pool Status".center(45))
     print("=" * 45)
 
-    if 'note' in status:
+    if "note" in status:
         print(f"Type: {status['type']}")
         print(f"Note: {status['note']}")
     else:

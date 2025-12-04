@@ -14,7 +14,7 @@ from domain.services import (
     DistribucionCuotasService,
     EquidadGuardiasService,
 )
-from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
+from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session
 
 
@@ -37,9 +37,7 @@ class TestDisponibilidadProfesorService:
         session.flush()
 
         service = DisponibilidadProfesorService(session)
-        disponible, razon = service.esta_disponible(
-            profesor, date.today(), "mañana"
-        )
+        disponible, razon = service.esta_disponible(profesor, date.today(), "mañana")
 
         assert disponible is True
         assert razon is None
@@ -57,9 +55,7 @@ class TestDisponibilidadProfesorService:
         session.flush()
 
         service = DisponibilidadProfesorService(session)
-        disponible, razon = service.esta_disponible(
-            profesor, date.today(), "mañana"
-        )
+        disponible, razon = service.esta_disponible(profesor, date.today(), "mañana")
 
         assert disponible is False
         assert "inactivo" in razon.lower()
@@ -107,9 +103,7 @@ class TestDisponibilidadProfesorService:
         session.flush()
 
         service = DisponibilidadProfesorService(session)
-        disponible, razon = service.esta_disponible(
-            profesor, date.today(), "tarde"
-        )
+        disponible, razon = service.esta_disponible(profesor, date.today(), "tarde")
 
         assert disponible is False
         assert "turno" in razon.lower() or "incompatible" in razon.lower()
@@ -156,6 +150,7 @@ class TestDistribucionCuotasService:
     def test_calcular_cuotas_simple(self, session: Session):
         """Calcula cuotas para 2 profesores con misma jornada."""
         from datetime import time
+
         # Crear configuración
         config = Configuracion(
             anio_inicio_curso=2025,
@@ -197,10 +192,13 @@ class TestDistribucionCuotasService:
         assert prof2.id in cuotas
         assert abs(cuotas[prof1.id] - cuotas[prof2.id]) <= 1  # Máx 1 de diferencia
 
-    @pytest.mark.skip(reason="Requiere lógica compleja de distribución - revisar en fase de integración")
+    @pytest.mark.skip(
+        reason="Requiere lógica compleja de distribución - revisar en fase de integración"
+    )
     def test_cuota_proporcional_a_jornada(self, session: Session):
         """Profesor de medio tiempo debe tener ~mitad de cuota."""
         from datetime import time
+
         config = Configuracion(
             anio_inicio_curso=2025,
             fecha_inicio_curso=date.today(),
@@ -258,9 +256,7 @@ class TestAsignacionGuardiaService:
         session.flush()
 
         service = AsignacionGuardiaService(session)
-        puede, razon = service.puede_asignar_guardia(
-            profesor, date.today(), "mañana", 1, zona.id
-        )
+        puede, razon = service.puede_asignar_guardia(profesor, date.today(), "mañana", 1, zona.id)
 
         assert puede is True
         assert razon is None
@@ -282,9 +278,7 @@ class TestAsignacionGuardiaService:
 
         service = AsignacionGuardiaService(session)
         fecha = date.today()
-        guardia = service.asignar_guardia(
-            profesor, fecha, "mañana", 1, zona.id
-        )
+        guardia = service.asignar_guardia(profesor, fecha, "mañana", 1, zona.id)
 
         assert guardia is not None
         assert guardia.profesor_id == profesor.id

@@ -70,10 +70,7 @@ class IProfesorRepository(IBaseRepository[ProfesorEntity]):
 
     @abstractmethod
     def find_disponibles_en_fecha(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int
+        self, fecha: date, turno: str, recreo: int
     ) -> list[ProfesorEntity]:
         """
         Obtiene profesores disponibles en una fecha, turno y recreo específicos.
@@ -115,11 +112,7 @@ class IProfesorRepository(IBaseRepository[ProfesorEntity]):
         pass
 
     @abstractmethod
-    def contar_guardias_profesor_en_fecha(
-        self,
-        profesor_id: int,
-        fecha: date
-    ) -> int:
+    def contar_guardias_profesor_en_fecha(self, profesor_id: int, fecha: date) -> int:
         """
         Cuenta las guardias de un profesor en una fecha específica.
 

@@ -9,7 +9,7 @@ import locale
 from datetime import date
 from typing import Dict, List, Tuple
 
-from models.models import Ausencia, Guardia, Zona
+from infrastructure.database.models import Ausencia, Guardia, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (

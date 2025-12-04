@@ -16,7 +16,7 @@ from datetime import date, datetime, timedelta
 from typing import Dict, List, Tuple
 
 from core.logging import get_logger
-from models.models import Ausencia, Configuracion, Guardia, Zona
+from infrastructure.database.models import Ausencia, Configuracion, Guardia, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -178,8 +178,7 @@ class CeldaDia(QGroupBox):
                     claves_ordenadas.append(clave)
             # Re-ordenar
             claves_ordenadas = sorted(
-                claves_ordenadas,
-                key=lambda x: (orden_turno.get(x[0], 2), x[1])
+                claves_ordenadas, key=lambda x: (orden_turno.get(x[0], 2), x[1])
             )
 
         for turno, recreo in claves_ordenadas:
@@ -750,9 +749,7 @@ class VistaCalendario(BaseForm):
 
         self.actualizar_calendario()
 
-    def _obtener_zonas_esperadas_por_recreo(
-        self, fecha: date
-    ) -> Dict[Tuple[str, int], List[Zona]]:
+    def _obtener_zonas_esperadas_por_recreo(self, fecha: date) -> Dict[Tuple[str, int], List[Zona]]:
         """
         Determina qué zonas deberían tener guardia para cada recreo/turno en una fecha.
 
@@ -786,10 +783,8 @@ class VistaCalendario(BaseForm):
         zonas_activas = sorted(
             zonas_activas,
             key=lambda z: (
-                int(z.nombre_zona[1])
-                if z.nombre_zona and z.nombre_zona.startswith("Z")
-                else 999
-            )
+                int(z.nombre_zona[1]) if z.nombre_zona and z.nombre_zona.startswith("Z") else 999
+            ),
         )
 
         # Parse recreos_config
@@ -797,12 +792,12 @@ class VistaCalendario(BaseForm):
 
         # Para cada recreo, agregar las zonas que deberían tener guardia
         for recreo_data in recreos_list:
-            recreo_id = recreo_data['id']
-            turno = recreo_data.get('turno', 'mañana')
-            num_zonas = recreo_data.get('zonas', len(zonas_activas))
+            recreo_id = recreo_data["id"]
+            turno = recreo_data.get("turno", "mañana")
+            num_zonas = recreo_data.get("zonas", len(zonas_activas))
 
             # Limitar al número de zonas activas disponibles
-            zonas_para_recreo = zonas_activas[:min(num_zonas, len(zonas_activas))]
+            zonas_para_recreo = zonas_activas[: min(num_zonas, len(zonas_activas))]
             zonas_por_recreo[(turno, recreo_id)] = zonas_para_recreo
 
         return zonas_por_recreo
@@ -821,35 +816,43 @@ class VistaCalendario(BaseForm):
 
         if config.hora_recreo1_manana:
             recreo_id += 1
-            recreos.append({
-                'id': recreo_id,
-                'turno': 'mañana',
-                'etiqueta': f'Recreo {recreo_id}',
-            })
+            recreos.append(
+                {
+                    "id": recreo_id,
+                    "turno": "mañana",
+                    "etiqueta": f"Recreo {recreo_id}",
+                }
+            )
 
         if config.hora_recreo2_manana:
             recreo_id += 1
-            recreos.append({
-                'id': recreo_id,
-                'turno': 'mañana',
-                'etiqueta': f'Recreo {recreo_id}',
-            })
+            recreos.append(
+                {
+                    "id": recreo_id,
+                    "turno": "mañana",
+                    "etiqueta": f"Recreo {recreo_id}",
+                }
+            )
 
         if config.hora_recreo1_tarde:
             recreo_id += 1
-            recreos.append({
-                'id': recreo_id,
-                'turno': 'tarde',
-                'etiqueta': f'Recreo {recreo_id}',
-            })
+            recreos.append(
+                {
+                    "id": recreo_id,
+                    "turno": "tarde",
+                    "etiqueta": f"Recreo {recreo_id}",
+                }
+            )
 
         if config.hora_recreo2_tarde:
             recreo_id += 1
-            recreos.append({
-                'id': recreo_id,
-                'turno': 'tarde',
-                'etiqueta': f'Recreo {recreo_id}',
-            })
+            recreos.append(
+                {
+                    "id": recreo_id,
+                    "turno": "tarde",
+                    "etiqueta": f"Recreo {recreo_id}",
+                }
+            )
 
         return recreos
 
@@ -1194,13 +1197,9 @@ class VistaCalendario(BaseForm):
             Tupla de (guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha)
         """
         # Obtener configuración activa para filtrar por curso
-        from models.models import CursoEscolar
+        from infrastructure.database.models import CursoEscolar
 
-        curso_activo = (
-            self.session.query(CursoEscolar)
-            .filter_by(activo=True)
-            .first()
-        )
+        curso_activo = self.session.query(CursoEscolar).filter_by(activo=True).first()
 
         if not curso_activo:
             # Si no hay curso activo, retornar datos vacíos
@@ -1212,7 +1211,7 @@ class VistaCalendario(BaseForm):
             .filter(
                 Guardia.curso_id == curso_activo.id,
                 Guardia.fecha >= fecha_inicio,
-                Guardia.fecha <= fecha_fin
+                Guardia.fecha <= fecha_fin,
             )
             .all()
         )

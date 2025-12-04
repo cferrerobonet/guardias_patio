@@ -22,75 +22,75 @@ class PDFStyles:
     # ==========================================
 
     # Azules principales (fondo de encabezados)
-    AZUL_PRINCIPAL = colors.HexColor('#1976D2')      # Azul primario
-    AZUL_OSCURO = colors.HexColor('#0D47A1')         # Azul oscuro para bordes
-    AZUL_CLARO = colors.HexColor('#E3F2FD')          # Azul muy claro para texto sobre azul
+    AZUL_PRINCIPAL = colors.HexColor("#1976D2")  # Azul primario
+    AZUL_OSCURO = colors.HexColor("#0D47A1")  # Azul oscuro para bordes
+    AZUL_CLARO = colors.HexColor("#E3F2FD")  # Azul muy claro para texto sobre azul
 
     # Colores para datos dinámicos (compatibles con fondo azul)
-    COLOR_DATO_PRINCIPAL = colors.HexColor('#FFD54F')   # Amarillo/dorado (destaca mucho)
-    COLOR_DATO_SECUNDARIO = colors.HexColor('#FFE082')  # Amarillo más claro
-    COLOR_DATO_TERCIARIO = colors.HexColor('#FFF59D')   # Amarillo pastel
+    COLOR_DATO_PRINCIPAL = colors.HexColor("#FFD54F")  # Amarillo/dorado (destaca mucho)
+    COLOR_DATO_SECUNDARIO = colors.HexColor("#FFE082")  # Amarillo más claro
+    COLOR_DATO_TERCIARIO = colors.HexColor("#FFF59D")  # Amarillo pastel
 
     # Colores para zonas (hasta 10 zonas diferentes)
     COLORES_ZONAS = {
-        1: colors.HexColor('#e74c3c'),   # Rojo
-        2: colors.HexColor('#3498db'),   # Azul
-        3: colors.HexColor('#2ecc71'),   # Verde
-        4: colors.HexColor('#f39c12'),   # Naranja
-        5: colors.HexColor('#9b59b6'),   # Morado
-        6: colors.HexColor('#1abc9c'),   # Turquesa
-        7: colors.HexColor('#e67e22'),   # Naranja oscuro
-        8: colors.HexColor('#34495e'),   # Gris oscuro
-        9: colors.HexColor('#e91e63'),   # Rosa
-        10: colors.HexColor('#00bcd4'),  # Cian
+        1: colors.HexColor("#e74c3c"),  # Rojo
+        2: colors.HexColor("#3498db"),  # Azul
+        3: colors.HexColor("#2ecc71"),  # Verde
+        4: colors.HexColor("#f39c12"),  # Naranja
+        5: colors.HexColor("#9b59b6"),  # Morado
+        6: colors.HexColor("#1abc9c"),  # Turquesa
+        7: colors.HexColor("#e67e22"),  # Naranja oscuro
+        8: colors.HexColor("#34495e"),  # Gris oscuro
+        9: colors.HexColor("#e91e63"),  # Rosa
+        10: colors.HexColor("#00bcd4"),  # Cian
     }
 
     # Colores para recreos (diferenciación visual)
     COLORES_RECREOS = {
-        1: colors.HexColor('#4CAF50'),   # Verde
-        2: colors.HexColor('#FF9800'),   # Naranja
-        3: colors.HexColor('#9C27B0'),   # Morado
-        4: colors.HexColor('#F44336'),   # Rojo
+        1: colors.HexColor("#4CAF50"),  # Verde
+        2: colors.HexColor("#FF9800"),  # Naranja
+        3: colors.HexColor("#9C27B0"),  # Morado
+        4: colors.HexColor("#F44336"),  # Rojo
     }
 
     # Colores para separación de meses
     COLORES_MESES_ALTERNOS = [
-        colors.HexColor('#E8F5E9'),  # Verde muy claro
-        colors.HexColor('#E3F2FD'),  # Azul muy claro
-        colors.HexColor('#FFF3E0'),  # Naranja muy claro
-        colors.HexColor('#F3E5F5'),  # Morado muy claro
-        colors.HexColor('#E0F2F1'),  # Turquesa muy claro
+        colors.HexColor("#E8F5E9"),  # Verde muy claro
+        colors.HexColor("#E3F2FD"),  # Azul muy claro
+        colors.HexColor("#FFF3E0"),  # Naranja muy claro
+        colors.HexColor("#F3E5F5"),  # Morado muy claro
+        colors.HexColor("#E0F2F1"),  # Turquesa muy claro
     ]
 
     # Colores de texto
-    TEXTO_OSCURO = colors.HexColor('#2c3e50')
-    TEXTO_MEDIO = colors.HexColor('#34495e')
+    TEXTO_OSCURO = colors.HexColor("#2c3e50")
+    TEXTO_MEDIO = colors.HexColor("#34495e")
     TEXTO_GRIS = colors.grey
 
     # Fondos
-    FONDO_CLARO = colors.HexColor('#f8f9fa')
+    FONDO_CLARO = colors.HexColor("#f8f9fa")
     FONDO_TABLA_HEADER = AZUL_PRINCIPAL
     FONDO_TABLA_ALTERNADO_1 = colors.white
-    FONDO_TABLA_ALTERNADO_2 = colors.HexColor('#f5f5f5')
+    FONDO_TABLA_ALTERNADO_2 = colors.HexColor("#f5f5f5")
 
     # ==========================================
     # DIMENSIONES Y MÁRGENES
     # ==========================================
 
     PAGESIZE = landscape(A4)
-    MARGEN_SUPERIOR = 1*cm
-    MARGEN_INFERIOR = 1*cm
-    MARGEN_IZQUIERDO = 1*cm
-    MARGEN_DERECHO = 1*cm
+    MARGEN_SUPERIOR = 1 * cm
+    MARGEN_INFERIOR = 1 * cm
+    MARGEN_IZQUIERDO = 1 * cm
+    MARGEN_DERECHO = 1 * cm
 
     # ==========================================
     # TIPOGRAFÍA
     # ==========================================
 
-    FUENTE_TITULO = 'Helvetica-Bold'
-    FUENTE_SUBTITULO = 'Helvetica-Bold'
-    FUENTE_NORMAL = 'Helvetica'
-    FUENTE_NEGRITA = 'Helvetica-Bold'
+    FUENTE_TITULO = "Helvetica-Bold"
+    FUENTE_SUBTITULO = "Helvetica-Bold"
+    FUENTE_NORMAL = "Helvetica"
+    FUENTE_NEGRITA = "Helvetica-Bold"
 
     TAMANO_TITULO_PRINCIPAL = 18
     TAMANO_SUBTITULO = 14
@@ -122,8 +122,8 @@ class PDFStyles:
         """
         styles = cls.get_base_styles()
         return ParagraphStyle(
-            'TituloPrincipal',
-            parent=styles['Heading1'],
+            "TituloPrincipal",
+            parent=styles["Heading1"],
             fontSize=cls.TAMANO_TITULO_PRINCIPAL,
             textColor=texto_color or colors.whitesmoke,
             fontName=cls.FUENTE_TITULO,
@@ -144,8 +144,8 @@ class PDFStyles:
         """
         styles = cls.get_base_styles()
         return ParagraphStyle(
-            'Subtitulo',
-            parent=styles['Heading2'],
+            "Subtitulo",
+            parent=styles["Heading2"],
             fontSize=cls.TAMANO_SUBTITULO,
             textColor=texto_color or cls.TEXTO_OSCURO,
             fontName=cls.FUENTE_SUBTITULO,
@@ -167,8 +167,8 @@ class PDFStyles:
         """
         styles = cls.get_base_styles()
         return ParagraphStyle(
-            'TextoNormal',
-            parent=styles['Normal'],
+            "TextoNormal",
+            parent=styles["Normal"],
             fontSize=cls.TAMANO_TEXTO_NORMAL,
             textColor=texto_color or cls.TEXTO_OSCURO,
             fontName=cls.FUENTE_NORMAL,
@@ -189,8 +189,8 @@ class PDFStyles:
         """
         styles = cls.get_base_styles()
         return ParagraphStyle(
-            'TextoPequeno',
-            parent=styles['Normal'],
+            "TextoPequeno",
+            parent=styles["Normal"],
             fontSize=cls.TAMANO_TEXTO_PEQUENO,
             textColor=texto_color or cls.TEXTO_GRIS,
             fontName=cls.FUENTE_NORMAL,
@@ -273,7 +273,7 @@ class PDFStyles:
         Returns:
             Lista de strings con días de la semana
         """
-        return ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+        return ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
     @classmethod
     def get_dias_semana_cortos(cls):
@@ -283,4 +283,4 @@ class PDFStyles:
         Returns:
             Lista de strings con días de la semana abreviados
         """
-        return ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+        return ["L", "M", "X", "J", "V", "S", "D"]

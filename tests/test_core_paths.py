@@ -10,7 +10,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
 from core import paths
 
 
@@ -41,7 +40,7 @@ class TestGetBaseDirectory:
         with patch.object(sys, "frozen", True, create=True):
             base_dir = paths.get_base_directory()
             assert isinstance(base_dir, Path)
-            assert ("AppData" in str(base_dir) or "APPDATA" in str(base_dir).upper())
+            assert "AppData" in str(base_dir) or "APPDATA" in str(base_dir).upper()
             assert "GuardiasDePatio" in str(base_dir)
 
     def test_creates_directory_if_not_exists(self):

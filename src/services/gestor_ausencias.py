@@ -6,7 +6,7 @@ Permite registrar, editar y eliminar ausencias, así como encontrar y reasignar 
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
-from models.models import Ausencia, Guardia, Profesor
+from infrastructure.database.models import Ausencia, Guardia, Profesor
 from services.validators import AusenciaChecker, TurnoValidator
 from sqlalchemy.orm import Session
 from utils import get_logger

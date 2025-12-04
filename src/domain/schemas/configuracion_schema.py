@@ -38,98 +38,61 @@ class ConfiguracionSchema(BaseModel):
     )
 
     # Identidad (para persistencia)
-    id: Optional[int] = Field(
-        None,
-        gt=0,
-        description="ID de la configuración (para BD)"
-    )
+    id: Optional[int] = Field(None, gt=0, description="ID de la configuración (para BD)")
 
     # Parámetros de horas y jornada
     max_horas_contrato: float = Field(
-        25.0,
-        gt=0.0,
-        le=40.0,
-        description="Horas máximas de contrato por semana"
+        25.0, gt=0.0, le=40.0, description="Horas máximas de contrato por semana"
     )
 
     # Ajustes de guardias
     ajuste_tutores: float = Field(
-        10.0,
-        gt=0.0,
-        le=20.0,
-        description="Número de guardias esperadas para tutores"
+        10.0, gt=0.0, le=20.0, description="Número de guardias esperadas para tutores"
     )
     ajuste_no_tutores: float = Field(
-        12.0,
-        gt=0.0,
-        le=20.0,
-        description="Número de guardias esperadas para no tutores"
+        12.0, gt=0.0, le=20.0, description="Número de guardias esperadas para no tutores"
     )
 
     # Límites por día
     max_guardias_por_profesor_dia: int = Field(
-        2,
-        gt=0,
-        le=5,
-        description="Máximo de guardias que puede tener un profesor en un día"
+        2, gt=0, le=5, description="Máximo de guardias que puede tener un profesor en un día"
     )
 
     # Configuración de turnos y recreos
     num_recreos_manana: int = Field(
-        2,
-        ge=1,
-        le=3,
-        description="Número de recreos en turno de mañana"
+        2, ge=1, le=3, description="Número de recreos en turno de mañana"
     )
-    num_recreos_tarde: int = Field(
-        1,
-        ge=0,
-        le=3,
-        description="Número de recreos en turno de tarde"
-    )
+    num_recreos_tarde: int = Field(1, ge=0, le=3, description="Número de recreos en turno de tarde")
 
     # Días laborables
     dias_laborables: list[int] = Field(
         default_factory=lambda: [0, 1, 2, 3, 4],  # Lunes a Viernes
-        description="Lista de días laborables (0=Lunes, 6=Domingo)"
+        description="Lista de días laborables (0=Lunes, 6=Domingo)",
     )
 
     # Configuración de notificaciones
-    notificar_ausencias: bool = Field(
-        True,
-        description="Enviar notificaciones de ausencias"
-    )
+    notificar_ausencias: bool = Field(True, description="Enviar notificaciones de ausencias")
     notificar_sustituciones: bool = Field(
-        True,
-        description="Enviar notificaciones de sustituciones"
+        True, description="Enviar notificaciones de sustituciones"
     )
     email_notificaciones: Optional[str] = Field(
-        None,
-        max_length=200,
-        description="Email para notificaciones del sistema"
+        None, max_length=200, description="Email para notificaciones del sistema"
     )
 
     # Configuración de exportación
     incluir_email_en_exports: bool = Field(
-        False,
-        description="Incluir emails en exportaciones PDF/Excel"
+        False, description="Incluir emails en exportaciones PDF/Excel"
     )
     mostrar_zona_en_calendario: bool = Field(
-        True,
-        description="Mostrar nombre de zona en vista de calendario"
+        True, description="Mostrar nombre de zona en vista de calendario"
     )
 
     # Metadatos
     nombre_centro: str = Field(
-        "Centro Educativo",
-        min_length=1,
-        max_length=200,
-        description="Nombre del centro educativo"
+        "Centro Educativo", min_length=1, max_length=200, description="Nombre del centro educativo"
     )
     curso_escolar: str = Field(
-        "2025/2026",
-        pattern=r"^\d{4}/\d{4}$",
-        description="Curso escolar (formato: YYYY/YYYY)"
+        "2025/2026", pattern=r"^\d{4}/\d{4}$", description="Curso escolar (formato: YYYY/YYYY)"
     )
 
     @field_validator("dias_laborables")
@@ -137,9 +100,7 @@ class ConfiguracionSchema(BaseModel):
     def validar_dias_laborables(cls, v: list[int]) -> list[int]:
         """Valida que los días laborables estén en rango 0-6."""
         if not all(0 <= dia <= 6 for dia in v):
-            raise ValueError(
-                "Los días laborables deben estar entre 0 (Lunes) y 6 (Domingo)"
-            )
+            raise ValueError("Los días laborables deben estar entre 0 (Lunes) y 6 (Domingo)")
         if len(v) == 0:
             raise ValueError("Debe haber al menos un día laborable")
         # Eliminar duplicados y ordenar
@@ -193,9 +154,8 @@ class ConfiguracionSchema(BaseModel):
                 raise ValueError("Email de notificaciones no válido")
 
         # Advertir si notificaciones activas pero sin email
-        notificar = (
-            info.data.get("notificar_ausencias", False) or
-            info.data.get("notificar_sustituciones", False)
+        notificar = info.data.get("notificar_ausencias", False) or info.data.get(
+            "notificar_sustituciones", False
         )
         if notificar and v is None:
             # No es error, solo advertencia (el logger lo registrará)
@@ -203,11 +163,7 @@ class ConfiguracionSchema(BaseModel):
 
         return v
 
-    def calcular_guardias_esperadas_profesor(
-        self,
-        horas_contrato: float,
-        es_tutor: bool
-    ) -> float:
+    def calcular_guardias_esperadas_profesor(self, horas_contrato: float, es_tutor: bool) -> float:
         """
         Calcula guardias esperadas para un profesor según configuración.
 

@@ -103,12 +103,7 @@ class CuotasPanel(QGroupBox):
         # Tabla de cuotas
         self.tabla = QTableWidget()
         self.tabla.setColumnCount(4)
-        self.tabla.setHorizontalHeaderLabels([
-            "Profesor",
-            "Jornada %",
-            "Cuota Esperada",
-            "Estado"
-        ])
+        self.tabla.setHorizontalHeaderLabels(["Profesor", "Jornada %", "Cuota Esperada", "Estado"])
         self.tabla.setMinimumHeight(250)
         self.tabla.setAlternatingRowColors(True)
         self.tabla.setStyleSheet("""
@@ -144,6 +139,7 @@ class CuotasPanel(QGroupBox):
 
         # Permitir que la última columna se ajuste
         from PyQt6.QtWidgets import QHeaderView
+
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
@@ -164,7 +160,7 @@ class CuotasPanel(QGroupBox):
         """Calcula y muestra las cuotas usando el Use Case."""
         # Obtener configuración activa
         if not self.configuracion_id:
-            from models.models import Configuracion
+            from infrastructure.database.models import Configuracion
 
             # Obtener la configuración (solo hay una por usuario)
             configuracion = self.session.query(Configuracion).first()
@@ -172,6 +168,7 @@ class CuotasPanel(QGroupBox):
             if not configuracion:
                 from PyQt6.QtWidgets import QMessageBox
                 from utils.ui_helpers import MESSAGEBOX_STYLE
+
                 msg = QMessageBox(self)
                 msg.setWindowTitle("Sin Configuración")
                 msg.setText(
@@ -184,10 +181,12 @@ class CuotasPanel(QGroupBox):
 
             # Verificar que haya un curso activo usando el GestorCursos
             from services.gestor_cursos import GestorCursos
+
             curso_activo = GestorCursos.obtener_curso_activo(self.session)
             if not curso_activo:
                 from PyQt6.QtWidgets import QMessageBox
                 from utils.ui_helpers import MESSAGEBOX_STYLE
+
                 msg = QMessageBox(self)
                 msg.setWindowTitle("Sin Curso Activo")
                 msg.setText("No hay un curso escolar activo.\n\nDebe activar un curso en Ajustes.")
@@ -204,8 +203,7 @@ class CuotasPanel(QGroupBox):
 
             # Ejecutar Use Case
             request = CalcularCuotasRequest(
-                configuracion_id=self.configuracion_id,
-                solo_activos=True
+                configuracion_id=self.configuracion_id, solo_activos=True
             )
             response = self.calcular_cuotas_uc.execute(request)
 
@@ -262,11 +260,8 @@ class CuotasPanel(QGroupBox):
     def _mostrar_error(self, mensaje: str):
         """Muestra mensaje de error."""
         from PyQt6.QtWidgets import QMessageBox
-        QMessageBox.critical(
-            self,
-            "Error al Calcular Cuotas",
-            mensaje
-        )
+
+        QMessageBox.critical(self, "Error al Calcular Cuotas", mensaje)
         self.tabla.setRowCount(0)
         self.total_label.setText("Total: -- guardias")
 

@@ -28,6 +28,7 @@ class GuardiaDTO(BaseModel):
 
     class Config:
         """Configuración de Pydantic."""
+
         from_attributes = True
 
 
@@ -63,5 +64,6 @@ class FiltroGuardiasDTO(BaseModel):
 
     class Config:
         """Configuración de Pydantic."""
+
         # Permite valores por defecto None sin error
         arbitrary_types_allowed = True

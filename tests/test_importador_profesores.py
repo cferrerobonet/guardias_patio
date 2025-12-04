@@ -15,7 +15,7 @@ except ImportError:
 # Añadir src al path para imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from models.models import Base, Profesor
+from infrastructure.database.models import Base, Profesor
 from services.importador_profesores import (
     importar_profesores_desde_excel,
     normalizar_nombre,
@@ -76,14 +76,14 @@ def crear_excel_temporal(datos: list, tmp_path, skip_rows: int = 9):
     df_datos = pd.DataFrame(datos)
 
     # Escribir al archivo Excel
-    with pd.ExcelWriter(archivo_path, engine='openpyxl') as writer:
+    with pd.ExcelWriter(archivo_path, engine="openpyxl") as writer:
         workbook = writer.book
-        worksheet = workbook.create_sheet('Sheet1')
+        worksheet = workbook.create_sheet("Sheet1")
         workbook.active = worksheet
 
         # Agregar skip_rows filas de cabecera vacías/informativas
         for i in range(skip_rows):
-            worksheet.append([f"Línea informativa {i+1}"])
+            worksheet.append([f"Línea informativa {i + 1}"])
 
         # Agregar encabezados de columnas (fila skip_rows + 1)
         worksheet.append(list(df_datos.columns))
@@ -222,7 +222,7 @@ class TestImportarProfesoresBasico:
                 "nombre": "EMAIL NAN, PROFESOR",
                 "tel_fijo": "912345678",
                 "tel_movil": "612345678",
-                "email": float('nan'),
+                "email": float("nan"),
             },
         ]
 
@@ -286,7 +286,7 @@ class TestImportarProfesoresExistentes:
                 "nombre": "García Lopez, Juan",
                 "tel_fijo": "912345678",
                 "tel_movil": "612345678",
-                "email": "juan@ejemplo.com"
+                "email": "juan@ejemplo.com",
             }
         ]
         archivo_path = crear_excel_temporal(datos, tmp_path)
@@ -310,16 +310,11 @@ class TestValidaciones:
         archivo = tmp_path / "pocas_columnas.xlsx"
 
         # Añadir filas de cabecera
-        with pd.ExcelWriter(archivo, engine='openpyxl') as writer:
+        with pd.ExcelWriter(archivo, engine="openpyxl") as writer:
             # 9 filas vacías de cabecera
             for i in range(9):
                 df_temp = pd.DataFrame([[f"Cabecera {i}"]])
-                df_temp.to_excel(
-                    writer,
-                    startrow=i,
-                    index=False,
-                    header=False
-                )
+                df_temp.to_excel(writer, startrow=i, index=False, header=False)
             # Datos
             df.to_excel(writer, startrow=9, index=False, header=False)
 
@@ -662,9 +657,7 @@ class TestSkipRows:
 
         archivo = crear_excel_temporal(datos, tmp_path, skip_rows=5)
 
-        resultado = importar_profesores_desde_excel(
-            session, str(archivo), skip_rows=5
-        )
+        resultado = importar_profesores_desde_excel(session, str(archivo), skip_rows=5)
 
         assert resultado["importados"] == 1
 
@@ -672,14 +665,16 @@ class TestSkipRows:
         """Importa sin saltar filas."""
         # Crear Excel con encabezados en la primera fila y datos en la segunda
         datos = [
-            {"nombre": "PROFESOR DIRECTO", "tel_fijo": "912345678",
-             "tel_movil": "612345678", "email": "directo@colegio.edu"},
+            {
+                "nombre": "PROFESOR DIRECTO",
+                "tel_fijo": "912345678",
+                "tel_movil": "612345678",
+                "email": "directo@colegio.edu",
+            },
         ]
         archivo = crear_excel_temporal(datos, tmp_path, skip_rows=0)
 
-        resultado = importar_profesores_desde_excel(
-            session, str(archivo), skip_rows=0
-        )
+        resultado = importar_profesores_desde_excel(session, str(archivo), skip_rows=0)
 
         assert resultado["importados"] == 1
         assert resultado["leidos"] == 1

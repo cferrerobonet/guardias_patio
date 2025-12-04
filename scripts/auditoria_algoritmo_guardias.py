@@ -92,16 +92,16 @@ class AuditoriaAlgoritmoGuardias:
 
         # Mapeo manual de columnas (ajustar según tu esquema)
         config_dict = {
-            'id': config[0],
-            'fecha_inicio': config[1],
-            'fecha_fin': config[2],
+            "id": config[0],
+            "fecha_inicio": config[1],
+            "fecha_fin": config[2],
         }
 
         print(f"✓ Curso: {config_dict['fecha_inicio']} a {config_dict['fecha_fin']}")
 
         # Calcular días lectivos
-        fecha_inicio = datetime.strptime(config_dict['fecha_inicio'], '%Y-%m-%d')
-        fecha_fin = datetime.strptime(config_dict['fecha_fin'], '%Y-%m-%d')
+        fecha_inicio = datetime.strptime(config_dict["fecha_inicio"], "%Y-%m-%d")
+        fecha_fin = datetime.strptime(config_dict["fecha_fin"], "%Y-%m-%d")
         dias_totales = (fecha_fin - fecha_inicio).days + 1
 
         print(f"✓ Duración: {dias_totales} días")
@@ -120,12 +120,12 @@ class AuditoriaAlgoritmoGuardias:
         print(f"✓ Zonas: {total_zonas}")
         print(f"✓ Guardias asignadas: {total_guardias}")
 
-        self.stats['total_profesores'] = total_profes
-        self.stats['total_zonas'] = total_zonas
-        self.stats['total_guardias'] = total_guardias
-        self.stats['dias_lectivos'] = dias_totales
-        self.stats['fecha_inicio'] = config_dict['fecha_inicio']
-        self.stats['fecha_fin'] = config_dict['fecha_fin']
+        self.stats["total_profesores"] = total_profes
+        self.stats["total_zonas"] = total_zonas
+        self.stats["total_guardias"] = total_guardias
+        self.stats["dias_lectivos"] = dias_totales
+        self.stats["fecha_inicio"] = config_dict["fecha_inicio"]
+        self.stats["fecha_fin"] = config_dict["fecha_fin"]
 
         print()
 
@@ -158,10 +158,10 @@ class AuditoriaAlgoritmoGuardias:
 
                 self.problemas.append(f"Profesor sin guardias: {nombre} (ID: {prof_id})")
 
-            self.stats['profesores_sin_guardias'] = len(sin_guardias)
+            self.stats["profesores_sin_guardias"] = len(sin_guardias)
         else:
             print("✅ Todos los profesores activos tienen guardias asignadas")
-            self.stats['profesores_sin_guardias'] = 0
+            self.stats["profesores_sin_guardias"] = 0
 
         print()
 
@@ -203,8 +203,8 @@ class AuditoriaAlgoritmoGuardias:
                 )
             elif primera_guardia > fecha_inicio:
                 dias_retraso = (
-                    datetime.strptime(primera_guardia, '%Y-%m-%d') -
-                    datetime.strptime(fecha_inicio, '%Y-%m-%d')
+                    datetime.strptime(primera_guardia, "%Y-%m-%d")
+                    - datetime.strptime(fecha_inicio, "%Y-%m-%d")
                 ).days
                 retrasos.append((nombre, fecha_inicio, primera_guardia, dias_retraso))
                 if dias_retraso > 30:  # Más de 1 mes
@@ -218,7 +218,9 @@ class AuditoriaAlgoritmoGuardias:
                     )
 
         print(f"Profesores con fecha_inicio configurada: {len(profesores_con_fecha)}")
-        print(f"  ✅ Cumplen exactamente: {len(profesores_con_fecha) - len(violaciones_inicio) - len(retrasos) - len(sin_guardias_con_fecha)}")
+        print(
+            f"  ✅ Cumplen exactamente: {len(profesores_con_fecha) - len(violaciones_inicio) - len(retrasos) - len(sin_guardias_con_fecha)}"
+        )
         print(f"  ❌ Violaciones (antes de fecha): {len(violaciones_inicio)}")
         print(f"  ⚠️  Retrasos: {len(retrasos)}")
         print(f"  ❌ Sin guardias: {len(sin_guardias_con_fecha)}")
@@ -254,9 +256,9 @@ class AuditoriaAlgoritmoGuardias:
         if violaciones_fin:
             print(f"\n  ❌ Violaciones fecha_fin: {len(violaciones_fin)}")
 
-        self.stats['violaciones_fecha_inicio'] = len(violaciones_inicio)
-        self.stats['retrasos_fecha_inicio'] = len(retrasos)
-        self.stats['violaciones_fecha_fin'] = len(violaciones_fin)
+        self.stats["violaciones_fecha_inicio"] = len(violaciones_inicio)
+        self.stats["retrasos_fecha_inicio"] = len(retrasos)
+        self.stats["violaciones_fecha_fin"] = len(violaciones_fin)
 
         print()
 
@@ -288,8 +290,10 @@ class AuditoriaAlgoritmoGuardias:
         maximo = max(guardias_por_profesor)
 
         # Calcular desviación estándar
-        varianza = sum((x - promedio) ** 2 for x in guardias_por_profesor) / len(guardias_por_profesor)
-        desv_std = varianza ** 0.5
+        varianza = sum((x - promedio) ** 2 for x in guardias_por_profesor) / len(
+            guardias_por_profesor
+        )
+        desv_std = varianza**0.5
 
         print("📊 Estadísticas de distribución:")
         print(f"  Promedio: {promedio:.1f} guardias por profesor")
@@ -322,14 +326,16 @@ class AuditoriaAlgoritmoGuardias:
         if desequilibrios:
             print(f"\n⚠️  Profesores con desequilibrio (>{20}% desviación): {len(desequilibrios)}")
             print("\nTop 10 mayores desequilibrios:")
-            for nombre, total, prom, pct in sorted(desequilibrios, key=lambda x: x[3], reverse=True)[:10]:
+            for nombre, total, prom, pct in sorted(
+                desequilibrios, key=lambda x: x[3], reverse=True
+            )[:10]:
                 print(f"  - {nombre:45} | {total:3} guardias | Desv: {pct:5.1f}%")
         else:
             print("\n✅ Distribución equilibrada (desviaciones <20%)")
 
-        self.stats['promedio_guardias'] = promedio
-        self.stats['desviacion_std'] = desv_std
-        self.stats['desequilibrios'] = len(desequilibrios)
+        self.stats["promedio_guardias"] = promedio
+        self.stats["desviacion_std"] = desv_std
+        self.stats["desequilibrios"] = len(desequilibrios)
 
         print()
 
@@ -339,8 +345,8 @@ class AuditoriaAlgoritmoGuardias:
         print("-" * 100)
 
         # Obtener rango de fechas
-        fecha_inicio = datetime.strptime(self.stats['fecha_inicio'], '%Y-%m-%d')
-        fecha_fin = datetime.strptime(self.stats['fecha_fin'], '%Y-%m-%d')
+        fecha_inicio = datetime.strptime(self.stats["fecha_inicio"], "%Y-%m-%d")
+        fecha_fin = datetime.strptime(self.stats["fecha_fin"], "%Y-%m-%d")
 
         # Obtener fechas con guardias
         self.cursor.execute("""
@@ -357,7 +363,7 @@ class AuditoriaAlgoritmoGuardias:
         fecha_actual = fecha_inicio
 
         while fecha_actual <= fecha_fin:
-            fecha_str = fecha_actual.strftime('%Y-%m-%d')
+            fecha_str = fecha_actual.strftime("%Y-%m-%d")
             dia_semana = fecha_actual.weekday()
 
             # Ignorar fines de semana
@@ -367,7 +373,9 @@ class AuditoriaAlgoritmoGuardias:
 
             fecha_actual += timedelta(days=1)
 
-        print(f"Total días lectivos esperados (L-V): ~{len([d for d in range((fecha_fin - fecha_inicio).days + 1) if (fecha_inicio + timedelta(days=d)).weekday() < 5])}")
+        print(
+            f"Total días lectivos esperados (L-V): ~{len([d for d in range((fecha_fin - fecha_inicio).days + 1) if (fecha_inicio + timedelta(days=d)).weekday() < 5])}"
+        )
         print(f"Días con guardias: {len(fechas_con_guardias)}")
         print(f"❌ Días sin guardias (L-V): {len(dias_sin_guardias)}")
 
@@ -391,8 +399,8 @@ class AuditoriaAlgoritmoGuardias:
             periodo_actual = [dias_sin_guardias[0][0]]
 
             for i in range(1, len(dias_sin_guardias)):
-                fecha_ant = datetime.strptime(dias_sin_guardias[i-1][0], '%Y-%m-%d')
-                fecha_act = datetime.strptime(dias_sin_guardias[i][0], '%Y-%m-%d')
+                fecha_ant = datetime.strptime(dias_sin_guardias[i - 1][0], "%Y-%m-%d")
+                fecha_act = datetime.strptime(dias_sin_guardias[i][0], "%Y-%m-%d")
 
                 if (fecha_act - fecha_ant).days <= 3:  # Consecutivos o casi
                     periodo_actual.append(dias_sin_guardias[i][0])
@@ -426,18 +434,21 @@ class AuditoriaAlgoritmoGuardias:
         # Detectar caídas significativas
         if len(meses_ordenados) > 1:
             for i in range(1, len(meses_ordenados)):
-                mes_ant = meses_ordenados[i-1]
+                mes_ant = meses_ordenados[i - 1]
                 mes_act = meses_ordenados[i]
 
-                caida_pct = ((guardias_por_mes[mes_ant] - guardias_por_mes[mes_act]) /
-                            guardias_por_mes[mes_ant] * 100)
+                caida_pct = (
+                    (guardias_por_mes[mes_ant] - guardias_por_mes[mes_act])
+                    / guardias_por_mes[mes_ant]
+                    * 100
+                )
 
                 if caida_pct > 30:  # Caída > 30%
                     self.problemas.append(
                         f"CAÍDA SIGNIFICATIVA: {mes_act} tiene {caida_pct:.1f}% menos guardias que {mes_ant}"
                     )
 
-        self.stats['dias_sin_guardias'] = len(dias_sin_guardias)
+        self.stats["dias_sin_guardias"] = len(dias_sin_guardias)
 
         print()
 
@@ -456,27 +467,42 @@ class AuditoriaAlgoritmoGuardias:
         zonas_problematicas = []
 
         for zona_id, nombre_zona in zonas:
-            self.cursor.execute("""
+            self.cursor.execute(
+                """
                 SELECT COUNT(DISTINCT fecha) as dias_cubiertos
                 FROM guardias
                 WHERE zona_id = ?
-            """, (zona_id,))
+            """,
+                (zona_id,),
+            )
 
             dias_cubiertos = self.cursor.fetchone()[0]
 
             # Calcular días esperados (aproximado)
-            dias_esperados = len([
-                d for d in range((
-                    datetime.strptime(self.stats['fecha_fin'], '%Y-%m-%d') -
-                    datetime.strptime(self.stats['fecha_inicio'], '%Y-%m-%d')
-                ).days + 1)
-                if (datetime.strptime(self.stats['fecha_inicio'], '%Y-%m-%d') + timedelta(days=d)).weekday() < 5
-            ])
+            dias_esperados = len(
+                [
+                    d
+                    for d in range(
+                        (
+                            datetime.strptime(self.stats["fecha_fin"], "%Y-%m-%d")
+                            - datetime.strptime(self.stats["fecha_inicio"], "%Y-%m-%d")
+                        ).days
+                        + 1
+                    )
+                    if (
+                        datetime.strptime(self.stats["fecha_inicio"], "%Y-%m-%d")
+                        + timedelta(days=d)
+                    ).weekday()
+                    < 5
+                ]
+            )
 
             cobertura_pct = (dias_cubiertos / dias_esperados * 100) if dias_esperados > 0 else 0
 
             if cobertura_pct < 80:
-                zonas_problematicas.append((nombre_zona, dias_cubiertos, dias_esperados, cobertura_pct))
+                zonas_problematicas.append(
+                    (nombre_zona, dias_cubiertos, dias_esperados, cobertura_pct)
+                )
                 if cobertura_pct < 50:
                     self.problemas.append(
                         f"ZONA CRÍTICA: {nombre_zona} solo cubierta {cobertura_pct:.1f}% del tiempo"
@@ -489,7 +515,7 @@ class AuditoriaAlgoritmoGuardias:
         else:
             print("✅ Todas las zonas tienen cobertura >80%")
 
-        self.stats['zonas_baja_cobertura'] = len(zonas_problematicas)
+        self.stats["zonas_baja_cobertura"] = len(zonas_problematicas)
 
         print()
 
@@ -512,7 +538,9 @@ class AuditoriaAlgoritmoGuardias:
         if violaciones_turno:
             print(f"❌ Violaciones de turno: {len(violaciones_turno)} casos")
             for nombre, turno_prof, turno_guard, count in violaciones_turno[:10]:
-                print(f"  - {nombre}: asignado a turno '{turno_guard}' (debe ser '{turno_prof}') - {count} veces")
+                print(
+                    f"  - {nombre}: asignado a turno '{turno_guard}' (debe ser '{turno_prof}') - {count} veces"
+                )
                 self.problemas.append(
                     f"VIOLACIÓN TURNO: {nombre} tiene guardias en turno incorrecto"
                 )
@@ -543,7 +571,7 @@ class AuditoriaAlgoritmoGuardias:
         profes_con_restriccion_recreos = self.cursor.fetchall()
         print(f"Profesores con restricción de recreos: {len(profes_con_restriccion_recreos)}")
 
-        self.stats['violaciones_turno'] = len(violaciones_turno)
+        self.stats["violaciones_turno"] = len(violaciones_turno)
 
         print()
 
@@ -574,7 +602,9 @@ class AuditoriaAlgoritmoGuardias:
         guardias_durante_ausencia = self.cursor.fetchall()
 
         if guardias_durante_ausencia:
-            print(f"\n❌ PROBLEMA: {len(guardias_durante_ausencia)} profesores con guardias durante ausencia:")
+            print(
+                f"\n❌ PROBLEMA: {len(guardias_durante_ausencia)} profesores con guardias durante ausencia:"
+            )
             for nombre, inicio, fin, tipo, num_guardias in guardias_durante_ausencia[:10]:
                 print(f"  - {nombre}: {num_guardias} guardias del {inicio} al {fin} ({tipo})")
                 self.problemas.append(
@@ -583,7 +613,7 @@ class AuditoriaAlgoritmoGuardias:
         else:
             print("✅ No hay guardias asignadas durante ausencias")
 
-        self.stats['guardias_durante_ausencia'] = len(guardias_durante_ausencia)
+        self.stats["guardias_durante_ausencia"] = len(guardias_durante_ausencia)
 
         print()
 
@@ -619,7 +649,7 @@ class AuditoriaAlgoritmoGuardias:
         print(f"  - Guardias durante ausencia: {self.stats.get('guardias_durante_ausencia', 0)}")
 
         # Score de salud del sistema
-        problemas_criticos = len([p for p in self.problemas if 'CRÍTICO' in p or 'VIOLACIÓN' in p])
+        problemas_criticos = len([p for p in self.problemas if "CRÍTICO" in p or "VIOLACIÓN" in p])
 
         if problemas_criticos == 0 and len(self.problemas) < 5:
             print("\n✅ ESTADO DEL SISTEMA: SALUDABLE")
@@ -640,99 +670,113 @@ class AuditoriaAlgoritmoGuardias:
         acciones = []
 
         # Acción 1: Profesores sin guardias
-        if self.stats.get('profesores_sin_guardias', 0) > 0:
-            acciones.append({
-                'prioridad': 'CRÍTICA',
-                'accion': 'Asignar guardias a profesores sin asignación',
-                'pasos': [
-                    '1. Identificar por qué no se les asignó (¿restricciones? ¿turnos?)',
-                    '2. Verificar que tienen horario compatible',
-                    '3. Redistribuir guardias para incluirlos',
-                    '4. Ejecutar algoritmo con parámetro force_include_all=True'
-                ]
-            })
+        if self.stats.get("profesores_sin_guardias", 0) > 0:
+            acciones.append(
+                {
+                    "prioridad": "CRÍTICA",
+                    "accion": "Asignar guardias a profesores sin asignación",
+                    "pasos": [
+                        "1. Identificar por qué no se les asignó (¿restricciones? ¿turnos?)",
+                        "2. Verificar que tienen horario compatible",
+                        "3. Redistribuir guardias para incluirlos",
+                        "4. Ejecutar algoritmo con parámetro force_include_all=True",
+                    ],
+                }
+            )
 
         # Acción 2: Violaciones de fechas
-        if self.stats.get('violaciones_fecha_inicio', 0) > 0:
-            acciones.append({
-                'prioridad': 'CRÍTICA',
-                'accion': 'Corregir violaciones de fecha_inicio',
-                'pasos': [
-                    '1. Reasignar guardias que violan fecha_inicio',
-                    '2. Verificar lógica de validación en asignador',
-                    '3. Añadir test unitario para esta restricción'
-                ]
-            })
+        if self.stats.get("violaciones_fecha_inicio", 0) > 0:
+            acciones.append(
+                {
+                    "prioridad": "CRÍTICA",
+                    "accion": "Corregir violaciones de fecha_inicio",
+                    "pasos": [
+                        "1. Reasignar guardias que violan fecha_inicio",
+                        "2. Verificar lógica de validación en asignador",
+                        "3. Añadir test unitario para esta restricción",
+                    ],
+                }
+            )
 
         # Acción 3: Retrasos excesivos
-        if self.stats.get('retrasos_fecha_inicio', 0) > 5:
-            acciones.append({
-                'prioridad': 'ALTA',
-                'accion': 'Reducir retrasos en fecha_inicio',
-                'pasos': [
-                    '1. Implementar priorización de profesores con fecha_inicio',
-                    '2. Alternar asignaciones: día sí, día no hasta cubrir todos',
-                    '3. Calcular guardias necesarias considerando fecha_inicio'
-                ]
-            })
+        if self.stats.get("retrasos_fecha_inicio", 0) > 5:
+            acciones.append(
+                {
+                    "prioridad": "ALTA",
+                    "accion": "Reducir retrasos en fecha_inicio",
+                    "pasos": [
+                        "1. Implementar priorización de profesores con fecha_inicio",
+                        "2. Alternar asignaciones: día sí, día no hasta cubrir todos",
+                        "3. Calcular guardias necesarias considerando fecha_inicio",
+                    ],
+                }
+            )
 
         # Acción 4: Desequilibrios
-        if self.stats.get('desequilibrios', 0) > 10:
-            acciones.append({
-                'prioridad': 'ALTA',
-                'accion': 'Mejorar equilibrio de guardias',
-                'pasos': [
-                    '1. Revisar cálculo de guardias esperadas por profesor',
-                    '2. Implementar iteraciones de balanceo post-asignación',
-                    '3. Verificar que jornada reducida se considera correctamente'
-                ]
-            })
+        if self.stats.get("desequilibrios", 0) > 10:
+            acciones.append(
+                {
+                    "prioridad": "ALTA",
+                    "accion": "Mejorar equilibrio de guardias",
+                    "pasos": [
+                        "1. Revisar cálculo de guardias esperadas por profesor",
+                        "2. Implementar iteraciones de balanceo post-asignación",
+                        "3. Verificar que jornada reducida se considera correctamente",
+                    ],
+                }
+            )
 
         # Acción 5: Agujeros temporales
-        if self.stats.get('dias_sin_guardias', 0) > 20:
-            acciones.append({
-                'prioridad': 'CRÍTICA',
-                'accion': 'Cubrir días sin guardias',
-                'pasos': [
-                    '1. Identificar causa (¿festivos mal marcados? ¿bug en generación?)',
-                    '2. Revisar configuración de días lectivos',
-                    '3. Regenerar guardias para períodos sin cobertura',
-                    '4. Verificar que no hay límite artificial de guardias'
-                ]
-            })
+        if self.stats.get("dias_sin_guardias", 0) > 20:
+            acciones.append(
+                {
+                    "prioridad": "CRÍTICA",
+                    "accion": "Cubrir días sin guardias",
+                    "pasos": [
+                        "1. Identificar causa (¿festivos mal marcados? ¿bug en generación?)",
+                        "2. Revisar configuración de días lectivos",
+                        "3. Regenerar guardias para períodos sin cobertura",
+                        "4. Verificar que no hay límite artificial de guardias",
+                    ],
+                }
+            )
 
         # Acción 6: Zonas sin cubrir
-        if self.stats.get('zonas_baja_cobertura', 0) > 0:
-            acciones.append({
-                'prioridad': 'ALTA',
-                'accion': 'Mejorar cobertura de zonas',
-                'pasos': [
-                    '1. Verificar si zonas tienen fecha_inicio/fin configuradas',
-                    '2. Asegurar que hay suficientes profesores para cubrir',
-                    '3. Implementar rotación equitativa de zonas'
-                ]
-            })
+        if self.stats.get("zonas_baja_cobertura", 0) > 0:
+            acciones.append(
+                {
+                    "prioridad": "ALTA",
+                    "accion": "Mejorar cobertura de zonas",
+                    "pasos": [
+                        "1. Verificar si zonas tienen fecha_inicio/fin configuradas",
+                        "2. Asegurar que hay suficientes profesores para cubrir",
+                        "3. Implementar rotación equitativa de zonas",
+                    ],
+                }
+            )
 
         # Acción 7: Algoritmo general
-        acciones.append({
-            'prioridad': 'FUNDAMENTAL',
-            'accion': 'Mejorar algoritmo de asignación',
-            'pasos': [
-                '1. Implementar asignación en múltiples pasadas:',
-                '   - Pasada 1: Profesores con fecha_inicio urgente',
-                '   - Pasada 2: Profesores normales',
-                '   - Pasada 3: Balanceo y corrección',
-                '2. Añadir validación post-asignación con métricas',
-                '3. Implementar backtracking si no se cumplen restricciones',
-                '4. Añadir parámetro max_iteraciones para ajustar hasta cumplir',
-                '5. Generar reporte de cumplimiento al finalizar'
-            ]
-        })
+        acciones.append(
+            {
+                "prioridad": "FUNDAMENTAL",
+                "accion": "Mejorar algoritmo de asignación",
+                "pasos": [
+                    "1. Implementar asignación en múltiples pasadas:",
+                    "   - Pasada 1: Profesores con fecha_inicio urgente",
+                    "   - Pasada 2: Profesores normales",
+                    "   - Pasada 3: Balanceo y corrección",
+                    "2. Añadir validación post-asignación con métricas",
+                    "3. Implementar backtracking si no se cumplen restricciones",
+                    "4. Añadir parámetro max_iteraciones para ajustar hasta cumplir",
+                    "5. Generar reporte de cumplimiento al finalizar",
+                ],
+            }
+        )
 
         # Mostrar plan
         for i, accion in enumerate(acciones, 1):
             print(f"{i}. [{accion['prioridad']}] {accion['accion']}")
-            for paso in accion['pasos']:
+            for paso in accion["pasos"]:
                 print(f"   {paso}")
             print()
 

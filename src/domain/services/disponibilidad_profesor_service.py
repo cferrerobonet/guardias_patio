@@ -13,7 +13,7 @@ Integra:
 from datetime import date
 from typing import List, Optional, Tuple
 
-from models.models import Ausencia, Guardia, Profesor
+from infrastructure.database.models import Ausencia, Guardia, Profesor
 from services.validators import AusenciaChecker, TurnoValidator
 from sqlalchemy.orm import Session
 from utils import get_logger
@@ -92,7 +92,10 @@ class DisponibilidadProfesorService:
         )
 
         if not turno_profesor.puede_hacer_guardia_en_turno(turno_recreo):
-            return False, f"Turno incompatible: profesor trabaja {profesor.turno}, recreo es {turno_recreo}"
+            return (
+                False,
+                f"Turno incompatible: profesor trabaja {profesor.turno}, recreo es {turno_recreo}",
+            )
 
         # 4. Verificar máximo de guardias por día
         guardias_dia = self._contar_guardias_dia(profesor.id, fecha)
@@ -221,9 +224,7 @@ class DisponibilidadProfesorService:
             .count()
         )
 
-    def _tiene_guardia_en_recreo(
-        self, profesor_id: int, fecha: date, recreo_id: int
-    ) -> bool:
+    def _tiene_guardia_en_recreo(self, profesor_id: int, fecha: date, recreo_id: int) -> bool:
         """Verifica si el profesor ya tiene una guardia en ese recreo/fecha."""
         return (
             self.session.query(Guardia)

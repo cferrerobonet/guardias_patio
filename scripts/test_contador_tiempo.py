@@ -26,11 +26,7 @@ def simular_proceso_largo(callback_progreso):
         time.sleep(0.5)  # Medio segundo por paso = 10 segundos total
 
         # Actualizar progreso
-        callback_progreso(
-            i + 1,
-            total_pasos,
-            f"Procesando paso {i + 1} de {total_pasos}"
-        )
+        callback_progreso(i + 1, total_pasos, f"Procesando paso {i + 1} de {total_pasos}")
 
     return "Proceso completado exitosamente"
 
@@ -43,7 +39,7 @@ def main():
     dialog = ProgressDialog(
         title="Prueba de Contador de Tiempo",
         message="Observa el contador de tiempo funcionando...",
-        show_details=True
+        show_details=True,
     )
 
     print("=" * 60)

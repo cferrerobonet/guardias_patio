@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import List
 
-from models.models import Configuracion, Zona
+from infrastructure.database.models import Configuracion, Zona
 from services.calculador_guardias import _parse_recreos_config, listar_dias_lectivos
 from sqlalchemy.orm import Session
 from utils import get_logger
@@ -136,8 +136,4 @@ class SlotBuilder:
         Returns:
             Lista filtrada
         """
-        return [
-            slot
-            for slot in slots
-            if fecha_inicio <= slot.fecha <= fecha_fin
-        ]
+        return [slot for slot in slots if fecha_inicio <= slot.fecha <= fecha_fin]

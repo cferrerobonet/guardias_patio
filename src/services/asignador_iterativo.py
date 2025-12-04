@@ -2,6 +2,7 @@
 Asignador iterativo de guardias con recalculación automática y relajación progresiva.
 Implementa la Opción A: rápido, construye sobre el algoritmo actual, múltiples intentos.
 """
+
 import logging
 from dataclasses import dataclass
 from datetime import date
@@ -10,7 +11,7 @@ from typing import Dict, List, Tuple
 # Domain Services (Phase 2.4)
 from domain.services.distribucion_cuotas_service import DistribucionCuotasService
 from domain.services.equidad_guardias_service import EquidadGuardiasService
-from models.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from services.calculador_guardias import calcular_guardias_por_profesor
 from services.estadisticas_service import EstadisticasService
 from sqlalchemy.orm import Session
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ConfiguracionIteracion:
     """Configuración para cada iteración del algoritmo."""
+
     permitir_desbalance: float  # % de desbalance permitido (0.1 = 10%)
     permitir_retraso_fecha_inicio: int  # Días de retraso permitidos
     priorizar_cobertura_vs_equidad: bool  # True = prioriza cobertura, False = equidad
@@ -44,7 +46,7 @@ class AsignadorIterativo:
     def generar_guardias_iterativo(
         self,
         max_iteraciones: int = 5,
-        objetivo_cobertura_minima: float = 0.95  # 95%
+        objetivo_cobertura_minima: float = 0.95,  # 95%
     ) -> Tuple[List[Guardia], Dict]:
         """
         Genera guardias usando múltiples iteraciones con estrategias progresivas.
@@ -73,21 +75,23 @@ class AsignadorIterativo:
             guardias, stats = self._intentar_asignacion_con_estrategia(estrategia, i)
 
             # Calcular cobertura
-            total_slots = len(self.dias_lectivos) * len(self.config.recreos) * len(self.config.zonas)
+            total_slots = (
+                len(self.dias_lectivos) * len(self.config.recreos) * len(self.config.zonas)
+            )
             cobertura = len(guardias) / total_slots if total_slots > 0 else 0
 
             logger.info(f"📊 Resultado: {len(guardias)} guardias asignadas")
-            logger.info(f"📊 Cobertura: {cobertura*100:.1f}%")
+            logger.info(f"📊 Cobertura: {cobertura * 100:.1f}%")
 
             # Guardar si es el mejor hasta ahora
             if cobertura > mejor_cobertura:
                 mejor_resultado = guardias
                 mejor_cobertura = cobertura
                 metadatos_mejor = {
-                    'iteracion_exitosa': i,
-                    'estrategia': estrategia.nombre_iteracion,
-                    'estadisticas': stats,
-                    'cobertura': cobertura
+                    "iteracion_exitosa": i,
+                    "estrategia": estrategia.nombre_iteracion,
+                    "estadisticas": stats,
+                    "cobertura": cobertura,
                 }
 
             # Si alcanzamos el objetivo, terminamos
@@ -103,7 +107,7 @@ class AsignadorIterativo:
         logger.info(f"\n{'=' * 70}")
         logger.info("ASIGNACIÓN ITERATIVA COMPLETADA")
         logger.info(f"Mejor resultado: Iteración {metadatos_mejor.get('iteracion_exitosa', 0)}")
-        logger.info(f"Cobertura final: {mejor_cobertura*100:.1f}%")
+        logger.info(f"Cobertura final: {mejor_cobertura * 100:.1f}%")
         logger.info(f"{'=' * 70}")
 
         # Reporte de Equidad usando Domain Service
@@ -148,7 +152,7 @@ class AsignadorIterativo:
                 permitir_retraso_fecha_inicio=14,  # 2 semanas
                 priorizar_cobertura_vs_equidad=False,
                 max_guardias_consecutivas=2,
-                nombre_iteracion="Estrategia Estricta (ideal)"
+                nombre_iteracion="Estrategia Estricta (ideal)",
             ),
             # Iteración 2: Moderada - aceptable
             ConfiguracionIteracion(
@@ -156,7 +160,7 @@ class AsignadorIterativo:
                 permitir_retraso_fecha_inicio=30,  # 1 mes
                 priorizar_cobertura_vs_equidad=False,
                 max_guardias_consecutivas=3,
-                nombre_iteracion="Estrategia Moderada (aceptable)"
+                nombre_iteracion="Estrategia Moderada (aceptable)",
             ),
             # Iteración 3: Prioriza cobertura
             ConfiguracionIteracion(
@@ -164,7 +168,7 @@ class AsignadorIterativo:
                 permitir_retraso_fecha_inicio=45,  # 1.5 meses
                 priorizar_cobertura_vs_equidad=True,
                 max_guardias_consecutivas=4,
-                nombre_iteracion="Prioridad Cobertura"
+                nombre_iteracion="Prioridad Cobertura",
             ),
             # Iteración 4: Muy permisiva
             ConfiguracionIteracion(
@@ -172,7 +176,7 @@ class AsignadorIterativo:
                 permitir_retraso_fecha_inicio=60,  # 2 meses
                 priorizar_cobertura_vs_equidad=True,
                 max_guardias_consecutivas=5,
-                nombre_iteracion="Estrategia Permisiva"
+                nombre_iteracion="Estrategia Permisiva",
             ),
             # Iteración 5: Máxima flexibilidad
             ConfiguracionIteracion(
@@ -180,22 +184,22 @@ class AsignadorIterativo:
                 permitir_retraso_fecha_inicio=90,  # 3 meses
                 priorizar_cobertura_vs_equidad=True,
                 max_guardias_consecutivas=7,
-                nombre_iteracion="Máxima Flexibilidad"
+                nombre_iteracion="Máxima Flexibilidad",
             ),
         ]
 
     def _intentar_asignacion_con_estrategia(
-        self,
-        estrategia: ConfiguracionIteracion,
-        num_iteracion: int
+        self, estrategia: ConfiguracionIteracion, num_iteracion: int
     ) -> Tuple[List[Guardia], Dict]:
         """
         Intenta generar guardias con una estrategia específica.
         """
         logger.info("Configuración:")
-        logger.info(f"  • Desbalance permitido: {estrategia.permitir_desbalance*100:.0f}%")
+        logger.info(f"  • Desbalance permitido: {estrategia.permitir_desbalance * 100:.0f}%")
         logger.info(f"  • Retraso fecha inicio: {estrategia.permitir_retraso_fecha_inicio} días")
-        logger.info(f"  • Prioridad: {'Cobertura' if estrategia.priorizar_cobertura_vs_equidad else 'Equidad'}")
+        logger.info(
+            f"  • Prioridad: {'Cobertura' if estrategia.priorizar_cobertura_vs_equidad else 'Equidad'}"
+        )
         logger.info(f"  • Consecutivos máx: {estrategia.max_guardias_consecutivas} días")
 
         # Ajustar parámetros del algoritmo base según estrategia
@@ -249,7 +253,9 @@ class AsignadorIterativo:
             deficit_porcentaje = (cuota_esperada - guardias_reales) / cuota_esperada
 
             if deficit_porcentaje > 0.3:  # Más de 30% de déficit
-                profesores_con_deficit.append((prof_id, guardias_reales, cuota_esperada, deficit_porcentaje))
+                profesores_con_deficit.append(
+                    (prof_id, guardias_reales, cuota_esperada, deficit_porcentaje)
+                )
 
         if profesores_con_deficit:
             logger.info(f"Detectados {len(profesores_con_deficit)} profesores con déficit >30%")
@@ -259,22 +265,25 @@ class AsignadorIterativo:
             total_deficit = sum(esp - real for _, real, esp, _ in profesores_con_deficit)
 
             profesores_sin_deficit = [
-                prof_id for prof_id in cuotas_esperadas.keys()
+                prof_id
+                for prof_id in cuotas_esperadas.keys()
                 if prof_id not in [p[0] for p in profesores_con_deficit]
             ]
 
             if profesores_sin_deficit:
                 cuota_extra_por_profesor = total_deficit / len(profesores_sin_deficit)
-                logger.info(f"Redistribuyendo {total_deficit:.1f} guardias entre {len(profesores_sin_deficit)} profesores")
+                logger.info(
+                    f"Redistribuyendo {total_deficit:.1f} guardias entre {len(profesores_sin_deficit)} profesores"
+                )
 
                 # Aquí normalmente actualizaríamos las cuotas en calculador o config
                 # Por ahora solo lo registramos
-                logger.info(f"Cada profesor disponible recibiría ~{cuota_extra_por_profesor:.1f} guardias extra")
+                logger.info(
+                    f"Cada profesor disponible recibiría ~{cuota_extra_por_profesor:.1f} guardias extra"
+                )
 
     def _calcular_estadisticas_iteracion(
-        self,
-        guardias: List[Guardia],
-        estrategia: ConfiguracionIteracion
+        self, guardias: List[Guardia], estrategia: ConfiguracionIteracion
     ) -> Dict:
         """Calcula estadísticas detalladas de una iteración."""
         total_slots = len(self.dias_lectivos) * len(self.config.recreos) * len(self.config.zonas)
@@ -296,7 +305,7 @@ class AsignadorIterativo:
             guardias=guardias,
             profesores=profesores,
             cuotas=cuotas_esperadas,
-            total_slots=total_slots
+            total_slots=total_slots,
         )
 
         # Calcular desbalances usando las estadísticas del servicio
@@ -330,18 +339,18 @@ class AsignadorIterativo:
         retraso_promedio = sum(retrasos) / len(retrasos) if retrasos else 0
 
         return {
-            'total_guardias': len(guardias),
-            'total_slots': total_slots,
-            'cobertura': stats['cobertura'],
-            'profesores_con_guardias': stats['profesores_con_guardias'],
-            'profesores_activos': stats['total_profesores'],
-            'desbalance_promedio': desbalance_promedio,
-            'desbalances_excesivos': desbalances_excesivos,
-            'profesores_con_retraso': profesores_con_retraso,
-            'retraso_promedio_dias': retraso_promedio,
-            'cumple_objetivos': (
-                stats['cobertura'] / 100 >= 0.95 and
-                desbalances_excesivos == 0 and
-                profesores_con_retraso == 0
-            )
+            "total_guardias": len(guardias),
+            "total_slots": total_slots,
+            "cobertura": stats["cobertura"],
+            "profesores_con_guardias": stats["profesores_con_guardias"],
+            "profesores_activos": stats["total_profesores"],
+            "desbalance_promedio": desbalance_promedio,
+            "desbalances_excesivos": desbalances_excesivos,
+            "profesores_con_retraso": profesores_con_retraso,
+            "retraso_promedio_dias": retraso_promedio,
+            "cumple_objetivos": (
+                stats["cobertura"] / 100 >= 0.95
+                and desbalances_excesivos == 0
+                and profesores_con_retraso == 0
+            ),
         }

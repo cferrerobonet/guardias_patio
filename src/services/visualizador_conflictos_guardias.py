@@ -2,6 +2,7 @@
 Sistema de visualización de conflictos y análisis gráfico de guardias.
 Genera gráficos con matplotlib mostrando slots problemáticos, heatmaps y análisis.
 """
+
 import logging
 from datetime import date
 from pathlib import Path
@@ -9,11 +10,11 @@ from typing import List, Optional
 
 import matplotlib
 
-matplotlib.use('Agg')  # Backend sin GUI
+matplotlib.use("Agg")  # Backend sin GUI
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
-from models.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from services.validators import TurnoValidator
 from sqlalchemy.orm import Session
 
@@ -35,12 +36,10 @@ class VisualizadorConflictosGuardias:
         self.dias_lectivos = dias_lectivos
 
         # Estilo
-        plt.style.use('seaborn-v0_8-darkgrid')
+        plt.style.use("seaborn-v0_8-darkgrid")
 
     def generar_dashboard_completo(
-        self,
-        guardias: List[Guardia],
-        ruta_salida: Optional[Path] = None
+        self, guardias: List[Guardia], ruta_salida: Optional[Path] = None
     ) -> Path:
         """
         Genera un dashboard completo con múltiples visualizaciones.
@@ -49,12 +48,7 @@ class VisualizadorConflictosGuardias:
             Ruta del archivo PNG generado
         """
         fig = plt.figure(figsize=(20, 12))
-        fig.suptitle(
-            'Dashboard de Análisis de Guardias',
-            fontsize=20,
-            fontweight='bold',
-            y=0.98
-        )
+        fig.suptitle("Dashboard de Análisis de Guardias", fontsize=20, fontweight="bold", y=0.98)
 
         # Crear grid de subplots
         gs = fig.add_gridspec(3, 3, hspace=0.3, wspace=0.3)
@@ -88,7 +82,7 @@ class VisualizadorConflictosGuardias:
             ruta_salida = Path("output/dashboard_guardias.png")
 
         ruta_salida.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(ruta_salida, dpi=150, bbox_inches='tight')
+        fig.savefig(ruta_salida, dpi=150, bbox_inches="tight")
         plt.close(fig)
 
         logger.info(f"✅ Dashboard generado: {ruta_salida}")
@@ -114,39 +108,38 @@ class VisualizadorConflictosGuardias:
 
         # Dibujar heatmap
         im = ax.imshow(
-            matriz_cobertura,
-            cmap='RdYlGn',
-            aspect='auto',
-            vmin=0,
-            vmax=zonas_por_recreo
+            matriz_cobertura, cmap="RdYlGn", aspect="auto", vmin=0, vmax=zonas_por_recreo
         )
 
         # Etiquetas
-        ax.set_title('Cobertura por Día y Recreo', fontweight='bold')
-        ax.set_ylabel('Recreo')
-        ax.set_xlabel('Día Lectivo')
+        ax.set_title("Cobertura por Día y Recreo", fontweight="bold")
+        ax.set_ylabel("Recreo")
+        ax.set_xlabel("Día Lectivo")
 
         # Ticks
         ax.set_yticks(range(len(recreos)))
-        ax.set_yticklabels([f'R{r}' for r in recreos])
+        ax.set_yticklabels([f"R{r}" for r in recreos])
 
         # Mostrar cada N días en el eje X
         step = max(1, len(self.dias_lectivos) // 10)
         ax.set_xticks(range(0, len(self.dias_lectivos), step))
         ax.set_xticklabels(
-            [self.dias_lectivos[i].strftime('%d/%m') for i in range(0, len(self.dias_lectivos), step)],
-            rotation=45
+            [
+                self.dias_lectivos[i].strftime("%d/%m")
+                for i in range(0, len(self.dias_lectivos), step)
+            ],
+            rotation=45,
         )
 
         # Colorbar
         cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label('Guardias Asignadas')
+        cbar.set_label("Guardias Asignadas")
 
         # Marcar slots problemáticos
         for i in range(matriz_cobertura.shape[0]):
             for j in range(matriz_cobertura.shape[1]):
                 if matriz_cobertura[i, j] < zonas_por_recreo:
-                    ax.plot(j, i, 'rx', markersize=3)
+                    ax.plot(j, i, "rx", markersize=3)
 
     def _generar_distribucion_zonas(self, guardias: List[Guardia], ax):
         """Gráfico de barras con distribución por zona."""
@@ -161,19 +154,25 @@ class VisualizadorConflictosGuardias:
         total_slots = len(self.dias_lectivos) * len(self.config.recreos)
         esperado_por_zona = total_slots
 
-        colors = ['green' if c >= esperado_por_zona * 0.9 else 'orange' if c >= esperado_por_zona * 0.8 else 'red'
-                  for c in counts]
+        colors = [
+            "green"
+            if c >= esperado_por_zona * 0.9
+            else "orange"
+            if c >= esperado_por_zona * 0.8
+            else "red"
+            for c in counts
+        ]
 
         ax.bar(range(len(zonas)), counts, color=colors, alpha=0.7)
-        ax.axhline(y=esperado_por_zona, color='blue', linestyle='--', label='Esperado')
+        ax.axhline(y=esperado_por_zona, color="blue", linestyle="--", label="Esperado")
 
-        ax.set_title('Distribución por Zona', fontweight='bold')
-        ax.set_xlabel('Zona')
-        ax.set_ylabel('Número de Guardias')
+        ax.set_title("Distribución por Zona", fontweight="bold")
+        ax.set_xlabel("Zona")
+        ax.set_ylabel("Número de Guardias")
         ax.set_xticks(range(len(zonas)))
-        ax.set_xticklabels([f'Z{z}' for z in zonas])
+        ax.set_xticklabels([f"Z{z}" for z in zonas])
         ax.legend()
-        ax.grid(axis='y', alpha=0.3)
+        ax.grid(axis="y", alpha=0.3)
 
     def _generar_timeline_cobertura(self, guardias: List[Guardia], ax):
         """Timeline mostrando evolución de cobertura a lo largo del curso."""
@@ -192,27 +191,46 @@ class VisualizadorConflictosGuardias:
         esperado = len(self.config.recreos) * len(self.config.zonas)
 
         # Graficar
-        ax.plot(fechas, cobertura, label='Cobertura Real', linewidth=2, color='steelblue')
-        ax.axhline(y=esperado, color='green', linestyle='--', label='Cobertura Esperada (100%)', linewidth=1.5)
-        ax.axhline(y=esperado * 0.95, color='orange', linestyle=':', label='Mínimo Aceptable (95%)', linewidth=1)
+        ax.plot(fechas, cobertura, label="Cobertura Real", linewidth=2, color="steelblue")
+        ax.axhline(
+            y=esperado,
+            color="green",
+            linestyle="--",
+            label="Cobertura Esperada (100%)",
+            linewidth=1.5,
+        )
+        ax.axhline(
+            y=esperado * 0.95,
+            color="orange",
+            linestyle=":",
+            label="Mínimo Aceptable (95%)",
+            linewidth=1,
+        )
 
         # Rellenar área debajo de la línea
-        ax.fill_between(fechas, cobertura, alpha=0.3, color='steelblue')
+        ax.fill_between(fechas, cobertura, alpha=0.3, color="steelblue")
 
         # Marcar días problemáticos
         dias_problematicos = [f for f in fechas if guardias_por_dia.get(f, 0) < esperado * 0.9]
         if dias_problematicos:
             cobertura_problematica = [guardias_por_dia.get(f, 0) for f in dias_problematicos]
-            ax.scatter(dias_problematicos, cobertura_problematica, color='red', s=50, zorder=5, label='Días Críticos')
+            ax.scatter(
+                dias_problematicos,
+                cobertura_problematica,
+                color="red",
+                s=50,
+                zorder=5,
+                label="Días Críticos",
+            )
 
-        ax.set_title('Timeline de Cobertura', fontweight='bold')
-        ax.set_xlabel('Fecha')
-        ax.set_ylabel('Guardias Asignadas por Día')
-        ax.legend(loc='upper right')
+        ax.set_title("Timeline de Cobertura", fontweight="bold")
+        ax.set_xlabel("Fecha")
+        ax.set_ylabel("Guardias Asignadas por Día")
+        ax.legend(loc="upper right")
         ax.grid(True, alpha=0.3)
 
         # Formato de fechas
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m'))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m"))
         ax.xaxis.set_major_locator(mdates.MonthLocator())
         plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
 
@@ -238,12 +256,12 @@ class VisualizadorConflictosGuardias:
         colors = plt.cm.viridis(np.linspace(0.3, 0.9, len(nombres)))
         ax.barh(range(len(nombres)), counts, color=colors)
 
-        ax.set_title('Top 10 Profesores (Más Guardias)', fontweight='bold')
-        ax.set_xlabel('Número de Guardias')
+        ax.set_title("Top 10 Profesores (Más Guardias)", fontweight="bold")
+        ax.set_xlabel("Número de Guardias")
         ax.set_yticks(range(len(nombres)))
         ax.set_yticklabels(nombres)
         ax.invert_yaxis()
-        ax.grid(axis='x', alpha=0.3)
+        ax.grid(axis="x", alpha=0.3)
 
     def _generar_distribucion_turnos(self, guardias: List[Guardia], ax):
         """Gráfico circular con distribución por turno."""
@@ -254,21 +272,21 @@ class VisualizadorConflictosGuardias:
         turnos = list(turnos_count.keys())
         counts = list(turnos_count.values())
 
-        colors = ['#ff9999', '#66b3ff', '#99ff99', '#ffcc99'][:len(turnos)]
+        colors = ["#ff9999", "#66b3ff", "#99ff99", "#ffcc99"][: len(turnos)]
 
         ax.pie(
             counts,
             labels=turnos,
-            autopct='%1.1f%%',
+            autopct="%1.1f%%",
             startangle=90,
             colors=colors,
-            textprops={'fontsize': 10}
+            textprops={"fontsize": 10},
         )
-        ax.set_title('Distribución por Turno', fontweight='bold')
+        ax.set_title("Distribución por Turno", fontweight="bold")
 
     def _generar_metricas_resumen(self, guardias: List[Guardia], ax):
         """Panel con métricas resumidas."""
-        ax.axis('off')
+        ax.axis("off")
 
         # Calcular métricas
         total_slots = len(self.dias_lectivos) * len(self.config.recreos) * len(self.config.zonas)
@@ -301,37 +319,37 @@ class VisualizadorConflictosGuardias:
 
         # Color según cobertura
         if cobertura >= 95:
-            color_fondo = '#d4edda'
-            color_texto = '#155724'
+            color_fondo = "#d4edda"
+            color_texto = "#155724"
         elif cobertura >= 85:
-            color_fondo = '#fff3cd'
-            color_texto = '#856404'
+            color_fondo = "#fff3cd"
+            color_texto = "#856404"
         else:
-            color_fondo = '#f8d7da'
-            color_texto = '#721c24'
+            color_fondo = "#f8d7da"
+            color_texto = "#721c24"
 
         ax.text(
-            0.5, 0.5, texto,
+            0.5,
+            0.5,
+            texto,
             fontsize=11,
-            verticalalignment='center',
-            horizontalalignment='center',
-            bbox=dict(boxstyle='round', facecolor=color_fondo, alpha=0.8),
+            verticalalignment="center",
+            horizontalalignment="center",
+            bbox=dict(boxstyle="round", facecolor=color_fondo, alpha=0.8),
             color=color_texto,
-            fontfamily='monospace'
+            fontfamily="monospace",
         )
 
-        ax.set_title('Resumen', fontweight='bold', pad=20)
+        ax.set_title("Resumen", fontweight="bold", pad=20)
 
     def generar_analisis_slots_problematicos(
-        self,
-        guardias: List[Guardia],
-        ruta_salida: Optional[Path] = None
+        self, guardias: List[Guardia], ruta_salida: Optional[Path] = None
     ) -> Path:
         """
         Genera visualización específica de slots problemáticos.
         """
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
-        fig.suptitle('Análisis de Slots Problemáticos', fontsize=16, fontweight='bold')
+        fig.suptitle("Análisis de Slots Problemáticos", fontsize=16, fontweight="bold")
 
         # 1. Slots vacíos por turno y zona
         self._generar_slots_vacios_turno_zona(guardias, ax1)
@@ -344,7 +362,7 @@ class VisualizadorConflictosGuardias:
             ruta_salida = Path("output/analisis_slots_problematicos.png")
 
         ruta_salida.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(ruta_salida, dpi=150, bbox_inches='tight')
+        fig.savefig(ruta_salida, dpi=150, bbox_inches="tight")
         plt.close(fig)
 
         logger.info(f"✅ Análisis de slots generado: {ruta_salida}")
@@ -366,23 +384,30 @@ class VisualizadorConflictosGuardias:
                 matriz_vacios[i, j] = esperado - real
 
         # Heatmap
-        im = ax.imshow(matriz_vacios, cmap='Reds', aspect='auto')
+        im = ax.imshow(matriz_vacios, cmap="Reds", aspect="auto")
 
-        ax.set_title('Slots Vacíos por Turno y Zona', fontweight='bold')
-        ax.set_ylabel('Turno')
-        ax.set_xlabel('Zona')
+        ax.set_title("Slots Vacíos por Turno y Zona", fontweight="bold")
+        ax.set_ylabel("Turno")
+        ax.set_xlabel("Zona")
         ax.set_yticks(range(len(turnos)))
         ax.set_yticklabels(turnos)
         ax.set_xticks(range(len(zonas)))
-        ax.set_xticklabels([f'Z{z}' for z in zonas])
+        ax.set_xticklabels([f"Z{z}" for z in zonas])
 
         # Añadir valores en las celdas
         for i in range(len(turnos)):
             for j in range(len(zonas)):
-                ax.text(j, i, int(matriz_vacios[i, j]),
-                               ha="center", va="center", color="black", fontweight='bold')
+                ax.text(
+                    j,
+                    i,
+                    int(matriz_vacios[i, j]),
+                    ha="center",
+                    va="center",
+                    color="black",
+                    fontweight="bold",
+                )
 
-        plt.colorbar(im, ax=ax, label='Slots Vacíos')
+        plt.colorbar(im, ax=ax, label="Slots Vacíos")
 
     def _generar_dias_criticos(self, guardias: List[Guardia], ax):
         """Identifica y muestra días con cobertura crítica."""
@@ -400,20 +425,31 @@ class VisualizadorConflictosGuardias:
         if dias_criticos:
             fechas, counts, porcentajes = zip(*dias_criticos)
 
-            colors = ['red' if p < 70 else 'orange' for p in porcentajes]
+            colors = ["red" if p < 70 else "orange" for p in porcentajes]
 
             ax.bar(range(len(fechas)), counts, color=colors, alpha=0.7)
-            ax.axhline(y=esperado_por_dia, color='green', linestyle='--', label='Esperado (100%)')
-            ax.axhline(y=esperado_por_dia * 0.9, color='orange', linestyle=':', label='Crítico (<90%)')
+            ax.axhline(y=esperado_por_dia, color="green", linestyle="--", label="Esperado (100%)")
+            ax.axhline(
+                y=esperado_por_dia * 0.9, color="orange", linestyle=":", label="Crítico (<90%)"
+            )
 
-            ax.set_title(f'Días Críticos ({len(dias_criticos)} días con cobertura <90%)', fontweight='bold')
-            ax.set_xlabel('Día')
-            ax.set_ylabel('Guardias Asignadas')
+            ax.set_title(
+                f"Días Críticos ({len(dias_criticos)} días con cobertura <90%)", fontweight="bold"
+            )
+            ax.set_xlabel("Día")
+            ax.set_ylabel("Guardias Asignadas")
             ax.set_xticks(range(len(fechas)))
-            ax.set_xticklabels([f.strftime('%d/%m') for f in fechas], rotation=45)
+            ax.set_xticklabels([f.strftime("%d/%m") for f in fechas], rotation=45)
             ax.legend()
-            ax.grid(axis='y', alpha=0.3)
+            ax.grid(axis="y", alpha=0.3)
         else:
-            ax.text(0.5, 0.5, '✅ No hay días críticos\n(todos >90% cobertura)',
-                   ha='center', va='center', fontsize=14, color='green')
-            ax.axis('off')
+            ax.text(
+                0.5,
+                0.5,
+                "✅ No hay días críticos\n(todos >90% cobertura)",
+                ha="center",
+                va="center",
+                fontsize=14,
+                color="green",
+            )
+            ax.axis("off")

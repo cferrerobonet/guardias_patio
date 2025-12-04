@@ -68,6 +68,7 @@ def time_query(func: Callable) -> Callable:
         # Logs:
         # Query obtener_profesores_activos ejecutada en 0.045s
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         start = time()
@@ -79,8 +80,7 @@ def time_query(func: Callable) -> Callable:
         # Advertencia si la query es lenta
         if elapsed > 1.0:
             logger.warning(
-                f"Query lenta detectada: {func.__name__} "
-                f"({elapsed:.3f}s) - Considerar optimización"
+                f"Query lenta detectada: {func.__name__} ({elapsed:.3f}s) - Considerar optimización"
             )
 
         return result
@@ -128,18 +128,12 @@ class QueryAnalyzer:
         def receive_before_cursor_execute(
             conn, cursor, statement, parameters, context, executemany
         ):
-            conn.info.setdefault('query_start_time', []).append(time())
+            conn.info.setdefault("query_start_time", []).append(time())
 
         @event.listens_for(self.engine, "after_cursor_execute")
-        def receive_after_cursor_execute(
-            conn, cursor, statement, parameters, context, executemany
-        ):
-            total = time() - conn.info['query_start_time'].pop()
-            self.queries.append({
-                'statement': statement,
-                'parameters': parameters,
-                'time': total
-            })
+        def receive_after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+            total = time() - conn.info["query_start_time"].pop()
+            self.queries.append({"statement": statement, "parameters": parameters, "time": total})
 
         self._listening = True
         logger.info("QueryAnalyzer iniciado")
@@ -163,21 +157,16 @@ class QueryAnalyzer:
             print(f"Queries lentas: {stats['slow_queries']}")
         """
         if not self.queries:
-            return {
-                'total_queries': 0,
-                'total_time': 0,
-                'avg_time': 0,
-                'slow_queries': 0
-            }
+            return {"total_queries": 0, "total_time": 0, "avg_time": 0, "slow_queries": 0}
 
-        total_time = sum(q['time'] for q in self.queries)
-        slow_queries = sum(1 for q in self.queries if q['time'] > 0.5)
+        total_time = sum(q["time"] for q in self.queries)
+        slow_queries = sum(1 for q in self.queries if q["time"] > 0.5)
 
         return {
-            'total_queries': len(self.queries),
-            'total_time': total_time,
-            'avg_time': total_time / len(self.queries),
-            'slow_queries': slow_queries
+            "total_queries": len(self.queries),
+            "total_time": total_time,
+            "avg_time": total_time / len(self.queries),
+            "slow_queries": slow_queries,
         }
 
     def get_slowest_queries(self, limit: int = 10) -> list:
@@ -195,11 +184,7 @@ class QueryAnalyzer:
             for q in slowest:
                 print(f"{q['time']:.3f}s - {q['statement'][:100]}")
         """
-        sorted_queries = sorted(
-            self.queries,
-            key=lambda q: q['time'],
-            reverse=True
-        )
+        sorted_queries = sorted(self.queries, key=lambda q: q["time"], reverse=True)
         return sorted_queries[:limit]
 
     def print_report(self):
@@ -234,7 +219,7 @@ class QueryAnalyzer:
         if slowest:
             print("Top 5 Slowest Queries:")
             for i, q in enumerate(slowest, 1):
-                stmt = q['statement'].replace('\n', ' ')[:80]
+                stmt = q["statement"].replace("\n", " ")[:80]
                 print(f"{i}. {q['time']:.3f}s - {stmt}...")
 
         print("=" * 50)
@@ -247,24 +232,24 @@ class QueryAnalyzer:
 
 # Índices recomendados para las tablas principales
 RECOMMENDED_INDEXES = {
-    'profesor': [
-        ('idx_profesor_activo', ['activo']),
-        ('idx_profesor_turno', ['turno']),
-        ('idx_profesor_email', ['email']),
+    "profesor": [
+        ("idx_profesor_activo", ["activo"]),
+        ("idx_profesor_turno", ["turno"]),
+        ("idx_profesor_email", ["email"]),
     ],
-    'zona': [
-        ('idx_zona_activa', ['activa']),
-        ('idx_zona_nombre', ['nombre']),
+    "zona": [
+        ("idx_zona_activa", ["activa"]),
+        ("idx_zona_nombre", ["nombre"]),
     ],
-    'guardia': [
-        ('idx_guardia_fecha', ['fecha']),
-        ('idx_guardia_profesor_fecha', ['profesor_id', 'fecha']),
-        ('idx_guardia_zona_fecha', ['zona_id', 'fecha']),
-        ('idx_guardia_turno_recreo', ['turno', 'recreo']),
+    "guardia": [
+        ("idx_guardia_fecha", ["fecha"]),
+        ("idx_guardia_profesor_fecha", ["profesor_id", "fecha"]),
+        ("idx_guardia_zona_fecha", ["zona_id", "fecha"]),
+        ("idx_guardia_turno_recreo", ["turno", "recreo"]),
     ],
-    'configuracion': [
-        ('idx_configuracion_activa', ['activa']),
-    ]
+    "configuracion": [
+        ("idx_configuracion_activa", ["activa"]),
+    ],
 }
 
 
@@ -285,11 +270,8 @@ def generate_index_sql() -> list:
 
     for table, indexes in RECOMMENDED_INDEXES.items():
         for index_name, columns in indexes:
-            columns_str = ', '.join(columns)
-            sql = (
-                f"CREATE INDEX IF NOT EXISTS {index_name} "
-                f"ON {table} ({columns_str});"
-            )
+            columns_str = ", ".join(columns)
+            sql = f"CREATE INDEX IF NOT EXISTS {index_name} ON {table} ({columns_str});"
             sql_statements.append(sql)
 
     return sql_statements
@@ -315,7 +297,7 @@ def print_index_recommendations():
     for table, indexes in RECOMMENDED_INDEXES.items():
         print(f"\nTable: {table}")
         for index_name, columns in indexes:
-            columns_str = ', '.join(columns)
+            columns_str = ", ".join(columns)
             print(f"  - CREATE INDEX {index_name} ON {table} ({columns_str});")
 
     print("\n" + "=" * 50)

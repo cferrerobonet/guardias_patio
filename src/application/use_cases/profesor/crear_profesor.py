@@ -5,14 +5,14 @@ Caso de uso para crear un nuevo profesor en el sistema.
 Invalida cache de profesores tras crear.
 """
 
+from typing import Optional, Union
+
 from core.exceptions import ValidationError
 from core.logging import get_logger
 from core.observability import with_metrics
 from domain.entities import ProfesorEntity
 from domain.repositories import IProfesorRepository
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
-from infrastructure.mappers import ProfesorMapper
-from infrastructure.repositories import SQLAlchemyProfesorRepository
 from sqlalchemy.orm import Session
 from utils.repository_cache import invalidate_profesores_cache
 
@@ -29,16 +29,35 @@ class CrearProfesorUseCase:
     y la persiste en la base de datos.
     """
 
-    def __init__(self, session: Session):
+    def __init__(
+        self,
+        session_or_repo: Union[Session, IProfesorRepository],
+        repository: Optional[IProfesorRepository] = None,
+        mapper=None,
+    ):
         """
         Inicializa el caso de uso.
 
         Args:
-            session: Sesión de SQLAlchemy para transacciones
+            session_or_repo: Session (legacy) o IProfesorRepository (nueva forma)
+            repository: Repositorio (si se pasa session como primer param)
+            mapper: Mapper opcional (no se usa actualmente)
         """
-        self.session = session
-        self.repository: IProfesorRepository = SQLAlchemyProfesorRepository(session)
-        self.mapper = ProfesorMapper()
+        if isinstance(session_or_repo, Session):
+            self.session = session_or_repo
+            if repository is not None:
+                # Nueva forma con inyección
+                self.repository: IProfesorRepository = repository
+            else:
+                # Compatibilidad hacia atrás
+                from infrastructure.repositories import SQLAlchemyProfesorRepository
+
+                self.repository = SQLAlchemyProfesorRepository(session_or_repo)
+        else:
+            # session_or_repo es un repositorio directamente
+            self.repository = session_or_repo
+            self.session = None  # No disponible en este modo
+        self.mapper = mapper
 
     def execute(self, dto: CrearProfesorDTO) -> ProfesorDTO:
         """
@@ -132,7 +151,9 @@ class CrearProfesorUseCase:
             tutor=entidad.es_tutor,  # Entidad usa 'es_tutor', DTO usa 'tutor'
             fecha_inicio_guardias=entidad.fecha_inicio_guardias,
             fecha_fin_guardias=entidad.fecha_fin_guardias,
-            zona_preferida_id=entidad.zona_preferida.zona_id if entidad.zona_preferida.tiene_preferencia else None,
+            zona_preferida_id=entidad.zona_preferida.zona_id
+            if entidad.zona_preferida.tiene_preferencia
+            else None,
             dias_semana_permitidos=entidad.dias_semana_permitidos,
             recreos_permitidos=entidad.recreos_permitidos,
             ajuste_guardias=entidad.ajuste_guardias,

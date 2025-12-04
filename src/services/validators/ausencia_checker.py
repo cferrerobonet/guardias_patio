@@ -11,7 +11,7 @@ import logging
 from datetime import date
 from typing import List, Optional
 
-from models.models import Ausencia, Profesor
+from infrastructure.database.models import Ausencia, Profesor
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -40,11 +40,7 @@ class AusenciaChecker:
         """
         self.session = session
 
-    def profesor_ausente(
-        self,
-        profesor_id: int,
-        fecha: date
-    ) -> bool:
+    def profesor_ausente(self, profesor_id: int, fecha: date) -> bool:
         """
         Verificar si un profesor está ausente en una fecha específica.
 
@@ -67,17 +63,13 @@ class AusenciaChecker:
             .filter(
                 Ausencia.profesor_id == profesor_id,
                 Ausencia.fecha_inicio <= fecha,
-                Ausencia.fecha_fin >= fecha
+                Ausencia.fecha_fin >= fecha,
             )
             .first()
         )
         return ausencia is not None
 
-    def obtener_ausencia(
-        self,
-        profesor_id: int,
-        fecha: date
-    ) -> Optional[Ausencia]:
+    def obtener_ausencia(self, profesor_id: int, fecha: date) -> Optional[Ausencia]:
         """
         Obtener la ausencia de un profesor en una fecha específica.
 
@@ -93,15 +85,13 @@ class AusenciaChecker:
             .filter(
                 Ausencia.profesor_id == profesor_id,
                 Ausencia.fecha_inicio <= fecha,
-                Ausencia.fecha_fin >= fecha
+                Ausencia.fecha_fin >= fecha,
             )
             .first()
         )
 
     def profesores_ausentes_en_fecha(
-        self,
-        fecha: date,
-        profesor_ids: Optional[List[int]] = None
+        self, fecha: date, profesor_ids: Optional[List[int]] = None
     ) -> List[Profesor]:
         """
         Obtener lista de profesores ausentes en una fecha.
@@ -117,10 +107,7 @@ class AusenciaChecker:
         query = (
             self.session.query(Profesor)
             .join(Ausencia, Ausencia.profesor_id == Profesor.id)
-            .filter(
-                Ausencia.fecha_inicio <= fecha,
-                Ausencia.fecha_fin >= fecha
-            )
+            .filter(Ausencia.fecha_inicio <= fecha, Ausencia.fecha_fin >= fecha)
         )
 
         if profesor_ids is not None:
@@ -129,9 +116,7 @@ class AusenciaChecker:
         return query.all()
 
     def profesores_disponibles_en_fecha(
-        self,
-        fecha: date,
-        solo_activos: bool = True
+        self, fecha: date, solo_activos: bool = True
     ) -> List[Profesor]:
         """
         Obtener lista de profesores disponibles (no ausentes) en una fecha.
@@ -144,9 +129,7 @@ class AusenciaChecker:
             Lista de profesores disponibles
         """
         # Obtener IDs de profesores ausentes
-        ausentes_ids = [
-            p.id for p in self.profesores_ausentes_en_fecha(fecha)
-        ]
+        ausentes_ids = [p.id for p in self.profesores_ausentes_en_fecha(fecha)]
 
         # Consultar profesores no ausentes
         query = self.session.query(Profesor).filter(
@@ -162,7 +145,7 @@ class AusenciaChecker:
         self,
         profesor_id: int,
         fecha_inicio: Optional[date] = None,
-        fecha_fin: Optional[date] = None
+        fecha_fin: Optional[date] = None,
     ) -> int:
         """
         Contar el número de ausencias de un profesor en un período.
@@ -175,9 +158,7 @@ class AusenciaChecker:
         Returns:
             Número de ausencias registradas
         """
-        query = self.session.query(Ausencia).filter(
-            Ausencia.profesor_id == profesor_id
-        )
+        query = self.session.query(Ausencia).filter(Ausencia.profesor_id == profesor_id)
 
         if fecha_inicio:
             query = query.filter(Ausencia.fecha_fin >= fecha_inicio)
@@ -187,12 +168,7 @@ class AusenciaChecker:
 
         return query.count()
 
-    def dias_ausente_en_periodo(
-        self,
-        profesor_id: int,
-        fecha_inicio: date,
-        fecha_fin: date
-    ) -> int:
+    def dias_ausente_en_periodo(self, profesor_id: int, fecha_inicio: date, fecha_fin: date) -> int:
         """
         Calcular el número de días que un profesor estuvo ausente en un período.
 
@@ -209,7 +185,7 @@ class AusenciaChecker:
             .filter(
                 Ausencia.profesor_id == profesor_id,
                 Ausencia.fecha_inicio <= fecha_fin,
-                Ausencia.fecha_fin >= fecha_inicio
+                Ausencia.fecha_fin >= fecha_inicio,
             )
             .all()
         )
@@ -227,11 +203,7 @@ class AusenciaChecker:
 
         return dias_totales
 
-    def tiene_ausencias_futuras(
-        self,
-        profesor_id: int,
-        desde_fecha: Optional[date] = None
-    ) -> bool:
+    def tiene_ausencias_futuras(self, profesor_id: int, desde_fecha: Optional[date] = None) -> bool:
         """
         Verificar si un profesor tiene ausencias programadas a futuro.
 
@@ -247,10 +219,7 @@ class AusenciaChecker:
 
         ausencias = (
             self.session.query(Ausencia)
-            .filter(
-                Ausencia.profesor_id == profesor_id,
-                Ausencia.fecha_inicio >= desde_fecha
-            )
+            .filter(Ausencia.profesor_id == profesor_id, Ausencia.fecha_inicio >= desde_fecha)
             .first()
         )
 

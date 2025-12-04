@@ -7,16 +7,16 @@ Invalida cache de profesores tras actualizar.
 
 import json
 
-from sqlalchemy.orm import Session
-
-from application.dtos.profesor_dto import ActualizarProfesorDTO, ProfesorDTO
-from application.use_cases.profesor.parsers import parse_dias_semana, parse_recreos
 from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
-from models.models import Profesor
+from infrastructure.database.models import Profesor
+from sqlalchemy.orm import Session
 from utils.logger import get_logger
 from utils.repository_cache import invalidate_profesores_cache
 from utils.validators import validar_email, validar_horas_contrato, validar_nombre_completo
+
+from application.dtos.profesor_dto import ActualizarProfesorDTO, ProfesorDTO
+from application.use_cases.profesor.parsers import parse_dias_semana, parse_recreos
 
 logger = get_logger(__name__)
 

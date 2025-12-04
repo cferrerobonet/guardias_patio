@@ -20,9 +20,7 @@ router = APIRouter(prefix="/cuotas", tags=["cuotas"])
 
 @router.get("")
 def calcular_cuotas(
-    configuracion_id: int,
-    solo_activos: bool = True,
-    db: Session = Depends(get_db)
+    configuracion_id: int, solo_activos: bool = True, db: Session = Depends(get_db)
 ):
     """
     Calcula las cuotas de guardias para todos los profesores.
@@ -41,8 +39,7 @@ def calcular_cuotas(
     try:
         use_case = CalcularCuotasUseCase(db)
         request = CalcularCuotasRequest(
-            configuracion_id=configuracion_id,
-            solo_activos=solo_activos
+            configuracion_id=configuracion_id, solo_activos=solo_activos
         )
         response = use_case.execute(request)
 
@@ -52,7 +49,7 @@ def calcular_cuotas(
             "cuotas": response.cuotas,
             "cuotas_detalle": [asdict(dto) for dto in response.cuotas_detalle],
             "total_guardias": response.total_guardias,
-            "mensaje": response.mensaje
+            "mensaje": response.mensaje,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

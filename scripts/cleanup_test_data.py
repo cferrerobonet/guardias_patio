@@ -15,10 +15,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from sqlalchemy import or_
-
 from database.db_manager import SessionLocal
-from models.models import Ausencia, Guardia, Profesor
+from infrastructure.database.models import Ausencia, Guardia, Profesor
+from sqlalchemy import or_
 
 
 def cleanup_test_professors():
@@ -63,7 +62,7 @@ def cleanup_test_professors():
         print()
         respuesta = input("¿Desea eliminar estos profesores? (s/N): ").strip().lower()
 
-        if respuesta != 's':
+        if respuesta != "s":
             print("❌ Operación cancelada.")
             return
 

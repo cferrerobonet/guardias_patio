@@ -7,7 +7,7 @@ funcionan correctamente y mantienen la equidad del algoritmo.
 
 from datetime import date
 
-from models.models import Guardia, Profesor
+from infrastructure.database.models import Guardia, Profesor
 from services.optimizaciones_asignador import (
     CacheElegibilidad,
     FiltroProfesores,
@@ -83,20 +83,8 @@ class TestIndiceSlots:
         fecha = date(2025, 10, 1)
 
         # Crear guardias mock
-        guardia1 = Guardia(
-            fecha=fecha,
-            turno="mañana",
-            recreo=1,
-            zona_id=1,
-            profesor_id=1
-        )
-        guardia2 = Guardia(
-            fecha=fecha,
-            turno="mañana",
-            recreo=2,
-            zona_id=1,
-            profesor_id=2
-        )
+        guardia1 = Guardia(fecha=fecha, turno="mañana", recreo=1, zona_id=1, profesor_id=1)
+        guardia2 = Guardia(fecha=fecha, turno="mañana", recreo=2, zona_id=1, profesor_id=2)
 
         calendario = [guardia1, guardia2]
         indice = IndiceSlots.desde_calendario(calendario)
@@ -152,25 +140,13 @@ class TestFiltroProfesores:
     def crear_profesores_test(self):
         """Crear profesores de prueba."""
         prof1 = Profesor(
-            id=1,
-            nombre_completo="Prof1",
-            turno="mañana",
-            zona_preferida_id=1,
-            es_tutor=True
+            id=1, nombre_completo="Prof1", turno="mañana", zona_preferida_id=1, tutor=True
         )
         prof2 = Profesor(
-            id=2,
-            nombre_completo="Prof2",
-            turno="tarde",
-            zona_preferida_id=2,
-            es_tutor=False
+            id=2, nombre_completo="Prof2", turno="tarde", zona_preferida_id=2, tutor=False
         )
         prof3 = Profesor(
-            id=3,
-            nombre_completo="Prof3",
-            turno="mañana",
-            zona_preferida_id=1,
-            es_tutor=False
+            id=3, nombre_completo="Prof3", turno="mañana", zona_preferida_id=1, tutor=False
         )
         return [prof1, prof2, prof3]
 
@@ -234,11 +210,7 @@ class TestFiltroProfesores:
         cuotas = {1: 10, 2: 10, 3: 10}
 
         # Profesores con menos de cuota completa
-        resultado = filtro.filtrar_por_cuota(
-            profesores,
-            asignadas,
-            cuotas
-        )
+        resultado = filtro.filtrar_por_cuota(profesores, asignadas, cuotas)
 
         assert len(resultado) == 2  # Prof1 y Prof3 aún no han completado cuota
         assert all(p.id in [1, 3] for p in resultado)
@@ -296,11 +268,11 @@ class TestCacheElegibilidad:
         cache.obtener(fecha, "mañana", 1, 1)
 
         stats = cache.estadisticas()
-        assert stats['hits'] == 1
-        assert stats['misses'] == 1
-        assert stats['total'] == 2
-        assert stats['hit_rate'] == 50.0
-        assert stats['cache_size'] == 1
+        assert stats["hits"] == 1
+        assert stats["misses"] == 1
+        assert stats["total"] == 2
+        assert stats["hit_rate"] == 50.0
+        assert stats["cache_size"] == 1
 
 
 class TestFuncionesAuxiliares:
@@ -336,32 +308,15 @@ class TestFuncionesAuxiliares:
 
     def test_ordenar_profesores_equitativamente(self):
         """Verificar ordenación equitativa de profesores."""
-        prof1 = Profesor(
-            id=1,
-            nombre_completo="Prof1",
-            zona_preferida_id=1
-        )
-        prof2 = Profesor(
-            id=2,
-            nombre_completo="Prof2",
-            zona_preferida_id=2
-        )
-        prof3 = Profesor(
-            id=3,
-            nombre_completo="Prof3",
-            zona_preferida_id=1
-        )
+        prof1 = Profesor(id=1, nombre_completo="Prof1", zona_preferida_id=1)
+        prof2 = Profesor(id=2, nombre_completo="Prof2", zona_preferida_id=2)
+        prof3 = Profesor(id=3, nombre_completo="Prof3", zona_preferida_id=1)
 
         profesores = [prof1, prof2, prof3]
         asignadas = {1: 5, 2: 10, 3: 2}  # Prof3 tiene menos guardias
         cuotas = {1: 10, 2: 10, 3: 10}
 
-        ordenados = ordenar_profesores_equitativamente(
-            profesores,
-            asignadas,
-            cuotas,
-            zona_actual=1
-        )
+        ordenados = ordenar_profesores_equitativamente(profesores, asignadas, cuotas, zona_actual=1)
 
         # Prof3 debería estar primero (menos guardias)
         assert ordenados[0].id == 3
@@ -372,13 +327,7 @@ class TestFuncionesAuxiliares:
         """Verificar validación de índices sincronizados."""
         fecha = date(2025, 10, 1)
 
-        guardia1 = Guardia(
-            fecha=fecha,
-            turno="mañana",
-            recreo=1,
-            zona_id=1,
-            profesor_id=1
-        )
+        guardia1 = Guardia(fecha=fecha, turno="mañana", recreo=1, zona_id=1, profesor_id=1)
 
         calendario = [guardia1]
         indice = IndiceSlots.desde_calendario(calendario)
@@ -393,14 +342,11 @@ class TestFuncionesAuxiliares:
         indice.marcar_ocupado(fecha, "mañana", 1, 1)
         indice.marcar_ocupado(fecha, "mañana", 2, 1)
 
-        stats = estadisticas_rendimiento(
-            indice_slots=indice,
-            total_slots=10
-        )
+        stats = estadisticas_rendimiento(indice_slots=indice, total_slots=10)
 
-        assert stats['slots_ocupados'] == 2
-        assert stats['slots_totales'] == 10
-        assert stats['cobertura'] == 20.0
+        assert stats["slots_ocupados"] == 2
+        assert stats["slots_totales"] == 10
+        assert stats["cobertura"] == 20.0
 
 
 class TestRendimiento:
@@ -413,22 +359,12 @@ class TestRendimiento:
         # Crear índice con 1000 slots
         indice = IndiceSlots()
         for i in range(1000):
-            indice.marcar_ocupado(
-                date(2025, 10, i % 30 + 1),
-                "mañana",
-                (i % 4) + 1,
-                (i % 4) + 1
-            )
+            indice.marcar_ocupado(date(2025, 10, i % 30 + 1), "mañana", (i % 4) + 1, (i % 4) + 1)
 
         # Verificar 1000 slots
         start = time.time()
         for i in range(1000):
-            indice.esta_ocupado(
-                date(2025, 10, i % 30 + 1),
-                "mañana",
-                (i % 4) + 1,
-                (i % 4) + 1
-            )
+            indice.esta_ocupado(date(2025, 10, i % 30 + 1), "mañana", (i % 4) + 1, (i % 4) + 1)
         tiempo = time.time() - start
 
         # Debe ser muy rápido (< 0.01 segundos para 1000 verificaciones)

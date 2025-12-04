@@ -2,7 +2,7 @@
 Diálogo para crear un nuevo perfil de usuario con su base de datos.
 """
 
-
+from database.db_manager import create_user_database
 from PyQt6.QtWidgets import (
     QDialog,
     QFormLayout,
@@ -13,8 +13,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
-from database.db_manager import create_user_database
 from sync.sync_manager import UserAuth
 
 
@@ -122,17 +120,13 @@ class DialogoCrearPerfil(QDialog):
             return
 
         if username in self.user_auth.users:
-            QMessageBox.warning(
-                self, "Error", f"Ya existe un usuario con el nombre '{username}'"
-            )
+            QMessageBox.warning(self, "Error", f"Ya existe un usuario con el nombre '{username}'")
             return
 
         try:
             # Crear usuario en UserAuth
             if not self.user_auth.add_user(username, password, email):
-                QMessageBox.critical(
-                    self, "Error", "No se pudo crear el usuario en el sistema"
-                )
+                QMessageBox.critical(self, "Error", "No se pudo crear el usuario en el sistema")
                 return
 
             # Crear base de datos para el nuevo usuario
@@ -141,6 +135,4 @@ class DialogoCrearPerfil(QDialog):
             self.accept()
 
         except Exception as e:
-            QMessageBox.critical(
-                self, "Error", f"Error al crear el perfil:\n{str(e)}"
-            )
+            QMessageBox.critical(self, "Error", f"Error al crear el perfil:\n{str(e)}")

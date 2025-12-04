@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
-from models.models import Ausencia, Base, Guardia, Profesor, Zona  # noqa: E402
+from infrastructure.database.models import Ausencia, Base, Guardia, Profesor, Zona  # noqa: E402
 
 # ============================================================================
 # FIXTURES DE BASE DE DATOS
@@ -58,7 +58,7 @@ def session(engine) -> Generator[Session, None, None]:
 
     # Cleanup - orden correcto para evitar SAWarning
     session.rollback()  # Rollback de la sesión primero
-    session.close()     # Cerrar sesión
+    session.close()  # Cerrar sesión
     if transaction.is_active:
         transaction.rollback()  # Rollback de transacción solo si está activa
     connection.close()
@@ -365,7 +365,7 @@ def configuracion_base(session: Session):
     import json
     from datetime import date, time
 
-    from models.models import Configuracion
+    from infrastructure.database.models import Configuracion
 
     config = Configuracion(
         anio_inicio_curso=2024,
@@ -379,12 +379,14 @@ def configuracion_base(session: Session):
         ajuste_tutores=1.0,
         ajuste_no_tutores=1.0,
         activar_festivos_automaticos=True,
-        recreos_config=json.dumps([
-            {"id": 1, "etiqueta": "Recreo 1 Mañana", "turno": "mañana", "hora": "11:00"},
-            {"id": 2, "etiqueta": "Recreo 2 Mañana", "turno": "mañana", "hora": "12:00"},
-            {"id": 3, "etiqueta": "Recreo 1 Tarde", "turno": "tarde", "hora": "16:00"},
-            {"id": 4, "etiqueta": "Recreo 2 Tarde", "turno": "tarde", "hora": "17:00"},
-        ]),
+        recreos_config=json.dumps(
+            [
+                {"id": 1, "etiqueta": "Recreo 1 Mañana", "turno": "mañana", "hora": "11:00"},
+                {"id": 2, "etiqueta": "Recreo 2 Mañana", "turno": "mañana", "hora": "12:00"},
+                {"id": 3, "etiqueta": "Recreo 1 Tarde", "turno": "tarde", "hora": "16:00"},
+                {"id": 4, "etiqueta": "Recreo 2 Tarde", "turno": "tarde", "hora": "17:00"},
+            ]
+        ),
     )
     session.add(config)
     session.commit()
@@ -411,7 +413,7 @@ def profesores_variados(session: Session):
             activo=True,
             fecha_inicio_guardias=date(2024, 9, 1),
             horas_manana=12.5,
-            horas_tarde=12.5
+            horas_tarde=12.5,
         ),
         # Profesor media jornada mañana
         Profesor(
@@ -422,7 +424,7 @@ def profesores_variados(session: Session):
             activo=True,
             fecha_inicio_guardias=date(2024, 9, 1),
             horas_manana=12.5,
-            horas_tarde=0
+            horas_tarde=0,
         ),
         # Profesor jornada completa tarde
         Profesor(
@@ -433,7 +435,7 @@ def profesores_variados(session: Session):
             activo=True,
             fecha_inicio_guardias=date(2024, 9, 1),
             horas_manana=0,
-            horas_tarde=25.0
+            horas_tarde=25.0,
         ),
         # Profesor turno mixto
         Profesor(
@@ -444,7 +446,7 @@ def profesores_variados(session: Session):
             activo=True,
             fecha_inicio_guardias=date(2024, 9, 1),
             horas_manana=10.0,
-            horas_tarde=10.0
+            horas_tarde=10.0,
         ),
     ]
 
@@ -463,10 +465,7 @@ def zona_patio(session: Session):
     Returns:
         Zona: Zona de patio
     """
-    zona = Zona(
-        nombre_zona="Patio Principal",
-        descripcion="Zona central del patio"
-    )
+    zona = Zona(nombre_zona="Patio Principal", descripcion="Zona central del patio")
     session.add(zona)
     session.commit()
     return zona

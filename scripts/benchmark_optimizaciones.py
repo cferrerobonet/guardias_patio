@@ -23,11 +23,10 @@ sys.path.insert(0, str(src_path))
 # Cambiar al directorio src para que los imports funcionen correctamente
 os.chdir(src_path)
 
+from infrastructure.database.models import Configuracion, Guardia, Profesor  # noqa: E402
 from models.database import SessionLocal, get_db_path  # noqa: E402
-from sqlalchemy import func  # noqa: E402
-
-from models.models import Configuracion, Guardia, Profesor  # noqa: E402
 from services.asignador_guardias import generar_guardias  # noqa: E402
+from sqlalchemy import func  # noqa: E402
 from utils import get_logger  # noqa: E402
 
 logger = get_logger(__name__)
@@ -37,9 +36,7 @@ def obtener_estadisticas_bd(session, config: Configuracion) -> dict:
     """Obtiene estadísticas de la base de datos."""
     total_profesores = session.query(func.count(Profesor.id)).scalar()
     total_guardias_actuales = (
-        session.query(func.count(Guardia.id))
-        .filter(Guardia.configuracion_id == config.id)
-        .scalar()
+        session.query(func.count(Guardia.id)).filter(Guardia.configuracion_id == config.id).scalar()
     )
 
     return {
@@ -126,10 +123,7 @@ def ejecutar_benchmark(db_id: str, verbose: bool = False) -> dict:
         logger.info("=" * 80)
         logger.info(f"  ✓ Guardias generadas: {guardias_generadas}")
         tiempo_min = tiempo_total / 60
-        logger.info(
-            f"  ✓ Tiempo total: {tiempo_total:.2f} segundos "
-            f"({tiempo_min:.2f} minutos)"
-        )
+        logger.info(f"  ✓ Tiempo total: {tiempo_total:.2f} segundos ({tiempo_min:.2f} minutos)")
         logger.info(f"  ✓ Cobertura: {resultado.get('cobertura', 0):.2f}%")
         logger.info(f"  ✓ Profesores sin guardias: {resultado.get('profesores_sin_guardias', 0)}")
 
@@ -166,10 +160,7 @@ def ejecutar_benchmark(db_id: str, verbose: bool = False) -> dict:
             f"  ✓ Tiempo estimado sin optimizaciones: "
             f"{tiempo_estimado_sin_opt:.2f}s ({tiempo_est_min:.2f} min)"
         )
-        logger.info(
-            f"  ✓ Tiempo con optimizaciones: "
-            f"{tiempo_total:.2f}s ({tiempo_min:.2f} min)"
-        )
+        logger.info(f"  ✓ Tiempo con optimizaciones: {tiempo_total:.2f}s ({tiempo_min:.2f} min)")
         logger.info(f"  ✓ Mejora estimada: {mejora_porcentaje:.1f}% más rápido")
         factor = tiempo_estimado_sin_opt / tiempo_total
         logger.info(f"  ✓ Factor de aceleración: {factor:.2f}x")

@@ -6,12 +6,11 @@ Tests completos: AsignarGuardiaUseCase, ObtenerGuardiasUseCase.
 from datetime import date
 
 import pytest
-
 from application.dtos.guardia_dto import CrearGuardiaDTO, FiltroGuardiasDTO
 from application.use_cases.guardia.asignar_guardia import AsignarGuardiaUseCase
 from application.use_cases.guardia.obtener_guardias import ObtenerGuardiasUseCase
 from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
-from models.models import Guardia
+from infrastructure.database.models import Guardia
 
 # ============================================================================
 # TEST: ASIGNAR GUARDIA
@@ -58,9 +57,7 @@ class TestAsignarGuardiaUseCase:
         assert guardia_bd is not None
         assert guardia_bd.profesor_id == profesor.id
 
-    def test_asignar_guardia_sustitucion(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_asignar_guardia_sustitucion(self, session, profesor_factory, zona_factory):
         """Asignar una guardia como sustitución.
 
         NOTA: El modelo de BD actual no almacena es_sustitucion ni profesor_sustituido_id.
@@ -132,9 +129,7 @@ class TestAsignarGuardiaUseCase:
         with pytest.raises(NotFoundError, match="Zona"):
             use_case.execute(dto)
 
-    def test_asignar_guardia_profesor_no_puede(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_asignar_guardia_profesor_no_puede(self, session, profesor_factory, zona_factory):
         """Error al asignar guardia cuando el profesor no puede hacerla."""
         # Profesor con turno "tarde" no puede hacer guardias de "mañana"
         profesor = profesor_factory(
@@ -245,11 +240,7 @@ class TestAsignarGuardiaUseCase:
         use_case = AsignarGuardiaUseCase(session)
 
         # Mock del repositorio para devolver la entidad con capacidad limitada
-        mocker.patch.object(
-            use_case.zona_repo,
-            "get_by_id",
-            return_value=zona_entity_mock
-        )
+        mocker.patch.object(use_case.zona_repo, "get_by_id", return_value=zona_entity_mock)
 
         dto = CrearGuardiaDTO(
             fecha=date(2024, 10, 15),
@@ -262,9 +253,7 @@ class TestAsignarGuardiaUseCase:
         with pytest.raises(BusinessLogicError, match="capacidad máxima"):
             use_case.execute(dto)
 
-    def test_asignar_guardia_error_bd(
-        self, session, profesor_factory, zona_factory, mocker
-    ):
+    def test_asignar_guardia_error_bd(self, session, profesor_factory, zona_factory, mocker):
         """Manejar error de base de datos al asignar guardia."""
         profesor = profesor_factory(
             nombre_completo="Test",
@@ -362,9 +351,7 @@ class TestObtenerGuardiasUseCase:
         )
 
         use_case = ObtenerGuardiasUseCase(session)
-        filtros = FiltroGuardiasDTO(
-            fecha_inicio=date(2024, 10, 12), fecha_fin=date(2024, 10, 18)
-        )
+        filtros = FiltroGuardiasDTO(fecha_inicio=date(2024, 10, 12), fecha_fin=date(2024, 10, 18))
 
         resultado = use_case.execute(filtros)
 
@@ -523,9 +510,7 @@ class TestObtenerGuardiasUseCase:
 class TestGuardiaUseCasesIntegracion:
     """Tests de integración entre los use cases de Guardia."""
 
-    def test_flujo_completo_asignar_y_obtener(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_flujo_completo_asignar_y_obtener(self, session, profesor_factory, zona_factory):
         """Flujo completo: asignar guardia y luego obtenerla con filtros."""
         profesor = profesor_factory(
             nombre_completo="Juan García",
@@ -559,9 +544,7 @@ class TestGuardiaUseCasesIntegracion:
         assert guardias[0].profesor_nombre == "Juan García"
         assert guardias[0].zona_nombre == "Patio Principal"
 
-    def test_asignar_multiples_y_filtrar_por_fecha(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_asignar_multiples_y_filtrar_por_fecha(self, session, profesor_factory, zona_factory):
         """Asignar múltiples guardias y filtrar por rango de fechas."""
         profesor = profesor_factory(
             nombre_completo="María López",
@@ -587,9 +570,7 @@ class TestGuardiaUseCasesIntegracion:
 
         # Filtrar solo las del rango 12-18 octubre
         obtener_uc = ObtenerGuardiasUseCase(session)
-        filtros = FiltroGuardiasDTO(
-            fecha_inicio=date(2024, 10, 12), fecha_fin=date(2024, 10, 18)
-        )
+        filtros = FiltroGuardiasDTO(fecha_inicio=date(2024, 10, 12), fecha_fin=date(2024, 10, 18))
 
         resultado = obtener_uc.execute(filtros)
 

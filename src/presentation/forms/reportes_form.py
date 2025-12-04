@@ -6,6 +6,8 @@ Permite generar calendarios PDF e informes estadísticos.
 
 import os
 
+import ui_styles as styles
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFileDialog,
@@ -16,9 +18,9 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+from services.exportador_pdf import ExportadorPDF
+from utils import get_logger
 
-import ui_styles as styles
-from models.models import Configuracion, Guardia, Profesor
 from presentation.forms.base_form import BaseForm
 from presentation.forms.reportes_widgets import (
     CalendariosPdfWidget,
@@ -26,8 +28,6 @@ from presentation.forms.reportes_widgets import (
 )
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
-from services.exportador_pdf import ExportadorPDF
-from utils import get_logger
 
 logger = get_logger(__name__)
 

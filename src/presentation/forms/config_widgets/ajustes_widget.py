@@ -96,8 +96,7 @@ class AjustesWidget(QGroupBox):
             "• Híbrido + ILP (casos complejos)"
         )
         self.algoritmo_info.setStyleSheet(
-            styles.STYLE_INPUT +
-            "padding: 5px; background-color: #f8f8f8; color: #555; "
+            styles.STYLE_INPUT + "padding: 5px; background-color: #f8f8f8; color: #555; "
             "font-size: 9px; line-height: 1.3;"
         )
         self.algoritmo_info.setToolTip(
@@ -134,14 +133,14 @@ class AjustesWidget(QGroupBox):
         return {
             "tutores": float(self.ajuste_tutores_input.text() or 1.0),
             "no_tutores": float(self.ajuste_no_tutores_input.text() or 1.0),
-            "algoritmo": "v3.0"  # Siempre v3.0
+            "algoritmo": "v3.0",  # Siempre v3.0
         }
 
     def set_ajustes(
         self,
         tutores: float = 1.0,
         no_tutores: float = 1.0,
-        algoritmo: str = "v3.0"  # Ignorado, siempre v3.0
+        algoritmo: str = "v3.0",  # Ignorado, siempre v3.0
     ) -> None:
         """
         Establece los valores de ajustes.

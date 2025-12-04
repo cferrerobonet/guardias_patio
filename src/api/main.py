@@ -64,17 +64,14 @@ def root():
         "nombre": "Guardias de Patio API",
         "version": "1.0.0",
         "descripcion": "API REST para gestión y análisis de guardias de patio",
-        "documentacion": {
-            "swagger_ui": "/docs",
-            "redoc": "/redoc"
-        },
+        "documentacion": {"swagger_ui": "/docs", "redoc": "/redoc"},
         "endpoints": {
             "cuotas": "/api/cuotas",
             "equidad": "/api/equidad",
             "guardias": "/api/guardias",
             "profesores": "/api/profesores",
-            "estadisticas": "/api/estadisticas"
-        }
+            "estadisticas": "/api/estadisticas",
+        },
     }
 
 
@@ -91,4 +88,5 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

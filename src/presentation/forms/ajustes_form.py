@@ -5,6 +5,13 @@ Form para gestionar los ajustes del curso escolar.
 Sigue el patrón MVP usando Use Cases.
 """
 
+import ui_styles as styles
+from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
+from application.use_cases.configuracion import (
+    ActualizarConfiguracionUseCase,
+    ObtenerConfiguracionUseCase,
+)
+from core.exceptions import NotFoundError
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -16,13 +23,6 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-import ui_styles as styles
-from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
-from application.use_cases.configuracion import (
-    ActualizarConfiguracionUseCase,
-    ObtenerConfiguracionUseCase,
-)
-from core.exceptions import NotFoundError
 from presentation.forms.base_form import BaseForm
 from presentation.forms.config_widgets import (
     AjustesWidget,
@@ -132,9 +132,7 @@ class AjustesForm(BaseForm):
         # Crear el contenedor con scroll
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
-        )
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         # Widget contenedor del contenido
@@ -240,7 +238,7 @@ class AjustesForm(BaseForm):
                 activar_festivos_automaticos=festivos_config["activar_automaticos"],
                 dias_no_lectivos_personalizados=festivos_config["dias_no_lectivos"],
                 recreos_config=self._generar_recreos_config_json(),
-                algoritmo_asignacion=ajustes["algoritmo"]
+                algoritmo_asignacion=ajustes["algoritmo"],
             )
 
             # Ejecutar Use Case
@@ -273,9 +271,7 @@ class AjustesForm(BaseForm):
             config = self.obtener_config_uc.execute()
 
             # Cargar fechas y recreos en el widget
-            self.fechas_recreos_widget.set_fechas(
-                config.fecha_inicio_curso, config.fecha_fin_curso
-            )
+            self.fechas_recreos_widget.set_fechas(config.fecha_inicio_curso, config.fecha_fin_curso)
             self.fechas_recreos_widget.set_recreos_manana(
                 config.hora_recreo1_manana, config.hora_recreo2_manana
             )
@@ -286,17 +282,17 @@ class AjustesForm(BaseForm):
                 )
 
             # Cargar ajustes
-            algoritmo = getattr(config, 'algoritmo_asignacion', 'v2.9')
+            algoritmo = getattr(config, "algoritmo_asignacion", "v2.9")
             self.ajustes_widget.set_ajustes(
                 tutores=config.ajuste_tutores,
                 no_tutores=config.ajuste_no_tutores,
-                algoritmo=algoritmo
+                algoritmo=algoritmo,
             )
 
             # Cargar festivos
             self.festivos_widget.set_festivos_config(
                 activar_automaticos=config.activar_festivos_automaticos,
-                dias_no_lectivos=config.dias_no_lectivos_personalizados or ""
+                dias_no_lectivos=config.dias_no_lectivos_personalizados or "",
             )
 
             self.logger.info("Configuración cargada correctamente")
@@ -324,7 +320,7 @@ class AjustesForm(BaseForm):
         import json
         from datetime import time
 
-        from models.models import Zona
+        from infrastructure.database.models import Zona
 
         # Obtener número de zonas desde la tabla Zona
         num_zonas = self.session.query(Zona).count()
@@ -342,46 +338,54 @@ class AjustesForm(BaseForm):
         # Recreo 1 Mañana
         hora_r1_manana = recreos_manana["recreo1"]
         if hora_r1_manana != time(0, 0):  # Si no es 00:00 (valor por defecto)
-            recreos.append({
-                "id": 1,
-                "etiqueta": "Recreo 1 Mañana",
-                "turno": "mañana",
-                "hora": hora_r1_manana.strftime("%H:%M"),
-                "zonas": num_zonas
-            })
+            recreos.append(
+                {
+                    "id": 1,
+                    "etiqueta": "Recreo 1 Mañana",
+                    "turno": "mañana",
+                    "hora": hora_r1_manana.strftime("%H:%M"),
+                    "zonas": num_zonas,
+                }
+            )
 
         # Recreo 2 Mañana
         hora_r2_manana = recreos_manana["recreo2"]
         if hora_r2_manana != time(0, 0):
-            recreos.append({
-                "id": 2,
-                "etiqueta": "Recreo 2 Mañana",
-                "turno": "mañana",
-                "hora": hora_r2_manana.strftime("%H:%M"),
-                "zonas": num_zonas
-            })
+            recreos.append(
+                {
+                    "id": 2,
+                    "etiqueta": "Recreo 2 Mañana",
+                    "turno": "mañana",
+                    "hora": hora_r2_manana.strftime("%H:%M"),
+                    "zonas": num_zonas,
+                }
+            )
 
         # Recreo 1 Tarde
         hora_r1_tarde = recreos_tarde["recreo1"]
         if hora_r1_tarde != time(0, 0):
-            recreos.append({
-                "id": 3,
-                "etiqueta": "Recreo 1 Tarde",
-                "turno": "tarde",
-                "hora": hora_r1_tarde.strftime("%H:%M"),
-                "zonas": num_zonas
-            })
+            recreos.append(
+                {
+                    "id": 3,
+                    "etiqueta": "Recreo 1 Tarde",
+                    "turno": "tarde",
+                    "hora": hora_r1_tarde.strftime("%H:%M"),
+                    "zonas": num_zonas,
+                }
+            )
 
         # Recreo 2 Tarde
         hora_r2_tarde = recreos_tarde["recreo2"]
         if hora_r2_tarde != time(0, 0):
-            recreos.append({
-                "id": 4,
-                "etiqueta": "Recreo 2 Tarde",
-                "turno": "tarde",
-                "hora": hora_r2_tarde.strftime("%H:%M"),
-                "zonas": num_zonas
-            })
+            recreos.append(
+                {
+                    "id": 4,
+                    "etiqueta": "Recreo 2 Tarde",
+                    "turno": "tarde",
+                    "hora": hora_r2_tarde.strftime("%H:%M"),
+                    "zonas": num_zonas,
+                }
+            )
 
         return json.dumps(recreos) if recreos else ""
 
@@ -452,16 +456,12 @@ class AjustesForm(BaseForm):
 
             # Validar email
             if not nuevo_email:
-                self.mostrar_advertencia(
-                    "Email vacío",
-                    "El email no puede estar vacío"
-                )
+                self.mostrar_advertencia("Email vacío", "El email no puede estar vacío")
                 return
 
             if "@" not in nuevo_email or "." not in nuevo_email:
                 self.mostrar_advertencia(
-                    "Email inválido",
-                    "Por favor introduce un email válido (debe contener @ y .)"
+                    "Email inválido", "Por favor introduce un email válido (debe contener @ y .)"
                 )
                 return
 
@@ -471,15 +471,11 @@ class AjustesForm(BaseForm):
                 self.user_auth._save_users()
 
                 self.mostrar_exito(
-                    "Email Actualizado",
-                    f"Tu email ha sido actualizado a: {nuevo_email}"
+                    "Email Actualizado", f"Tu email ha sido actualizado a: {nuevo_email}"
                 )
                 self.logger.info(f"Email actualizado para usuario {self.current_username}")
             else:
-                self.mostrar_advertencia(
-                    "Error",
-                    "No se encontró el usuario actual"
-                )
+                self.mostrar_advertencia("Error", "No se encontró el usuario actual")
 
         except Exception as e:
             self.manejar_excepcion(e, "actualizar email")
@@ -494,4 +490,3 @@ class AjustesForm(BaseForm):
 
         except Exception as e:
             self.manejar_excepcion(e, "abrir diálogo de cambio de contraseña")
-

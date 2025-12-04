@@ -12,7 +12,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
 from sync.sync_manager import UserAuth
 
 
@@ -109,6 +108,4 @@ class DialogoEditarPerfil(QDialog):
                 QMessageBox.critical(self, "Error", "No se encontró el usuario")
 
         except Exception as e:
-            QMessageBox.critical(
-                self, "Error", f"Error al guardar los cambios:\n{str(e)}"
-            )
+            QMessageBox.critical(self, "Error", f"Error al guardar los cambios:\n{str(e)}")

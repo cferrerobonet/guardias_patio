@@ -10,7 +10,8 @@ from typing import Optional
 
 from domain.entities import ProfesorEntity
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
-from models.models import Profesor
+
+from infrastructure.database.models import Profesor
 
 
 class ProfesorMapper:
@@ -46,9 +47,7 @@ class ProfesorMapper:
         if turno_str == "mixto":
             if model.horas_manana or model.horas_tarde:
                 turno = Turno.from_string(
-                    model.turno,
-                    horas_manana=model.horas_manana,
-                    horas_tarde=model.horas_tarde
+                    model.turno, horas_manana=model.horas_manana, horas_tarde=model.horas_tarde
                 )
             else:
                 # Datos inconsistentes: turno mixto sin horas -> fallback a mañana
@@ -62,7 +61,7 @@ class ProfesorMapper:
         if model.zona_preferida_id:
             # Tiene zona preferida asignada
             zona_nombre = None
-            if hasattr(model, 'zona_preferida') and model.zona_preferida:
+            if hasattr(model, "zona_preferida") and model.zona_preferida:
                 zona_nombre = model.zona_preferida.nombre_zona
             zona_preferida = ZonaPreferida.from_id(model.zona_preferida_id, zona_nombre)
 
@@ -135,7 +134,7 @@ class ProfesorMapper:
             porcentaje_jornada=model.porcentaje_jornada,
             turno=turno,
             es_tutor=model.tutor,
-            activo=getattr(model, 'activo', True),  # Manejar modelos antiguos sin el campo
+            activo=getattr(model, "activo", True),  # Manejar modelos antiguos sin el campo
             fecha_inicio_guardias=model.fecha_inicio_guardias,
             fecha_fin_guardias=model.fecha_fin_guardias,
             zona_preferida=zona_preferida,
@@ -144,10 +143,7 @@ class ProfesorMapper:
         )
 
     @staticmethod
-    def to_model(
-        entity: ProfesorEntity,
-        model: Optional[Profesor] = None
-    ) -> Profesor:
+    def to_model(entity: ProfesorEntity, model: Optional[Profesor] = None) -> Profesor:
         """
         Convierte una entidad de dominio a un modelo SQLAlchemy.
 
@@ -170,7 +166,7 @@ class ProfesorMapper:
         model.porcentaje_jornada = entity.porcentaje_jornada
 
         # Manejar turno: puede ser Turno value object o string
-        if hasattr(entity.turno, 'value'):
+        if hasattr(entity.turno, "value"):
             # Es un Turno value object
             model.turno = entity.turno.value.value
             model.horas_manana = entity.turno.horas_manana
@@ -178,11 +174,11 @@ class ProfesorMapper:
         else:
             # Es un string directo
             model.turno = str(entity.turno)
-            model.horas_manana = getattr(entity, 'horas_manana', None)
-            model.horas_tarde = getattr(entity, 'horas_tarde', None)
+            model.horas_manana = getattr(entity, "horas_manana", None)
+            model.horas_tarde = getattr(entity, "horas_tarde", None)
 
         model.tutor = entity.es_tutor
-        model.activo = getattr(entity, 'activo', True)  # Manejar entidades antiguas sin el campo
+        model.activo = getattr(entity, "activo", True)  # Manejar entidades antiguas sin el campo
         model.fecha_inicio_guardias = entity.fecha_inicio_guardias
         model.fecha_fin_guardias = entity.fecha_fin_guardias
 

@@ -2,6 +2,7 @@
 Test para validar que un profesor NO haga más de 1 guardia al día
 (sumando mañana y tarde).
 """
+
 import sys
 from datetime import date, time
 from pathlib import Path
@@ -13,7 +14,7 @@ from sqlalchemy.orm import sessionmaker
 # Añadir src al path para imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from models.models import Base, Configuracion, Profesor, Zona
+from infrastructure.database.models import Base, Configuracion, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias
 
 
@@ -54,7 +55,7 @@ def test_max_una_guardia_por_dia(session):
     # 10 profesores mixtos (pueden cubrir mañana y tarde)
     for i in range(10):
         prof = Profesor(
-            nombre_completo=f"PROFESOR{i+1}, TEST",
+            nombre_completo=f"PROFESOR{i + 1}, TEST",
             horas_contrato=30.0,
             porcentaje_jornada=1.0,
             turno="mixto",
@@ -115,12 +116,12 @@ def test_distribucion_equilibrada_con_limite_diario(session):
 
     # 3 zonas
     for i in range(3):
-        session.add(Zona(nombre_zona=f"Zona {i+1}"))
+        session.add(Zona(nombre_zona=f"Zona {i + 1}"))
 
     # 15 profesores mixtos
     for i in range(15):
         prof = Profesor(
-            nombre_completo=f"APELLIDO{i+1}, NOMBRE{i+1}",
+            nombre_completo=f"APELLIDO{i + 1}, NOMBRE{i + 1}",
             horas_contrato=30.0,
             porcentaje_jornada=1.0,
             turno="mixto",

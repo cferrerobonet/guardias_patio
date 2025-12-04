@@ -6,6 +6,8 @@ Permite registrar ausencias y reasignar guardias automáticamente.
 
 from datetime import date
 
+import ui_styles as styles
+from infrastructure.database.models import Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -21,8 +23,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-import ui_styles as styles
-from models.models import Guardia, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY, get_table_style
 
@@ -55,8 +55,7 @@ class GestorSustituciones(BaseForm):
 
         # Descripción
         descripcion = QLabel(
-            "Busca una guardia asignada a un profesor y "
-            "reasígnala a otro profesor disponible"
+            "Busca una guardia asignada a un profesor y reasígnala a otro profesor disponible"
         )
         descripcion.setAlignment(Qt.AlignmentFlag.AlignCenter)
         descripcion.setStyleSheet(f"""
@@ -150,9 +149,7 @@ class GestorSustituciones(BaseForm):
         tabla.setStyleSheet(get_table_style())
         tabla.horizontalHeader().setStretchLastSection(True)
         tabla.setMinimumHeight(150)
-        tabla.selectionModel().selectionChanged.connect(
-            self.guardia_seleccionada_cambio
-        )
+        tabla.selectionModel().selectionChanged.connect(self.guardia_seleccionada_cambio)
         return tabla
 
     def _crear_seccion_sustituir(self) -> QGroupBox:
@@ -186,9 +183,7 @@ class GestorSustituciones(BaseForm):
 
         self.text_observaciones = QTextEdit()
         self.text_observaciones.setMaximumHeight(70)
-        self.text_observaciones.setPlaceholderText(
-            "Añade observaciones sobre la sustitución..."
-        )
+        self.text_observaciones.setPlaceholderText("Añade observaciones sobre la sustitución...")
         self.text_observaciones.setStyleSheet(styles.STYLE_INPUT)
         layout_sustituir.addWidget(self.text_observaciones)
 
@@ -244,9 +239,7 @@ class GestorSustituciones(BaseForm):
     def cargar_profesores(self):
         """Cargar la lista de profesores en los combos."""
         try:
-            profesores = (
-                self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
-            )
+            profesores = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
 
             self.combo_profesor_original.clear()
             self.combo_profesor_sustituto.clear()
@@ -254,12 +247,8 @@ class GestorSustituciones(BaseForm):
             self.combo_profesor_original.addItem("-- Todos --", None)
 
             for profesor in profesores:
-                self.combo_profesor_original.addItem(
-                    profesor.nombre_completo, profesor.id
-                )
-                self.combo_profesor_sustituto.addItem(
-                    profesor.nombre_completo, profesor.id
-                )
+                self.combo_profesor_original.addItem(profesor.nombre_completo, profesor.id)
+                self.combo_profesor_sustituto.addItem(profesor.nombre_completo, profesor.id)
 
         except Exception as e:
             self.manejar_excepcion(e, "cargar profesores")
@@ -289,9 +278,7 @@ class GestorSustituciones(BaseForm):
                 self.tabla_guardias.setItem(
                     i,
                     1,
-                    QTableWidgetItem(
-                        f"{profesor.nombre_completo if profesor else 'N/A'}"
-                    ),
+                    QTableWidgetItem(f"{profesor.nombre_completo if profesor else 'N/A'}"),
                 )
                 self.tabla_guardias.setItem(i, 2, QTableWidgetItem(guardia.turno))
                 self.tabla_guardias.setItem(i, 3, QTableWidgetItem(str(guardia.recreo)))
@@ -300,15 +287,13 @@ class GestorSustituciones(BaseForm):
                 )
 
                 # Guardar el objeto guardia en la fila
-                self.tabla_guardias.item(i, 0).setData(
-                    Qt.ItemDataRole.UserRole, guardia
-                )
+                self.tabla_guardias.item(i, 0).setData(Qt.ItemDataRole.UserRole, guardia)
 
             # Mensaje si no hay resultados
             if len(guardias) == 0:
                 self.mostrar_informacion(
                     "Sin resultados",
-                    f"No se encontraron guardias para la fecha {fecha.strftime('%d/%m/%Y')}"
+                    f"No se encontraron guardias para la fecha {fecha.strftime('%d/%m/%Y')}",
                 )
 
         except Exception as e:
@@ -316,9 +301,7 @@ class GestorSustituciones(BaseForm):
 
     def guardia_seleccionada_cambio(self):
         """Manejar el cambio de selección en la tabla de guardias."""
-        self.btn_confirmar_sustitucion.setEnabled(
-            len(self.tabla_guardias.selectedItems()) > 0
-        )
+        self.btn_confirmar_sustitucion.setEnabled(len(self.tabla_guardias.selectedItems()) > 0)
 
     def buscar_profesores_disponibles(self):
         """Mostrar los profesores disponibles para el slot seleccionado."""
@@ -335,17 +318,13 @@ class GestorSustituciones(BaseForm):
 
             # Buscar profesores que NO tengan guardia ese día
             guardias_ese_dia = (
-                self.session.query(Guardia.profesor_id)
-                .filter(Guardia.fecha == guardia.fecha)
-                .all()
+                self.session.query(Guardia.profesor_id).filter(Guardia.fecha == guardia.fecha).all()
             )
 
             profesores_ocupados = {prof_id for (prof_id,) in guardias_ese_dia}
 
             todos_profesores = self.session.query(Profesor).all()
-            disponibles = [
-                p for p in todos_profesores if p.id not in profesores_ocupados
-            ]
+            disponibles = [p for p in todos_profesores if p.id not in profesores_ocupados]
 
             if disponibles:
                 mensaje = "Profesores disponibles (sin guardias ese día):\n\n"
@@ -360,16 +339,16 @@ class GestorSustituciones(BaseForm):
                 msg.setWindowTitle("Profesores Disponibles")
                 msg.setTextFormat(Qt.TextFormat.RichText)
                 msg.setWindowFlags(
-                    Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
-                    Qt.WindowType.WindowTitleHint
+                    Qt.WindowType.Dialog
+                    | Qt.WindowType.CustomizeWindowHint
+                    | Qt.WindowType.WindowTitleHint
                 )
                 msg.setText(mensaje)
                 msg.exec()
             else:
                 self.mostrar_advertencia(
                     "Sin Disponibles",
-                    "No hay profesores disponibles ese día "
-                    "(todos tienen al menos 1 guardia).",
+                    "No hay profesores disponibles ese día (todos tienen al menos 1 guardia).",
                 )
 
         except Exception as e:

@@ -42,22 +42,21 @@ class HorasContrato:
         if not isinstance(self.value, (int, float)):
             raise InvalidHorasContratoError(
                 horas=self.value,
-                message=f"Las horas deben ser un número, recibido: {type(self.value).__name__}"
+                message=f"Las horas deben ser un número, recibido: {type(self.value).__name__}",
             )
 
         if self.value < self.MIN_HORAS:
             raise InvalidHorasContratoError(
                 horas=self.value,
                 message=(
-                    f"Las horas de contrato ({self.value}) no pueden ser menores a "
-                    f"{self.MIN_HORAS}"
-                )
+                    f"Las horas de contrato ({self.value}) no pueden ser menores a {self.MIN_HORAS}"
+                ),
             )
 
         if self.value > self.MAX_HORAS:
             raise InvalidHorasContratoError(
                 horas=self.value,
-                message=f"Las horas de contrato ({self.value}) no pueden exceder {self.MAX_HORAS}"
+                message=f"Las horas de contrato ({self.value}) no pueden exceder {self.MAX_HORAS}",
             )
 
     def porcentaje_jornada(self, jornada_completa: float = 40.0) -> float:
@@ -115,7 +114,7 @@ class HorasContrato:
             return self.value == other
         return False
 
-    def __lt__(self, other: 'HorasContrato') -> bool:
+    def __lt__(self, other: "HorasContrato") -> bool:
         """Permite comparaciones de menor que."""
         if isinstance(other, HorasContrato):
             return self.value < other.value
@@ -123,7 +122,7 @@ class HorasContrato:
             return self.value < other
         return NotImplemented
 
-    def __le__(self, other: 'HorasContrato') -> bool:
+    def __le__(self, other: "HorasContrato") -> bool:
         """Permite comparaciones de menor o igual."""
         if isinstance(other, HorasContrato):
             return self.value <= other.value

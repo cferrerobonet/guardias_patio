@@ -112,9 +112,10 @@ class TestPerformanceMonitor:
         assert stats.avg_duration_ms == 55
         assert stats.min_duration_ms == 10
         assert stats.max_duration_ms == 100
-        assert stats.p50_duration_ms == 50
-        assert stats.p95_duration_ms == 90
-        assert stats.p99_duration_ms == 90
+        # Con 10 elementos, p50 usa índice 5 (valor 60), p95 usa índice 9, p99 usa índice 9
+        assert stats.p50_duration_ms == 60
+        assert stats.p95_duration_ms == 100
+        assert stats.p99_duration_ms == 100
         assert stats.slow_operations == 1  # Solo 100ms es >= 100
 
     def test_get_operation_stats_nonexistent(self, monitor):

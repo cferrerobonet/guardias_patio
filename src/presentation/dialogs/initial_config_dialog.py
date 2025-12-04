@@ -23,7 +23,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -462,9 +461,7 @@ class InitialConfigDialog(QDialog):
         if self._sftp_password:
             self.sftp_password_input.setText("••••••••")
             self.sftp_password_input.setPlaceholderText("Contraseña configurada")
-        self.sftp_basedir_input.setText(
-            os.getenv("SFTP_BASE_DIR", "/aplicaciones/guardias_patio")
-        )
+        self.sftp_basedir_input.setText(os.getenv("SFTP_BASE_DIR", "/aplicaciones/guardias_patio"))
 
         # SMTP
         self.smtp_server_input.setText(os.getenv("SMTP_SERVER", ""))
@@ -479,12 +476,14 @@ class InitialConfigDialog(QDialog):
     def _check_configuration(self) -> None:
         """Verifica si la configuración está completa y actualiza el estado."""
         # SFTP (obligatorio)
-        sftp_complete = all([
-            self.sftp_host_input.text().strip(),
-            self.sftp_port_input.text().strip(),
-            self.sftp_user_input.text().strip(),
-            self._sftp_password or self.sftp_password_input.text().strip()
-        ])
+        sftp_complete = all(
+            [
+                self.sftp_host_input.text().strip(),
+                self.sftp_port_input.text().strip(),
+                self.sftp_user_input.text().strip(),
+                self._sftp_password or self.sftp_password_input.text().strip(),
+            ]
+        )
 
         if sftp_complete and self._sftp_configured:
             self.sftp_status_label.setText("☁️ SFTP: ✅ Configurado correctamente")
@@ -518,12 +517,14 @@ class InitialConfigDialog(QDialog):
             """)
 
         # SMTP (opcional)
-        smtp_complete = all([
-            self.smtp_server_input.text().strip(),
-            self.smtp_port_input.text().strip(),
-            self.smtp_user_input.text().strip(),
-            self._smtp_password or self.smtp_password_input.text().strip()
-        ])
+        smtp_complete = all(
+            [
+                self.smtp_server_input.text().strip(),
+                self.smtp_port_input.text().strip(),
+                self.smtp_user_input.text().strip(),
+                self._smtp_password or self.smtp_password_input.text().strip(),
+            ]
+        )
 
         if smtp_complete and self._smtp_configured:
             self.smtp_status_label.setText("📧 SMTP: ✅ Configurado correctamente")
@@ -587,7 +588,7 @@ class InitialConfigDialog(QDialog):
             QMessageBox.warning(
                 self,
                 "Campos Incompletos",
-                "Por favor, completa todos los campos SFTP antes de probar la conexión."
+                "Por favor, completa todos los campos SFTP antes de probar la conexión.",
             )
             return
 
@@ -612,7 +613,7 @@ class InitialConfigDialog(QDialog):
                 self,
                 "✅ Conexión Exitosa",
                 f"La conexión SFTP a {host} se estableció correctamente.\n\n"
-                "Ahora puedes guardar la configuración."
+                "Ahora puedes guardar la configuración.",
             )
 
         except Exception as e:
@@ -620,7 +621,7 @@ class InitialConfigDialog(QDialog):
                 self,
                 "❌ Error de Conexión",
                 f"No se pudo conectar al servidor SFTP:\n\n{str(e)}\n\n"
-                "Verifica los datos e inténtalo de nuevo."
+                "Verifica los datos e inténtalo de nuevo.",
             )
             logger.error(f"Error al probar SFTP: {e}")
 
@@ -639,7 +640,7 @@ class InitialConfigDialog(QDialog):
             QMessageBox.warning(
                 self,
                 "Campos Incompletos",
-                "Por favor, completa todos los campos SMTP antes de probar la conexión."
+                "Por favor, completa todos los campos SMTP antes de probar la conexión.",
             )
             return
 
@@ -653,7 +654,7 @@ class InitialConfigDialog(QDialog):
                 self,
                 "✅ Conexión Exitosa",
                 f"La conexión SMTP a {server} se estableció correctamente.\n\n"
-                "Ahora puedes guardar la configuración."
+                "Ahora puedes guardar la configuración.",
             )
 
         except smtplib.SMTPAuthenticationError:
@@ -661,7 +662,7 @@ class InitialConfigDialog(QDialog):
                 self,
                 "❌ Error de Autenticación",
                 "Usuario o contraseña incorrectos.\n\n"
-                "Para Gmail, necesitas usar una App Password, no tu contraseña normal."
+                "Para Gmail, necesitas usar una App Password, no tu contraseña normal.",
             )
 
         except Exception as e:
@@ -669,7 +670,7 @@ class InitialConfigDialog(QDialog):
                 self,
                 "❌ Error de Conexión",
                 f"No se pudo conectar al servidor SMTP:\n\n{str(e)}\n\n"
-                "Verifica los datos e inténtalo de nuevo."
+                "Verifica los datos e inténtalo de nuevo.",
             )
             logger.error(f"Error al probar SMTP: {e}")
 
@@ -691,18 +692,20 @@ class InitialConfigDialog(QDialog):
             QMessageBox.warning(
                 self,
                 "Campos Incompletos",
-                "Por favor, completa todos los campos SFTP antes de guardar."
+                "Por favor, completa todos los campos SFTP antes de guardar.",
             )
             return
 
         try:
-            self._update_env_file({
-                "SFTP_HOST": host,
-                "SFTP_PORT": port,
-                "SFTP_USERNAME": user,
-                "SFTP_PASSWORD": password,
-                "SFTP_BASE_DIR": basedir or "/aplicaciones/guardias_patio"
-            })
+            self._update_env_file(
+                {
+                    "SFTP_HOST": host,
+                    "SFTP_PORT": port,
+                    "SFTP_USERNAME": user,
+                    "SFTP_PASSWORD": password,
+                    "SFTP_BASE_DIR": basedir or "/aplicaciones/guardias_patio",
+                }
+            )
 
             self._sftp_configured = True
             self._check_configuration()
@@ -711,14 +714,14 @@ class InitialConfigDialog(QDialog):
                 self,
                 "✅ Configuración Guardada",
                 "La configuración SFTP se ha guardado correctamente.\n\n"
-                "Ahora puedes continuar usando la aplicación."
+                "Ahora puedes continuar usando la aplicación.",
             )
 
         except Exception as e:
             QMessageBox.critical(
                 self,
                 "❌ Error al Guardar",
-                f"No se pudo guardar la configuración SFTP:\n\n{str(e)}"
+                f"No se pudo guardar la configuración SFTP:\n\n{str(e)}",
             )
             logger.error(f"Error al guardar SFTP: {e}")
 
@@ -740,7 +743,7 @@ class InitialConfigDialog(QDialog):
             QMessageBox.warning(
                 self,
                 "Campos Incompletos",
-                "Por favor, completa todos los campos SMTP antes de guardar."
+                "Por favor, completa todos los campos SMTP antes de guardar.",
             )
             return
 
@@ -749,13 +752,15 @@ class InitialConfigDialog(QDialog):
             from_name = "Guardias de Patio"
 
         try:
-            self._update_env_file({
-                "SMTP_SERVER": server,
-                "SMTP_PORT": port,
-                "SMTP_USER": user,
-                "SMTP_PASSWORD": password,
-                "SMTP_FROM_NAME": from_name
-            })
+            self._update_env_file(
+                {
+                    "SMTP_SERVER": server,
+                    "SMTP_PORT": port,
+                    "SMTP_USER": user,
+                    "SMTP_PASSWORD": password,
+                    "SMTP_FROM_NAME": from_name,
+                }
+            )
 
             self._smtp_configured = True
             self._check_configuration()
@@ -764,14 +769,14 @@ class InitialConfigDialog(QDialog):
                 self,
                 "✅ Configuración Guardada",
                 "La configuración SMTP se ha guardado correctamente.\n\n"
-                "Ya puedes enviar emails desde la aplicación."
+                "Ya puedes enviar emails desde la aplicación.",
             )
 
         except Exception as e:
             QMessageBox.critical(
                 self,
                 "❌ Error al Guardar",
-                f"No se pudo guardar la configuración SMTP:\n\n{str(e)}"
+                f"No se pudo guardar la configuración SMTP:\n\n{str(e)}",
             )
             logger.error(f"Error al guardar SMTP: {e}")
 
@@ -783,7 +788,7 @@ class InitialConfigDialog(QDialog):
                 "⚠️ SFTP Obligatorio",
                 "No puedes continuar sin configurar SFTP.\n\n"
                 "El servidor SFTP es necesario para garantizar copias de seguridad "
-                "y sincronización de datos."
+                "y sincronización de datos.",
             )
             return
 
@@ -797,7 +802,7 @@ class InitialConfigDialog(QDialog):
             "• Recibir notificaciones automáticas\n\n"
             "Podrás configurarlo más tarde desde el menú de configuración.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -852,11 +857,13 @@ class InitialConfigDialog(QDialog):
         load_dotenv()
 
         # SFTP es obligatorio
-        sftp_complete = all([
-            os.getenv("SFTP_HOST"),
-            os.getenv("SFTP_PORT"),
-            os.getenv("SFTP_USERNAME"),
-            os.getenv("SFTP_PASSWORD")
-        ])
+        sftp_complete = all(
+            [
+                os.getenv("SFTP_HOST"),
+                os.getenv("SFTP_PORT"),
+                os.getenv("SFTP_USERNAME"),
+                os.getenv("SFTP_PASSWORD"),
+            ]
+        )
 
         return not sftp_complete

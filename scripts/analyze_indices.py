@@ -12,21 +12,22 @@ from pathlib import Path
 # Agregar src al path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from sqlalchemy import text
-
 from database.db_manager import SessionLocal
+from sqlalchemy import text
 
 
 def analyze_existing_indices():
     """Analiza índices existentes en la base de datos."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("📑 ANÁLISIS DE ÍNDICES EXISTENTES")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     session = SessionLocal()
     try:
         # SQLite: Obtener índices
-        query = text("SELECT name, tbl_name, sql FROM sqlite_master WHERE type='index' ORDER BY tbl_name, name")
+        query = text(
+            "SELECT name, tbl_name, sql FROM sqlite_master WHERE type='index' ORDER BY tbl_name, name"
+        )
         result = session.execute(query)
         indices = result.fetchall()
 
@@ -57,9 +58,9 @@ def analyze_existing_indices():
 
 def recommend_indices():
     """Recomienda índices basándose en consultas comunes."""
-    print("="*70)
+    print("=" * 70)
     print("💡 RECOMENDACIONES DE ÍNDICES")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     recommendations = [
         {
@@ -67,63 +68,63 @@ def recommend_indices():
             "columna": "activo",
             "razon": "Filtro frecuente en WHERE activo = True",
             "sql": "CREATE INDEX IF NOT EXISTS idx_profesores_activo ON profesores(activo);",
-            "prioridad": "ALTA"
+            "prioridad": "ALTA",
         },
         {
             "tabla": "profesores",
             "columna": "zona_preferida_id",
             "razon": "Join frecuente con zonas",
             "sql": "CREATE INDEX IF NOT EXISTS idx_profesores_zona_preferida ON profesores(zona_preferida_id);",
-            "prioridad": "ALTA"
+            "prioridad": "ALTA",
         },
         {
             "tabla": "guardias",
             "columna": "profesor_id",
             "razon": "Join frecuente y filtros por profesor",
             "sql": "CREATE INDEX IF NOT EXISTS idx_guardias_profesor ON guardias(profesor_id);",
-            "prioridad": "ALTA"
+            "prioridad": "ALTA",
         },
         {
             "tabla": "guardias",
             "columna": "zona_id",
             "razon": "Join frecuente y filtros por zona",
             "sql": "CREATE INDEX IF NOT EXISTS idx_guardias_zona ON guardias(zona_id);",
-            "prioridad": "ALTA"
+            "prioridad": "ALTA",
         },
         {
             "tabla": "guardias",
             "columna": "fecha",
             "razon": "Filtros y ordenamiento por fecha",
             "sql": "CREATE INDEX IF NOT EXISTS idx_guardias_fecha ON guardias(fecha);",
-            "prioridad": "MEDIA"
+            "prioridad": "MEDIA",
         },
         {
             "tabla": "guardias",
             "columna": "turno",
             "razon": "Filtros por turno (mañana/tarde)",
             "sql": "CREATE INDEX IF NOT EXISTS idx_guardias_turno ON guardias(turno);",
-            "prioridad": "MEDIA"
+            "prioridad": "MEDIA",
         },
         {
             "tabla": "guardias",
             "columnas": "fecha, turno",
             "razon": "Búsqueda combinada fecha+turno (muy frecuente)",
             "sql": "CREATE INDEX IF NOT EXISTS idx_guardias_fecha_turno ON guardias(fecha, turno);",
-            "prioridad": "ALTA"
+            "prioridad": "ALTA",
         },
         {
             "tabla": "ausencias",
             "columna": "profesor_id",
             "razon": "Join frecuente con profesores",
             "sql": "CREATE INDEX IF NOT EXISTS idx_ausencias_profesor ON ausencias(profesor_id);",
-            "prioridad": "ALTA"
+            "prioridad": "ALTA",
         },
         {
             "tabla": "ausencias",
             "columnas": "fecha_inicio, fecha_fin",
             "razon": "Búsqueda de rangos de fechas",
             "sql": "CREATE INDEX IF NOT EXISTS idx_ausencias_fechas ON ausencias(fecha_inicio, fecha_fin);",
-            "prioridad": "MEDIA"
+            "prioridad": "MEDIA",
         },
     ]
 
@@ -137,19 +138,21 @@ def recommend_indices():
 
 def generate_alembic_migration():
     """Genera el código para una migración de Alembic con los índices."""
-    print("="*70)
+    print("=" * 70)
     print("🔧 CÓDIGO PARA MIGRACIÓN DE ALEMBIC")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     print("Para crear la migración, ejecuta:")
-    print("  alembic revision -m \"add_performance_indices\"\n")
+    print('  alembic revision -m "add_performance_indices"\n')
 
     print("Luego, en el archivo generado, agrega este código en upgrade():\n")
     print("```python")
     print("def upgrade():")
     print("    # Índices para tabla profesores")
     print("    op.create_index('idx_profesores_activo', 'profesores', ['activo'])")
-    print("    op.create_index('idx_profesores_zona_preferida', 'profesores', ['zona_preferida_id'])")
+    print(
+        "    op.create_index('idx_profesores_zona_preferida', 'profesores', ['zona_preferida_id'])"
+    )
     print()
     print("    # Índices para tabla guardias")
     print("    op.create_index('idx_guardias_profesor', 'guardias', ['profesor_id'])")
@@ -180,14 +183,14 @@ def generate_alembic_migration():
 
 def estimate_impact():
     """Estima el impacto de los índices propuestos."""
-    print("="*70)
+    print("=" * 70)
     print("📈 ESTIMACIÓN DE IMPACTO")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     session = SessionLocal()
     try:
         # Contar registros por tabla
-        from models.models import Guardia, Profesor, Zona
+        from infrastructure.database.models import Guardia, Profesor, Zona
 
         count_profesores = session.query(Profesor).count()
         count_guardias = session.query(Guardia).count()
@@ -218,7 +221,7 @@ def estimate_impact():
         # SQLite: ~1KB por 10 registros para índices simples
         espacio_kb = count_guardias * 9 * 0.1  # 9 índices propuestos
         print(f"   • Aproximadamente {espacio_kb:.1f} KB adicionales")
-        print(f"   • {espacio_kb/1024:.2f} MB adicionales\n")
+        print(f"   • {espacio_kb / 1024:.2f} MB adicionales\n")
 
     finally:
         session.close()
@@ -226,9 +229,9 @@ def estimate_impact():
 
 def main():
     """Función principal."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("🔍 ANÁLISIS DE OPTIMIZACIÓN DE BASE DE DATOS")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     try:
         analyze_existing_indices()
@@ -236,9 +239,9 @@ def main():
         recommend_indices()
         generate_alembic_migration()
 
-        print("="*70)
+        print("=" * 70)
         print("✅ ANÁLISIS COMPLETADO")
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
 
         print("📋 PRÓXIMOS PASOS:")
         print("   1. Revisar los índices recomendados arriba")
@@ -249,11 +252,12 @@ def main():
     except Exception as e:
         print(f"\n❌ Error durante el análisis: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

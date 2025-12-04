@@ -7,6 +7,11 @@ usando Clean Architecture con Use Cases y DTOs.
 Este form NO reemplaza el actual, es solo una demostración del patrón.
 """
 
+from application.dtos import CrearProfesorDTO
+from application.use_cases.profesor import (
+    CrearProfesorUseCase,
+    ListarProfesoresUseCase,
+)
 from PyQt6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
@@ -19,11 +24,6 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-from application.dtos import CrearProfesorDTO
-from application.use_cases.profesor import (
-    CrearProfesorUseCase,
-    ListarProfesoresUseCase,
-)
 from presentation.forms.base_form import BaseForm
 
 
@@ -130,9 +130,7 @@ class SimpleProfesorForm(BaseForm):
         # Tabla de profesores
         self.tabla = QTableWidget()
         self.tabla.setColumnCount(4)
-        self.tabla.setHorizontalHeaderLabels([
-            "ID", "Nombre Completo", "Email", "Horas Contrato"
-        ])
+        self.tabla.setHorizontalHeaderLabels(["ID", "Nombre Completo", "Email", "Horas Contrato"])
         self.tabla.setAlternatingRowColors(True)
         layout.addWidget(self.tabla)
 
@@ -166,7 +164,7 @@ class SimpleProfesorForm(BaseForm):
                 email_corporativo=self.email_input.text().strip() or None,
                 horas_contrato=float(self.horas_input.text().strip()),
                 turno="mañana",  # Simplificado para el ejemplo
-                es_tutor=False
+                es_tutor=False,
             )
 
             # 3. Ejecutar Use Case
@@ -175,7 +173,7 @@ class SimpleProfesorForm(BaseForm):
             # 4. Mostrar éxito
             self.mostrar_exito(
                 "Profesor Creado",
-                f"Profesor {profesor.nombre_completo} creado exitosamente con ID {profesor.id}"
+                f"Profesor {profesor.nombre_completo} creado exitosamente con ID {profesor.id}",
             )
 
             # 5. Actualizar UI

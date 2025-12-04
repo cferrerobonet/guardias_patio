@@ -1,4 +1,5 @@
 """Tests para el servicio de exportación e importación de datos."""
+
 import json
 import sys
 from datetime import date, time
@@ -11,7 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 # Añadir src al path para imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from models.models import Base, Configuracion, Guardia, Profesor, Zona
+from infrastructure.database.models import Base, Configuracion, Guardia, Profesor, Zona
 from services.exportador import ExportadorDatos
 
 
@@ -215,8 +216,22 @@ class TestImportarProfesores:
         assert profesores[0].email_corporativo == "pedro@colegio.edu"
         assert profesores[0].tutor is True
 
-    def test_importar_profesores_limpiar(self, session: Session, datos_prueba):
+    def test_importar_profesores_limpiar(self, session: Session):
         """Importa profesores limpiando datos existentes."""
+        # Primero crear un profesor existente
+        prof_existente = Profesor(
+            nombre_completo="Existente, Prof",
+            horas_contrato=25.0,
+            porcentaje_jornada=100.0,
+            turno="mañana",
+        )
+        session.add(prof_existente)
+        session.commit()
+
+        # Verificar que hay 1 profesor
+        assert session.query(Profesor).count() == 1
+
+        # Importar con limpiar=True
         datos = [
             {
                 "nombre": "Nuevo",
@@ -227,21 +242,13 @@ class TestImportarProfesores:
             }
         ]
 
-        # Cerrar la sesión actual y crear una nueva para evitar conflictos
-        session.close()
-        from database.db_manager import SessionLocal
-        new_session = SessionLocal()
+        count = ExportadorDatos.importar_profesores(session, datos, limpiar=True)
+        assert count == 1
 
-        try:
-            count = ExportadorDatos.importar_profesores(new_session, datos, limpiar=True)
-            assert count == 1
-
-            new_session.expire_all()
-            profesores = new_session.query(Profesor).all()
-            assert len(profesores) == 1
-            assert profesores[0].nombre_completo == "Profesor, Nuevo"
-        finally:
-            new_session.close()
+        session.expire_all()
+        profesores = session.query(Profesor).all()
+        assert len(profesores) == 1
+        assert profesores[0].nombre_completo == "Profesor, Nuevo"
 
 
 class TestImportarZonas:

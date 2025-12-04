@@ -15,13 +15,12 @@ from datetime import datetime
 from pathlib import Path
 
 # Añadir src al path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+from infrastructure.database.models import Guardia
+from services.asignador_guardias import generar_calendario_guardias
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-from models.models import Guardia
-from services.asignador_guardias import generar_calendario_guardias
 
 
 def backup_database(db_path: str) -> str:
@@ -55,9 +54,9 @@ def regenerar_guardias(db_path: str, crear_backup: bool = True, validate_only: b
         crear_backup: Si True, crea backup antes de regenerar
         validate_only: Si True, solo valida sin regenerar
     """
-    print("="*100)
+    print("=" * 100)
     print("REGENERACIÓN DE GUARDIAS - ALGORITMO v2.9 EQUITATIVO")
-    print("="*100)
+    print("=" * 100)
 
     # Verificar que el archivo existe
     if not os.path.exists(db_path):
@@ -72,7 +71,7 @@ def regenerar_guardias(db_path: str, crear_backup: bool = True, validate_only: b
 
     # Conectar a la base de datos
     print(f"🔌 Conectando a: {db_path}")
-    engine = create_engine(f'sqlite:///{db_path}')
+    engine = create_engine(f"sqlite:///{db_path}")
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -105,8 +104,7 @@ def regenerar_guardias(db_path: str, crear_backup: bool = True, validate_only: b
 
         # Generar calendario
         calendario, asignadas = generar_calendario_guardias(
-            session,
-            progress_callback=progress_callback
+            session, progress_callback=progress_callback
         )
 
         # Guardar guardias
@@ -118,9 +116,9 @@ def regenerar_guardias(db_path: str, crear_backup: bool = True, validate_only: b
         print(f"✅ {len(calendario)} guardias generadas y guardadas")
 
         # Estadísticas finales
-        print("\n" + "="*100)
+        print("\n" + "=" * 100)
         print("RESUMEN DE REGENERACIÓN")
-        print("="*100)
+        print("=" * 100)
         print(f"Guardias anteriores: {guardias_actuales}")
         print(f"Guardias nuevas:     {len(calendario)}")
         print(f"Diferencia:          {len(calendario) - guardias_actuales:+d}")
@@ -130,14 +128,19 @@ def regenerar_guardias(db_path: str, crear_backup: bool = True, validate_only: b
         print(f"   Total profesores con guardias: {len([a for a in asignadas.values() if a > 0])}")
         print(f"   Guardias mínimas: {min(asignadas.values()) if asignadas else 0}")
         print(f"   Guardias máximas: {max(asignadas.values()) if asignadas else 0}")
-        print(f"   Guardias promedio: {sum(asignadas.values()) / len(asignadas):.1f}" if asignadas else 0)
+        print(
+            f"   Guardias promedio: {sum(asignadas.values()) / len(asignadas):.1f}"
+            if asignadas
+            else 0
+        )
 
         print("\n✅ REGENERACIÓN COMPLETADA EXITOSAMENTE")
-        print("="*100)
+        print("=" * 100)
 
     except Exception as e:
         print(f"\n❌ ERROR durante la regeneración: {e}")
         import traceback
+
         traceback.print_exc()
 
         if not validate_only:
@@ -152,33 +155,23 @@ def regenerar_guardias(db_path: str, crear_backup: bool = True, validate_only: b
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Regenerar guardias con algoritmo v2.9 equitativo"
+    parser = argparse.ArgumentParser(description="Regenerar guardias con algoritmo v2.9 equitativo")
+    parser.add_argument(
+        "--db", required=True, help="Ruta a la base de datos (ej: data/users/XXX/guardias_patio.db)"
     )
     parser.add_argument(
-        "--db",
-        required=True,
-        help="Ruta a la base de datos (ej: data/users/XXX/guardias_patio.db)"
-    )
-    parser.add_argument(
-        "--backup",
-        action="store_true",
-        help="Crear backup antes de regenerar (recomendado)"
+        "--backup", action="store_true", help="Crear backup antes de regenerar (recomendado)"
     )
     parser.add_argument(
         "--validate-only",
         action="store_true",
-        help="Solo validar, no regenerar (útil para pruebas)"
+        help="Solo validar, no regenerar (útil para pruebas)",
     )
 
     args = parser.parse_args()
 
     try:
-        regenerar_guardias(
-            args.db,
-            crear_backup=args.backup,
-            validate_only=args.validate_only
-        )
+        regenerar_guardias(args.db, crear_backup=args.backup, validate_only=args.validate_only)
     except KeyboardInterrupt:
         print("\n\n⚠️  Regeneración cancelada por el usuario")
         sys.exit(130)

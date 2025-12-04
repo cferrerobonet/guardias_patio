@@ -12,7 +12,14 @@ from sqlalchemy.orm import sessionmaker
 # Añadir src al path para imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from models.models import Base, Configuracion, CursoEscolar, Guardia, Profesor, Zona
+from infrastructure.database.models import (
+    Base,
+    Configuracion,
+    CursoEscolar,
+    Guardia,
+    Profesor,
+    Zona,
+)
 from services.asignador_guardias import generar_calendario_guardias, guardar_guardias_en_bd
 
 
@@ -154,7 +161,9 @@ class TestGeneracionCalendario:
                 f"Zonas asignadas: {[g.zona_id for g in guardias_en_slot]}"
             )
 
-    def test_respeta_cuotas(self, session, curso_activo, config_completa, profesores_multiples, zonas_multiples):
+    def test_respeta_cuotas(
+        self, session, curso_activo, config_completa, profesores_multiples, zonas_multiples
+    ):
         """Verifica que ningún profesor supera su cuota asignada."""
         from services.calculador_guardias import calcular_guardias_por_profesor
 
@@ -185,8 +194,7 @@ class TestGeneracionCalendario:
                 )
             elif profesor.turno == "tarde":
                 assert guardia.turno == "tarde", (
-                    f"Profesor de tarde {profesor.nombre_completo} "
-                    f"tiene guardia de {guardia.turno}"
+                    f"Profesor de tarde {profesor.nombre_completo} tiene guardia de {guardia.turno}"
                 )
             # Turno mixto puede tener ambos (no se valida)
 

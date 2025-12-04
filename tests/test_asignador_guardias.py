@@ -9,7 +9,7 @@ from datetime import date, time
 from unittest.mock import Mock, patch
 
 import pytest
-from models.models import Configuracion, Profesor, Zona
+from infrastructure.database.models import Configuracion, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias
 from sqlalchemy.orm import Session
 
@@ -102,9 +102,7 @@ class TestValidaciones:
         with pytest.raises(ValueError, match="No existe configuración del curso"):
             generar_calendario_guardias(session_mock)
 
-    def test_generar_calendario_sin_profesores(
-        self, session_mock, configuracion_valida
-    ):
+    def test_generar_calendario_sin_profesores(self, session_mock, configuracion_valida):
         """
         Debe lanzar ValueError si no hay profesores registrados.
         """
@@ -121,6 +119,7 @@ class TestValidaciones:
         """
         Debe lanzar ValueError si no hay zonas registradas.
         """
+
         # Configurar query mock para retornar config, profesores, y luego vacío para zonas
         def query_side_effect(model):
             mock_query = Mock()
@@ -160,6 +159,7 @@ class TestProgressCallback:
         """
         El progress_callback debe ser invocado durante la generación.
         """
+
         # Setup mocks
         def query_side_effect(model):
             mock_query = Mock()
@@ -203,6 +203,7 @@ class TestProgressCallback:
         """
         Si el callback lanza excepción, la generación debe continuar.
         """
+
         # Setup
         def query_side_effect(model):
             mock_query = Mock()
@@ -254,6 +255,7 @@ class TestLogicaAsignacion:
         """
         Si no hay slots disponibles, debe retornar listas vacías.
         """
+
         # Setup
         def query_side_effect(model):
             mock_query = Mock()
@@ -290,6 +292,7 @@ class TestLogicaAsignacion:
         """
         Debe llamar a calcular_guardias_por_profesor para obtener cuotas.
         """
+
         # Setup
         def query_side_effect(model):
             mock_query = Mock()
@@ -320,9 +323,7 @@ class TestLogicaAsignacion:
 class TestEdgeCases:
     """Tests para casos edge y situaciones límite."""
 
-    def test_generar_con_profesor_sin_email(
-        self, session_mock, configuracion_valida, zonas_mock
-    ):
+    def test_generar_con_profesor_sin_email(self, session_mock, configuracion_valida, zonas_mock):
         """
         Profesor sin email_corporativo debe poder recibir guardias.
         """
@@ -374,6 +375,7 @@ class TestEdgeCases:
         """
         Debe funcionar correctamente sin progress_callback (None).
         """
+
         def query_side_effect(model):
             mock_query = Mock()
             if model == Configuracion:
@@ -389,9 +391,7 @@ class TestEdgeCases:
         mock_build_slots.return_value = []
 
         # Ejecutar sin callback
-        guardias, asignaciones = generar_calendario_guardias(
-            session_mock, progress_callback=None
-        )
+        guardias, asignaciones = generar_calendario_guardias(session_mock, progress_callback=None)
 
         # Debe funcionar normalmente
         assert guardias == []
@@ -418,6 +418,7 @@ class TestIntegracionCalculador:
         """
         Debe usar las cuotas calculadas por el calculador.
         """
+
         def query_side_effect(model):
             mock_query = Mock()
             if model == Configuracion:
@@ -469,7 +470,7 @@ class TestFuncionesHelper:
         """
         Profesor con ausencia activa debe retornar True.
         """
-        from models.models import Ausencia
+        from infrastructure.database.models import Ausencia
         from services.asignador_guardias import profesor_ausente
 
         # Mock ausencia
@@ -583,8 +584,8 @@ class TestBuildSlots:
         session_mock.query.return_value.all.return_value = zonas_mock
         mock_dias.return_value = [date(2025, 10, 27), date(2025, 10, 28)]
         mock_parse.return_value = [
-            {'id': 1, 'turno': 'mañana', 'zonas': 2},
-            {'id': 2, 'turno': 'tarde', 'zonas': 1},
+            {"id": 1, "turno": "mañana", "zonas": 2},
+            {"id": 2, "turno": "tarde", "zonas": 1},
         ]
 
         # Ejecutar
@@ -640,7 +641,7 @@ class TestGuardarGuardias:
         """
         Con guardias, debe usar bulk_save_objects y commit.
         """
-        from models.models import Guardia
+        from infrastructure.database.models import Guardia
         from services.asignador_guardias import guardar_guardias_en_bd
 
         guardias = [
@@ -814,9 +815,7 @@ class TestBuclePrincipalAsignacion:
                     date(2025, 10, 23),
                 ],
             ):
-                with patch(
-                    "services.asignador_guardias.profesor_ausente", return_value=False
-                ):
+                with patch("services.asignador_guardias.profesor_ausente", return_value=False):
                     calendario, _ = generar_calendario_guardias(session_mock)
 
         # Todas las guardias deben ser >= 22/10
@@ -881,9 +880,7 @@ class TestBuclePrincipalAsignacion:
                     date(2025, 10, 23),
                 ],
             ):
-                with patch(
-                    "services.asignador_guardias.profesor_ausente", return_value=False
-                ):
+                with patch("services.asignador_guardias.profesor_ausente", return_value=False):
                     calendario, _ = generar_calendario_guardias(session_mock)
 
         # Todas las guardias deben ser <= 21/10
@@ -948,9 +945,7 @@ class TestBuclePrincipalAsignacion:
                     date(2025, 10, 23),  # Jueves
                 ],
             ):
-                with patch(
-                    "services.asignador_guardias.profesor_ausente", return_value=False
-                ):
+                with patch("services.asignador_guardias.profesor_ausente", return_value=False):
                     calendario, _ = generar_calendario_guardias(session_mock)
 
         # Todas las guardias deben ser lunes o miércoles
@@ -1010,9 +1005,7 @@ class TestBuclePrincipalAsignacion:
                 "services.asignador_guardias.listar_dias_lectivos",
                 return_value=[date(2025, 10, 20), date(2025, 10, 21)],
             ):
-                with patch(
-                    "services.asignador_guardias.profesor_ausente", return_value=False
-                ):
+                with patch("services.asignador_guardias.profesor_ausente", return_value=False):
                     # No debe lanzar excepción
                     calendario, _ = generar_calendario_guardias(session_mock)
 
@@ -1033,7 +1026,9 @@ class TestBuclePrincipalAsignacion:
         config.dias_lectivos = 3
         config.dias_no_lectivos = ""
         config.festivos_automaticos = False
-        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 1}, {"id": 2, "turno": "mañana", "zonas": 1}]'
+        config.recreos_config = (
+            '[{"id": 1, "turno": "mañana", "zonas": 1}, {"id": 2, "turno": "mañana", "zonas": 1}]'
+        )
 
         # Profesor con matriz: lunes recreo 1, miércoles recreo 2
         profesor = Mock(spec=Profesor)
@@ -1075,9 +1070,7 @@ class TestBuclePrincipalAsignacion:
                     date(2025, 10, 22),  # Miércoles (2)
                 ],
             ):
-                with patch(
-                    "services.asignador_guardias.profesor_ausente", return_value=False
-                ):
+                with patch("services.asignador_guardias.profesor_ausente", return_value=False):
                     calendario, _ = generar_calendario_guardias(session_mock)
 
         # Verificar combinaciones permitidas
@@ -1221,9 +1214,7 @@ class TestBuclePrincipalAsignacion:
                     date(2025, 10, 24),
                 ],
             ):
-                with patch(
-                    "services.asignador_guardias.profesor_ausente", return_value=False
-                ):
+                with patch("services.asignador_guardias.profesor_ausente", return_value=False):
                     calendario, _ = generar_calendario_guardias(session_mock)
 
         # Debe tener guardias
@@ -1250,7 +1241,9 @@ class TestBuclePrincipalAsignacion:
         config.dias_no_lectivos = ""
         config.festivos_automaticos = False
         # Recreos de mañana Y tarde para poder tener 2 en el mismo día
-        config.recreos_config = '[{"id": 1, "turno": "mañana", "zonas": 1}, {"id": 2, "turno": "tarde", "zonas": 1}]'
+        config.recreos_config = (
+            '[{"id": 1, "turno": "mañana", "zonas": 1}, {"id": 2, "turno": "tarde", "zonas": 1}]'
+        )
 
         profesor = Mock(spec=Profesor)
         profesor.id = 1
@@ -1288,9 +1281,7 @@ class TestBuclePrincipalAsignacion:
                 "services.asignador_guardias.listar_dias_lectivos",
                 return_value=[date(2025, 10, 20), date(2025, 10, 21), date(2025, 10, 22)],
             ):
-                with patch(
-                    "services.asignador_guardias.profesor_ausente", return_value=False
-                ):
+                with patch("services.asignador_guardias.profesor_ausente", return_value=False):
                     calendario, _ = generar_calendario_guardias(session_mock)
 
         # Agrupar por día
@@ -1357,9 +1348,7 @@ class TestBuclePrincipalAsignacion:
                 "services.asignador_guardias.listar_dias_lectivos",
                 return_value=[date(2025, 10, 20), date(2025, 10, 21), date(2025, 10, 22)],
             ):
-                with patch(
-                    "services.asignador_guardias.profesor_ausente", return_value=False
-                ):
+                with patch("services.asignador_guardias.profesor_ausente", return_value=False):
                     calendario, _ = generar_calendario_guardias(session_mock)
 
         # Agrupar por (fecha, turno, recreo)

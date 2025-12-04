@@ -1,5 +1,7 @@
 """Diálogos modales profesionales para gestión de perfiles."""
 
+import ui_styles as styles
+from application.dtos.perfil_dto import ActualizarPerfilDTO, CambiarPasswordDTO, CrearPerfilDTO
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -9,9 +11,6 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QVBoxLayout,
 )
-
-import ui_styles as styles
-from application.dtos.perfil_dto import ActualizarPerfilDTO, CambiarPasswordDTO, CrearPerfilDTO
 
 
 class DialogoCrearPerfilProfesional(QDialog):
@@ -35,8 +34,7 @@ class DialogoCrearPerfilProfesional(QDialog):
 
         # Descripción
         desc = QLabel(
-            "Se creará un nuevo perfil con su propia base de datos "
-            "y configuración independiente."
+            "Se creará un nuevo perfil con su propia base de datos y configuración independiente."
         )
         desc.setWordWrap(True)
         desc.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 10px;")

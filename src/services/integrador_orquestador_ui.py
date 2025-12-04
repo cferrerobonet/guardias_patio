@@ -2,9 +2,10 @@
 Ejemplo de integración del OrquestadorAsignacionGuardias con la UI.
 Muestra cómo usar el sistema completo con fallback automático.
 """
+
 from typing import Callable, Optional
 
-from models.models import Configuracion
+from infrastructure.database.models import Configuracion
 from PyQt6.QtWidgets import QWidget
 from services.calculador_guardias import listar_dias_lectivos
 from sqlalchemy.orm import Session
@@ -26,7 +27,7 @@ class IntegradorOrquestadorUI:
         self,
         db: Session,
         parent_widget: Optional[QWidget] = None,
-        callback_decision_custom: Optional[Callable] = None
+        callback_decision_custom: Optional[Callable] = None,
     ):
         """
         Args:
@@ -39,8 +40,7 @@ class IntegradorOrquestadorUI:
         self.callback_decision_custom = callback_decision_custom
 
     def generar_guardias_inteligente(
-        self,
-        progress_callback: Optional[Callable[[str, int], None]] = None
+        self, progress_callback: Optional[Callable[[str, int], None]] = None
     ) -> ResultadoOrquestacion:
         """
         Ejecuta la generación de guardias con el sistema completo de fallback.
@@ -86,9 +86,9 @@ class IntegradorOrquestadorUI:
             logger.info("⚠️  PUNTO CRÍTICO: Iniciando orquestador.generar_guardias_con_fallback")
             resultado = orquestador.generar_guardias_con_fallback(
                 umbral_cobertura_minima=0.95,  # 95%
-                umbral_problemas_criticos=0,   # 0 problemas críticos
+                umbral_problemas_criticos=0,  # 0 problemas críticos
                 callback_decision_usuario=self._mostrar_dialogo_decision,
-                progress_callback=progress_callback  # Pasar callback de progreso
+                progress_callback=progress_callback,  # Pasar callback de progreso
             )
 
             return resultado
@@ -109,7 +109,7 @@ class IntegradorOrquestadorUI:
                 estrategia_usada=EstrategiaUsada.NINGUNA,
                 mensaje_usuario=f"Error al generar guardias: {str(e)}",
                 requiere_intervencion_usuario=True,
-                diagnostico=None
+                diagnostico=None,
             )
 
     def _mostrar_dialogo_decision(self, diagnostico: DiagnosticoCompleto) -> str:
@@ -144,17 +144,18 @@ class IntegradorOrquestadorUI:
             if dialogo.exec():
                 return dialogo.get_accion_elegida()
             else:
-                return 'cancelar'
+                return "cancelar"
 
         except Exception as e:
             logger.error(f"❌ Error al mostrar diálogo de diagnóstico: {str(e)}")
             logger.error(f"Traceback: {traceback.format_exc()}")
             # En caso de error, retornar 'ajustar' por defecto (opción más segura)
-            return 'ajustar'
+            return "ajustar"
 
 
 # EJEMPLO DE USO DESDE UN FORMULARIO O VENTANA
 # ============================================
+
 
 def ejemplo_uso_desde_formulario(db: Session, parent_widget: QWidget):
     """
@@ -171,15 +172,12 @@ def ejemplo_uso_desde_formulario(db: Session, parent_widget: QWidget):
 
         if resultado.exitoso:
             # Mostrar mensaje de éxito
-            QMessageBox.information(
-                parent_widget,
-                "Guardias Generadas",
-                resultado.mensaje_usuario
-            )
+            QMessageBox.information(parent_widget, "Guardias Generadas", resultado.mensaje_usuario)
 
             # Guardar guardias en base de datos
             # (eliminar guardias anteriores y guardar nuevas)
             from src.models.guardia import Guardia
+
             db.query(Guardia).delete()
             db.add_all(resultado.guardias)
             db.commit()
@@ -190,31 +188,24 @@ def ejemplo_uso_desde_formulario(db: Session, parent_widget: QWidget):
             if resultado.requiere_intervencion_usuario:
                 # Usuario debe ajustar configuración
                 QMessageBox.warning(
-                    parent_widget,
-                    "Intervención Requerida",
-                    resultado.mensaje_usuario
+                    parent_widget, "Intervención Requerida", resultado.mensaje_usuario
                 )
             else:
                 # Usuario canceló
                 QMessageBox.information(
-                    parent_widget,
-                    "Operación Cancelada",
-                    resultado.mensaje_usuario
+                    parent_widget, "Operación Cancelada", resultado.mensaje_usuario
                 )
 
             return False
 
     except Exception as e:
-        QMessageBox.critical(
-            parent_widget,
-            "Error",
-            f"Error al generar guardias: {str(e)}"
-        )
+        QMessageBox.critical(parent_widget, "Error", f"Error al generar guardias: {str(e)}")
         return False
 
 
 # EJEMPLO DE USO DESDE LA LÍNEA DE COMANDOS (SCRIPT)
 # ==================================================
+
 
 def ejemplo_uso_cli():
     """
@@ -244,12 +235,12 @@ def ejemplo_uso_cli():
 
             while True:
                 opcion = input("\nSeleccione opción (1/2/3): ").strip()
-                if opcion == '1':
-                    return 'ajustar'
-                elif opcion == '2':
-                    return 'continuar_ilp'
-                elif opcion == '3':
-                    return 'cancelar'
+                if opcion == "1":
+                    return "ajustar"
+                elif opcion == "2":
+                    return "continuar_ilp"
+                elif opcion == "3":
+                    return "cancelar"
                 else:
                     print("Opción inválida")
 
@@ -265,6 +256,7 @@ def ejemplo_uso_cli():
 
             # Guardar en BD
             from src.models.guardia import Guardia
+
             db.query(Guardia).delete()
             db.add_all(resultado.guardias)
             db.commit()

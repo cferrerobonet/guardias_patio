@@ -13,8 +13,8 @@ from datetime import date, datetime
 from typing import Optional
 
 from core.logging import get_logger
+from infrastructure.database.models import CursoEscolar, Profesor
 from infrastructure.repositories.repository_factory import RepositoryFactory
-from models.models import CursoEscolar, Profesor
 from sqlalchemy.orm import Session
 
 logger = get_logger(__name__)
@@ -303,7 +303,11 @@ class GestorCursos:
         for prof_viejo in profesores_antiguos:
             # Verificar si ya existe un profesor con ese email en el nuevo curso
             # TODO: Cuando Profesor tenga curso_id, filtrar por curso también
-            existe = session.query(Profesor).filter_by(email_corporativo=prof_viejo.email_corporativo).first()
+            existe = (
+                session.query(Profesor)
+                .filter_by(email_corporativo=prof_viejo.email_corporativo)
+                .first()
+            )
 
             if not existe:
                 # Crear copia del profesor
@@ -319,7 +323,7 @@ class GestorCursos:
                     activo=prof_viejo.activo,
                     zona_preferida_id=prof_viejo.zona_preferida_id,
                     dias_semana_permitidos=prof_viejo.dias_semana_permitidos,
-                    recreos_permitidos=prof_viejo.recreos_permitidos
+                    recreos_permitidos=prof_viejo.recreos_permitidos,
                 )
                 session.add(nuevo_prof)
                 contador += 1

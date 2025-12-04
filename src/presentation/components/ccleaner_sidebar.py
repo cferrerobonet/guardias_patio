@@ -115,7 +115,9 @@ class SidebarMenu(QWidget):
                     outline: none;
                 }
             """)
-            logo_section_layout.addWidget(self.selector_curso, alignment=Qt.AlignmentFlag.AlignCenter)
+            logo_section_layout.addWidget(
+                self.selector_curso, alignment=Qt.AlignmentFlag.AlignCenter
+            )
 
         layout.addWidget(logo_section)
 
@@ -145,8 +147,20 @@ class SidebarMenu(QWidget):
 
         # ========== GUARDIAS ==========
         self.add_category(menu_layout, "GUARDIAS")
-        self.add_menu_item(menu_layout, "asignacion_calculo", "Cálculo y Distribución", "asignacion_calculo", "chart-line")
-        self.add_menu_item(menu_layout, "asignacion_resultados", "Generación y Resultados", "asignacion_resultados", "check-bold")
+        self.add_menu_item(
+            menu_layout,
+            "asignacion_calculo",
+            "Cálculo y Distribución",
+            "asignacion_calculo",
+            "chart-line",
+        )
+        self.add_menu_item(
+            menu_layout,
+            "asignacion_resultados",
+            "Generación y Resultados",
+            "asignacion_resultados",
+            "check-bold",
+        )
         self.add_menu_item(menu_layout, "calendario", "Calendario", "calendario", "calendar")
 
         menu_layout.addSpacing(4)
@@ -183,6 +197,7 @@ class SidebarMenu(QWidget):
         try:
             from database.db_manager import get_current_user_id
             from PyQt6.QtGui import QPixmap
+
             current_user = get_current_user_id()
             logo_path = Path("imagenes") / f"{current_user}.png"
 

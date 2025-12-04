@@ -441,12 +441,14 @@ class ZonaForm(BaseForm):
             self.limpiar_formulario()
 
             # ✅ Cargar datos en el widget
-            self.datos_zona_widget.set_datos({
-                "nombre": zona_dto.nombre_zona or "",
-                "descripcion": zona_dto.descripcion or "",
-                "fecha_inicio": zona_dto.fecha_inicio,
-                "fecha_fin": zona_dto.fecha_fin,
-            })
+            self.datos_zona_widget.set_datos(
+                {
+                    "nombre": zona_dto.nombre_zona or "",
+                    "descripcion": zona_dto.descripcion or "",
+                    "fecha_inicio": zona_dto.fecha_inicio,
+                    "fecha_fin": zona_dto.fecha_fin,
+                }
+            )
 
             # Actualizar título - modo lectura/vista previa
             self.titulo_form.setText("📋 VISTA PREVIA")
@@ -473,7 +475,7 @@ class ZonaForm(BaseForm):
 
             # Cargar datos directamente de la BD (sin caché) para datos actualizados
             try:
-                from models.models import Zona
+                from infrastructure.database.models import Zona
 
                 zona_model = self.session.query(Zona).filter_by(id=id_zona).first()
 
@@ -485,12 +487,14 @@ class ZonaForm(BaseForm):
                 self.limpiar_formulario()
 
                 # Cargar datos en el widget directamente desde el modelo de BD
-                self.datos_zona_widget.set_datos({
-                    "nombre": zona_model.nombre_zona or "",
-                    "descripcion": zona_model.descripcion or "",
-                    "fecha_inicio": zona_model.fecha_inicio,
-                    "fecha_fin": zona_model.fecha_fin,
-                })
+                self.datos_zona_widget.set_datos(
+                    {
+                        "nombre": zona_model.nombre_zona or "",
+                        "descripcion": zona_model.descripcion or "",
+                        "fecha_inicio": zona_model.fecha_inicio,
+                        "fecha_fin": zona_model.fecha_fin,
+                    }
+                )
 
             except Exception as e:
                 self.manejar_excepcion(e, "cargar datos de la zona")

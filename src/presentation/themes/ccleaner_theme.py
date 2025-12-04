@@ -14,35 +14,35 @@ Características:
 # ========== PALETA DE COLORES ESTILO CCLEANER ==========
 
 # Colores del Sidebar (Tema Oscuro)
-SIDEBAR_BG = "#3E4857"           # Fondo sidebar oscuro
-SIDEBAR_BG_DARK = "#2D3845"      # Fondo sidebar más oscuro
-SIDEBAR_TEXT = "#FFFFFF"         # Texto blanco en sidebar
-SIDEBAR_TEXT_DIM = "#B0B8C4"     # Texto secundario en sidebar
-SIDEBAR_HOVER = "#4A5668"        # Hover en sidebar
-SIDEBAR_ACTIVE = "#5B6B7F"       # Item activo en sidebar
-SIDEBAR_BORDER = "#2A3340"       # Bordes en sidebar
+SIDEBAR_BG = "#3E4857"  # Fondo sidebar oscuro
+SIDEBAR_BG_DARK = "#2D3845"  # Fondo sidebar más oscuro
+SIDEBAR_TEXT = "#FFFFFF"  # Texto blanco en sidebar
+SIDEBAR_TEXT_DIM = "#B0B8C4"  # Texto secundario en sidebar
+SIDEBAR_HOVER = "#4A5668"  # Hover en sidebar
+SIDEBAR_ACTIVE = "#5B6B7F"  # Item activo en sidebar
+SIDEBAR_BORDER = "#2A3340"  # Bordes en sidebar
 
 # Colores principales de acción
-PRIMARY_BLUE = "#007ACC"         # Azul primario (botones principales)
-PRIMARY_BLUE_HOVER = "#005A9E"   # Hover azul
-PRIMARY_BLUE_LIGHT = "#E6F2FA"   # Fondos azul claro
+PRIMARY_BLUE = "#007ACC"  # Azul primario (botones principales)
+PRIMARY_BLUE_HOVER = "#005A9E"  # Hover azul
+PRIMARY_BLUE_LIGHT = "#E6F2FA"  # Fondos azul claro
 
 # Colores de estado
-SUCCESS_GREEN = "#28A745"        # Verde éxito
+SUCCESS_GREEN = "#28A745"  # Verde éxito
 SUCCESS_GREEN_LIGHT = "#D4EDDA"
-WARNING_ORANGE = "#FFC107"       # Naranja advertencia
+WARNING_ORANGE = "#FFC107"  # Naranja advertencia
 WARNING_ORANGE_LIGHT = "#FFF3CD"
-ERROR_RED = "#DC3545"            # Rojo error
+ERROR_RED = "#DC3545"  # Rojo error
 ERROR_RED_LIGHT = "#F8D7DA"
 
 # Grises para el canvas/contenido
-CONTENT_BG = "#FFFFFF"           # Fondo blanco puro
-CONTENT_BG_ALT = "#F8F9FA"       # Fondo alternativo
-BORDER_LIGHT = "#E1E4E8"         # Bordes claros
-BORDER_MEDIUM = "#D1D5DB"        # Bordes normales
-TEXT_PRIMARY = "#1F2937"         # Texto principal negro
-TEXT_SECONDARY = "#6B7280"       # Texto secundario gris
-TEXT_DISABLED = "#9CA3AF"        # Texto deshabilitado
+CONTENT_BG = "#FFFFFF"  # Fondo blanco puro
+CONTENT_BG_ALT = "#F8F9FA"  # Fondo alternativo
+BORDER_LIGHT = "#E1E4E8"  # Bordes claros
+BORDER_MEDIUM = "#D1D5DB"  # Bordes normales
+TEXT_PRIMARY = "#1F2937"  # Texto principal negro
+TEXT_SECONDARY = "#6B7280"  # Texto secundario gris
+TEXT_DISABLED = "#9CA3AF"  # Texto deshabilitado
 
 # ========== TIPOGRAFÍA ==========
 
@@ -50,11 +50,11 @@ TEXT_DISABLED = "#9CA3AF"        # Texto deshabilitado
 FONT_FAMILY = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
 
 # Tamaños de fuente
-FONT_SIZE_SMALL = 12      # Secundario
-FONT_SIZE_NORMAL = 14     # Texto normal
-FONT_SIZE_LARGE = 16      # Subtítulos
-FONT_SIZE_XLARGE = 20     # Títulos de sección
-FONT_SIZE_XXLARGE = 24    # Títulos principales
+FONT_SIZE_SMALL = 12  # Secundario
+FONT_SIZE_NORMAL = 14  # Texto normal
+FONT_SIZE_LARGE = 16  # Subtítulos
+FONT_SIZE_XLARGE = 20  # Títulos de sección
+FONT_SIZE_XXLARGE = 24  # Títulos principales
 
 # Pesos de fuente
 FONT_WEIGHT_NORMAL = 400
@@ -83,6 +83,7 @@ SHADOW_LARGE = "0 4px 8px rgba(0, 0, 0, 0.12)"
 
 
 # ========== ESTILOS DE COMPONENTES ==========
+
 
 def get_sidebar_style() -> str:
     """Estilo para el sidebar oscuro estilo CCleaner - limpio y moderno"""

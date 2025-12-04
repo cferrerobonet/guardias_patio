@@ -3,6 +3,7 @@
 Script para agregar la columna 'activo' a la tabla profesores.
 Este campo indica si un profesor está activo en el sistema.
 """
+
 import sqlite3
 import sys
 from pathlib import Path
@@ -41,7 +42,7 @@ def add_activo_column():
         cursor.execute("PRAGMA table_info(profesores)")
         columns = [column[1] for column in cursor.fetchall()]
 
-        if 'activo' in columns:
+        if "activo" in columns:
             print("⚠️  La columna 'activo' ya existe en la tabla profesores.")
             conn.close()
             return
@@ -86,4 +87,3 @@ if __name__ == "__main__":
     print("=" * 60)
     add_activo_column()
     print("=" * 60)
-

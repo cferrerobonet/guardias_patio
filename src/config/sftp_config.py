@@ -9,6 +9,7 @@ from pathlib import Path
 # Intentar cargar variables de entorno desde .env
 try:
     from dotenv import load_dotenv
+
     # El .env está en la raíz del proyecto (dos niveles arriba de este archivo)
     env_path = Path(__file__).parent.parent.parent / ".env"
     load_dotenv(env_path)

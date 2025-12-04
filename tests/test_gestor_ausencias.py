@@ -12,9 +12,7 @@ from datetime import date
 from unittest.mock import Mock, patch
 
 import pytest
-from sqlalchemy.orm import Session
-
-from models.models import Ausencia, Guardia, Profesor
+from infrastructure.database.models import Ausencia, Guardia, Profesor
 from services.gestor_ausencias import (
     desactivar_ausencia,
     editar_ausencia,
@@ -26,6 +24,7 @@ from services.gestor_ausencias import (
     reasignar_guardias_automaticamente,
     registrar_ausencia,
 )
+from sqlalchemy.orm import Session
 
 
 @pytest.fixture
@@ -405,7 +404,7 @@ def test_obtener_profesores_disponibles_exito(mock_session, profesor_fixture):
     mock_query_guardias.count.return_value = 0
 
     # Mock profesor_ausente
-    with patch("services.gestor_ausencias.profesor_ausente", return_value=False):
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=False):
         # Act
         disponibles = obtener_profesores_disponibles(
             mock_session,
@@ -444,7 +443,7 @@ def test_obtener_profesores_disponibles_turno_incompatible(mock_session, profeso
     profesor_fixture.turno = "mañana"
     mock_session.query(Profesor).all.return_value = [profesor_fixture]
 
-    with patch("services.gestor_ausencias.profesor_ausente", return_value=False):
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=False):
         # Act
         disponibles = obtener_profesores_disponibles(
             mock_session,
@@ -464,7 +463,7 @@ def test_obtener_profesores_disponibles_profesor_ausente(mock_session, profesor_
     mock_session.query(Profesor).all.return_value = [profesor_fixture]
 
     # Act
-    with patch("services.gestor_ausencias.profesor_ausente", return_value=True):
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=True):
         disponibles = obtener_profesores_disponibles(
             mock_session,
             date(2025, 10, 23),
@@ -493,7 +492,7 @@ def test_obtener_profesores_disponibles_ya_tiene_guardia(mock_session, profesor_
     mock_query_guardias.filter.return_value = mock_query_guardias
     mock_query_guardias.count.return_value = 1  # Ya tiene 1 guardia
 
-    with patch("services.gestor_ausencias.profesor_ausente", return_value=False):
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=False):
         # Act
         disponibles = obtener_profesores_disponibles(
             mock_session,
@@ -521,7 +520,7 @@ def test_reasignar_guardia_exito(mock_session, guardia_fixture):
     mock_session.query(Guardia).get.return_value = guardia_fixture
     mock_session.query(Profesor).get.return_value = nuevo_profesor
 
-    with patch("services.gestor_ausencias.profesor_ausente", return_value=False):
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=False):
         mock_query = Mock()
         mock_session.query.return_value = mock_query
         mock_query.filter.return_value = mock_query
@@ -547,6 +546,7 @@ def test_reasignar_guardia_no_existe(mock_session):
 
 def test_reasignar_guardia_profesor_no_existe(mock_session, guardia_fixture):
     """Test: error si el nuevo profesor no existe."""
+
     # Arrange
     def get_side_effect(entity_id):
         if entity_id == 1:  # guardia_id
@@ -576,7 +576,7 @@ def test_reasignar_guardia_profesor_ausente(mock_session, guardia_fixture):
 
     mock_session.query().get.side_effect = get_side_effect
 
-    with patch("services.gestor_ausencias.profesor_ausente", return_value=True):
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=True):
         # Act & Assert
         with pytest.raises(ValueError, match="está ausente"):
             reasignar_guardia(mock_session, 1, 2)
@@ -592,7 +592,7 @@ def test_reasignar_guardia_profesor_ya_tiene_guardia_ese_dia(mock_session, guard
     mock_session.query(Guardia).get.return_value = guardia_fixture
     mock_session.query(Profesor).get.return_value = nuevo_profesor
 
-    with patch("services.gestor_ausencias.profesor_ausente", return_value=False):
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=False):
         mock_query = Mock()
         mock_session.query.return_value = mock_query
         mock_query.filter.return_value = mock_query
@@ -653,9 +653,7 @@ def test_reasignar_guardias_automaticamente_sin_disponibles(mock_session, guardi
         assert "No hay profesores disponibles" in resultados["detalles"][0]["razon"]
 
 
-def test_reasignar_guardias_automaticamente_error_en_reasignacion(
-    mock_session, guardia_fixture
-):
+def test_reasignar_guardias_automaticamente_error_en_reasignacion(mock_session, guardia_fixture):
     """Test: error durante reasignación."""
     # Arrange
     profesor_disponible = Mock(spec=Profesor)

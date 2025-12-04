@@ -29,9 +29,9 @@ from core.qt_imports import (
     QVBoxLayout,
     QWidget,
 )
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from models.models import Configuracion, Guardia, Profesor
 from sqlalchemy.orm import Session
 from utils import get_logger
 
@@ -257,9 +257,7 @@ class DashboardForm(QWidget):
                 return
 
             # Obtener guardias
-            guardias = self.session.query(Guardia).filter(
-                Guardia.curso_id == config.id
-            ).all()
+            guardias = self.session.query(Guardia).filter(Guardia.curso_id == config.id).all()
 
             if not guardias:
                 self._mostrar_sin_datos()
@@ -271,8 +269,7 @@ class DashboardForm(QWidget):
 
             # Análisis de equidad
             request_equidad = AnalisisEquidadRequest(
-                configuracion_id=config.id,
-                incluir_cuotas_detalle=True
+                configuracion_id=config.id, incluir_cuotas_detalle=True
             )
             response_equidad = self.analisis_equidad_uc.execute(request_equidad)
 
@@ -341,15 +338,14 @@ class DashboardForm(QWidget):
 
         if not guardias_por_profesor:
             self.canvas_histograma.axes.text(
-                0.5, 0.5, "No hay datos disponibles",
-                ha='center', va='center', fontsize=12
+                0.5, 0.5, "No hay datos disponibles", ha="center", va="center", fontsize=12
             )
             self.canvas_histograma.draw()
             return
 
         # Ordenar por cantidad
         items = sorted(guardias_por_profesor.items(), key=lambda x: x[1], reverse=True)
-        nombres = [item[0].split(',')[0] for item in items]  # Solo apellido
+        nombres = [item[0].split(",")[0] for item in items]  # Solo apellido
         cantidades = [item[1] for item in items]
 
         # Limitar a 15 profesores
@@ -358,18 +354,18 @@ class DashboardForm(QWidget):
             cantidades = cantidades[:15]
 
         # Crear gráfico de barras horizontal
-        colores = ['#2196F3' if i % 2 == 0 else '#1976D2' for i in range(len(nombres))]
+        colores = ["#2196F3" if i % 2 == 0 else "#1976D2" for i in range(len(nombres))]
         self.canvas_histograma.axes.barh(nombres, cantidades, color=colores)
-        self.canvas_histograma.axes.set_xlabel('Número de Guardias', fontsize=10)
+        self.canvas_histograma.axes.set_xlabel("Número de Guardias", fontsize=10)
         self.canvas_histograma.axes.set_title(
-            'Guardias por Profesor', fontsize=12, fontweight='bold'
+            "Guardias por Profesor", fontsize=12, fontweight="bold"
         )
         self.canvas_histograma.axes.tick_params(labelsize=8)
         self.canvas_histograma.axes.invert_yaxis()  # Orden descendente
 
         # Agregar valores en las barras
         for i, v in enumerate(cantidades):
-            self.canvas_histograma.axes.text(v + 0.5, i, str(v), va='center', fontsize=8)
+            self.canvas_histograma.axes.text(v + 0.5, i, str(v), va="center", fontsize=8)
 
         self.canvas_histograma.fig.tight_layout()
         self.canvas_histograma.draw()
@@ -379,16 +375,15 @@ class DashboardForm(QWidget):
         self.canvas_turnos.axes.clear()
 
         # Contar por turno
-        turnos_count = {'mañana': 0, 'tarde': 0}
+        turnos_count = {"mañana": 0, "tarde": 0}
         for guardia in guardias:
-            turno = guardia.turno or 'mañana'
+            turno = guardia.turno or "mañana"
             if turno in turnos_count:
                 turnos_count[turno] += 1
 
         if sum(turnos_count.values()) == 0:
             self.canvas_turnos.axes.text(
-                0.5, 0.5, "No hay datos",
-                ha='center', va='center', fontsize=12
+                0.5, 0.5, "No hay datos", ha="center", va="center", fontsize=12
             )
             self.canvas_turnos.draw()
             return
@@ -396,14 +391,13 @@ class DashboardForm(QWidget):
         # Gráfico de pastel
         labels = [f"{k.capitalize()}\n({v})" for k, v in turnos_count.items()]
         sizes = list(turnos_count.values())
-        colores = ['#FFA726', '#42A5F5']
+        colores = ["#FFA726", "#42A5F5"]
         explode = (0.05, 0.05)
 
         self.canvas_turnos.axes.pie(
-            sizes, labels=labels, autopct='%1.1f%%',
-            colors=colores, explode=explode, startangle=90
+            sizes, labels=labels, autopct="%1.1f%%", colors=colores, explode=explode, startangle=90
         )
-        self.canvas_turnos.axes.set_title('Distribución por Turno', fontsize=12, fontweight='bold')
+        self.canvas_turnos.axes.set_title("Distribución por Turno", fontsize=12, fontweight="bold")
         self.canvas_turnos.fig.tight_layout()
         self.canvas_turnos.draw()
 
@@ -422,31 +416,34 @@ class DashboardForm(QWidget):
 
         if not guardias_por_profesor:
             self.canvas_top.axes.text(
-                0.5, 0.5, "No hay datos",
-                ha='center', va='center', fontsize=12
+                0.5, 0.5, "No hay datos", ha="center", va="center", fontsize=12
             )
             self.canvas_top.draw()
             return
 
         # Top 10
         items = sorted(guardias_por_profesor.items(), key=lambda x: x[1], reverse=True)[:10]
-        nombres = [item[0].split(',')[0] for item in items]
+        nombres = [item[0].split(",")[0] for item in items]
         cantidades = [item[1] for item in items]
 
         # Gráfico de barras vertical con gradiente
-        colores = plt.cm.Blues(range(100, 255, int(155/len(nombres))))
+        colores = plt.cm.Blues(range(100, 255, int(155 / len(nombres))))
         bars = self.canvas_top.axes.bar(range(len(nombres)), cantidades, color=colores)
         self.canvas_top.axes.set_xticks(range(len(nombres)))
-        self.canvas_top.axes.set_xticklabels(nombres, rotation=45, ha='right', fontsize=8)
-        self.canvas_top.axes.set_ylabel('Guardias', fontsize=10)
-        self.canvas_top.axes.set_title('Top 10 Profesores', fontsize=12, fontweight='bold')
+        self.canvas_top.axes.set_xticklabels(nombres, rotation=45, ha="right", fontsize=8)
+        self.canvas_top.axes.set_ylabel("Guardias", fontsize=10)
+        self.canvas_top.axes.set_title("Top 10 Profesores", fontsize=12, fontweight="bold")
 
         # Valores en barras
         for bar in bars:
             height = bar.get_height()
             self.canvas_top.axes.text(
-                bar.get_x() + bar.get_width()/2., height,
-                f'{int(height)}', ha='center', va='bottom', fontsize=8
+                bar.get_x() + bar.get_width() / 2.0,
+                height,
+                f"{int(height)}",
+                ha="center",
+                va="bottom",
+                fontsize=8,
             )
 
         self.canvas_top.fig.tight_layout()
@@ -457,7 +454,8 @@ class DashboardForm(QWidget):
         self.canvas_zonas.axes.clear()
 
         # Contar por zona
-        from models.models import Zona
+        from infrastructure.database.models import Zona
+
         zonas_count = {}
         for guardia in guardias:
             if guardia.zona_id:
@@ -467,8 +465,7 @@ class DashboardForm(QWidget):
 
         if not zonas_count:
             self.canvas_zonas.axes.text(
-                0.5, 0.5, "No hay datos",
-                ha='center', va='center', fontsize=12
+                0.5, 0.5, "No hay datos", ha="center", va="center", fontsize=12
             )
             self.canvas_zonas.draw()
             return
@@ -479,23 +476,22 @@ class DashboardForm(QWidget):
         colores = plt.cm.Set3(range(len(sizes)))
 
         wedges, texts, autotexts = self.canvas_zonas.axes.pie(
-            sizes, labels=labels, autopct='%1.1f%%',
-            colors=colores, startangle=90, pctdistance=0.85
+            sizes, labels=labels, autopct="%1.1f%%", colors=colores, startangle=90, pctdistance=0.85
         )
 
         # Hacer dona
-        centre_circle = plt.Circle((0, 0), 0.70, fc='white')
+        centre_circle = plt.Circle((0, 0), 0.70, fc="white")
         self.canvas_zonas.axes.add_artist(centre_circle)
 
         # Ajustar tamaño de texto
         for text in texts:
             text.set_fontsize(8)
         for autotext in autotexts:
-            autotext.set_color('white')
-            autotext.set_fontweight('bold')
+            autotext.set_color("white")
+            autotext.set_fontweight("bold")
             autotext.set_fontsize(8)
 
-        self.canvas_zonas.axes.set_title('Distribución por Zona', fontsize=12, fontweight='bold')
+        self.canvas_zonas.axes.set_title("Distribución por Zona", fontsize=12, fontweight="bold")
         self.canvas_zonas.fig.tight_layout()
         self.canvas_zonas.draw()
 
@@ -506,12 +502,21 @@ class DashboardForm(QWidget):
         self.card_indice_equidad.actualizar_valor("N/A")
         self.card_desbalances.actualizar_valor("0")
 
-        for canvas in [self.canvas_histograma, self.canvas_turnos,
-                       self.canvas_top, self.canvas_zonas]:
+        for canvas in [
+            self.canvas_histograma,
+            self.canvas_turnos,
+            self.canvas_top,
+            self.canvas_zonas,
+        ]:
             canvas.axes.clear()
             canvas.axes.text(
-                0.5, 0.5, "No hay guardias asignadas",
-                ha='center', va='center', fontsize=14, color='#999'
+                0.5,
+                0.5,
+                "No hay guardias asignadas",
+                ha="center",
+                va="center",
+                fontsize=14,
+                color="#999",
             )
             canvas.draw()
 

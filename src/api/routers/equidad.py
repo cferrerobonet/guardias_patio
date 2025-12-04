@@ -21,7 +21,7 @@ def analizar_equidad(
     configuracion_id: int,
     umbral_desbalance: float = 0.15,
     incluir_cuotas_detalle: bool = False,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Analiza la equidad en la distribución de guardias.
@@ -43,7 +43,7 @@ def analizar_equidad(
         request = AnalisisEquidadRequest(
             configuracion_id=configuracion_id,
             umbral_desbalance=umbral_desbalance,
-            incluir_cuotas_detalle=incluir_cuotas_detalle
+            incluir_cuotas_detalle=incluir_cuotas_detalle,
         )
         response = use_case.execute(request)
 
@@ -53,7 +53,7 @@ def analizar_equidad(
             "metricas": asdict(response.metricas),
             "cuotas": [asdict(dto) for dto in response.cuotas],
             "recomendaciones": response.recomendaciones,
-            "mensaje": response.mensaje
+            "mensaje": response.mensaje,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

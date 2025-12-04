@@ -20,7 +20,7 @@ from typing import Optional, Tuple
 from core.exceptions import (
     BusinessLogicError,
 )
-from models.models import Guardia, Profesor, Zona
+from infrastructure.database.models import Guardia, Profesor, Zona
 from sqlalchemy.orm import Session
 from utils import get_logger
 
@@ -103,10 +103,8 @@ class AsignacionGuardiaService:
 
         # 3. Verificar fecha de inicio de guardias
         if profesor.fecha_inicio_guardias:
-            fecha_valida, razon = (
-                self.disponibilidad_service.validar_fecha_inicio_guardias(
-                    profesor, fecha
-                )
+            fecha_valida, razon = self.disponibilidad_service.validar_fecha_inicio_guardias(
+                profesor, fecha
             )
             if not fecha_valida:
                 return False, razon
@@ -165,9 +163,7 @@ class AsignacionGuardiaService:
         """
         # Validar si se solicitó
         if validar_antes:
-            puede, razon = self.puede_asignar_guardia(
-                profesor, fecha, turno, recreo_id, zona_id
-            )
+            puede, razon = self.puede_asignar_guardia(profesor, fecha, turno, recreo_id, zona_id)
             if not puede:
                 raise BusinessLogicError(
                     message=f"No se puede asignar guardia: {razon}",
@@ -241,8 +237,7 @@ class AsignacionGuardiaService:
         guardia.profesor_id = nuevo_profesor.id
 
         self.logger.info(
-            f"Guardia reasignada: {guardia.id} - "
-            f"Profesor {profesor_anterior} → {nuevo_profesor.id}"
+            f"Guardia reasignada: {guardia.id} - Profesor {profesor_anterior} → {nuevo_profesor.id}"
         )
 
         return guardia
@@ -255,8 +250,7 @@ class AsignacionGuardiaService:
             guardia: Guardia a eliminar
         """
         self.logger.info(
-            f"Eliminando guardia: {guardia.id} - "
-            f"Profesor {guardia.profesor_id} - {guardia.fecha}"
+            f"Eliminando guardia: {guardia.id} - Profesor {guardia.profesor_id} - {guardia.fecha}"
         )
         self.session.delete(guardia)
 
@@ -276,12 +270,8 @@ class AsignacionGuardiaService:
             Lista de tuplas (indice, valido, razon)
         """
         resultados = []
-        for i, (profesor, fecha, turno, recreo_id, zona_id) in enumerate(
-            asignaciones
-        ):
-            puede, razon = self.puede_asignar_guardia(
-                profesor, fecha, turno, recreo_id, zona_id
-            )
+        for i, (profesor, fecha, turno, recreo_id, zona_id) in enumerate(asignaciones):
+            puede, razon = self.puede_asignar_guardia(profesor, fecha, turno, recreo_id, zona_id)
             resultados.append((i, puede, razon))
         return resultados
 
@@ -305,11 +295,7 @@ class AsignacionGuardiaService:
 
     def _contar_guardias_profesor(self, profesor_id: int) -> int:
         """Cuenta el total de guardias de un profesor."""
-        return (
-            self.session.query(Guardia)
-            .filter(Guardia.profesor_id == profesor_id)
-            .count()
-        )
+        return self.session.query(Guardia).filter(Guardia.profesor_id == profesor_id).count()
 
     def calcular_carga_profesor(self, profesor: Profesor) -> dict:
         """
@@ -318,11 +304,7 @@ class AsignacionGuardiaService:
         Returns:
             Dict con: total_guardias, guardias_por_mes, promedio_semanal, etc.
         """
-        guardias = (
-            self.session.query(Guardia)
-            .filter(Guardia.profesor_id == profesor.id)
-            .all()
-        )
+        guardias = self.session.query(Guardia).filter(Guardia.profesor_id == profesor.id).all()
 
         if not guardias:
             return {

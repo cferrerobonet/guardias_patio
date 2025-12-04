@@ -12,8 +12,8 @@ from application.use_cases.asignacion_guardias import (
 )
 from application.use_cases.guardia import LimpiarGuardiasUseCase
 from core.exceptions import BusinessLogicError
+from infrastructure.database.models import Guardia
 from infrastructure.repositories import SQLAlchemyGuardiaRepository
-from models.models import Guardia
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QGridLayout,
@@ -47,6 +47,27 @@ class AsignacionGuardiasForm(BaseForm):
     - Calcular distribución de guardias por profesor
     - Generar el calendario completo de guardias
     """
+
+    # =============== PROPIEDADES DE COMPATIBILIDAD ===============
+    # Estas propiedades permiten acceso directo a los widgets internos de los paneles
+    # para mantener compatibilidad con tests existentes.
+
+    @property
+    def stats_text(self):
+        """Acceso al QTextEdit de estadísticas (delegado al panel)."""
+        return self.estadisticas_panel.stats_text
+
+    @property
+    def distribucion_text(self):
+        """Acceso al QTextEdit de distribución (delegado al panel)."""
+        return self.distribucion_panel.distribucion_text
+
+    @property
+    def resultado_text(self):
+        """Acceso al QTextEdit de resultados (delegado al panel)."""
+        return self.resultados_panel.resultado_text
+
+    # =============================================================
 
     def __init__(self, session: Session, sync_manager=None):
         """

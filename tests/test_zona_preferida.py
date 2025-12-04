@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 # Añadir el directorio src al path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from models.models import Configuracion, Profesor, Zona
+from infrastructure.database.models import Configuracion, Profesor, Zona
 from services.asignador_guardias import generar_calendario_guardias
 
 
@@ -24,7 +24,8 @@ def test_zona_preferida():
     """
     # Base de datos en memoria
     engine = create_engine("sqlite:///:memory:")
-    from models.models import Base
+    from infrastructure.database.models import Base
+
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -66,9 +67,9 @@ def test_zona_preferida():
         # Generar calendario
         calendario, asignadas = generar_calendario_guardias(session)
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print("RESUMEN DE ASIGNACIONES")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
         print(f"Total guardias generadas: {len(calendario)}")
         print("\nDistribución por profesor:")
         for prof_id, count in asignadas.items():
@@ -76,9 +77,9 @@ def test_zona_preferida():
             print(f"  {prof.nombre_completo}: {count} guardias")
 
         # Analizar zona preferida de cada profesor
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print("ANÁLISIS DE ZONA PREFERIDA")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         zonas_por_profesor = {}
         for guardia in calendario:
@@ -111,9 +112,9 @@ def test_zona_preferida():
                 f"en su zona preferida ({porcentaje:.1f}%)"
             )
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print("✅ TEST APROBADO: Todos los profesores mantienen su zona preferida")
-        print(f"{'='*80}\n")
+        print(f"{'=' * 80}\n")
 
     finally:
         session.close()

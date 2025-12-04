@@ -8,8 +8,8 @@ import ui_styles as styles
 from application.use_cases.asignacion_guardias import GenerarGuardiasHibridoUseCase
 from application.use_cases.guardia import LimpiarGuardiasUseCase
 from core.exceptions import BusinessLogicError
+from infrastructure.database.models import Guardia
 from infrastructure.repositories import SQLAlchemyGuardiaRepository
-from models.models import Guardia
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QGridLayout,

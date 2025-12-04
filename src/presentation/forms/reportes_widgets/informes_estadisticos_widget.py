@@ -11,6 +11,7 @@ Genera reportes detallados con estadísticas y gráficos sobre:
 
 from datetime import datetime
 
+import ui_styles as styles
 from PyQt6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -24,7 +25,6 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-import ui_styles as styles
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
 
@@ -72,35 +72,18 @@ class InformesEstadisticosWidget(QGroupBox):
 
         # Tipo de reporte
         self.tipo_combo = QComboBox()
-        self.tipo_combo.addItem(
-            "📅 Guardias del Mes",
-            "guardias_mes"
-        )
-        self.tipo_combo.addItem(
-            "⚖️ Distribución de Carga",
-            "distribucion_carga"
-        )
-        self.tipo_combo.addItem(
-            "🏥 Ausencias del Periodo",
-            "ausencias"
-        )
-        self.tipo_combo.addItem(
-            "📈 Cobertura Mensual",
-            "cobertura"
-        )
-        self.tipo_combo.addItem(
-            "📊 Resumen Completo",
-            "resumen_completo"
-        )
+        self.tipo_combo.addItem("📅 Guardias del Mes", "guardias_mes")
+        self.tipo_combo.addItem("⚖️ Distribución de Carga", "distribucion_carga")
+        self.tipo_combo.addItem("🏥 Ausencias del Periodo", "ausencias")
+        self.tipo_combo.addItem("📈 Cobertura Mensual", "cobertura")
+        self.tipo_combo.addItem("📊 Resumen Completo", "resumen_completo")
         self.tipo_combo.setStyleSheet(styles.STYLE_INPUT)
         config_layout.addRow("Tipo de Reporte:", self.tipo_combo)
 
         # Periodo: Desde
         self.fecha_desde = QDateEdit()
         self.fecha_desde.setCalendarPopup(True)
-        self.fecha_desde.setDate(
-            datetime.now().date().replace(day=1)
-        )
+        self.fecha_desde.setDate(datetime.now().date().replace(day=1))
         self.fecha_desde.setDisplayFormat("dd/MM/yyyy")
         self.fecha_desde.setStyleSheet(styles.STYLE_INPUT)
         config_layout.addRow("Desde:", self.fecha_desde)
@@ -159,9 +142,7 @@ class InformesEstadisticosWidget(QGroupBox):
         layout.addWidget(self.desc_reporte)
 
         # Conectar señal para actualizar descripción
-        self.tipo_combo.currentIndexChanged.connect(
-            self._actualizar_descripcion
-        )
+        self.tipo_combo.currentIndexChanged.connect(self._actualizar_descripcion)
         self._actualizar_descripcion()
 
         self.setLayout(layout)
@@ -202,10 +183,7 @@ class InformesEstadisticosWidget(QGroupBox):
         }
 
         tipo = self.tipo_combo.currentData()
-        texto = descripciones.get(
-            tipo,
-            "Seleccione un tipo de reporte para ver su descripción."
-        )
+        texto = descripciones.get(tipo, "Seleccione un tipo de reporte para ver su descripción.")
         self.desc_reporte.setText(texto)
 
     def _vista_previa(self) -> None:
@@ -214,7 +192,7 @@ class InformesEstadisticosWidget(QGroupBox):
             self,
             "Vista Previa",
             "La vista previa estará disponible en una próxima actualización.\n\n"
-            "Por ahora, puede generar el reporte directamente en PDF."
+            "Por ahora, puede generar el reporte directamente en PDF.",
         )
 
     def _generar_reporte(self) -> None:
@@ -229,7 +207,7 @@ class InformesEstadisticosWidget(QGroupBox):
             QMessageBox.warning(
                 self,
                 "Fechas Inválidas",
-                "La fecha 'Desde' no puede ser posterior a la fecha 'Hasta'."
+                "La fecha 'Desde' no puede ser posterior a la fecha 'Hasta'.",
             )
             return
 
@@ -239,7 +217,7 @@ class InformesEstadisticosWidget(QGroupBox):
                 self,
                 "Formato No Disponible",
                 "Por ahora solo está disponible el formato PDF.\n\n"
-                "El formato Excel estará disponible próximamente."
+                "El formato Excel estará disponible próximamente.",
             )
             return
 
@@ -247,10 +225,7 @@ class InformesEstadisticosWidget(QGroupBox):
         from PyQt6.QtWidgets import QFileDialog
 
         carpeta = QFileDialog.getExistingDirectory(
-            self,
-            "Seleccionar Carpeta de Destino",
-            "",
-            QFileDialog.Option.ShowDirsOnly
+            self, "Seleccionar Carpeta de Destino", "", QFileDialog.Option.ShowDirsOnly
         )
 
         if not carpeta:
@@ -264,5 +239,5 @@ class InformesEstadisticosWidget(QGroupBox):
             f"Reporte seleccionado: {self.tipo_combo.currentText()}\n"
             f"Periodo: {fecha_desde.strftime('%d/%m/%Y')} - {fecha_hasta.strftime('%d/%m/%Y')}\n"
             f"Formato: {formato.upper()}\n\n"
-            "Mientras tanto, puede usar la funcionalidad de Calendarios PDF."
+            "Mientras tanto, puede usar la funcionalidad de Calendarios PDF.",
         )

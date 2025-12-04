@@ -9,9 +9,7 @@ from datetime import date
 from typing import Optional
 
 
-def _horario_permitido(
-    fecha: date, recreo_id: int, horario_json: Optional[str]
-) -> bool:
+def _horario_permitido(fecha: date, recreo_id: int, horario_json: Optional[str]) -> bool:
     """
     Valida si un día+recreo está permitido según la matriz JSON.
     """
@@ -41,9 +39,7 @@ def test_horario_permitido():
     print("Test 1: Sin restricciones")
     fecha_lunes = date(2025, 10, 20)  # Lunes
     fecha_sabado = date(2025, 10, 25)  # Sábado
-    assert _horario_permitido(fecha_lunes, 1, None), (
-        "❌ Fallo: Lunes debería estar permitido"
-    )
+    assert _horario_permitido(fecha_lunes, 1, None), "❌ Fallo: Lunes debería estar permitido"
     assert not _horario_permitido(fecha_sabado, 1, None), (
         "❌ Fallo: Sábado NO debería estar permitido"
     )
@@ -51,33 +47,29 @@ def test_horario_permitido():
 
     # Test 2: Con restricciones específicas
     print("Test 2: Con restricciones específicas")
-    horario = json.dumps({
-        "0": [1, 2],     # Lunes: recreos 1 y 2
-        "2": [1, 3, 4],  # Miércoles: recreos 1, 3 y 4
-        "4": [2]         # Viernes: solo recreo 2
-    })
+    horario = json.dumps(
+        {
+            "0": [1, 2],  # Lunes: recreos 1 y 2
+            "2": [1, 3, 4],  # Miércoles: recreos 1, 3 y 4
+            "4": [2],  # Viernes: solo recreo 2
+        }
+    )
 
-    fecha_lunes = date(2025, 10, 20)      # Lunes
-    fecha_martes = date(2025, 10, 21)     # Martes
+    fecha_lunes = date(2025, 10, 20)  # Lunes
+    fecha_martes = date(2025, 10, 21)  # Martes
     fecha_miercoles = date(2025, 10, 22)  # Miércoles
-    fecha_viernes = date(2025, 10, 24)    # Viernes
+    fecha_viernes = date(2025, 10, 24)  # Viernes
 
     # Lunes
-    assert _horario_permitido(fecha_lunes, 1, horario), (
-        "❌ Lunes recreo 1 debería estar permitido"
-    )
-    assert _horario_permitido(fecha_lunes, 2, horario), (
-        "❌ Lunes recreo 2 debería estar permitido"
-    )
+    assert _horario_permitido(fecha_lunes, 1, horario), "❌ Lunes recreo 1 debería estar permitido"
+    assert _horario_permitido(fecha_lunes, 2, horario), "❌ Lunes recreo 2 debería estar permitido"
     assert not _horario_permitido(fecha_lunes, 3, horario), (
         "❌ Lunes recreo 3 NO debería estar permitido"
     )
     print("  ✅ Lunes: OK")
 
     # Martes (no está en el JSON)
-    assert not _horario_permitido(fecha_martes, 1, horario), (
-        "❌ Martes NO debería estar permitido"
-    )
+    assert not _horario_permitido(fecha_martes, 1, horario), "❌ Martes NO debería estar permitido"
     print("  ✅ Martes: OK (no incluido)")
 
     # Miércoles
@@ -120,9 +112,7 @@ def test_horario_permitido():
 
     # Test 4: Caso extremo - todos los días y recreos
     print("Test 4: Todos los días y recreos")
-    horario_completo = json.dumps({
-        str(i): [1, 2, 3, 4] for i in range(7)
-    })
+    horario_completo = json.dumps({str(i): [1, 2, 3, 4] for i in range(7)})
     for dia in range(7):
         fecha_test = date(2025, 10, 20 + dia)
         for recreo in [1, 2, 3, 4]:

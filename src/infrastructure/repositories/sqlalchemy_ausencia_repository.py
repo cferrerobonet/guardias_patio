@@ -6,8 +6,9 @@ from datetime import date
 from typing import Optional
 
 from domain.repositories.ausencia_repository import IAusenciaRepository
-from models.models import Ausencia
 from sqlalchemy.orm import Session
+
+from infrastructure.database.models import Ausencia
 
 
 class SQLAlchemyAusenciaRepository(IAusenciaRepository):
@@ -49,9 +50,7 @@ class SQLAlchemyAusenciaRepository(IAusenciaRepository):
         """Cuenta el total de ausencias."""
         return self.session.query(Ausencia).count()
 
-    def find_by_profesor_and_date(
-        self, profesor_id: int, fecha: date
-    ) -> Optional[Ausencia]:
+    def find_by_profesor_and_date(self, profesor_id: int, fecha: date) -> Optional[Ausencia]:
         """Busca ausencia activa de un profesor en una fecha."""
         return (
             self.session.query(Ausencia)
@@ -80,11 +79,7 @@ class SQLAlchemyAusenciaRepository(IAusenciaRepository):
 
     def count_by_profesor(self, profesor_id: int) -> int:
         """Cuenta ausencias totales de un profesor."""
-        return (
-            self.session.query(Ausencia)
-            .filter(Ausencia.profesor_id == profesor_id)
-            .count()
-        )
+        return self.session.query(Ausencia).filter(Ausencia.profesor_id == profesor_id).count()
 
     def find_active_in_date(self, fecha: date) -> list[Ausencia]:
         """Encuentra todas las ausencias activas en una fecha."""

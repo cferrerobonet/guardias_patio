@@ -5,9 +5,10 @@ SQLAlchemy CursoEscolar Repository Implementation
 from typing import Optional
 
 from domain.repositories.curso_escolar_repository import ICursoEscolarRepository
-from models.models import CursoEscolar
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
+
+from infrastructure.database.models import CursoEscolar
 
 
 class SQLAlchemyCursoEscolarRepository(ICursoEscolarRepository):
@@ -55,20 +56,14 @@ class SQLAlchemyCursoEscolarRepository(ICursoEscolarRepository):
 
     def find_by_year(self, anio_inicio: int) -> Optional[CursoEscolar]:
         """Busca curso por año de inicio."""
-        return (
-            self.session.query(CursoEscolar)
-            .filter_by(anio_inicio=anio_inicio)
-            .first()
-        )
+        return self.session.query(CursoEscolar).filter_by(anio_inicio=anio_inicio).first()
 
     def deactivate_all(self) -> None:
         """Desactiva todos los cursos escolares."""
         self.session.query(CursoEscolar).update({CursoEscolar.activo: False})
         self.session.flush()
 
-    def find_by_date_range(
-        self, fecha_inicio: str, fecha_fin: str
-    ) -> list[CursoEscolar]:
+    def find_by_date_range(self, fecha_inicio: str, fecha_fin: str) -> list[CursoEscolar]:
         """Busca cursos que se solapen con un rango de fechas."""
         return (
             self.session.query(CursoEscolar)

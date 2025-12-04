@@ -4,6 +4,12 @@ Formulario de cálculo y distribución de guardias.
 Permite calcular la distribución teórica de guardias por profesor.
 """
 
+import ui_styles as styles
+from application.use_cases.asignacion_guardias import (
+    CalcularDistribucionUseCase,
+    ObtenerEstadisticasUseCase,
+)
+from core.exceptions import BusinessLogicError
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QGridLayout,
@@ -15,12 +21,6 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-import ui_styles as styles
-from application.use_cases.asignacion_guardias import (
-    CalcularDistribucionUseCase,
-    ObtenerEstadisticasUseCase,
-)
-from core.exceptions import BusinessLogicError
 from presentation.forms.asignacion_widgets import (
     CuotasPanel,
     DistribucionPanel,
@@ -208,7 +208,7 @@ class AsignacionCalculoForm(BaseForm):
             self.mostrar_exito(
                 "Distribución calculada",
                 "La distribución teórica se ha calculado correctamente.\n\n"
-                "Ahora puedes ir a 'Generación y Resultados' para crear el calendario."
+                "Ahora puedes ir a 'Generación y Resultados' para crear el calendario.",
             )
 
         except BusinessLogicError as e:

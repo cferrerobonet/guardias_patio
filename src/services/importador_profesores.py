@@ -8,9 +8,8 @@ para callbacks de progreso para mostrar el estado de la importación.
 from pathlib import Path
 from typing import Callable, Optional
 
+from infrastructure.database.models import Profesor
 from sqlalchemy.orm import Session
-
-from models.models import Profesor
 from utils import get_logger
 
 try:
@@ -101,9 +100,7 @@ def importar_profesores_desde_excel(
             return resultados
 
         # Asignar nombres de columnas
-        df.columns = columnas_esperadas + [
-            f"extra_{i}" for i in range(len(df.columns) - 4)
-        ]
+        df.columns = columnas_esperadas + [f"extra_{i}" for i in range(len(df.columns) - 4)]
 
         reportar_progreso(15, "Validando datos...")
 
@@ -156,9 +153,7 @@ def importar_profesores_desde_excel(
 
                 # Crear nuevo profesor
                 # Validar email
-                email_valido = (
-                    email if email and email.lower() not in ["nan", "none", ""] else None
-                )
+                email_valido = email if email and email.lower() not in ["nan", "none", ""] else None
 
                 nuevo_profesor = Profesor(
                     nombre_completo=nombre_completo,

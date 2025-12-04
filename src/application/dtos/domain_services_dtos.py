@@ -16,6 +16,7 @@ from typing import Dict, List, Optional
 
 class AlgoritmoAsignacion(str, Enum):
     """Tipos de algoritmos de asignación disponibles."""
+
     V2_9_LEGACY = "v2.9"
     V3_SIMPLE = "v3_simple"
     V4_MODULAR = "v4"
@@ -26,6 +27,7 @@ class AlgoritmoAsignacion(str, Enum):
 @dataclass(frozen=True)
 class CuotaProfesorDTO:
     """DTO para cuota de guardias de un profesor."""
+
     profesor_id: int
     profesor_nombre: str
     cuota_esperada: int
@@ -48,6 +50,7 @@ class CuotaProfesorDTO:
 @dataclass(frozen=True)
 class EquidadMetricasDTO:
     """DTO para métricas de equidad."""
+
     indice_equidad: float  # 0.0 a 1.0 (1.0 = perfecta equidad)
     coeficiente_variacion: float
     desviacion_estandar: float
@@ -71,6 +74,7 @@ class EquidadMetricasDTO:
 @dataclass(frozen=True)
 class DisponibilidadDTO:
     """DTO para disponibilidad de un profesor."""
+
     profesor_id: int
     fecha: date
     recreo_id: int
@@ -80,9 +84,11 @@ class DisponibilidadDTO:
 
 # Request/Response DTOs para Use Cases
 
+
 @dataclass(frozen=True)
 class CalcularCuotasRequest:
     """Request para calcular cuotas de profesores."""
+
     configuracion_id: int
     solo_activos: bool = True
 
@@ -90,6 +96,7 @@ class CalcularCuotasRequest:
 @dataclass(frozen=True)
 class CalcularCuotasResponse:
     """Response de cálculo de cuotas."""
+
     exitoso: bool
     cuotas: Dict[int, int]  # profesor_id -> cuota
     cuotas_detalle: List[CuotaProfesorDTO]
@@ -100,6 +107,7 @@ class CalcularCuotasResponse:
 @dataclass(frozen=True)
 class AnalisisEquidadRequest:
     """Request para analizar equidad de guardias."""
+
     configuracion_id: Optional[int] = None
     incluir_detalle: bool = True
     umbral_desbalance: float = 0.15  # 15% de desviación
@@ -108,6 +116,7 @@ class AnalisisEquidadRequest:
 @dataclass(frozen=True)
 class AnalisisEquidadResponse:
     """Response de análisis de equidad."""
+
     exitoso: bool
     metricas: EquidadMetricasDTO
     cuotas: List[CuotaProfesorDTO]
@@ -118,6 +127,7 @@ class AnalisisEquidadResponse:
 @dataclass(frozen=True)
 class ValidarDisponibilidadRequest:
     """Request para validar disponibilidad de profesores."""
+
     profesor_id: int
     fecha: date
     recreo_id: int
@@ -126,6 +136,7 @@ class ValidarDisponibilidadRequest:
 @dataclass(frozen=True)
 class ValidarDisponibilidadResponse:
     """Response de validación de disponibilidad."""
+
     disponible: bool
     profesor_nombre: str
     razon_no_disponible: Optional[str] = None
@@ -134,6 +145,7 @@ class ValidarDisponibilidadResponse:
 @dataclass(frozen=True)
 class GenerarGuardiasConDomainServicesRequest:
     """Request mejorado para generar guardias usando Domain Services."""
+
     configuracion_id: int
     algoritmo: AlgoritmoAsignacion = AlgoritmoAsignacion.V4_MODULAR
     forzar_regeneracion: bool = False
@@ -144,6 +156,7 @@ class GenerarGuardiasConDomainServicesRequest:
 @dataclass(frozen=True)
 class GenerarGuardiasConDomainServicesResponse:
     """Response mejorado con información de Domain Services."""
+
     exitoso: bool
     total_guardias: int
     cobertura_porcentaje: float

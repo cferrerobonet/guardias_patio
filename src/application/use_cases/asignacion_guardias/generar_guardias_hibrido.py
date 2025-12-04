@@ -10,7 +10,7 @@ from typing import Callable, Optional
 
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
-from models.models import Configuracion, Guardia
+from infrastructure.database.models import Configuracion, Guardia
 from services.asignador_guardias import guardar_guardias_en_bd
 from services.calculador_guardias import obtener_estadisticas
 from services.integrador_orquestador_ui import IntegradorOrquestadorUI
@@ -106,13 +106,14 @@ class GenerarGuardiasHibridoUseCase:
             worker_thread = None
             try:
                 from PyQt6.QtCore import QThread
+
                 current_thread = QThread.currentThread()
                 thread_type = type(current_thread).__name__
                 logger.info(f"🔍 Thread actual: {current_thread} (tipo: {thread_type})")
 
                 # CRÍTICO: Comparar por nombre de clase, no por isinstance
                 # porque pueden ser módulos diferentes (src.presentation vs presentation)
-                if thread_type == 'WorkerThread':
+                if thread_type == "WorkerThread":
                     worker_thread = current_thread
                     logger.info("🧵 Ejecutando desde WorkerThread, usando callback thread-safe")
                 else:
@@ -120,6 +121,7 @@ class GenerarGuardiasHibridoUseCase:
             except Exception as e:
                 logger.error(f"❌ Error al detectar WorkerThread: {e}")
                 import traceback
+
                 logger.error(f"Traceback: {traceback.format_exc()}")
 
             # Crear integrador con callback thread-safe si estamos en worker thread
@@ -128,7 +130,7 @@ class GenerarGuardiasHibridoUseCase:
                 integrador = IntegradorOrquestadorUI(
                     self.session,
                     self.parent_window,
-                    callback_decision_custom=worker_thread.solicitar_decision_usuario
+                    callback_decision_custom=worker_thread.solicitar_decision_usuario,
                 )
             else:
                 # Ejecutando desde thread principal, usar el método normal
@@ -141,10 +143,9 @@ class GenerarGuardiasHibridoUseCase:
             except Exception as e:
                 logger.error(f"❌ Error en integrador: {str(e)}")
                 import traceback
+
                 logger.error(f"Traceback: {traceback.format_exc()}")
-                raise BusinessLogicError(
-                    f"Error crítico durante la generación: {str(e)}"
-                ) from e
+                raise BusinessLogicError(f"Error crítico durante la generación: {str(e)}") from e
 
             if not resultado.exitoso:
                 # Verificar el tipo de error según la estrategia usada
@@ -160,7 +161,7 @@ class GenerarGuardiasHibridoUseCase:
                 # CASO 2: ILP falló (problema infactible o error técnico)
                 elif resultado.estrategia_usada == EstrategiaUsada.ILP:
                     # Si el mensaje contiene "INFACTIBLE", es un problema de configuración
-                    if 'INFACTIBLE' in resultado.mensaje_usuario.upper():
+                    if "INFACTIBLE" in resultado.mensaje_usuario.upper():
                         logger.error("❌ Problema matemáticamente infactible")
                         raise BusinessLogicError(
                             "No se pudo generar un calendario válido.\n\n"

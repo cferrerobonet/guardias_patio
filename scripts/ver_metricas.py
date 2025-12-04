@@ -92,6 +92,7 @@ def show_health_checks():
         # Mostrar en formato texto limpio
         print_section("📄 Formato JSON")
         import json
+
         print(json.dumps(health_data, indent=2, ensure_ascii=False))
 
     finally:
@@ -114,9 +115,7 @@ def show_metrics():
     metrics_text = metrics.get_metrics_text()
 
     # Filtrar solo las líneas con valores (no comentarios)
-    lines = [
-        line for line in metrics_text.split("\n") if line and not line.startswith("#")
-    ]
+    lines = [line for line in metrics_text.split("\n") if line and not line.startswith("#")]
 
     if lines:
         print("\nMétricas con valores:")
@@ -134,9 +133,7 @@ def show_metrics():
         print(f"\nTotal: {len(memory_store)} registros")
         print("\nÚltimas 5:")
         for metric in memory_store[-5:]:
-            print(
-                f"  • {metric.name}: {metric.value} @ {metric.timestamp.strftime('%H:%M:%S')}"
-            )
+            print(f"  • {metric.name}: {metric.value} @ {metric.timestamp.strftime('%H:%M:%S')}")
 
 
 def show_performance():
@@ -175,9 +172,7 @@ def show_performance():
     all_stats = monitor.get_all_operations_stats()
     if all_stats:
         print_section("📊 Estadísticas por Operación (Top 5)")
-        print(
-            f"\n{'Operación':<25} {'Count':<8} {'Avg':<10} {'P95':<10} {'Slow':<6}"
-        )
+        print(f"\n{'Operación':<25} {'Count':<8} {'Avg':<10} {'P95':<10} {'Slow':<6}")
         print("-" * 70)
         for stats in all_stats[:5]:
             print(
@@ -234,18 +229,10 @@ def main():
     parser = argparse.ArgumentParser(
         description="Visualizar métricas de observabilidad del sistema"
     )
-    parser.add_argument(
-        "--health", action="store_true", help="Mostrar solo health checks"
-    )
-    parser.add_argument(
-        "--metrics", action="store_true", help="Mostrar solo métricas"
-    )
-    parser.add_argument(
-        "--perf", action="store_true", help="Mostrar solo performance"
-    )
-    parser.add_argument(
-        "--slow", action="store_true", help="Mostrar solo operaciones lentas"
-    )
+    parser.add_argument("--health", action="store_true", help="Mostrar solo health checks")
+    parser.add_argument("--metrics", action="store_true", help="Mostrar solo métricas")
+    parser.add_argument("--perf", action="store_true", help="Mostrar solo performance")
+    parser.add_argument("--slow", action="store_true", help="Mostrar solo operaciones lentas")
 
     args = parser.parse_args()
 

@@ -9,7 +9,7 @@ import logging
 from typing import List
 
 from domain.services.distribucion_cuotas_service import DistribucionCuotasService
-from models.models import Configuracion, Profesor
+from infrastructure.database.models import Configuracion, Profesor
 from sqlalchemy.orm import Session
 
 from application.dtos.domain_services_dtos import (
@@ -58,7 +58,7 @@ class CalcularCuotasUseCase:
                     cuotas={},
                     cuotas_detalle=[],
                     total_guardias=0,
-                    mensaje=f"Configuración {request.configuracion_id} no encontrada"
+                    mensaje=f"Configuración {request.configuracion_id} no encontrada",
                 )
 
             # 2. Obtener profesores
@@ -73,7 +73,7 @@ class CalcularCuotasUseCase:
                     cuotas={},
                     cuotas_detalle=[],
                     total_guardias=0,
-                    mensaje="No hay profesores para calcular cuotas"
+                    mensaje="No hay profesores para calcular cuotas",
                 )
 
             # 3. Delegar cálculo a Domain Service
@@ -83,14 +83,16 @@ class CalcularCuotasUseCase:
             cuotas_detalle = self._mapear_cuotas_a_dtos(cuotas, profesores)
             total_guardias = sum(cuotas.values())
 
-            logger.info(f"✓ Cuotas calculadas: {len(cuotas)} profesores, {total_guardias} guardias totales")
+            logger.info(
+                f"✓ Cuotas calculadas: {len(cuotas)} profesores, {total_guardias} guardias totales"
+            )
 
             return CalcularCuotasResponse(
                 exitoso=True,
                 cuotas=cuotas,
                 cuotas_detalle=cuotas_detalle,
                 total_guardias=total_guardias,
-                mensaje=f"Cuotas calculadas correctamente para {len(cuotas)} profesores"
+                mensaje=f"Cuotas calculadas correctamente para {len(cuotas)} profesores",
             )
 
         except Exception as e:
@@ -100,13 +102,11 @@ class CalcularCuotasUseCase:
                 cuotas={},
                 cuotas_detalle=[],
                 total_guardias=0,
-                mensaje=f"Error al calcular cuotas: {str(e)}"
+                mensaje=f"Error al calcular cuotas: {str(e)}",
             )
 
     def _mapear_cuotas_a_dtos(
-        self,
-        cuotas: dict[int, int],
-        profesores: List[Profesor]
+        self, cuotas: dict[int, int], profesores: List[Profesor]
     ) -> List[CuotaProfesorDTO]:
         """Mapea cuotas a DTOs con información de profesores."""
         profesores_dict = {p.id: p for p in profesores}
@@ -115,13 +115,15 @@ class CalcularCuotasUseCase:
         for profesor_id, cuota in cuotas.items():
             profesor = profesores_dict.get(profesor_id)
             if profesor:
-                cuotas_dto.append(CuotaProfesorDTO(
-                    profesor_id=profesor_id,
-                    profesor_nombre=profesor.nombre_completo,
-                    cuota_esperada=cuota,
-                    porcentaje_jornada=profesor.porcentaje_jornada,
-                    cuota_asignada=0  # Se llenará cuando haya guardias asignadas
-                ))
+                cuotas_dto.append(
+                    CuotaProfesorDTO(
+                        profesor_id=profesor_id,
+                        profesor_nombre=profesor.nombre_completo,
+                        cuota_esperada=cuota,
+                        porcentaje_jornada=profesor.porcentaje_jornada,
+                        cuota_asignada=0,  # Se llenará cuando haya guardias asignadas
+                    )
+                )
 
         # Ordenar por cuota descendente
         return sorted(cuotas_dto, key=lambda x: x.cuota_esperada, reverse=True)

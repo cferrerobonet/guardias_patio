@@ -18,7 +18,7 @@ from datetime import date, time
 from pathlib import Path
 
 import pytest
-from models.models import Configuracion, Guardia, Profesor, Zona
+from infrastructure.database.models import Configuracion, CursoEscolar, Guardia, Profesor, Zona
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
 from sqlalchemy import create_engine
@@ -35,7 +35,7 @@ def temp_dir():
 @pytest.fixture
 def engine():
     """Motor de base de datos en memoria para tests."""
-    from models.models import Base
+    from infrastructure.database.models import Base
 
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -51,8 +51,24 @@ def session(engine):
     session.close()
 
 
+@pytest.fixture(autouse=True)
+def curso_activo(session):
+    """Fixture que crea un curso escolar activo."""
+    curso = CursoEscolar(
+        nombre="Curso 2024-2025",
+        anio_inicio=2024,
+        anio_fin=2025,
+        fecha_inicio=date(2024, 9, 1),
+        fecha_fin=date(2025, 6, 30),
+        activo=True,
+    )
+    session.add(curso)
+    session.commit()
+    return curso
+
+
 @pytest.fixture
-def datos_base(session):
+def datos_base(session, curso_activo):
     """Crear datos base para tests de exportación."""
     # Configuración
     config = Configuracion(
@@ -478,9 +494,7 @@ class TestImportacionJSON:
         ]
 
         # Importar con limpieza
-        count = ExportadorDatos.importar_profesores(
-            session, profesores_data, limpiar=True
-        )
+        count = ExportadorDatos.importar_profesores(session, profesores_data, limpiar=True)
 
         assert count == 1
 

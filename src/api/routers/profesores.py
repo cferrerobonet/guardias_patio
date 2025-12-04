@@ -7,7 +7,7 @@ Endpoints para consultar información de profesores.
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from models.models import Profesor
+from infrastructure.database.models import Profesor
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/profesores", tags=["profesores"])
 
 class ProfesorResponse(BaseModel):
     """Schema de respuesta para profesor."""
+
     id: int
     nombre_completo: str
     horas_contrato: int
@@ -32,9 +33,7 @@ class ProfesorResponse(BaseModel):
 
 @router.get("", response_model=List[ProfesorResponse])
 def listar_profesores(
-    activo: Optional[bool] = None,
-    turno: Optional[str] = None,
-    db: Session = Depends(get_db)
+    activo: Optional[bool] = None, turno: Optional[str] = None, db: Session = Depends(get_db)
 ):
     """
     Lista todos los profesores con filtros opcionales.

@@ -7,15 +7,15 @@ Implementación concreta del repositorio de profesores usando SQLAlchemy.
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import func
-from sqlalchemy.orm import Session
-
 from core.exceptions import DatabaseError, ProfesorNotFoundError
 from core.logging import get_logger, log_function_call
 from domain.entities import ProfesorEntity
 from domain.repositories import IProfesorRepository
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from infrastructure.database.models import Guardia, Profesor
 from infrastructure.mappers import ProfesorMapper
-from models.models import Guardia, Profesor
 
 logger = get_logger(__name__)
 
@@ -47,10 +47,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
             return self.mapper.to_entity(model)
         except Exception as e:
             logger.error("Error al obtener profesor por ID", entity_id=entity_id, error=str(e))
-            raise DatabaseError(
-                message=f"Error al obtener profesor {entity_id}",
-                original_error=e
-            )
+            raise DatabaseError(message=f"Error al obtener profesor {entity_id}", original_error=e)
 
     @log_function_call()
     def get_all(self) -> list[ProfesorEntity]:
@@ -60,10 +57,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
             return self.mapper.to_entities(models)
         except Exception as e:
             logger.error("Error al obtener todos los profesores", error=str(e))
-            raise DatabaseError(
-                message="Error al obtener lista de profesores",
-                original_error=e
-            )
+            raise DatabaseError(message="Error al obtener lista de profesores", original_error=e)
 
     @log_function_call()
     def save(self, entity: ProfesorEntity) -> ProfesorEntity:
@@ -91,8 +85,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
         except Exception as e:
             logger.error("Error al guardar profesor", profesor_id=entity.id, error=str(e))
             raise DatabaseError(
-                message=f"Error al guardar profesor {entity.nombre_completo}",
-                original_error=e
+                message=f"Error al guardar profesor {entity.nombre_completo}", original_error=e
             )
 
     @log_function_call()
@@ -109,10 +102,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
 
         except Exception as e:
             logger.error("Error al eliminar profesor", profesor_id=entity_id, error=str(e))
-            raise DatabaseError(
-                message=f"Error al eliminar profesor {entity_id}",
-                original_error=e
-            )
+            raise DatabaseError(message=f"Error al eliminar profesor {entity_id}", original_error=e)
 
     def exists(self, entity_id: int) -> bool:
         """Verifica si existe un profesor."""
@@ -140,11 +130,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
     def find_by_email(self, email: str) -> Optional[ProfesorEntity]:
         """Busca un profesor por email."""
         try:
-            model = (
-                self.session.query(Profesor)
-                .filter(Profesor.email_corporativo == email)
-                .first()
-            )
+            model = self.session.query(Profesor).filter(Profesor.email_corporativo == email).first()
             return self.mapper.to_entity(model) if model else None
         except Exception as e:
             logger.error("Error al buscar por email", email=email, error=str(e))
@@ -169,10 +155,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
             raise DatabaseError(message="Error en búsqueda de tutores", original_error=e)
 
     def find_disponibles_en_fecha(
-        self,
-        fecha: date,
-        turno: str,
-        recreo: int
+        self, fecha: date, turno: str, recreo: int
     ) -> list[ProfesorEntity]:
         """Obtiene profesores disponibles en una fecha, turno y recreo."""
         try:
@@ -190,11 +173,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
 
         except Exception as e:
             logger.error(
-                "Error al buscar disponibles",
-                fecha=fecha,
-                turno=turno,
-                recreo=recreo,
-                error=str(e)
+                "Error al buscar disponibles", fecha=fecha, turno=turno, recreo=recreo, error=str(e)
             )
             raise DatabaseError(message="Error en búsqueda de disponibles", original_error=e)
 
@@ -204,8 +183,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
             # Subquery para contar guardias por profesor
             guardias_count = (
                 self.session.query(
-                    Guardia.profesor_id,
-                    func.count(Guardia.id).label('total_guardias')
+                    Guardia.profesor_id, func.count(Guardia.id).label("total_guardias")
                 )
                 .group_by(Guardia.profesor_id)
                 .subquery()
@@ -225,8 +203,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
         except Exception as e:
             logger.error("Error al buscar con menos guardias", limite=limite, error=str(e))
             raise DatabaseError(
-                message="Error en búsqueda de profesores con menos guardias",
-                original_error=e
+                message="Error en búsqueda de profesores con menos guardias", original_error=e
             )
 
     def contar_guardias_profesor(self, profesor_id: int) -> int:
@@ -234,7 +211,8 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
         return (
             self.session.query(func.count(Guardia.id))
             .filter(Guardia.profesor_id == profesor_id)
-            .scalar() or 0
+            .scalar()
+            or 0
         )
 
     def contar_guardias_profesor_en_fecha(self, profesor_id: int, fecha: date) -> int:
@@ -242,5 +220,6 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
         return (
             self.session.query(func.count(Guardia.id))
             .filter(Guardia.profesor_id == profesor_id, Guardia.fecha == fecha)
-            .scalar() or 0
+            .scalar()
+            or 0
         )

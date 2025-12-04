@@ -23,7 +23,7 @@ from application.use_cases.asignacion_guardias.obtener_estadisticas import (
     ObtenerEstadisticasUseCase,
 )
 from core.exceptions import BusinessLogicError
-from models.models import Configuracion, Guardia
+from infrastructure.database.models import Configuracion, CursoEscolar, Guardia
 
 # ============================================================================
 # TEST: OBTENER ESTADÍSTICAS
@@ -40,10 +40,20 @@ class TestObtenerEstadisticasUseCase:
         with pytest.raises(BusinessLogicError):
             use_case.execute()
 
-    def test_obtener_estadisticas_con_configuracion(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_obtener_estadisticas_con_configuracion(self, session, profesor_factory, zona_factory):
         """Obtener estadísticas cuando hay configuración básica."""
+        # Crear curso escolar activo
+        curso = CursoEscolar(
+            nombre="2024-2025",
+            anio_inicio=2024,
+            anio_fin=2025,
+            fecha_inicio=date(2024, 9, 1),
+            fecha_fin=date(2024, 9, 30),
+            activo=True,
+        )
+        session.add(curso)
+        session.commit()
+
         # Crear configuración
         config = Configuracion(
             anio_inicio_curso=2024,
@@ -53,6 +63,7 @@ class TestObtenerEstadisticasUseCase:
             hora_recreo2_manana=time(12, 30),
             ajuste_tutores=1.0,
             ajuste_no_tutores=1.0,
+            curso_activo_id=curso.id,
         )
         session.add(config)
         session.commit()
@@ -74,10 +85,20 @@ class TestObtenerEstadisticasUseCase:
         assert resultado.num_profesores == 2
         assert resultado.slots_totales >= 0
 
-    def test_obtener_estadisticas_estructura_dto(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_obtener_estadisticas_estructura_dto(self, session, profesor_factory, zona_factory):
         """Verificar que el DTO tiene la estructura correcta."""
+        # Crear curso escolar activo
+        curso = CursoEscolar(
+            nombre="2024-2025",
+            anio_inicio=2024,
+            anio_fin=2025,
+            fecha_inicio=date(2024, 9, 1),
+            fecha_fin=date(2024, 9, 5),
+            activo=True,
+        )
+        session.add(curso)
+        session.commit()
+
         # Setup mínimo
         config = Configuracion(
             anio_inicio_curso=2024,
@@ -87,6 +108,7 @@ class TestObtenerEstadisticasUseCase:
             hora_recreo2_manana=time(12, 30),
             ajuste_tutores=1.0,
             ajuste_no_tutores=1.0,
+            curso_activo_id=curso.id,
         )
         session.add(config)
         session.commit()
@@ -122,10 +144,20 @@ class TestCalcularDistribucionUseCase:
         with pytest.raises(BusinessLogicError):
             use_case.execute()
 
-    def test_calcular_distribucion_con_datos(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_calcular_distribucion_con_datos(self, session, profesor_factory, zona_factory):
         """Calcular distribución con datos básicos."""
+        # Crear curso escolar activo
+        curso = CursoEscolar(
+            nombre="2024-2025",
+            anio_inicio=2024,
+            anio_fin=2025,
+            fecha_inicio=date(2024, 9, 1),
+            fecha_fin=date(2024, 9, 30),
+            activo=True,
+        )
+        session.add(curso)
+        session.commit()
+
         # Configuración
         config = Configuracion(
             anio_inicio_curso=2024,
@@ -135,17 +167,14 @@ class TestCalcularDistribucionUseCase:
             hora_recreo2_manana=time(12, 30),
             ajuste_tutores=1.0,
             ajuste_no_tutores=1.0,
+            curso_activo_id=curso.id,
         )
         session.add(config)
         session.commit()
 
         # Crear profesores
-        profesor_factory(
-            nombre_completo="Profesor 1", turno="mañana", horas_contrato=25
-        )
-        profesor_factory(
-            nombre_completo="Profesor 2", turno="mañana", horas_contrato=25
-        )
+        profesor_factory(nombre_completo="Profesor 1", turno="mañana", horas_contrato=25)
+        profesor_factory(nombre_completo="Profesor 2", turno="mañana", horas_contrato=25)
 
         # Crear zona
         zona_factory(nombre_zona="Zona A")
@@ -162,10 +191,20 @@ class TestCalcularDistribucionUseCase:
         # Verificar que hay distribución para los profesores
         assert len(resultado.distribucion) > 0
 
-    def test_calcular_distribucion_propiedades_dto(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_calcular_distribucion_propiedades_dto(self, session, profesor_factory, zona_factory):
         """Verificar propiedades calculadas del DTO."""
+        # Crear curso escolar activo
+        curso = CursoEscolar(
+            nombre="2024-2025",
+            anio_inicio=2024,
+            anio_fin=2025,
+            fecha_inicio=date(2024, 9, 1),
+            fecha_fin=date(2024, 9, 10),
+            activo=True,
+        )
+        session.add(curso)
+        session.commit()
+
         # Setup
         config = Configuracion(
             anio_inicio_curso=2024,
@@ -175,6 +214,7 @@ class TestCalcularDistribucionUseCase:
             hora_recreo2_manana=time(12, 30),
             ajuste_tutores=1.0,
             ajuste_no_tutores=1.0,
+            curso_activo_id=curso.id,
         )
         session.add(config)
         session.commit()
@@ -308,9 +348,7 @@ class TestGenerarGuardiasUseCase:
         count_final = session.query(Guardia).count()
         assert count_final >= count_inicial
 
-    def test_generar_guardias_estructura_dto(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_generar_guardias_estructura_dto(self, session, profesor_factory, zona_factory):
         """Verificar estructura del DTO de resultado."""
         # Setup mínimo
         config = Configuracion(
@@ -351,9 +389,7 @@ class TestGenerarGuardiasUseCase:
         assert isinstance(resultado.resumen_por_profesor, dict)
         assert isinstance(resultado.cobertura_completa, bool)
 
-    def test_generar_guardias_con_callback(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_generar_guardias_con_callback(self, session, profesor_factory, zona_factory):
         """Verificar que el callback de progreso funciona."""
         # Setup
         config = Configuracion(
@@ -405,6 +441,18 @@ class TestAsignacionGuardiasIntegracion:
         self, session, profesor_factory, zona_factory
     ):
         """Flujo completo: obtener stats → calcular distribución → generar guardias."""
+        # Crear curso escolar activo
+        curso = CursoEscolar(
+            nombre="2024-2025",
+            anio_inicio=2024,
+            anio_fin=2025,
+            fecha_inicio=date(2024, 9, 1),
+            fecha_fin=date(2024, 9, 10),
+            activo=True,
+        )
+        session.add(curso)
+        session.commit()
+
         # Setup completo
         config = Configuracion(
             anio_inicio_curso=2024,
@@ -414,6 +462,7 @@ class TestAsignacionGuardiasIntegracion:
             hora_recreo2_manana=time(12, 30),
             ajuste_tutores=1.0,
             ajuste_no_tutores=1.0,
+            curso_activo_id=curso.id,
         )
         session.add(config)
         session.commit()
@@ -460,9 +509,7 @@ class TestAsignacionGuardiasIntegracion:
         assert resultado.guardias_generadas > 0
         assert len(resultado.resumen_por_profesor) > 0
 
-    def test_generar_multiples_veces_con_eliminacion(
-        self, session, profesor_factory, zona_factory
-    ):
+    def test_generar_multiples_veces_con_eliminacion(self, session, profesor_factory, zona_factory):
         """Generar guardias múltiples veces eliminando las anteriores."""
         # Setup
         config = Configuracion(

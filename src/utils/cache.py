@@ -42,10 +42,10 @@ _cache_store: OrderedDict[str, Tuple[Any, float, float, int]] = OrderedDict()
 
 # Estadísticas globales de caché
 _cache_stats = {
-    'hits': 0,
-    'misses': 0,
-    'invalidations': 0,
-    'evictions': 0,  # Entradas eliminadas por límite de capacidad
+    "hits": 0,
+    "misses": 0,
+    "invalidations": 0,
+    "evictions": 0,  # Entradas eliminadas por límite de capacidad
 }
 
 # Métricas por función
@@ -68,13 +68,15 @@ def _generate_cache_key(func: Callable, args: tuple, kwargs: dict) -> str:
     func_name = f"{func.__module__}.{func.__name__}"
 
     # Convertir argumentos a string (excluyendo objetos de sesión)
-    args_str = ','.join(
-        str(arg) for arg in args
-        if not hasattr(arg, 'query')  # Excluir sesiones SQLAlchemy
+    args_str = ",".join(
+        str(arg)
+        for arg in args
+        if not hasattr(arg, "query")  # Excluir sesiones SQLAlchemy
     )
-    kwargs_str = ','.join(
-        f"{k}={v}" for k, v in sorted(kwargs.items())
-        if not hasattr(v, 'query')  # Excluir sesiones SQLAlchemy
+    kwargs_str = ",".join(
+        f"{k}={v}"
+        for k, v in sorted(kwargs.items())
+        if not hasattr(v, "query")  # Excluir sesiones SQLAlchemy
     )
 
     cache_key = f"{func_name}({args_str},{kwargs_str})"
@@ -89,7 +91,7 @@ def _evict_if_needed():
         # Eliminar la entrada más antigua (primera en OrderedDict)
         oldest_key = next(iter(_cache_store))
         del _cache_store[oldest_key]
-        _cache_stats['evictions'] += 1
+        _cache_stats["evictions"] += 1
         logger.debug(f"Cache EVICTED: {oldest_key} (limite alcanzado)")
 
 
@@ -102,17 +104,13 @@ def _update_function_metrics(func_name: str, hit: bool):
         hit: True si fue cache hit, False si fue miss
     """
     if func_name not in _function_metrics:
-        _function_metrics[func_name] = {
-            'hits': 0,
-            'misses': 0,
-            'total': 0
-        }
+        _function_metrics[func_name] = {"hits": 0, "misses": 0, "total": 0}
 
-    _function_metrics[func_name]['total'] += 1
+    _function_metrics[func_name]["total"] += 1
     if hit:
-        _function_metrics[func_name]['hits'] += 1
+        _function_metrics[func_name]["hits"] += 1
     else:
-        _function_metrics[func_name]['misses'] += 1
+        _function_metrics[func_name]["misses"] += 1
 
 
 def cache_query(ttl: float = 300, key_func: Optional[Callable] = None):
@@ -137,6 +135,7 @@ def cache_query(ttl: float = 300, key_func: Optional[Callable] = None):
         # Segunda llamada (dentro de 10 min): retorna desde caché
         zonas = obtener_zonas_activas(session)  # HIT
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -161,10 +160,10 @@ def cache_query(ttl: float = 300, key_func: Optional[Callable] = None):
                         cached_result,
                         timestamp,
                         cached_ttl,
-                        access_count + 1
+                        access_count + 1,
                     )
 
-                    _cache_stats['hits'] += 1
+                    _cache_stats["hits"] += 1
                     _update_function_metrics(func_name, hit=True)
 
                     logger.debug(
@@ -179,7 +178,7 @@ def cache_query(ttl: float = 300, key_func: Optional[Callable] = None):
                     del _cache_store[cache_key]
 
             # Cache MISS: ejecutar función
-            _cache_stats['misses'] += 1
+            _cache_stats["misses"] += 1
             _update_function_metrics(func_name, hit=False)
             logger.debug(f"Cache MISS: {func_name}")
 
@@ -234,7 +233,7 @@ def invalidate_cache(pattern: str = None, use_regex: bool = False):
         # Invalidar todo
         count = len(_cache_store)
         _cache_store.clear()
-        _cache_stats['invalidations'] += count
+        _cache_stats["invalidations"] += count
         logger.info(f"Cache invalidado completamente ({count} entradas)")
         return count
 
@@ -264,7 +263,7 @@ def invalidate_cache(pattern: str = None, use_regex: bool = False):
         del _cache_store[key]
 
     count = len(keys_to_delete)
-    _cache_stats['invalidations'] += count
+    _cache_stats["invalidations"] += count
 
     if count > 0:
         pattern_type = "regex" if use_regex else "patrón"
@@ -307,7 +306,7 @@ def clear_all_cache():
     """
     count = len(_cache_store)
     _cache_store.clear()
-    _cache_stats['invalidations'] += count
+    _cache_stats["invalidations"] += count
 
     logger.info(f"Cache limpiado completamente ({count} entradas)")
 
@@ -332,18 +331,18 @@ def get_cache_stats() -> dict:
         print(f"Hit rate: {stats['hit_rate']:.1f}%")
         print(f"Cache size: {stats['size']}/{stats['max_size']}")
     """
-    total_requests = _cache_stats['hits'] + _cache_stats['misses']
-    hit_rate = (_cache_stats['hits'] / total_requests * 100) if total_requests > 0 else 0
+    total_requests = _cache_stats["hits"] + _cache_stats["misses"]
+    hit_rate = (_cache_stats["hits"] / total_requests * 100) if total_requests > 0 else 0
 
     return {
-        'hits': _cache_stats['hits'],
-        'misses': _cache_stats['misses'],
-        'invalidations': _cache_stats['invalidations'],
-        'evictions': _cache_stats['evictions'],
-        'size': len(_cache_store),
-        'max_size': MAX_CACHE_SIZE,
-        'hit_rate': hit_rate,
-        'total_requests': total_requests
+        "hits": _cache_stats["hits"],
+        "misses": _cache_stats["misses"],
+        "invalidations": _cache_stats["invalidations"],
+        "evictions": _cache_stats["evictions"],
+        "size": len(_cache_store),
+        "max_size": MAX_CACHE_SIZE,
+        "hit_rate": hit_rate,
+        "total_requests": total_requests,
     }
 
 
@@ -373,18 +372,11 @@ def get_function_metrics(func_name: str = None) -> dict:
     """
     if func_name is not None:
         if func_name not in _function_metrics:
-            return {
-                'hits': 0,
-                'misses': 0,
-                'total': 0,
-                'hit_rate': 0.0
-            }
+            return {"hits": 0, "misses": 0, "total": 0, "hit_rate": 0.0}
 
         metrics = _function_metrics[func_name].copy()
-        metrics['hit_rate'] = (
-            (metrics['hits'] / metrics['total'] * 100)
-            if metrics['total'] > 0
-            else 0.0
+        metrics["hit_rate"] = (
+            (metrics["hits"] / metrics["total"] * 100) if metrics["total"] > 0 else 0.0
         )
         return metrics
 
@@ -392,10 +384,8 @@ def get_function_metrics(func_name: str = None) -> dict:
     result = {}
     for func, metrics in _function_metrics.items():
         func_metrics = metrics.copy()
-        func_metrics['hit_rate'] = (
-            (metrics['hits'] / metrics['total'] * 100)
-            if metrics['total'] > 0
-            else 0.0
+        func_metrics["hit_rate"] = (
+            (metrics["hits"] / metrics["total"] * 100) if metrics["total"] > 0 else 0.0
         )
         result[func] = func_metrics
 
@@ -428,14 +418,16 @@ def get_cache_entries_info() -> list:
         remaining = ttl - age
         expired = remaining <= 0
 
-        entries.append({
-            'key': key,
-            'age': age,
-            'ttl': ttl,
-            'remaining': remaining,
-            'access_count': access_count,
-            'expired': expired
-        })
+        entries.append(
+            {
+                "key": key,
+                "age": age,
+                "ttl": ttl,
+                "remaining": remaining,
+                "access_count": access_count,
+                "expired": expired,
+            }
+        )
 
     return entries
 
@@ -488,18 +480,12 @@ def print_cache_stats(detailed: bool = False):
         if function_metrics:
             # Ordenar por número total de peticiones (descendente)
             sorted_funcs = sorted(
-                function_metrics.items(),
-                key=lambda x: x[1]['total'],
-                reverse=True
+                function_metrics.items(), key=lambda x: x[1]["total"], reverse=True
             )
 
             for func_name, metrics in sorted_funcs:
                 # Truncar nombre de función si es muy largo
-                display_name = (
-                    func_name[:40] + "..."
-                    if len(func_name) > 43
-                    else func_name
-                )
+                display_name = func_name[:40] + "..." if len(func_name) > 43 else func_name
                 print(
                     f"{display_name:43s} | "
                     f"Total: {metrics['total']:4d} | "
@@ -523,10 +509,10 @@ def reset_cache_stats():
         stats = get_cache_stats()
         print(f"Hit rate en esta sesión: {stats['hit_rate']:.1f}%")
     """
-    _cache_stats['hits'] = 0
-    _cache_stats['misses'] = 0
-    _cache_stats['invalidations'] = 0
-    _cache_stats['evictions'] = 0
+    _cache_stats["hits"] = 0
+    _cache_stats["misses"] = 0
+    _cache_stats["invalidations"] = 0
+    _cache_stats["evictions"] = 0
 
     logger.info("Estadísticas de caché reiniciadas")
 

@@ -112,7 +112,7 @@ class EquidadPanel(QGroupBox):
             request = AnalisisEquidadRequest(
                 configuracion_id=None,  # Analizar todas las guardias del curso
                 incluir_detalle=True,
-                umbral_desbalance=0.15  # 15% de desviación
+                umbral_desbalance=0.15,  # 15% de desviación
             )
             response = self.analisis_uc.execute(request)
 
@@ -137,12 +137,7 @@ class EquidadPanel(QGroupBox):
         metricas = response.metricas
 
         # Elegir emoji según nivel
-        nivel_emoji = {
-            "EXCELENTE": "🌟",
-            "BUENO": "✅",
-            "ACEPTABLE": "⚠️",
-            "DEFICIENTE": "❌"
-        }
+        nivel_emoji = {"EXCELENTE": "🌟", "BUENO": "✅", "ACEPTABLE": "⚠️", "DEFICIENTE": "❌"}
         emoji = nivel_emoji.get(metricas.nivel_equidad, "📊")
 
         # Formatear métricas principales
@@ -187,11 +182,9 @@ class EquidadPanel(QGroupBox):
             lineas.append(format_terminal_info("📋 Top 5 Profesores con Mayor Desbalance:"))
 
             # Ordenar por déficit absoluto descendente
-            cuotas_ordenadas = sorted(
-                response.cuotas,
-                key=lambda c: abs(c.deficit),
-                reverse=True
-            )[:5]
+            cuotas_ordenadas = sorted(response.cuotas, key=lambda c: abs(c.deficit), reverse=True)[
+                :5
+            ]
 
             for cuota in cuotas_ordenadas:
                 if cuota.deficit != 0:
@@ -221,9 +214,7 @@ class EquidadPanel(QGroupBox):
         Args:
             mensaje: Mensaje de error a mostrar.
         """
-        error_html = wrap_terminal_html(
-            format_terminal_error(f"⚠️  {mensaje}")
-        )
+        error_html = wrap_terminal_html(format_terminal_error(f"⚠️  {mensaje}"))
         self.equidad_text.setHtml(error_html)
 
     def limpiar(self):

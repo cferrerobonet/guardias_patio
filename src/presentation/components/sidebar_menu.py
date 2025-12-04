@@ -7,8 +7,6 @@ y estados activos/hover.
 
 from typing import Callable, Optional
 
-from PyQt6.QtCore import Qt
-
 from core.qt_imports import (
     QFrame,
     QHBoxLayout,
@@ -20,6 +18,8 @@ from core.qt_imports import (
     QWidget,
     pyqtSignal,
 )
+from PyQt6.QtCore import Qt
+
 from presentation.themes.ccleaner_theme import (
     SPACING_M,
     SPACING_S,
@@ -199,10 +199,7 @@ class SidebarMenu(QWidget):
         button = QPushButton(item.title)
         button.setObjectName("menuButton")
         button.setCursor(Qt.CursorShape.PointingHandCursor)
-        button.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Fixed
-        )
+        button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         button.setMinimumHeight(40)
 
         # Estilo directo en el botón para asegurar que se aplica

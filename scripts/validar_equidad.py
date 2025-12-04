@@ -31,9 +31,9 @@ def validar_equidad(db_path: str, verbose: bool = False) -> bool:
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    print("="*100)
+    print("=" * 100)
     print("VALIDACIÓN DE EQUIDAD EN DISTRIBUCIÓN DE GUARDIAS")
-    print("="*100)
+    print("=" * 100)
 
     # Obtener configuración
     cursor.execute("SELECT ajuste_tutores, ajuste_no_tutores FROM configuracion LIMIT 1")
@@ -70,7 +70,7 @@ def validar_equidad(db_path: str, verbose: bool = False) -> bool:
 
     # Validar cada grupo
     print("\n📊 ANÁLISIS POR GRUPOS:")
-    print("-"*100)
+    print("-" * 100)
 
     grupos_inequitativos = []
     total_profesores = 0
@@ -103,8 +103,10 @@ def validar_equidad(db_path: str, verbose: bool = False) -> bool:
         tutor_str = "TUTOR    " if tutor else "NO TUTOR "
 
         print(f"\n{estado} | Turno: {turno:8s} | {tutor_str} | Horas: {horas:4.1f}h")
-        print(f"   Profesores: {len(miembros):2d} | Guardias: MIN={min_g:3d}, MAX={max_g:3d}, "
-              f"PROM={promedio:5.1f}, RANGO={rango:3d}")
+        print(
+            f"   Profesores: {len(miembros):2d} | Guardias: MIN={min_g:3d}, MAX={max_g:3d}, "
+            f"PROM={promedio:5.1f}, RANGO={rango:3d}"
+        )
 
         if verbose or rango > 1:
             # Mostrar detalle si verbose o si hay inequidad
@@ -115,9 +117,9 @@ def validar_equidad(db_path: str, verbose: bool = False) -> bool:
                 print(f"     • {nombre:<45} {guardias:3d} guardias ({delta_str})")
 
     # Resumen final
-    print("\n" + "="*100)
+    print("\n" + "=" * 100)
     print("RESUMEN DE VALIDACIÓN")
-    print("="*100)
+    print("=" * 100)
 
     print("\n📈 Estadísticas:")
     print(f"   • Total profesores analizados: {total_profesores}")
@@ -131,33 +133,29 @@ def validar_equidad(db_path: str, verbose: bool = False) -> bool:
         for clave, miembros, rango in grupos_inequitativos:
             turno, tutor, horas = clave
             tutor_str = "TUTOR" if tutor else "NO TUTOR"
-            print(f"   • {turno.upper()} - {tutor_str} - {horas:.1f}h: "
-                  f"{len(miembros)} profesores, RANGO={rango}")
+            print(
+                f"   • {turno.upper()} - {tutor_str} - {horas:.1f}h: "
+                f"{len(miembros)} profesores, RANGO={rango}"
+            )
 
         print("\n💡 RECOMENDACIÓN:")
         print("   Regenerar guardias con algoritmo equitativo v2.9")
-        print("="*100)
+        print("=" * 100)
         return False
     else:
         print("\n✅ ¡DISTRIBUCIÓN EQUITATIVA PERFECTA!")
         print("   Todos los grupos tienen rango ≤ 3")
-        print("="*100)
+        print("=" * 100)
         return True
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Validar equidad en distribución de guardias"
+    parser = argparse.ArgumentParser(description="Validar equidad en distribución de guardias")
+    parser.add_argument(
+        "--db", required=True, help="Ruta a la base de datos (ej: data/users/XXX/guardias_patio.db)"
     )
     parser.add_argument(
-        "--db",
-        required=True,
-        help="Ruta a la base de datos (ej: data/users/XXX/guardias_patio.db)"
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Mostrar detalles de todos los grupos"
+        "--verbose", action="store_true", help="Mostrar detalles de todos los grupos"
     )
 
     args = parser.parse_args()

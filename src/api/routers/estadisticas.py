@@ -8,7 +8,7 @@ from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from models.models import Guardia, Profesor
+from infrastructure.database.models import Guardia, Profesor
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -22,7 +22,7 @@ def obtener_resumen(
     configuracion_id: int,
     fecha_inicio: Optional[date] = None,
     fecha_fin: Optional[date] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Obtiene un resumen estadístico de guardias.
@@ -55,23 +55,21 @@ def obtener_resumen(
         sin_asignar = total_guardias - asignadas
 
         # Por turno
-        por_turno = db.query(
-            Guardia.turno,
-            func.count(Guardia.id).label('total')
-        ).filter(
-            Guardia.curso_id == configuracion_id
-        ).group_by(Guardia.turno).all()
+        por_turno = (
+            db.query(Guardia.turno, func.count(Guardia.id).label("total"))
+            .filter(Guardia.curso_id == configuracion_id)
+            .group_by(Guardia.turno)
+            .all()
+        )
 
         # Profesor con más guardias
-        top_profesor = db.query(
-            Guardia.profesor_id,
-            func.count(Guardia.id).label('total')
-        ).filter(
-            Guardia.curso_id == configuracion_id,
-            Guardia.profesor_id.isnot(None)
-        ).group_by(Guardia.profesor_id).order_by(
-            func.count(Guardia.id).desc()
-        ).first()
+        top_profesor = (
+            db.query(Guardia.profesor_id, func.count(Guardia.id).label("total"))
+            .filter(Guardia.curso_id == configuracion_id, Guardia.profesor_id.isnot(None))
+            .group_by(Guardia.profesor_id)
+            .order_by(func.count(Guardia.id).desc())
+            .first()
+        )
 
         top_profesor_info = None
         if top_profesor:
@@ -80,7 +78,7 @@ def obtener_resumen(
                 top_profesor_info = {
                     "id": profesor.id,
                     "nombre": profesor.nombre_completo,
-                    "total_guardias": top_profesor[1]
+                    "total_guardias": top_profesor[1],
                 }
 
         porcentaje = (asignadas / total_guardias * 100) if total_guardias > 0 else 0
@@ -90,7 +88,7 @@ def obtener_resumen(
             "sin_asignar": sin_asignar,
             "cobertura_porcentaje": porcentaje,
             "por_turno": {turno: total for turno, total in por_turno},
-            "top_profesor": top_profesor_info
+            "top_profesor": top_profesor_info,
         }
 
     except Exception as e:
@@ -98,10 +96,7 @@ def obtener_resumen(
 
 
 @router.get("/por-profesor")
-def estadisticas_por_profesor(
-    configuracion_id: int,
-    db: Session = Depends(get_db)
-):
+def estadisticas_por_profesor(configuracion_id: int, db: Session = Depends(get_db)):
     """
     Obtiene estadísticas de guardias por profesor.
 
@@ -117,30 +112,24 @@ def estadisticas_por_profesor(
     """
     try:
         # Guardias por profesor
-        resultados = db.query(
-            Profesor.id,
-            Profesor.nombre_completo,
-            func.count(Guardia.id).label('total_guardias')
-        ).join(
-            Guardia, Guardia.profesor_id == Profesor.id
-        ).filter(
-            Guardia.curso_id == configuracion_id
-        ).group_by(
-            Profesor.id, Profesor.nombre_completo
-        ).order_by(
-            func.count(Guardia.id).desc()
-        ).all()
+        resultados = (
+            db.query(
+                Profesor.id,
+                Profesor.nombre_completo,
+                func.count(Guardia.id).label("total_guardias"),
+            )
+            .join(Guardia, Guardia.profesor_id == Profesor.id)
+            .filter(Guardia.curso_id == configuracion_id)
+            .group_by(Profesor.id, Profesor.nombre_completo)
+            .order_by(func.count(Guardia.id).desc())
+            .all()
+        )
 
         return {
             "profesores": [
-                {
-                    "id": r[0],
-                    "nombre": r[1],
-                    "total_guardias": r[2]
-                }
-                for r in resultados
+                {"id": r[0], "nombre": r[1], "total_guardias": r[2]} for r in resultados
             ],
-            "total_profesores": len(resultados)
+            "total_profesores": len(resultados),
         }
 
     except Exception as e:

@@ -16,7 +16,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
 from services.email_service import get_email_service
 from sync.sync_manager import UserAuth
 from utils.ui_helpers import get_corporate_icon
@@ -129,11 +128,7 @@ class ForgotPasswordDialog(QDialog):
         user_input = self.user_input.text().strip()
 
         if not user_input:
-            QMessageBox.warning(
-                self,
-                "Campo vacío",
-                "Por favor introduce tu usuario o email"
-            )
+            QMessageBox.warning(self, "Campo vacío", "Por favor introduce tu usuario o email")
             return
 
         # Buscar usuario
@@ -148,9 +143,7 @@ class ForgotPasswordDialog(QDialog):
 
         if not user_data:
             QMessageBox.warning(
-                self,
-                "Usuario no encontrado",
-                "No existe ningún usuario con ese nombre o email"
+                self, "Usuario no encontrado", "No existe ningún usuario con ese nombre o email"
             )
             return
 
@@ -160,7 +153,7 @@ class ForgotPasswordDialog(QDialog):
                 self,
                 "Sin email",
                 f"El usuario '{username}' no tiene un email registrado.\n\n"
-                "No es posible recuperar la contraseña sin email."
+                "No es posible recuperar la contraseña sin email.",
             )
             return
 
@@ -169,9 +162,7 @@ class ForgotPasswordDialog(QDialog):
 
         # Guardar código en datos del usuario (temporal)
         user_data["recovery_code"] = recovery_code
-        user_data["recovery_code_hash"] = hashlib.sha256(
-            recovery_code.encode()
-        ).hexdigest()
+        user_data["recovery_code_hash"] = hashlib.sha256(recovery_code.encode()).hexdigest()
         self.user_auth._save_users()
 
         # Obtener servicio de email
@@ -186,14 +177,12 @@ class ForgotPasswordDialog(QDialog):
                 "• Servidor SMTP\n"
                 "• Puerto SMTP\n"
                 "• Usuario y Contraseña\n\n"
-                "Esto se configura en el menú Configuración."
+                "Esto se configura en el menú Configuración.",
             )
             return
 
         # Enviar email de recuperación
-        success, message = email_service.send_recovery_code(
-            email, username, recovery_code
-        )
+        success, message = email_service.send_recovery_code(email, username, recovery_code)
 
         if not success:
             QMessageBox.critical(
@@ -204,7 +193,7 @@ class ForgotPasswordDialog(QDialog):
                 "• Tu email esté correctamente registrado\n"
                 "• La configuración SMTP sea correcta\n"
                 "• Tengas conexión a Internet\n\n"
-                "Si el problema persiste, contacta al administrador."
+                "Si el problema persiste, contacta al administrador.",
             )
             return
 
@@ -214,8 +203,7 @@ class ForgotPasswordDialog(QDialog):
         msg.setWindowTitle("✅ Email Enviado")
         msg.setTextFormat(Qt.TextFormat.RichText)
         msg.setWindowFlags(
-            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
-            Qt.WindowType.WindowTitleHint
+            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )
         msg.setText(
             f"Se ha enviado un código de recuperación a:<br><br>"
@@ -227,6 +215,7 @@ class ForgotPasswordDialog(QDialog):
 
         # Abrir diálogo de reseteo
         from presentation.forms.reset_password_dialog import ResetPasswordDialog
+
         reset_dialog = ResetPasswordDialog(username, self)
         if reset_dialog.exec() == QDialog.DialogCode.Accepted:
             self.accept()

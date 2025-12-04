@@ -12,11 +12,10 @@ Ver: documentacion/SOLUCION_COMPILACION.md para más detalles.
 from pathlib import Path
 from typing import Optional
 
+from core.paths import get_resources_directory
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
-
-from core.paths import get_resources_directory
 
 
 class IconManager:
@@ -46,12 +45,7 @@ class IconManager:
             # Usar el sistema de rutas adaptativas para desarrollo y producción
             self._icons_path = get_resources_directory() / "icons"
 
-    def get_icon(
-        self,
-        icon_name: str,
-        color: str = "white",
-        size: int = 24
-    ) -> QIcon:
+    def get_icon(self, icon_name: str, color: str = "white", size: int = 24) -> QIcon:
         """
         Carga un icono SVG y le aplica un color.
 
@@ -76,7 +70,7 @@ class IconManager:
             return QIcon()  # Retorna icono vacío
 
         # Leer el contenido del SVG
-        with open(icon_file, 'r', encoding='utf-8') as f:
+        with open(icon_file, "r", encoding="utf-8") as f:
             svg_content = f.read()
 
         # Reemplazar el color del SVG de manera más agresiva
@@ -87,12 +81,12 @@ class IconManager:
         svg_content = svg_content.replace('fill="black"', f'fill="{color}"')
 
         # También reemplazar en el path si no tiene fill explícito
-        if 'fill=' not in svg_content and '<path' in svg_content:
-            svg_content = svg_content.replace('<path', f'<path fill="{color}"')
+        if "fill=" not in svg_content and "<path" in svg_content:
+            svg_content = svg_content.replace("<path", f'<path fill="{color}"')
 
         # Renderizar el SVG en un pixmap
         renderer = QSvgRenderer()
-        renderer.load(svg_content.encode('utf-8'))
+        renderer.load(svg_content.encode("utf-8"))
 
         pixmap = QPixmap(QSize(size, size))
         pixmap.fill(Qt.GlobalColor.transparent)
@@ -103,12 +97,7 @@ class IconManager:
 
         return QIcon(pixmap)
 
-    def get_colored_icon(
-        self,
-        icon_name: str,
-        color: QColor,
-        size: int = 24
-    ) -> QIcon:
+    def get_colored_icon(self, icon_name: str, color: QColor, size: int = 24) -> QIcon:
         """
         Carga un icono SVG y le aplica un QColor.
 
@@ -132,9 +121,7 @@ class IconManager:
         if not self._icons_path.exists():
             return []
 
-        return [
-            f.stem for f in self._icons_path.glob("*.svg")
-        ]
+        return [f.stem for f in self._icons_path.glob("*.svg")]
 
 
 # Instancia global del gestor de iconos

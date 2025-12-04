@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 # Añadir src al path para imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from models.models import Base, Configuracion, CursoEscolar, Profesor, Zona
+from infrastructure.database.models import Base, Configuracion, CursoEscolar, Profesor, Zona
 from services.calculador_guardias import (
     _easter_sunday,
     _festivos_automaticos_en_rango,
@@ -220,11 +220,13 @@ class TestParseRecreos:
 
     def test_parse_recreos_config_valido(self, session, config_basica):
         """Parsea JSON de recreos."""
-        config_basica.recreos_config = json.dumps([
-            {"id": 1, "etiqueta": "R1 Mañana", "turno": "mañana", "zonas": 2},
-            {"id": 2, "etiqueta": "R2 Mañana", "turno": "mañana", "zonas": 3},
-            {"id": 3, "etiqueta": "R1 Tarde", "turno": "tarde", "zonas": 2},
-        ])
+        config_basica.recreos_config = json.dumps(
+            [
+                {"id": 1, "etiqueta": "R1 Mañana", "turno": "mañana", "zonas": 2},
+                {"id": 2, "etiqueta": "R2 Mañana", "turno": "mañana", "zonas": 3},
+                {"id": 3, "etiqueta": "R1 Tarde", "turno": "tarde", "zonas": 2},
+            ]
+        )
         recreos = _parse_recreos_config(config_basica)
         assert len(recreos) == 3
         assert recreos[0]["id"] == 1
@@ -242,11 +244,13 @@ class TestCalculoRecreosActivos:
 
     def test_recreos_desde_config(self, session, config_basica):
         """Usa recreos_config si está presente."""
-        config_basica.recreos_config = json.dumps([
-            {"id": 1, "turno": "mañana", "zonas": 2},
-            {"id": 2, "turno": "mañana", "zonas": 1},
-            {"id": 3, "turno": "tarde", "zonas": 2},
-        ])
+        config_basica.recreos_config = json.dumps(
+            [
+                {"id": 1, "turno": "mañana", "zonas": 2},
+                {"id": 2, "turno": "mañana", "zonas": 1},
+                {"id": 3, "turno": "tarde", "zonas": 2},
+            ]
+        )
         session.commit()
         manana, tarde = calcular_recreos_activos(session)
         assert manana == 2
@@ -289,9 +293,7 @@ class TestDistribucionBase:
         # Carmen (tarde, no participa en recreos mañana)
         assert distribucion[profesores_basicos[0].id] < distribucion[profesores_basicos[1].id]
 
-    def test_distribucion_mixta_turnos(
-        self, session, curso_activo, config_basica, zonas_basicas
-    ):
+    def test_distribucion_mixta_turnos(self, session, curso_activo, config_basica, zonas_basicas):
         """Profesor mixto participa en ambos turnos."""
         config_basica.hora_recreo1_tarde = time(15, 30)
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
@@ -346,10 +348,12 @@ class TestObtenerEstadisticas:
         """Calcula slots con recreos_config."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 5)  # 5 días
-        config_basica.recreos_config = json.dumps([
-            {"id": 1, "turno": "mañana", "zonas": 2},
-            {"id": 2, "turno": "mañana", "zonas": 1},
-        ])
+        config_basica.recreos_config = json.dumps(
+            [
+                {"id": 1, "turno": "mañana", "zonas": 2},
+                {"id": 2, "turno": "mañana", "zonas": 1},
+            ]
+        )
         session.commit()
 
         stats = obtener_estadisticas(session)
@@ -391,7 +395,9 @@ class TestCalculoCompleto:
 class TestProfesoresConFechasLimite:
     """Tests para profesores con fecha_inicio_guardias y fecha_fin_guardias."""
 
-    def test_profesor_con_fecha_inicio_posterior(self, session, curso_activo, config_basica, zonas_basicas):
+    def test_profesor_con_fecha_inicio_posterior(
+        self, session, curso_activo, config_basica, zonas_basicas
+    ):
         """Profesor que empieza guardias después del inicio del curso."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 30)  # 22 días lectivos
@@ -420,7 +426,9 @@ class TestProfesoresConFechasLimite:
         # prof2 tiene menos días disponibles, debe tener menos guardias
         assert distribucion[prof2.id] < distribucion[prof1.id]
 
-    def test_profesor_con_fecha_fin_anticipada(self, session, curso_activo, config_basica, zonas_basicas):
+    def test_profesor_con_fecha_fin_anticipada(
+        self, session, curso_activo, config_basica, zonas_basicas
+    ):
         """Profesor que termina guardias antes del fin del curso."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 30)
@@ -449,7 +457,9 @@ class TestProfesoresConFechasLimite:
         # prof2 tiene menos días disponibles
         assert distribucion[prof2.id] < distribucion[prof1.id]
 
-    def test_profesor_rango_completo_fuera_curso(self, session, curso_activo, config_basica, zonas_basicas):
+    def test_profesor_rango_completo_fuera_curso(
+        self, session, curso_activo, config_basica, zonas_basicas
+    ):
         """Profesor con rango completamente fuera del curso."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 30)
@@ -559,7 +569,9 @@ class TestCasosEdge:
         assert distribucion[prof2.id] == 0.0
         assert distribucion[prof1.id] > 0.0
 
-    def test_porcentajes_jornada_extremos(self, session, curso_activo, config_basica, zonas_basicas):
+    def test_porcentajes_jornada_extremos(
+        self, session, curso_activo, config_basica, zonas_basicas
+    ):
         """Test con porcentajes de jornada muy variados."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 5)
@@ -643,7 +655,9 @@ class TestCasosEdge:
         with pytest.raises(ValueError, match="No hay días lectivos"):
             calcular_guardias_por_profesor(session)
 
-    def test_error_suma_participacion_cero(self, session, curso_activo, config_basica, zonas_basicas):
+    def test_error_suma_participacion_cero(
+        self, session, curso_activo, config_basica, zonas_basicas
+    ):
         """Error cuando suma de participación es cero."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 5)
@@ -663,7 +677,9 @@ class TestCasosEdge:
         with pytest.raises(ValueError, match="La suma de participación ponderada es 0"):
             calcular_guardias_por_profesor(session)
 
-    def test_redondeo_con_minimo_una_guardia(self, session, curso_activo, config_basica, zonas_basicas):
+    def test_redondeo_con_minimo_una_guardia(
+        self, session, curso_activo, config_basica, zonas_basicas
+    ):
         """Verifica que profesores con participación mínima reciben al menos 1 guardia."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 5)
@@ -785,10 +801,12 @@ class TestRecreoConfigAvanzado:
         """Test con recreos que tienen diferente número de zonas."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 5)
-        config_basica.recreos_config = json.dumps([
-            {"id": 1, "etiqueta": "R1", "turno": "mañana", "zonas": 3},
-            {"id": 2, "etiqueta": "R2", "turno": "mañana", "zonas": 2},
-        ])
+        config_basica.recreos_config = json.dumps(
+            [
+                {"id": 1, "etiqueta": "R1", "turno": "mañana", "zonas": 3},
+                {"id": 2, "etiqueta": "R2", "turno": "mañana", "zonas": 2},
+            ]
+        )
         session.commit()
 
         # Crear 5 zonas pero los recreos solo usan 3 y 2
@@ -809,9 +827,11 @@ class TestRecreoConfigAvanzado:
         """Test donde recreos_config pide más zonas de las disponibles."""
         config_basica.fecha_inicio_curso = date(2025, 9, 1)
         config_basica.fecha_fin_curso = date(2025, 9, 5)
-        config_basica.recreos_config = json.dumps([
-            {"id": 1, "etiqueta": "R1", "turno": "mañana", "zonas": 10},  # Pide 10
-        ])
+        config_basica.recreos_config = json.dumps(
+            [
+                {"id": 1, "etiqueta": "R1", "turno": "mañana", "zonas": 10},  # Pide 10
+            ]
+        )
         session.commit()
 
         # Solo hay 2 zonas reales

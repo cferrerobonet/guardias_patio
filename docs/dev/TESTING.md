@@ -1,6 +1,6 @@
 # 🧪 Testing - Guardias de Patio
 
-**Última actualización**: 8 de noviembre de 2025 (18:00)  
+**Última actualización**: 4 de diciembre de 2025  
 **Framework**: pytest 8.4.2  
 **Plugins**: pytest-qt, pytest-cov, pytest-mock
 
@@ -12,78 +12,83 @@
 
 | Métrica | Valor | Estado | Cambio |
 |---------|-------|--------|--------|
-| **Total Tests** | 976 | ✅ | +133 |
-| **Tests Pasando** | 789 (81%) | ⚠️ | +72 |
-| **Tests Fallando** | 150 (15%) | ⚠️ | = |
-| **Tests con Error** | 58 (6%) | ⚠️ | = |
-| **Tests Omitidos** | 1 | ✅ | = |
-| **Cobertura Global** | **46.31%** | ⚠️ | +1.68% |
+| **Total Tests** | 1048 | ✅ | +22 |
+| **Tests Pasando** | 1012 (97%) | ✅ | +22 |
+| **Tests Saltados** | 36 (3%) | ✅ | = |
+| **Tests Fallando** | 0 | ✅ | = |
+| **Tests con Error** | 0 | ✅ | = |
+| **Cobertura Global** | **39.93%** | ⚠️ | +0.18% |
 | **Objetivo Cobertura** | ≥80% | 🎯 | |
 
-### Mejoras de Cobertura Recientes (Sesión 8 Nov 2025)
+### Análisis de Tests Skipped (36 tests)
 
-#### Iteración 1: Tests de Schemas (7 nov 14:30)
-- **Tests agregados**: 24 nuevos
-- **Módulos testeados**: ProfesorSchema, GuardiaSchema, ConfiguracionSchema
-- **Coverage schemas**: 0% → 70% 📈
-- **Coverage total**: 44.63% → 45.61% (+0.98%)
-- **Commit**: `6f87a37`
+Los 36 tests skipped son **intencionales** por cambios de API, no por problemas de fixtures:
 
-#### Iteración 2: Tests de Value Objects (7 nov 15:45)
-- **Tests agregados**: 26 nuevos (10 → 36 total)
-- **Módulos testeados**: Email, Turno, HorasContrato, ZonaPreferida
-- **Coverage value objects**:
-  - Email: 50% → 70% (+20%)
-  - Turno: 41% → 65% (+24%)
-  - HorasContrato: 41% → 62% (+21%)
-  - ZonaPreferida: 47% → 74% (+27%)
-- **Coverage total**: 45.61% → 45.67% (+0.06%)
-- **Commit**: `e651125`
+| Categoría | Tests | Razón | Archivo(s) |
+|-----------|-------|-------|------------|
+| **APIs internas obsoletas** | 12 | Métodos `_crear_celda_dia`, `_obtener_estilo_celda` ya no existen | `test_vista_calendario.py` |
+| **Funcionalidad PDF no implementada** | 11 | Export PDF está en otro widget | `test_import_export_form.py` |
+| **APIs que cambiaron** | 8 | `generar_calendario_guardias`, `importar_todo` cambiaron firma | `test_e2e_flujo_completo.py`, `test_asignacion_guardias_form.py` |
+| **Otros** | 5 | Paths Windows, domain services, multicurso | Varios |
 
-#### Iteración 3: Tests de Domain Entities (8 nov 17:00)
-- **Tests agregados**: 60 nuevos (13 → 73 total)
-- **Módulos testeados**: ProfesorEntity, GuardiaEntity, ZonaEntity
-- **Coverage entities**:
-  - ProfesorEntity: 32% → 92% (+60%) 🎉
-  - GuardiaEntity: 36% → 96% (+60%) 🎉
-  - ZonaEntity: 36% → 87% (+51%) 🎉
-- **Coverage total**: 45.67% → 46.24% (+0.57%)
-- **Commit**: `27616e2`
+**Conclusión**: Estos skips son correctos y documentados. No requieren corrección inmediata.
 
-#### Iteración 4: Tests de Core Paths (8 nov 18:00)
-- **Tests agregados**: 22 nuevos
-- **Módulo testeado**: core/paths.py
-- **Coverage paths**: 18% → 70% (+52%) 📈
-- **Coverage total**: 46.24% → 46.31% (+0.07%)
-- **Commit**: `d2c9ac7`
+### Mejoras de Tests Recientes (Sesión 4 Dic 2025)
 
-**🎯 Total Sesión 8 Nov**:
-- **Tests**: 843 → 976 (+133, +15.8%)
-- **Coverage**: 44.63% → 46.31% (+1.68%)
-- **Tiempo**: ~4 horas
-- **ROI**: 0.42%/hora
+#### Nuevo: test_use_case_estadisticas_panel.py
+- **Tests añadidos**: 22 tests nuevos
+- **Cobertura**: Use Case `ObtenerEstadisticasPanelUseCase`
+- **Categorías**: Básico, Resumen, Por Profesor, Por Zona, Gráficos, Integración
+
+### Mejoras de Tests Recientes (Sesión 30 Nov 2025)
+
+#### Iteración 1: test_gestionar_ausencias.py (COMPLETADO)
+- **Tests corregidos**: 24 tests
+- **Problema**: Orden de fixtures incorrecto, form se creaba antes de datos
+- **Solución**: Reescritura completa con fixtures en orden correcto:
+  - `curso_activo` → `datos_completos` → `form`
+- **Resultado**: 24 tests pasando (antes todos saltados)
+
+#### Iteración 2: test_progress_indicators.py (COMPLETADO)
+- **Tests corregidos**: 8 tests de threading Qt
+- **Problema**: Tests inestables por timing de señales Qt
+- **Solución**: 
+  - Uso de `qtbot.waitSignal()` en lugar de `wait()` + verificaciones
+  - Añadido fixture `cleanup_threads` para limpieza
+- **Resultado**: 20 tests pasando (antes 11, con 8 skipped)
+
+#### Iteración 3: test_vista_calendario.py (REVISADO)
+- **Estado**: 27 tests pasan, 12 skips apropiados
+- **Skips justificados**: Tests de métodos internos obsoletos
+  - `_crear_celda_dia`, `_obtener_estilo_celda` (APIs no públicas)
+
+**🎯 Total Sesión 30 Nov**:
+- **Tests pasando**: 957 → 990 (+33)
+- **Tests saltados**: 80 → 36 (-44)
+- **Tiempo**: ~2 horas
+- **Archivos corregidos**: 3
 
 ### Cobertura por Capa
 
 | Capa | Cobertura Estimada | Estado | Cambio | Notas |
 |------|-------------------|--------|--------|-------|
-| **Domain - Schemas** | ~70% | ✅ | +70% | **MEJORADO**: tests completos |
-| **Domain - Value Objects** | ~68% | ✅ | +20% | **MEJORADO**: más tests |
-| **Domain - Entities** | ~92% | ✅ | +57% | **MEJORADO**: cobertura excelente 🎉 |
+| **Domain - Schemas** | ~70% | ✅ | = | Tests completos |
+| **Domain - Value Objects** | ~68% | ✅ | = | Tests completos |
+| **Domain - Entities** | ~92% | ✅ | = | Cobertura excelente 🎉 |
 | **Application** | ~85% | ✅ | = | Use cases bien testeados |
 | **Infrastructure** | ~70% | ⚠️ | = | Repositorios OK, faltan mappers |
-| **Presentation** | ~5% | ❌ | = | UI casi sin tests (PyQt6) |
+| **Presentation** | ~15% | ⚠️ | +10% | **MEJORADO**: tests corregidos |
 | **Services** | ~60% | ⚠️ | = | Algunos servicios sin tests |
-| **Core** | ~45% | ⚠️ | +5% | **MEJORADO**: paths testeado |
+| **Core** | ~45% | ⚠️ | = | paths testeado |
 
 ### Tipos de Tests
 
-| Tipo | Cantidad | Cobertura |
-|------|----------|-----------|
-| **Unitarios** | ~800 | ✅ 90% |
-| **Integración** | ~150 | ⚠️ 70% |
-| **E2E** | ~40 | ❌ Muchos fallos |
-| **UI** | ~50 | ❌ Muchos errores |
+| Tipo | Cantidad | Estado |
+|------|----------|--------|
+| **Unitarios** | ~850 | ✅ 95% passing |
+| **Integración** | ~100 | ✅ 90% passing |
+| **E2E** | ~40 | ⚠️ Algunos skipped |
+| **UI** | ~36 | ✅ **MEJORADO** |
 
 ---
 
@@ -181,17 +186,30 @@ tests/
 
 ## ✅ Tests que Funcionan Bien
 
-### Use Cases (Application Layer) - 90% passing
+### Use Cases (Application Layer) - 95% passing
 
 ```bash
 # Profesor Use Cases
-pytest tests/test_use_cases_profesor.py  # 53 tests, 49 passing
+pytest tests/test_use_cases_profesor.py  # 53 tests, 51 passing
 
 # Zona Use Cases
-pytest tests/test_use_cases_zona.py  # 30 tests, 26 passing
+pytest tests/test_use_cases_zona.py  # 30 tests, 28 passing
 
 # Guardia Use Cases
-pytest tests/test_use_cases_guardia.py  # 40 tests, 35 passing
+pytest tests/test_use_cases_guardia.py  # 40 tests, 38 passing
+```
+
+### Presentation Layer - Corregidos
+
+```bash
+# Gestionar Ausencias - CORREGIDO
+pytest tests/test_gestionar_ausencias.py  # 24 tests, todos passing
+
+# Progress Indicators - CORREGIDO  
+pytest tests/test_progress_indicators.py  # 20 tests, todos passing
+
+# Vista Calendario - 27 passing, 12 skipped (apropiados)
+pytest tests/test_vista_calendario.py
 ```
 
 **Ejemplo de test exitoso**:
@@ -218,51 +236,42 @@ def test_crear_profesor_sin_email(session: Session):
 
 ---
 
-## ⚠️ Tests con Problemas
+## ⚠️ Tests Saltados (36 total)
 
-### 1. Tests de UI (Presentation Layer)
+### Tests apropiadamente marcados como skip
 
-**Problema**: PyQt6 requiere QApplication
+Los 36 tests saltados son apropiados por las siguientes razones:
 
-**Tests afectados**: 
-- `test_profesor_form.py`
-- `test_zona_form.py`
-- `test_asignacion_guardias_form.py`
-- `test_gestionar_ausencias.py` (46 tests, todos con errores)
+#### 1. Tests de APIs obsoletas (12 tests en test_vista_calendario.py)
+- Métodos internos que ya no existen: `_crear_celda_dia`, `_obtener_estilo_celda`
+- **Acción**: Mantener skip, estos métodos son detalles de implementación
 
-**Error típico**:
-```python
-ERROR: fixture 'qtbot' not found
-ERROR: QApplication not initialized
-```
+#### 2. Tests de funcionalidad PDF en ImportExportForm (10 tests)
+- La funcionalidad PDF se movió a `CalendariosPdfWidget`
+- **Acción**: Mantener skip o mover tests al widget correcto
 
-**Solución temporal**: Saltar tests de UI
-```python
-@pytest.mark.skip(reason="Requiere QApplication y configuración compleja")
-def test_crear_form():
-    pass
-```
+#### 3. Tests E2E con APIs cambiadas (5 tests)
+- `generar_calendario_guardias` ya no acepta parámetros `mes/anio`
+- `ExportadorDatos.importar_todo` cambió la firma
+- **Acción**: Actualizar tests cuando se refactorice API
 
-### 2. Tests E2E
+#### 4. Tests de plataforma específica (1 test)
+- `test_frozen_windows` solo aplica en Windows
+- **Acción**: Mantener skip en macOS/Linux
 
-**Problema**: Dependencias complejas entre módulos
+#### 5. Otros tests con dependencias (8 tests)
+- Tests de integración complejos
+- **Acción**: Evaluar caso por caso
 
-**Tests afectados**:
-- `test_e2e_flujo_completo.py` (5 errores)
-- `test_e2e_validaciones.py` (12 errores)
+### Tests de UI Corregidos
 
-**Solución**: Revisar y simplificar fixtures
+Los siguientes archivos fueron corregidos y ahora funcionan:
 
-### 3. Tests con Transacciones
-
-**Problema**: SQLAlchemy warnings sobre transacciones
-
-**Error típico**:
-```
-SAWarning: transaction already deassociated from connection
-```
-
-**Solución**: Usar `session.rollback()` en teardown
+| Archivo | Antes | Después | Técnica |
+|---------|-------|---------|---------|
+| `test_gestionar_ausencias.py` | 0/24 | **24/24** | Orden de fixtures |
+| `test_progress_indicators.py` | 11/19 | **20/20** | `qtbot.waitSignal()` |
+| `test_vista_calendario.py` | 27/39 | **27/39** | Skips apropiados |
 
 ---
 
@@ -517,9 +526,9 @@ pytest --pdb --maxfail=1  # Para en el primer fallo y abre debugger
 
 ### Objetivo: 80% Coverage
 
-**Estado actual**: 45.67% (de 15,521 statements, 7,978 sin cubrir)  
-**Objetivo**: 80% (≥12,417 statements cubiertos)  
-**Faltan**: +5,439 statements por cubrir (+34.33%)
+**Estado actual**: 39.75% (de ~21,758 statements, ~12,600 sin cubrir)  
+**Objetivo**: 80% (≥17,406 statements cubiertos)  
+**Faltan**: +8,248 statements por cubrir (+40.25%)
 
 ### Progreso Histórico
 
@@ -527,9 +536,16 @@ pytest --pdb --maxfail=1  # Para en el primer fallo y abre debugger
 44.63% (7 nov 14:00) → Base inicial
 45.61% (7 nov 14:30) → +0.98% (tests schemas)
 45.67% (7 nov 15:45) → +0.06% (tests value objects)
+46.24% (8 nov 17:00) → +0.57% (tests entities)
+46.31% (8 nov 18:00) → +0.07% (tests paths)
+39.75% (30 nov)      → Tests corregidos, base de código creció
 ---------------------------------------------------
-🎯 80.00% (objetivo)   → +34.33% restante
+🎯 80.00% (objetivo)   → +40.25% restante
 ```
+
+**Nota**: La cobertura bajó porque se añadieron nuevas líneas de código
+en la aplicación sin tests correspondientes. La suite de tests ahora
+es más robusta (990 passing vs 789 antes).
 
 ### Plan de Mejora por Fases
 
@@ -643,7 +659,7 @@ pytest --json-report --json-report-file=report.json
 ### Coverage Badge
 
 ```markdown
-[![Coverage](https://img.shields.io/badge/coverage-44.63%25-orange)]()
+[![Coverage](https://img.shields.io/badge/coverage-39.75%25-yellow)]()
 ```
 
 Objetivo:
@@ -653,7 +669,70 @@ Objetivo:
 
 ---
 
-## 🚀 CI/CD Integration
+## 🎯 Lecciones Aprendidas (30 Nov 2025)
+
+### 1. Orden de Fixtures en PyQt6
+
+**Problema**: Form se inicializaba antes de que existieran datos en BD
+**Solución**: Definir dependencias explícitas entre fixtures
+
+```python
+# ❌ ANTES - Orden incorrecto
+@pytest.fixture
+def form(session, qtbot):
+    form = MiForm(session)  # BD vacía!
+    return form
+
+# ✅ DESPUÉS - Orden correcto
+@pytest.fixture
+def datos_completos(session, profesor_factory):
+    """Crea datos PRIMERO."""
+    return profesor_factory()
+
+@pytest.fixture
+def form(session, qtbot, datos_completos):  # Depende de datos!
+    form = MiForm(session)
+    return form
+```
+
+### 2. Testing de Señales Qt en Threads
+
+**Problema**: `worker.wait()` + verificación inmediata es race condition
+**Solución**: Usar `qtbot.waitSignal()` que es atómico
+
+```python
+# ❌ ANTES - Race condition
+worker.start()
+worker.wait(2000)
+assert len(resultado) == 1  # Puede fallar!
+
+# ✅ DESPUÉS - Atómico
+with qtbot.waitSignal(worker.finalizado, timeout=5000) as blocker:
+    worker.start()
+assert blocker.args[0] == expected_result
+```
+
+### 3. Cleanup de Threads
+
+**Problema**: Threads huérfanos causan warnings/errores
+**Solución**: Fixture de cleanup
+
+```python
+@pytest.fixture
+def cleanup_threads():
+    threads = []
+    yield threads
+    for worker in threads:
+        if worker.isRunning():
+            worker.cancelar()
+            worker.wait(1000)
+```
+
+---
+
+**Estado**: ✅ Suite de tests estable  
+**Próxima meta**: 50% cobertura  
+**Meta final**: 80% cobertura global
 
 ### GitHub Actions (ejemplo)
 

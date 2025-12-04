@@ -9,6 +9,8 @@ Permite configurar opciones de generación de PDFs con diferentes modos:
 from datetime import datetime
 from typing import List
 
+import ui_styles as styles
+from infrastructure.database.models import Profesor
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -24,8 +26,6 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-import ui_styles as styles
-from models.models import Profesor
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
 
@@ -281,9 +281,7 @@ class PdfExportWidget(QGroupBox):
         email_layout.setSpacing(5)
 
         # Checkbox de envío por email
-        self.enviar_email_check = QCheckBox(
-            "📧 Enviar calendario por email a cada profesor"
-        )
+        self.enviar_email_check = QCheckBox("📧 Enviar calendario por email a cada profesor")
         self.enviar_email_check.setChecked(False)
         self.enviar_email_check.setStyleSheet(
             """

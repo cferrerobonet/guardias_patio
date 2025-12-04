@@ -12,11 +12,10 @@ from pathlib import Path
 # Agregar src al path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from sqlalchemy.orm import Session
-
 from database.db_manager import SessionLocal
-from models.models import Guardia, Profesor, Zona
+from infrastructure.database.models import Guardia, Profesor, Zona
 from services.exportador_pdf import ExportadorPDF
+from sqlalchemy.orm import Session
 
 
 def profile_data_loading(session: Session) -> dict:
@@ -40,9 +39,7 @@ def profile_data_loading(session: Session) -> dict:
     ultimo_dia = primer_dia + timedelta(days=31)
 
     guardias = (
-        session.query(Guardia)
-        .filter(Guardia.fecha >= primer_dia, Guardia.fecha < ultimo_dia)
-        .all()
+        session.query(Guardia).filter(Guardia.fecha >= primer_dia, Guardia.fecha < ultimo_dia).all()
     )
 
     # Acceder a relaciones (simula renderizado de UI)
@@ -78,9 +75,7 @@ def profile_calendar_rendering(session: Session) -> dict:
     ultimo_dia = primer_dia + timedelta(days=31)
 
     guardias = (
-        session.query(Guardia)
-        .filter(Guardia.fecha >= primer_dia, Guardia.fecha < ultimo_dia)
-        .all()
+        session.query(Guardia).filter(Guardia.fecha >= primer_dia, Guardia.fecha < ultimo_dia).all()
     )
 
     # Simular construcción de estructura de datos para calendario
@@ -90,12 +85,14 @@ def profile_calendar_rendering(session: Session) -> dict:
         if fecha_key not in calendario:
             calendario[fecha_key] = []
 
-        calendario[fecha_key].append({
-            "profesor": g.profesor.nombre_completo if g.profesor else "N/A",
-            "zona": g.zona.nombre_zona if g.zona else "N/A",
-            "turno": g.turno,
-            "recreo": g.recreo,
-        })
+        calendario[fecha_key].append(
+            {
+                "profesor": g.profesor.nombre_completo if g.profesor else "N/A",
+                "zona": g.zona.nombre_zona if g.zona else "N/A",
+                "turno": g.turno,
+                "recreo": g.recreo,
+            }
+        )
 
     elapsed = time.perf_counter() - start
 
@@ -206,6 +203,7 @@ def main():
     except Exception as e:
         print(f"❌ Error durante profiling: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
     finally:

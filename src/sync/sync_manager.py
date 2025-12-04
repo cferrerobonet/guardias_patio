@@ -144,7 +144,7 @@ class SFTPSyncBackend(SyncBackend):
 
     def upload_file(self, local_path: Path, remote_path: str) -> bool:
         try:
-            if not hasattr(self, 'sftp') or self.sftp is None:
+            if not hasattr(self, "sftp") or self.sftp is None:
                 logger.error("Conexión SFTP no establecida")
                 return False
 
@@ -160,7 +160,7 @@ class SFTPSyncBackend(SyncBackend):
 
     def download_file(self, remote_path: str, local_path: Path) -> bool:
         try:
-            if not hasattr(self, 'sftp') or self.sftp is None:
+            if not hasattr(self, "sftp") or self.sftp is None:
                 logger.error("Conexión SFTP no establecida")
                 return False
 
@@ -177,7 +177,7 @@ class SFTPSyncBackend(SyncBackend):
 
     def file_exists(self, remote_path: str) -> bool:
         try:
-            if not hasattr(self, 'sftp') or self.sftp is None:
+            if not hasattr(self, "sftp") or self.sftp is None:
                 return False
 
             full_path = f"{self.base_dir}/{remote_path}"
@@ -268,6 +268,7 @@ class SyncManager:
                     # Importar JSON a la base de datos si se proporciona session
                     if session:
                         from sync.data_exporter import DataExporter
+
                         logger.info("📊 Importando datos a la base de datos local...")
                         if DataExporter.import_from_json(
                             session, local_json_path, clear_existing=False
@@ -306,6 +307,7 @@ class SyncManager:
 
         if session:
             from sync.data_exporter import DataExporter
+
             logger.info("📤 Exportando base de datos a JSON...")
 
             if progress_callback:
@@ -341,10 +343,10 @@ class SyncManager:
             logger.info("☁️  Subiendo datos a la nube...")
 
             if progress_callback:
-                progress_callback("uploading", {
-                    "message": "Subiendo archivo a la nube",
-                    "file_size_kb": file_size_kb
-                })
+                progress_callback(
+                    "uploading",
+                    {"message": "Subiendo archivo a la nube", "file_size_kb": file_size_kb},
+                )
 
             try:
                 if self.backend.upload_file(local_json_path, remote_path):
@@ -416,6 +418,7 @@ class UserAuth:
         # Si no se especifica, usar el directorio de datos de la aplicación
         if users_file is None:
             from core.paths import get_data_directory
+
             users_file = get_data_directory() / "users.json"
         self.users_file = users_file
         self.users = self._load_users()

@@ -42,7 +42,7 @@ from domain.services import (
     DistribucionCuotasService,
     EquidadGuardiasService,
 )
-from models.models import Ausencia, Configuracion, Guardia, Profesor, Zona
+from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services.calculador_guardias import (
     _parse_recreos_config,
     calcular_guardias_por_profesor,
@@ -109,9 +109,7 @@ def _profesor_ausente(session: Session, profesor_id: int, fecha: date) -> bool:
     return ausencia is not None
 
 
-def _cumple_restricciones(
-    profesor: Profesor, slot: SlotV3, session: Session
-) -> bool:
+def _cumple_restricciones(profesor: Profesor, slot: SlotV3, session: Session) -> bool:
     """
     Verifica si un profesor puede cubrir un slot según sus restricciones.
 
@@ -212,8 +210,8 @@ def _generar_todos_slots(config: Configuracion, session: Session) -> List[SlotV3
     slots = []
     for dia in dias_lectivos:
         for recreo_data in recreos_list:
-            recreo_id = recreo_data['id']
-            turno = recreo_data['turno']
+            recreo_id = recreo_data["id"]
+            turno = recreo_data["turno"]
             for zona in zonas:
                 # Verificar si la zona está activa en esta fecha
                 zona_activa = True
@@ -247,7 +245,9 @@ def _calcular_slots_posibles(
     return count
 
 
-def _calcular_prioridad_profesor(pc: ProfesorConCuota, config: Configuracion, dias_lectivos_totales: int) -> float:
+def _calcular_prioridad_profesor(
+    pc: ProfesorConCuota, config: Configuracion, dias_lectivos_totales: int
+) -> float:
     """
     Calcula prioridad de asignación (menor = más prioritario).
 
@@ -292,9 +292,7 @@ def _calcular_prioridad_profesor(pc: ProfesorConCuota, config: Configuracion, di
 
 
 def _ordenar_profesores_por_prioridad(
-    profesores_cuotas: List[ProfesorConCuota],
-    config: Configuracion,
-    dias_lectivos_totales: int
+    profesores_cuotas: List[ProfesorConCuota], config: Configuracion, dias_lectivos_totales: int
 ) -> List[ProfesorConCuota]:
     """
     Ordena profesores por prioridad de asignación.
@@ -417,7 +415,8 @@ def _ordenar_slots_para_profesor(
         # 4. Prioridad de día de semana (0 = día objetivo, 1 = otro día)
         # MENOR PRIORIDAD que fechas consecutivas
         dia_semana_match = (
-            0 if dia_semana_objetivo is not None and slot.fecha.weekday() == dia_semana_objetivo
+            0
+            if dia_semana_objetivo is not None and slot.fecha.weekday() == dia_semana_objetivo
             else 1
         )
 
@@ -428,12 +427,12 @@ def _ordenar_slots_para_profesor(
         recreo_id = slot.recreo_id
 
         return (
-            zona_match,          # Prioridad 1: Mantener misma zona
-            recreo_match,        # Prioridad 2: Mantener mismo recreo
-            distancia_dias,      # Prioridad 3: ⭐ Fechas consecutivas/agrupadas (NUEVO)
-            dia_semana_match,    # Prioridad 4: Mantener mismo día de semana (menor prioridad)
-            fecha,               # Prioridad 5: Cronológico dentro del grupo
-            recreo_id,           # Prioridad 6: Desempate por recreo
+            zona_match,  # Prioridad 1: Mantener misma zona
+            recreo_match,  # Prioridad 2: Mantener mismo recreo
+            distancia_dias,  # Prioridad 3: ⭐ Fechas consecutivas/agrupadas (NUEVO)
+            dia_semana_match,  # Prioridad 4: Mantener mismo día de semana (menor prioridad)
+            fecha,  # Prioridad 5: Cronológico dentro del grupo
+            recreo_id,  # Prioridad 6: Desempate por recreo
         )
 
     return sorted(slots, key=clave_ordenamiento)
@@ -491,13 +490,16 @@ def generar_guardias_v3_simple(
 
     # Obtener curso activo para asignar a las guardias
     from services.gestor_cursos import GestorCursos
+
     curso_activo = GestorCursos.obtener_curso_activo(session)
     curso_id = curso_activo.id if curso_activo else None
 
     if not curso_id:
         logger.warning("⚠️ No hay curso activo - las guardias se crearán sin curso asignado")
     else:
-        logger.info(f"✅ Guardias se asignarán al curso activo: {curso_activo.nombre} (ID: {curso_id})")
+        logger.info(
+            f"✅ Guardias se asignarán al curso activo: {curso_activo.nombre} (ID: {curso_id})"
+        )
 
     reportar_progreso(5, "Paso 1: Cargando profesores activos...")
     profesores = session.query(Profesor).filter(Profesor.activo == True).all()  # noqa: E712
@@ -567,8 +569,7 @@ def generar_guardias_v3_simple(
         profesores_cuotas.append(pc)
 
         logger.info(
-            f"  • {profesor.nombre_completo}: "
-            f"cuota={cuota}, slots_posibles={slots_posibles}"
+            f"  • {profesor.nombre_completo}: cuota={cuota}, slots_posibles={slots_posibles}"
         )
 
         # Reportar progreso cada 5 profesores
@@ -576,8 +577,7 @@ def generar_guardias_v3_simple(
         if procesados % 5 == 0 or procesados == len(profesores):
             progreso = 20 + int((procesados / len(profesores)) * 8)
             reportar_progreso(
-                progreso,
-                f"Paso 3: Analizando profesor {procesados}/{len(profesores)}"
+                progreso, f"Paso 3: Analizando profesor {procesados}/{len(profesores)}"
             )
 
     # Ordenar por prioridad con NUEVA ESTRATEGIA v3.1
@@ -589,7 +589,11 @@ def generar_guardias_v3_simple(
     logger.info("")
     logger.info("  Orden de asignación (⭐ fecha_inicio urgente primero):")
     for i, pc in enumerate(profesores_ordenados[:10], 1):
-        fecha_info = f", inicio={pc.profesor.fecha_inicio_guardias}" if pc.profesor.fecha_inicio_guardias else ""
+        fecha_info = (
+            f", inicio={pc.profesor.fecha_inicio_guardias}"
+            if pc.profesor.fecha_inicio_guardias
+            else ""
+        )
         logger.info(
             f"    {i}. {pc.profesor.nombre_completo} "
             f"(cuota={pc.cuota}, disponibles={pc.slots_posibles}{fecha_info}, prioridad={pc.prioridad:.1f})"
@@ -624,7 +628,7 @@ def generar_guardias_v3_simple(
             )
             reportar_progreso(
                 30 + int((idx / len(profesores_ordenados)) * 60),
-                f"Paso 4: Procesando {idx}/{len(profesores_ordenados)} profesores"
+                f"Paso 4: Procesando {idx}/{len(profesores_ordenados)} profesores",
             )
             continue
 
@@ -704,8 +708,7 @@ def generar_guardias_v3_simple(
     session.commit()
 
     reportar_progreso(
-        90,
-        f"Paso 4: ✓ {guardias_asignadas} guardias creadas ({guardias_asignadas}/{total_slots})"
+        90, f"Paso 4: ✓ {guardias_asignadas} guardias creadas ({guardias_asignadas}/{total_slots})"
     )
 
     # PASO 5: VALIDACIÓN Y ESTADÍSTICAS (90% - 100%)
@@ -732,8 +735,7 @@ def generar_guardias_v3_simple(
     stats_service.log_resumen(stats)
 
     reportar_progreso(
-        95,
-        f"Paso 5: ✓ {len(profesores_incompletos)} profesores con cuota incompleta"
+        95, f"Paso 5: ✓ {len(profesores_incompletos)} profesores con cuota incompleta"
     )
 
     if profesores_incompletos:
@@ -742,14 +744,13 @@ def generar_guardias_v3_simple(
         for profesor, asignadas, cuota in profesores_incompletos:
             faltantes = cuota - asignadas
             logger.warning(
-                f"    • {profesor.nombre_completo}: {asignadas}/{cuota} "
-                f"(faltan {faltantes})"
+                f"    • {profesor.nombre_completo}: {asignadas}/{cuota} (faltan {faltantes})"
             )
 
     reportar_progreso(98, "Paso 5: Generación completada, finalizando...")
     reportar_progreso(
         100,
-        f"✅ Completado: {guardias_asignadas}/{total_slots} guardias ({cobertura:.1f}% cobertura)"
+        f"✅ Completado: {guardias_asignadas}/{total_slots} guardias ({cobertura:.1f}% cobertura)",
     )
 
     if slots_vacios > 0:
@@ -823,7 +824,9 @@ def generar_guardias_v3_simple(
             profesores_con_error.append((profesor, guardias_asignadas, cuota, diferencia))
 
             if diferencia < 0:
-                profesores_con_deficit.append((profesor, guardias_asignadas, cuota, abs(diferencia)))
+                profesores_con_deficit.append(
+                    (profesor, guardias_asignadas, cuota, abs(diferencia))
+                )
             else:
                 profesores_con_exceso.append((profesor, guardias_asignadas, cuota, diferencia))
 
@@ -835,12 +838,16 @@ def generar_guardias_v3_simple(
         if profesores_con_deficit:
             logger.warning(f"\n  Profesores con DÉFICIT ({len(profesores_con_deficit)}):")
             for profesor, asignadas_real, cuota, faltante in profesores_con_deficit:
-                logger.warning(f"    • {profesor.nombre_completo}: {asignadas_real}/{cuota} (faltan {faltante})")
+                logger.warning(
+                    f"    • {profesor.nombre_completo}: {asignadas_real}/{cuota} (faltan {faltante})"
+                )
 
         if profesores_con_exceso:
             logger.warning(f"\n  Profesores con EXCESO ({len(profesores_con_exceso)}):")
             for profesor, asignadas_real, cuota, exceso in profesores_con_exceso:
-                logger.warning(f"    • {profesor.nombre_completo}: {asignadas_real}/{cuota} (sobran {exceso})")
+                logger.warning(
+                    f"    • {profesor.nombre_completo}: {asignadas_real}/{cuota} (sobran {exceso})"
+                )
 
     logger.info("=" * 80)
 
@@ -868,7 +875,9 @@ def generar_guardias_v3_simple(
         logger.info("✅ Ningún profesor tiene más de 1 guardia por día")
     else:
         logger.error(f"❌ PROBLEMA CRÍTICO: {len(dias_multiples)} días con múltiples guardias:")
-        for profesor, fecha, count in sorted(dias_multiples, key=lambda x: (x[1], x[0].nombre_completo)):
+        for profesor, fecha, count in sorted(
+            dias_multiples, key=lambda x: (x[1], x[0].nombre_completo)
+        ):
             logger.error(f"    • {profesor.nombre_completo} el {fecha}: {count} guardias")
 
     logger.info("=" * 80)
@@ -888,9 +897,7 @@ def generar_guardias_v3_simple(
     from services.validador_guardias import validar_guardias_completo
 
     resultado_validacion = validar_guardias_completo(
-        session=session,
-        profesores=profesores,
-        cuotas_esperadas=cuotas
+        session=session, profesores=profesores, cuotas_esperadas=cuotas
     )
 
     if resultado_validacion.es_valido():
@@ -898,7 +905,9 @@ def generar_guardias_v3_simple(
         logger.info("✅ VALIDACIÓN EXITOSA: Todas las restricciones cumplidas")
     else:
         logger.warning("")
-        logger.warning(f"⚠️  VALIDACIÓN CON ERRORES: {len(resultado_validacion.errores_criticos)} problemas críticos")
+        logger.warning(
+            f"⚠️  VALIDACIÓN CON ERRORES: {len(resultado_validacion.errores_criticos)} problemas críticos"
+        )
         logger.warning("   Ver reporte de validación arriba para detalles")
 
     logger.info("=" * 80)

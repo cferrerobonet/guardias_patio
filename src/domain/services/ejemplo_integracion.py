@@ -9,7 +9,7 @@ y mejorando la separación de responsabilidades.
 from datetime import date
 from typing import Dict, List, Tuple
 
-from models.models import Configuracion, Guardia, Profesor, Zona
+from infrastructure.database.models import Configuracion, Guardia, Profesor, Zona
 from services.estadisticas_service import EstadisticasService
 from sqlalchemy.orm import Session
 from utils import get_logger
@@ -47,6 +47,7 @@ def generar_guardias_con_servicios_dominio(
         Tupla (guardias_generadas, cuotas_asignadas)
     """
     if reportar_progreso is None:
+
         def reportar_progreso(p, m):
             return None
 
@@ -120,13 +121,11 @@ def generar_guardias_con_servicios_dominio(
                 turno = "mañana" if recreo_id == 1 else "tarde"
 
                 # Obtener profesores disponibles usando servicio de dominio
-                profesores_disponibles = (
-                    disponibilidad_service.obtener_profesores_disponibles(
-                        profesores=profesores,
-                        fecha=fecha,
-                        turno_recreo=turno,
-                        recreo_id=recreo_id,
-                    )
+                profesores_disponibles = disponibilidad_service.obtener_profesores_disponibles(
+                    profesores=profesores,
+                    fecha=fecha,
+                    turno_recreo=turno,
+                    recreo_id=recreo_id,
                 )
 
                 if not profesores_disponibles:
@@ -182,9 +181,7 @@ def generar_guardias_con_servicios_dominio(
 
     if indice_equidad < 0.90:  # Si equidad < 90%
         logger.warning("  ⚠️  Equidad por debajo del objetivo (90%)")
-        sugerencias = equidad_service.sugerir_reasignaciones(
-            calendario, cuotas, max_sugerencias=5
-        )
+        sugerencias = equidad_service.sugerir_reasignaciones(calendario, cuotas, max_sugerencias=5)
         if sugerencias:
             logger.info(f"  💡 {len(sugerencias)} sugerencias de mejora:")
             for sug in sugerencias[:3]:
@@ -249,9 +246,7 @@ def ejemplo_integracion_caso_uso(session: Session):
         return None
 
     # 2. Validar asignación completa
-    puede, razon = asignacion.puede_asignar_guardia(
-        profesor, fecha, turno, recreo_id, zona_id
-    )
+    puede, razon = asignacion.puede_asignar_guardia(profesor, fecha, turno, recreo_id, zona_id)
 
     if not puede:
         logger.error(f"No se puede asignar guardia: {razon}")
@@ -302,9 +297,7 @@ def ejemplo_testing_con_mock():
     profesor.id = 1
     profesor.activo = True
 
-    disponible, _ = mock_disponibilidad.esta_disponible(
-        profesor, date.today(), "mañana"
-    )
+    disponible, _ = mock_disponibilidad.esta_disponible(profesor, date.today(), "mañana")
 
     assert disponible is True
 
@@ -313,9 +306,7 @@ def ejemplo_testing_con_mock():
         False,
         "Profesor ausente",
     )
-    disponible, razon = mock_disponibilidad.esta_disponible(
-        profesor, date.today(), "mañana"
-    )
+    disponible, razon = mock_disponibilidad.esta_disponible(profesor, date.today(), "mañana")
 
     assert disponible is False
     assert razon == "Profesor ausente"
@@ -328,9 +319,7 @@ if __name__ == "__main__":
     session = SessionLocal()
     try:
         # Generar guardias usando servicios de dominio
-        calendario, cuotas = generar_guardias_con_servicios_dominio(
-            session, configuracion_id=1
-        )
+        calendario, cuotas = generar_guardias_con_servicios_dominio(session, configuracion_id=1)
         session.commit()
         print(f"✅ {len(calendario)} guardias generadas")
     except Exception as e:

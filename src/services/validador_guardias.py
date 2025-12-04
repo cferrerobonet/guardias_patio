@@ -13,7 +13,7 @@ Valida que las guardias asignadas cumplan todas las restricciones:
 from collections import defaultdict
 from typing import Dict, List
 
-from models.models import Ausencia, Guardia, Profesor
+from infrastructure.database.models import Ausencia, Guardia, Profesor
 from sqlalchemy.orm import Session
 from utils import get_logger
 
@@ -105,9 +105,7 @@ class ValidadorGuardias:
         self.session = session
 
     def validar_todo(
-        self,
-        profesores: List[Profesor],
-        cuotas_esperadas: Dict[int, int]
+        self, profesores: List[Profesor], cuotas_esperadas: Dict[int, int]
     ) -> ResultadoValidacion:
         """
         Ejecuta todas las validaciones.
@@ -149,9 +147,7 @@ class ValidadorGuardias:
         return resultado
 
     def _validar_profesores_sin_guardias(
-        self,
-        profesores: List[Profesor],
-        resultado: ResultadoValidacion
+        self, profesores: List[Profesor], resultado: ResultadoValidacion
     ):
         """Valida que todos los profesores activos tengan al menos 1 guardia."""
         logger.info("\n1️⃣ Validando profesores sin guardias...")
@@ -170,8 +166,10 @@ class ValidadorGuardias:
                     f"jornada: {profesor.porcentaje_jornada}%)"
                 )
 
-        resultado.metricas['profesores_sin_guardias'] = len(profesores_sin_guardias)
-        resultado.metricas['profesores_con_guardias'] = len(profesores) - len(profesores_sin_guardias)
+        resultado.metricas["profesores_sin_guardias"] = len(profesores_sin_guardias)
+        resultado.metricas["profesores_con_guardias"] = len(profesores) - len(
+            profesores_sin_guardias
+        )
 
         if profesores_sin_guardias:
             logger.warning(f"  ❌ {len(profesores_sin_guardias)} profesores sin guardias")
@@ -179,20 +177,16 @@ class ValidadorGuardias:
             logger.info("  ✅ Todos los profesores tienen guardias")
 
     def _validar_fechas_inicio_fin(
-        self,
-        profesores: List[Profesor],
-        resultado: ResultadoValidacion
+        self, profesores: List[Profesor], resultado: ResultadoValidacion
     ):
         """Valida que las guardias respeten fecha_inicio_guardias y fecha_fin_guardias."""
         logger.info("\n2️⃣ Validando cumplimiento de fechas inicio/fin...")
 
-        profesores_con_fecha_inicio = [
-            p for p in profesores if p.fecha_inicio_guardias
-        ]
+        profesores_con_fecha_inicio = [p for p in profesores if p.fecha_inicio_guardias]
 
         if not profesores_con_fecha_inicio:
             logger.info("  ℹ️  Ningún profesor tiene fecha_inicio configurada")
-            resultado.metricas['cumplimiento_fecha_inicio'] = 100.0
+            resultado.metricas["cumplimiento_fecha_inicio"] = 100.0
             return
 
         violaciones_inicio = []
@@ -200,9 +194,12 @@ class ValidadorGuardias:
         retrasos = []
 
         for profesor in profesores_con_fecha_inicio:
-            guardias = self.session.query(Guardia).filter(
-                Guardia.profesor_id == profesor.id
-            ).order_by(Guardia.fecha).all()
+            guardias = (
+                self.session.query(Guardia)
+                .filter(Guardia.profesor_id == profesor.id)
+                .order_by(Guardia.fecha)
+                .all()
+            )
 
             if not guardias:
                 profesores_sin_guardias_con_fecha.append(profesor)
@@ -245,18 +242,23 @@ class ValidadorGuardias:
 
         # Calcular métricas
         total_con_fecha = len(profesores_con_fecha_inicio)
-        cumplen_exactamente = total_con_fecha - len(violaciones_inicio) - len(retrasos) - len(profesores_sin_guardias_con_fecha)
+        cumplen_exactamente = (
+            total_con_fecha
+            - len(violaciones_inicio)
+            - len(retrasos)
+            - len(profesores_sin_guardias_con_fecha)
+        )
 
         cumplimiento = (cumplen_exactamente / total_con_fecha * 100) if total_con_fecha > 0 else 100
 
-        resultado.metricas['profesores_con_fecha_inicio'] = total_con_fecha
-        resultado.metricas['cumplimiento_fecha_inicio'] = cumplimiento
-        resultado.metricas['violaciones_fecha_inicio'] = len(violaciones_inicio)
-        resultado.metricas['retrasos_fecha_inicio'] = len(retrasos)
+        resultado.metricas["profesores_con_fecha_inicio"] = total_con_fecha
+        resultado.metricas["cumplimiento_fecha_inicio"] = cumplimiento
+        resultado.metricas["violaciones_fecha_inicio"] = len(violaciones_inicio)
+        resultado.metricas["retrasos_fecha_inicio"] = len(retrasos)
 
         if retrasos:
             retraso_promedio = sum(r[2] for r in retrasos) / len(retrasos)
-            resultado.metricas['retraso_promedio_dias'] = retraso_promedio
+            resultado.metricas["retraso_promedio_dias"] = retraso_promedio
 
         if violaciones_inicio:
             logger.error(f"  ❌ {len(violaciones_inicio)} violaciones de fecha_inicio")
@@ -271,7 +273,7 @@ class ValidadorGuardias:
         self,
         profesores: List[Profesor],
         cuotas_esperadas: Dict[int, int],
-        resultado: ResultadoValidacion
+        resultado: ResultadoValidacion,
     ):
         """Valida que la distribución sea equilibrada."""
         logger.info("\n3️⃣ Validando equilibrio de distribución...")
@@ -304,11 +306,11 @@ class ValidadorGuardias:
         if desviaciones:
             promedio_desv = sum(desviaciones) / len(desviaciones)
             varianza = sum((d - promedio_desv) ** 2 for d in desviaciones) / len(desviaciones)
-            desviacion_std = varianza ** 0.5
+            desviacion_std = varianza**0.5
 
-            resultado.metricas['desviacion_promedio_pct'] = promedio_desv
-            resultado.metricas['desviacion_std_pct'] = desviacion_std
-            resultado.metricas['profesores_desequilibrio'] = len(profesores_con_desequilibrio)
+            resultado.metricas["desviacion_promedio_pct"] = promedio_desv
+            resultado.metricas["desviacion_std_pct"] = desviacion_std
+            resultado.metricas["profesores_desequilibrio"] = len(profesores_con_desequilibrio)
 
             if desviacion_std < 10:
                 logger.info(f"  ✅ Buen equilibrio (desv. std: {desviacion_std:.1f}%)")
@@ -324,12 +326,16 @@ class ValidadorGuardias:
         guardias_con_ausencia = []
 
         for guardia in self.session.query(Guardia).all():
-            ausencia = self.session.query(Ausencia).filter(
-                Ausencia.profesor_id == guardia.profesor_id,
-                Ausencia.fecha_inicio <= guardia.fecha,
-                Ausencia.fecha_fin >= guardia.fecha,
-                Ausencia.activa == True  # noqa: E712
-            ).first()
+            ausencia = (
+                self.session.query(Ausencia)
+                .filter(
+                    Ausencia.profesor_id == guardia.profesor_id,
+                    Ausencia.fecha_inicio <= guardia.fecha,
+                    Ausencia.fecha_fin >= guardia.fecha,
+                    Ausencia.activa == True,  # noqa: E712
+                )
+                .first()
+            )
 
             if ausencia:
                 profesor = self.session.query(Profesor).get(guardia.profesor_id)
@@ -340,18 +346,14 @@ class ValidadorGuardias:
                     f"{ausencia.fecha_inicio} a {ausencia.fecha_fin})"
                 )
 
-        resultado.metricas['guardias_durante_ausencia'] = len(guardias_con_ausencia)
+        resultado.metricas["guardias_durante_ausencia"] = len(guardias_con_ausencia)
 
         if guardias_con_ausencia:
             logger.error(f"  ❌ {len(guardias_con_ausencia)} guardias durante ausencias")
         else:
             logger.info("  ✅ Sin guardias durante ausencias")
 
-    def _validar_guardias_por_dia(
-        self,
-        profesores: List[Profesor],
-        resultado: ResultadoValidacion
-    ):
+    def _validar_guardias_por_dia(self, profesores: List[Profesor], resultado: ResultadoValidacion):
         """Valida que ningún profesor tenga >1 guardia por día."""
         logger.info("\n5️⃣ Validando múltiples guardias por día...")
 
@@ -370,7 +372,7 @@ class ValidadorGuardias:
                     f"el {fecha} tiene {count} guardias"
                 )
 
-        resultado.metricas['dias_multiples_guardias'] = len(dias_multiples)
+        resultado.metricas["dias_multiples_guardias"] = len(dias_multiples)
 
         if dias_multiples:
             logger.error(f"  ❌ {len(dias_multiples)} días con múltiples guardias")
@@ -379,9 +381,7 @@ class ValidadorGuardias:
 
 
 def validar_guardias_completo(
-    session: Session,
-    profesores: List[Profesor],
-    cuotas_esperadas: Dict[int, int]
+    session: Session, profesores: List[Profesor], cuotas_esperadas: Dict[int, int]
 ) -> ResultadoValidacion:
     """
     Función helper para validar guardias.

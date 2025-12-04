@@ -199,9 +199,9 @@ class ProfesorForm(BaseForm):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Email - Stretch
 
         # Columnas con ancho fijo más estrecho
-        self.tabla_profesores.setColumnWidth(2, 70)   # Horas - más estrecho
-        self.tabla_profesores.setColumnWidth(3, 80)   # Turno - más estrecho
-        self.tabla_profesores.setColumnWidth(4, 60)   # Tutor - más estrecho
+        self.tabla_profesores.setColumnWidth(2, 70)  # Horas - más estrecho
+        self.tabla_profesores.setColumnWidth(3, 80)  # Turno - más estrecho
+        self.tabla_profesores.setColumnWidth(4, 60)  # Tutor - más estrecho
         self.tabla_profesores.setColumnWidth(5, 110)  # Inicio Guardias - más estrecho
         self.tabla_profesores.setColumnWidth(6, 110)  # Fin Guardias - más estrecho
 
@@ -484,7 +484,7 @@ class ProfesorForm(BaseForm):
     def cargar_profesores(self):
         """Cargar tabla de profesores desde la base de datos."""
         try:
-            from models.models import Profesor
+            from infrastructure.database.models import Profesor
 
             self.tabla_profesores.setSortingEnabled(False)
             self.tabla_profesores.setRowCount(0)
@@ -556,7 +556,7 @@ class ProfesorForm(BaseForm):
     def cargar_zonas(self):
         """Cargar zonas disponibles en el combo del widget de restricciones."""
         try:
-            from models.models import Zona
+            from infrastructure.database.models import Zona
 
             zonas = self.session.query(Zona).order_by(Zona.nombre_zona).all()
             zonas_list = [(z.id, z.nombre_zona) for z in zonas]
@@ -616,7 +616,7 @@ class ProfesorForm(BaseForm):
             # El DTO pierde la estructura por día al convertir dict a lista
             recreos_raw = None
             try:
-                from models.models import Profesor
+                from infrastructure.database.models import Profesor
 
                 profesor_model = self.session.query(Profesor).filter_by(id=id_profesor).first()
                 if profesor_model and profesor_model.recreos_permitidos:
@@ -683,7 +683,7 @@ class ProfesorForm(BaseForm):
             # Cargar datos del profesor seleccionado
             try:
                 # Obtener directamente de BD (sin caché) para datos actualizados
-                from models.models import Profesor
+                from infrastructure.database.models import Profesor
 
                 profesor_model = self.session.query(Profesor).filter_by(id=id_profesor).first()
 

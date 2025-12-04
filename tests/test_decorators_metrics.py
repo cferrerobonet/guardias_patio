@@ -4,9 +4,9 @@ Tests para el decorador `with_metrics`.
 Verifica que en la ruta de éxito se registren las métricas correspondientes
 y que en la ruta de error también se registren los contadores de error.
 """
-import pytest
 
 import core.observability.decorators as obs_decorators
+import pytest
 
 
 class DummyMetrics:

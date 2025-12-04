@@ -2,11 +2,12 @@
 Diagnosticador de problemas en la asignación de guardias.
 Analiza las causas raíz de fallos y genera reportes detallados para el usuario.
 """
+
 from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List
 
-from models.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from services.validators import TurnoValidator
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -18,6 +19,7 @@ _turno_validator = TurnoValidator()
 @dataclass
 class ProblemaDetectado:
     """Representa un problema específico detectado."""
+
     tipo: str  # 'profesor_sin_guardias', 'fecha_inicio_incumplida', 'slot_vacio', etc.
     gravedad: str  # 'CRITICA', 'ALTA', 'MEDIA', 'BAJA'
     descripcion: str  # Descripción clara para el usuario
@@ -28,6 +30,7 @@ class ProblemaDetectado:
 @dataclass
 class DiagnosticoCompleto:
     """Resultado completo del diagnóstico."""
+
     problemas_criticos: List[ProblemaDetectado]
     problemas_altos: List[ProblemaDetectado]
     problemas_medios: List[ProblemaDetectado]
@@ -84,16 +87,16 @@ class DiagnosticadorGuardias:
             problemas_medios=problemas_medios,
             estadisticas=estadisticas,
             puede_continuar_ilp=puede_continuar_ilp,
-            mensaje_resumen=mensaje_resumen
+            mensaje_resumen=mensaje_resumen,
         )
 
-    def _diagnosticar_profesores_sin_guardias(self, guardias: List[Guardia]) -> List[ProblemaDetectado]:
+    def _diagnosticar_profesores_sin_guardias(
+        self, guardias: List[Guardia]
+    ) -> List[ProblemaDetectado]:
         """Detecta profesores activos sin guardias asignadas."""
         problemas = []
 
-        profesores_activos = self.db.query(Profesor).filter(
-            Profesor.activo
-        ).all()
+        profesores_activos = self.db.query(Profesor).filter(Profesor.activo).all()
 
         profesores_con_guardias = {g.profesor_id for g in guardias}
         profesores_sin_guardias = [
@@ -105,8 +108,8 @@ class DiagnosticadorGuardias:
             por_turno = {}
             for prof in profesores_sin_guardias:
                 # Determinar qué turnos puede hacer el profesor
-                if prof.turno in ('completo', 'mixto'):
-                    turnos = ['mañana', 'tarde']
+                if prof.turno in ("completo", "mixto"):
+                    turnos = ["mañana", "tarde"]
                 else:
                     turnos = [prof.turno]
                 for turno in turnos:
@@ -117,15 +120,15 @@ class DiagnosticadorGuardias:
                 causas = self._analizar_causas_sin_guardias(profs, turno)
 
                 problema = ProblemaDetectado(
-                    tipo='profesor_sin_guardias',
-                    gravedad='CRITICA',
+                    tipo="profesor_sin_guardias",
+                    gravedad="CRITICA",
                     descripcion=f"{len(profs)} profesor(es) sin guardias en turno '{turno}'",
                     detalles={
-                        'turno': turno,
-                        'profesores': [{'nombre': p.nombre_completo, 'id': p.id} for p in profs],
-                        'causas': causas
+                        "turno": turno,
+                        "profesores": [{"nombre": p.nombre_completo, "id": p.id} for p in profs],
+                        "causas": causas,
                     },
-                    sugerencias=self._generar_sugerencias_profesores_sin_guardias(causas, turno)
+                    sugerencias=self._generar_sugerencias_profesores_sin_guardias(causas, turno),
                 )
                 problemas.append(problema)
 
@@ -149,18 +152,18 @@ class DiagnosticadorGuardias:
             huecos_detallados = self._analizar_slots_vacios_detalle(guardias)
 
             problema = ProblemaDetectado(
-                tipo='slots_vacios',
-                gravedad='CRITICA',
-                descripcion=f"{slots_vacios} slots sin cubrir ({(slots_vacios/slots_esperados)*100:.1f}% del total)",
+                tipo="slots_vacios",
+                gravedad="CRITICA",
+                descripcion=f"{slots_vacios} slots sin cubrir ({(slots_vacios / slots_esperados) * 100:.1f}% del total)",
                 detalles={
-                    'slots_vacios': slots_vacios,
-                    'slots_esperados': slots_esperados,
-                    'cobertura_porcentaje': (slots_cubiertos/slots_esperados)*100,
-                    'huecos_por_turno': huecos_detallados['por_turno'],
-                    'huecos_por_zona': huecos_detallados['por_zona'],
-                    'dias_problematicos': huecos_detallados['dias_criticos']
+                    "slots_vacios": slots_vacios,
+                    "slots_esperados": slots_esperados,
+                    "cobertura_porcentaje": (slots_cubiertos / slots_esperados) * 100,
+                    "huecos_por_turno": huecos_detallados["por_turno"],
+                    "huecos_por_zona": huecos_detallados["por_zona"],
+                    "dias_problematicos": huecos_detallados["dias_criticos"],
                 },
-                sugerencias=self._generar_sugerencias_slots_vacios(huecos_detallados)
+                sugerencias=self._generar_sugerencias_slots_vacios(huecos_detallados),
             )
             problemas.append(problema)
 
@@ -183,40 +186,43 @@ class DiagnosticadorGuardias:
                 primera_guardia = min(fechas)
                 if primera_guardia > profesor.fecha_inicio_guardias:
                     dias_retraso = (primera_guardia - profesor.fecha_inicio_guardias).days
-                    profesores_retrasados.append({
-                        'profesor': profesor,
-                        'fecha_inicio_esperada': profesor.fecha_inicio_guardias,
-                        'primera_guardia': primera_guardia,
-                        'dias_retraso': dias_retraso
-                    })
+                    profesores_retrasados.append(
+                        {
+                            "profesor": profesor,
+                            "fecha_inicio_esperada": profesor.fecha_inicio_guardias,
+                            "primera_guardia": primera_guardia,
+                            "dias_retraso": dias_retraso,
+                        }
+                    )
 
         if profesores_retrasados:
             # Agrupar por nivel de retraso
-            retrasos_criticos = [p for p in profesores_retrasados if p['dias_retraso'] > 60]
-            [p for p in profesores_retrasados if 30 < p['dias_retraso'] <= 60]
+            retrasos_criticos = [p for p in profesores_retrasados if p["dias_retraso"] > 60]
+            [p for p in profesores_retrasados if 30 < p["dias_retraso"] <= 60]
 
             if retrasos_criticos:
                 problema = ProblemaDetectado(
-                    tipo='fecha_inicio_incumplida',
-                    gravedad='ALTA',
+                    tipo="fecha_inicio_incumplida",
+                    gravedad="ALTA",
                     descripcion=f"{len(retrasos_criticos)} profesor(es) con retraso >60 días en fecha inicio",
                     detalles={
-                        'profesores_retrasados': [
+                        "profesores_retrasados": [
                             {
-                                'nombre': p['profesor'].nombre_completo,
-                                'fecha_inicio': p['fecha_inicio_esperada'].isoformat(),
-                                'primera_guardia': p['primera_guardia'].isoformat(),
-                                'dias_retraso': p['dias_retraso']
+                                "nombre": p["profesor"].nombre_completo,
+                                "fecha_inicio": p["fecha_inicio_esperada"].isoformat(),
+                                "primera_guardia": p["primera_guardia"].isoformat(),
+                                "dias_retraso": p["dias_retraso"],
                             }
                             for p in retrasos_criticos
                         ],
-                        'retraso_promedio': sum(p['dias_retraso'] for p in retrasos_criticos) / len(retrasos_criticos)
+                        "retraso_promedio": sum(p["dias_retraso"] for p in retrasos_criticos)
+                        / len(retrasos_criticos),
                     },
                     sugerencias=[
                         "Revisar si hay suficientes slots disponibles en las primeras semanas del curso",
                         "Verificar disponibilidades de profesores en fechas tempranas",
-                        "Considerar aumentar prioridad de profesores con fecha_inicio temprana"
-                    ]
+                        "Considerar aumentar prioridad de profesores con fecha_inicio temprana",
+                    ],
                 )
                 problemas.append(problema)
 
@@ -229,6 +235,7 @@ class DiagnosticadorGuardias:
         # Calcular cuotas esperadas
         # Importar función de calculador
         from services.calculador_guardias import calcular_guardias_por_profesor
+
         cuotas = calcular_guardias_por_profesor(self.db)
 
         # Contar guardias reales por profesor
@@ -243,37 +250,39 @@ class DiagnosticadorGuardias:
 
             if deficit > cuota_esperada * 0.2:  # Más de 20% de déficit
                 profesor = self.db.query(Profesor).get(profesor_id)
-                profesores_deficit.append({
-                    'profesor': profesor,
-                    'esperadas': cuota_esperada,
-                    'asignadas': guardias_asignadas,
-                    'deficit': deficit,
-                    'deficit_porcentaje': (deficit / cuota_esperada) * 100
-                })
+                profesores_deficit.append(
+                    {
+                        "profesor": profesor,
+                        "esperadas": cuota_esperada,
+                        "asignadas": guardias_asignadas,
+                        "deficit": deficit,
+                        "deficit_porcentaje": (deficit / cuota_esperada) * 100,
+                    }
+                )
 
         if profesores_deficit:
             problema = ProblemaDetectado(
-                tipo='cuota_incompleta',
-                gravedad='ALTA',
+                tipo="cuota_incompleta",
+                gravedad="ALTA",
                 descripcion=f"{len(profesores_deficit)} profesor(es) con déficit >20% en su cuota",
                 detalles={
-                    'profesores': [
+                    "profesores": [
                         {
-                            'nombre': p['profesor'].nombre_completo,
-                            'esperadas': p['esperadas'],
-                            'asignadas': p['asignadas'],
-                            'deficit': p['deficit'],
-                            'deficit_porcentaje': p['deficit_porcentaje']
+                            "nombre": p["profesor"].nombre_completo,
+                            "esperadas": p["esperadas"],
+                            "asignadas": p["asignadas"],
+                            "deficit": p["deficit"],
+                            "deficit_porcentaje": p["deficit_porcentaje"],
                         }
                         for p in profesores_deficit[:10]  # Mostrar solo los 10 primeros
                     ],
-                    'total_afectados': len(profesores_deficit)
+                    "total_afectados": len(profesores_deficit),
                 },
                 sugerencias=[
                     "Verificar disponibilidades de estos profesores (pueden tener muchas ausencias)",
                     "Revisar si hay incompatibilidades de zonas o turnos",
-                    "Considerar si las restricciones son demasiado estrictas"
-                ]
+                    "Considerar si las restricciones son demasiado estrictas",
+                ],
             )
             problemas.append(problema)
 
@@ -295,23 +304,25 @@ class DiagnosticadorGuardias:
             for zona, cantidad in guardias_por_zona.items():
                 desviacion = abs(cantidad - promedio) / promedio
                 if desviacion > 0.3:  # Más de 30% de desviación
-                    zonas_desbalanceadas.append({
-                        'zona': zona,
-                        'cantidad': cantidad,
-                        'promedio': promedio,
-                        'desviacion_porcentaje': desviacion * 100
-                    })
+                    zonas_desbalanceadas.append(
+                        {
+                            "zona": zona,
+                            "cantidad": cantidad,
+                            "promedio": promedio,
+                            "desviacion_porcentaje": desviacion * 100,
+                        }
+                    )
 
             if zonas_desbalanceadas:
                 problema = ProblemaDetectado(
-                    tipo='desbalance_zonas',
-                    gravedad='MEDIA',
+                    tipo="desbalance_zonas",
+                    gravedad="MEDIA",
                     descripcion=f"{len(zonas_desbalanceadas)} zona(s) con desbalance >30%",
-                    detalles={'zonas': zonas_desbalanceadas},
+                    detalles={"zonas": zonas_desbalanceadas},
                     sugerencias=[
                         "Revisar disponibilidad de profesores por zona",
-                        "Verificar si algunas zonas tienen restricciones muy estrictas"
-                    ]
+                        "Verificar si algunas zonas tienen restricciones muy estrictas",
+                    ],
                 )
                 problemas.append(problema)
 
@@ -320,40 +331,43 @@ class DiagnosticadorGuardias:
     def _analizar_causas_sin_guardias(self, profesores: List[Profesor], turno: str) -> Dict:
         """Analiza por qué un grupo de profesores no tiene guardias."""
         causas = {
-            'slots_insuficientes': False,
-            'ausencias_excesivas': [],
-            'incompatibilidades_zona': [],
-            'sin_disponibilidad_turno': []
+            "slots_insuficientes": False,
+            "ausencias_excesivas": [],
+            "incompatibilidades_zona": [],
+            "sin_disponibilidad_turno": [],
         }
 
         # Calcular slots disponibles en ese turno
         recreos_turno = [r for r in self.config.recreos if r.turno == turno]
         slots_disponibles = len(self.dias_lectivos) * len(recreos_turno) * len(self.config.zonas)
 
-        profesores_turno = self.db.query(Profesor).filter(
-            Profesor.activo,
-            # Filtrar profesores que pueden hacer este turno
-            # (turno completo/mixto pueden ambos, o turno específico coincide)
-            or_(
-                Profesor.turno.in_(['completo', 'mixto']),
-                Profesor.turno == turno
+        profesores_turno = (
+            self.db.query(Profesor)
+            .filter(
+                Profesor.activo,
+                # Filtrar profesores que pueden hacer este turno
+                # (turno completo/mixto pueden ambos, o turno específico coincide)
+                or_(Profesor.turno.in_(["completo", "mixto"]), Profesor.turno == turno),
             )
-        ).count()
+            .count()
+        )
 
         if slots_disponibles < profesores_turno:
-            causas['slots_insuficientes'] = True
+            causas["slots_insuficientes"] = True
 
         # Analizar cada profesor
         for prof in profesores:
             # Verificar ausencias
-            if hasattr(prof, 'ausencias') and prof.ausencias:
+            if hasattr(prof, "ausencias") and prof.ausencias:
                 ausencias_count = len(prof.ausencias)
                 if ausencias_count > len(self.dias_lectivos) * 0.5:
-                    causas['ausencias_excesivas'].append({
-                        'nombre': prof.nombre_completo,
-                        'ausencias': ausencias_count,
-                        'dias_totales': len(self.dias_lectivos)
-                    })
+                    causas["ausencias_excesivas"].append(
+                        {
+                            "nombre": prof.nombre_completo,
+                            "ausencias": ausencias_count,
+                            "dias_totales": len(self.dias_lectivos),
+                        }
+                    )
 
             # Verificar zonas: Los profesores pueden trabajar en TODAS las zonas
             # No hay restricción (profesor.zonas no existe)
@@ -361,9 +375,9 @@ class DiagnosticadorGuardias:
 
             # Verificar turno
             # Verificar si el profesor puede hacer este turno
-            puede_turno = prof.turno in ('completo', 'mixto') or prof.turno == turno
+            puede_turno = prof.turno in ("completo", "mixto") or prof.turno == turno
             if not puede_turno:
-                causas['sin_disponibilidad_turno'].append(prof.nombre_completo)
+                causas["sin_disponibilidad_turno"].append(prof.nombre_completo)
 
         return causas
 
@@ -405,40 +419,40 @@ class DiagnosticadorGuardias:
         dias_criticos = sorted(
             [(dia, count) for dia, count in huecos_por_dia.items()],
             key=lambda x: x[1],
-            reverse=True
+            reverse=True,
         )[:5]  # Top 5 días con más huecos
 
         return {
-            'por_turno': huecos_por_turno,
-            'por_zona': huecos_por_zona,
-            'dias_criticos': [(dia.isoformat(), count) for dia, count in dias_criticos]
+            "por_turno": huecos_por_turno,
+            "por_zona": huecos_por_zona,
+            "dias_criticos": [(dia.isoformat(), count) for dia, count in dias_criticos],
         }
 
     def _generar_sugerencias_profesores_sin_guardias(self, causas: Dict, turno: str) -> List[str]:
         """Genera sugerencias específicas basadas en las causas detectadas."""
         sugerencias = []
 
-        if causas['slots_insuficientes']:
+        if causas["slots_insuficientes"]:
             sugerencias.append(
                 f"⚠️ CRÍTICO: No hay suficientes slots en turno '{turno}' para todos los profesores. "
                 "Opciones: a) Añadir más recreos en este turno, b) Reducir número de zonas, "
                 "c) Desactivar algunos profesores de este turno"
             )
 
-        if causas['ausencias_excesivas']:
-            nombres = [a['nombre'] for a in causas['ausencias_excesivas'][:3]]
+        if causas["ausencias_excesivas"]:
+            nombres = [a["nombre"] for a in causas["ausencias_excesivas"][:3]]
             sugerencias.append(
                 f"Profesores con excesivas ausencias: {', '.join(nombres)}. "
                 "Revisar y reducir sus ausencias en el calendario si es posible."
             )
 
-        if causas['incompatibilidades_zona']:
+        if causas["incompatibilidades_zona"]:
             sugerencias.append(
                 f"{len(causas['incompatibilidades_zona'])} profesor(es) sin zonas asignadas. "
                 "Asignar al menos una zona a cada profesor activo."
             )
 
-        if causas['sin_disponibilidad_turno']:
+        if causas["sin_disponibilidad_turno"]:
             sugerencias.append(
                 f"{len(causas['sin_disponibilidad_turno'])} profesor(es) marcados como activos "
                 f"pero sin disponibilidad en turno '{turno}'. Revisar configuración de turnos."
@@ -457,23 +471,23 @@ class DiagnosticadorGuardias:
         sugerencias = []
 
         # Identificar turno más problemático
-        if huecos['por_turno']:
-            turno_peor = max(huecos['por_turno'].items(), key=lambda x: x[1])
+        if huecos["por_turno"]:
+            turno_peor = max(huecos["por_turno"].items(), key=lambda x: x[1])
             sugerencias.append(
                 f"Turno '{turno_peor[0]}' tiene {turno_peor[1]} slots vacíos. "
                 "Verificar que hay suficientes profesores activos y disponibles en este turno."
             )
 
         # Identificar zona más problemática
-        if huecos['por_zona']:
-            zona_peor = max(huecos['por_zona'].items(), key=lambda x: x[1])
+        if huecos["por_zona"]:
+            zona_peor = max(huecos["por_zona"].items(), key=lambda x: x[1])
             sugerencias.append(
                 f"Zona '{zona_peor[0]}' tiene {zona_peor[1]} slots vacíos. "
                 "Asignar más profesores compatibles con esta zona."
             )
 
         # Días críticos
-        if huecos['dias_criticos']:
+        if huecos["dias_criticos"]:
             sugerencias.append(
                 f"Días con más huecos: {', '.join(str(d[0]) for d in huecos['dias_criticos'][:3])}. "
                 "Revisar si hay eventos especiales o ausencias masivas en estas fechas."
@@ -490,12 +504,14 @@ class DiagnosticadorGuardias:
         profesores_activos = self.db.query(Profesor).filter(Profesor.activo).count()
 
         return {
-            'total_guardias_asignadas': len(guardias),
-            'total_slots_esperados': total_slots,
-            'cobertura_porcentaje': (len(guardias) / total_slots * 100) if total_slots > 0 else 0,
-            'profesores_con_guardias': profesores_con_guardias,
-            'profesores_activos_totales': profesores_activos,
-            'participacion_porcentaje': (profesores_con_guardias / profesores_activos * 100) if profesores_activos > 0 else 0
+            "total_guardias_asignadas": len(guardias),
+            "total_slots_esperados": total_slots,
+            "cobertura_porcentaje": (len(guardias) / total_slots * 100) if total_slots > 0 else 0,
+            "profesores_con_guardias": profesores_con_guardias,
+            "profesores_activos_totales": profesores_activos,
+            "participacion_porcentaje": (profesores_con_guardias / profesores_activos * 100)
+            if profesores_activos > 0
+            else 0,
         }
 
     def _generar_mensaje_resumen(
@@ -503,7 +519,7 @@ class DiagnosticadorGuardias:
         criticos: List[ProblemaDetectado],
         altos: List[ProblemaDetectado],
         medios: List[ProblemaDetectado],
-        stats: Dict
+        stats: Dict,
     ) -> str:
         """Genera mensaje resumen para el usuario."""
         lineas = []
@@ -515,9 +531,13 @@ class DiagnosticadorGuardias:
 
         # Estadísticas
         lineas.append("📊 ESTADÍSTICAS GENERALES:")
-        lineas.append(f"  • Guardias asignadas: {stats['total_guardias_asignadas']} de {stats['total_slots_esperados']}")
+        lineas.append(
+            f"  • Guardias asignadas: {stats['total_guardias_asignadas']} de {stats['total_slots_esperados']}"
+        )
         lineas.append(f"  • Cobertura: {stats['cobertura_porcentaje']:.1f}%")
-        lineas.append(f"  • Profesores participantes: {stats['profesores_con_guardias']} de {stats['profesores_activos_totales']}")
+        lineas.append(
+            f"  • Profesores participantes: {stats['profesores_con_guardias']} de {stats['profesores_activos_totales']}"
+        )
         lineas.append("")
 
         # Problemas críticos

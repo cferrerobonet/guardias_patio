@@ -19,11 +19,8 @@ log_file = log_dir / f"app_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler(log_file, encoding="utf-8"), logging.StreamHandler(sys.stdout)],
 )
 
 from presentation.ccleaner_main_window import CCleanerMainWindow
@@ -46,13 +43,14 @@ def main():
 
     logger.debug(f"🧹 Threads activos al inicio: {threading.active_count()}")
     for thread in threading.enumerate():
-        thread_name = getattr(thread, 'name', 'Unknown')
+        thread_name = getattr(thread, "name", "Unknown")
         logger.debug(f"   - Thread: {thread_name} (tipo: {type(thread).__name__})")
 
     # Instalar manejador global de excepciones
     def exception_hook(exctype, value, tb):
         """Captura excepciones no manejadas."""
         import traceback
+
         logger.critical("=" * 80)
         logger.critical("🚨 EXCEPCIÓN NO MANEJADA DETECTADA")
         logger.critical("=" * 80)
@@ -235,8 +233,7 @@ def main():
         )
         msg.setText("No se pudo conectar al servidor de sincronización.")
         msg.setInformativeText(
-            "La aplicación funcionará en modo local.\n\n"
-            "Los datos se guardarán solo en este equipo."
+            "La aplicación funcionará en modo local.\n\nLos datos se guardarán solo en este equipo."
         )
         msg.setStyleSheet(MESSAGEBOX_STYLE)
         msg.exec()
@@ -284,9 +281,9 @@ def main():
         if sync_manager:
             # Verificar si el backend está disponible antes de intentar sincronizar
             backend_disponible = True
-            if hasattr(sync_manager.backend, 'sftp'):
+            if hasattr(sync_manager.backend, "sftp"):
                 backend_disponible = sync_manager.backend.sftp is not None
-            elif hasattr(sync_manager.backend, 'base_path'):
+            elif hasattr(sync_manager.backend, "base_path"):
                 backend_disponible = sync_manager.backend.base_path is not None
 
             if backend_disponible:
@@ -304,7 +301,7 @@ def main():
                     """Actualiza el diálogo según el paso de sincronización."""
                     if step == "exporting":
                         # Contar registros (aproximado)
-                        from models.models import Ausencia, Guardia, Profesor, Zona
+                        from infrastructure.database.models import Ausencia, Guardia, Profesor, Zona
 
                         try:
                             total = (

@@ -2,6 +2,7 @@
 Diálogo para eliminar usuarios con confirmación de contraseña
 """
 
+from database.db_manager import delete_user_database
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -13,8 +14,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
-from database.db_manager import delete_user_database
 from sync.backend_factory import get_default_backend
 from sync.sync_manager import UserAuth
 from utils.ui_helpers import get_corporate_icon
@@ -80,6 +79,7 @@ class DeleteUserDialog(QDialog):
 
         # Selector de usuario
         from PyQt6.QtWidgets import QComboBox
+
         self.username_combo = QComboBox()
         self.username_combo.setMinimumHeight(35)
         users = list(self.user_auth.users.keys())
@@ -101,9 +101,7 @@ class DeleteUserDialog(QDialog):
         layout.addLayout(form_layout)
 
         # Confirmación adicional
-        confirm_label = QLabel(
-            "⚡ Escribe la contraseña del usuario para confirmar la eliminación"
-        )
+        confirm_label = QLabel("⚡ Escribe la contraseña del usuario para confirmar la eliminación")
         confirm_label.setStyleSheet("color: #DC2626; font-size: 12px; padding: 0px 40px;")
         confirm_label.setWordWrap(True)
         layout.addWidget(confirm_label)
@@ -166,7 +164,7 @@ class DeleteUserDialog(QDialog):
             QMessageBox.warning(
                 self,
                 "Contraseña requerida",
-                "Debes introducir la contraseña del usuario para confirmar la eliminación"
+                "Debes introducir la contraseña del usuario para confirmar la eliminación",
             )
             self.password_input.setFocus()
             return
@@ -177,7 +175,7 @@ class DeleteUserDialog(QDialog):
                 self,
                 "❌ Contraseña incorrecta",
                 "La contraseña no coincide con la del usuario.\n\n"
-                "Por seguridad, no se puede eliminar el usuario sin la contraseña correcta."
+                "Por seguridad, no se puede eliminar el usuario sin la contraseña correcta.",
             )
             self.password_input.clear()
             self.password_input.setFocus()
@@ -189,8 +187,7 @@ class DeleteUserDialog(QDialog):
         msg.setWindowTitle("⚠️ Confirmación final")
         msg.setTextFormat(Qt.TextFormat.RichText)
         msg.setWindowFlags(
-            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint |
-            Qt.WindowType.WindowTitleHint
+            Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )
         msg.setText(
             f"¿Estás ABSOLUTAMENTE SEGURO de que quieres eliminar el usuario "
@@ -201,9 +198,7 @@ class DeleteUserDialog(QDialog):
             f"• La cuenta de usuario<br><br>"
             f"Esta acción <b>NO</b> se puede deshacer."
         )
-        msg.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg.setDefaultButton(QMessageBox.StandardButton.No)
         reply = msg.exec()
 
@@ -214,6 +209,7 @@ class DeleteUserDialog(QDialog):
         try:
             # 1. Eliminar archivos en la nube
             from sync.sync_manager import SyncManager
+
             backend = get_default_backend()
             sync_manager = SyncManager(backend, username)
             # 1. Eliminar archivos en la nube
@@ -227,7 +223,7 @@ class DeleteUserDialog(QDialog):
                     pass
 
             except Exception as e:
-                logger = self.user_auth.logger if hasattr(self.user_auth, 'logger') else None
+                logger = self.user_auth.logger if hasattr(self.user_auth, "logger") else None
                 if logger:
                     logger.warning(f"No se pudieron eliminar archivos en la nube: {e}")
 
@@ -249,7 +245,7 @@ class DeleteUserDialog(QDialog):
                     f"El usuario '{username}' fue eliminado parcialmente.\n\n"
                     f"Base de datos: {'✓ Eliminada' if db_deleted else '✗ Error'}\n"
                     f"Cuenta: {'✓ Eliminada' if user_unregistered else '✗ Error'}\n\n"
-                    "Revisa los logs para más información."
+                    "Revisa los logs para más información.",
                 )
 
         except Exception as e:
@@ -257,5 +253,5 @@ class DeleteUserDialog(QDialog):
                 self,
                 "❌ Error al eliminar",
                 f"Error al eliminar el usuario '{username}':\n\n{str(e)}\n\n"
-                "Revisa los logs para más información."
+                "Revisa los logs para más información.",
             )
