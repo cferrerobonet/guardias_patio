@@ -325,42 +325,6 @@ class TestAsignacionGuardiasFormDistribucion:
 class TestAsignacionGuardiasFormGeneracion:
     """Tests de generación de guardias"""
 
-    @pytest.mark.skip(
-        reason="Test de integración complejo con múltiples mocks que no refleja el flujo real"
-    )
-    def test_generar_guardias_sin_existentes(
-        self, qtbot, session, configuracion, zonas, profesores
-    ):
-        """Test generar guardias sin guardias existentes"""
-        form = AsignacionGuardiasForm(session)
-
-        with patch.object(form, "generar_guardias_uc") as mock_uc:
-            # Mock del resumen
-            mock_resumen = Mock()
-            mock_resumen.guardias_generadas = 100
-            mock_resumen.slots_esperados = 100
-            mock_resumen.cobertura_completa = True
-            mock_resumen.slots_sin_cubrir = 0
-            mock_resumen.resumen_por_profesor = {profesores[0].id: 100}
-            mock_resumen.mensaje = "Guardias generadas correctamente"
-
-            mock_uc.execute.return_value = mock_resumen
-
-            with patch.object(form, "mostrar_exito") as mock_exito:
-                with patch(
-                    "presentation.forms.asignacion_guardias_form.ejecutar_con_progreso"
-                ) as mock_ejecutar:
-                    # Hacer que ejecutar_con_progreso devuelva el resumen
-                    mock_ejecutar.return_value = mock_resumen
-
-                    form.generar_guardias()
-
-                    # Verificar que se llamó al ejecutar_con_progreso
-                    mock_ejecutar.assert_called_once()
-
-                    # Verificar que se mostró mensaje de éxito
-                    mock_exito.assert_called_once()
-
     def test_generar_guardias_con_existentes_eliminar(
         self, qtbot, session, guardias_existentes, profesores
     ):
@@ -509,87 +473,6 @@ class TestAsignacionGuardiasFormGeneracion:
 
 
 # ========================================
-# TESTS DE FORMATEO DE RESUMEN
-# ========================================
-
-
-@pytest.mark.skip(reason="Método _formatear_resumen movido a ResultadosPanel")
-class TestAsignacionGuardiasFormFormateoResumen:
-    """Tests del método _formatear_resumen (DEPRECADO - movido a ResultadosPanel)"""
-
-    def test_formatear_resumen_cobertura_completa(self, qtbot, session, profesores):
-        """Test formatear resumen con cobertura completa"""
-        form = AsignacionGuardiasForm(session)
-
-        mock_resumen = Mock()
-        mock_resumen.guardias_generadas = 100
-        mock_resumen.slots_esperados = 100
-        mock_resumen.cobertura_completa = True
-        mock_resumen.slots_sin_cubrir = 0
-        mock_resumen.resumen_por_profesor = {
-            profesores[0].id: 60,
-            profesores[1].id: 40,
-        }
-
-        texto = form._formatear_resumen(mock_resumen)
-
-        assert "Guardias generadas: 100" in texto
-        assert "Slots esperados: 100" in texto
-        assert "Cobertura completa" in texto
-        assert "Juan García: 60" in texto
-        assert "María López: 40" in texto
-
-    def test_formatear_resumen_sin_cobertura_completa(self, qtbot, session, profesores):
-        """Test formatear resumen sin cobertura completa"""
-        form = AsignacionGuardiasForm(session)
-
-        mock_resumen = Mock()
-        mock_resumen.guardias_generadas = 80
-        mock_resumen.slots_esperados = 100
-        mock_resumen.cobertura_completa = False
-        mock_resumen.slots_sin_cubrir = 20
-        mock_resumen.resumen_por_profesor = {profesores[0].id: 80}
-
-        texto = form._formatear_resumen(mock_resumen)
-
-        assert "Guardias generadas: 80" in texto
-        assert "Slots esperados: 100" in texto
-        assert "20 slots sin cubrir" in texto
-
-    def test_formatear_resumen_top_10_profesores(self, qtbot, session, profesor_factory):
-        """Test formatear resumen con top 10 profesores"""
-        form = AsignacionGuardiasForm(session)
-
-        # Crear 15 profesores usando la factory
-        profesores = []
-        for i in range(15):
-            prof = profesor_factory(
-                nombre_completo=f"Profesor {i}",
-                horas_contrato=25.0,
-                turno="mañana",
-            )
-            profesores.append(prof)
-
-        # Crear resumen con distribución
-        distribucion = {prof.id: 100 - i * 5 for i, prof in enumerate(profesores)}
-
-        mock_resumen = Mock()
-        mock_resumen.guardias_generadas = sum(distribucion.values())
-        mock_resumen.slots_esperados = mock_resumen.guardias_generadas
-        mock_resumen.cobertura_completa = True
-        mock_resumen.slots_sin_cubrir = 0
-        mock_resumen.resumen_por_profesor = distribucion
-
-        texto = form._formatear_resumen(mock_resumen)
-
-        # Solo debe mostrar top 10
-        assert "top 10" in texto.lower()
-        assert "Profesor 0: 100" in texto  # El primero
-        assert "Profesor 9:" in texto  # El décimo
-        assert "Profesor 14:" not in texto  # El 15 no debe aparecer
-
-
-# ========================================
 # TESTS DE LIMPIEZA
 # ========================================
 
@@ -682,57 +565,6 @@ class TestAsignacionGuardiasFormIntegracion:
 
                     # Verificar resumen
                     assert "Guardias generadas: 100" in form.resultado_text.toPlainText()
-
-    @pytest.mark.skip(
-        reason="Test de integración complejo con múltiples mocks que no refleja el flujo real"
-    )
-    def test_flujo_con_guardias_existentes_completo(
-        self, qtbot, session, guardias_existentes, profesores
-    ):
-        """Test flujo completo con guardias existentes"""
-        form = AsignacionGuardiasForm(session)
-
-        # Verificar guardias existentes
-        assert session.query(Guardia).count() == 5
-
-        # Generar con confirmación
-        with patch.object(form, "generar_guardias_uc") as mock_uc:
-            mock_resumen = Mock()
-            mock_resumen.guardias_generadas = 100
-            mock_resumen.slots_esperados = 100
-            mock_resumen.cobertura_completa = True
-            mock_resumen.slots_sin_cubrir = 0
-            mock_resumen.resumen_por_profesor = {}
-            mock_resumen.mensaje = "Guardias generadas"
-
-            mock_uc.execute.return_value = mock_resumen
-
-            with patch(
-                "utils.ui_helpers.show_question_with_cancel",
-                return_value=QMessageBox.StandardButton.Yes,
-            ):
-                with patch(
-                    "presentation.forms.asignacion_guardias_form.ejecutar_con_progreso"
-                ) as mock_ejecutar:
-                    # Hacer que ejecutar_con_progreso ejecute la función pasada
-                    def ejecutar_funcion(parent, funcion, *args, **kwargs):
-                        return funcion(lambda *_: None)  # callback_progreso dummy
-
-                    mock_ejecutar.side_effect = ejecutar_funcion
-
-                    with patch.object(form, "mostrar_exito") as mock_exito:
-                        form.generar_guardias()
-
-                        # Debe mostrar dos mensajes de éxito
-                        assert mock_exito.call_count == 2
-
-                        # Primera llamada: limpieza
-                        first_call = mock_exito.call_args_list[0][0]
-                        assert "Limpieza completada" in first_call[0]
-
-                        # Segunda llamada: generación
-                        second_call = mock_exito.call_args_list[1][0]
-                        assert "Asignación generada" in second_call[0]
 
 
 # ========================================
