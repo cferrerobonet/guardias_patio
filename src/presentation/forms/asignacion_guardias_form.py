@@ -7,7 +7,7 @@ Permite calcular distribución y generar el calendario completo de guardias.
 import ui_styles as styles
 from application.use_cases.asignacion_guardias import (
     CalcularDistribucionUseCase,
-    GenerarGuardiasHibridoUseCase,
+    GenerarGuardiasUseCase,
     ObtenerEstadisticasUseCase,
 )
 from application.use_cases.guardia import LimpiarGuardiasUseCase
@@ -85,8 +85,8 @@ class AsignacionGuardiasForm(BaseForm):
         # Inicializar Use Cases
         self.obtener_estadisticas_uc = ObtenerEstadisticasUseCase(session)
         self.calcular_distribucion_uc = CalcularDistribucionUseCase(session)
-        # Usar sistema híbrido (iterativo + ILP con diagnóstico)
-        self.generar_guardias_uc = GenerarGuardiasHibridoUseCase(session, parent_window=self)
+        # Usar algoritmo v4.0 Híbrido (5 fases)
+        self.generar_guardias_uc = GenerarGuardiasUseCase(session)
 
         # Repositorio para limpiar guardias
         guardia_repo = SQLAlchemyGuardiaRepository(session)

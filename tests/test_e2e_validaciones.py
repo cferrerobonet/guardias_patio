@@ -21,7 +21,7 @@ from infrastructure.database.models import (
     Profesor,
     Zona,
 )
-from services.asignador_guardias import generar_calendario_guardias
+from services.asignador_guardias_v4_hibrido import generar_guardias_v4_hibrido
 from utils.validators import (
     validar_dias_semana,
     validar_email,
@@ -303,7 +303,7 @@ class TestEscenariosValidacionNegocio:
 
         # Generar guardias (puede o no generar dependiendo de las fechas)
         try:
-            generar_calendario_guardias(session)
+            generar_guardias_v4_hibrido(session)
         except ValueError:
             # Si no hay slots válidos, el test igual pasa
             # porque verificamos que la zona vacía no tiene guardias
@@ -363,7 +363,7 @@ class TestEscenariosValidacionNegocio:
         session.commit()
 
         # Generar guardias para el rango que incluye la ausencia
-        generar_calendario_guardias(session)
+        generar_guardias_v4_hibrido(session)
 
         # Verificar que NO hay guardias para el profesor en la fecha de ausencia
         guardias_dia_ausencia = (
@@ -397,7 +397,7 @@ class TestEscenariosValidacionNegocio:
         session.commit()
 
         # Generar guardias
-        generar_calendario_guardias(session)
+        generar_guardias_v4_hibrido(session)
 
         # Obtener todas las guardias del profesor
         guardias = session.query(Guardia).filter_by(profesor_id=profesor.id).all()
@@ -437,7 +437,7 @@ class TestEscenariosValidacionNegocio:
         session.commit()
 
         # Generar guardias
-        generar_calendario_guardias(session)
+        generar_guardias_v4_hibrido(session)
 
         # Obtener todas las guardias
         guardias = session.query(Guardia).all()
@@ -492,7 +492,7 @@ class TestEscenariosValidacionNegocio:
         session.commit()
 
         # Generar guardias
-        generar_calendario_guardias(session)
+        generar_guardias_v4_hibrido(session)
 
         # Verificar que profesor de tarde NO tiene guardias de mañana
         guardias_manana = (

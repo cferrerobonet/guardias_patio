@@ -5,7 +5,7 @@ Permite generar el calendario de guardias y analizar los resultados.
 """
 
 import ui_styles as styles
-from application.use_cases.asignacion_guardias import GenerarGuardiasHibridoUseCase
+from application.use_cases.asignacion_guardias import GenerarGuardiasUseCase
 from application.use_cases.guardia import LimpiarGuardiasUseCase
 from core.exceptions import BusinessLogicError
 from infrastructure.database.models import Guardia
@@ -56,8 +56,8 @@ class AsignacionResultadosForm(BaseForm):
         # Guardar sync_manager
         self.sync_manager = sync_manager
 
-        # Inicializar Use Cases
-        self.generar_guardias_uc = GenerarGuardiasHibridoUseCase(session, parent_window=self)
+        # Inicializar Use Cases - Algoritmo v4.0 Híbrido
+        self.generar_guardias_uc = GenerarGuardiasUseCase(session)
 
         # Repositorio para limpiar guardias
         guardia_repo = SQLAlchemyGuardiaRepository(session)

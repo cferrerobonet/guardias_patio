@@ -269,11 +269,11 @@ def calcular_slots_reales(session: Session, config: Configuracion) -> int:
     Returns:
         int: Número total de slots disponibles
     """
-    from services.asignador_guardias import _build_slots
+    from services.asignador_guardias_v4_hibrido import _generar_slots
 
-    # Usar el mismo método que el generador de guardias
+    # Usar el mismo método que el generador de guardias v4.0
     try:
-        slots_list = _build_slots(session, config)
+        slots_list = _generar_slots(config, session)
         return len(slots_list)
     except Exception as e:
         logger.error(f"Error al calcular slots reales: {e}")

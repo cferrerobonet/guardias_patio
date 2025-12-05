@@ -178,22 +178,26 @@ class TestIntegrationGeneracionBasica:
         # Slots esperados: 5 días × 2 turnos × 2 recreos × 2 zonas = 40
         assert resumen.slots_esperados == 40
 
-        # Con restricción de 1 guardia/día: 4 profesores × 5 días = 20 guardias máximo
-        # (Los 4 profesores son 2 de mañana que solo cubren 10 slots de mañana,
-        #  y 2 de tarde que solo cubren 10 slots de tarde)
-        assert resumen.guardias_generadas == 20
-        assert resumen.slots_sin_cubrir == 20
+        # v4.0 CUBRE TODOS los slots (no tiene restricción hard de 1 guardia/día)
+        # Completitud forzada garantiza cobertura 100% si es matemáticamente posible
+        assert resumen.guardias_generadas == 40
+        assert resumen.slots_sin_cubrir == 0
 
         # Verificar en BD
         count_guardias = session.query(Guardia).count()
-        assert count_guardias == 20
+        assert count_guardias == 40
 
-        # Verificar distribución en resumen (ahora son 4 profesores)
+        # Verificar distribución en resumen (4 profesores)
         assert len(resumen.resumen_por_profesor) == 4
 
-        # Cada profesor debe tener exactamente 5 guardias (1 por día × 5 días)
+        # Verificar que la distribución total suma 40
+        total_asignadas = sum(resumen.resumen_por_profesor.values())
+        assert total_asignadas == 40
+
+        # Verificar que cada profesor tiene al menos 5 guardias (una por día)
+        # y como máximo 15 (si tuviera que cubrir todo su turno solo)
         for profesor_id, count in resumen.resumen_por_profesor.items():
-            assert count == 5
+            assert 5 <= count <= 15
 
     def test_generar_calendario_con_profesores_parciales(
         self,
@@ -643,11 +647,15 @@ class TestIntegrationValidacionesAsignador:
         generar_uc,
     ):
         """
-        Test: Validación máximo 1 guardia al día por profesor.
+        Test: Validación comportamiento múltiples guardias al día.
+
+        v4.0 permite múltiples guardias al día para lograr cobertura 100%.
+        Con un solo profesor mixto, debe cubrir todos los slots aunque
+        requiera múltiples guardias por día.
 
         Valida:
-        - Un profesor no puede tener 2 guardias el mismo día
-        - Ni siquiera si es turno completo (mañana + tarde)
+        - Cobertura completa aunque requiera múltiples guardias/día
+        - No más de 4 guardias al día (2 recreos × 2 turnos)
         """
         # Setup
         config_dto = ActualizarConfiguracionDTO(
@@ -679,15 +687,18 @@ class TestIntegrationValidacionesAsignador:
         # Generar
         generar_uc.execute()
 
-        # Verificar: no debe haber 2 guardias del mismo profesor en la misma fecha
+        # v4.0: Con 1 profesor mixto y 1 zona, debe cubrir todos los slots
+        # Slots = 3 días × 4 recreos × 1 zona = 12 slots
         guardias = session.query(Guardia).filter(Guardia.profesor_id == prof.id).all()
 
-        fechas_usadas = set()
-        for g in guardias:
-            assert g.fecha not in fechas_usadas, (
-                f"Profesor {prof.nombre_completo} tiene 2 guardias el {g.fecha}"
-            )
-            fechas_usadas.add(g.fecha)
+        # Debe tener exactamente 12 guardias (cobertura 100%)
+        assert len(guardias) == 12
+
+        # Verificar distribución por fecha (máx 4 por día: 2 recreos × 2 turnos)
+        from collections import Counter
+        guardias_por_fecha = Counter(g.fecha for g in guardias)
+        for fecha, count in guardias_por_fecha.items():
+            assert count <= 4, f"Más de 4 guardias el {fecha}"
 
     def test_validacion_no_simultaneidad(
         self,

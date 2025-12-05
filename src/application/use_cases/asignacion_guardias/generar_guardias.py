@@ -9,11 +9,10 @@ from typing import Callable, Optional
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
 from infrastructure.database.models import Configuracion, Guardia
-from services.asignador_guardias import (
-    generar_calendario_guardias,
+from services.asignador_guardias_v4_hibrido import (
+    generar_guardias_v4_hibrido,
     guardar_guardias_en_bd,
 )
-from services.asignador_guardias_v3_simple import generar_guardias_v3_simple
 from services.calculador_guardias import obtener_estadisticas
 from sqlalchemy.orm import Session
 from utils.logger import get_logger
@@ -84,7 +83,7 @@ class GenerarGuardiasUseCase:
             if not config:
                 raise BusinessLogicError("No existe configuración del curso")
 
-            algoritmo = getattr(config, "algoritmo_asignacion", "v2.9")  # Default v2.9
+            algoritmo = getattr(config, "algoritmo_asignacion", "v4.0")  # Default v4.0
             logger.info(f"🔧 Algoritmo seleccionado: {algoritmo}")
 
             # Generar calendario
@@ -98,15 +97,11 @@ class GenerarGuardiasUseCase:
                     porcentaje_escalado = 50 + int(porcentaje * 0.30)
                     progress_callback(mensaje or "Generando guardias...", porcentaje_escalado)
 
-            # SELECTOR DE ALGORITMO
-            if algoritmo == "v3.0":
-                logger.info("✨ Usando algoritmo v3.0 Simple Determinista")
-                calendario, resumen = generar_guardias_v3_simple(
-                    self.session, config.id, adapter_callback
-                )
-            else:
-                logger.info("🔄 Usando algoritmo v2.9 Clásico (7 fases)")
-                calendario, resumen = generar_calendario_guardias(self.session, adapter_callback)
+            # SELECTOR DE ALGORITMO - v4.0 es el algoritmo principal
+            logger.info("✨ Usando algoritmo v4.0 Híbrido (5 fases)")
+            calendario, resumen = generar_guardias_v4_hibrido(
+                self.session, adapter_callback
+            )
 
             # Guardar en base de datos
             if progress_callback:
