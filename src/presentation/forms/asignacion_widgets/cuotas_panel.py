@@ -11,6 +11,7 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
+    QLabel,
     QPushButton,
     QTextEdit,
     QVBoxLayout,
@@ -93,32 +94,28 @@ class CuotasPanel(QGroupBox):
         self.calcular_button.clicked.connect(self.calcular_cuotas)
         button_layout.addWidget(self.calcular_button)
 
-        # Indicador de total (visual, no botón)
-        self.total_label = QPushButton("Total: -- guardias")
-        self.total_label.setStyleSheet("""
-            QPushButton {
+        # Badge informativo de total (no es un botón)
+        self.total_badge = QLabel("Total: -- guardias")
+        self.total_badge.setStyleSheet("""
+            QLabel {
                 background-color: #065f46;
                 color: #10b981;
                 font-weight: bold;
                 font-size: 14px;
-                padding: 8px 16px;
+                padding: 8px 20px;
                 border-radius: 6px;
                 border: 2px solid #10b981;
             }
-            QPushButton:hover {
-                background-color: #064e3b;
-            }
         """)
-        self.total_label.setMinimumHeight(35)
-        self.total_label.setEnabled(False)  # Solo visual
-        button_layout.addWidget(self.total_label)
+        self.total_badge.setMinimumHeight(35)
+        button_layout.addWidget(self.total_badge)
 
         layout.addLayout(button_layout)
 
         # Área de texto con estilo terminal (igual que otros widgets)
         self.cuotas_text = QTextEdit()
         self.cuotas_text.setReadOnly(True)
-        self.cuotas_text.setMinimumHeight(300)
+        self.cuotas_text.setMinimumHeight(380)  # Altura similar al panel izquierdo
         self.cuotas_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
         self.cuotas_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
 
@@ -220,8 +217,8 @@ class CuotasPanel(QGroupBox):
         Args:
             response: CalcularCuotasResponse con cuotas detalladas.
         """
-        # Actualizar etiqueta de total
-        self.total_label.setText(f"Total: {response.total_guardias} guardias")
+        # Actualizar badge de total
+        self.total_badge.setText(f"Total: {response.total_guardias} guardias")
 
         # Construir texto formateado
         lineas = []
@@ -296,12 +293,12 @@ class CuotasPanel(QGroupBox):
         """Muestra mensaje de error en formato terminal."""
         error_html = wrap_terminal_html(format_terminal_error(f"⚠️  {mensaje}"))
         self.cuotas_text.setHtml(error_html)
-        self.total_label.setText("Total: -- guardias")
+        self.total_badge.setText("Total: -- guardias")
 
     def limpiar(self):
         """Limpia el contenido del panel."""
         self._mostrar_mensaje_inicial()
-        self.total_label.setText("Total: -- guardias")
+        self.total_badge.setText("Total: -- guardias")
         self._ultima_response = None
 
     def actualizar_estado_asignacion(self, cuotas_asignadas: dict):

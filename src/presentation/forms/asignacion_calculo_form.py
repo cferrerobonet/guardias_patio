@@ -124,9 +124,8 @@ class AsignacionCalculoForm(BaseForm):
         left_layout.addWidget(step1_label)
 
         self.estadisticas_panel = EstadisticasPanel()
-        left_layout.addWidget(self.estadisticas_panel)
+        left_layout.addWidget(self.estadisticas_panel, 1)  # stretch=1 para expandir
 
-        left_layout.addStretch()  # Empuja hacia arriba
         left_container.setLayout(left_layout)
         grid_layout.addWidget(left_container, 0, 0)
 
@@ -143,7 +142,7 @@ class AsignacionCalculoForm(BaseForm):
         right_layout.addWidget(step2_label)
 
         self.cuotas_panel = CuotasPanel(self.session)
-        right_layout.addWidget(self.cuotas_panel)
+        right_layout.addWidget(self.cuotas_panel, 1)  # stretch=1 para expandir igual que izquierda
 
         right_container.setLayout(right_layout)
         grid_layout.addWidget(right_container, 0, 1)
