@@ -28,8 +28,6 @@ from sqlalchemy.orm import Session
 
 from presentation.forms.asignacion_widgets import (
     CuotasPanel,
-    DistribucionPanel,
-    EquidadPanel,
     EstadisticasPanel,
     IncidenciasPanel,
     ResultadosPanel,
@@ -58,9 +56,9 @@ class AsignacionGuardiasForm(BaseForm):
         return self.estadisticas_panel.stats_text
 
     @property
-    def distribucion_text(self):
-        """Acceso al QTextEdit de distribución (delegado al panel)."""
-        return self.distribucion_panel.distribucion_text
+    def cuotas_text(self):
+        """Acceso al QTextEdit de cuotas (delegado al panel)."""
+        return self.cuotas_panel.cuotas_text
 
     @property
     def resultado_text(self):
@@ -133,76 +131,58 @@ class AsignacionGuardiasForm(BaseForm):
         grid_layout.setContentsMargins(10, 10, 10, 10)
         content_widget.setLayout(grid_layout)
 
-        # ============ COLUMNA IZQUIERDA ============
+        # ============ FILA 0: ESTADÍSTICAS Y CUOTAS ============
 
-        # Panel de estadísticas
+        # Panel de estadísticas (izquierda)
         self.estadisticas_panel = EstadisticasPanel()
         grid_layout.addWidget(self.estadisticas_panel, 0, 0)
 
-        # Botón calcular
-        calc_button = QPushButton("📊 Calcular Distribución")
-        calc_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
-        calc_button.setMinimumHeight(34)
-        calc_button.setMaximumHeight(34)
-        calc_button.clicked.connect(self.calcular_distribucion)
-        grid_layout.addWidget(calc_button, 1, 0)
-
-        # ============ COLUMNA DERECHA ============
-
-        # Panel de distribución
-        self.distribucion_panel = DistribucionPanel(self.session)
-        grid_layout.addWidget(self.distribucion_panel, 0, 1)
-
-        # ============ FILA CUOTAS ============
-
-        # Panel de cuotas (ancho completo)
+        # Panel de cuotas (derecha) - incluye botón "Calcular Cuotas"
         self.cuotas_panel = CuotasPanel(self.session)
-        grid_layout.addWidget(self.cuotas_panel, 1, 0, 1, 2)  # span 2 columnas
+        grid_layout.addWidget(self.cuotas_panel, 0, 1)
 
-        # ============ FILA BOTÓN GENERAR ============
+        # ============ FILA 1: RESULTADOS E INCIDENCIAS ============
+
+        # Panel de resultados (izquierda) - incluye métricas de equidad
+        self.resultados_panel = ResultadosPanel(self.session)
+        grid_layout.addWidget(self.resultados_panel, 1, 0)
+
+        # Panel de incidencias (derecha)
+        self.incidencias_panel = IncidenciasPanel(self.session)
+        grid_layout.addWidget(self.incidencias_panel, 1, 1)
+
+        # ============ FILA 2: BOTONES DE ACCIÓN ============
+
+        # Contenedor de botones
+        button_container = QWidget()
+        button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(0, 10, 0, 10)
+        button_layout.setSpacing(15)
+        button_container.setLayout(button_layout)
+
+        button_layout.addStretch()
 
         # Botón generar
         self.generar_button = QPushButton("🎯 Generar Asignación")
         self.generar_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
-        self.generar_button.setMinimumHeight(34)
-        self.generar_button.setMaximumHeight(34)
-        self.generar_button.setEnabled(False)
+        self.generar_button.setMinimumWidth(220)
+        self.generar_button.setMinimumHeight(40)
+        self.generar_button.setMaximumHeight(40)
         self.generar_button.clicked.connect(self.generar_guardias)
-        grid_layout.addWidget(self.generar_button, 2, 1)
+        button_layout.addWidget(self.generar_button)
 
-        # ============ FILA INFERIOR ============
-
-        # Panel de resultados (izquierda)
-        self.resultados_panel = ResultadosPanel(self.session)
-        grid_layout.addWidget(self.resultados_panel, 3, 0)
-
-        # Panel de incidencias (derecha)
-        self.incidencias_panel = IncidenciasPanel(self.session)
-        grid_layout.addWidget(self.incidencias_panel, 3, 1)
-
-        # ============ FILA DE EQUIDAD (NUEVA - Phase 3) ============
-
-        # Panel de equidad (centrado, ancho completo)
-        self.equidad_panel = EquidadPanel(self.session)
-        grid_layout.addWidget(self.equidad_panel, 4, 0, 1, 2)  # span 2 columnas
-
-        # Botón limpiar (centrado, abajo)
-        button_container = QWidget()
-        button_layout = QHBoxLayout()
-        button_layout.setContentsMargins(0, 10, 0, 10)
-        button_container.setLayout(button_layout)
-
-        button_layout.addStretch()
-        self.limpiar_button = QPushButton("🗑️  Limpiar Todas las Guardias")
+        # Botón limpiar
+        self.limpiar_button = QPushButton("🗑️ Limpiar Guardias")
         self.limpiar_button.setStyleSheet(styles.STYLE_BUTTON_DANGER)
-        self.limpiar_button.setMinimumWidth(280)
+        self.limpiar_button.setMinimumWidth(220)
         self.limpiar_button.setMinimumHeight(40)
         self.limpiar_button.setMaximumHeight(40)
         self.limpiar_button.clicked.connect(self.limpiar_guardias)
         button_layout.addWidget(self.limpiar_button)
+
         button_layout.addStretch()
 
-        grid_layout.addWidget(button_container, 5, 0, 1, 2)  # Movido a fila 5
+        grid_layout.addWidget(button_container, 2, 0, 1, 2)
 
         # Configurar proporciones de columnas
         grid_layout.setColumnStretch(0, 1)
@@ -229,23 +209,9 @@ class AsignacionGuardiasForm(BaseForm):
             self.manejar_excepcion(e, "cargar estadísticas")
 
     def calcular_distribucion(self):
-        """Calcular y mostrar la distribución de guardias"""
-        try:
-            # Ejecutar Use Case
-            distribucion_dto = self.calcular_distribucion_uc.execute()
-
-            # Delegar al widget
-            self.distribucion_panel.mostrar_distribucion(distribucion_dto)
-
-            # Habilitar botón de generación
-            self.generar_button.setEnabled(True)
-
-        except BusinessLogicError as e:
-            self.mostrar_error("Error en Cálculo", str(e))
-            self.distribucion_panel.mostrar_error(str(e))
-
-        except Exception as e:
-            self.manejar_excepcion(e, "calcular distribución")
+        """Calcular y mostrar la distribución de guardias (delegado a cuotas_panel)"""
+        # Ahora la funcionalidad está integrada en CuotasPanel
+        self.cuotas_panel.calcular_cuotas()
 
     def generar_guardias(self):
         """Generar el calendario completo de guardias"""
@@ -311,15 +277,9 @@ class AsignacionGuardiasForm(BaseForm):
                 return
 
             if resumen:
-                # Delegar a los widgets
+                # Delegar a los widgets (equidad integrada en resultados_panel)
                 self.resultados_panel.mostrar_resultados(resumen)
                 self.incidencias_panel.analizar_incidencias(resumen)
-
-                # NUEVO (Phase 3): Actualizar análisis de equidad automáticamente
-                self.equidad_panel.actualizar_despues_generacion()
-
-                # NUEVO (Phase 3): Actualizar estado de cuotas después de asignación
-                self.cuotas_panel.actualizar_estado_asignacion()
 
                 self.mostrar_exito(
                     "Asignación generada",
@@ -357,10 +317,9 @@ class AsignacionGuardiasForm(BaseForm):
     def limpiar_formulario(self):
         """Limpiar todos los campos del formulario"""
         self.estadisticas_panel.limpiar()
-        self.distribucion_panel.limpiar()
+        self.cuotas_panel.limpiar()
         self.resultados_panel.limpiar()
         self.incidencias_panel.limpiar()
-        self.generar_button.setEnabled(False)
         self.cargar_estadisticas()
 
     def limpiar_guardias(self):

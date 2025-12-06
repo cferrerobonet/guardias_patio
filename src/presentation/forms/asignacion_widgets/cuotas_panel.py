@@ -1,32 +1,42 @@
-"""Widget para mostrar cuotas calculadas antes de generar guardias.
+"""Widget para mostrar cuotas calculadas con estilo terminal.
 
 Integra CalcularCuotasUseCase para preview de distribución esperada.
+Usa estilo terminal negro consistente con otros widgets.
 """
 
 import ui_styles as styles
 from application.dtos.domain_services_dtos import CalcularCuotasRequest
 from application.use_cases.calcular_cuotas_use_case import CalcularCuotasUseCase
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
-    QLabel,
     QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
+    QTextEdit,
     QVBoxLayout,
 )
 from sqlalchemy.orm import Session
+from ui_styles import (
+    format_terminal_error,
+    format_terminal_info,
+    format_terminal_label,
+    format_terminal_number,
+    format_terminal_profesor,
+    format_terminal_success,
+    format_terminal_value,
+    format_terminal_warning,
+    wrap_terminal_html,
+)
 
 
 class CuotasPanel(QGroupBox):
-    """Panel para calcular y mostrar cuotas esperadas usando Domain Services.
+    """Panel para calcular y mostrar cuotas esperadas con estilo terminal.
 
     Muestra:
-    - Tabla con cuotas por profesor
-    - Porcentaje de jornada
-    - Total de guardias a asignar
-    - Botón para recalcular
+    - Total de guardias a distribuir
+    - Distribución por profesor ordenada por cuota
+    - Porcentaje de jornada y turno de cada profesor
+    - Estado de la distribución (exacta o con diferencia)
 
     Señales:
         cuotas_calculadas: Emitida cuando se calculan cuotas exitosamente.
@@ -45,6 +55,7 @@ class CuotasPanel(QGroupBox):
         self.session = session
         self.calcular_cuotas_uc = CalcularCuotasUseCase(session)
         self.configuracion_id = None
+        self._ultima_response = None
 
         self.setStyleSheet("""
             QGroupBox {
@@ -73,80 +84,61 @@ class CuotasPanel(QGroupBox):
         layout.setContentsMargins(6, 8, 6, 8)
         layout.setSpacing(6)
 
-        # Botón calcular
+        # Botones en la parte superior
         button_layout = QHBoxLayout()
+
         self.calcular_button = QPushButton("🔢 Calcular Cuotas")
         self.calcular_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.calcular_button.setMinimumHeight(35)
         self.calcular_button.clicked.connect(self.calcular_cuotas)
         button_layout.addWidget(self.calcular_button)
 
-        # Etiqueta de total (no es botón)
-        self.total_label = QLabel("Total: -- guardias")
+        # Indicador de total (visual, no botón)
+        self.total_label = QPushButton("Total: -- guardias")
         self.total_label.setStyleSheet("""
-            QLabel {
-                background-color: #ecfdf5;
-                color: #059669;
+            QPushButton {
+                background-color: #065f46;
+                color: #10b981;
                 font-weight: bold;
                 font-size: 14px;
                 padding: 8px 16px;
                 border-radius: 6px;
                 border: 2px solid #10b981;
             }
+            QPushButton:hover {
+                background-color: #064e3b;
+            }
         """)
         self.total_label.setMinimumHeight(35)
-        self.total_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.total_label.setEnabled(False)  # Solo visual
         button_layout.addWidget(self.total_label)
 
         layout.addLayout(button_layout)
 
-        # Tabla de cuotas
-        self.tabla = QTableWidget()
-        self.tabla.setColumnCount(4)
-        self.tabla.setHorizontalHeaderLabels(["Profesor", "Jornada %", "Cuota Esperada", "Estado"])
-        self.tabla.setMinimumHeight(250)
-        self.tabla.setAlternatingRowColors(True)
-        self.tabla.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 4px;
-                gridline-color: #e5e7eb;
-            }
-            QTableWidget::item {
-                padding: 5px;
-                font-size: 12px;
-            }
-            QHeaderView::section {
-                background-color: #f3f4f6;
-                padding: 8px;
-                border: none;
-                border-right: 1px solid #e5e7eb;
-                border-bottom: 2px solid #d1d5db;
-                font-weight: bold;
-                font-size: 12px;
-            }
-        """)
+        # Área de texto con estilo terminal (igual que otros widgets)
+        self.cuotas_text = QTextEdit()
+        self.cuotas_text.setReadOnly(True)
+        self.cuotas_text.setMinimumHeight(300)
+        self.cuotas_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.cuotas_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
 
-        # Ajustar tamaño y comportamiento de columnas
-        header = self.tabla.horizontalHeader()
-        header.setStretchLastSection(False)
-
-        self.tabla.setColumnWidth(0, 320)  # Profesor (más ancho para nombres completos)
-        self.tabla.setColumnWidth(1, 100)  # Jornada %
-        self.tabla.setColumnWidth(2, 120)  # Cuota Esperada
-        self.tabla.setColumnWidth(3, 120)  # Estado
-
-        # Permitir que la última columna se ajuste
-        from PyQt6.QtWidgets import QHeaderView
-
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
-
-        layout.addWidget(self.tabla)
+        layout.addWidget(self.cuotas_text)
         self.setLayout(layout)
+
+        # Mensaje inicial
+        self._mostrar_mensaje_inicial()
+
+    def _mostrar_mensaje_inicial(self):
+        """Muestra mensaje inicial."""
+        texto = format_terminal_info(
+            "💡 Pulsa 'Calcular Cuotas' para ver la distribución\n"
+            "   teórica de guardias por profesor.\n\n"
+            "   La cuota se calcula en base a:\n"
+            "   • Porcentaje de jornada\n"
+            "   • Turno (mañana/tarde/ambos)\n"
+            "   • Días/recreos disponibles"
+        )
+        self.cuotas_text.setHtml(wrap_terminal_html(texto))
 
     def set_configuracion(self, configuracion_id: int):
         """Establece la configuración para calcular cuotas.
@@ -162,7 +154,6 @@ class CuotasPanel(QGroupBox):
         if not self.configuracion_id:
             from infrastructure.database.models import Configuracion
 
-            # Obtener la configuración (solo hay una por usuario)
             configuracion = self.session.query(Configuracion).first()
 
             if not configuracion:
@@ -179,7 +170,7 @@ class CuotasPanel(QGroupBox):
                 msg.exec()
                 return
 
-            # Verificar que haya un curso activo usando el GestorCursos
+            # Verificar curso activo
             from services.gestor_cursos import GestorCursos
 
             curso_activo = GestorCursos.obtener_curso_activo(self.session)
@@ -208,82 +199,150 @@ class CuotasPanel(QGroupBox):
             response = self.calcular_cuotas_uc.execute(request)
 
             if response.exitoso:
+                self._ultima_response = response
                 self._mostrar_cuotas(response)
-                # Emitir señal
-                self.cuotas_calculadas.emit(response.cuotas)
+                # Emitir señal con el diccionario de cuotas
+                cuotas_dict = {c.profesor_id: c.cuota_esperada for c in response.cuotas_detalle}
+                self.cuotas_calculadas.emit(cuotas_dict)
             else:
-                self._mostrar_error(response.mensaje)
+                self._mostrar_error_terminal(response.mensaje)
 
         except Exception as e:
-            self._mostrar_error(f"Error al calcular cuotas: {str(e)}")
+            self._mostrar_error_terminal(f"Error al calcular cuotas: {str(e)}")
         finally:
             # Rehabilitar botón
             self.calcular_button.setEnabled(True)
             self.calcular_button.setText("🔢 Calcular Cuotas")
 
     def _mostrar_cuotas(self, response):
-        """Muestra las cuotas en la tabla.
+        """Muestra las cuotas en formato terminal.
 
         Args:
             response: CalcularCuotasResponse con cuotas detalladas.
         """
-        # Actualizar total
+        # Actualizar etiqueta de total
         self.total_label.setText(f"Total: {response.total_guardias} guardias")
 
-        # Llenar tabla
-        self.tabla.setRowCount(len(response.cuotas_detalle))
+        # Construir texto formateado
+        lineas = []
 
-        for i, cuota_dto in enumerate(response.cuotas_detalle):
-            # Profesor
-            item_nombre = QTableWidgetItem(cuota_dto.profesor_nombre)
-            item_nombre.setFlags(item_nombre.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.tabla.setItem(i, 0, item_nombre)
+        # Cabecera
+        lineas.append(format_terminal_success("�� DISTRIBUCIÓN OBJETIVO DE GUARDIAS"))
+        lineas.append("")
 
-            # Jornada
-            item_jornada = QTableWidgetItem(f"{cuota_dto.porcentaje_jornada:.0f}%")
-            item_jornada.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            item_jornada.setFlags(item_jornada.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.tabla.setItem(i, 1, item_jornada)
+        # Información contextual
+        lineas.append(
+            format_terminal_info("ℹ️  Esta distribución es el objetivo ideal basado en:")
+        )
+        lineas.append(format_terminal_info("   • Porcentaje de jornada de cada profesor"))
+        lineas.append(format_terminal_info("   • Turno (mañana/tarde/ambos)"))
+        lineas.append(format_terminal_info("   • Slots totales disponibles"))
+        lineas.append("")
 
-            # Cuota
-            item_cuota = QTableWidgetItem(str(cuota_dto.cuota_esperada))
-            item_cuota.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            item_cuota.setFlags(item_cuota.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.tabla.setItem(i, 2, item_cuota)
+        # Resumen rápido
+        total_label = format_terminal_label("Total guardias a distribuir:")
+        total_val = format_terminal_number(str(response.total_guardias))
+        lineas.append(f"{total_label} {total_val}")
 
-            # Estado
-            item_estado = QTableWidgetItem("⏳ Pendiente")
-            item_estado.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            item_estado.setFlags(item_estado.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.tabla.setItem(i, 3, item_estado)
+        profesores_label = format_terminal_label("Profesores activos:")
+        profesores_val = format_terminal_number(str(len(response.cuotas_detalle)))
+        lineas.append(f"{profesores_label} {profesores_val}")
+        lineas.append("")
 
-    def _mostrar_error(self, mensaje: str):
-        """Muestra mensaje de error."""
-        from PyQt6.QtWidgets import QMessageBox
+        # Separador
+        lineas.append(format_terminal_info("─" * 50))
+        lineas.append(format_terminal_label("📋 CUOTAS POR PROFESOR (ordenado por cuota):"))
+        lineas.append(format_terminal_info("─" * 50))
+        lineas.append("")
 
-        QMessageBox.critical(self, "Error al Calcular Cuotas", mensaje)
-        self.tabla.setRowCount(0)
+        # Ordenar por cuota descendente
+        cuotas_ordenadas = sorted(
+            response.cuotas_detalle,
+            key=lambda c: c.cuota_esperada,
+            reverse=True,
+        )
+
+        # Mostrar cada profesor
+        for cuota_dto in cuotas_ordenadas:
+            nombre = format_terminal_profesor(cuota_dto.profesor_nombre)
+            jornada = f"{cuota_dto.porcentaje_jornada:.0f}%"
+            cuota = format_terminal_number(str(cuota_dto.cuota_esperada))
+            turno_info = format_terminal_info(f"({jornada})")
+
+            lineas.append(f"  • {nombre} {turno_info}: {cuota} guardias")
+
+        lineas.append("")
+
+        # Verificar si hay diferencia
+        if hasattr(response, "slots_totales") and response.slots_totales:
+            diferencia = response.total_guardias - response.slots_totales
+            if diferencia == 0:
+                lineas.append(format_terminal_success("✅ La distribución es EXACTA"))
+            else:
+                dif_msg = f"⚠️  Diferencia: {abs(diferencia)} guardias"
+                lineas.append(format_terminal_warning(dif_msg))
+        else:
+            lineas.append(format_terminal_success("✅ Cuotas calculadas correctamente"))
+
+        lineas.append("")
+        lineas.append(
+            format_terminal_info('💡 Tras generar, verifica el reparto real en "Resultados"')
+        )
+
+        texto = "\n".join(lineas)
+        self.cuotas_text.setHtml(wrap_terminal_html(texto))
+
+    def _mostrar_error_terminal(self, mensaje: str):
+        """Muestra mensaje de error en formato terminal."""
+        error_html = wrap_terminal_html(format_terminal_error(f"⚠️  {mensaje}"))
+        self.cuotas_text.setHtml(error_html)
         self.total_label.setText("Total: -- guardias")
 
     def limpiar(self):
         """Limpia el contenido del panel."""
-        self.tabla.setRowCount(0)
+        self._mostrar_mensaje_inicial()
         self.total_label.setText("Total: -- guardias")
+        self._ultima_response = None
 
     def actualizar_estado_asignacion(self, cuotas_asignadas: dict):
         """Actualiza el estado después de asignar guardias.
 
+        Compara cuotas esperadas con asignadas y muestra diferencias.
+
         Args:
             cuotas_asignadas: Diccionario {profesor_id: guardias_asignadas}
         """
-        for row in range(self.tabla.rowCount()):
-            # Obtener profesor_id del nombre (simplificado)
-            # En producción, guardaríamos el ID en el item
-            item_estado = self.tabla.item(row, 3)
-            item_cuota = self.tabla.item(row, 2)
+        if not self._ultima_response:
+            return
 
-            if item_cuota and item_estado:
-                int(item_cuota.text())
-                # Aquí necesitaríamos el profesor_id real
-                # Por ahora, marcamos como completado genéricamente
-                item_estado.setText("✅ Asignado")
+        lineas = []
+        lineas.append(format_terminal_success("📊 RESULTADO DE ASIGNACIÓN"))
+        lineas.append("")
+
+        total_asignadas = sum(cuotas_asignadas.values())
+        lineas.append(
+            f"{format_terminal_label('Guardias asignadas:')} "
+            f"{format_terminal_number(str(total_asignadas))}"
+        )
+        lineas.append("")
+
+        # Comparar cada profesor
+        for cuota_dto in self._ultima_response.cuotas_detalle:
+            nombre = format_terminal_profesor(cuota_dto.profesor_nombre)
+            esperada = cuota_dto.cuota_esperada
+            asignada = cuotas_asignadas.get(cuota_dto.profesor_id, 0)
+            diferencia = asignada - esperada
+
+            if diferencia == 0:
+                estado = format_terminal_success("✅")
+            elif diferencia > 0:
+                estado = format_terminal_warning(f"+{diferencia}")
+            else:
+                estado = format_terminal_error(f"{diferencia}")
+
+            lineas.append(
+                f"  • {nombre}: {format_terminal_value(str(asignada))}/{esperada} {estado}"
+            )
+
+        texto = "\n".join(lineas)
+        self.cuotas_text.setHtml(wrap_terminal_html(texto))

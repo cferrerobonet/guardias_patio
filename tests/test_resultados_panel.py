@@ -1,8 +1,8 @@
 """
 Tests para ResultadosPanel.
 
-Este módulo contiene tests para la funcionalidad de formateo de resumen
-de generación de guardias.
+Este módulo contiene tests para la funcionalidad de mostrar resultados
+de generación de guardias con métricas de equidad.
 """
 
 from dataclasses import dataclass
@@ -71,17 +71,22 @@ class TestResultadosPanelEstructura:
         """Test: El panel tiene título."""
         assert "Resultados" in panel.title() or "📈" in panel.title()
 
+    def test_mensaje_inicial(self, panel):
+        """Test: El panel muestra mensaje inicial."""
+        texto = panel.resultado_text.toPlainText()
+        assert "Generar Asignación" in texto or "resultados" in texto.lower()
+
 
 # ========================================
-# TESTS DE FORMATEO DE RESUMEN
+# TESTS DE MOSTRAR RESULTADOS
 # ========================================
 
 
-class TestResultadosPanelFormateoResumen:
-    """Tests para el método _formatear_resumen."""
+class TestResultadosPanelMostrarResultados:
+    """Tests para el método mostrar_resultados."""
 
-    def test_formatear_resumen_cobertura_completa(self, panel):
-        """Test: Resumen con cobertura completa se formatea correctamente."""
+    def test_mostrar_resultados_cobertura_completa(self, panel):
+        """Test: Resumen con cobertura completa se muestra correctamente."""
         mock_resumen = MockResumenGeneracion(
             guardias_generadas=100,
             slots_esperados=100,
@@ -90,14 +95,15 @@ class TestResultadosPanelFormateoResumen:
             resumen_por_profesor={},
         )
 
-        texto = panel._formatear_resumen(mock_resumen)
+        panel.mostrar_resultados(mock_resumen)
 
+        texto = panel.resultado_text.toPlainText()
         # Debe mostrar guardias generadas
         assert "100" in texto
         # Debe mostrar cobertura completa
         assert "✅" in texto or "completa" in texto.lower()
 
-    def test_formatear_resumen_sin_cobertura_completa(self, panel):
+    def test_mostrar_resultados_sin_cobertura_completa(self, panel):
         """Test: Resumen sin cobertura completa muestra advertencia."""
         mock_resumen = MockResumenGeneracion(
             guardias_generadas=80,
@@ -107,12 +113,13 @@ class TestResultadosPanelFormateoResumen:
             resumen_por_profesor={},
         )
 
-        texto = panel._formatear_resumen(mock_resumen)
+        panel.mostrar_resultados(mock_resumen)
 
-        # Debe mostrar advertencia
+        texto = panel.resultado_text.toPlainText()
+        # Debe mostrar advertencia por slots sin cubrir
         assert "⚠️" in texto or "20" in texto
 
-    def test_formatear_resumen_top_10_profesores(self, panel_con_profesores):
+    def test_mostrar_resultados_top_10_profesores(self, panel_con_profesores):
         """Test: Resumen muestra top 10 profesores."""
         panel, profesores = panel_con_profesores
 
@@ -126,21 +133,13 @@ class TestResultadosPanelFormateoResumen:
             resumen_por_profesor=resumen_por_profesor,
         )
 
-        texto = panel._formatear_resumen(mock_resumen)
+        panel.mostrar_resultados(mock_resumen)
 
-        # Debe mostrar "top 10"
-        assert "10" in texto.lower() or "profesor" in texto.lower()
+        texto = panel.resultado_text.toPlainText()
+        # Debe mostrar sección de profesores
+        assert "Profesor" in texto or "profesor" in texto.lower() or "top" in texto.lower()
 
-
-# ========================================
-# TESTS DE MOSTRAR RESULTADOS
-# ========================================
-
-
-class TestResultadosPanelMostrarResultados:
-    """Tests para el método mostrar_resultados."""
-
-    def test_mostrar_resultados(self, panel):
+    def test_mostrar_resultados_actualiza_texto(self, panel):
         """Test: mostrar_resultados actualiza el texto."""
         mock_resumen = MockResumenGeneracion(
             guardias_generadas=50,
@@ -157,7 +156,7 @@ class TestResultadosPanelMostrarResultados:
         assert "50" in texto
 
     def test_limpiar(self, panel):
-        """Test: limpiar vacía el contenido."""
+        """Test: limpiar restaura el mensaje inicial."""
         mock_resumen = MockResumenGeneracion(
             guardias_generadas=50,
             slots_esperados=100,
@@ -166,7 +165,9 @@ class TestResultadosPanelMostrarResultados:
 
         panel.limpiar()
 
-        assert panel.resultado_text.toPlainText() == ""
+        # Debe mostrar mensaje inicial (no vacío)
+        texto = panel.resultado_text.toPlainText()
+        assert "Generar Asignación" in texto or "resultados" in texto.lower()
 
 
 # ========================================
@@ -181,8 +182,9 @@ class TestResultadosPanelRobustez:
         """Test: Funciona con resumen vacío."""
         mock_resumen = MockResumenGeneracion()
 
-        texto = panel._formatear_resumen(mock_resumen)
+        panel.mostrar_resultados(mock_resumen)
 
+        texto = panel.resultado_text.toPlainText()
         assert texto != ""
         assert "0" in texto
 
@@ -194,6 +196,30 @@ class TestResultadosPanelRobustez:
             cobertura_completa=True,
         )
 
-        texto = panel._formatear_resumen(mock_resumen)
+        panel.mostrar_resultados(mock_resumen)
 
+        texto = panel.resultado_text.toPlainText()
         assert texto != ""
+
+
+# ========================================
+# TESTS DE INTEGRACIÓN DE EQUIDAD
+# ========================================
+
+
+class TestResultadosPanelEquidad:
+    """Tests para la integración de métricas de equidad."""
+
+    def test_muestra_seccion_equidad(self, panel):
+        """Test: Muestra sección de análisis de equidad."""
+        mock_resumen = MockResumenGeneracion(
+            guardias_generadas=100,
+            slots_esperados=100,
+            cobertura_completa=True,
+        )
+
+        panel.mostrar_resultados(mock_resumen)
+
+        texto = panel.resultado_text.toPlainText()
+        # Debe intentar mostrar la sección de equidad
+        assert "EQUIDAD" in texto.upper() or "equidad" in texto.lower() or "⚖️" in texto

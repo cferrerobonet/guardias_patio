@@ -23,7 +23,6 @@ from PyQt6.QtWidgets import (
 from sqlalchemy.orm import Session
 
 from presentation.forms.asignacion_widgets import (
-    EquidadPanel,
     IncidenciasPanel,
     ResultadosPanel,
 )
@@ -37,9 +36,8 @@ class AsignacionResultadosForm(BaseForm):
 
     Permite:
     - Generar el calendario completo de guardias
-    - Ver resultados de la asignación
+    - Ver resultados de la asignación con métricas de equidad
     - Analizar incidencias y problemas
-    - Evaluar equidad en la distribución
     - Limpiar todas las guardias
     """
 
@@ -83,7 +81,6 @@ class AsignacionResultadosForm(BaseForm):
         if count_guardias == 0:
             self.resultados_panel.limpiar()
             self.incidencias_panel.limpiar()
-            self.equidad_panel.limpiar()
 
     def setup_ui(self):
         """Configurar la interfaz de usuario del formulario"""
@@ -113,7 +110,7 @@ class AsignacionResultadosForm(BaseForm):
 
         # ============ FILA 1: RESULTADOS E INCIDENCIAS ============
 
-        # Panel de resultados (izquierda)
+        # Panel de resultados (izquierda) - incluye métricas de equidad
         self.resultados_panel = ResultadosPanel(self.session)
         grid_layout.addWidget(self.resultados_panel, 0, 0)
 
@@ -121,13 +118,7 @@ class AsignacionResultadosForm(BaseForm):
         self.incidencias_panel = IncidenciasPanel(self.session)
         grid_layout.addWidget(self.incidencias_panel, 0, 1)
 
-        # ============ FILA 2: EQUIDAD (ancho completo) ============
-
-        # Panel de equidad
-        self.equidad_panel = EquidadPanel(self.session)
-        grid_layout.addWidget(self.equidad_panel, 1, 0, 1, 2)  # span 2 columnas
-
-        # ============ FILA 3: BOTONES DE ACCIÓN ============
+        # ============ FILA 2: BOTONES DE ACCIÓN ============
 
         # Contenedor de botones
         button_container = QWidget()
@@ -158,7 +149,7 @@ class AsignacionResultadosForm(BaseForm):
 
         button_layout.addStretch()
 
-        grid_layout.addWidget(button_container, 2, 0, 1, 2)
+        grid_layout.addWidget(button_container, 1, 0, 1, 2)
 
         # Configurar proporciones de columnas
         grid_layout.setColumnStretch(0, 1)
@@ -229,12 +220,9 @@ class AsignacionResultadosForm(BaseForm):
             )
 
             if resumen:
-                # Delegar a los widgets
+                # Delegar a los widgets (equidad integrada en resultados_panel)
                 self.resultados_panel.mostrar_resultados(resumen)
                 self.incidencias_panel.analizar_incidencias(resumen)
-
-                # Actualizar análisis de equidad automáticamente
-                self.equidad_panel.actualizar_despues_generacion()
 
                 self.mostrar_exito(
                     "Asignación generada",
@@ -317,7 +305,6 @@ class AsignacionResultadosForm(BaseForm):
         """Limpiar todos los campos del formulario"""
         self.resultados_panel.limpiar()
         self.incidencias_panel.limpiar()
-        self.equidad_panel.limpiar()
 
     def validar_formulario(self) -> bool:
         """

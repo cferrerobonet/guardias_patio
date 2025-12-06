@@ -1,9 +1,12 @@
 """Widget para mostrar resultados de la generación de guardias.
 
-Muestra el resumen de guardias generadas y cobertura.
+Muestra el resumen de guardias generadas, cobertura y métricas de equidad.
+Estilo terminal negro consistente con otros widgets.
 """
 
 import ui_styles as styles
+from application.dtos.domain_services_dtos import AnalisisEquidadRequest
+from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
 from infrastructure.database.models import Profesor
 from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
 from sqlalchemy.orm import Session
@@ -13,18 +16,20 @@ from ui_styles import (
     format_terminal_number,
     format_terminal_profesor,
     format_terminal_success,
+    format_terminal_value,
     format_terminal_warning,
     wrap_terminal_html,
 )
 
 
 class ResultadosPanel(QGroupBox):
-    """Panel para mostrar resultados de generación de guardias.
+    """Panel para mostrar resultados de generación de guardias con equidad.
 
     Muestra:
     - Guardias generadas vs slots esperados
     - Estado de cobertura
-    - Top 10 profesores con más guardias
+    - Métricas de equidad integradas
+    - Top profesores con más/menos guardias
 
     Señales:
         No emite señales (solo visualización).
@@ -39,6 +44,9 @@ class ResultadosPanel(QGroupBox):
         """
         super().__init__("📈 Resultados de Generación", parent)
         self.session = session
+        self.analisis_equidad_uc = AnalisisEquidadUseCase(session)
+        self._ultimo_resumen = None
+
         self.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -69,15 +77,27 @@ class ResultadosPanel(QGroupBox):
         # Área de texto con estilo terminal
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
-        self.resultado_text.setMinimumHeight(320)
+        self.resultado_text.setMinimumHeight(350)
         self.resultado_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
         self.resultado_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
 
         layout.addWidget(self.resultado_text)
         self.setLayout(layout)
 
+        # Mensaje inicial
+        self._mostrar_mensaje_inicial()
+
+    def _mostrar_mensaje_inicial(self):
+        """Muestra mensaje inicial."""
+        texto = format_terminal_info(
+            "💡 Los resultados se mostrarán aquí después de\n"
+            "   generar el calendario de guardias.\n\n"
+            "   Pulsa 'Generar Asignación' para comenzar."
+        )
+        self.resultado_text.setHtml(wrap_terminal_html(texto))
+
     def mostrar_resultados(self, resumen):
-        """Muestra los resultados de generación.
+        """Muestra los resultados de generación con métricas de equidad.
 
         Args:
             resumen: ResumenGeneracionDTO con atributos:
@@ -87,51 +107,121 @@ class ResultadosPanel(QGroupBox):
                 - slots_sin_cubrir (int)
                 - resumen_por_profesor (dict): {profesor_id: count}
         """
-        texto = self._formatear_resumen(resumen)
-        self.resultado_text.setHtml(wrap_terminal_html(texto))
+        self._ultimo_resumen = resumen
+        lineas = []
 
-    def _formatear_resumen(self, resumen) -> str:
-        """Formatea el resumen de generación.
+        # ======= SECCIÓN 1: COBERTURA =======
+        lineas.append(format_terminal_success("📊 RESUMEN DE GENERACIÓN"))
+        lineas.append(format_terminal_info("─" * 45))
+        lineas.append("")
 
-        Args:
-            resumen: ResumenGeneracionDTO con los resultados.
-
-        Returns:
-            Texto formateado (HTML con colores terminal).
-        """
+        # Métricas principales
         guardias_label = format_terminal_label("Guardias generadas:")
-        guardias_num = format_terminal_number(resumen.guardias_generadas)
+        guardias_num = format_terminal_number(str(resumen.guardias_generadas))
+        lineas.append(f"{guardias_label} {guardias_num}")
+
         slots_label = format_terminal_label("Slots esperados:")
-        slots_num = format_terminal_number(resumen.slots_esperados)
+        slots_num = format_terminal_number(str(resumen.slots_esperados))
+        lineas.append(f"{slots_label} {slots_num}")
 
-        lineas = [
-            f"{guardias_label} {guardias_num}",
-            f"{slots_label} {slots_num}",
-        ]
-
+        # Cobertura
+        cobertura_pct = (
+            resumen.guardias_generadas / resumen.slots_esperados * 100
+            if resumen.slots_esperados > 0
+            else 0
+        )
         if resumen.cobertura_completa:
-            lineas.append(format_terminal_success("✅ Cobertura completa"))
+            cobertura_msg = f"✅ Cobertura: {cobertura_pct:.1f}% (completa)"
+            lineas.append(format_terminal_success(cobertura_msg))
         elif resumen.slots_sin_cubrir > 0:
-            warning_msg = f"⚠️ {resumen.slots_sin_cubrir} slots sin cubrir (falta elegibilidad)"
+            warning_msg = (
+                f"⚠️ Cobertura: {cobertura_pct:.1f}% "
+                f"({resumen.slots_sin_cubrir} sin cubrir)"
+            )
             lineas.append(format_terminal_warning(warning_msg))
+        lineas.append("")
 
-        # Top profesores (máximo 10)
+        # ======= SECCIÓN 2: EQUIDAD =======
+        lineas.append(format_terminal_info("─" * 45))
+        lineas.append(format_terminal_success("⚖️ ANÁLISIS DE EQUIDAD"))
+        lineas.append("")
+
+        # Obtener métricas de equidad
+        try:
+            request = AnalisisEquidadRequest(
+                configuracion_id=None,
+                incluir_detalle=True,
+                umbral_desbalance=0.15,
+            )
+            response = self.analisis_equidad_uc.execute(request)
+
+            if response.exitoso:
+                metricas = response.metricas
+
+                # Nivel de equidad con emoji
+                nivel_emoji = {
+                    "EXCELENTE": "🌟",
+                    "BUENO": "✅",
+                    "ACEPTABLE": "⚠️",
+                    "DEFICIENTE": "❌",
+                }
+                emoji = nivel_emoji.get(metricas.nivel_equidad, "📊")
+
+                is_good = metricas.nivel_equidad in ["EXCELENTE", "BUENO"]
+                nivel_color = format_terminal_success if is_good else format_terminal_warning
+                lineas.append(
+                    f"{format_terminal_label('Nivel:')} "
+                    f"{nivel_color(f'{emoji} {metricas.nivel_equidad}')}"
+                )
+
+                lineas.append(
+                    f"{format_terminal_label('Índice de equidad:')} "
+                    f"{format_terminal_value(f'{metricas.indice_equidad:.1%}')}"
+                )
+
+                lineas.append(
+                    f"{format_terminal_label('Coef. variación:')} "
+                    f"{format_terminal_number(f'{metricas.coeficiente_variacion:.3f}')}"
+                )
+
+                if metricas.desbalances_detectados > 0:
+                    lineas.append(
+                        format_terminal_warning(
+                            f"⚠️ {metricas.desbalances_detectados} desbalances detectados"
+                        )
+                    )
+                else:
+                    lineas.append(format_terminal_success("✅ Sin desbalances significativos"))
+            else:
+                lineas.append(format_terminal_info("(análisis de equidad no disponible)"))
+        except Exception:
+            lineas.append(format_terminal_info("(análisis de equidad no disponible)"))
+
+        lineas.append("")
+
+        # ======= SECCIÓN 3: TOP PROFESORES =======
         if resumen.resumen_por_profesor:
+            lineas.append(format_terminal_info("─" * 45))
+            lineas.append(format_terminal_label("👥 DISTRIBUCIÓN POR PROFESOR (top 10):"))
+            lineas.append("")
+
             top = sorted(
                 resumen.resumen_por_profesor.items(),
                 key=lambda x: x[1],
                 reverse=True,
             )[:10]
-            lineas.append(f"\n{format_terminal_info('Por profesor (top 10):')}")
+
             for pid, cnt in top:
                 prof = self.session.query(Profesor).get(pid)
                 if prof:
                     prof_name = format_terminal_profesor(prof.nombre_completo)
-                    cnt_num = format_terminal_number(cnt)
-                    lineas.append(f"• {prof_name}: {cnt_num}")
+                    cnt_num = format_terminal_number(str(cnt))
+                    lineas.append(f"  • {prof_name}: {cnt_num} guardias")
 
-        return "\n".join(lineas)
+        texto = "\n".join(lineas)
+        self.resultado_text.setHtml(wrap_terminal_html(texto))
 
     def limpiar(self):
         """Limpia el contenido del panel."""
-        self.resultado_text.clear()
+        self._mostrar_mensaje_inicial()
+        self._ultimo_resumen = None

@@ -6,7 +6,6 @@ Permite calcular la distribución teórica de guardias por profesor.
 
 import ui_styles as styles
 from application.use_cases.asignacion_guardias import (
-    CalcularDistribucionUseCase,
     ObtenerEstadisticasUseCase,
 )
 from core.exceptions import BusinessLogicError
@@ -14,7 +13,6 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QGridLayout,
     QLabel,
-    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -23,7 +21,6 @@ from sqlalchemy.orm import Session
 
 from presentation.forms.asignacion_widgets import (
     CuotasPanel,
-    DistribucionPanel,
     EstadisticasPanel,
 )
 from presentation.forms.base_form import BaseForm
@@ -54,7 +51,6 @@ class AsignacionCalculoForm(BaseForm):
 
         # Inicializar Use Cases
         self.obtener_estadisticas_uc = ObtenerEstadisticasUseCase(session)
-        self.calcular_distribucion_uc = CalcularDistribucionUseCase(session)
 
         self.setWindowTitle("Cálculo y Distribución")
         self.setup_ui()
@@ -83,10 +79,10 @@ class AsignacionCalculoForm(BaseForm):
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         main_layout.addWidget(titulo)
 
-        # Instrucciones
+        # Instrucciones compactas
         instrucciones = QLabel(
-            "Este formulario calcula la distribución teórica de guardias por profesor. "
-            "Revisa las estadísticas del curso y pulsa el botón para calcular."
+            "Revisa las estadísticas del curso y calcula las cuotas de distribución "
+            "antes de generar el calendario de guardias."
         )
         instrucciones.setWordWrap(True)
         instrucciones.setStyleSheet("""
@@ -94,7 +90,7 @@ class AsignacionCalculoForm(BaseForm):
                 background-color: #EFF6FF;
                 border: 1px solid #BFDBFE;
                 border-radius: 6px;
-                padding: 12px;
+                padding: 10px;
                 color: #1E40AF;
                 font-size: 13px;
             }
@@ -115,12 +111,12 @@ class AsignacionCalculoForm(BaseForm):
         grid_layout.setContentsMargins(10, 10, 10, 10)
         content_widget.setLayout(grid_layout)
 
-        # ============ COLUMNA IZQUIERDA ============
+        # ============ COLUMNA IZQUIERDA: Estadísticas ============
 
         left_container = QWidget()
         left_layout = QVBoxLayout()
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(12)
+        left_layout.setSpacing(8)
 
         # Paso 1: Estadísticas del Curso
         step1_label = QLabel("1️⃣ Estadísticas del Curso")
@@ -130,41 +126,24 @@ class AsignacionCalculoForm(BaseForm):
         self.estadisticas_panel = EstadisticasPanel()
         left_layout.addWidget(self.estadisticas_panel)
 
-        # Paso 3: Cuotas Calculadas
-        step3_label = QLabel("3️⃣ Cuotas Calculadas por Profesor")
-        step3_label.setStyleSheet(
-            "font-size: 14px; font-weight: bold; color: #1976D2; margin-top: 10px;"
-        )
-        left_layout.addWidget(step3_label)
-
-        self.cuotas_panel = CuotasPanel(self.session)
-        left_layout.addWidget(self.cuotas_panel)
-
+        left_layout.addStretch()  # Empuja hacia arriba
         left_container.setLayout(left_layout)
         grid_layout.addWidget(left_container, 0, 0)
 
-        # ============ COLUMNA DERECHA ============
+        # ============ COLUMNA DERECHA: Cuotas ============
 
         right_container = QWidget()
         right_layout = QVBoxLayout()
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(10)
+        right_layout.setSpacing(8)
 
-        # Paso 2: Calcular Distribución
-        step2_label = QLabel("2️⃣ Calcular Distribución")
+        # Paso 2: Cuotas Calculadas (con botón integrado)
+        step2_label = QLabel("2️⃣ Distribución de Cuotas")
         step2_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #1976D2;")
         right_layout.addWidget(step2_label)
 
-        calc_button = QPushButton("📊 Calcular Distribución Teórica")
-        calc_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
-        calc_button.setMinimumHeight(50)
-        calc_button.setMaximumHeight(50)
-        calc_button.clicked.connect(self.calcular_distribucion)
-        right_layout.addWidget(calc_button)
-
-        # Panel de distribución por profesor (ocupa toda la altura restante)
-        self.distribucion_panel = DistribucionPanel(self.session)
-        right_layout.addWidget(self.distribucion_panel)
+        self.cuotas_panel = CuotasPanel(self.session)
+        right_layout.addWidget(self.cuotas_panel)
 
         right_container.setLayout(right_layout)
         grid_layout.addWidget(right_container, 0, 1)
@@ -193,35 +172,10 @@ class AsignacionCalculoForm(BaseForm):
         except Exception as e:
             self.manejar_excepcion(e, "cargar estadísticas")
 
-    def calcular_distribucion(self):
-        """Calcular y mostrar la distribución de guardias"""
-        try:
-            # Ejecutar Use Case
-            distribucion_dto = self.calcular_distribucion_uc.execute()
-
-            # Delegar al widget
-            self.distribucion_panel.mostrar_distribucion(distribucion_dto)
-
-            # Actualizar el panel de cuotas (recalcula desde BD)
-            self.cuotas_panel.calcular_cuotas()
-
-            self.mostrar_exito(
-                "Distribución calculada",
-                "La distribución teórica se ha calculado correctamente.\n\n"
-                "Ahora puedes ir a 'Generación y Resultados' para crear el calendario.",
-            )
-
-        except BusinessLogicError as e:
-            self.mostrar_error("Error en Cálculo", str(e))
-            self.distribucion_panel.mostrar_error(str(e))
-
-        except Exception as e:
-            self.manejar_excepcion(e, "calcular distribución")
-
     def limpiar_formulario(self):
         """Limpiar todos los campos del formulario"""
         self.estadisticas_panel.limpiar()
-        self.distribucion_panel.limpiar()
+        self.cuotas_panel.limpiar()
         self.cargar_estadisticas()
 
     def validar_formulario(self) -> bool:

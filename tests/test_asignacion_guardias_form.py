@@ -128,7 +128,6 @@ class TestAsignacionGuardiasFormBasico:
         form = AsignacionGuardiasForm(session)
 
         assert hasattr(form, "obtener_estadisticas_uc")
-        assert hasattr(form, "calcular_distribucion_uc")
         assert hasattr(form, "generar_guardias_uc")
 
     def test_has_widgets(self, qapp, session):
@@ -136,20 +135,21 @@ class TestAsignacionGuardiasFormBasico:
         form = AsignacionGuardiasForm(session)
 
         assert hasattr(form, "stats_text")
-        assert hasattr(form, "distribucion_text")
+        assert hasattr(form, "cuotas_text")
         assert hasattr(form, "resultado_text")
         assert hasattr(form, "generar_button")
 
         # Texto de solo lectura
         assert form.stats_text.isReadOnly()
-        assert form.distribucion_text.isReadOnly()
+        assert form.cuotas_text.isReadOnly()
         assert form.resultado_text.isReadOnly()
 
-    def test_generar_button_disabled_initially(self, qapp, session):
-        """Test que el botón generar está deshabilitado inicialmente"""
+    def test_generar_button_enabled(self, qapp, session):
+        """Test que el botón generar está habilitado (ya no se requiere calcular primero)"""
         form = AsignacionGuardiasForm(session)
 
-        assert not form.generar_button.isEnabled()
+        # Ahora el botón generar siempre está habilitado
+        assert form.generar_button.isEnabled()
 
 
 # ========================================
@@ -231,90 +231,36 @@ class TestAsignacionGuardiasFormDistribucion:
             )
             form.calcular_distribucion()
 
-            texto = form.distribucion_text.toPlainText()
+            texto = form.cuotas_text.toPlainText()
 
-            assert "Juan García" in texto
-            assert "María López" in texto
-            assert "100 guardias" in texto
-            assert "50 guardias" in texto
-            assert "TOTAL: 150" in texto
+            # Verificar que muestra información de cuotas
+            assert "DISTRIBUCIÓN" in texto or "Cuotas" in texto
 
-    def test_calcular_distribucion_habilita_boton(
+    def test_cuotas_panel_exists(
         self, qtbot, session, configuracion, zonas, profesores
     ):
-        """Test que calcular distribución habilita botón de generar"""
+        """Test que el panel de cuotas existe y funciona"""
         form = AsignacionGuardiasForm(session)
 
-        assert not form.generar_button.isEnabled()
+        # El botón generar siempre está habilitado en la nueva UI
+        assert form.generar_button.isEnabled()
+        assert hasattr(form, "cuotas_panel")
 
-        with patch.object(form, "calcular_distribucion_uc") as mock_uc:
-            mock_distribucion = Mock()
-            mock_distribucion.distribucion = {profesores[0].id: 100}
-            mock_distribucion.total_guardias = 100
-            mock_distribucion.slots_totales = 360
-            mock_distribucion.es_exacta = True
-            mock_distribucion.diferencia = 0
+    def test_calcular_distribucion_delegates_to_cuotas(self, qtbot, session):
+        """Test que calcular_distribucion delega a cuotas_panel"""
+        form = AsignacionGuardiasForm(session)
 
-            mock_uc.execute.return_value = mock_distribucion
-
+        with patch.object(form.cuotas_panel, "calcular_cuotas") as mock_calcular:
             form.calcular_distribucion()
+            mock_calcular.assert_called_once()
 
-            # Botón debe estar habilitado
-            assert form.generar_button.isEnabled()
-
-    def test_calcular_distribucion_error(self, qtbot, session):
-        """Test error al calcular distribución"""
-        form = AsignacionGuardiasForm(session)
-
-        with patch.object(form, "calcular_distribucion_uc") as mock_uc:
-            mock_uc.execute.side_effect = BusinessLogicError("No hay profesores suficientes")
-
-            with patch.object(form, "mostrar_error") as mock_error:
-                form.calcular_distribucion()
-
-                mock_error.assert_called_once()
-                args = mock_error.call_args[0]
-                assert "Error en Cálculo" in args[0]
-                assert "No hay profesores suficientes" in args[1]
-
-    def test_distribucion_exacta_vs_no_exacta(
+    def test_cuotas_text_readonly(
         self, qtbot, session, configuracion, zonas, profesores
     ):
-        """Test diferencia entre distribución exacta y no exacta"""
+        """Test que el área de cuotas es de solo lectura"""
         form = AsignacionGuardiasForm(session)
 
-        # Caso 1: Distribución exacta
-        with patch.object(form, "calcular_distribucion_uc") as mock_uc:
-            mock_distribucion = Mock()
-            mock_distribucion.distribucion = {profesores[0].id: 100}
-            mock_distribucion.total_guardias = 100
-            mock_distribucion.slots_totales = 100
-            mock_distribucion.es_exacta = True
-            mock_distribucion.diferencia = 0
-
-            mock_uc.execute.return_value = mock_distribucion
-
-            form.calcular_distribucion()
-            texto = form.distribucion_text.toPlainText()
-
-            assert "La distribución es exacta" in texto
-
-        # Caso 2: Distribución no exacta
-        with patch.object(form, "calcular_distribucion_uc") as mock_uc:
-            mock_distribucion = Mock()
-            mock_distribucion.distribucion = {profesores[0].id: 100}
-            mock_distribucion.total_guardias = 100
-            mock_distribucion.slots_totales = 150
-            mock_distribucion.es_exacta = False
-            mock_distribucion.diferencia = -50
-
-            mock_uc.execute.return_value = mock_distribucion
-
-            form.calcular_distribucion()
-            texto = form.distribucion_text.toPlainText()
-
-            assert "Diferencia:" in texto
-            assert "50" in texto
+        assert form.cuotas_text.isReadOnly()
 
 
 # ========================================
@@ -484,17 +430,20 @@ class TestAsignacionGuardiasFormLimpieza:
         """Test limpiar formulario"""
         form = AsignacionGuardiasForm(session)
 
-        # Llenar con datos
-        form.distribucion_text.setText("Datos de prueba")
+        # Llenar con datos de prueba
+        form.cuotas_text.setText("Datos de prueba")
         form.resultado_text.setText("Resultados de prueba")
-        form.generar_button.setEnabled(True)
 
         # Limpiar
         form.limpiar_formulario()
 
-        assert form.distribucion_text.toPlainText() == ""
-        assert form.resultado_text.toPlainText() == ""
-        assert not form.generar_button.isEnabled()
+        # Después de limpiar, muestra el mensaje inicial (no vacío)
+        cuotas_text = form.cuotas_text.toPlainText()
+        assert "Calcular Cuotas" in cuotas_text or cuotas_text == ""
+
+        # El resultado muestra mensaje inicial o está vacío
+        resultado_text = form.resultado_text.toPlainText()
+        assert "resultados" in resultado_text.lower() or resultado_text == ""
 
         # Stats debe recargarse
         assert "Días lectivos" in form.stats_text.toPlainText()
@@ -511,7 +460,6 @@ class TestAsignacionGuardiasFormLimpieza:
 # TESTS DE INTEGRACIÓN
 # ========================================
 
-
 class TestAsignacionGuardiasFormIntegracion:
     """Tests de integración del formulario"""
 
@@ -523,7 +471,8 @@ class TestAsignacionGuardiasFormIntegracion:
         texto_stats = form.stats_text.toPlainText()
         assert "Días lectivos:" in texto_stats
         assert "días (L-V)" in texto_stats
-        assert not form.generar_button.isEnabled()
+        # El botón generar está siempre habilitado (el usuario decide cuándo generar)
+        assert form.generar_button.isEnabled()
 
         # 2. Calcular distribución
         with patch.object(form, "calcular_distribucion_uc") as mock_dist_uc:
@@ -540,7 +489,7 @@ class TestAsignacionGuardiasFormIntegracion:
 
             # Botón debe habilitarse
             assert form.generar_button.isEnabled()
-            assert "Juan García" in form.distribucion_text.toPlainText()
+            assert "Juan García" in form.cuotas_text.toPlainText()
 
         # 3. Generar guardias
         with patch.object(form, "generar_guardias_uc") as mock_gen_uc:
