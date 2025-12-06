@@ -501,10 +501,15 @@ def _asignar_por_rondas(
     reportar_progreso: Callable[[int, str], None],
 ) -> int:
     """
-    Asignación por rondas equitativas.
+    Asignación por rondas equitativas con ordenación dinámica por déficit.
 
     En cada ronda, se intenta dar 1 guardia a cada profesor
     que aún no ha alcanzado su cuota.
+
+    MEJORA DE EQUIDAD: En cada ronda, los profesores se ordenan por déficit
+    (cuota_ideal - asignadas) de mayor a menor. Esto garantiza que los
+    profesores con mayor necesidad de guardias tengan prioridad, logrando
+    una distribución más equitativa entre profesores con condiciones iguales.
 
     Garantiza que TODOS los profesores reciban guardias proporcionalmente
     ANTES de que cualquiera supere su cuota.
@@ -512,10 +517,22 @@ def _asignar_por_rondas(
     max_cuota = max(ctx.cuotas_ideales.values()) if ctx.cuotas_ideales else 0
     asignaciones_totales = 0
 
+    def calcular_deficit(p: Profesor) -> float:
+        """Calcula déficit: cuota_ideal - guardias_asignadas."""
+        return ctx.cuotas_ideales.get(p.id, 0) - ctx.asignadas[p.id]
+
     for ronda in range(1, max_cuota + 1):
         asignaciones_ronda = 0
 
-        for profesor in profesores_ordenados:
+        # ORDENACIÓN DINÁMICA: en cada ronda, ordenar por déficit descendente
+        # Esto garantiza equidad: quien más necesita guardias va primero
+        profesores_por_deficit = sorted(
+            profesores_ordenados,
+            key=lambda p: (calcular_deficit(p), -p.id),  # Desempate por ID inverso para variedad
+            reverse=True
+        )
+
+        for profesor in profesores_por_deficit:
             cuota = ctx.cuotas_ideales.get(profesor.id, 0)
 
             # ¿Ya alcanzó su cuota?
