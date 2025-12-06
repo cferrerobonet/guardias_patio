@@ -94,17 +94,17 @@ class CuotasPanel(QGroupBox):
         self.calcular_button.clicked.connect(self.calcular_cuotas)
         button_layout.addWidget(self.calcular_button)
 
-        # Badge informativo de total (no es un botón)
+        # Badge informativo de total (solo lectura, no interactivo)
         self.total_badge = QLabel("Total: -- guardias")
         self.total_badge.setStyleSheet("""
             QLabel {
-                background-color: #065f46;
-                color: #10b981;
+                background-color: #10b981;
+                color: white;
                 font-weight: bold;
                 font-size: 14px;
                 padding: 8px 20px;
                 border-radius: 6px;
-                border: 2px solid #10b981;
+                border: none;
             }
         """)
         self.total_badge.setMinimumHeight(35)

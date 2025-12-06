@@ -101,8 +101,8 @@ class ActualizarProfesorUseCase:
 
         if data.horas_contrato is not None:
             profesor.horas_contrato = data.horas_contrato
-            # Recalcular porcentaje de jornada
-            profesor.porcentaje_jornada = data.horas_contrato / 25.0
+            # Recalcular porcentaje de jornada (horas/40 * 100)
+            profesor.porcentaje_jornada = (data.horas_contrato / 40.0) * 100
 
         if data.turno is not None:
             profesor.turno = data.turno
