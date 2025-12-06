@@ -112,7 +112,16 @@ class SFTPSyncBackend(SyncBackend):
         self.sftp = None
         self.client = None
         self.base_dir = base_dir
+        # Guardar credenciales para reconexión
+        self._host = host
+        self._port = port
+        self._username = username
+        self._password = password
 
+        self._connect()
+
+    def _connect(self) -> bool:
+        """Establece la conexión SFTP."""
         try:
             import paramiko
 
@@ -131,21 +140,43 @@ class SFTPSyncBackend(SyncBackend):
             # Esto previene ataques Man-in-the-Middle (MITM)
             self.client.set_missing_host_key_policy(paramiko.RejectPolicy())
 
-            self.client.connect(host, port=port, username=username, password=password)
+            self.client.connect(
+                self._host, port=self._port, username=self._username, password=self._password
+            )
             self.sftp = self.client.open_sftp()
-            logger.info(f"SFTP conectado a {host}:{port} con verificación de host key ✅")
+            logger.info(
+                f"SFTP conectado a {self._host}:{self._port} con verificación de host key ✅"
+            )
+            return True
         except ImportError:
             logger.error("Paramiko no instalado. Ejecutar: pip install paramiko")
+            return False
         except Exception as e:
             logger.error(f"Error conectando SFTP: {e}")
             if "paramiko" in str(type(e).__module__):
                 logger.error("El servidor no está en known_hosts. Agregarlo con:")
-                logger.error(f"  ssh-keyscan -H {host} >> ~/.ssh/known_hosts")
+                logger.error(f"  ssh-keyscan -H {self._host} >> ~/.ssh/known_hosts")
+            return False
+
+    def _ensure_connected(self) -> bool:
+        """Verifica la conexión y reconecta si es necesario."""
+        if self.sftp is None:
+            logger.info("Conexión SFTP perdida. Reconectando...")
+            return self._connect()
+
+        # Verificar si la conexión sigue activa
+        try:
+            self.sftp.stat(self.base_dir)
+            return True
+        except Exception:
+            logger.info("Conexión SFTP inactiva. Reconectando...")
+            self.close()
+            return self._connect()
 
     def upload_file(self, local_path: Path, remote_path: str) -> bool:
         try:
-            if not hasattr(self, "sftp") or self.sftp is None:
-                logger.error("Conexión SFTP no establecida")
+            if not self._ensure_connected():
+                logger.error("No se pudo establecer conexión SFTP")
                 return False
 
             full_path = f"{self.base_dir}/{remote_path}"
@@ -160,8 +191,8 @@ class SFTPSyncBackend(SyncBackend):
 
     def download_file(self, remote_path: str, local_path: Path) -> bool:
         try:
-            if not hasattr(self, "sftp") or self.sftp is None:
-                logger.error("Conexión SFTP no establecida")
+            if not self._ensure_connected():
+                logger.error("No se pudo establecer conexión SFTP")
                 return False
 
             full_path = f"{self.base_dir}/{remote_path}"
@@ -177,7 +208,7 @@ class SFTPSyncBackend(SyncBackend):
 
     def file_exists(self, remote_path: str) -> bool:
         try:
-            if not hasattr(self, "sftp") or self.sftp is None:
+            if not self._ensure_connected():
                 return False
 
             full_path = f"{self.base_dir}/{remote_path}"
@@ -188,6 +219,8 @@ class SFTPSyncBackend(SyncBackend):
 
     def get_last_modified(self, remote_path: str) -> Optional[datetime]:
         try:
+            if not self._ensure_connected():
+                return None
             full_path = f"{self.base_dir}/{remote_path}"
             stat = self.sftp.stat(full_path)
             return datetime.fromtimestamp(stat.st_mtime)
@@ -206,10 +239,21 @@ class SFTPSyncBackend(SyncBackend):
 
     def close(self):
         """Cierra la conexión SFTP."""
-        if hasattr(self, "sftp"):
-            self.sftp.close()
-        if hasattr(self, "client"):
-            self.client.close()
+        try:
+            if hasattr(self, "sftp") and self.sftp is not None:
+                self.sftp.close()
+        except Exception:
+            pass  # Ignorar errores al cerrar sftp
+        finally:
+            self.sftp = None
+
+        try:
+            if hasattr(self, "client") and self.client is not None:
+                self.client.close()
+        except Exception:
+            pass  # Ignorar errores al cerrar cliente
+        finally:
+            self.client = None
 
 
 class SyncManager:
