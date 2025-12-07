@@ -209,49 +209,35 @@ class DistribucionCuotasService:
         """
         Calcula el factor de participación de cada profesor.
 
-        Factor completo = factor_turno × factor_horas × factor_tutoria × proporcion_tiempo
+        Factor completo = factor_horas × factor_tutoria × proporcion_tiempo
 
         Considera:
-        - Turno (mañana/tarde/mixto) según recreos disponibles
         - Horas de contrato (proporción respecto a 30h jornada completa)
         - Factor de tutoría (ajuste_tutores / ajuste_no_tutores)
         - Fechas de inicio/fin de guardias
+
+        NOTA: El turno NO afecta la cuota. Cualquier profesor puede cubrir
+        cualquier recreo (mañana o tarde), con máximo 1 recreo por día.
         """
         factores = {}
-        recreos = _parse_recreos_config(config)
         dias_lectivos = listar_dias_lectivos(config)
-
-        # Contar recreos por turno
-        recreos_manana = sum(1 for r in recreos if r["turno"] == "mañana")
-        recreos_tarde = sum(1 for r in recreos if r["turno"] == "tarde")
-        total_recreos = len(recreos)
 
         for profesor in profesores:
             if not profesor.activo:
                 factores[profesor.id] = 0.0
                 continue
 
-            # 1. Factor por turno (proporción de recreos disponibles)
-            if profesor.turno == "mañana":
-                factor_turno = recreos_manana / total_recreos if total_recreos > 0 else 0.5
-            elif profesor.turno == "tarde":
-                factor_turno = recreos_tarde / total_recreos if total_recreos > 0 else 0.5
-            else:  # mixto
-                factor_turno = 1.0
-
-            # 2. Factor por porcentaje de jornada (ya normalizado 0-100%)
-            # Usar porcentaje_jornada en lugar de horas_contrato para evitar
-            # problemas con datos incorrectos (ej: 60h cuando máximo es 30h)
+            # 1. Factor por porcentaje de jornada (ya normalizado 0-100%)
             factor_horas = profesor.porcentaje_jornada / 100.0
 
-            # 3. Factor de tutoría (desde configuración)
+            # 2. Factor de tutoría (desde configuración)
             factor_tutoria = (
                 getattr(config, "ajuste_tutores", 1.0)
                 if getattr(profesor, "tutor", False)
                 else getattr(config, "ajuste_no_tutores", 1.0)
             )
 
-            # 4. Proporción de tiempo disponible (fechas inicio/fin)
+            # 3. Proporción de tiempo disponible (fechas inicio/fin)
             proporcion_tiempo = 1.0
             if len(dias_lectivos) > 0:
                 if profesor.fecha_inicio_guardias or profesor.fecha_fin_guardias:
@@ -277,16 +263,18 @@ class DistribucionCuotasService:
                         f"{len(dias_lectivos)} días (factor: {proporcion_tiempo:.2f})"
                     )
 
-            # Factor total combinado
-            factor = factor_turno * factor_horas * factor_tutoria * proporcion_tiempo
+            # Factor total combinado (sin factor turno)
+            factor = factor_horas * factor_tutoria * proporcion_tiempo
             factores[profesor.id] = factor
 
             self.logger.debug(
-                f"{profesor.nombre_completo}: turno={factor_turno:.2f}, "
+                f"{profesor.nombre_completo}: "
                 f"jornada={factor_horas:.2f} ({profesor.porcentaje_jornada}%), "
                 f"tutoria={factor_tutoria:.2f}, tiempo={proporcion_tiempo:.2f} → "
                 f"factor={factor:.4f}"
             )
+
+        return factores
 
         return factores
 
