@@ -19,10 +19,7 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-from presentation.forms.asignacion_widgets import (
-    CuotasPanel,
-    EstadisticasPanel,
-)
+from presentation.forms.asignacion_widgets import CalculoPanel
 from presentation.forms.base_form import BaseForm
 
 
@@ -111,38 +108,43 @@ class AsignacionCalculoForm(BaseForm):
         grid_layout.setContentsMargins(10, 10, 10, 10)
         content_widget.setLayout(grid_layout)
 
-        # ============ COLUMNA IZQUIERDA: Estadísticas ============
+        # ============ COLUMNA IZQUIERDA: Panel combinado ============
 
         left_container = QWidget()
         left_layout = QVBoxLayout()
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(8)
 
-        # Paso 1: Estadísticas del Curso
-        step1_label = QLabel("1️⃣ Estadísticas del Curso")
-        step1_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #1976D2;")
-        left_layout.addWidget(step1_label)
-
-        self.estadisticas_panel = EstadisticasPanel()
-        left_layout.addWidget(self.estadisticas_panel, 1)  # stretch=1 para expandir
+        # Panel combinado de estadísticas y cuotas
+        self.calculo_panel = CalculoPanel(self.session)
+        left_layout.addWidget(self.calculo_panel, 1)
 
         left_container.setLayout(left_layout)
         grid_layout.addWidget(left_container, 0, 0)
 
-        # ============ COLUMNA DERECHA: Cuotas ============
+        # ============ COLUMNA DERECHA: Espacio para futuro widget ============
 
         right_container = QWidget()
         right_layout = QVBoxLayout()
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(8)
 
-        # Paso 2: Cuotas Calculadas (con botón integrado)
-        step2_label = QLabel("2️⃣ Distribución de Cuotas")
-        step2_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #1976D2;")
-        right_layout.addWidget(step2_label)
-
-        self.cuotas_panel = CuotasPanel(self.session)
-        right_layout.addWidget(self.cuotas_panel, 1)  # stretch=1 para expandir igual que izquierda
+        # Placeholder para futuro widget
+        placeholder = QLabel("📌 Espacio reservado para futuro widget")
+        placeholder.setStyleSheet("""
+            QLabel {
+                background-color: #f3f4f6;
+                border: 2px dashed #d1d5db;
+                border-radius: 6px;
+                padding: 40px;
+                color: #6b7280;
+                font-size: 14px;
+                font-style: italic;
+            }
+        """)
+        placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        placeholder.setMinimumHeight(400)
+        right_layout.addWidget(placeholder, 1)
 
         right_container.setLayout(right_layout)
         grid_layout.addWidget(right_container, 0, 1)
@@ -163,18 +165,17 @@ class AsignacionCalculoForm(BaseForm):
             # Ejecutar Use Case
             stats = self.obtener_estadisticas_uc.execute()
 
-            # Delegar al widget
-            self.estadisticas_panel.mostrar_estadisticas(stats)
+            # Delegar al panel combinado
+            self.calculo_panel.mostrar_estadisticas(stats)
 
         except BusinessLogicError as e:
-            self.estadisticas_panel.mostrar_error(str(e))
+            self.calculo_panel.mostrar_error(str(e))
         except Exception as e:
             self.manejar_excepcion(e, "cargar estadísticas")
 
     def limpiar_formulario(self):
         """Limpiar todos los campos del formulario"""
-        self.estadisticas_panel.limpiar()
-        self.cuotas_panel.limpiar()
+        self.calculo_panel.limpiar()
         self.cargar_estadisticas()
 
     def validar_formulario(self) -> bool:
