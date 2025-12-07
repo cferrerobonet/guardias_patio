@@ -209,18 +209,20 @@ class DistribucionCuotasService:
         """
         Calcula el factor de participación de cada profesor.
 
-        Factor completo = factor_horas × factor_tutoria × proporcion_tiempo
+        Factor completo = factor_horas × factor_tutoria
 
         Considera:
         - Horas de contrato (proporción respecto a 30h jornada completa)
         - Factor de tutoría (ajuste_tutores / ajuste_no_tutores)
-        - Fechas de inicio/fin de guardias
 
         NOTA: El turno NO afecta la cuota. Cualquier profesor puede cubrir
         cualquier recreo (mañana o tarde), con máximo 1 recreo por día.
+
+        NOTA: Las fechas inicio/fin NO reducen la cuota. Son restricciones
+        de asignación. Si no hay suficientes días para cumplir la cuota,
+        se informará al usuario.
         """
         factores = {}
-        dias_lectivos = listar_dias_lectivos(config)
 
         for profesor in profesores:
             if not profesor.activo:
@@ -237,41 +239,14 @@ class DistribucionCuotasService:
                 else getattr(config, "ajuste_no_tutores", 1.0)
             )
 
-            # 3. Proporción de tiempo disponible (fechas inicio/fin)
-            proporcion_tiempo = 1.0
-            if len(dias_lectivos) > 0:
-                if profesor.fecha_inicio_guardias or profesor.fecha_fin_guardias:
-                    inicio_efectivo = (
-                        profesor.fecha_inicio_guardias
-                        if profesor.fecha_inicio_guardias
-                        else config.fecha_inicio_curso
-                    )
-                    fin_efectivo = (
-                        profesor.fecha_fin_guardias
-                        if profesor.fecha_fin_guardias
-                        else config.fecha_fin_curso
-                    )
-
-                    # Contar días lectivos disponibles para este profesor
-                    dias_disponibles = len(
-                        [d for d in dias_lectivos if inicio_efectivo <= d <= fin_efectivo]
-                    )
-                    proporcion_tiempo = dias_disponibles / len(dias_lectivos)
-
-                    self.logger.info(
-                        f"{profesor.nombre_completo}: disponible {dias_disponibles}/"
-                        f"{len(dias_lectivos)} días (factor: {proporcion_tiempo:.2f})"
-                    )
-
-            # Factor total combinado (sin factor turno)
-            factor = factor_horas * factor_tutoria * proporcion_tiempo
+            # Factor total combinado
+            factor = factor_horas * factor_tutoria
             factores[profesor.id] = factor
 
             self.logger.debug(
                 f"{profesor.nombre_completo}: "
                 f"jornada={factor_horas:.2f} ({profesor.porcentaje_jornada}%), "
-                f"tutoria={factor_tutoria:.2f}, tiempo={proporcion_tiempo:.2f} → "
-                f"factor={factor:.4f}"
+                f"tutoria={factor_tutoria:.2f} → factor={factor:.4f}"
             )
 
         return factores
