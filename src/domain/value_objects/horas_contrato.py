@@ -59,20 +59,20 @@ class HorasContrato:
                 message=f"Las horas de contrato ({self.value}) no pueden exceder {self.MAX_HORAS}",
             )
 
-    def porcentaje_jornada(self, jornada_completa: float = 40.0) -> float:
+    def porcentaje_jornada(self, jornada_completa: float = 30.0) -> float:
         """
         Calcula el porcentaje de jornada respecto a una jornada completa.
 
         Args:
-            jornada_completa: Horas de una jornada completa (default: 40.0)
+            jornada_completa: Horas de una jornada completa (default: 30.0)
 
         Returns:
             Porcentaje de jornada (0-100)
 
         Examples:
-            >>> horas = HorasContrato(25.0)
+            >>> horas = HorasContrato(30.0)
             >>> horas.porcentaje_jornada()
-            62.5
+            100.0
         """
         return (self.value / jornada_completa) * 100
 

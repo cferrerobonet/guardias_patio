@@ -168,7 +168,7 @@ class TestActualizarProfesorUseCase:
 
         assert resultado.email_corporativo == "pedro.gonzalez@colegio.edu"
         assert resultado.horas_contrato == 25.0
-        assert resultado.porcentaje_jornada == 62.5  # (25/40)*100
+        assert abs(resultado.porcentaje_jornada - 83.33) < 0.1  # (25/30)*100
 
     def test_actualizar_profesor_turno(self, session: Session, profesor_factory):
         """Test: actualizar turno de profesor."""
