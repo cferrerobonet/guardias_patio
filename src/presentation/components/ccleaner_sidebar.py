@@ -154,13 +154,6 @@ class SidebarMenu(QWidget):
             "asignacion_calculo",
             "chart-line",
         )
-        self.add_menu_item(
-            menu_layout,
-            "asignacion_resultados",
-            "Generación y Resultados",
-            "asignacion_resultados",
-            "check-bold",
-        )
         self.add_menu_item(menu_layout, "calendario", "Calendario", "calendario", "calendar")
 
         menu_layout.addSpacing(4)

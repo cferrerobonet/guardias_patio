@@ -1,7 +1,8 @@
 """
 Formulario de cálculo y asignación de guardias.
 
-Permite calcular la distribución teórica de guardias por profesor.
+Permite calcular la distribución teórica de guardias por profesor
+y generar el calendario de guardias.
 """
 
 import ui_styles as styles
@@ -19,18 +20,19 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-from presentation.forms.asignacion_widgets import CalculoPanel
+from presentation.forms.asignacion_widgets import CalculoPanel, GeneracionPanel
 from presentation.forms.base_form import BaseForm
 
 
 class AsignacionCalculoForm(BaseForm):
     """
-    Formulario para calcular distribución de guardias.
+    Formulario para cálculo y generación de guardias.
 
     Permite:
     - Ver estadísticas del curso
     - Calcular distribución teórica de guardias por profesor
-    - Visualizar cuotas y disponibilidad
+    - Generar el calendario de guardias
+    - Analizar resultados e incidencias
     """
 
     def __init__(self, session: Session, sync_manager=None):
@@ -60,9 +62,10 @@ class AsignacionCalculoForm(BaseForm):
         Este método es llamado automáticamente por el sistema de señales
         cuando el usuario cambia de curso escolar.
         """
-        self.logger.info("🔄 Recargando estadísticas para el curso activo")
+        self.logger.info("🔄 Recargando datos para el curso activo")
         self.session.expire_all()  # Limpiar caché de SQLAlchemy
         self.cargar_estadisticas()
+        self.generacion_panel.cargar_datos()
 
     def setup_ui(self):
         """Configurar la interfaz de usuario del formulario"""
@@ -122,29 +125,18 @@ class AsignacionCalculoForm(BaseForm):
         left_container.setLayout(left_layout)
         grid_layout.addWidget(left_container, 0, 0)
 
-        # ============ COLUMNA DERECHA: Espacio para futuro widget ============
+        # ============ COLUMNA DERECHA: Panel de Generación ============
 
         right_container = QWidget()
         right_layout = QVBoxLayout()
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(8)
 
-        # Placeholder para futuro widget
-        placeholder = QLabel("📌 Espacio reservado para futuro widget")
-        placeholder.setStyleSheet("""
-            QLabel {
-                background-color: #f3f4f6;
-                border: 2px dashed #d1d5db;
-                border-radius: 6px;
-                padding: 40px;
-                color: #6b7280;
-                font-size: 14px;
-                font-style: italic;
-            }
-        """)
-        placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        placeholder.setMinimumHeight(400)
-        right_layout.addWidget(placeholder, 1)
+        # Panel de generación y resultados
+        self.generacion_panel = GeneracionPanel(
+            self.session, sync_manager=self.sync_manager
+        )
+        right_layout.addWidget(self.generacion_panel, 1)
 
         right_container.setLayout(right_layout)
         grid_layout.addWidget(right_container, 0, 1)
@@ -176,6 +168,7 @@ class AsignacionCalculoForm(BaseForm):
     def limpiar_formulario(self):
         """Limpiar todos los campos del formulario"""
         self.calculo_panel.limpiar()
+        self.generacion_panel.limpiar()
         self.cargar_estadisticas()
 
     def validar_formulario(self) -> bool:

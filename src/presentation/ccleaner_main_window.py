@@ -19,7 +19,6 @@ from sqlalchemy.orm import Session
 from presentation.components.ccleaner_sidebar import SidebarMenu
 from presentation.forms.ajustes_form import AjustesForm
 from presentation.forms.asignacion_calculo_form import AsignacionCalculoForm
-from presentation.forms.asignacion_resultados_form import AsignacionResultadosForm
 from presentation.forms.conectividad_form import ConectividadForm
 from presentation.forms.import_export_form import ImportExportForm
 from presentation.forms.perfiles_usuario_form import PerfilesUsuarioForm
@@ -158,11 +157,6 @@ class CCleanerMainWindow(QMainWindow):
             "asignacion_calculo",
             "Cálculo y Asignación",
             AsignacionCalculoForm(self.session, sync_manager=self.sync_manager),
-        )
-        self.add_view(
-            "asignacion_resultados",
-            "Generación y Resultados",
-            AsignacionResultadosForm(self.session, sync_manager=self.sync_manager),
         )
         self.add_view("calendario", "Calendario de Guardias", VistaCalendario(self.session))
 
