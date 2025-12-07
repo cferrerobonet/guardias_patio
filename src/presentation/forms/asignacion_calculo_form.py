@@ -1,5 +1,5 @@
 """
-Formulario de cálculo y distribución de guardias.
+Formulario de cálculo y asignación de guardias.
 
 Permite calcular la distribución teórica de guardias por profesor.
 """
@@ -49,7 +49,7 @@ class AsignacionCalculoForm(BaseForm):
         # Inicializar Use Cases
         self.obtener_estadisticas_uc = ObtenerEstadisticasUseCase(session)
 
-        self.setWindowTitle("Cálculo y Distribución")
+        self.setWindowTitle("Cálculo y Asignación")
         self.setup_ui()
         self.cargar_estadisticas()
 
@@ -72,7 +72,7 @@ class AsignacionCalculoForm(BaseForm):
         main_layout.setSpacing(10)
 
         # Título principal
-        titulo = QLabel("📊 CÁLCULO Y DISTRIBUCIÓN")
+        titulo = QLabel("📊 CÁLCULO Y ASIGNACIÓN")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         main_layout.addWidget(titulo)
 

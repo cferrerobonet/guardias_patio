@@ -150,7 +150,7 @@ class SidebarMenu(QWidget):
         self.add_menu_item(
             menu_layout,
             "asignacion_calculo",
-            "Cálculo y Distribución",
+            "Cálculo y Asignación",
             "asignacion_calculo",
             "chart-line",
         )

@@ -156,7 +156,7 @@ class CCleanerMainWindow(QMainWindow):
         # GUARDIAS
         self.add_view(
             "asignacion_calculo",
-            "Cálculo y Distribución",
+            "Cálculo y Asignación",
             AsignacionCalculoForm(self.session, sync_manager=self.sync_manager),
         )
         self.add_view(

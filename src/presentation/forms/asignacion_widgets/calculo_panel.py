@@ -36,7 +36,7 @@ class CalculoPanel(QGroupBox):
 
     def __init__(self, session: Session, parent=None):
         """Inicializa el panel combinado."""
-        super().__init__("📊 Cálculo y Distribución", parent)
+        super().__init__("📊 Cálculo y Asignación", parent)
         self.session = session
         self.calcular_cuotas_uc = CalcularCuotasUseCase(session)
         self.configuracion_id = None
@@ -291,29 +291,25 @@ class CalculoPanel(QGroupBox):
 {format_terminal_info("   • Porcentaje de jornada de cada profesor")}
 {format_terminal_info("   • Factor de tutoría (tutores = 0.5)")}
 
-{format_terminal_label("Total guardias a distribuir:")} {format_terminal_value(total_txt)}
-{format_terminal_label("Profesores activos:")} {format_terminal_number(len(response.cuotas))}
+{format_terminal_label("Total guardias:")} {format_terminal_value(total_txt)}
+{format_terminal_label("Profesores:")} {format_terminal_number(len(response.cuotas_detalle))}
 
 {format_terminal_label("─" * 50)}
 {format_terminal_label("📋 CUOTAS POR PROFESOR (ordenado por cuota):")}
 """
 
-        # Ordenar cuotas
+        # Ordenar cuotas por cuota_esperada descendente
         cuotas_ordenadas = sorted(
-            response.cuotas.items(), key=lambda x: x[1], reverse=True
+            response.cuotas_detalle, key=lambda x: x.cuota_esperada, reverse=True
         )
 
-        for profesor_id, cuota in cuotas_ordenadas:
-            info = next(
-                (p for p in response.profesores_info if p.get("id") == profesor_id),
-                None,
-            )
-            if info:
-                nombre = info.get("nombre", f"Profesor {profesor_id}")
-                pct = info.get("porcentaje_jornada", 100)
-                cuota_str = format_terminal_value(str(cuota))
-                nombre_fmt = format_terminal_profesor(nombre)
-                texto += f"\n• {nombre_fmt} ({pct:.0f}%): {cuota_str} guardias"
+        for cuota_dto in cuotas_ordenadas:
+            nombre = cuota_dto.profesor_nombre
+            pct = cuota_dto.porcentaje_jornada
+            cuota = cuota_dto.cuota_esperada
+            cuota_str = format_terminal_value(str(cuota))
+            nombre_fmt = format_terminal_profesor(nombre)
+            texto += f"\n• {nombre_fmt} ({pct:.0f}%): {cuota_str} guardias"
 
         texto += f"\n\n{format_terminal_success('✅ Cuotas calculadas correctamente')}"
         info_txt = '💡 Tras generar, verifica el reparto en "Resultados"'
