@@ -499,17 +499,21 @@ def _asignar_por_rondas(
     profesores_ordenados: List[Profesor],
     session: Session,
     reportar_progreso: Callable[[int, str], None],
+    matriz_elegibilidad: Optional[Dict[int, int]] = None,
 ) -> int:
     """
-    Asignación por rondas equitativas con ordenación dinámica por déficit.
+    Asignación por rondas equitativas con ordenación dinámica mejorada.
 
     En cada ronda, se intenta dar 1 guardia a cada profesor
     que aún no ha alcanzado su cuota.
 
-    MEJORA DE EQUIDAD: En cada ronda, los profesores se ordenan por déficit
-    (cuota_ideal - asignadas) de mayor a menor. Esto garantiza que los
-    profesores con mayor necesidad de guardias tengan prioridad, logrando
-    una distribución más equitativa entre profesores con condiciones iguales.
+    MEJORAS DE EQUIDAD v4.1:
+    1. DÉFICIT NORMALIZADO: Usa déficit relativo (deficit/cuota) en lugar de
+       absoluto para tratar equitativamente a profesores con distintas cuotas.
+    2. DESEMPATE ROTATIVO: El desempate cambia cada ronda para evitar que
+       siempre los mismos profesores tengan prioridad ante empates.
+    3. FACTOR DE ELEGIBILIDAD: Profesores con menos slots elegibles tienen
+       prioridad para que no se queden sin opciones.
 
     Garantiza que TODOS los profesores reciban guardias proporcionalmente
     ANTES de que cualquiera supere su cuota.
@@ -517,19 +521,60 @@ def _asignar_por_rondas(
     max_cuota = max(ctx.cuotas_ideales.values()) if ctx.cuotas_ideales else 0
     asignaciones_totales = 0
 
-    def calcular_deficit(p: Profesor) -> float:
-        """Calcula déficit: cuota_ideal - guardias_asignadas."""
-        return ctx.cuotas_ideales.get(p.id, 0) - ctx.asignadas[p.id]
+    # Pre-calcular elegibilidad si no se proporcionó
+    if matriz_elegibilidad is None:
+        matriz_elegibilidad = _calcular_matriz_elegibilidad(ctx, session)
+
+    def calcular_deficit_normalizado(p: Profesor) -> float:
+        """
+        Calcula déficit normalizado: (cuota - asignadas) / cuota.
+
+        Valor entre 0.0 (cuota alcanzada) y 1.0 (ninguna asignada).
+        Esto garantiza equidad entre profesores con distintas cuotas.
+        """
+        cuota = ctx.cuotas_ideales.get(p.id, 0)
+        if cuota == 0:
+            return 0.0
+        deficit = cuota - ctx.asignadas[p.id]
+        return max(0.0, deficit / cuota)
+
+    def calcular_factor_elegibilidad(p: Profesor) -> float:
+        """
+        Factor de urgencia basado en elegibilidad restante.
+
+        Profesores con menos slots elegibles restantes tienen mayor
+        factor (más prioridad) para evitar quedarse sin opciones.
+        """
+        elegibles = matriz_elegibilidad.get(p.id, 0)
+        cuota = ctx.cuotas_ideales.get(p.id, 0)
+        asignadas = ctx.asignadas[p.id]
+        restantes = cuota - asignadas
+
+        if restantes <= 0:
+            return 0.0
+
+        # Ratio elegibles/restantes: menor ratio = más urgente
+        if elegibles == 0:
+            return 1000.0  # Máxima urgencia
+        ratio = elegibles / restantes
+        # Invertir: menor ratio -> mayor factor
+        return 1.0 / max(ratio, 0.1)
 
     for ronda in range(1, max_cuota + 1):
         asignaciones_ronda = 0
 
-        # ORDENACIÓN DINÁMICA: en cada ronda, ordenar por déficit descendente
-        # Esto garantiza equidad: quien más necesita guardias va primero
+        # ORDENACIÓN DINÁMICA MEJORADA:
+        # 1. Déficit normalizado (principal)
+        # 2. Factor de elegibilidad (secundario - prioriza profesores con pocas opciones)
+        # 3. Desempate rotativo basado en ronda (evita favorecer siempre los mismos)
+        num_profesores = len(profesores_ordenados)
         profesores_por_deficit = sorted(
             profesores_ordenados,
-            key=lambda p: (calcular_deficit(p), -p.id),  # Desempate por ID inverso para variedad
-            reverse=True
+            key=lambda p: (
+                -calcular_deficit_normalizado(p),      # Mayor déficit primero
+                -calcular_factor_elegibilidad(p),     # Mayor urgencia por elegibilidad
+                (p.id + ronda) % num_profesores       # Desempate rotativo
+            )
         )
 
         for profesor in profesores_por_deficit:
@@ -631,9 +676,22 @@ def _completitud_forzada(
     # =========================================================================
     logger.info(f"  Nivel 2: {len(slots_sin_cubrir)} slots restantes - distribución equitativa")
 
-    # Calcular exceso actual de cada profesor
-    def exceso_actual(p: Profesor) -> int:
+    # Calcular exceso actual de cada profesor (normalizado por cuota)
+    def exceso_actual(p: Profesor) -> float:
+        """Exceso absoluto para comparación de niveles."""
         return ctx.asignadas[p.id] - ctx.cuotas_ideales.get(p.id, 0)
+
+    def exceso_normalizado(p: Profesor) -> float:
+        """
+        Exceso normalizado por cuota para ordenación justa.
+
+        Profesores con menor cuota no deberían absorber más extras proporcionalmente.
+        """
+        cuota = ctx.cuotas_ideales.get(p.id, 0)
+        if cuota == 0:
+            return float('inf')  # No asignar a quien no tiene cuota
+        exceso = ctx.asignadas[p.id] - cuota
+        return exceso / cuota
 
     max_rondas_extra = 20  # Límite de seguridad
 
@@ -662,8 +720,8 @@ def _completitud_forzada(
             ]
 
             if candidatos:
-                # Ordenar por menor exceso actual (por si cambió durante la ronda)
-                candidatos.sort(key=lambda p: exceso_actual(p))
+                # Ordenar por menor exceso NORMALIZADO (equidad proporcional)
+                candidatos.sort(key=lambda p: exceso_normalizado(p))
                 _registrar_asignacion(candidatos[0], slot, ctx)
                 asignaciones += 1
                 asignaciones_ronda += 1
@@ -693,7 +751,8 @@ def _completitud_forzada(
         ]
 
         if candidatos:
-            candidatos.sort(key=lambda p: exceso_actual(p))
+            # Usar exceso normalizado para equidad proporcional
+            candidatos.sort(key=lambda p: exceso_normalizado(p))
             profesor = candidatos[0]
             _registrar_asignacion(profesor, slot, ctx)
             asignaciones += 1
@@ -990,7 +1049,9 @@ def generar_guardias_v4_hibrido(
     logger.info("-" * 80)
     reportar(25, "Fase 2: Iniciando rondas...")
 
-    _asignaciones_rondas = _asignar_por_rondas(ctx, profesores_ordenados, session, reportar)
+    _asignaciones_rondas = _asignar_por_rondas(
+        ctx, profesores_ordenados, session, reportar, matriz_elegibilidad
+    )
 
     cobertura_rondas = len(ctx.calendario) / ctx.total_slots * 100 if ctx.total_slots > 0 else 0
     logger.info(
