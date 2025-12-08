@@ -30,7 +30,7 @@ from api.routers import (
 app = FastAPI(
     title="Guardias de Patio API",
     description="API REST para gestión y análisis de guardias de patio",
-    version="1.0.0",
+    version="3.2.1",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -62,7 +62,7 @@ def root():
     """
     return {
         "nombre": "Guardias de Patio API",
-        "version": "1.0.0",
+        "version": "3.2.1",
         "descripcion": "API REST para gestión y análisis de guardias de patio",
         "documentacion": {"swagger_ui": "/docs", "redoc": "/redoc"},
         "endpoints": {
@@ -83,7 +83,7 @@ def health_check():
     Returns:
         dict: Estado de salud de la API
     """
-    return {"status": "healthy", "version": "1.0.0"}
+    return {"status": "healthy", "version": "3.2.1"}
 
 
 if __name__ == "__main__":

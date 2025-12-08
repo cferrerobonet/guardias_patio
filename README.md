@@ -9,7 +9,7 @@
 <!-- Security & Release -->
 [![Security](https://img.shields.io/badge/Security-✅_0_vulnerabilities-success.svg)](docs/archive/auditoria/SECURITY_FIX_20251108.md)
 [![Release](https://img.shields.io/github/v/release/cferrerobonet/guardias_patio)](https://github.com/cferrerobonet/guardias_patio/releases/latest)
-![Version](https://img.shields.io/badge/Version-3.2.0-blue.svg)
+![Version](https://img.shields.io/badge/Version-3.2.1-blue.svg)
 
 <!-- Tech Stack -->
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)
