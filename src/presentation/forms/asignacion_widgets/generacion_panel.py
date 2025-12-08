@@ -14,7 +14,15 @@ from application.use_cases.guardia import LimpiarGuardiasUseCase
 from infrastructure.database.models import Guardia, Profesor, Zona
 from infrastructure.repositories import SQLAlchemyGuardiaRepository
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QGroupBox, QHBoxLayout, QPushButton, QTextEdit, QVBoxLayout
+from PyQt6.QtWidgets import (
+    QComboBox,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+)
 from sqlalchemy.orm import Session
 from ui_styles import (
     format_terminal_error,
@@ -92,6 +100,44 @@ class GeneracionPanel(QGroupBox):
         layout.setContentsMargins(6, 8, 6, 8)
         layout.setSpacing(6)
 
+        # Selector de algoritmo
+        algoritmo_container = QHBoxLayout()
+        algoritmo_container.setContentsMargins(0, 0, 0, 4)
+        algoritmo_container.setSpacing(8)
+
+        algoritmo_label = QLabel("Algoritmo:")
+        algoritmo_label.setStyleSheet("font-weight: bold; color: #374151;")
+        algoritmo_container.addWidget(algoritmo_label)
+
+        self.algoritmo_combo = QComboBox()
+        self.algoritmo_combo.addItem("⚡ Rápido (v4 Híbrido)", "v4.0")
+        self.algoritmo_combo.addItem("🎯 Óptimo (CP-SAT)", "cpsat")
+        self.algoritmo_combo.setCurrentIndex(0)  # Default: rápido
+        self.algoritmo_combo.setToolTip(
+            "Rápido: ~1 segundo, heurístico\n"
+            "Óptimo: ~10 segundos, garantiza la mejor solución"
+        )
+        self.algoritmo_combo.setStyleSheet("""
+            QComboBox {
+                padding: 4px 8px;
+                border: 1px solid #d1d5db;
+                border-radius: 4px;
+                background: white;
+                min-width: 150px;
+            }
+            QComboBox:hover {
+                border-color: #10b981;
+            }
+            QComboBox::drop-down {
+                border: none;
+                padding-right: 4px;
+            }
+        """)
+        algoritmo_container.addWidget(self.algoritmo_combo)
+        algoritmo_container.addStretch()
+
+        layout.addLayout(algoritmo_container)
+
         # Contenedor de botones
         button_container = QHBoxLayout()
         button_container.setContentsMargins(0, 0, 0, 4)
@@ -156,12 +202,20 @@ class GeneracionPanel(QGroupBox):
 
     def _generar_guardias(self):
         """Genera el calendario de guardias."""
+        from infrastructure.database.models import Configuracion
         from PyQt6.QtWidgets import QMessageBox
         from utils.ui_helpers import show_question_with_cancel
 
         from presentation.widgets.progress_indicators import ejecutar_con_progreso
 
         try:
+            # Obtener algoritmo seleccionado y actualizar configuración
+            algoritmo_seleccionado = self.algoritmo_combo.currentData()
+            config = self.session.query(Configuracion).first()
+            if config:
+                config.algoritmo_asignacion = algoritmo_seleccionado
+                self.session.commit()
+
             count_guardias = self.session.query(Guardia).count()
             eliminar_existentes = True
 

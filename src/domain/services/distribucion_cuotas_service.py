@@ -88,9 +88,13 @@ class DistribucionCuotasService:
         La distribución se basa en:
         - Porcentaje de jornada (factor principal)
         - Factor de tutoría (ajuste desde configuración)
+        - Turno del profesor (mañana/tarde/mixto) para garantizar cuotas alcanzables
 
-        El turno NO afecta el cálculo de cuotas - solo afecta dónde
-        se asignan las guardias en el algoritmo de asignación.
+        IMPORTANTE: El turno SÍ afecta el cálculo de cuotas para garantizar
+        que las cuotas calculadas sean matemáticamente alcanzables.
+        - Profesores de mañana: solo pueden cubrir slots de mañana
+        - Profesores de tarde: solo pueden cubrir slots de tarde
+        - Profesores mixtos: pueden cubrir ambos turnos
 
         Args:
             profesores: Lista de profesores (si None, consulta todos los activos)
@@ -115,15 +119,19 @@ class DistribucionCuotasService:
         if not config:
             raise ValueError("No se encontró configuración activa")
 
-        # Calcular total de slots
-        total_slots = self._calcular_total_slots(config)
-        self.logger.info(f"Total de slots: {total_slots}")
+        # Calcular slots por turno
+        slots_por_turno = self._calcular_slots_por_turno(config)
+        total_slots = slots_por_turno.get("mañana", 0) + slots_por_turno.get("tarde", 0)
+        self.logger.info(
+            f"Slots por turno: mañana={slots_por_turno.get('mañana', 0)}, "
+            f"tarde={slots_por_turno.get('tarde', 0)}, total={total_slots}"
+        )
 
-        # Calcular factores de participación (sin considerar turno)
+        # Calcular factores de participación
         factores = self._calcular_factores_participacion(profesores, config)
 
-        # Distribuir slots proporcionalmente entre TODOS los profesores
-        cuotas = self._distribuir_slots_equitativamente(profesores, factores, total_slots)
+        # Distribuir slots POR TURNO para garantizar cuotas alcanzables
+        cuotas = self._distribuir_slots_por_turno(profesores, factores, slots_por_turno)
 
         # Log de resumen
         self._log_resumen_distribucion(profesores, cuotas, total_slots)
@@ -239,6 +247,9 @@ class DistribucionCuotasService:
         """
         Calcula los slots disponibles por turno.
 
+        IMPORTANTE: Usa la misma lógica que _calcular_total_slots para
+        garantizar consistencia, considerando fechas de inicio/fin de zonas.
+
         Returns:
             Dict con 'mañana' y 'tarde' como claves y número de slots como valores.
         """
@@ -246,16 +257,32 @@ class DistribucionCuotasService:
         recreos = _parse_recreos_config(config)
         zonas = self.session.query(Zona).all()
 
+        if not dias_lectivos or not recreos or not zonas:
+            return {"mañana": 0, "tarde": 0}
+
         slots_manana = 0
         slots_tarde = 0
 
-        for recreo in recreos:
-            turno_recreo = recreo.get("turno", "mañana")
-            slots_recreo = len(dias_lectivos) * len(zonas)
-            if turno_recreo == "mañana":
-                slots_manana += slots_recreo
-            else:
-                slots_tarde += slots_recreo
+        for dia in dias_lectivos:
+            for recreo in recreos:
+                turno_recreo = recreo.get("turno", "mañana")
+                # Número de zonas a cubrir en este recreo (default: todas)
+                num_zonas_recreo = min(recreo.get("zonas", len(zonas)), len(zonas))
+
+                for i, zona in enumerate(zonas):
+                    if i >= num_zonas_recreo:
+                        break
+
+                    # Verificar si la zona está activa en esta fecha
+                    if zona.fecha_inicio and dia < zona.fecha_inicio:
+                        continue
+                    if zona.fecha_fin and dia > zona.fecha_fin:
+                        continue
+
+                    if turno_recreo == "mañana":
+                        slots_manana += 1
+                    else:
+                        slots_tarde += 1
 
         return {"mañana": slots_manana, "tarde": slots_tarde}
 
@@ -385,32 +412,101 @@ class DistribucionCuotasService:
         slots_por_turno: Dict[str, int],
     ) -> Dict[int, int]:
         """
-        Distribuye slots considerando el turno de cada profesor.
+        Distribuye slots considerando el turno EFECTIVO de cada profesor.
 
-        - Profesores de mañana: solo reciben cuota de slots de mañana
-        - Profesores de tarde: solo reciben cuota de slots de tarde
-        - Profesores mixtos: reciben cuota de ambos turnos
+        El turno efectivo se determina por:
+        1. El campo 'turno' del profesor (mañana/tarde/mixto)
+        2. Los recreos permitidos del profesor
+
+        Un profesor "mixto" que solo tiene recreos de tarde [3,4] realmente
+        solo puede cubrir slots de tarde, así que su turno efectivo es "tarde".
 
         Esto garantiza que las cuotas calculadas sean realmente alcanzables.
         """
+        import json
+
+        config = self.session.query(Configuracion).first()
+        recreos_config = []
+        if config and hasattr(config, 'recreos_config') and config.recreos_config:
+            try:
+                recreos_config = json.loads(config.recreos_config)
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        # Crear mapeo de recreo_id -> turno
+        recreo_a_turno = {}
+        for r in recreos_config:
+            recreo_a_turno[r.get('id')] = r.get('turno', 'mañana')
+
+        # Si no hay configuración de recreos, asumir: 1,2=mañana, 3,4=tarde
+        if not recreo_a_turno:
+            recreo_a_turno = {1: 'mañana', 2: 'mañana', 3: 'tarde', 4: 'tarde'}
+
         cuotas = {p.id: 0 for p in profesores}
 
-        # Separar profesores por turno
+        # Determinar turno EFECTIVO de cada profesor basándose en sus recreos permitidos
+        def get_turno_efectivo(profesor: Profesor) -> str:
+            """
+            Determina qué turnos puede REALMENTE cubrir un profesor.
+
+            Returns:
+                'mañana' - solo puede cubrir mañana
+                'tarde' - solo puede cubrir tarde
+                'mixto' - puede cubrir ambos
+            """
+            turno_base = self._get_turno_profesor(profesor)
+
+            # Obtener recreos permitidos
+            recreos_permitidos = set()
+            if profesor.recreos_permitidos:
+                try:
+                    recreos_raw = json.loads(profesor.recreos_permitidos)
+                    if isinstance(recreos_raw, dict):
+                        for r_list in recreos_raw.values():
+                            recreos_permitidos.update(r_list)
+                    elif isinstance(recreos_raw, list):
+                        recreos_permitidos = set(recreos_raw)
+                except (json.JSONDecodeError, TypeError):
+                    recreos_permitidos = {1, 2, 3, 4}
+            else:
+                recreos_permitidos = {1, 2, 3, 4}
+
+            # Determinar qué turnos cubren sus recreos
+            puede_manana = any(recreo_a_turno.get(r) == 'mañana' for r in recreos_permitidos)
+            puede_tarde = any(recreo_a_turno.get(r) == 'tarde' for r in recreos_permitidos)
+
+            # Combinar con turno base
+            if turno_base == 'mañana':
+                return 'mañana' if puede_manana else 'ninguno'
+            elif turno_base == 'tarde':
+                return 'tarde' if puede_tarde else 'ninguno'
+            else:  # mixto
+                if puede_manana and puede_tarde:
+                    return 'mixto'
+                elif puede_manana:
+                    return 'mañana'
+                elif puede_tarde:
+                    return 'tarde'
+                else:
+                    return 'ninguno'
+
+        # Clasificar profesores por turno EFECTIVO
         profs_manana = []
         profs_tarde = []
         profs_mixtos = []
 
         for p in profesores:
-            turno = self._get_turno_profesor(p)
-            if turno == "mañana":
+            turno_efectivo = get_turno_efectivo(p)
+            if turno_efectivo == 'mañana':
                 profs_manana.append(p)
-            elif turno == "tarde":
+            elif turno_efectivo == 'tarde':
                 profs_tarde.append(p)
-            else:  # mixto
+            elif turno_efectivo == 'mixto':
                 profs_mixtos.append(p)
+            # turno_efectivo == 'ninguno' no se asigna a ningún grupo
 
         self.logger.info(
-            f"Distribución por turno: {len(profs_manana)} mañana, "
+            f"Distribución por turno EFECTIVO: {len(profs_manana)} mañana, "
             f"{len(profs_tarde)} tarde, {len(profs_mixtos)} mixto"
         )
 

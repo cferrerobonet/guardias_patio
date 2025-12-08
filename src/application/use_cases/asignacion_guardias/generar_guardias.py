@@ -11,6 +11,10 @@ from typing import Callable, Optional
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
 from infrastructure.database.models import Configuracion, Guardia, Profesor
+from services.asignador_guardias_cpsat import (
+    generar_guardias_cpsat,
+    guardar_guardias_cpsat_en_bd,
+)
 from services.asignador_guardias_v4_hibrido import (
     generar_guardias_v4_hibrido,
     guardar_guardias_en_bd,
@@ -99,17 +103,27 @@ class GenerarGuardiasUseCase:
                     porcentaje_escalado = 50 + int(porcentaje * 0.30)
                     progress_callback(mensaje or "Generando guardias...", porcentaje_escalado)
 
-            # SELECTOR DE ALGORITMO - v4.0 es el algoritmo principal
-            logger.info("✨ Usando algoritmo v4.0 Híbrido (5 fases)")
-            calendario, resumen = generar_guardias_v4_hibrido(
-                self.session, adapter_callback
-            )
-
-            # Guardar en base de datos
-            if progress_callback:
-                progress_callback("Guardando guardias en base de datos...", 80)
-
-            guardar_guardias_en_bd(self.session, calendario)
+            # SELECTOR DE ALGORITMO
+            # - "v4.0" o "rapido": Algoritmo v4 Híbrido (rápido, heurístico)
+            # - "cpsat" u "optimo": Algoritmo CP-SAT (más lento, garantiza óptimo)
+            if algoritmo in ("cpsat", "optimo", "cp-sat"):
+                logger.info("✨ Usando algoritmo CP-SAT (optimización garantizada)")
+                calendario, resumen = generar_guardias_cpsat(
+                    self.session, adapter_callback
+                )
+                # Guardar en base de datos
+                if progress_callback:
+                    progress_callback("Guardando guardias en base de datos...", 80)
+                guardar_guardias_cpsat_en_bd(self.session, calendario)
+            else:
+                logger.info("✨ Usando algoritmo v4.0 Híbrido (5 fases)")
+                calendario, resumen = generar_guardias_v4_hibrido(
+                    self.session, adapter_callback
+                )
+                # Guardar en base de datos
+                if progress_callback:
+                    progress_callback("Guardando guardias en base de datos...", 80)
+                guardar_guardias_en_bd(self.session, calendario)
 
             if progress_callback:
                 progress_callback("Proceso completado", 100)
