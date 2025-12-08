@@ -360,6 +360,11 @@ class GeneracionPanel(QGroupBox):
         lineas.append("")
 
         # ═══════════════════════════════════════════════════════════
+        # SECCIÓN 3.5: PROFESORES CON FECHAS ESPECIALES
+        # ═══════════════════════════════════════════════════════════
+        lineas.extend(self._formato_profesores_fechas_especiales(resumen))
+
+        # ═══════════════════════════════════════════════════════════
         # SECCIÓN 4: INCIDENCIAS / SIN INCIDENCIAS
         # ═══════════════════════════════════════════════════════════
         lineas.append(format_terminal_info("─" * 50))
@@ -437,6 +442,132 @@ class GeneracionPanel(QGroupBox):
         lineas.append(format_terminal_info("• Revisar restricciones de profesores"))
         lineas.append(format_terminal_info("• Flexibilizar recreos permitidos"))
         lineas.append(format_terminal_info("• Verificar configuración de zonas"))
+        return lineas
+
+    def _formato_profesores_fechas_especiales(self, resumen) -> list:
+        """
+        Formatea reporte de profesores con fecha_inicio o fecha_fin de guardias.
+
+        Analiza si se cumplieron las fechas límite y cuántas guardias
+        se asignaron dentro/fuera del rango esperado.
+        """
+        lineas = []
+
+        # Obtener profesores con fechas especiales
+        profesores_fechas = (
+            self.session.query(Profesor)
+            .filter(
+                Profesor.activo.is_(True),
+                (Profesor.fecha_inicio_guardias.isnot(None))
+                | (Profesor.fecha_fin_guardias.isnot(None)),
+            )
+            .all()
+        )
+
+        if not profesores_fechas:
+            return lineas  # No hay profesores con fechas especiales
+
+        lineas.append(format_terminal_info("─" * 50))
+        lineas.append(format_terminal_label("📅 PROFESORES CON FECHAS ESPECIALES:"))
+        lineas.append("")
+
+        cumplidos = 0
+        no_cumplidos = 0
+
+        for prof in profesores_fechas:
+            guardias_asignadas = resumen.resumen_por_profesor.get(prof.id, 0)
+
+            # Obtener guardias del profesor para analizar fechas
+            guardias_prof = (
+                self.session.query(Guardia)
+                .filter(Guardia.profesor_id == prof.id)
+                .all()
+            )
+
+            fechas_guardias = [g.fecha for g in guardias_prof]
+            fecha_min = min(fechas_guardias) if fechas_guardias else None
+            fecha_max = max(fechas_guardias) if fechas_guardias else None
+
+            # Analizar cumplimiento
+            problemas = []
+            cumple = True
+
+            if prof.fecha_inicio_guardias:
+                if fecha_min and fecha_min < prof.fecha_inicio_guardias:
+                    guardias_antes = sum(
+                        1 for f in fechas_guardias if f < prof.fecha_inicio_guardias
+                    )
+                    problemas.append(
+                        f"⚠️ {guardias_antes} guardias antes del inicio "
+                        f"({prof.fecha_inicio_guardias.strftime('%d/%m')})"
+                    )
+                    cumple = False
+
+            if prof.fecha_fin_guardias:
+                if fecha_max and fecha_max > prof.fecha_fin_guardias:
+                    guardias_despues = sum(
+                        1 for f in fechas_guardias if f > prof.fecha_fin_guardias
+                    )
+                    problemas.append(
+                        f"⚠️ {guardias_despues} guardias después del fin "
+                        f"({prof.fecha_fin_guardias.strftime('%d/%m')})"
+                    )
+                    cumple = False
+
+            # Formatear línea del profesor
+            prof_name = format_terminal_profesor(prof.nombre_completo)
+
+            # Construir info de fechas
+            fechas_info = []
+            if prof.fecha_inicio_guardias:
+                fechas_info.append(
+                    f"Inicio: {prof.fecha_inicio_guardias.strftime('%d/%m/%Y')}"
+                )
+            if prof.fecha_fin_guardias:
+                fechas_info.append(
+                    f"Fin: {prof.fecha_fin_guardias.strftime('%d/%m/%Y')}"
+                )
+
+            if cumple:
+                cumplidos += 1
+                estado = format_terminal_success("✅")
+                lineas.append(f"  {estado} {prof_name}")
+                lineas.append(
+                    f"      {format_terminal_info(' | '.join(fechas_info))}"
+                )
+                lineas.append(
+                    f"      {format_terminal_number(str(guardias_asignadas))} "
+                    f"guardias asignadas correctamente"
+                )
+            else:
+                no_cumplidos += 1
+                estado = format_terminal_warning("⚠️")
+                lineas.append(f"  {estado} {prof_name}")
+                lineas.append(
+                    f"      {format_terminal_info(' | '.join(fechas_info))}"
+                )
+                for problema in problemas:
+                    lineas.append(f"      {format_terminal_warning(problema)}")
+
+            lineas.append("")
+
+        # Resumen
+        total = len(profesores_fechas)
+        if no_cumplidos > 0:
+            lineas.append(
+                format_terminal_warning(
+                    f"📊 Resumen: {cumplidos}/{total} cumplidos, "
+                    f"{no_cumplidos} con problemas"
+                )
+            )
+        else:
+            lineas.append(
+                format_terminal_success(
+                    f"📊 Resumen: {total}/{total} fechas respetadas correctamente"
+                )
+            )
+
+        lineas.append("")
         return lineas
 
     def _mostrar_error(self, mensaje: str):
