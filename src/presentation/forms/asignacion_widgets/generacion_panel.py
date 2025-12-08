@@ -418,16 +418,61 @@ class GeneracionPanel(QGroupBox):
             lineas.append(format_terminal_label("👥 DISTRIBUCIÓN DE GUARDIAS ASIGNADAS:"))
             lineas.append("")
 
-            # Ordenar TODOS los profesores por guardias (descendente)
-            todos_ordenados = sorted(
-                resumen.resumen_por_profesor.items(),
-                key=lambda x: x[1],
-                reverse=True,
-            )
+            # Función para normalizar turno
+            def normalizar_turno(turno: str) -> str:
+                t = (turno or "mixto").lower().strip()
+                if t in ("mañana", "manana", "morning"):
+                    return "mañana"
+                elif t in ("tarde", "afternoon"):
+                    return "tarde"
+                else:
+                    return "mixto"
 
-            for pid, cnt in todos_ordenados:
+            # Agrupar profesores por turno
+            turno_manana = []
+            turno_tarde = []
+            turno_mixto = []
+
+            for pid, cnt in resumen.resumen_por_profesor.items():
                 prof = self.session.query(Profesor).get(pid)
                 if prof:
+                    turno = normalizar_turno(prof.turno)
+                    if turno == "mañana":
+                        turno_manana.append((prof, cnt))
+                    elif turno == "tarde":
+                        turno_tarde.append((prof, cnt))
+                    else:
+                        turno_mixto.append((prof, cnt))
+
+            # Ordenar cada grupo alfabéticamente
+            turno_manana.sort(key=lambda x: x[0].nombre_completo)
+            turno_tarde.sort(key=lambda x: x[0].nombre_completo)
+            turno_mixto.sort(key=lambda x: x[0].nombre_completo)
+
+            # Mostrar TURNO MAÑANA
+            if turno_manana:
+                lineas.append(format_terminal_success("☀️ TURNO MAÑANA"))
+                for prof, cnt in turno_manana:
+                    pct = prof.porcentaje_jornada or 100
+                    prof_name = format_terminal_profesor(prof.nombre_completo)
+                    cnt_num = format_terminal_number(str(cnt))
+                    lineas.append(f"  • {prof_name} ({pct:.0f}%): {cnt_num} guardias")
+                lineas.append("")
+
+            # Mostrar TURNO TARDE
+            if turno_tarde:
+                lineas.append(format_terminal_success("🌙 TURNO TARDE"))
+                for prof, cnt in turno_tarde:
+                    pct = prof.porcentaje_jornada or 100
+                    prof_name = format_terminal_profesor(prof.nombre_completo)
+                    cnt_num = format_terminal_number(str(cnt))
+                    lineas.append(f"  • {prof_name} ({pct:.0f}%): {cnt_num} guardias")
+                lineas.append("")
+
+            # Mostrar TURNO MIXTO
+            if turno_mixto:
+                lineas.append(format_terminal_success("🔄 TURNO MIXTO"))
+                for prof, cnt in turno_mixto:
                     pct = prof.porcentaje_jornada or 100
                     prof_name = format_terminal_profesor(prof.nombre_completo)
                     cnt_num = format_terminal_number(str(cnt))
