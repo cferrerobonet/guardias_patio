@@ -319,7 +319,7 @@ class SidebarMenu(QWidget):
 
     def add_app_info_section(self, layout: QVBoxLayout):
         """Añadir sección de información de la aplicación en la parte inferior"""
-        from utils.constants import APP_AUTHOR, APP_LAST_UPDATE, APP_VERSION
+        from utils.constants import APP_VERSION
 
         # Contenedor de información
         info_container = QWidget()
@@ -331,17 +331,7 @@ class SidebarMenu(QWidget):
         """)
         info_layout = QVBoxLayout(info_container)
         info_layout.setContentsMargins(16, 12, 16, 12)
-        info_layout.setSpacing(4)
-
-        # Estilo común para las etiquetas
-        label_style = """
-            QLabel {
-                color: rgba(255, 255, 255, 0.6);
-                font-size: 11px;
-                background-color: transparent;
-                border: none;
-            }
-        """
+        info_layout.setSpacing(8)
 
         # Versión (más destacada)
         version_label = QLabel(f"📦 v{APP_VERSION}")
@@ -356,17 +346,34 @@ class SidebarMenu(QWidget):
         """)
         info_layout.addWidget(version_label)
 
-        # Autor
-        author_label = QLabel(f"👤 {APP_AUTHOR}")
-        author_label.setStyleSheet(label_style)
-        info_layout.addWidget(author_label)
-
-        # Fecha de actualización
-        update_label = QLabel(f"🔄 Actualizado: {APP_LAST_UPDATE}")
-        update_label.setStyleSheet(label_style)
-        info_layout.addWidget(update_label)
+        # Botón "Acerca de"
+        btn_acerca = QPushButton("ℹ️ Acerca de...")
+        btn_acerca.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_acerca.setStyleSheet("""
+            QPushButton {
+                color: rgba(255, 255, 255, 0.7);
+                background-color: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                color: white;
+            }
+        """)
+        btn_acerca.clicked.connect(self._show_about_dialog)
+        info_layout.addWidget(btn_acerca)
 
         layout.addWidget(info_container)
+
+    def _show_about_dialog(self):
+        """Mostrar el diálogo Acerca de"""
+        from presentation.dialogs.dialogo_acerca_de import DialogoAcercaDe
+
+        dialogo = DialogoAcercaDe(self, session=self.session)
+        dialogo.exec()
 
     def set_active_section(self, section: str):
         """Establecer sección activa programáticamente"""
