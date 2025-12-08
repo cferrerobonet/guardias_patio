@@ -9,6 +9,7 @@ Define valores constantes utilizados en toda la aplicación para evitar
 APP_NAME = "Gestión de Guardias de Patio"
 APP_VERSION = "3.2.1"
 APP_AUTHOR = "Carlos Ferrero Bonet"
+APP_LAST_UPDATE = "2025-12-08"  # Fecha de última actualización
 
 # ========== CONSTANTES DE BASE DE DATOS ==========
 DB_FILE = "guardias_patio.db"

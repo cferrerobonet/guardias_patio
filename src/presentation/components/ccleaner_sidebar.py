@@ -175,8 +175,11 @@ class SidebarMenu(QWidget):
         self.add_menu_item(menu_layout, "reportes", "Reportes", "reportes", "file-chart")
         self.add_menu_item(menu_layout, "estadisticas", "Estadísticas", "estadisticas", "chart-bar")
 
-        # Espaciador al final
+        # Espaciador flexible antes de la información de la app
         menu_layout.addStretch()
+
+        # ========== INFORMACIÓN DE LA APP ==========
+        self.add_app_info_section(menu_layout)
 
         scroll.setWidget(menu_widget)
         layout.addWidget(scroll)
@@ -313,6 +316,57 @@ class SidebarMenu(QWidget):
 
         # Emitir señal
         self.section_changed.emit(section)
+
+    def add_app_info_section(self, layout: QVBoxLayout):
+        """Añadir sección de información de la aplicación en la parte inferior"""
+        from utils.constants import APP_AUTHOR, APP_LAST_UPDATE, APP_VERSION
+
+        # Contenedor de información
+        info_container = QWidget()
+        info_container.setStyleSheet("""
+            QWidget {
+                background-color: rgba(0, 0, 0, 0.15);
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        """)
+        info_layout = QVBoxLayout(info_container)
+        info_layout.setContentsMargins(16, 12, 16, 12)
+        info_layout.setSpacing(4)
+
+        # Estilo común para las etiquetas
+        label_style = """
+            QLabel {
+                color: rgba(255, 255, 255, 0.6);
+                font-size: 11px;
+                background-color: transparent;
+                border: none;
+            }
+        """
+
+        # Versión (más destacada)
+        version_label = QLabel(f"📦 v{APP_VERSION}")
+        version_label.setStyleSheet("""
+            QLabel {
+                color: rgba(255, 255, 255, 0.85);
+                font-size: 12px;
+                font-weight: bold;
+                background-color: transparent;
+                border: none;
+            }
+        """)
+        info_layout.addWidget(version_label)
+
+        # Autor
+        author_label = QLabel(f"👤 {APP_AUTHOR}")
+        author_label.setStyleSheet(label_style)
+        info_layout.addWidget(author_label)
+
+        # Fecha de actualización
+        update_label = QLabel(f"🔄 Actualizado: {APP_LAST_UPDATE}")
+        update_label.setStyleSheet(label_style)
+        info_layout.addWidget(update_label)
+
+        layout.addWidget(info_container)
 
     def set_active_section(self, section: str):
         """Establecer sección activa programáticamente"""
