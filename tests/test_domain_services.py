@@ -5,6 +5,7 @@ Verifica que los servicios de dominio funcionen correctamente
 y mantengan las reglas de negocio.
 """
 
+import json
 from datetime import date, timedelta
 
 import pytest
@@ -158,7 +159,7 @@ class TestDistribucionCuotasService:
             fecha_fin_curso=date.today() + timedelta(days=180),
             hora_recreo1_manana=time(10, 30),
             hora_recreo2_manana=time(12, 30),
-            recreos_config=str([{"id": 1, "turno": "mañana"}, {"id": 2, "turno": "tarde"}]),
+            recreos_config=json.dumps([{"id": 1, "turno": "mañana"}, {"id": 2, "turno": "tarde"}]),
         )
         session.add(config)
 
@@ -202,7 +203,7 @@ class TestDistribucionCuotasService:
             fecha_fin_curso=date.today() + timedelta(days=180),
             hora_recreo1_manana=time(10, 30),
             hora_recreo2_manana=time(12, 30),
-            recreos_config=str([{"id": 1, "turno": "mañana"}]),
+            recreos_config=json.dumps([{"id": 1, "turno": "mañana"}]),
         )
         session.add(config)
 
