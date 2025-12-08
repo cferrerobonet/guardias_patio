@@ -292,15 +292,38 @@ class DialogoAcercaDe(QDialog):
         try:
             from pathlib import Path
 
-            from utils.constants import DB_FILE
+            # Intentar obtener la ruta real de la BD desde la sesión
+            if self.session:
+                db_url = str(self.session.bind.url)
+                # sqlite:///guardias_patio.db -> guardias_patio.db
+                if "sqlite" in db_url:
+                    db_name = db_url.split("///")[-1] if "///" in db_url else db_url
+                    info.append(("🗄️ Base de datos:", db_name))
 
-            db_path = Path(DB_FILE)
-            if db_path.exists():
-                size_mb = db_path.stat().st_size / (1024 * 1024)
-                info.append(("🗄️ Base de datos:", DB_FILE))
-                info.append(("📁 Tamaño:", f"{size_mb:.2f} MB"))
+                    # Buscar el archivo en varias ubicaciones posibles
+                    posibles_rutas = [
+                        Path(db_name),
+                        Path("..") / db_name,
+                        Path.cwd() / db_name,
+                        Path.cwd().parent / db_name,
+                    ]
+
+                    for ruta in posibles_rutas:
+                        if ruta.exists():
+                            size_kb = ruta.stat().st_size / 1024
+                            if size_kb >= 1024:
+                                size_str = f"{size_kb / 1024:.2f} MB"
+                            else:
+                                size_str = f"{size_kb:.1f} KB"
+                            info.append(("📁 Tamaño:", size_str))
+                            info.append(("📍 Ubicación:", str(ruta.resolve())))
+                            break
+                    else:
+                        info.append(("📁 Tamaño:", "No se pudo determinar"))
+                else:
+                    info.append(("🗄️ Base de datos:", db_url))
             else:
-                info.append(("🗄️ Base de datos:", "No encontrada"))
+                info.append(("🗄️ Base de datos:", "Sesión no disponible"))
         except Exception as e:
             info.append(("🗄️ Base de datos:", f"Error: {e}"))
         return info
