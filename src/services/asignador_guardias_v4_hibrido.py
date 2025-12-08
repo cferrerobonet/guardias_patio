@@ -566,7 +566,7 @@ def _asignar_por_rondas(
 
 
 # =============================================================================
-# FASE 3: COMPLETITUD FORZADA
+# FASE 3: COMPLETITUD FORZADA CON EQUIDAD
 # =============================================================================
 
 
@@ -576,13 +576,17 @@ def _completitud_forzada(
     reportar_progreso: Callable[[int, str], None],
 ) -> Tuple[int, List[Slot]]:
     """
-    Garantiza cobertura completa relajando restricciones progresivamente.
+    Garantiza cobertura completa MANTENIENDO EQUIDAD.
 
-    Niveles de relajación:
-    1. Permitir exceder cuota hasta +25%
-    2. Permitir exceder cuota hasta +50%
-    3. Permitir cualquier exceso de cuota
-    4. Permitir múltiples guardias por día (último recurso)
+    PRINCIPIO: Las guardias extra se distribuyen equitativamente.
+    Ningún profesor debe recibir más de 1 guardia extra que otro
+    en la misma categoría de jornada.
+
+    Estrategia:
+    1. Primero: asignar a profesores que NO han alcanzado su cuota
+    2. Segundo: si todos alcanzaron cuota, distribuir extras equitativamente
+       (todos suben 1, luego todos suben 2, etc.)
+    3. Último recurso: permitir múltiples guardias por día
     """
     slots_sin_cubrir = [s for s in ctx.slots if s not in ctx.slots_ocupados]
 
@@ -595,41 +599,109 @@ def _completitud_forzada(
     asignaciones = 0
     slots_imposibles = []
 
-    for idx, slot in enumerate(slots_sin_cubrir):
-        # Reportar progreso
-        if idx % 20 == 0:
-            progreso = 60 + int((idx / len(slots_sin_cubrir)) * 30)
-            reportar_progreso(
-                progreso, f"Completitud: {idx}/{len(slots_sin_cubrir)} slots procesados"
-            )
-
-        asignado = False
-
-        # Nivel 1: Ignorar cuotas
-        for profesor in ctx.profesores:
-            if _es_elegible(profesor, slot, ctx, session, ignorar_cuota=True):
-                _registrar_asignacion(profesor, slot, ctx)
-                asignaciones += 1
-                asignado = True
-                break
-
-        if asignado:
+    # =========================================================================
+    # NIVEL 1: Asignar a profesores que NO han alcanzado su cuota
+    # =========================================================================
+    for slot in list(slots_sin_cubrir):
+        if slot in ctx.slots_ocupados:
             continue
 
-        # Nivel 2: Permitir múltiples guardias por día
-        for profesor in ctx.profesores:
-            if _es_elegible(
-                profesor, slot, ctx, session, ignorar_cuota=True, permitir_multiples_dia=True
-            ):
-                _registrar_asignacion(profesor, slot, ctx)
-                asignaciones += 1
-                asignado = True
-                logger.warning(
-                    f"  ⚠️ {profesor.nombre_completo} asignado con múltiple guardia el {slot.fecha}"
-                )
-                break
+        # Buscar profesores elegibles que NO han alcanzado cuota
+        candidatos = [
+            p for p in ctx.profesores
+            if _es_elegible(p, slot, ctx, session, ignorar_cuota=False)
+        ]
 
-        if not asignado:
+        if candidatos:
+            # Priorizar por déficit (quien más necesita guardias)
+            candidatos.sort(
+                key=lambda p: ctx.cuotas_ideales.get(p.id, 0) - ctx.asignadas[p.id],
+                reverse=True
+            )
+            _registrar_asignacion(candidatos[0], slot, ctx)
+            asignaciones += 1
+            slots_sin_cubrir.remove(slot)
+
+    if not slots_sin_cubrir:
+        logger.info(f"✓ Completitud nivel 1: {asignaciones} guardias (profesores bajo cuota)")
+        return asignaciones, []
+
+    # =========================================================================
+    # NIVEL 2: Distribución equitativa de extras (todos +1, luego +2, etc.)
+    # =========================================================================
+    logger.info(f"  Nivel 2: {len(slots_sin_cubrir)} slots restantes - distribución equitativa")
+
+    # Calcular exceso actual de cada profesor
+    def exceso_actual(p: Profesor) -> int:
+        return ctx.asignadas[p.id] - ctx.cuotas_ideales.get(p.id, 0)
+
+    max_rondas_extra = 20  # Límite de seguridad
+
+    for ronda_extra in range(max_rondas_extra):
+        if not slots_sin_cubrir:
+            break
+
+        # En cada ronda, solo asignar a profesores con MENOR exceso
+        min_exceso = min(exceso_actual(p) for p in ctx.profesores)
+
+        # Profesores elegibles para esta ronda: los que tienen el menor exceso
+        profesores_esta_ronda = [
+            p for p in ctx.profesores
+            if exceso_actual(p) == min_exceso
+        ]
+
+        asignaciones_ronda = 0
+        for slot in list(slots_sin_cubrir):
+            if slot in ctx.slots_ocupados:
+                continue
+
+            # Buscar entre profesores de esta ronda (menor exceso)
+            candidatos = [
+                p for p in profesores_esta_ronda
+                if _es_elegible(p, slot, ctx, session, ignorar_cuota=True)
+            ]
+
+            if candidatos:
+                # Ordenar por menor exceso actual (por si cambió durante la ronda)
+                candidatos.sort(key=lambda p: exceso_actual(p))
+                _registrar_asignacion(candidatos[0], slot, ctx)
+                asignaciones += 1
+                asignaciones_ronda += 1
+                slots_sin_cubrir.remove(slot)
+
+        if asignaciones_ronda == 0:
+            # No se pudo asignar en esta ronda, pasar al nivel 3
+            break
+
+    if not slots_sin_cubrir:
+        logger.info(f"✓ Completitud nivel 2: {asignaciones} guardias (distribución equitativa)")
+        return asignaciones, []
+
+    # =========================================================================
+    # NIVEL 3: Último recurso - permitir múltiples guardias por día
+    # =========================================================================
+    logger.warning(f"  Nivel 3: {len(slots_sin_cubrir)} slots - permitiendo múltiples por día")
+
+    for slot in list(slots_sin_cubrir):
+        if slot in ctx.slots_ocupados:
+            continue
+
+        # Buscar cualquier profesor elegible, priorizando menor exceso
+        candidatos = [
+            p for p in ctx.profesores
+            if _es_elegible(p, slot, ctx, session, ignorar_cuota=True, permitir_multiples_dia=True)
+        ]
+
+        if candidatos:
+            candidatos.sort(key=lambda p: exceso_actual(p))
+            profesor = candidatos[0]
+            _registrar_asignacion(profesor, slot, ctx)
+            asignaciones += 1
+            slots_sin_cubrir.remove(slot)
+            logger.warning(
+                f"  ⚠️ {profesor.nombre_completo} asignado con múltiple guardia el {slot.fecha}"
+            )
+        else:
             slots_imposibles.append(slot)
 
     if slots_imposibles:
@@ -637,7 +709,7 @@ def _completitud_forzada(
         for s in slots_imposibles[:5]:
             logger.error(f"    - {s.fecha} {s.turno} R{s.recreo_id} Z{s.zona_id}")
 
-    logger.info(f"✓ Completitud: {asignaciones} guardias adicionales asignadas")
+    logger.info(f"✓ Completitud total: {asignaciones} guardias adicionales")
     return asignaciones, slots_imposibles
 
 
