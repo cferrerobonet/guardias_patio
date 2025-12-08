@@ -79,17 +79,17 @@ class CalculoPanel(QGroupBox):
         self.calcular_button.clicked.connect(self.calcular_cuotas)
         button_layout.addWidget(self.calcular_button)
 
-        # Badge informativo de total
+        # Badge informativo de total (solo texto, no interactivo)
         self.total_badge = QLabel("Total: -- guardias")
         self.total_badge.setStyleSheet("""
             QLabel {
-                background-color: #10b981;
-                color: white;
+                background-color: #0f172a;
+                color: #22c55e;
                 font-weight: bold;
                 font-size: 14px;
                 padding: 8px 20px;
-                border-radius: 6px;
-                border: none;
+                border-radius: 4px;
+                border: 2px solid #22c55e;
             }
         """)
         self.total_badge.setMinimumHeight(35)
@@ -312,8 +312,9 @@ class CalculoPanel(QGroupBox):
             texto += f"\n• {nombre_fmt} ({pct:.0f}%): {cuota_str} guardias"
 
         texto += f"\n\n{format_terminal_success('✅ Cuotas calculadas correctamente')}"
-        info_txt = '💡 Tras generar, verifica el reparto en "Resultados"'
-        texto += f"\n{format_terminal_info(info_txt)}"
+        msg_generar = '💡 Ahora pulsa "Generar Asignación" para crear el calendario'
+        texto += f"\n{format_terminal_info(msg_generar)}"
+        texto += f"\n{format_terminal_info('   respetando estas cuotas.')}"
 
         self.content_text.setHtml(wrap_terminal_html(texto))
 

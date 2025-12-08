@@ -201,12 +201,38 @@ class DistribucionCuotasService:
     # Métodos privados auxiliares
 
     def _calcular_total_slots(self, config: Configuracion) -> int:
-        """Calcula el total de slots a distribuir."""
+        """
+        Calcula el total de slots a distribuir.
+
+        IMPORTANTE: Usa la misma lógica que el algoritmo de asignación,
+        considerando las fechas de inicio/fin de cada zona.
+        """
         dias_lectivos = listar_dias_lectivos(config)
         recreos = _parse_recreos_config(config)
         zonas = self.session.query(Zona).all()
 
-        total = len(dias_lectivos) * len(recreos) * len(zonas)
+        if not dias_lectivos or not recreos or not zonas:
+            return 0
+
+        # Contar slots REALES considerando fechas de cada zona
+        total = 0
+        for dia in dias_lectivos:
+            for recreo in recreos:
+                # Número de zonas a cubrir en este recreo (default: todas)
+                num_zonas_recreo = min(recreo.get("zonas", len(zonas)), len(zonas))
+
+                for i, zona in enumerate(zonas):
+                    if i >= num_zonas_recreo:
+                        break
+
+                    # Verificar si la zona está activa en esta fecha
+                    if zona.fecha_inicio and dia < zona.fecha_inicio:
+                        continue
+                    if zona.fecha_fin and dia > zona.fecha_fin:
+                        continue
+
+                    total += 1
+
         return total
 
     def _calcular_slots_por_turno(self, config: Configuracion) -> Dict[str, int]:
