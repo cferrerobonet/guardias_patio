@@ -97,11 +97,13 @@ class GeneracionPanel(QGroupBox):
         button_container.setContentsMargins(0, 0, 0, 4)
         button_container.setSpacing(10)
 
-        # Botón Generar
+        # Botón Generar (deshabilitado hasta que se calculen cuotas)
         self.generar_button = QPushButton("🎯 Generar Asignación")
         self.generar_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.generar_button.setMinimumHeight(36)
         self.generar_button.clicked.connect(self._generar_guardias)
+        self.generar_button.setEnabled(False)  # Deshabilitado hasta calcular cuotas
+        self.generar_button.setToolTip("Primero debe calcular las cuotas")
         button_container.addWidget(self.generar_button, 1)
 
         # Botón Limpiar
@@ -128,9 +130,29 @@ class GeneracionPanel(QGroupBox):
         texto = format_terminal_info(
             "💡 Los resultados se mostrarán aquí después de\n"
             "   generar el calendario de guardias.\n\n"
-            "   Pulsa 'Generar Asignación' para comenzar."
+            "   Pulsa 'Calcular Cuotas' en el panel izquierdo\n"
+            "   para habilitar 'Generar Asignación'."
         )
         self.content_text.setHtml(wrap_terminal_html(texto))
+
+    def habilitar_generacion(self, habilitar: bool = True):
+        """Habilita o deshabilita el botón de generar asignación.
+
+        Args:
+            habilitar: True para habilitar, False para deshabilitar.
+        """
+        self.generar_button.setEnabled(habilitar)
+        if habilitar:
+            self.generar_button.setToolTip("Generar el calendario de guardias")
+            # Actualizar mensaje para indicar que puede generar
+            texto = format_terminal_info(
+                "✅ Cuotas calculadas correctamente.\n\n"
+                "💡 Pulsa 'Generar Asignación' para crear\n"
+                "   el calendario de guardias del curso."
+            )
+            self.content_text.setHtml(wrap_terminal_html(texto))
+        else:
+            self.generar_button.setToolTip("Primero debe calcular las cuotas")
 
     def _generar_guardias(self):
         """Genera el calendario de guardias."""

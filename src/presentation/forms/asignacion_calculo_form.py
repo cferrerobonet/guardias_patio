@@ -141,6 +141,12 @@ class AsignacionCalculoForm(BaseForm):
         right_container.setLayout(right_layout)
         grid_layout.addWidget(right_container, 0, 1)
 
+        # ============ CONECTAR SEÑALES ============
+        # Habilitar botón de generar cuando se calculen las cuotas
+        self.calculo_panel.cuotas_calculadas.connect(
+            lambda _: self.generacion_panel.habilitar_generacion(True)
+        )
+
         # Configurar proporciones de columnas (50-50)
         grid_layout.setColumnStretch(0, 1)
         grid_layout.setColumnStretch(1, 1)
