@@ -335,25 +335,27 @@ class GeneracionPanel(QGroupBox):
         lineas.append("")
 
         # ═══════════════════════════════════════════════════════════
-        # SECCIÓN 3: DISTRIBUCIÓN POR PROFESOR (TOP 10)
+        # SECCIÓN 3: DISTRIBUCIÓN POR PROFESOR (TODOS)
         # ═══════════════════════════════════════════════════════════
         if resumen.resumen_por_profesor:
             lineas.append(format_terminal_info("─" * 50))
-            lineas.append(format_terminal_label("👥 DISTRIBUCIÓN (top 10):"))
+            lineas.append(format_terminal_label("👥 DISTRIBUCIÓN DE GUARDIAS ASIGNADAS:"))
             lineas.append("")
 
-            top = sorted(
+            # Ordenar TODOS los profesores por guardias (descendente)
+            todos_ordenados = sorted(
                 resumen.resumen_por_profesor.items(),
                 key=lambda x: x[1],
                 reverse=True,
-            )[:10]
+            )
 
-            for pid, cnt in top:
+            for pid, cnt in todos_ordenados:
                 prof = self.session.query(Profesor).get(pid)
                 if prof:
+                    pct = prof.porcentaje_jornada or 100
                     prof_name = format_terminal_profesor(prof.nombre_completo)
                     cnt_num = format_terminal_number(str(cnt))
-                    lineas.append(f"  • {prof_name}: {cnt_num}")
+                    lineas.append(f"  • {prof_name} ({pct:.0f}%): {cnt_num} guardias")
 
         lineas.append("")
 
