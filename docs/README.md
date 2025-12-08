@@ -29,12 +29,11 @@ Documentación de diseño y arquitectura del sistema.
 - **[ARCHITECTURE.md](architecture/ARCHITECTURE.md)** - Arquitectura general del sistema
 - **[CLEAN_ARCHITECTURE_PHASE3.md](architecture/CLEAN_ARCHITECTURE_PHASE3.md)** - Clean Architecture implementada
 - **[API_REST.md](architecture/API_REST.md)** - Documentación de la API REST
-- **[PREMISAS_ASIGNACION_GUARDIAS.md](architecture/PREMISAS_ASIGNACION_GUARDIAS.md)** - Reglas de negocio
+- **[PREMISAS_ASIGNACION_GUARDIAS.md](architecture/PREMISAS_ASIGNACION_GUARDIAS.md)** - **Algoritmo CP-SAT y reglas de negocio** ⭐
 
 ### 📋 Información General
 
 - **[CHANGELOG.md](CHANGELOG.md)** - Historial de cambios del proyecto
-- **[FASES_4_5_COMPLETADAS.md](FASES_4_5_COMPLETADAS.md)** - Resumen de últimas implementaciones
 
 ### 📦 Archivo (`archive/`)
 Documentación histórica, planes completados y análisis previos. 
@@ -52,17 +51,19 @@ Se mantiene por referencia histórica, pero no refleja el estado actual del proy
 ### Para Desarrolladores
 1. Comienza con la [Guía Técnica](dev/TECHNICAL_GUIDE.md)
 2. Revisa la [Arquitectura](architecture/ARCHITECTURE.md)
-3. Lee las guías de [Testing](dev/TESTING.md) y [Deployment](dev/DEPLOYMENT.md)
+3. **Lee las [Premisas del Algoritmo](architecture/PREMISAS_ASIGNACION_GUARDIAS.md)** ⭐
 4. Consulta [CONTRIBUTING](dev/CONTRIBUTING.md) antes de contribuir
 
 ---
 
 ## 📊 Estado del Proyecto
 
-- **Versión actual**: 3.1.0
-- **Última actualización**: Noviembre 2025
+- **Versión actual**: 3.2.0
+- **Última actualización**: Diciembre 2025
 - **Features principales**:
-  - ✅ Sistema de asignación de guardias con algoritmo optimizado
+  - ✅ **Algoritmo CP-SAT con equidad perfecta (IE=100%)**
+  - ✅ Optimización de consecutividad de guardias
+  - ✅ Preferencia de zona (~85% en zona principal)
   - ✅ Dashboard de equidad con visualizaciones matplotlib
   - ✅ API REST con FastAPI (8 endpoints)
   - ✅ Clean Architecture (Phase 3)
@@ -75,4 +76,4 @@ Se mantiene por referencia histórica, pero no refleja el estado actual del proy
 
 **Proyecto**: Guardias de Patio  
 **Licencia**: Escuelas Profesionales Luis Amigó  
-**Última revisión documental**: 30 de Noviembre 2025
+**Última revisión documental**: 8 de Diciembre 2025

@@ -112,7 +112,7 @@ class GeneracionPanel(QGroupBox):
         self.algoritmo_combo = QComboBox()
         self.algoritmo_combo.addItem("⚡ Rápido (v4 Híbrido)", "v4.0")
         self.algoritmo_combo.addItem("🎯 Óptimo (CP-SAT)", "cpsat")
-        self.algoritmo_combo.setCurrentIndex(0)  # Default: rápido
+        self.algoritmo_combo.setCurrentIndex(1)  # Default: óptimo (CP-SAT)
         self.algoritmo_combo.setToolTip(
             "Rápido: ~1 segundo, heurístico\n"
             "Óptimo: ~10 segundos, garantiza la mejor solución"

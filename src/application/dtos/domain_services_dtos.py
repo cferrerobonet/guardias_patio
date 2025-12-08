@@ -33,6 +33,7 @@ class CuotaProfesorDTO:
     cuota_esperada: int
     porcentaje_jornada: float = 100.0
     cuota_asignada: int = 0
+    turno: str = "mixto"  # mañana, tarde, mixto
 
     @property
     def porcentaje_cumplimiento(self) -> float:

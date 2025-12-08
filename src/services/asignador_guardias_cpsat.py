@@ -430,12 +430,12 @@ def generar_guardias_cpsat(
     logger.info("  ✓ Restricción: no simultaneidad (1 zona/recreo)")
 
     # =========================================================================
-    # FASE 4: DEFINIR OBJETIVO (MINIMIZAR INEQUIDAD)
+    # FASE 4: DEFINIR OBJETIVO (EQUIDAD + CONSECUTIVIDAD + ZONA)
     # =========================================================================
     logger.info("")
-    logger.info("FASE 4: DEFINIENDO OBJETIVO")
+    logger.info("FASE 4: DEFINIENDO OBJETIVO MULTI-CRITERIO")
     logger.info("-" * 80)
-    reportar(25, "Definiendo objetivo de equidad...")
+    reportar(25, "Definiendo objetivo multi-criterio...")
 
     # Calcular cuotas ideales usando el servicio de distribución
     # Esto considera correctamente los turnos de cada profesor
@@ -457,6 +457,9 @@ def generar_guardias_cpsat(
         else:
             n_guardias[p.id] = model.NewIntVar(0, 0, f"n_{p.id}")
 
+    # -------------------------------------------------------------------------
+    # OBJETIVO 1 (PRIMARIO): MINIMIZAR INEQUIDAD
+    # -------------------------------------------------------------------------
     # Desviación de cada profesor respecto a su cuota
     desviaciones: List[cp_model.IntVar] = []
     for p in profesores:
@@ -471,18 +474,154 @@ def generar_guardias_cpsat(
     max_dev = model.NewIntVar(0, 50, "max_dev")
     model.AddMaxEquality(max_dev, desviaciones)
 
-    # Objetivo: minimizar max_dev prioritariamente, luego suma de desviaciones
-    # El factor 10000 asegura que primero se minimice max_dev
-    model.Minimize(10000 * max_dev + sum(desviaciones))
+    logger.info("  ✓ Objetivo 1: minimizar inequidad (max_desv + sum_desv)")
 
-    logger.info("  ✓ Objetivo: minimizar max_desviación + sum(desviaciones)")
+    # -------------------------------------------------------------------------
+    # OBJETIVO 2 (SECUNDARIO): MAXIMIZAR CONSECUTIVIDAD
+    # -------------------------------------------------------------------------
+    # Estrategia: Incentivar que guardias consecutivas en el calendario
+    # sean asignadas al mismo profesor.
+    # Para cada par de slots (s1, s2) en días consecutivos d y d+1,
+    # si el mismo profesor cubre ambos, damos un "bonus" (reducimos penalización).
+    # Esto fomenta bloques de días consecutivos para cada profesor.
+
+    # Ordenar días lectivos y crear mapeo día -> índice ordinal
+    dias_unicos = sorted(set(s.fecha for s in slots))
+    dia_a_ordinal: Dict[date, int] = {d: i for i, d in enumerate(dias_unicos)}
+
+    # Para cada profesor, agrupar sus slots por día
+    # slots_por_prof_dia[prof_id][dia_ordinal] = lista de slot_idx
+    slots_por_prof_dia: Dict[int, Dict[int, List[int]]] = defaultdict(lambda: defaultdict(list))
+    for p in profesores:
+        for s_idx in prof_slots[p.id]:
+            dia_ord = dia_a_ordinal[slots[s_idx].fecha]
+            slots_por_prof_dia[p.id][dia_ord].append(s_idx)
+
+    # Crear variable: tiene_guardia_dia[prof_id][dia_ord] = 1 si el profesor
+    # tiene al menos una guardia ese día
+    tiene_guardia_dia: Dict[int, Dict[int, cp_model.IntVar]] = {}
+
+    for p in profesores:
+        tiene_guardia_dia[p.id] = {}
+        for dia_ord, slot_idxs in slots_por_prof_dia[p.id].items():
+            if slot_idxs:
+                tiene = model.NewBoolVar(f"tiene_{p.id}_{dia_ord}")
+                # tiene = 1 si alguno de los slots de ese día está asignado
+                model.AddMaxEquality(tiene, [x[(p.id, s_idx)] for s_idx in slot_idxs])
+                tiene_guardia_dia[p.id][dia_ord] = tiene
+
+    # Penalizar "cambios" de día a día: si tiene guardia en d pero no en d+1
+    # (o viceversa), hay un "corte" que queremos minimizar.
+    # Un corte indica que las guardias no son consecutivas.
+    penalizacion_consecutividad: List[cp_model.IntVar] = []
+
+    for p in profesores:
+        dias_prof = sorted(tiene_guardia_dia[p.id].keys())
+        if len(dias_prof) < 2:
+            continue
+
+        for i in range(len(dias_prof) - 1):
+            dia1 = dias_prof[i]
+            dia2 = dias_prof[i + 1]
+
+            # Solo considerar días consecutivos en el calendario del profesor
+            if dia2 != dia1 + 1:
+                continue  # No son días consecutivos, ignorar
+
+            tiene_d1 = tiene_guardia_dia[p.id][dia1]
+            tiene_d2 = tiene_guardia_dia[p.id][dia2]
+
+            # corte = 1 si (tiene_d1 XOR tiene_d2)
+            # Es decir, si hay guardia en uno pero no en el otro
+            corte = model.NewBoolVar(f"corte_{p.id}_{dia1}")
+
+            # XOR: corte = tiene_d1 != tiene_d2
+            # Equivalente a: corte = 1 iff (tiene_d1 + tiene_d2 == 1)
+            model.Add(tiene_d1 + tiene_d2 == 1).OnlyEnforceIf(corte)
+            model.Add(tiene_d1 + tiene_d2 != 1).OnlyEnforceIf(corte.Not())
+
+            penalizacion_consecutividad.append(corte)
+
+    n_cortes = len(penalizacion_consecutividad)
+    logger.info(f"  ✓ Objetivo 2: minimizar cortes entre días ({n_cortes} términos)")
+
+    # -------------------------------------------------------------------------
+    # OBJETIVO 3 (TERCIARIO): PREFERENCIA DE ZONA
+    # -------------------------------------------------------------------------
+    # Estrategia: Cada profesor debería hacer guardias en la MISMA zona.
+    # Maximizar la concentración: si un profesor hace N guardias,
+    # maximizar que estén en la misma zona.
+
+    # Para cada profesor, contar guardias por zona
+    penalizacion_zona: List[cp_model.IntVar] = []
+
+    for p in profesores:
+        slots_prof = prof_slots[p.id]
+        if not slots_prof or len(slots_prof) < 2:
+            continue
+
+        # Agrupar slots por zona
+        slots_por_zona: Dict[int, List[int]] = defaultdict(list)
+        for s_idx in slots_prof:
+            zona_id = slots[s_idx].zona_id
+            slots_por_zona[zona_id].append(s_idx)
+
+        if len(slots_por_zona) < 2:
+            # Solo tiene acceso a una zona, no hay penalización posible
+            continue
+
+        # guardias_en_zona[z] = número de guardias del profesor en zona z
+        guardias_en_zona: Dict[int, cp_model.IntVar] = {}
+        for zona_id, slot_idxs in slots_por_zona.items():
+            g_zona = model.NewIntVar(0, len(slot_idxs), f"gz_{p.id}_{zona_id}")
+            model.Add(g_zona == sum(x[(p.id, s_idx)] for s_idx in slot_idxs))
+            guardias_en_zona[zona_id] = g_zona
+
+        # max_en_una_zona = máximo de guardias en una sola zona
+        max_en_zona = model.NewIntVar(0, len(slots_prof), f"maxz_{p.id}")
+        model.AddMaxEquality(max_en_zona, list(guardias_en_zona.values()))
+
+        # Penalización = guardias_totales - max_en_zona
+        # (guardias fuera de la zona principal)
+        pen_zona = model.NewIntVar(0, len(slots_prof), f"penz_{p.id}")
+        model.Add(pen_zona == n_guardias[p.id] - max_en_zona)
+        penalizacion_zona.append(pen_zona)
+
+    n_pen_zona = len(penalizacion_zona)
+    logger.info(f"  ✓ Objetivo 3: maximizar concentración zona ({n_pen_zona} profesores)")
+
+    # -------------------------------------------------------------------------
+    # COMBINAR OBJETIVOS CON PESOS
+    # -------------------------------------------------------------------------
+    # Prioridad: Equidad >> Consecutividad > Zona
+    # Pesos elegidos para que la equidad siempre tenga prioridad absoluta.
+    # Una vez garantizada equidad perfecta (max_dev=0, sum_desv=0),
+    # los objetivos secundarios se optimizan con consecutividad prioritaria.
+    PESO_EQUIDAD = 1000000      # Máxima prioridad (garantiza equidad primero)
+    PESO_EQUIDAD_SUMA = 10000   # Suma de desviaciones (secundario a max_dev)
+    PESO_CONSECUTIVIDAD = 10    # Minimizar cortes entre días (prioritario)
+    PESO_ZONA = 3               # Preferencia de zona (secundario)
+
+    objetivo = (
+        PESO_EQUIDAD * max_dev +
+        PESO_EQUIDAD_SUMA * sum(desviaciones) +
+        PESO_CONSECUTIVIDAD * sum(penalizacion_consecutividad) +
+        PESO_ZONA * sum(penalizacion_zona)
+    )
+
+    model.Minimize(objetivo)
+
+    logger.info(
+        f"  ✓ Objetivo combinado: equidad({PESO_EQUIDAD}*max + {PESO_EQUIDAD_SUMA}*sum) "
+        f"+ consec({PESO_CONSECUTIVIDAD}) + zona({PESO_ZONA})"
+    )
 
     # =========================================================================
-    # FASE 5: GENERAR HINTS (SOLUCIÓN INICIAL GREEDY)
+    # FASE 5: GENERAR HINTS (SOLUCIÓN INICIAL GREEDY MEJORADA)
     # =========================================================================
     if use_hints:
         logger.info("")
-        logger.info("FASE 5: GENERANDO HINTS (Greedy)")
+        logger.info("FASE 5: GENERANDO HINTS (Greedy mejorado)")
         logger.info("-" * 80)
         reportar(30, "Generando solución inicial...")
 
@@ -491,9 +630,19 @@ def generar_guardias_cpsat(
         guardias_por_dia_greedy: Dict[Tuple[int, date], Set[int]] = defaultdict(set)
         momento_ocupado: Set[Tuple[int, date, str, int]] = set()
 
+        # Tracking adicional para consecutividad y zona
+        # prof_id -> último día ordinal con guardia
+        ultimo_dia_guardia: Dict[int, int] = {}
+        # prof_id -> {zona: count}
+        zona_principal: Dict[int, Dict[int, int]] = defaultdict(
+            lambda: defaultdict(int)
+        )
+
         for s_idx in range(len(slots)):
             slot = slots[s_idx]
+            dia_ord = dia_a_ordinal[slot.fecha]
             candidatos = []
+
             for p_id in slot_profs[s_idx]:
                 # Max 1/día
                 if guardias_por_dia_greedy[(p_id, slot.fecha)]:
@@ -505,22 +654,49 @@ def generar_guardias_cpsat(
                 candidatos.append(p_id)
 
             if candidatos:
-                # Elegir el de menor asignación normalizada
-                mejor = min(
-                    candidatos,
-                    key=lambda pid: asig_greedy[pid] / max(cuotas_ideales[pid], 0.1),
-                )
+                # Función de scoring multi-criterio:
+                # 1. Equidad (principal): menor ratio asignado/cuota
+                # 2. Consecutividad: bonus si el día es consecutivo al último
+                # 3. Zona: bonus si es la zona principal del profesor
+
+                def score_candidato(pid):
+                    # Score de equidad (menor es mejor)
+                    ratio = asig_greedy[pid] / max(cuotas_ideales[pid], 0.1)
+
+                    # Bonus consecutividad (menor es mejor, restamos bonus)
+                    bonus_consec = 0
+                    if pid in ultimo_dia_guardia:
+                        diff = dia_ord - ultimo_dia_guardia[pid]
+                        if diff == 1:  # Día consecutivo
+                            bonus_consec = -0.1  # Bonus fuerte
+                        elif diff <= 3:  # Cercano
+                            bonus_consec = -0.02
+
+                    # Bonus zona (menor es mejor)
+                    bonus_zona = 0
+                    if zona_principal[pid]:
+                        zona_mas_usada = max(zona_principal[pid], key=zona_principal[pid].get)
+                        if slot.zona_id == zona_mas_usada:
+                            bonus_zona = -0.05  # Bonus moderado
+
+                    return ratio + bonus_consec + bonus_zona
+
+                mejor = min(candidatos, key=score_candidato)
                 slot_asignado[s_idx] = mejor
                 asig_greedy[mejor] += 1
                 guardias_por_dia_greedy[(mejor, slot.fecha)].add(s_idx)
                 momento = (mejor, slot.fecha, slot.turno, slot.recreo_id)
                 momento_ocupado.add(momento)
 
+                # Actualizar tracking
+                ultimo_dia_guardia[mejor] = dia_ord
+                zona_principal[mejor][slot.zona_id] += 1
+
         # Aplicar hints al modelo
         for s_idx, p_id in slot_asignado.items():
             model.AddHint(x[(p_id, s_idx)], 1)
 
-        logger.info(f"  ✓ Hint greedy: {len(slot_asignado)}/{len(slots)} slots")
+        logger.info(f"  ✓ Hint greedy mejorado: {len(slot_asignado)}/{len(slots)} slots")
 
     # =========================================================================
     # FASE 6: RESOLVER
@@ -590,6 +766,7 @@ def generar_guardias_cpsat(
     logger.info("MÉTRICAS FINALES")
     logger.info("-" * 80)
 
+    # Métricas de equidad
     diferencias = [asignaciones[p.id] - cuotas_ideales[p.id] for p in profesores]
     max_desviacion = max(abs(d) for d in diferencias)
     desviacion_media = sum(abs(d) for d in diferencias) / len(diferencias)
@@ -601,6 +778,40 @@ def generar_guardias_cpsat(
     logger.info(f"  Índice de Equidad: {indice_equidad:.1f}%")
     logger.info(f"  Máxima desviación: {max_desviacion:.1f} guardias")
     logger.info(f"  Desviación media: {desviacion_media:.2f} guardias")
+
+    # Métricas de consecutividad (analizar guardias generadas)
+    guardias_por_prof: Dict[int, List[date]] = defaultdict(list)
+    for g in guardias:
+        guardias_por_prof[g.profesor_id].append(g.fecha)
+
+    huecos_totales = 0
+    profs_con_huecos = 0
+    for p_id, fechas in guardias_por_prof.items():
+        if len(fechas) < 2:
+            continue
+        fechas_ord = sorted(set(fechas))
+        dias_ord_prof = [dia_a_ordinal[f] for f in fechas_ord]
+        for i in range(len(dias_ord_prof) - 1):
+            salto = dias_ord_prof[i+1] - dias_ord_prof[i]
+            if salto > 1:
+                huecos_totales += (salto - 1)
+                profs_con_huecos += 1
+
+    logger.info(f"  Huecos en consecutividad: {huecos_totales} días")
+
+    # Métricas de zona (analizar concentración)
+    zonas_por_prof: Dict[int, Dict[int, int]] = defaultdict(lambda: defaultdict(int))
+    for g in guardias:
+        zonas_por_prof[g.profesor_id][g.zona_id] += 1
+
+    total_fuera_zona_principal = 0
+    for p_id, zonas_count in zonas_por_prof.items():
+        if zonas_count:
+            max_zona = max(zonas_count.values())
+            total_prof = sum(zonas_count.values())
+            total_fuera_zona_principal += (total_prof - max_zona)
+
+    logger.info(f"  Guardias fuera de zona principal: {total_fuera_zona_principal}")
     logger.info(f"  Solución óptima: {'SÍ' if es_optimo else 'NO (tiempo agotado)'}")
 
     opt_str = 'Óptimo' if es_optimo else 'Factible'

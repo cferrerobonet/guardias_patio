@@ -122,6 +122,7 @@ class CalcularCuotasUseCase:
                         cuota_esperada=cuota,
                         porcentaje_jornada=profesor.porcentaje_jornada,
                         cuota_asignada=0,  # Se llenará cuando haya guardias asignadas
+                        turno=profesor.turno or "mixto",
                     )
                 )
 

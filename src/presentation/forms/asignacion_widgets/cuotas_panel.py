@@ -248,25 +248,74 @@ class CuotasPanel(QGroupBox):
 
         # Separador
         lineas.append(format_terminal_info("─" * 50))
-        lineas.append(format_terminal_label("📋 CUOTAS POR PROFESOR (ordenado por cuota):"))
+        lineas.append(format_terminal_label("📋 CUOTAS POR PROFESOR (ordenado por turno):"))
         lineas.append(format_terminal_info("─" * 50))
         lineas.append("")
 
-        # Ordenar por cuota descendente
-        cuotas_ordenadas = sorted(
-            response.cuotas_detalle,
-            key=lambda c: c.cuota_esperada,
-            reverse=True,
-        )
+        # Agrupar por turno y ordenar alfabéticamente dentro de cada grupo
+        def normalizar_turno(turno: str) -> str:
+            """Normaliza el nombre del turno."""
+            t = (turno or "mixto").lower().strip()
+            if t in ("mañana", "manana", "morning"):
+                return "mañana"
+            elif t in ("tarde", "afternoon"):
+                return "tarde"
+            else:
+                return "mixto"
 
-        # Mostrar cada profesor
-        for cuota_dto in cuotas_ordenadas:
-            nombre = format_terminal_profesor(cuota_dto.profesor_nombre)
-            jornada = f"{cuota_dto.porcentaje_jornada:.0f}%"
-            cuota = format_terminal_number(str(cuota_dto.cuota_esperada))
-            turno_info = format_terminal_info(f"({jornada})")
+        # Separar en categorías
+        turno_manana = []
+        turno_tarde = []
+        turno_mixto = []
 
-            lineas.append(f"  • {nombre} {turno_info}: {cuota} guardias")
+        for cuota_dto in response.cuotas_detalle:
+            turno = normalizar_turno(cuota_dto.turno)
+            if turno == "mañana":
+                turno_manana.append(cuota_dto)
+            elif turno == "tarde":
+                turno_tarde.append(cuota_dto)
+            else:
+                turno_mixto.append(cuota_dto)
+
+        # Ordenar cada grupo alfabéticamente por nombre
+        turno_manana.sort(key=lambda c: c.profesor_nombre)
+        turno_tarde.sort(key=lambda c: c.profesor_nombre)
+        turno_mixto.sort(key=lambda c: c.profesor_nombre)
+
+        # Mostrar TURNO MAÑANA
+        if turno_manana:
+            lineas.append(format_terminal_success("☀️ TURNO MAÑANA"))
+            lineas.append("")
+            for cuota_dto in turno_manana:
+                nombre = format_terminal_profesor(cuota_dto.profesor_nombre)
+                jornada = f"{cuota_dto.porcentaje_jornada:.0f}%"
+                cuota = format_terminal_number(str(cuota_dto.cuota_esperada))
+                turno_info = format_terminal_info(f"({jornada})")
+                lineas.append(f"  • {nombre} {turno_info}: {cuota} guardias")
+            lineas.append("")
+
+        # Mostrar TURNO TARDE
+        if turno_tarde:
+            lineas.append(format_terminal_success("🌙 TURNO TARDE"))
+            lineas.append("")
+            for cuota_dto in turno_tarde:
+                nombre = format_terminal_profesor(cuota_dto.profesor_nombre)
+                jornada = f"{cuota_dto.porcentaje_jornada:.0f}%"
+                cuota = format_terminal_number(str(cuota_dto.cuota_esperada))
+                turno_info = format_terminal_info(f"({jornada})")
+                lineas.append(f"  • {nombre} {turno_info}: {cuota} guardias")
+            lineas.append("")
+
+        # Mostrar TURNO MIXTO
+        if turno_mixto:
+            lineas.append(format_terminal_success("🔄 TURNO MIXTO"))
+            lineas.append("")
+            for cuota_dto in turno_mixto:
+                nombre = format_terminal_profesor(cuota_dto.profesor_nombre)
+                jornada = f"{cuota_dto.porcentaje_jornada:.0f}%"
+                cuota = format_terminal_number(str(cuota_dto.cuota_esperada))
+                turno_info = format_terminal_info(f"({jornada})")
+                lineas.append(f"  • {nombre} {turno_info}: {cuota} guardias")
 
         lineas.append("")
 

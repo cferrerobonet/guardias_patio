@@ -7,6 +7,66 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.2.0] - 2025-12-08
+
+### 🎯 Resumen
+
+**Algoritmo CP-SAT optimizado con 3 objetivos**: Equidad perfecta (IE=100%), consecutividad de guardias, y preferencia de zona. Mejoras en UI para organizar profesores por turno.
+
+### ✨ Added
+
+#### Algoritmo CP-SAT Multi-Objetivo
+- **Objetivo 1 - Equidad perfecta**: 
+  - Índice de Equidad (IE) = 100%
+  - Máxima desviación = 0 guardias por profesor
+  - Pesos: `PESO_EQUIDAD=1,000,000`, `PESO_EQUIDAD_SUMA=10,000`
+
+- **Objetivo 2 - Consecutividad de guardias**:
+  - Las guardias de cada profesor son lo más consecutivas posibles
+  - Minimiza "cortes" entre días (cambios día con guardia ↔ día sin guardia)
+  - Resultado: ~30% menos bloques por profesor (de ~22 a ~15)
+  - Peso: `PESO_CONSECUTIVIDAD=10`
+
+- **Objetivo 3 - Preferencia de zona**:
+  - Cada profesor hace guardias preferentemente en la misma zona
+  - Maximiza concentración en zona principal
+  - Resultado: ~85% guardias en zona principal (vs ~68% antes)
+  - Peso: `PESO_ZONA=3`
+
+#### Greedy Mejorado para Hints
+- Función de scoring multi-criterio para solución inicial:
+  - Bonus por días consecutivos (`-0.1`)
+  - Bonus por zona principal (`-0.05`)
+  - Tracking de último día y zona principal por profesor
+
+### Changed
+
+#### UI - Organización por Turno
+- **CuotasPanel**: Profesores agrupados por turno (☀️ MAÑANA, 🌙 TARDE, 🔄 MIXTO)
+- **ResultadosPanel**: Misma organización por turno con ordenación alfabética
+- **GeneracionPanel**: Algoritmo Óptimo (CP-SAT) seleccionado por defecto
+
+#### DTOs
+- **CuotaProfesorDTO**: Añadido campo `turno: str` para agrupar profesores
+- **calcular_cuotas_use_case.py**: Incluye turno del profesor en DTOs
+
+### 📊 Métricas de Mejora
+
+| Métrica | Antes (v4 Híbrido) | Después (CP-SAT) | Mejora |
+|---------|-------------------|------------------|--------|
+| Índice de Equidad | ~60-80% | **100%** | +20-40% |
+| Bloques/profesor | ~22 | ~15 | -30% |
+| % zona principal | ~68% | ~85% | +17% |
+| Tiempo ejecución | ~1-2s | ~10-30s | Trade-off |
+
+### 🔧 Technical
+
+- **Jerarquía de pesos**: `Equidad >> Consecutividad > Zona`
+- **Solver config**: 8 workers, timeout 120s, linearization_level=2
+- **Variables**: ~170,000 booleanas para 67 profesores × 2516 slots
+
+---
+
 ## [3.1.1] - 2025-01-13
 
 ### 🎯 Resumen

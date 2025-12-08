@@ -9,12 +9,13 @@
 <!-- Security & Release -->
 [![Security](https://img.shields.io/badge/Security-✅_0_vulnerabilities-success.svg)](docs/archive/auditoria/SECURITY_FIX_20251108.md)
 [![Release](https://img.shields.io/github/v/release/cferrerobonet/guardias_patio)](https://github.com/cferrerobonet/guardias_patio/releases/latest)
-![Version](https://img.shields.io/badge/Version-3.1.0-blue.svg)
+![Version](https://img.shields.io/badge/Version-3.2.0-blue.svg)
 
 <!-- Tech Stack -->
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.7.0-orange.svg)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-red.svg)
+![OR-Tools](https://img.shields.io/badge/OR--Tools-CP--SAT-blueviolet.svg)
 
 <!-- Architecture & Standards -->
 ![Arquitectura](https://img.shields.io/badge/Arquitectura-Clean-brightgreen.svg)
@@ -22,11 +23,11 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Linting: ruff](https://img.shields.io/badge/linting-ruff-blueviolet.svg)](https://github.com/astral-sh/ruff)
 
-**Aplicación de escritorio profesional** para la gestión integral de guardias de patio en centros educativos. Asignación automática equitativa con algoritmo optimizado, gestión completa de ausencias y sustituciones, calendario interactivo, y arquitectura limpia con ~40% de cobertura de tests.
+**Aplicación de escritorio profesional** para la gestión integral de guardias de patio en centros educativos. Asignación automática con **equidad perfecta (IE=100%)** usando algoritmo CP-SAT de Google OR-Tools, optimización de consecutividad y preferencia de zona, gestión completa de ausencias y sustituciones, calendario interactivo, y arquitectura limpia.
 
-> 🧪 **v3.1.0 Released** - Mejora suite de tests: 990 passed, 36 skipped (+33 tests recuperados)
+> 🎯 **v3.2.0 Released** - Algoritmo CP-SAT con 3 objetivos: equidad perfecta, consecutividad y zona
+> 🧪 **v3.1.0** - Mejora suite de tests: 990 passed, 36 skipped
 > 📊 **v3.0.2** - Dashboard de Equidad + API REST con 8 endpoints (FastAPI)
-> 📈 **v3.0.1** - Seguridad: 0 vulnerabilidades, SFTP seguro  
 > 📚 [Ver Changelog](docs/CHANGELOG.md) | [Guía de Usuario](docs/user/USER_GUIDE.md) | [Guía Técnica](docs/dev/TECHNICAL_GUIDE.md)
 
 ---
@@ -46,9 +47,15 @@
 
 ## ✨ Características Principales
 
-### 🎯 Gestión Completa
-- ✅ **Asignación Automática Inteligente**: Algoritmo v3.0 con distribución equitativa según % de jornada
-- ✅ **Gestión de Ausencias**: Sistema completo de sustituciones con búsqueda automática de compatibles
+### 🎯 Algoritmo de Asignación CP-SAT
+- ✅ **Equidad Perfecta**: Índice de Equidad (IE) = 100%, máxima desviación = 0
+- ✅ **Guardias Consecutivas**: Minimiza cambios entre días (~30% menos bloques)
+- ✅ **Preferencia de Zona**: ~85% guardias en zona principal por profesor
+- ✅ **Optimización Multi-objetivo**: Jerarquía Equidad >> Consecutividad > Zona
+- ✅ **Solución Óptima Garantizada**: Google OR-Tools CP-SAT solver
+
+### 🗓️ Gestión Completa
+- ✅ **Gestión de Ausencias**: Sistema completo de sustituciones con búsqueda automática
 - ✅ **Calendario Interactivo**: Vista mensual con filtros por profesor, zona y turno
 - ✅ **Dashboard de Equidad**: Visualización con gráficos en tiempo real (matplotlib)
 - ✅ **API REST**: Endpoints FastAPI para integraciones externas y mobile
@@ -65,12 +72,10 @@
 
 ### 🎨 UX/UI Moderna
 - ✅ **Fluent Design**: Interfaz moderna inspirada en Windows 11
-- ✅ **Responsive**: Validación automática de resolución (mínimo 1280x720)
+- ✅ **Organización por Turno**: Profesores agrupados (☀️ Mañana, 🌙 Tarde, 🔄 Mixto)
 - ✅ **Feedback Visual**: Indicadores de progreso y confirmaciones contextuales
 - ✅ **Tooltips Intuitivos**: ~85% de campos con ayuda contextual
-- ✅ **Confirmaciones Inteligentes**: Solo en acciones destructivas (100% apropiadas)
 - ✅ **Atajos de Teclado**: 50+ shortcuts documentados
-- ✅ **Patrones UX Consistentes**: Guía de patrones para desarrollo
 - ✅ **Puntuación UX**: 8.2/10 según auditoría independiente
 
 ---
