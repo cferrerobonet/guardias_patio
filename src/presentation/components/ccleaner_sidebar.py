@@ -333,8 +333,9 @@ class SidebarMenu(QWidget):
         info_layout.setContentsMargins(16, 12, 16, 12)
         info_layout.setSpacing(8)
 
-        # Versión (más destacada)
+        # Versión (más destacada) - centrada
         version_label = QLabel(f"📦 v{APP_VERSION}")
+        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         version_label.setStyleSheet("""
             QLabel {
                 color: rgba(255, 255, 255, 0.85);
