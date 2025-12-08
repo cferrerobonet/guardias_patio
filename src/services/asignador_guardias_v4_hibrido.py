@@ -1,6 +1,6 @@
 """
-Asignador de Guardias v4.0 Híbrido
-===================================
+Asignador de Guardias v4.0 Híbrido (MEJORADO v4.1)
+===================================================
 
 Algoritmo híbrido que combina lo mejor de v2.9 (cobertura) y v3.0 (simplicidad).
 
@@ -9,7 +9,14 @@ PRINCIPIOS DE DISEÑO:
 2. EQUIDAD GARANTIZADA: Profesores equivalentes reciben ±1 guardia
 3. DETERMINISMO: Mismo input → mismo output (sin aleatoridad)
 4. PRIORIDADES CLARAS: Profesores urgentes (fecha_inicio cercana) primero
-5. CONSISTENCIA DE PATRONES: Mantener zona/recreo/día cuando sea posible
+5. CONSECUTIVIDAD: Guardias de cada profesor en días seguidos (MEJORADO v4.1)
+6. PREFERENCIA DE ZONA: Cada profesor en la misma zona siempre que sea posible
+
+MEJORAS v4.1 (Diciembre 2025):
+- Scoring mejorado: consecutividad como máxima prioridad
+- Bonus fuerte para días consecutivos (distancia=1)
+- Penalización progresiva para días lejanos
+- Zona preferida como segunda prioridad
 
 FASES DEL ALGORITMO:
 - Fase 0: Preparación (slots, cuotas, elegibilidad)
@@ -22,6 +29,7 @@ COMPARATIVA:
 - v2.9: 7 fases, ~2400 líneas, SA innecesario
 - v3.0: 5 pasos, ~923 líneas, sin completitud
 - v4.0: 5 fases, ~700 líneas, lo mejor de ambos
+- v4.1: + consecutividad + zona como prioridades principales
 """
 
 from __future__ import annotations
@@ -406,34 +414,53 @@ def _score_slot(
 
     Menor valor = mejor slot (se ordenan ASC).
 
-    Criterios (en orden de prioridad):
-    1. Zona preferida / consistente
-    2. Recreo consistente
-    3. Fechas agrupadas (cerca de última asignación)
-    4. Día de semana consistente
+    Criterios (en orden de prioridad) - MEJORADO v4.1:
+    1. Consecutividad: días seguidos a la última guardia (MÁXIMA PRIORIDAD)
+    2. Zona preferida / consistente
+    3. Recreo consistente
+    4. Día de semana consistente (menor prioridad)
     5. Fecha cronológica
     6. Recreo (desempate)
+
+    La consecutividad es clave para que cada profesor termine sus guardias
+    lo antes posible y tenga períodos libres más largos.
     """
-    # 1. Zona preferida / consistente
-    zona_objetivo = ctx.ultima_zona.get(profesor.id) or getattr(profesor, "zona_preferida_id", None)
+    fecha_base = ctx.ultima_fecha.get(profesor.id)
+
+    # 1. CONSECUTIVIDAD (MÁXIMA PRIORIDAD)
+    # Priorizar fechas consecutivas o muy cercanas a la última guardia
+    if fecha_base:
+        distancia_dias = abs((slot.fecha - fecha_base).days)
+        # Bonus fuerte si es día consecutivo
+        if distancia_dias == 1:
+            consecutividad = 0  # Perfecto: día siguiente
+        elif distancia_dias <= 3:
+            consecutividad = 1  # Muy cercano
+        elif distancia_dias <= 7:
+            consecutividad = 2  # Misma semana
+        else:
+            consecutividad = 3 + (distancia_dias // 7)  # Penalización progresiva
+    else:
+        # Sin guardias previas, preferir fechas más tempranas
+        consecutividad = 0
+        distancia_dias = 0
+
+    # 2. Zona preferida / consistente
+    zona_objetivo = ctx.ultima_zona.get(profesor.id) or getattr(
+        profesor, "zona_preferida_id", None
+    )
     zona_match = 0 if zona_objetivo and slot.zona_id == zona_objetivo else 1
 
-    # 2. Recreo consistente
+    # 3. Recreo consistente
     recreo_objetivo = ctx.ultimo_recreo.get(profesor.id)
     recreo_match = 0 if recreo_objetivo and slot.recreo_id == recreo_objetivo else 1
 
-    # 3. Fechas agrupadas
-    fecha_base = ctx.ultima_fecha.get(profesor.id)
-    if fecha_base:
-        distancia_dias = abs((slot.fecha - fecha_base).days)
-    else:
-        distancia_dias = 0
-
-    # 4. Día de semana consistente
+    # 4. Día de semana consistente (baja prioridad)
     dia_objetivo = fecha_base.weekday() if fecha_base else None
     dia_match = 0 if dia_objetivo is not None and slot.fecha.weekday() == dia_objetivo else 1
 
-    return (zona_match, recreo_match, distancia_dias, dia_match, slot.fecha, slot.recreo_id)
+    # Orden de tupla: consecutividad > zona > recreo > día > fecha > recreo_id
+    return (consecutividad, zona_match, recreo_match, dia_match, slot.fecha, slot.recreo_id)
 
 
 def _seleccionar_mejor_slot(

@@ -7,6 +7,43 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.2.1] - 2025-12-08
+
+### 🎯 Resumen
+
+**Mejora del algoritmo Híbrido v4.1**: El algoritmo rápido ahora también prioriza consecutividad y zona. **Limpieza del proyecto** con reducción significativa del tamaño.
+
+### ✨ Added
+
+#### Algoritmo Híbrido v4.1
+- **Consecutividad como prioridad máxima**: 
+  - Scoring mejorado en `_score_slot()` que prioriza días consecutivos
+  - Bonus fuerte para distancia=1 día (perfecto)
+  - Penalización progresiva para días lejanos (>7 días)
+  
+- **Zona preferida como segunda prioridad**:
+  - Cada profesor se asigna preferentemente a la misma zona
+  - Tracking de zona más usada por profesor
+
+### Changed
+
+- Docstring del módulo actualizado a v4.1
+- Reorganización de prioridades de scoring:
+  1. Consecutividad (MÁXIMA PRIORIDAD)
+  2. Zona preferida
+  3. Recreo consistente
+  4. Día de semana (baja prioridad)
+
+### 🧹 Housekeeping
+
+- Limpieza de caché: `__pycache__`, `.pytest_cache`, `.ruff_cache`
+- Eliminación de archivos temporales: `.coverage`, `coverage.xml`, `htmlcov/`
+- Limpieza de logs antiguos (>7 días)
+- Eliminación de `.DS_Store`
+- **Reducción de ~160MB** en el tamaño del proyecto
+
+---
+
 ## [3.2.0] - 2025-12-08
 
 ### 🎯 Resumen
