@@ -4,11 +4,14 @@ Use Case: Generar calendario de guardias.
 Genera todas las guardias del curso y las guarda en la base de datos.
 """
 
+import json
+from datetime import datetime
+from pathlib import Path
 from typing import Callable, Optional
 
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
-from infrastructure.database.models import Configuracion, Guardia
+from infrastructure.database.models import Configuracion, Guardia, Profesor
 from services.asignador_guardias_v4_hibrido import (
     generar_guardias_v4_hibrido,
     guardar_guardias_en_bd,
@@ -120,6 +123,9 @@ class GenerarGuardiasUseCase:
 
             logger.info(f"Guardias generadas: {total_generado} de {esperado} esperados")
 
+            # Exportar comparación cuotas vs asignaciones para análisis
+            self._exportar_comparacion_cuotas(resumen)
+
             return ResumenGeneracionDTO(
                 guardias_generadas=total_generado,
                 slots_esperados=esperado,
@@ -152,3 +158,87 @@ class GenerarGuardiasUseCase:
             )
         else:
             return f"✅ {total_generado} guardias generadas de {esperado} esperados"
+
+    def _exportar_comparacion_cuotas(self, asignaciones: dict) -> None:
+        """
+        Exporta la comparación entre cuotas calculadas y guardias asignadas.
+
+        Genera un archivo JSON con:
+        - Cuotas ideales calculadas por el servicio de distribución
+        - Guardias realmente asignadas por el algoritmo
+        - Diferencia (delta) entre ambos
+        - Timestamp de generación
+
+        El archivo se guarda en: logs/comparacion_cuotas_YYYYMMDD_HHMMSS.json
+        """
+        try:
+            from domain.services import DistribucionCuotasService
+
+            # Calcular cuotas ideales
+            cuotas_service = DistribucionCuotasService(self.session)
+            profesores = (
+                self.session.query(Profesor).filter(Profesor.activo.is_(True)).all()
+            )
+            cuotas_ideales = cuotas_service.calcular_cuotas(profesores)
+
+            # Construir comparación
+            comparacion = {
+                "timestamp": datetime.now().isoformat(),
+                "resumen": {
+                    "total_cuotas_ideales": sum(cuotas_ideales.values()),
+                    "total_asignadas": sum(asignaciones.values()),
+                    "diferencia_global": sum(asignaciones.values())
+                    - sum(cuotas_ideales.values()),
+                },
+                "profesores": [],
+            }
+
+            # Añadir detalle por profesor
+            for profesor in profesores:
+                cuota = cuotas_ideales.get(profesor.id, 0)
+                asignada = asignaciones.get(profesor.id, 0)
+                delta = asignada - cuota
+
+                comparacion["profesores"].append(
+                    {
+                        "id": profesor.id,
+                        "nombre": profesor.nombre_completo,
+                        "porcentaje_jornada": profesor.porcentaje_jornada or 100,
+                        "turno": profesor.turno or "mixto",
+                        "cuota_ideal": cuota,
+                        "guardias_asignadas": asignada,
+                        "diferencia": delta,
+                        "cumple_cuota": abs(delta) <= 1,
+                    }
+                )
+
+            # Ordenar por diferencia (mayor discrepancia primero)
+            comparacion["profesores"].sort(
+                key=lambda x: abs(x["diferencia"]), reverse=True
+            )
+
+            # Añadir estadísticas de discrepancias
+            discrepancias = [
+                p for p in comparacion["profesores"] if abs(p["diferencia"]) > 1
+            ]
+            comparacion["resumen"]["profesores_con_discrepancia"] = len(discrepancias)
+            comparacion["resumen"]["max_discrepancia"] = (
+                max(abs(p["diferencia"]) for p in comparacion["profesores"])
+                if comparacion["profesores"]
+                else 0
+            )
+
+            # Guardar archivo
+            logs_dir = Path("logs")
+            logs_dir.mkdir(exist_ok=True)
+
+            filename = f"comparacion_cuotas_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            filepath = logs_dir / filename
+
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(comparacion, f, ensure_ascii=False, indent=2)
+
+            logger.info(f"📊 Comparación exportada a: {filepath}")
+
+        except Exception as e:
+            logger.warning(f"No se pudo exportar comparación: {e}")
