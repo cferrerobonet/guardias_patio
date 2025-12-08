@@ -6,7 +6,6 @@ Genera todas las guardias del curso y las guarda en la base de datos.
 
 import json
 from datetime import datetime
-from pathlib import Path
 from typing import Callable, Optional
 
 from core.exceptions import BusinessLogicError
@@ -228,9 +227,10 @@ class GenerarGuardiasUseCase:
                 else 0
             )
 
-            # Guardar archivo
-            logs_dir = Path("logs")
-            logs_dir.mkdir(exist_ok=True)
+            # Guardar archivo en el directorio de logs
+            from core.paths import get_logs_directory
+
+            logs_dir = get_logs_directory()
 
             filename = f"comparacion_cuotas_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
             filepath = logs_dir / filename
