@@ -114,7 +114,7 @@ class DialogoAcercaDe(QDialog):
         # Información básica
         info_items = [
             ("👤 Autor:", APP_AUTHOR),
-            ("📧 Contacto:", "cferrerobonet@gmail.com"),
+            ("📧 Contacto:", "cferrerobonet@epla.es"),
             ("🔄 Última actualización:", APP_LAST_UPDATE),
             ("🌐 Repositorio:", "github.com/cferrerobonet/guardias_patio"),
         ]
