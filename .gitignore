@@ -41,6 +41,10 @@ desktop.ini
 .env.local
 *.env
 
+# Archivos de configuración con credenciales encriptadas
+sftp_config.json
+smtp_config.json
+
 # Base de datos de desarrollo (se regenera con: alembic upgrade head)
 guardias_patio.db
 *.db

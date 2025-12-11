@@ -5,6 +5,8 @@ Valida y configura SMTP y SFTP al iniciar la aplicación por primera vez
 o cuando falte configuración crítica.
 """
 
+import base64
+import json
 import os
 import smtplib
 
@@ -13,6 +15,7 @@ from dotenv import load_dotenv
 from PyQt6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
+    QFileDialog,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -212,13 +215,16 @@ class InitialConfigDialog(QDialog):
         info_text = QLabel(
             "<p><b>El servidor SFTP es crítico</b> para el funcionamiento de la aplicación:</p>"
             "<ul>"
-            "<li>✅ <b>Sincronización en la nube:</b> Permite trabajar desde múltiples dispositivos</li>"
-            "<li>✅ <b>Copias de seguridad automáticas:</b> Tus datos están siempre protegidos</li>"
-            "<li>✅ <b>Recuperación ante fallos:</b> Si pierdes tu dispositivo, tus datos están seguros</li>"
+            "<li>✅ <b>Sincronización en la nube:</b> Permite trabajar desde múltiples "
+            "dispositivos</li>"
+            "<li>✅ <b>Copias de seguridad automáticas:</b> Tus datos están siempre "
+            "protegidos</li>"
+            "<li>✅ <b>Recuperación ante fallos:</b> Si pierdes tu dispositivo, tus datos "
+            "están seguros</li>"
             "</ul>"
             "<p style='color: #dc2626; font-weight: bold;'>"
-            "⚠️ Sin SFTP configurado, la aplicación no puede garantizar la seguridad de tus datos "
-            "ni permitir el trabajo colaborativo."
+            "⚠️ Sin SFTP configurado, la aplicación no puede garantizar la seguridad "
+            "de tus datos ni permitir el trabajo colaborativo."
             "</p>"
         )
         info_text.setWordWrap(True)
@@ -311,6 +317,27 @@ class InitialConfigDialog(QDialog):
         action_row.addWidget(self.sftp_save_btn)
 
         form_layout.addLayout(action_row)
+
+        # Botón de carga desde JSON encriptado
+        load_json_row = QHBoxLayout()
+        self.sftp_load_json_btn = QPushButton("📂 Cargar desde JSON encriptado")
+        self.sftp_load_json_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6366f1;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #4f46e5;
+            }
+        """)
+        self.sftp_load_json_btn.clicked.connect(self._load_sftp_from_json)
+        load_json_row.addWidget(self.sftp_load_json_btn)
+        load_json_row.addStretch()
+
+        form_layout.addLayout(load_json_row)
 
         form_box.setLayout(form_layout)
         layout.addWidget(form_box)
@@ -440,6 +467,27 @@ class InitialConfigDialog(QDialog):
         smtp_action_row.addWidget(self.smtp_save_btn)
 
         form_layout.addLayout(smtp_action_row)
+
+        # Botón de carga desde JSON encriptado
+        smtp_load_json_row = QHBoxLayout()
+        self.smtp_load_json_btn = QPushButton("📂 Cargar desde JSON encriptado")
+        self.smtp_load_json_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6366f1;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #4f46e5;
+            }
+        """)
+        self.smtp_load_json_btn.clicked.connect(self._load_smtp_from_json)
+        smtp_load_json_row.addWidget(self.smtp_load_json_btn)
+        smtp_load_json_row.addStretch()
+
+        form_layout.addLayout(smtp_load_json_row)
 
         form_box.setLayout(form_layout)
         layout.addWidget(form_box)
@@ -867,3 +915,116 @@ class InitialConfigDialog(QDialog):
         )
 
         return not sftp_complete
+
+    def _decrypt_value(self, encrypted_value: str) -> str:
+        """Desencripta un valor codificado en base64."""
+        try:
+            return base64.b64decode(encrypted_value.encode("utf-8")).decode("utf-8")
+        except Exception:
+            return encrypted_value  # Si falla, asumir que ya está desencriptado
+
+    def _load_sftp_from_json(self) -> None:
+        """Carga la configuración SFTP desde un archivo JSON encriptado."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Seleccionar archivo de configuración SFTP",
+            "",
+            "Archivos JSON (*.json);;Todos los archivos (*)",
+        )
+
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            # Desencriptar y rellenar campos
+            if "host" in data:
+                self.sftp_host_input.setText(self._decrypt_value(data["host"]))
+            if "port" in data:
+                self.sftp_port_input.setText(self._decrypt_value(str(data["port"])))
+            if "username" in data:
+                self.sftp_user_input.setText(self._decrypt_value(data["username"]))
+            if "password" in data:
+                password = self._decrypt_value(data["password"])
+                self.sftp_password_input.setText(password)
+                self._sftp_password = password
+            if "base_dir" in data:
+                self.sftp_basedir_input.setText(self._decrypt_value(data["base_dir"]))
+
+            QMessageBox.information(
+                self,
+                "✅ Configuración Cargada",
+                "Los datos de SFTP se han cargado correctamente.\n\n"
+                "Ahora puedes probar la conexión y guardar la configuración.",
+            )
+
+            self._check_configuration()
+
+        except json.JSONDecodeError:
+            QMessageBox.critical(
+                self,
+                "❌ Error",
+                "El archivo no es un JSON válido.",
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "❌ Error",
+                f"No se pudo cargar el archivo:\n{str(e)}",
+            )
+            logger.error(f"Error cargando JSON SFTP: {e}")
+
+    def _load_smtp_from_json(self) -> None:
+        """Carga la configuración SMTP desde un archivo JSON encriptado."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Seleccionar archivo de configuración SMTP",
+            "",
+            "Archivos JSON (*.json);;Todos los archivos (*)",
+        )
+
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            # Desencriptar y rellenar campos
+            if "server" in data:
+                self.smtp_server_input.setText(self._decrypt_value(data["server"]))
+            if "port" in data:
+                self.smtp_port_input.setText(self._decrypt_value(str(data["port"])))
+            if "email" in data:
+                self.smtp_user_input.setText(self._decrypt_value(data["email"]))
+            if "password" in data:
+                password = self._decrypt_value(data["password"])
+                self.smtp_password_input.setText(password)
+                self._smtp_password = password
+            if "from_name" in data:
+                self.smtp_from_name_input.setText(self._decrypt_value(data["from_name"]))
+
+            QMessageBox.information(
+                self,
+                "✅ Configuración Cargada",
+                "Los datos de SMTP se han cargado correctamente.\n\n"
+                "Ahora puedes probar la conexión y guardar la configuración.",
+            )
+
+            self._check_configuration()
+
+        except json.JSONDecodeError:
+            QMessageBox.critical(
+                self,
+                "❌ Error",
+                "El archivo no es un JSON válido.",
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "❌ Error",
+                f"No se pudo cargar el archivo:\n{str(e)}",
+            )
+            logger.error(f"Error cargando JSON SMTP: {e}")

@@ -101,6 +101,164 @@ def _run_alembic_migrations(engine, db_path: Path):
         logger.info("La aplicación continuará usando create_all() para el esquema")
 
 
+def _apply_direct_migrations(engine):
+    """
+    Aplica migraciones directas con SQL para añadir columnas faltantes.
+    Esta función es un fallback cuando Alembic no funciona correctamente.
+    """
+    from sqlalchemy import inspect, text
+
+    try:
+        inspector = inspect(engine)
+        existing_tables = inspector.get_table_names()
+
+        with engine.connect() as conn:
+            # ========== TABLA PROFESORES ==========
+            if 'profesores' in existing_tables:
+                profesores_columns = [col['name'] for col in inspector.get_columns('profesores')]
+
+                # profesores.activo
+                if 'activo' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.activo...")
+                    sql = "ALTER TABLE profesores ADD COLUMN activo BOOLEAN DEFAULT 1 NOT NULL"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.activo añadida")
+
+                # profesores.zona_preferida_id
+                if 'zona_preferida_id' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.zona_preferida_id...")
+                    sql = "ALTER TABLE profesores ADD COLUMN zona_preferida_id INTEGER"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.zona_preferida_id añadida")
+
+                # profesores.dias_semana_permitidos
+                if 'dias_semana_permitidos' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.dias_semana_permitidos...")
+                    sql = "ALTER TABLE profesores ADD COLUMN dias_semana_permitidos TEXT"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.dias_semana_permitidos añadida")
+
+                # profesores.recreos_permitidos
+                if 'recreos_permitidos' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.recreos_permitidos...")
+                    conn.execute(text("ALTER TABLE profesores ADD COLUMN recreos_permitidos TEXT"))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.recreos_permitidos añadida")
+
+            # ========== TABLA CONFIGURACION ==========
+            if 'configuracion' in existing_tables:
+                config_columns = [col['name'] for col in inspector.get_columns('configuracion')]
+
+                # configuracion.anio_inicio_curso
+                if 'anio_inicio_curso' not in config_columns:
+                    logger.info("Añadiendo columna configuracion.anio_inicio_curso...")
+                    sql = "ALTER TABLE configuracion ADD COLUMN anio_inicio_curso INTEGER"
+                    conn.execute(text(sql))
+                    # Poblar desde fecha_inicio_curso
+                    conn.execute(text("""
+                        UPDATE configuracion
+                        SET anio_inicio_curso = CAST(strftime('%Y', fecha_inicio_curso) AS INTEGER)
+                        WHERE anio_inicio_curso IS NULL AND fecha_inicio_curso IS NOT NULL
+                    """))
+                    conn.commit()
+                    logger.info("✓ Columna configuracion.anio_inicio_curso añadida")
+
+                # configuracion.curso_activo_id
+                if 'curso_activo_id' not in config_columns:
+                    logger.info("Añadiendo columna configuracion.curso_activo_id...")
+                    sql = "ALTER TABLE configuracion ADD COLUMN curso_activo_id INTEGER"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna configuracion.curso_activo_id añadida")
+
+                # configuracion.algoritmo_asignacion
+                if 'algoritmo_asignacion' not in config_columns:
+                    logger.info("Añadiendo columna configuracion.algoritmo_asignacion...")
+                    sql = "ALTER TABLE configuracion ADD COLUMN algoritmo_asignacion VARCHAR DEFAULT 'v2.9' NOT NULL"  # noqa: E501
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna configuracion.algoritmo_asignacion añadida")
+
+                # configuracion.recreos_config
+                if 'recreos_config' not in config_columns:
+                    logger.info("Añadiendo columna configuracion.recreos_config...")
+                    conn.execute(text("ALTER TABLE configuracion ADD COLUMN recreos_config TEXT"))
+                    conn.commit()
+                    logger.info("✓ Columna configuracion.recreos_config añadida")
+
+            # ========== TABLA CURSOS_ESCOLARES ==========
+            if 'cursos_escolares' not in existing_tables:
+                logger.info("Creando tabla cursos_escolares...")
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS cursos_escolares (
+                        id INTEGER PRIMARY KEY,
+                        nombre VARCHAR NOT NULL,
+                        anio_inicio INTEGER NOT NULL,
+                        anio_fin INTEGER NOT NULL,
+                        fecha_inicio DATE NOT NULL,
+                        fecha_fin DATE NOT NULL,
+                        activo BOOLEAN DEFAULT 0 NOT NULL,
+                        cerrado BOOLEAN DEFAULT 0 NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                        UNIQUE(anio_inicio, anio_fin)
+                    )
+                """))
+                conn.commit()
+                logger.info("✓ Tabla cursos_escolares creada")
+            else:
+                # Verificar columna cerrado en cursos_escolares
+                cursos_columns = [col['name'] for col in inspector.get_columns('cursos_escolares')]
+                if 'cerrado' not in cursos_columns:
+                    logger.info("Añadiendo columna cursos_escolares.cerrado...")
+                    sql = "ALTER TABLE cursos_escolares ADD COLUMN cerrado BOOLEAN DEFAULT 0 NOT NULL"  # noqa: E501
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna cursos_escolares.cerrado añadida")
+
+            # ========== TABLA GUARDIAS ==========
+            if 'guardias' in existing_tables:
+                guardias_columns = [col['name'] for col in inspector.get_columns('guardias')]
+
+                # guardias.curso_id
+                if 'curso_id' not in guardias_columns:
+                    logger.info("Añadiendo columna guardias.curso_id...")
+                    sql = "ALTER TABLE guardias ADD COLUMN curso_id INTEGER"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna guardias.curso_id añadida")
+
+            # ========== TABLA AUSENCIAS ==========
+            if 'ausencias' not in existing_tables:
+                logger.info("Creando tabla ausencias...")
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS ausencias (
+                        id INTEGER PRIMARY KEY,
+                        profesor_id INTEGER NOT NULL REFERENCES profesores(id),
+                        fecha_inicio DATE NOT NULL,
+                        fecha_fin DATE NOT NULL,
+                        tipo VARCHAR NOT NULL,
+                        motivo TEXT,
+                        documento_path VARCHAR,
+                        activa BOOLEAN DEFAULT 1 NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
+                conn.commit()
+                logger.info("✓ Tabla ausencias creada")
+
+            logger.info("✓ Migraciones directas completadas")
+
+    except Exception as e:
+        logger.error(f"Error aplicando migraciones directas: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        # No lanzar excepción, continuar con el flujo normal
+
+
 def initialize_user_database(username: str):
     """
     Inicializa la base de datos para un usuario específico.
@@ -160,6 +318,9 @@ def initialize_user_database(username: str):
     from infrastructure.database.models import Base
 
     Base.metadata.create_all(bind=engine)
+
+    # Aplicar migraciones SQL directas para columnas faltantes
+    _apply_direct_migrations(engine)
 
     # Session factory para este usuario
     session_factory = sessionmaker(
@@ -252,7 +413,7 @@ def delete_user_database(username: str) -> bool:
 # URL de la base de datos (fallback para compatibilidad con scripts legacy)
 # NOTA: En producción siempre se debe usar initialize_user_database(user_id)
 # Este fallback usa ruta absoluta para evitar crear BD en directorios incorrectos
-from core.paths import get_database_path
+from core.paths import get_database_path  # noqa: E402
 
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{get_database_path()}")
 
