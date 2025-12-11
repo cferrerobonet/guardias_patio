@@ -50,7 +50,7 @@ class InitialConfigDialog(QDialog):
         self.setWindowTitle("🔧 Configuración Inicial - Guardias de Patio")
         self.setModal(True)
         self.setMinimumWidth(700)
-        self.setMinimumHeight(600)
+        self.setMinimumHeight(720)
 
         # Estado interno
         self._smtp_configured = False
@@ -309,23 +309,30 @@ class InitialConfigDialog(QDialog):
 
         # Botones de acción
         action_row = QHBoxLayout()
+        action_row.setSpacing(10)
         self.sftp_test_btn = QPushButton("🧪 Probar Conexión")
+        self.sftp_test_btn.setMinimumWidth(180)
+        self.sftp_test_btn.setMinimumHeight(36)
         self.sftp_test_btn.clicked.connect(self._test_sftp)
         self.sftp_save_btn = QPushButton("💾 Guardar Configuración")
+        self.sftp_save_btn.setMinimumWidth(180)
+        self.sftp_save_btn.setMinimumHeight(36)
         self.sftp_save_btn.clicked.connect(self._save_sftp)
         action_row.addWidget(self.sftp_test_btn)
         action_row.addWidget(self.sftp_save_btn)
 
         form_layout.addLayout(action_row)
+        form_layout.addSpacing(10)
 
         # Botón de carga desde JSON encriptado
         load_json_row = QHBoxLayout()
-        self.sftp_load_json_btn = QPushButton("📂 Cargar desde JSON encriptado")
+        self.sftp_load_json_btn = QPushButton("📂 Cargar configuración desde archivo JSON")
+        self.sftp_load_json_btn.setMinimumHeight(36)
         self.sftp_load_json_btn.setStyleSheet("""
             QPushButton {
                 background-color: #6366f1;
                 color: white;
-                padding: 8px 16px;
+                padding: 8px 20px;
                 border-radius: 5px;
                 font-weight: bold;
             }
@@ -335,7 +342,6 @@ class InitialConfigDialog(QDialog):
         """)
         self.sftp_load_json_btn.clicked.connect(self._load_sftp_from_json)
         load_json_row.addWidget(self.sftp_load_json_btn)
-        load_json_row.addStretch()
 
         form_layout.addLayout(load_json_row)
 
@@ -459,23 +465,30 @@ class InitialConfigDialog(QDialog):
 
         # Botones de acción
         smtp_action_row = QHBoxLayout()
+        smtp_action_row.setSpacing(10)
         self.smtp_test_btn = QPushButton("🧪 Probar Conexión")
+        self.smtp_test_btn.setMinimumWidth(180)
+        self.smtp_test_btn.setMinimumHeight(36)
         self.smtp_test_btn.clicked.connect(self._test_smtp)
         self.smtp_save_btn = QPushButton("💾 Guardar Configuración")
+        self.smtp_save_btn.setMinimumWidth(180)
+        self.smtp_save_btn.setMinimumHeight(36)
         self.smtp_save_btn.clicked.connect(self._save_smtp)
         smtp_action_row.addWidget(self.smtp_test_btn)
         smtp_action_row.addWidget(self.smtp_save_btn)
 
         form_layout.addLayout(smtp_action_row)
+        form_layout.addSpacing(10)
 
         # Botón de carga desde JSON encriptado
         smtp_load_json_row = QHBoxLayout()
-        self.smtp_load_json_btn = QPushButton("📂 Cargar desde JSON encriptado")
+        self.smtp_load_json_btn = QPushButton("📂 Cargar configuración desde archivo JSON")
+        self.smtp_load_json_btn.setMinimumHeight(36)
         self.smtp_load_json_btn.setStyleSheet("""
             QPushButton {
                 background-color: #6366f1;
                 color: white;
-                padding: 8px 16px;
+                padding: 8px 20px;
                 border-radius: 5px;
                 font-weight: bold;
             }
@@ -485,7 +498,6 @@ class InitialConfigDialog(QDialog):
         """)
         self.smtp_load_json_btn.clicked.connect(self._load_smtp_from_json)
         smtp_load_json_row.addWidget(self.smtp_load_json_btn)
-        smtp_load_json_row.addStretch()
 
         form_layout.addLayout(smtp_load_json_row)
 
