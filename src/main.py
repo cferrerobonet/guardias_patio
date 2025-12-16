@@ -279,11 +279,11 @@ def main():
 
         # Sincronizar datos al cerrar (exportar DB a JSON y subir a la nube)
         if sync_manager:
-            # Verificar si el backend está disponible antes de intentar sincronizar
+            # Siempre intentar sincronizar - el backend puede reconectar si es necesario
+            # No verificar si sftp es None porque _ensure_connected() puede reconectar
             backend_disponible = True
-            if hasattr(sync_manager.backend, "sftp"):
-                backend_disponible = sync_manager.backend.sftp is not None
-            elif hasattr(sync_manager.backend, "base_path"):
+            if hasattr(sync_manager.backend, "base_path"):
+                # Solo verificar LocalBackend
                 backend_disponible = sync_manager.backend.base_path is not None
 
             if backend_disponible:
