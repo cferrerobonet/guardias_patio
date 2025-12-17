@@ -4,6 +4,7 @@ Widget para operaciones de JSON (exportar/importar).
 Agrupa las funcionalidades de exportación e importación de datos en JSON.
 """
 
+import ui_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -13,8 +14,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from utils.icons import icon_for_button
 
-import ui_styles as styles
 from presentation.themes.ccleaner_theme import ERROR_RED, TEXT_SECONDARY
 
 
@@ -52,7 +53,7 @@ class JsonOperationsWidget(QWidget):
 
     def _crear_grupo_exportar(self) -> QGroupBox:
         """Crear grupo de exportación a JSON."""
-        grupo = QGroupBox("📤 EXPORTAR DATOS A JSON")
+        grupo = QGroupBox("EXPORTAR DATOS A JSON")
         grupo.setStyleSheet(styles.STYLE_GROUPBOX)
 
         layout = QVBoxLayout()
@@ -75,7 +76,8 @@ class JsonOperationsWidget(QWidget):
         layout.addWidget(info)
 
         # Botón de exportación
-        self.exportar_btn = QPushButton("💾 Exportar a JSON...")
+        self.exportar_btn = QPushButton("Exportar a JSON...")
+        self.exportar_btn.setIcon(icon_for_button("export"))
         self.exportar_btn.clicked.connect(self.exportar_solicitado.emit)
         self.exportar_btn.setMinimumHeight(40)
         self.exportar_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
@@ -86,7 +88,7 @@ class JsonOperationsWidget(QWidget):
 
     def _crear_grupo_importar(self) -> QGroupBox:
         """Crear grupo de importación desde JSON."""
-        grupo = QGroupBox("📥 IMPORTAR DATOS DESDE JSON")
+        grupo = QGroupBox("IMPORTAR DATOS DESDE JSON")
         grupo.setStyleSheet(styles.STYLE_GROUPBOX)
 
         layout = QVBoxLayout()
@@ -94,7 +96,7 @@ class JsonOperationsWidget(QWidget):
         layout.setContentsMargins(15, 20, 15, 15)
 
         # Advertencia
-        info = QLabel("⚠️ ATENCIÓN: Esto puede ELIMINAR los datos actuales si activas la opción.")
+        info = QLabel("ATENCIÓN: Esto puede ELIMINAR los datos actuales si activas la opción.")
         info.setWordWrap(True)
         info.setStyleSheet(
             f"""
@@ -125,7 +127,8 @@ class JsonOperationsWidget(QWidget):
         layout.addWidget(self.limpiar_checkbox)
 
         # Botón de importación
-        self.importar_btn = QPushButton("📂 Importar desde JSON...")
+        self.importar_btn = QPushButton("Importar desde JSON...")
+        self.importar_btn.setIcon(icon_for_button("import"))
         self.importar_btn.clicked.connect(self.importar_solicitado.emit)
         self.importar_btn.setMinimumHeight(40)
         self.importar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)

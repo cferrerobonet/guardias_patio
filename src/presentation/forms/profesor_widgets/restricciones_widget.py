@@ -12,6 +12,7 @@ import json
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
+import ui_styles as styles
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -28,7 +29,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-import ui_styles as styles
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
 
@@ -193,7 +193,7 @@ class RestriccionesWidget(QGroupBox):
         layout.setSpacing(8)
 
         # Título
-        titulo = QLabel("📋 <b>Disponibilidad por Día</b>")
+        titulo = QLabel("<b>Disponibilidad por Día</b>")
         titulo.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout.addWidget(titulo)
 
@@ -364,7 +364,7 @@ class RestriccionesWidget(QGroupBox):
         dia_nombre = dia_item.text()
 
         self.dia_editando = dia_index
-        self.label_dia_editando.setText(f"📅 {dia_nombre}")
+        self.label_dia_editando.setText(dia_nombre)
 
         # Cargar recreos del día (siempre se muestran)
         recreos_actuales = self.restricciones_dias.get(dia_index, [])

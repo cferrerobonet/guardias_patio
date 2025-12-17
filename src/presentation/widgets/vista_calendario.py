@@ -33,6 +33,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from services.calculador_guardias import listar_dias_lectivos
+from utils.icons import icon_for_button
 
 from presentation.dialogs.dia_detalle_dialog import DiaDetalleDialog
 from presentation.forms.base_form import BaseForm
@@ -97,9 +98,9 @@ class CeldaDia(QGroupBox):
         # Indicadores de estado
         indicadores = []
         if self.ausencias:
-            indicadores.append(f"🏥{len(self.ausencias)}")
+            indicadores.append(f"A:{len(self.ausencias)}")
         if self.sustituciones:
-            indicadores.append(f"🔄{len(self.sustituciones)}")
+            indicadores.append(f"S:{len(self.sustituciones)}")
 
         if indicadores:
             label_indicadores = QLabel(" ".join(indicadores))
@@ -256,7 +257,8 @@ class CeldaDia(QGroupBox):
 
         if es_sustitucion:
             # Indicador de sustitución
-            sust_label = QLabel("🔄")
+            sust_label = QLabel("S")
+            sust_label.setToolTip("Sustitución")
             sust_label.setStyleSheet("font-size: 8px;")
             sust_label.setToolTip("Sustitución")
             h_layout.addWidget(sust_label)
@@ -308,7 +310,7 @@ class CeldaDia(QGroupBox):
         h_layout.addWidget(zona_label)
 
         # Texto indicando falta de guardia
-        texto_label = QLabel("⚠️ SIN GUARDIA ASIGNADA")
+        texto_label = QLabel("SIN GUARDIA ASIGNADA")
         texto_label.setStyleSheet("font-size: 8px; color: #B71C1C; font-weight: bold;")
         h_layout.addWidget(texto_label, 1)
 
@@ -458,7 +460,7 @@ class VistaCalendario(BaseForm):
         # Cache de días lectivos
         self._dias_lectivos_cache = None
 
-        self.setWindowTitle("📅 Calendario de Guardias")
+        self.setWindowTitle("Calendario de Guardias")
         self.resize(1400, 900)
         self.setup_ui()
 
@@ -609,7 +611,8 @@ class VistaCalendario(BaseForm):
         barra_layout.addSpacing(20)
 
         # Botón Hoy
-        self.btn_hoy = QPushButton("📅 Hoy")
+        self.btn_hoy = QPushButton("Hoy")
+        self.btn_hoy.setIcon(icon_for_button("calendar"))
         self.btn_hoy.clicked.connect(self.ir_a_hoy)
         self.btn_hoy.setStyleSheet("""
             QPushButton {
@@ -651,7 +654,8 @@ class VistaCalendario(BaseForm):
         barra_layout.addStretch()
 
         # Botón refrescar
-        btn_refrescar = QPushButton("🔄 Refrescar")
+        btn_refrescar = QPushButton("Refrescar")
+        btn_refrescar.setIcon(icon_for_button("refresh"))
         btn_refrescar.clicked.connect(self.refrescar)
         btn_refrescar.setStyleSheet("""
             QPushButton {
@@ -699,7 +703,7 @@ class VistaCalendario(BaseForm):
         leyenda_layout = QHBoxLayout()
         leyenda_layout.setSpacing(15)
 
-        label_titulo = QLabel("📋 LEYENDA:")
+        label_titulo = QLabel("LEYENDA:")
         label_titulo.setStyleSheet("font-weight: bold; font-size: 10px; color: #1976D2;")
         leyenda_layout.addWidget(label_titulo)
 
@@ -708,10 +712,10 @@ class VistaCalendario(BaseForm):
             ("🟨", "Hoy", "#FFF9C4", "#FBC02D"),
             ("🟦", "Con guardias", "#E3F2FD", "#90CAF9"),
             ("🟧", "Con sustituciones", "#FFF3E0", "#FF9800"),
-            ("🟥", "Con ausencias", "#FCE4EC", "#E91E63"),
-            ("⬜", "Sin actividad", "#FAFAFA", "#E0E0E0"),
-            ("⬛", "No lectivo", "#F5F5F5", "#BDBDBD"),
-            ("⚠️", "Zona sin guardia", "#FFEBEE", "#D32F2F"),
+            ("■", "Con ausencias", "#FCE4EC", "#E91E63"),
+            ("□", "Sin actividad", "#FAFAFA", "#E0E0E0"),
+            ("■", "No lectivo", "#F5F5F5", "#BDBDBD"),
+            ("!", "Zona sin guardia", "#FFEBEE", "#D32F2F"),
         ]
 
         for emoji, texto, bg_color, border_color in items:

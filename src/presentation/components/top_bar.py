@@ -10,6 +10,7 @@ from core.qt_imports import (
     QPushButton,
     QWidget,
 )
+from utils.icons import icon_for_form
 
 from presentation.themes.ccleaner_theme import (
     SPACING_M,
@@ -39,19 +40,22 @@ class TopBar(QWidget):
         layout.addStretch()
 
         # Botones de acción rápida (usuario, configuración, etc.)
-        self.user_btn = QPushButton("👤")
+        self.user_btn = QPushButton()
+        self.user_btn.setIcon(icon_for_form("user"))
         self.user_btn.setObjectName("topbarButton")
         self.user_btn.setToolTip("Usuario")
         self.user_btn.setFixedSize(36, 36)
         layout.addWidget(self.user_btn)
 
-        self.settings_btn = QPushButton("⚙️")
+        self.settings_btn = QPushButton()
+        self.settings_btn.setIcon(icon_for_form("settings"))
         self.settings_btn.setObjectName("topbarButton")
         self.settings_btn.setToolTip("Configuración")
         self.settings_btn.setFixedSize(36, 36)
         layout.addWidget(self.settings_btn)
 
-        self.help_btn = QPushButton("❓")
+        self.help_btn = QPushButton()
+        self.help_btn.setIcon(icon_for_form("help"))
         self.help_btn.setObjectName("topbarButton")
         self.help_btn.setToolTip("Ayuda")
         self.help_btn.setFixedSize(36, 36)

@@ -27,6 +27,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from utils import get_logger
+from utils.icons import icon_for_button
 
 logger = get_logger(__name__)
 
@@ -47,7 +48,7 @@ class InitialConfigDialog(QDialog):
             parent: Widget padre
         """
         super().__init__(parent)
-        self.setWindowTitle("🔧 Configuración Inicial - Guardias de Patio")
+        self.setWindowTitle("Configuración Inicial - Guardias de Patio")
         self.setModal(True)
         self.setMinimumWidth(700)
         self.setMinimumHeight(720)
@@ -67,7 +68,7 @@ class InitialConfigDialog(QDialog):
         layout = QVBoxLayout()
 
         # Título y explicación
-        title_label = QLabel("⚙️ Configuración Inicial del Sistema")
+        title_label = QLabel("Configuración Inicial del Sistema")
         title_label.setStyleSheet("""
             QLabel {
                 font-size: 20px;
@@ -117,18 +118,18 @@ class InitialConfigDialog(QDialog):
 
         # Tab SFTP (CRÍTICO)
         self.sftp_tab = self._create_sftp_tab()
-        self.tabs.addTab(self.sftp_tab, "☁️ SFTP (Obligatorio)")
+        self.tabs.addTab(self.sftp_tab, "SFTP (Obligatorio)")
 
         # Tab SMTP (OPCIONAL)
         self.smtp_tab = self._create_smtp_tab()
-        self.tabs.addTab(self.smtp_tab, "📧 SMTP (Opcional)")
+        self.tabs.addTab(self.smtp_tab, "SMTP (Opcional)")
 
         layout.addWidget(self.tabs)
 
         # Indicadores de estado
         status_layout = QHBoxLayout()
 
-        self.smtp_status_label = QLabel("📧 SMTP: No configurado")
+        self.smtp_status_label = QLabel("SMTP: No configurado")
         self.smtp_status_label.setStyleSheet("""
             QLabel {
                 padding: 8px;
@@ -138,7 +139,7 @@ class InitialConfigDialog(QDialog):
             }
         """)
 
-        self.sftp_status_label = QLabel("☁️ SFTP: No configurado")
+        self.sftp_status_label = QLabel("SFTP: No configurado")
         self.sftp_status_label.setStyleSheet("""
             QLabel {
                 padding: 8px;
@@ -156,7 +157,8 @@ class InitialConfigDialog(QDialog):
         # Botones
         button_box = QDialogButtonBox()
 
-        self.skip_smtp_btn = QPushButton("⏭️ Continuar sin SMTP")
+        self.skip_smtp_btn = QPushButton("Continuar sin SMTP")
+        self.skip_smtp_btn.setIcon(icon_for_button("skip"))
         self.skip_smtp_btn.setStyleSheet("""
             QPushButton {
                 background-color: #f59e0b;
@@ -171,7 +173,8 @@ class InitialConfigDialog(QDialog):
         """)
         self.skip_smtp_btn.clicked.connect(self._skip_smtp)
 
-        self.continue_btn = QPushButton("✅ Continuar")
+        self.continue_btn = QPushButton("Continuar")
+        self.continue_btn.setIcon(icon_for_button("check"))
         self.continue_btn.setStyleSheet("""
             QPushButton {
                 background-color: #10b981;
@@ -209,21 +212,21 @@ class InitialConfigDialog(QDialog):
         layout = QVBoxLayout()
 
         # Explicación SFTP
-        info_box = QGroupBox("ℹ️ ¿Por qué es obligatorio SFTP?")
+        info_box = QGroupBox("¿Por qué es obligatorio SFTP?")
         info_layout = QVBoxLayout()
 
         info_text = QLabel(
             "<p><b>El servidor SFTP es crítico</b> para el funcionamiento de la aplicación:</p>"
             "<ul>"
-            "<li>✅ <b>Sincronización en la nube:</b> Permite trabajar desde múltiples "
+            "<li><b>Sincronización en la nube:</b> Permite trabajar desde múltiples "
             "dispositivos</li>"
-            "<li>✅ <b>Copias de seguridad automáticas:</b> Tus datos están siempre "
+            "<li><b>Copias de seguridad automáticas:</b> Tus datos están siempre "
             "protegidos</li>"
-            "<li>✅ <b>Recuperación ante fallos:</b> Si pierdes tu dispositivo, tus datos "
+            "<li><b>Recuperación ante fallos:</b> Si pierdes tu dispositivo, tus datos "
             "están seguros</li>"
             "</ul>"
             "<p style='color: #dc2626; font-weight: bold;'>"
-            "⚠️ Sin SFTP configurado, la aplicación no puede garantizar la seguridad "
+            "Sin SFTP configurado, la aplicación no puede garantizar la seguridad "
             "de tus datos ni permitir el trabajo colaborativo."
             "</p>"
         )
@@ -243,7 +246,7 @@ class InitialConfigDialog(QDialog):
         layout.addWidget(info_box)
 
         # Formulario SFTP
-        form_box = QGroupBox("☁️ Datos del Servidor SFTP")
+        form_box = QGroupBox("Datos del Servidor SFTP")
         form_layout = QVBoxLayout()
 
         # Host
@@ -310,11 +313,13 @@ class InitialConfigDialog(QDialog):
         # Botones de acción
         action_row = QHBoxLayout()
         action_row.setSpacing(10)
-        self.sftp_test_btn = QPushButton("🧪 Probar Conexión")
+        self.sftp_test_btn = QPushButton("Probar Conexión")
+        self.sftp_test_btn.setIcon(icon_for_button("test"))
         self.sftp_test_btn.setMinimumWidth(180)
         self.sftp_test_btn.setMinimumHeight(36)
         self.sftp_test_btn.clicked.connect(self._test_sftp)
-        self.sftp_save_btn = QPushButton("💾 Guardar Configuración")
+        self.sftp_save_btn = QPushButton("Guardar Configuración")
+        self.sftp_save_btn.setIcon(icon_for_button("save"))
         self.sftp_save_btn.setMinimumWidth(180)
         self.sftp_save_btn.setMinimumHeight(36)
         self.sftp_save_btn.clicked.connect(self._save_sftp)
@@ -326,7 +331,8 @@ class InitialConfigDialog(QDialog):
 
         # Botón de carga desde JSON encriptado
         load_json_row = QHBoxLayout()
-        self.sftp_load_json_btn = QPushButton("📂 Cargar configuración desde archivo JSON")
+        self.sftp_load_json_btn = QPushButton("Cargar configuración desde archivo JSON")
+        self.sftp_load_json_btn.setIcon(icon_for_button("open"))
         self.sftp_load_json_btn.setMinimumHeight(36)
         self.sftp_load_json_btn.setStyleSheet("""
             QPushButton {
@@ -364,23 +370,23 @@ class InitialConfigDialog(QDialog):
         layout = QVBoxLayout()
 
         # Explicación SMTP
-        info_box = QGroupBox("ℹ️ Configuración SMTP (Opcional)")
+        info_box = QGroupBox("Configuración SMTP (Opcional)")
         info_layout = QVBoxLayout()
 
         info_text = QLabel(
             "<p><b>El servidor SMTP permite enviar emails automáticos</b> desde la aplicación:</p>"
             "<ul>"
-            "<li>📧 <b>Calendarios por email:</b> Enviar calendarios de guardias a profesores</li>"
-            "<li>🔑 <b>Recuperación de contraseñas:</b> Códigos de recuperación por email</li>"
-            "<li>📬 <b>Notificaciones:</b> Alertas y avisos importantes</li>"
+            "<li><b>Calendarios por email:</b> Enviar calendarios de guardias a profesores</li>"
+            "<li><b>Recuperación de contraseñas:</b> Códigos de recuperación por email</li>"
+            "<li><b>Notificaciones:</b> Alertas y avisos importantes</li>"
             "</ul>"
             "<p style='color: #059669;'>"
-            "✅ <b>Esta funcionalidad NO es crítica.</b> Si no configuras SMTP ahora, podrás "
+            "<b>Esta funcionalidad NO es crítica.</b> Si no configuras SMTP ahora, podrás "
             "seguir usando la aplicación normalmente. Solo necesitarás copiar manualmente los "
             "calendarios o códigos de recuperación."
             "</p>"
             "<p style='color: #6b7280; font-size: 13px;'>"
-            "💡 <b>Tip:</b> Los datos SMTP son los de la cuenta de email que enviará los mensajes. "
+            "<b>Tip:</b> Los datos SMTP son los de la cuenta de email que enviará los mensajes. "
             "Puede ser cualquier cuenta de Gmail, Outlook, etc."
             "</p>"
         )
@@ -400,7 +406,7 @@ class InitialConfigDialog(QDialog):
         layout.addWidget(info_box)
 
         # Formulario SMTP
-        form_box = QGroupBox("📧 Datos del Servidor SMTP")
+        form_box = QGroupBox("Datos del Servidor SMTP")
         form_layout = QVBoxLayout()
 
         # Servidor
@@ -466,11 +472,13 @@ class InitialConfigDialog(QDialog):
         # Botones de acción
         smtp_action_row = QHBoxLayout()
         smtp_action_row.setSpacing(10)
-        self.smtp_test_btn = QPushButton("🧪 Probar Conexión")
+        self.smtp_test_btn = QPushButton("Probar Conexión")
+        self.smtp_test_btn.setIcon(icon_for_button("test"))
         self.smtp_test_btn.setMinimumWidth(180)
         self.smtp_test_btn.setMinimumHeight(36)
         self.smtp_test_btn.clicked.connect(self._test_smtp)
-        self.smtp_save_btn = QPushButton("💾 Guardar Configuración")
+        self.smtp_save_btn = QPushButton("Guardar Configuración")
+        self.smtp_save_btn.setIcon(icon_for_button("save"))
         self.smtp_save_btn.setMinimumWidth(180)
         self.smtp_save_btn.setMinimumHeight(36)
         self.smtp_save_btn.clicked.connect(self._save_smtp)
@@ -482,7 +490,8 @@ class InitialConfigDialog(QDialog):
 
         # Botón de carga desde JSON encriptado
         smtp_load_json_row = QHBoxLayout()
-        self.smtp_load_json_btn = QPushButton("📂 Cargar configuración desde archivo JSON")
+        self.smtp_load_json_btn = QPushButton("Cargar configuración desde archivo JSON")
+        self.smtp_load_json_btn.setIcon(icon_for_button("open"))
         self.smtp_load_json_btn.setMinimumHeight(36)
         self.smtp_load_json_btn.setStyleSheet("""
             QPushButton {
@@ -546,7 +555,7 @@ class InitialConfigDialog(QDialog):
         )
 
         if sftp_complete and self._sftp_configured:
-            self.sftp_status_label.setText("☁️ SFTP: ✅ Configurado correctamente")
+            self.sftp_status_label.setText("SFTP: Configurado correctamente")
             self.sftp_status_label.setStyleSheet("""
                 QLabel {
                     padding: 8px;
@@ -556,7 +565,7 @@ class InitialConfigDialog(QDialog):
                 }
             """)
         elif sftp_complete:
-            self.sftp_status_label.setText("☁️ SFTP: ⚠️ Datos completos - Guardar y probar")
+            self.sftp_status_label.setText("SFTP: Datos completos - Guardar y probar")
             self.sftp_status_label.setStyleSheet("""
                 QLabel {
                     padding: 8px;
@@ -566,7 +575,7 @@ class InitialConfigDialog(QDialog):
                 }
             """)
         else:
-            self.sftp_status_label.setText("☁️ SFTP: ❌ Configuración incompleta (OBLIGATORIO)")
+            self.sftp_status_label.setText("SFTP: Configuración incompleta (OBLIGATORIO)")
             self.sftp_status_label.setStyleSheet("""
                 QLabel {
                     padding: 8px;
@@ -587,7 +596,7 @@ class InitialConfigDialog(QDialog):
         )
 
         if smtp_complete and self._smtp_configured:
-            self.smtp_status_label.setText("📧 SMTP: ✅ Configurado correctamente")
+            self.smtp_status_label.setText("SMTP: Configurado correctamente")
             self.smtp_status_label.setStyleSheet("""
                 QLabel {
                     padding: 8px;
@@ -597,7 +606,7 @@ class InitialConfigDialog(QDialog):
                 }
             """)
         elif smtp_complete:
-            self.smtp_status_label.setText("📧 SMTP: ⚠️ Datos completos - Guardar y probar")
+            self.smtp_status_label.setText("SMTP: Datos completos - Guardar y probar")
             self.smtp_status_label.setStyleSheet("""
                 QLabel {
                     padding: 8px;
@@ -607,7 +616,7 @@ class InitialConfigDialog(QDialog):
                 }
             """)
         else:
-            self.smtp_status_label.setText("📧 SMTP: ⚠️ No configurado (OPCIONAL)")
+            self.smtp_status_label.setText("SMTP: No configurado (OPCIONAL)")
             self.smtp_status_label.setStyleSheet("""
                 QLabel {
                     padding: 8px;

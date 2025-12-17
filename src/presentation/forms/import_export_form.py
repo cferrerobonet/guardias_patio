@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 from services.exportador import ExportadorDatos
 from services.importador_profesores import importar_profesores_desde_excel
 from utils import get_logger
+from utils.icons import icon_for_button
 
 from presentation.forms.base_form import BaseForm
 from presentation.forms.import_export_widgets import JsonOperationsWidget
@@ -79,7 +80,7 @@ class ImportExportForm(BaseForm):
         main_layout.setSpacing(15)
 
         # Título
-        titulo = QLabel("💾 IMPORTAR / EXPORTAR DATOS")
+        titulo = QLabel("IMPORTAR / EXPORTAR DATOS")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(titulo)
@@ -123,7 +124,7 @@ class ImportExportForm(BaseForm):
         main_layout.addLayout(layout_columnas)
 
         # Resultado (ancho completo)
-        resultado_group = QGroupBox("📋 Resultados")
+        resultado_group = QGroupBox("Resultados")
         resultado_group.setStyleSheet(styles.STYLE_GROUPBOX)
         resultado_layout = QVBoxLayout()
         self.resultado_text = QTextEdit()
@@ -141,7 +142,7 @@ class ImportExportForm(BaseForm):
 
     def _crear_seccion_importar_profesores(self) -> QGroupBox:
         """Crear sección de importación de profesores desde Excel."""
-        grupo = QGroupBox("📊 IMPORTAR PROFESORES DESDE EXCEL")
+        grupo = QGroupBox("IMPORTAR PROFESORES DESDE EXCEL")
         grupo.setStyleSheet(styles.STYLE_GROUPBOX)
 
         layout = QVBoxLayout()
@@ -162,7 +163,8 @@ class ImportExportForm(BaseForm):
         )
         layout.addWidget(info)
 
-        self.importar_profesores_btn = QPushButton("� Importar Profesores...")
+        self.importar_profesores_btn = QPushButton("Importar Profesores...")
+        self.importar_profesores_btn.setIcon(icon_for_button("import"))
         self.importar_profesores_btn.clicked.connect(self.importar_profesores)
         self.importar_profesores_btn.setMinimumHeight(40)
         self.importar_profesores_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
@@ -219,7 +221,7 @@ class ImportExportForm(BaseForm):
 
         except Exception as e:
             self.manejar_excepcion(e, "exportar datos")
-            self.resultado_text.setText(f"❌ Error al exportar: {e}")
+            self.resultado_text.setText(f"Error al exportar: {e}")
 
     def importar_datos(self):
         """Importar datos desde archivo JSON."""
@@ -305,7 +307,7 @@ class ImportExportForm(BaseForm):
 
         except Exception as e:
             self.manejar_excepcion(e, "importar datos")
-            self.resultado_text.setText(f"❌ Error al importar: {e}")
+            self.resultado_text.setText(f"Error al importar: {e}")
 
     def importar_profesores(self):
         """Importar profesores desde un archivo Excel."""
@@ -338,17 +340,17 @@ class ImportExportForm(BaseForm):
             )
 
             if cancelado:
-                self.resultado_text.setText("⚠️ Importación cancelada por el usuario")
+                self.resultado_text.setText("Importación cancelada por el usuario")
                 return
 
             # Mostrar resultados
             mensaje = (
-                f"✅ Importación completada\n\n"
+                f"Importación completada\n\n"
                 f"Archivo: {resultados['archivo']}\n"
                 f"Profesores leídos: {resultados['leidos']}\n"
-                f"✅ Nuevos importados: {resultados['importados']}\n"
-                f"⏭️  Ya existentes: {resultados['existentes']}\n"
-                f"❌ Errores: {resultados['errores']}\n"
+                f"Nuevos importados: {resultados['importados']}\n"
+                f"Ya existentes: {resultados['existentes']}\n"
+                f"Errores: {resultados['errores']}\n"
             )
 
             self.resultado_text.setText(mensaje)
@@ -369,4 +371,4 @@ class ImportExportForm(BaseForm):
 
         except Exception as e:
             self.manejar_excepcion(e, "importar profesores desde Excel")
-            self.resultado_text.setText(f"❌ Error al importar profesores: {e}")
+            self.resultado_text.setText(f"Error al importar profesores: {e}")

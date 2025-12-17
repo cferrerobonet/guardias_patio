@@ -29,6 +29,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
+from utils.icons import icon_for_button, icon_for_form
 
 from presentation.forms.base_form import BaseForm
 from presentation.forms.zona_widgets import DatosZonaWidget
@@ -256,11 +257,13 @@ class ZonaForm(BaseForm):
         # Botón "Actualizar" eliminado - la tabla se actualiza automáticamente
         # después de cada operación (crear, editar, eliminar)
 
-        self.editar_btn = QPushButton("✏️ Editar")
+        self.editar_btn = QPushButton("Editar")
+        self.editar_btn.setIcon(icon_for_button("edit"))
         self.editar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
         self.editar_btn.clicked.connect(self.editar_zona)
 
-        self.delete_btn = QPushButton("🗑️ Eliminar")
+        self.delete_btn = QPushButton("Eliminar")
+        self.delete_btn.setIcon(icon_for_button("delete"))
         self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.delete_btn.clicked.connect(self.eliminar_zona)
         self.delete_btn.setToolTip(
@@ -294,7 +297,7 @@ class ZonaForm(BaseForm):
         right_section.setSpacing(12)
 
         # Título del formulario
-        self.titulo_form = QLabel("✏️ NUEVA ZONA")
+        self.titulo_form = QLabel("NUEVA ZONA")
         self.titulo_form.setStyleSheet(styles.STYLE_TITLE_MAIN)
         right_section.addWidget(self.titulo_form)
 
@@ -306,12 +309,14 @@ class ZonaForm(BaseForm):
         btn_action_layout = QHBoxLayout()
         btn_action_layout.setSpacing(8)
 
-        self.submit_btn = QPushButton("💾 Guardar Zona")
+        self.submit_btn = QPushButton("Guardar Zona")
+        self.submit_btn.setIcon(icon_for_button("save"))
         self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.submit_btn.clicked.connect(self.guardar_zona)
         btn_action_layout.addWidget(self.submit_btn)
 
-        self.cancelar_btn = QPushButton("❌ Cancelar")
+        self.cancelar_btn = QPushButton("Cancelar")
+        self.cancelar_btn.setIcon(icon_for_form("close"))
         self.cancelar_btn.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
         self.cancelar_btn.clicked.connect(self.cancelar_edicion)
         self.cancelar_btn.setVisible(False)  # Oculto por defecto
@@ -451,8 +456,8 @@ class ZonaForm(BaseForm):
             )
 
             # Actualizar título - modo lectura/vista previa
-            self.titulo_form.setText("📋 VISTA PREVIA")
-            self.submit_btn.setText("💾 Guardar Cambios")
+            self.titulo_form.setText("VISTA PREVIA")
+            self.submit_btn.setText("Guardar Cambios")
             self.cancelar_btn.setVisible(False)
 
         except Exception as e:
@@ -502,8 +507,8 @@ class ZonaForm(BaseForm):
 
             # Activar modo edición
             self.zona_editando_id = id_zona
-            self.titulo_form.setText(f"✏️ EDITAR ZONA [ID: {id_zona}]")
-            self.submit_btn.setText("💾 Actualizar Zona")
+            self.titulo_form.setText(f"EDITAR ZONA [ID: {id_zona}]")
+            self.submit_btn.setText("Actualizar Zona")
             self.cancelar_btn.setVisible(True)
 
         except Exception as e:
@@ -516,8 +521,8 @@ class ZonaForm(BaseForm):
     def cancelar_edicion(self):
         """Cancelar la edición y volver al modo 'nueva zona' (sin recargar tabla)."""
         self.zona_editando_id = None
-        self.titulo_form.setText("✏️ NUEVA ZONA")
-        self.submit_btn.setText("💾 Guardar Zona")
+        self.titulo_form.setText("NUEVA ZONA")
+        self.submit_btn.setText("Guardar Zona")
         self.cancelar_btn.setVisible(False)
         self.limpiar_formulario()
         # NO recargar tabla - más rápido y no hay cambios guardados

@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from sqlalchemy.orm import Session
+from utils.icons import icon_for_button
 
 from presentation.forms.base_form import BaseForm
 
@@ -67,7 +68,7 @@ class SimpleProfesorForm(BaseForm):
         layout = QVBoxLayout()
 
         # Título
-        titulo = QLabel("👥 Gestión de Profesores (Ejemplo Refactorizado)")
+        titulo = QLabel("Gestión de Profesores (Ejemplo Refactorizado)")
         titulo.setStyleSheet("""
             QLabel {
                 font-size: 18px;
@@ -100,7 +101,8 @@ class SimpleProfesorForm(BaseForm):
         # Botones de acción
         botones_layout = QHBoxLayout()
 
-        self.guardar_btn = QPushButton("💾 Guardar Profesor")
+        self.guardar_btn = QPushButton("Guardar Profesor")
+        self.guardar_btn.setIcon(icon_for_button("save"))
         self.guardar_btn.clicked.connect(self.guardar_profesor)
         self.guardar_btn.setStyleSheet("""
             QPushButton {
@@ -117,11 +119,13 @@ class SimpleProfesorForm(BaseForm):
         """)
         botones_layout.addWidget(self.guardar_btn)
 
-        self.limpiar_btn = QPushButton("🧹 Limpiar")
+        self.limpiar_btn = QPushButton("Limpiar")
+        self.limpiar_btn.setIcon(icon_for_button("delete"))
         self.limpiar_btn.clicked.connect(self.limpiar_formulario)
         botones_layout.addWidget(self.limpiar_btn)
 
-        self.actualizar_btn = QPushButton("🔄 Actualizar Lista")
+        self.actualizar_btn = QPushButton("Actualizar Lista")
+        self.actualizar_btn.setIcon(icon_for_button("refresh"))
         self.actualizar_btn.clicked.connect(self.cargar_profesores)
         botones_layout.addWidget(self.actualizar_btn)
 
@@ -135,7 +139,7 @@ class SimpleProfesorForm(BaseForm):
         layout.addWidget(self.tabla)
 
         # Info footer
-        self.info_label = QLabel("💡 Este es un ejemplo simplificado del patrón MVP")
+        self.info_label = QLabel("Este es un ejemplo simplificado del patrón MVP")
         self.info_label.setStyleSheet("color: #7f8c8d; font-style: italic;")
         layout.addWidget(self.info_label)
 
@@ -206,7 +210,7 @@ class SimpleProfesorForm(BaseForm):
                 self.tabla.setItem(row, 3, QTableWidgetItem(str(profesor.horas_contrato)))
 
             # Actualizar info
-            self.info_label.setText(f"📊 {len(profesores)} profesores cargados")
+            self.info_label.setText(f"{len(profesores)} profesores cargados")
 
         except Exception as e:
             self.manejar_excepcion(e, "cargar profesores")

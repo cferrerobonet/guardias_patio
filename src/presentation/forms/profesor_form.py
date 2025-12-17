@@ -33,6 +33,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from utils.icons import icon_for_button
 
 from presentation.forms.base_form import BaseForm
 from presentation.forms.profesor_widgets import (
@@ -140,7 +141,7 @@ class ProfesorForm(BaseForm):
         layout.setSpacing(10)
 
         # Título con contador
-        self.titulo_lista_profesores = QLabel("📋 PROFESORES REGISTRADOS (0)")
+        self.titulo_lista_profesores = QLabel("PROFESORES REGISTRADOS (0)")
         self.titulo_lista_profesores.setStyleSheet(styles.STYLE_TITLE_MAIN)
         layout.addWidget(self.titulo_lista_profesores)
 
@@ -148,7 +149,7 @@ class ProfesorForm(BaseForm):
         busqueda_layout = QHBoxLayout()
         busqueda_layout.setSpacing(8)
 
-        busqueda_label = QLabel("🔍 Buscar:")
+        busqueda_label = QLabel("Buscar:")
         busqueda_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         busqueda_layout.addWidget(busqueda_label)
 
@@ -219,7 +220,7 @@ class ProfesorForm(BaseForm):
 
         # Label informativo de multiselección
         info_label = QLabel(
-            "💡 <b>Selección múltiple:</b> Ctrl+clic (individual) | "
+            "<b>Selección múltiple:</b> Ctrl+clic (individual) | "
             "Shift+clic (rango) | Ctrl+A (todos) | Supr (eliminar)"
         )
         info_label.setStyleSheet(f"""
@@ -242,18 +243,20 @@ class ProfesorForm(BaseForm):
         # Botón "Actualizar" eliminado - la tabla se actualiza automáticamente
         # después de cada operación (crear, editar, eliminar)
 
-        self.editar_btn = QPushButton("✏️ Editar")
+        self.editar_btn = QPushButton("Editar")
+        self.editar_btn.setIcon(icon_for_button("edit"))
         self.editar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
         self.editar_btn.clicked.connect(self.editar_profesor)
         self.editar_btn.setToolTip("Editar el profesor seleccionado")
 
-        self.delete_btn = QPushButton("🗑️ Eliminar")
+        self.delete_btn = QPushButton("Eliminar")
+        self.delete_btn.setIcon(icon_for_button("delete"))
         self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.delete_btn.clicked.connect(self.eliminar_profesor)
         self.delete_btn.setToolTip(
             "Eliminar profesor(es) seleccionado(s)\n"
-            "💡 Ctrl+clic: selección múltiple\n"
-            "💡 Shift+clic: rango de selección"
+            "Ctrl+clic: selección múltiple\n"
+            "Shift+clic: rango de selección"
         )
 
         btn_layout.addWidget(self.editar_btn)
@@ -275,7 +278,7 @@ class ProfesorForm(BaseForm):
         layout.setSpacing(4)  # Espaciado mínimo entre elementos
 
         # Título más compacto
-        self.titulo_seccion = QLabel("✏️ ALTA DE PROFESOR")
+        self.titulo_seccion = QLabel("ALTA DE PROFESOR")
         self.titulo_seccion.setStyleSheet(styles.STYLE_TITLE_MAIN)
         layout.addWidget(self.titulo_seccion)
 
@@ -296,12 +299,14 @@ class ProfesorForm(BaseForm):
         botones_accion = QHBoxLayout()
         botones_accion.setSpacing(6)
 
-        self.submit_btn = QPushButton("💾 Guardar")
+        self.submit_btn = QPushButton("Guardar")
+        self.submit_btn.setIcon(icon_for_button("save"))
         self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.submit_btn.clicked.connect(self.guardar_profesor)
         self.submit_btn.setMaximumHeight(32)  # Altura reducida
 
-        self.cancelar_btn = QPushButton("❌ Cancelar")
+        self.cancelar_btn = QPushButton("Cancelar")
+        self.cancelar_btn.setIcon(icon_for_button("close"))
         self.cancelar_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.cancelar_btn.clicked.connect(self.cancelar_edicion)
         self.cancelar_btn.setVisible(False)
@@ -345,8 +350,8 @@ class ProfesorForm(BaseForm):
 
         # Actualizar estado del formulario
         self.profesor_editando_id = None
-        self.titulo_seccion.setText("✏️ ALTA DE PROFESOR")
-        self.submit_btn.setText("💾 Guardar nuevo profesor")
+        self.titulo_seccion.setText("ALTA DE PROFESOR")
+        self.submit_btn.setText("Guardar nuevo profesor")
         self.cancelar_btn.setVisible(False)
 
         # Re-habilitar interacción con la tabla después de cancelar/guardar
@@ -457,10 +462,10 @@ class ProfesorForm(BaseForm):
             # Manejar modo edición
             if self.profesor_editando_id:
                 self.profesor_editando_id = None
-                self.titulo_seccion.setText("✏️ ALTA DE PROFESOR")
-                self.submit_btn.setText("💾 Guardar nuevo profesor")
+                self.titulo_seccion.setText("ALTA DE PROFESOR")
+                self.submit_btn.setText("Guardar nuevo profesor")
                 self.cancelar_btn.setVisible(False)
-                # ✅ Limpiar formulario después de actualizar para evitar confusión
+                # Limpiar formulario después de actualizar para evitar confusión
                 self._limpiar_formulario()
                 if self.table_manager:
                     self.table_manager.enable_table_interactions(True)
@@ -468,14 +473,14 @@ class ProfesorForm(BaseForm):
 
                 # La selección se restaurará automáticamente en cargar_profesores()
                 self.mostrar_exito(
-                    "✅ Profesor actualizado",
+                    "Profesor actualizado",
                     "El profesor ha sido actualizado correctamente.\n\n"
                     "Los datos permanecen visibles en el formulario.",
                 )
             else:
                 self._limpiar_formulario()
                 self.mostrar_exito(
-                    "✅ Profesor creado", "El profesor ha sido creado correctamente."
+                    "Profesor creado", "El profesor ha sido creado correctamente."
                 )
 
         except Exception as e:
@@ -494,7 +499,7 @@ class ProfesorForm(BaseForm):
             total_profesores = len(profesores)
             self.tabla_profesores.setRowCount(total_profesores)
 
-            self.titulo_lista_profesores.setText(f"📋 PROFESORES REGISTRADOS ({total_profesores})")
+            self.titulo_lista_profesores.setText(f"PROFESORES REGISTRADOS ({total_profesores})")
 
             for i, prof in enumerate(profesores):
                 # Nombre (con ID oculto)
@@ -657,8 +662,8 @@ class ProfesorForm(BaseForm):
             )
 
             # Actualizar título - modo lectura
-            self.titulo_seccion.setText("📋 VISTA PREVIA")
-            self.submit_btn.setText("💾 Guardar Cambios")
+            self.titulo_seccion.setText("VISTA PREVIA")
+            self.submit_btn.setText("Guardar Cambios")
             self.cancelar_btn.setVisible(False)
 
         except Exception as e:
@@ -728,8 +733,8 @@ class ProfesorForm(BaseForm):
 
             # Activar modo edición
             self.profesor_editando_id = id_profesor
-            self.titulo_seccion.setText(f"✏️ EDITAR PROFESOR [ID: {id_profesor}]")
-            self.submit_btn.setText("💾 Actualizar Profesor")
+            self.titulo_seccion.setText(f"EDITAR PROFESOR [ID: {id_profesor}]")
+            self.submit_btn.setText("Actualizar Profesor")
             self.cancelar_btn.setVisible(True)
 
             # Deshabilitar interacción con la tabla mientras se edita
@@ -748,8 +753,8 @@ class ProfesorForm(BaseForm):
             self.mostrar_advertencia(
                 "Selección requerida",
                 "Selecciona uno o más profesores para eliminar.\n\n"
-                "💡 Usa Ctrl+clic para seleccionar múltiples profesores\n"
-                "💡 Usa Shift+clic para seleccionar un rango",
+                "Usa Ctrl+clic para seleccionar múltiples profesores\n"
+                "Usa Shift+clic para seleccionar un rango",
             )
             return
 

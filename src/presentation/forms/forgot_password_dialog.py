@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 )
 from services.email_service import get_email_service
 from sync.sync_manager import UserAuth
+from utils.icons import icon_for_button
 from utils.ui_helpers import get_corporate_icon
 
 
@@ -31,7 +32,7 @@ class ForgotPasswordDialog(QDialog):
 
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
-        self.setWindowTitle("🔑 Recuperar Contraseña")
+        self.setWindowTitle("Recuperar Contraseña")
         self.setWindowIcon(get_corporate_icon())
         self.setModal(True)
         self.setFixedWidth(500)
@@ -102,7 +103,8 @@ class ForgotPasswordDialog(QDialog):
         """)
         buttons_layout.addWidget(cancel_btn)
 
-        send_btn = QPushButton("📧 Enviar Código")
+        send_btn = QPushButton("Enviar Código")
+        send_btn.setIcon(icon_for_button("email"))
         send_btn.setMinimumHeight(40)
         send_btn.clicked.connect(self.send_recovery_email)
         send_btn.setDefault(True)
@@ -200,7 +202,7 @@ class ForgotPasswordDialog(QDialog):
         # Email enviado correctamente
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Icon.Information)
-        msg.setWindowTitle("✅ Email Enviado")
+        msg.setWindowTitle("Email Enviado")
         msg.setTextFormat(Qt.TextFormat.RichText)
         msg.setWindowFlags(
             Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint

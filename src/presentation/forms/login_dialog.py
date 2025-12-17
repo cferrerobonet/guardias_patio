@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 )
 from sync.sync_manager import UserAuth
 from utils.icon_manager import get_icon
+from utils.icons import icon_for_button
 from utils.ui_helpers import get_corporate_icon
 
 
@@ -32,7 +33,7 @@ class RegisterDialog(QDialog):
 
     def setup_ui(self):
         """Configura la interfaz del diálogo de registro."""
-        self.setWindowTitle("📝 Registrar Nuevo Usuario")
+        self.setWindowTitle("Registrar Nuevo Usuario")
         self.setWindowIcon(get_corporate_icon())
         self.setModal(True)
         self.setMinimumWidth(500)
@@ -86,7 +87,9 @@ class RegisterDialog(QDialog):
 
         # Requisitos de contraseña
         requirements = QLabel(
-            "✓ Mínimo 4 caracteres\n✓ Las contraseñas deben coincidir\n✓ Email obligatorio para recuperación"
+            "✓ Mínimo 4 caracteres\n"
+            "✓ Las contraseñas deben coincidir\n"
+            "✓ Email obligatorio para recuperación"
         )
         requirements.setStyleSheet("color: #6B7280; font-size: 11px; padding: 0px 40px;")
         layout.addWidget(requirements)
@@ -96,7 +99,8 @@ class RegisterDialog(QDialog):
         buttons_layout.setSpacing(10)
         buttons_layout.setContentsMargins(40, 20, 40, 20)
 
-        cancel_btn = QPushButton("❌ Cancelar")
+        cancel_btn = QPushButton("Cancelar")
+        cancel_btn.setIcon(icon_for_button("close"))
         cancel_btn.setMinimumHeight(40)
         cancel_btn.clicked.connect(self.reject)
         cancel_btn.setStyleSheet("""
@@ -235,7 +239,7 @@ class RegisterDialog(QDialog):
             self.registered_username = username
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
-            msg.setWindowTitle("✅ Registro exitoso")
+            msg.setWindowTitle("Registro exitoso")
             msg.setWindowIcon(get_corporate_icon())
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
@@ -367,7 +371,7 @@ class LoginDialog(QDialog):
         self.username_combo.currentTextChanged.connect(self.on_user_selected)
 
         # Label con icono para usuario
-        user_label = QLabel("👤 Usuario:")
+        user_label = QLabel("Usuario:")
         user_label.setStyleSheet("color: #333; font-weight: 400;")
         form_layout.addRow(user_label, self.username_combo)
 
@@ -379,7 +383,7 @@ class LoginDialog(QDialog):
         self.password_input.returnPressed.connect(self.login)
 
         # Label con icono para contraseña
-        password_label = QLabel("🔑 Contraseña:")
+        password_label = QLabel("Contraseña:")
         password_label.setStyleSheet("color: #333; font-weight: 400;")
         form_layout.addRow(password_label, self.password_input)
 
@@ -462,7 +466,7 @@ class LoginDialog(QDialog):
         layout.addWidget(forgot_password_label)
 
         # Información
-        info_label = QLabel("ℹ️ Primera vez? Haz clic en Nuevo Usuario")
+        info_label = QLabel("Primera vez? Haz clic en Nuevo Usuario")
         info_label.setStyleSheet("color: #6B7280; font-size: 12px; padding: 10px;")
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(info_label)
@@ -563,7 +567,7 @@ class LoginDialog(QDialog):
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
-            msg.setWindowTitle("🔄 Datos actualizados")
+            msg.setWindowTitle("Datos actualizados")
             msg.setWindowIcon(get_corporate_icon())
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
@@ -601,7 +605,7 @@ class LoginDialog(QDialog):
             self.authenticated_user = username
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
-            msg.setWindowTitle("✅ Bienvenido")
+            msg.setWindowTitle("Bienvenido")
             msg.setWindowIcon(get_corporate_icon())
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
@@ -621,7 +625,7 @@ class LoginDialog(QDialog):
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Critical)
-            msg.setWindowTitle("❌ Error de autenticación")
+            msg.setWindowTitle("Error de autenticación")
             msg.setWindowIcon(get_corporate_icon())
             msg.setText(
                 "Usuario o contraseña incorrectos.\n\nPor favor, verifica tus credenciales."

@@ -14,6 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 
+import ui_styles as styles
 from dotenv import load_dotenv
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -25,9 +26,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
-import ui_styles as styles
 from utils import get_logger
+from utils.icons import icon_for_button
 
 
 class SMTPConfigWidget(QGroupBox):
@@ -138,12 +138,14 @@ class SMTPConfigWidget(QGroupBox):
         smtp_btn_layout = QHBoxLayout()
         smtp_btn_layout.setSpacing(8)
 
-        self.modify_smtp_btn = QPushButton("🔓 Modificar Configuración SMTP")
+        self.modify_smtp_btn = QPushButton("Modificar Configuración SMTP")
+        self.modify_smtp_btn.setIcon(icon_for_button("key"))
         self.modify_smtp_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
         self.modify_smtp_btn.clicked.connect(self._toggle_editable)
         smtp_btn_layout.addWidget(self.modify_smtp_btn, 1)
 
-        self.test_smtp_btn = QPushButton("✉️ Probar Conexión SMTP")
+        self.test_smtp_btn = QPushButton("Probar Conexión SMTP")
+        self.test_smtp_btn.setIcon(icon_for_button("test"))
         self.test_smtp_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.test_smtp_btn.clicked.connect(self._test_connection)
         smtp_btn_layout.addWidget(self.test_smtp_btn, 1)
@@ -151,7 +153,7 @@ class SMTPConfigWidget(QGroupBox):
         layout.addLayout(smtp_btn_layout)
 
         # Nota informativa
-        info_label = QLabel("💡 Para Gmail, usa una App Password en lugar de tu contraseña normal.")
+        info_label = QLabel("Para Gmail, usa una App Password en lugar de tu contraseña normal.")
         info_label.setStyleSheet(
             """
             QLabel {
@@ -223,9 +225,9 @@ class SMTPConfigWidget(QGroupBox):
         self._apply_readonly_style(new_state)
 
         if new_state:  # Bloqueado
-            self.modify_smtp_btn.setText("🔓 Modificar Configuración SMTP")
+            self.modify_smtp_btn.setText("Modificar Configuración SMTP")
         else:  # Editable
-            self.modify_smtp_btn.setText("🔒 Bloquear Configuración SMTP")
+            self.modify_smtp_btn.setText("Bloquear Configuración SMTP")
 
     def _show_global_warning(self) -> bool:
         """
@@ -236,8 +238,8 @@ class SMTPConfigWidget(QGroupBox):
         """
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setWindowTitle("⚠️ Configuración SMTP Global")
-        msg.setText("<h3>⚠️ ADVERTENCIA: Configuración SMTP Global</h3>")
+        msg.setWindowTitle("Configuración SMTP Global")
+        msg.setText("<h3>ADVERTENCIA: Configuración SMTP Global</h3>")
         msg.setInformativeText(
             "<p><b>La configuración SMTP es compartida por TODOS los usuarios del sistema.</b></p>"
             "<p>Modificar estos valores puede:</p>"

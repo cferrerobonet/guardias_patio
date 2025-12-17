@@ -7,6 +7,7 @@ import logging
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from utils.icons import icon_for_button
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class SessionLockedDialog(QDialog):
         layout.setContentsMargins(30, 30, 30, 30)
 
         # Icono y título
-        title_label = QLabel("🔒 Sesión Bloqueada")
+        title_label = QLabel("Sesión Bloqueada")
         title_font = QFont()
         title_font.setPointSize(16)
         title_font.setBold(True)
@@ -79,7 +80,7 @@ class SessionLockedDialog(QDialog):
 
         # Mensaje explicativo
         explanation = QLabel(
-            "⚠️ Para evitar conflictos y pérdida de datos, solo se permite una sesión "
+            "Para evitar conflictos y pérdida de datos, solo se permite una sesión "
             "activa por usuario.\n\n"
             "Por favor, cierra la sesión en el otro dispositivo o espera a que "
             "expire automáticamente (90 segundos de inactividad)."
@@ -93,7 +94,8 @@ class SessionLockedDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 
-        retry_button = QPushButton("🔄 Reintentar")
+        retry_button = QPushButton("Reintentar")
+        retry_button.setIcon(icon_for_button("refresh"))
         retry_button.clicked.connect(self.accept)
         retry_button.setStyleSheet("""
             QPushButton {
@@ -110,7 +112,8 @@ class SessionLockedDialog(QDialog):
         """)
         button_layout.addWidget(retry_button)
 
-        cancel_button = QPushButton("❌ Cancelar")
+        cancel_button = QPushButton("Cancelar")
+        cancel_button.setIcon(icon_for_button("close"))
         cancel_button.clicked.connect(self.reject)
         cancel_button.setStyleSheet("""
             QPushButton {

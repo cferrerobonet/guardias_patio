@@ -475,8 +475,36 @@ else:
 
     logger.warning(f"Base de datos no reconocida: {DATABASE_URL[:20]}...")
 
-# Session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
+# Session factory base (fallback para cuando no hay usuario activo)
+_base_session_factory = sessionmaker(
+    autocommit=False, autoflush=False, bind=engine, expire_on_commit=False
+)
+
+
+class _SmartSessionLocal:
+    """
+    Wrapper inteligente que devuelve la sesión del usuario activo
+    o la sesión fallback si no hay usuario.
+
+    Esto permite que código legacy que usa SessionLocal() directamente
+    funcione correctamente con el sistema multi-usuario.
+    """
+
+    def __call__(self):
+        """Crea una sesión usando el factory correcto."""
+        if _current_session_factory is not None:
+            return _current_session_factory()
+        else:
+            logger.warning(
+                "SessionLocal() llamado sin usuario activo. "
+                "Usando BD legacy en data/guardias_patio.db. "
+                "Considerar usar initialize_user_database(username) primero."
+            )
+            return _base_session_factory()
+
+
+# SessionLocal inteligente que usa la BD del usuario activo
+SessionLocal = _SmartSessionLocal()
 
 logger.info(f"Database manager inicializado: {DATABASE_URL[:50]}")
 
@@ -499,7 +527,9 @@ def get_session():
             profesores = db.query(Profesor).all()
     """
     # Usar session factory del usuario activo si existe
-    session_factory = _current_session_factory if _current_session_factory else SessionLocal
+    session_factory = (
+        _current_session_factory if _current_session_factory else _base_session_factory
+    )
 
     db = session_factory()
     try:
@@ -532,7 +562,9 @@ def get_db_session():
             db.commit()
     """
     # Usar session factory del usuario activo si existe
-    session_factory = _current_session_factory if _current_session_factory else SessionLocal
+    session_factory = (
+        _current_session_factory if _current_session_factory else _base_session_factory
+    )
 
     session = session_factory()
     try:

@@ -77,11 +77,11 @@ class DialogoCrearPerfilProfesional(QDialog):
         botones.rejected.connect(self.reject)
 
         # Estilar botones
-        botones.button(QDialogButtonBox.StandardButton.Ok).setText("✅ Crear")
+        botones.button(QDialogButtonBox.StandardButton.Ok).setText("Crear")
         botones.button(QDialogButtonBox.StandardButton.Ok).setStyleSheet(
             styles.STYLE_BUTTON_SUCCESS
         )
-        botones.button(QDialogButtonBox.StandardButton.Cancel).setText("❌ Cancelar")
+        botones.button(QDialogButtonBox.StandardButton.Cancel).setText("Cancelar")
 
         layout.addWidget(botones)
 
@@ -140,7 +140,7 @@ class DialogoEditarPerfilProfesional(QDialog):
         layout.setSpacing(20)
 
         # Título
-        titulo = QLabel(f"✏️ Editar Perfil: {self.username}")
+        titulo = QLabel(f"Editar Perfil: {self.username}")
         titulo.setStyleSheet("font-size: 16px; font-weight: bold; color: #2196F3;")
         layout.addWidget(titulo)
 
@@ -174,11 +174,11 @@ class DialogoEditarPerfilProfesional(QDialog):
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
 
-        botones.button(QDialogButtonBox.StandardButton.Ok).setText("💾 Guardar")
+        botones.button(QDialogButtonBox.StandardButton.Ok).setText("Guardar")
         botones.button(QDialogButtonBox.StandardButton.Ok).setStyleSheet(
             styles.STYLE_BUTTON_PRIMARY
         )
-        botones.button(QDialogButtonBox.StandardButton.Cancel).setText("❌ Cancelar")
+        botones.button(QDialogButtonBox.StandardButton.Cancel).setText("Cancelar")
 
         layout.addWidget(botones)
 
@@ -269,11 +269,11 @@ class DialogoCambiarPasswordProfesional(QDialog):
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
 
-        botones.button(QDialogButtonBox.StandardButton.Ok).setText("🔒 Cambiar")
+        botones.button(QDialogButtonBox.StandardButton.Ok).setText("Cambiar")
         botones.button(QDialogButtonBox.StandardButton.Ok).setStyleSheet(
             styles.STYLE_BUTTON_WARNING
         )
-        botones.button(QDialogButtonBox.StandardButton.Cancel).setText("❌ Cancelar")
+        botones.button(QDialogButtonBox.StandardButton.Cancel).setText("Cancelar")
 
         layout.addWidget(botones)
 

@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
     QDateEdit,
     QGroupBox,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QMessageBox,
     QPushButton,
@@ -22,6 +23,7 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+from utils.icons import icon_for_button, icon_for_form
 
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY, get_table_style
@@ -48,7 +50,7 @@ class GestorSustituciones(BaseForm):
         layout_principal.setSpacing(15)
 
         # Título
-        titulo = QLabel("🔄 GESTIÓN DE SUSTITUCIONES")
+        titulo = QLabel("GESTIÓN DE SUSTITUCIONES")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_principal.addWidget(titulo)
@@ -84,7 +86,7 @@ class GestorSustituciones(BaseForm):
         layout_principal.addLayout(layout_columnas)
 
         # Tabla de guardias encontradas (ancho completo)
-        tabla_group = QGroupBox("📋 Guardias Encontradas")
+        tabla_group = QGroupBox("Guardias Encontradas")
         tabla_group.setStyleSheet(styles.STYLE_GROUPBOX)
         tabla_layout = QVBoxLayout()
         self.tabla_guardias = self._crear_tabla_guardias()
@@ -102,14 +104,14 @@ class GestorSustituciones(BaseForm):
 
     def _crear_seccion_buscar(self) -> QGroupBox:
         """Crear sección de búsqueda de guardia."""
-        grupo_buscar = QGroupBox("1️⃣ Buscar Guardia")
+        grupo_buscar = QGroupBox("1. Buscar Guardia")
         grupo_buscar.setStyleSheet(styles.STYLE_GROUPBOX)
         layout_buscar = QVBoxLayout()
         layout_buscar.setSpacing(12)
         layout_buscar.setContentsMargins(15, 20, 15, 15)
 
         # Fecha
-        fecha_label = QLabel("📅 Fecha de la guardia:")
+        fecha_label = QLabel("Fecha de la guardia:")
         fecha_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_buscar.addWidget(fecha_label)
 
@@ -120,7 +122,7 @@ class GestorSustituciones(BaseForm):
         layout_buscar.addWidget(self.fecha_buscar)
 
         # Profesor
-        profesor_label = QLabel("👨‍🏫 Profesor original:")
+        profesor_label = QLabel("Profesor original:")
         profesor_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_buscar.addWidget(profesor_label)
 
@@ -129,7 +131,8 @@ class GestorSustituciones(BaseForm):
         layout_buscar.addWidget(self.combo_profesor_original)
 
         # Botón buscar
-        self.btn_buscar = QPushButton("🔍 Buscar Guardias")
+        self.btn_buscar = QPushButton("Buscar Guardias")
+        self.btn_buscar.setIcon(icon_for_button("search"))
         self.btn_buscar.clicked.connect(self.buscar_guardias)
         self.btn_buscar.setMinimumHeight(40)
         self.btn_buscar.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
@@ -147,21 +150,29 @@ class GestorSustituciones(BaseForm):
         tabla.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         tabla.setAlternatingRowColors(True)
         tabla.setStyleSheet(get_table_style())
-        tabla.horizontalHeader().setStretchLastSection(True)
+
+        # Configurar columnas para ajustarse al contenido
+        header = tabla.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # ID
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Profesor
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Turno
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Recreo
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  # Zona
+
         tabla.setMinimumHeight(150)
         tabla.selectionModel().selectionChanged.connect(self.guardia_seleccionada_cambio)
         return tabla
 
     def _crear_seccion_sustituir(self) -> QGroupBox:
         """Crear sección de asignación de sustituto."""
-        grupo_sustituir = QGroupBox("2️⃣ Asignar Sustituto")
+        grupo_sustituir = QGroupBox("2. Asignar Sustituto")
         grupo_sustituir.setStyleSheet(styles.STYLE_GROUPBOX)
         layout_sustituir = QVBoxLayout()
         layout_sustituir.setSpacing(12)
         layout_sustituir.setContentsMargins(15, 20, 15, 15)
 
         # Profesor sustituto
-        sustituto_label = QLabel("👥 Profesor sustituto:")
+        sustituto_label = QLabel("Profesor sustituto:")
         sustituto_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_sustituir.addWidget(sustituto_label)
 
@@ -170,14 +181,15 @@ class GestorSustituciones(BaseForm):
         layout_sustituir.addWidget(self.combo_profesor_sustituto)
 
         # Botón ver disponibles
-        self.btn_buscar_disponibles = QPushButton("🔍 Ver Profesores Disponibles")
+        self.btn_buscar_disponibles = QPushButton("Ver Profesores Disponibles")
+        self.btn_buscar_disponibles.setIcon(icon_for_form("users"))
         self.btn_buscar_disponibles.clicked.connect(self.buscar_profesores_disponibles)
         self.btn_buscar_disponibles.setMinimumHeight(35)
         self.btn_buscar_disponibles.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
         layout_sustituir.addWidget(self.btn_buscar_disponibles)
 
         # Observaciones
-        obs_label = QLabel("📝 Observaciones (opcional):")
+        obs_label = QLabel("Observaciones (opcional):")
         obs_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         layout_sustituir.addWidget(obs_label)
 
@@ -200,14 +212,16 @@ class GestorSustituciones(BaseForm):
         botones_layout.setSpacing(10)
         botones_layout.setContentsMargins(0, 15, 0, 0)
 
-        self.btn_confirmar_sustitucion = QPushButton("✅ Confirmar Sustitución")
+        self.btn_confirmar_sustitucion = QPushButton("Confirmar Sustitución")
+        self.btn_confirmar_sustitucion.setIcon(icon_for_button("check"))
         self.btn_confirmar_sustitucion.clicked.connect(self.confirmar_sustitucion)
         self.btn_confirmar_sustitucion.setMinimumHeight(45)
         self.btn_confirmar_sustitucion.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.btn_confirmar_sustitucion.setEnabled(False)
         botones_layout.addWidget(self.btn_confirmar_sustitucion, 2)
 
-        self.btn_cancelar = QPushButton("❌ Limpiar")
+        self.btn_cancelar = QPushButton("Limpiar")
+        self.btn_cancelar.setIcon(icon_for_button("close"))
         self.btn_cancelar.clicked.connect(self.limpiar_formulario)
         self.btn_cancelar.setMinimumHeight(45)
         self.btn_cancelar.setStyleSheet(styles.STYLE_BUTTON_DANGER)
@@ -217,7 +231,7 @@ class GestorSustituciones(BaseForm):
 
     def _crear_seccion_historial(self) -> QGroupBox:
         """Crear sección de historial."""
-        grupo_historial = QGroupBox("📜 Historial Reciente de Sustituciones")
+        grupo_historial = QGroupBox("Historial Reciente de Sustituciones")
         grupo_historial.setStyleSheet(styles.STYLE_GROUPBOX)
         layout_historial = QVBoxLayout()
         layout_historial.setContentsMargins(15, 20, 15, 15)
@@ -230,7 +244,15 @@ class GestorSustituciones(BaseForm):
         self.tabla_historial.setMaximumHeight(180)
         self.tabla_historial.setAlternatingRowColors(True)
         self.tabla_historial.setStyleSheet(get_table_style())
-        self.tabla_historial.horizontalHeader().setStretchLastSection(True)
+
+        # Configurar columnas para ajustarse al contenido
+        header_hist = self.tabla_historial.horizontalHeader()
+        header_hist.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Fecha
+        header_hist.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Prof. Original
+        header_hist.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  # Prof. Sustituto
+        header_hist.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Turno/Recreo
+        header_hist.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  # Zona
+
         layout_historial.addWidget(self.tabla_historial)
 
         grupo_historial.setLayout(layout_historial)

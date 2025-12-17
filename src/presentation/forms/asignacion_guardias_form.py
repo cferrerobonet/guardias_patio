@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
+from utils.icons import icon_for_button
 
 from presentation.forms.asignacion_widgets import (
     CuotasPanel,
@@ -113,7 +114,7 @@ class AsignacionGuardiasForm(BaseForm):
         main_layout.setSpacing(10)
 
         # Título principal
-        titulo = QLabel("🎯 ASIGNACIÓN DE GUARDIAS")
+        titulo = QLabel("ASIGNACIÓN DE GUARDIAS")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         main_layout.addWidget(titulo)
 
@@ -163,7 +164,8 @@ class AsignacionGuardiasForm(BaseForm):
         button_layout.addStretch()
 
         # Botón generar
-        self.generar_button = QPushButton("🎯 Generar Asignación")
+        self.generar_button = QPushButton("Generar Asignación")
+        self.generar_button.setIcon(icon_for_button("target"))
         self.generar_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.generar_button.setMinimumWidth(220)
         self.generar_button.setMinimumHeight(40)
@@ -172,7 +174,8 @@ class AsignacionGuardiasForm(BaseForm):
         button_layout.addWidget(self.generar_button)
 
         # Botón limpiar
-        self.limpiar_button = QPushButton("🗑️ Limpiar Guardias")
+        self.limpiar_button = QPushButton("Limpiar Guardias")
+        self.limpiar_button.setIcon(icon_for_button("delete"))
         self.limpiar_button.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.limpiar_button.setMinimumWidth(220)
         self.limpiar_button.setMinimumHeight(40)

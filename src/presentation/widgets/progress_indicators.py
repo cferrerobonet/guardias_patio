@@ -274,7 +274,7 @@ class ProgressDialog(QDialog):
         metrics_layout.addWidget(self.label_cpu)
 
         # Tiempo estimado
-        self.label_eta = QLabel("⏱️ ETA: calculando...")
+        self.label_eta = QLabel("ETA: calculando...")
         self.label_eta.setStyleSheet("""
             QLabel {
                 font-size: 10px;
@@ -302,7 +302,7 @@ class ProgressDialog(QDialog):
         # Área de detalles con log (si show_details=True)
         if show_details:
             # Label para el área de detalles
-            label_log = QLabel("📋 Detalles del proceso:")
+            label_log = QLabel("Detalles del proceso:")
             label_log.setStyleSheet("""
                 QLabel {
                     font-size: 11px;
@@ -395,13 +395,6 @@ class ProgressDialog(QDialog):
                 self._log_handler = None
             except Exception:
                 pass
-
-    def closeEvent(self, event):
-        """Override closeEvent para limpiar handlers."""
-        self._desinstalar_log_handler()
-        if self._timer:
-            self._timer.stop()
-        super().closeEvent(event)
 
     def actualizar_progreso(self, actual: int, total: int, detalle: str = ""):
         """
@@ -522,7 +515,8 @@ class ProgressDialog(QDialog):
 
             # Mostrar: % total, cores activos y cores equivalentes
             self.label_cpu.setText(
-                f"{emoji} CPU: {cpu_percent:.0f}% ({cores_activos}/{total_cores} cores, ~{cores_equivalentes:.1f} equiv.)"
+                f"{emoji} CPU: {cpu_percent:.0f}% "
+                f"({cores_activos}/{total_cores} cores, ~{cores_equivalentes:.1f} equiv.)"
             )
             self.label_cpu.setStyleSheet(f"""
                 QLabel {{
@@ -537,7 +531,7 @@ class ProgressDialog(QDialog):
         except ImportError:
             # psutil no disponible
             self.label_cpu.setText("💻 CPU: N/A")
-        except:
+        except Exception:
             pass
 
     def _actualizar_eta(self, porcentaje_actual: int):
@@ -569,9 +563,9 @@ class ProgressDialog(QDialog):
                 minutos = (segundos_restantes % 3600) // 60
                 eta_text = f"{horas}h {minutos}m"
 
-            self.label_eta.setText(f"⏱️ ETA: {eta_text}")
+            self.label_eta.setText(f"ETA: {eta_text}")
         else:
-            self.label_eta.setText("⏱️ ETA: calculando...")
+            self.label_eta.setText("ETA: calculando...")
 
     def fue_cancelado(self) -> bool:
         """
@@ -618,6 +612,7 @@ class ProgressDialog(QDialog):
     def closeEvent(self, event):
         """
         Manejar evento de cierre para evitar cierres accidentales durante operaciones.
+        También limpia los handlers de log.
         """
         from utils.logger import get_logger
 
@@ -626,6 +621,7 @@ class ProgressDialog(QDialog):
         # Si el diálogo fue cancelado o completado, permitir cierre
         if self._cancelado or self.progress_bar.value() >= self.progress_bar.maximum():
             logger.info("Diálogo de progreso cerrado normalmente")
+            self._desinstalar_log_handler()
             if self._timer:
                 self._timer.stop()
             event.accept()
@@ -766,7 +762,7 @@ class WorkerThread(QThread):
             # Intentar desbloquear mutex si quedó bloqueado
             try:
                 self._decision_mutex.unlock()
-            except:
+            except Exception:
                 pass
 
             return "error"
@@ -857,7 +853,7 @@ def ejecutar_con_progreso(
 
     def on_finalizado(resultado):
         resultado_final[0] = resultado
-        dialog.completar("✅ Generación completada exitosamente")
+        dialog.completar("Generación completada exitosamente")
 
     def on_error(error):
         error_final[0] = error
@@ -876,7 +872,7 @@ def ejecutar_con_progreso(
 
             if not isinstance(error, InterruptedError):
                 # Mostrar mensaje de error
-                dialog.set_mensaje(f"❌ Error: {str(error)[:100]}...")
+                dialog.set_mensaje(f"Error: {str(error)[:100]}...")
 
                 # Marcar como completado (con error) para permitir cierre
                 dialog._cancelado = True
@@ -900,7 +896,7 @@ def ejecutar_con_progreso(
             # Forzar cierre en caso de error
             try:
                 dialog.close()
-            except:
+            except Exception:
                 pass
 
     worker.finalizado.connect(on_finalizado)

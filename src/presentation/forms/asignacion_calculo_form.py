@@ -75,7 +75,7 @@ class AsignacionCalculoForm(BaseForm):
         main_layout.setSpacing(10)
 
         # Título principal
-        titulo = QLabel("📊 CÁLCULO Y ASIGNACIÓN")
+        titulo = QLabel("CÁLCULO Y ASIGNACIÓN")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         main_layout.addWidget(titulo)
 

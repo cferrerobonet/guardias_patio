@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from utils.icons import icon_for_button
 
 from src.services.diagnosticador_guardias import DiagnosticoCompleto, ProblemaDetectado
 
@@ -47,7 +48,7 @@ class DialogoDiagnosticoGuardias(QDialog):
         layout = QVBoxLayout()
 
         # Título
-        titulo = QLabel("⚠️ Se detectaron problemas en la asignación")
+        titulo = QLabel("Se detectaron problemas en la asignación")
         titulo.setStyleSheet("font-size: 16pt; font-weight: bold; color: #e67e22;")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(titulo)
@@ -76,20 +77,20 @@ class DialogoDiagnosticoGuardias(QDialog):
         # Mostrar problemas por gravedad
         self._agregar_seccion_problemas(
             layout_problemas,
-            "🔴 PROBLEMAS CRÍTICOS",
+            "PROBLEMAS CRÍTICOS",
             self.diagnostico.problemas_criticos,
             "#e74c3c",
         )
 
         self._agregar_seccion_problemas(
             layout_problemas,
-            "🟠 PROBLEMAS IMPORTANTES",
+            "PROBLEMAS IMPORTANTES",
             self.diagnostico.problemas_altos,
             "#e67e22",
         )
 
         self._agregar_seccion_problemas(
-            layout_problemas, "🟡 PROBLEMAS MENORES", self.diagnostico.problemas_medios, "#f39c12"
+            layout_problemas, "PROBLEMAS MENORES", self.diagnostico.problemas_medios, "#f39c12"
         )
 
         layout_problemas.addStretch()
@@ -99,7 +100,7 @@ class DialogoDiagnosticoGuardias(QDialog):
         # Mensaje de recomendación
         if self.diagnostico.puede_continuar_ilp:
             recomendacion = QLabel(
-                "💡 Recomendación: Puede ajustar manualmente la configuración o "
+                "Recomendación: Puede ajustar manualmente la configuración o "
                 "continuar con el algoritmo ILP avanzado que garantiza la mejor solución posible."
             )
             recomendacion.setWordWrap(True)
@@ -112,7 +113,8 @@ class DialogoDiagnosticoGuardias(QDialog):
         # Botones de acción
         layout_botones = QHBoxLayout()
 
-        btn_ajustar = QPushButton("📝 Ajustar Manualmente")
+        btn_ajustar = QPushButton("Ajustar Manualmente")
+        btn_ajustar.setIcon(icon_for_button("edit"))
         btn_ajustar.setToolTip(
             "Volver a la configuración para modificar disponibilidades, zonas, recreos o días"
         )
@@ -123,7 +125,8 @@ class DialogoDiagnosticoGuardias(QDialog):
             "QPushButton:hover { background-color: #2980b9; }"
         )
 
-        btn_continuar_ilp = QPushButton("🎯 Continuar con ILP Avanzado")
+        btn_continuar_ilp = QPushButton("Continuar con ILP Avanzado")
+        btn_continuar_ilp.setIcon(icon_for_button("target"))
         btn_continuar_ilp.setToolTip(
             "Usar algoritmo de Programación Lineal Entera que garantiza "
             "la solución óptima matemáticamente (puede tardar más)"
@@ -142,7 +145,8 @@ class DialogoDiagnosticoGuardias(QDialog):
                 "Los problemas detectados son menores. No es necesario usar el algoritmo ILP."
             )
 
-        btn_cancelar = QPushButton("❌ Cancelar")
+        btn_cancelar = QPushButton("Cancelar")
+        btn_cancelar.setIcon(icon_for_button("close"))
         btn_cancelar.clicked.connect(self.reject)
         btn_cancelar.setStyleSheet(
             "QPushButton { background-color: #95a5a6; color: white; "
@@ -187,7 +191,7 @@ class DialogoDiagnosticoGuardias(QDialog):
             # Sugerencias (si las hay)
             if problema.sugerencias:
                 for sugerencia in problema.sugerencias[:3]:  # Máximo 3 sugerencias
-                    lbl_sugerencia = QLabel(f"   💡 {sugerencia}")
+                    lbl_sugerencia = QLabel(f"   → {sugerencia}")
                     lbl_sugerencia.setWordWrap(True)
                     lbl_sugerencia.setStyleSheet(
                         "font-size: 9pt; color: #7f8c8d; margin-left: 30px; "

@@ -7,6 +7,7 @@ Encapsula la lógica de configuración de:
 - Recreos de tarde (2 recreos opcionales)
 """
 
+import ui_styles as styles
 from PyQt6.QtCore import QDate, QTime, pyqtSignal
 from PyQt6.QtWidgets import (
     QDateEdit,
@@ -16,8 +17,6 @@ from PyQt6.QtWidgets import (
     QTimeEdit,
     QVBoxLayout,
 )
-
-import ui_styles as styles
 from utils import get_logger
 
 
@@ -67,7 +66,7 @@ class FechasRecreosWidget(QGroupBox):
 
     def _crear_grupo_fechas(self) -> QGroupBox:
         """Crea el grupo de fechas del curso."""
-        grupo = QGroupBox("📅 Fechas del Curso")
+        grupo = QGroupBox("Fechas del Curso")
         grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         layout = QVBoxLayout()
         layout.setSpacing(1)
@@ -102,7 +101,7 @@ class FechasRecreosWidget(QGroupBox):
 
     def _crear_grupo_recreos_manana(self) -> QGroupBox:
         """Crea el grupo de recreos de mañana."""
-        grupo = QGroupBox("☀️ Recreos de Mañana")
+        grupo = QGroupBox("Recreos de Mañana")
         grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         layout = QHBoxLayout()
         layout.setSpacing(6)

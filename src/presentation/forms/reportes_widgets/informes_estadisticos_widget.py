@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from sqlalchemy.orm import Session
+from utils.icons import icon_for_button
 
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
@@ -39,7 +40,7 @@ class InformesEstadisticosWidget(QGroupBox):
             session: Sesión de base de datos
             parent: Widget padre
         """
-        super().__init__("📊 INFORMES ESTADÍSTICOS", parent)
+        super().__init__("INFORMES ESTADÍSTICOS", parent)
         self.session = session
 
         self.setStyleSheet(styles.STYLE_GROUPBOX)
@@ -72,11 +73,11 @@ class InformesEstadisticosWidget(QGroupBox):
 
         # Tipo de reporte
         self.tipo_combo = QComboBox()
-        self.tipo_combo.addItem("📅 Guardias del Mes", "guardias_mes")
-        self.tipo_combo.addItem("⚖️ Distribución de Carga", "distribucion_carga")
-        self.tipo_combo.addItem("🏥 Ausencias del Periodo", "ausencias")
-        self.tipo_combo.addItem("📈 Cobertura Mensual", "cobertura")
-        self.tipo_combo.addItem("📊 Resumen Completo", "resumen_completo")
+        self.tipo_combo.addItem("Guardias del Mes", "guardias_mes")
+        self.tipo_combo.addItem("Distribución de Carga", "distribucion_carga")
+        self.tipo_combo.addItem("Ausencias del Periodo", "ausencias")
+        self.tipo_combo.addItem("Cobertura Mensual", "cobertura")
+        self.tipo_combo.addItem("Resumen Completo", "resumen_completo")
         self.tipo_combo.setStyleSheet(styles.STYLE_INPUT)
         config_layout.addRow("Tipo de Reporte:", self.tipo_combo)
 
@@ -98,8 +99,8 @@ class InformesEstadisticosWidget(QGroupBox):
 
         # Formato de salida
         self.formato_combo = QComboBox()
-        self.formato_combo.addItem("📄 PDF", "pdf")
-        self.formato_combo.addItem("📊 Excel (próximamente)", "excel")
+        self.formato_combo.addItem("PDF", "pdf")
+        self.formato_combo.addItem("Excel (próximamente)", "excel")
         self.formato_combo.setCurrentIndex(0)
         self.formato_combo.setStyleSheet(styles.STYLE_INPUT)
         # Deshabilitar Excel temporalmente
@@ -112,12 +113,14 @@ class InformesEstadisticosWidget(QGroupBox):
         botones_layout = QHBoxLayout()
         botones_layout.addStretch()
 
-        btn_vista_previa = QPushButton("👁️ Vista Previa")
+        btn_vista_previa = QPushButton("Vista Previa")
+        btn_vista_previa.setIcon(icon_for_button("view"))
         btn_vista_previa.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
         btn_vista_previa.clicked.connect(self._vista_previa)
         botones_layout.addWidget(btn_vista_previa)
 
-        btn_generar = QPushButton("📊 Generar Reporte")
+        btn_generar = QPushButton("Generar Reporte")
+        btn_generar.setIcon(icon_for_button("chart"))
         btn_generar.setMinimumHeight(40)
         btn_generar.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         btn_generar.clicked.connect(self._generar_reporte)

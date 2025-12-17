@@ -171,7 +171,7 @@ class ResetPasswordDialog(QDialog):
 
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Icon.Information)
-        msg.setWindowTitle("✅ Contraseña cambiada")
+        msg.setWindowTitle("Contraseña cambiada")
         msg.setTextFormat(Qt.TextFormat.RichText)
         msg.setWindowFlags(
             Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint

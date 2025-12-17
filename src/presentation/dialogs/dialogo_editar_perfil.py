@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from sync.sync_manager import UserAuth
+from utils.icons import icon_for_button
 
 
 class DialogoEditarPerfil(QDialog):
@@ -32,7 +33,7 @@ class DialogoEditarPerfil(QDialog):
         layout = QVBoxLayout()
 
         # Título
-        titulo = QLabel(f"✏️ Editar Perfil: {self.username}")
+        titulo = QLabel(f"Editar Perfil: {self.username}")
         titulo.setStyleSheet("font-size: 14px; font-weight: bold; margin-bottom: 10px;")
         layout.addWidget(titulo)
 
@@ -64,7 +65,8 @@ class DialogoEditarPerfil(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         botones_layout.addWidget(btn_cancelar)
 
-        btn_guardar = QPushButton("💾 Guardar Cambios")
+        btn_guardar = QPushButton("Guardar Cambios")
+        btn_guardar.setIcon(icon_for_button("save"))
         btn_guardar.setStyleSheet("""
             QPushButton {
                 background-color: #2196F3;

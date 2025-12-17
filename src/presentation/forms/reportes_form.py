@@ -53,7 +53,7 @@ class ReportesForm(BaseForm):
         main_layout.setSpacing(15)
 
         # Título
-        titulo = QLabel("📊 REPORTES E INFORMES")
+        titulo = QLabel("REPORTES E INFORMES")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(titulo)
@@ -109,16 +109,16 @@ class ReportesForm(BaseForm):
         # Tab 1: Calendarios PDF
         self.calendarios_widget = CalendariosPdfWidget(self.session, self)
         self.calendarios_widget.generar_pdfs_solicitado.connect(self.exportar_pdfs)
-        self.tabs.addTab(self.calendarios_widget, "📅 Calendarios PDF")
+        self.tabs.addTab(self.calendarios_widget, "Calendarios PDF")
 
         # Tab 2: Informes Estadísticos
         self.informes_widget = InformesEstadisticosWidget(self.session, self)
-        self.tabs.addTab(self.informes_widget, "📊 Informes Estadísticos")
+        self.tabs.addTab(self.informes_widget, "Informes Estadísticos")
 
         main_layout.addWidget(self.tabs)
 
         # Resultado (ancho completo)
-        resultado_group = QGroupBox("📋 Resultados")
+        resultado_group = QGroupBox("Resultados")
         resultado_group.setStyleSheet(styles.STYLE_GROUPBOX)
         resultado_layout = QVBoxLayout()
         self.resultado_text = QTextEdit()
@@ -194,7 +194,7 @@ class ReportesForm(BaseForm):
 
         except Exception as e:
             self.manejar_excepcion(e, "generar PDFs")
-            self.resultado_text.setText(f"❌ Error al generar PDFs: {e}")
+            self.resultado_text.setText(f"Error al generar PDFs: {e}")
 
     def _exportar_mes_todos(self, config: dict, carpeta: str):
         """Exportar mes específico consolidado para todos los profesores."""

@@ -88,23 +88,23 @@ class MainWindow(QWidget):
 
         # Widgets refactorizados (Sprint 5)
         self.gestionar_ausencias = GestionarAusenciasForm(self.session)
-        self.tabs.addTab(self.gestionar_ausencias, "🏥 Ausencias")
+        self.tabs.addTab(self.gestionar_ausencias, "Ausencias")
 
         # Calendario mejorado
         self.vista_calendario = VistaCalendario(self.session)
-        self.tabs.addTab(self.vista_calendario, "📆 Calendario de Guardias")
+        self.tabs.addTab(self.vista_calendario, "Calendario de Guardias")
 
         self.panel_estadisticas = PanelEstadisticas(self.session)
-        self.tabs.addTab(self.panel_estadisticas, "📊 Estadísticas")
+        self.tabs.addTab(self.panel_estadisticas, "Estadísticas")
 
         # Dashboard de métricas (Fase 4)
         self.dashboard = DashboardForm(self.session)
-        self.tabs.addTab(self.dashboard, "📈 Dashboard Equidad")
+        self.tabs.addTab(self.dashboard, "Dashboard Equidad")
 
         self.gestor_sustituciones = GestorSustituciones(self.session)
-        self.tabs.addTab(self.gestor_sustituciones, "🔄 Sustituciones")
+        self.tabs.addTab(self.gestor_sustituciones, "Sustituciones")
 
-        self.tabs.addTab(self.import_export_form, "💾 Importar / Exportar")
+        self.tabs.addTab(self.import_export_form, "Importar / Exportar")
 
         # Conectar señales para actualización automática
         self._conectar_senales_actualizacion()

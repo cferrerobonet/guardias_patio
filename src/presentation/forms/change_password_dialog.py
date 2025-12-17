@@ -39,7 +39,7 @@ class ChangePasswordDialog(QDialog):
 
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
-        self.setWindowTitle("🔒 Cambiar Contraseña")
+        self.setWindowTitle("Cambiar Contraseña")
         self.setWindowIcon(get_corporate_icon())
         self.setModal(True)
         self.setFixedWidth(500)
@@ -202,7 +202,7 @@ class ChangePasswordDialog(QDialog):
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
-            msg.setWindowTitle("✅ Contraseña cambiada")
+            msg.setWindowTitle("Contraseña cambiada")
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
                 Qt.WindowType.Dialog

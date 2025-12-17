@@ -85,7 +85,7 @@ class DiaDetalleDialog(QDialog):
         nombre_dia = self.fecha.strftime("%A").capitalize()
         fecha_formateada = self.fecha.strftime("%d de %B de %Y")
 
-        label_fecha = QLabel(f"📅 {nombre_dia}, {fecha_formateada}")
+        label_fecha = QLabel(f"{nombre_dia}, {fecha_formateada}")
         font_fecha = QFont()
         font_fecha.setPointSize(14)
         font_fecha.setBold(True)
@@ -119,7 +119,7 @@ class DiaDetalleDialog(QDialog):
             guardias_group = self._crear_seccion_guardias()
             contenido_layout.addWidget(guardias_group)
         else:
-            label_sin_guardias = QLabel("ℹ️ No hay guardias asignadas para este día")
+            label_sin_guardias = QLabel("No hay guardias asignadas para este día")
             label_sin_guardias.setStyleSheet(
                 "padding: 20px; background-color: #f0f0f0; border-radius: 5px; color: #666;"
             )
@@ -150,7 +150,7 @@ class DiaDetalleDialog(QDialog):
 
     def _crear_resumen_estadistico(self) -> QGroupBox:
         """Crear widget con resumen estadístico del día."""
-        group = QGroupBox("📊 Resumen")
+        group = QGroupBox("Resumen")
         group.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -242,7 +242,7 @@ class DiaDetalleDialog(QDialog):
 
     def _crear_seccion_guardias(self) -> QGroupBox:
         """Crear sección con lista de guardias."""
-        group = QGroupBox(f"🛡️ Guardias ({len(self.guardias)})")
+        group = QGroupBox(f"Guardias ({len(self.guardias)})")
         group.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -288,7 +288,7 @@ class DiaDetalleDialog(QDialog):
         turno = guardias[0].turno if guardias else "mañana"
 
         # Header del recreo
-        header = QLabel(f"⏰ Recreo {numero_recreo} ({len(guardias)} profesores)")
+        header = QLabel(f"Recreo {numero_recreo} ({len(guardias)} profesores)")
         font_header = QFont()
         font_header.setBold(True)
         header.setFont(font_header)
@@ -345,7 +345,7 @@ class DiaDetalleDialog(QDialog):
         layout.addWidget(zona_label)
 
         # Texto de alerta
-        label_alerta = QLabel("⚠️ SIN GUARDIA ASIGNADA")
+        label_alerta = QLabel("SIN GUARDIA ASIGNADA")
         font_alerta = QFont()
         font_alerta.setPointSize(10)
         font_alerta.setBold(True)
@@ -425,7 +425,7 @@ class DiaDetalleDialog(QDialog):
 
     def _crear_seccion_ausencias(self) -> QGroupBox:
         """Crear sección con lista de ausencias."""
-        group = QGroupBox(f"🏥 Ausencias ({len(self.ausencias)})")
+        group = QGroupBox(f"Ausencias ({len(self.ausencias)})")
         group.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -461,7 +461,7 @@ class DiaDetalleDialog(QDialog):
 
         # Primera línea: Profesor y fechas
         linea1 = QHBoxLayout()
-        label_profesor = QLabel(f"👤 {ausencia.profesor.nombre_completo}")
+        label_profesor = QLabel(f"{ausencia.profesor.nombre_completo}")
         font_prof = QFont()
         font_prof.setBold(True)
         label_profesor.setFont(font_prof)
@@ -470,7 +470,7 @@ class DiaDetalleDialog(QDialog):
         # Fechas de ausencia
         fecha_inicio = ausencia.fecha_inicio.strftime("%d/%m/%Y")
         fecha_fin = ausencia.fecha_fin.strftime("%d/%m/%Y")
-        label_fechas = QLabel(f"📅 {fecha_inicio} - {fecha_fin}")
+        label_fechas = QLabel(f"{fecha_inicio} - {fecha_fin}")
         label_fechas.setStyleSheet("color: #666; font-size: 9px;")
         linea1.addWidget(label_fechas)
         linea1.addStretch()
@@ -479,7 +479,7 @@ class DiaDetalleDialog(QDialog):
 
         # Segunda línea: Motivo (si existe)
         if ausencia.motivo:
-            label_motivo = QLabel(f"💬 {ausencia.motivo}")
+            label_motivo = QLabel(f"Motivo: {ausencia.motivo}")
             label_motivo.setStyleSheet("color: #555; font-size: 10px; font-style: italic;")
             label_motivo.setWordWrap(True)
             layout.addWidget(label_motivo)
@@ -492,7 +492,7 @@ class DiaDetalleDialog(QDialog):
 
     def _crear_seccion_sustituciones(self) -> QGroupBox:
         """Crear sección con lista de sustituciones."""
-        group = QGroupBox(f"🔄 Sustituciones ({len(self.sustituciones)})")
+        group = QGroupBox(f"Sustituciones ({len(self.sustituciones)})")
         group.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;

@@ -108,7 +108,7 @@ class CalendariosPdfWidget(QGroupBox):
         tipo_layout = QVBoxLayout()
         tipo_layout.setSpacing(5)
 
-        tipo_label = QLabel("📋 Tipo de exportación:")
+        tipo_label = QLabel("Tipo de exportación:")
         tipo_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         tipo_layout.addWidget(tipo_label)
 
@@ -369,15 +369,15 @@ class CalendariosPdfWidget(QGroupBox):
 
         # Actualizar texto del botón
         if tipo == "mes_todos":
-            self.exportar_pdf_btn.setText("📄 Generar PDF Consolidado (Mes)")
+            self.exportar_pdf_btn.setText("Generar PDF Consolidado (Mes)")
         elif tipo == "mes_seleccionados":
-            self.exportar_pdf_btn.setText("📄 Generar PDFs Seleccionados (Mes)")
+            self.exportar_pdf_btn.setText("Generar PDFs Seleccionados (Mes)")
         elif tipo == "curso_todos":
-            self.exportar_pdf_btn.setText("📚 Generar PDF Curso Completo (Todos)")
+            self.exportar_pdf_btn.setText("Generar PDF Curso Completo (Todos)")
         elif tipo == "curso_seleccionados":
-            self.exportar_pdf_btn.setText("📚 Generar PDF Curso Completo (Seleccionados)")
+            self.exportar_pdf_btn.setText("Generar PDF Curso Completo (Seleccionados)")
         else:  # individual_seleccionados
-            self.exportar_pdf_btn.setText("🗓️ Generar Calendarios Individuales")
+            self.exportar_pdf_btn.setText("Generar Calendarios Individuales")
 
     def _on_seleccionar_todos_changed(self, state):
         """Manejar cambio en el checkbox de seleccionar todos."""
@@ -447,7 +447,7 @@ class CalendariosPdfWidget(QGroupBox):
                 """
                 )
         except Exception as e:
-            self.curso_activo_label.setText(f"❌ Error al obtener curso: {e}")
+            self.curso_activo_label.setText(f"Error al obtener curso: {e}")
 
     def refrescar_curso_activo(self):
         """Método público para refrescar el curso activo desde la UI principal."""

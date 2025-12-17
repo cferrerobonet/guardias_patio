@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from sqlalchemy.orm import Session
+from utils.icons import icon_for_button
 
 from presentation.forms.base_form import BaseForm
 from presentation.forms.config_widgets import (
@@ -142,7 +143,7 @@ class AjustesForm(BaseForm):
         content_layout.setSpacing(8)
 
         # Título principal
-        titulo = QLabel("⚙️ AJUSTES DEL CURSO ESCOLAR")
+        titulo = QLabel("AJUSTES DEL CURSO ESCOLAR")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         content_layout.addWidget(titulo)
 
@@ -191,11 +192,13 @@ class AjustesForm(BaseForm):
         layout = QHBoxLayout()
         layout.setSpacing(10)
 
-        self.save_btn = QPushButton("💾 Guardar Configuración")
+        self.save_btn = QPushButton("Guardar Configuración")
+        self.save_btn.setIcon(icon_for_button("save"))
         self.save_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.save_btn.clicked.connect(self.guardar_configuracion)
 
-        self.load_btn = QPushButton("🔄 Cargar Actual")
+        self.load_btn = QPushButton("Cargar Actual")
+        self.load_btn.setIcon(icon_for_button("refresh"))
         self.load_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.load_btn.clicked.connect(self.cargar_configuracion)
 
@@ -417,7 +420,8 @@ class AjustesForm(BaseForm):
         """Guarda el email del usuario actual internamente.
 
         Returns:
-            bool: True si se guardó correctamente o no hubo cambios, False si hay error de validación.
+            bool: True si se guardó correctamente o no hubo cambios,
+                  False si hay error de validación.
         """
         try:
             nuevo_email = self.email_input.text().strip()

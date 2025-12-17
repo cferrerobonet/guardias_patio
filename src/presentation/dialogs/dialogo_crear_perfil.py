@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from sync.sync_manager import UserAuth
+from utils.icons import icon_for_button
 
 
 class DialogoCrearPerfil(QDialog):
@@ -31,7 +32,7 @@ class DialogoCrearPerfil(QDialog):
         layout = QVBoxLayout()
 
         # Título
-        titulo = QLabel("➕ Crear Nuevo Perfil de Usuario")
+        titulo = QLabel("Crear Nuevo Perfil de Usuario")
         titulo.setStyleSheet("font-size: 14px; font-weight: bold; margin-bottom: 10px;")
         layout.addWidget(titulo)
 
@@ -75,7 +76,8 @@ class DialogoCrearPerfil(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         botones_layout.addWidget(btn_cancelar)
 
-        btn_crear = QPushButton("✅ Crear Perfil")
+        btn_crear = QPushButton("Crear Perfil")
+        btn_crear.setIcon(icon_for_button("check"))
         btn_crear.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50;

@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
 )
 from services.gestor_cursos import GestorCursos
 from sqlalchemy.orm import Session
+from utils.icons import icon_for_button
 
 from presentation.dialogs.dialogo_crear_curso import DialogoCrearCurso
 
@@ -64,7 +65,7 @@ class GestionCursosWidget(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
 
         # GroupBox con estilo - Se expandirá verticalmente
-        grupo = QGroupBox("📚 Gestión de Cursos Escolares")
+        grupo = QGroupBox("Gestión de Cursos Escolares")
         grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         grupo_layout = QVBoxLayout()
         grupo_layout.setSpacing(12)
@@ -86,7 +87,8 @@ class GestionCursosWidget(QWidget):
         # Agregar stretch al inicio para empujar botones a la derecha
         botones_layout.addStretch()
 
-        self.btn_crear = QPushButton("➕ Crear Nuevo Curso")
+        self.btn_crear = QPushButton("Crear Nuevo Curso")
+        self.btn_crear.setIcon(icon_for_button("plus"))
         self.btn_crear.setStyleSheet(
             styles.STYLE_BUTTON_SUCCESS + "font-size: 12px; padding: 8px 16px; font-weight: bold;"
         )
@@ -94,7 +96,8 @@ class GestionCursosWidget(QWidget):
         self.btn_crear.clicked.connect(self._crear_curso)
         botones_layout.addWidget(self.btn_crear)
 
-        self.btn_activar = QPushButton("⭐ Activar")
+        self.btn_activar = QPushButton("Activar")
+        self.btn_activar.setIcon(icon_for_button("check"))
         self.btn_activar.setStyleSheet(
             styles.STYLE_BUTTON_PRIMARY + "font-size: 12px; padding: 8px 16px;"
         )
@@ -103,7 +106,8 @@ class GestionCursosWidget(QWidget):
         self.btn_activar.setEnabled(False)
         botones_layout.addWidget(self.btn_activar)
 
-        self.btn_cerrar = QPushButton("🔒 Cerrar")
+        self.btn_cerrar = QPushButton("Cerrar")
+        self.btn_cerrar.setIcon(icon_for_button("lock"))
         self.btn_cerrar.setStyleSheet(
             styles.STYLE_BUTTON_WARNING + "font-size: 12px; padding: 8px 16px;"
         )
@@ -114,7 +118,8 @@ class GestionCursosWidget(QWidget):
         self.btn_cerrar.setEnabled(False)
         botones_layout.addWidget(self.btn_cerrar)
 
-        self.btn_eliminar = QPushButton("🗑️ Eliminar")
+        self.btn_eliminar = QPushButton("Eliminar")
+        self.btn_eliminar.setIcon(icon_for_button("delete"))
         self.btn_eliminar.setStyleSheet(
             styles.STYLE_BUTTON_DANGER + "font-size: 12px; padding: 8px 16px;"
         )
@@ -561,10 +566,10 @@ class GestionCursosWidget(QWidget):
             # Confirmación doble
             msg_box = QMessageBox(self)
             msg_box.setIcon(QMessageBox.Icon.Warning)
-            msg_box.setWindowTitle("⚠️ Eliminar Curso")
+            msg_box.setWindowTitle("Eliminar Curso")
             msg_box.setText(f"¿ELIMINAR el curso {curso.nombre}?")
             msg_box.setInformativeText(
-                f"⚠️ Esta acción eliminará:\n"
+                f"Esta acción eliminará:\n"
                 f"   • {num_guardias} guardias asignadas\n"
                 f"   • Todos los datos asociados al curso\n\n"
                 "Esta acción NO se puede deshacer."
@@ -585,7 +590,7 @@ class GestionCursosWidget(QWidget):
             # Segunda confirmación
             msg_box2 = QMessageBox(self)
             msg_box2.setIcon(QMessageBox.Icon.Critical)
-            msg_box2.setWindowTitle("⚠️ CONFIRMACIÓN FINAL")
+            msg_box2.setWindowTitle("CONFIRMACIÓN FINAL")
             msg_box2.setText(f"¿Estás COMPLETAMENTE SEGURO de eliminar {curso.nombre}?")
             msg_box2.setInformativeText("Se perderán todos los datos permanentemente.")
             msg_box2.setStandardButtons(

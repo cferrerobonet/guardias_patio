@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from utils.icons import icon_for_button
 
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import (
@@ -57,23 +58,24 @@ class PanelEstadisticas(BaseForm):
         layout_principal = QVBoxLayout()
 
         # Título
-        titulo = QLabel("📊 ESTADÍSTICAS DE GUARDIAS")
+        titulo = QLabel("ESTADÍSTICAS DE GUARDIAS")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_principal.addWidget(titulo)
 
         # Botón refrescar
-        btn_refrescar = QPushButton("🔄 Actualizar Estadísticas")
+        btn_refrescar = QPushButton("Actualizar Estadísticas")
+        btn_refrescar.setIcon(icon_for_button("refresh"))
         btn_refrescar.clicked.connect(self.actualizar_estadisticas)
         btn_refrescar.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         layout_principal.addWidget(btn_refrescar)
 
         # Pestañas
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._crear_tab_resumen(), "📋 Resumen")
-        self.tabs.addTab(self._crear_tab_profesores(), "👨‍🏫 Por Profesor")
-        self.tabs.addTab(self._crear_tab_zonas(), "🏫 Por Zona")
-        self.tabs.addTab(self._crear_tab_graficos(), "📈 Gráficos")
+        self.tabs.addTab(self._crear_tab_resumen(), "Resumen")
+        self.tabs.addTab(self._crear_tab_profesores(), "Por Profesor")
+        self.tabs.addTab(self._crear_tab_zonas(), "Por Zona")
+        self.tabs.addTab(self._crear_tab_graficos(), "Gráficos")
 
         layout_principal.addWidget(self.tabs)
         self.setLayout(layout_principal)

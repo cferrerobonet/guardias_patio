@@ -34,6 +34,7 @@ from ui_styles import (
     format_terminal_warning,
     wrap_terminal_html,
 )
+from utils.icons import icon_for_button
 
 
 class GeneracionPanel(QGroupBox):
@@ -61,7 +62,7 @@ class GeneracionPanel(QGroupBox):
             sync_manager: Gestor de sincronización con la nube.
             parent: Widget padre opcional.
         """
-        super().__init__("🎯 Generación y Resultados", parent)
+        super().__init__("Generación y Resultados", parent)
         self.session = session
         self.sync_manager = sync_manager
         self._ultimo_resumen = None
@@ -110,8 +111,8 @@ class GeneracionPanel(QGroupBox):
         algoritmo_container.addWidget(algoritmo_label)
 
         self.algoritmo_combo = QComboBox()
-        self.algoritmo_combo.addItem("⚡ Rápido (v4 Híbrido)", "v4.0")
-        self.algoritmo_combo.addItem("🎯 Óptimo (CP-SAT)", "cpsat")
+        self.algoritmo_combo.addItem("Rápido (v4 Híbrido)", "v4.0")
+        self.algoritmo_combo.addItem("Óptimo (CP-SAT)", "cpsat")
         self.algoritmo_combo.setCurrentIndex(1)  # Default: óptimo (CP-SAT)
         self.algoritmo_combo.setToolTip(
             "Rápido: ~1 segundo, heurístico\n"
@@ -144,7 +145,8 @@ class GeneracionPanel(QGroupBox):
         button_container.setSpacing(10)
 
         # Botón Generar (deshabilitado hasta que se calculen cuotas)
-        self.generar_button = QPushButton("🎯 Generar Asignación")
+        self.generar_button = QPushButton("Generar Asignación")
+        self.generar_button.setIcon(icon_for_button("target"))
         self.generar_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.generar_button.setMinimumHeight(36)
         self.generar_button.clicked.connect(self._generar_guardias)
@@ -153,7 +155,8 @@ class GeneracionPanel(QGroupBox):
         button_container.addWidget(self.generar_button, 1)
 
         # Botón Limpiar
-        self.limpiar_button = QPushButton("🗑️ Limpiar Guardias")
+        self.limpiar_button = QPushButton("Limpiar Guardias")
+        self.limpiar_button.setIcon(icon_for_button("delete"))
         self.limpiar_button.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.limpiar_button.setMinimumHeight(36)
         self.limpiar_button.clicked.connect(self._limpiar_guardias)
@@ -174,7 +177,7 @@ class GeneracionPanel(QGroupBox):
     def _mostrar_mensaje_inicial(self):
         """Muestra mensaje inicial."""
         texto = format_terminal_info(
-            "💡 Los resultados se mostrarán aquí después de\n"
+            "Los resultados se mostrarán aquí después de\n"
             "   generar el calendario de guardias.\n\n"
             "   Pulsa 'Calcular Cuotas' en el panel izquierdo\n"
             "   para habilitar 'Generar Asignación'."
@@ -192,8 +195,8 @@ class GeneracionPanel(QGroupBox):
             self.generar_button.setToolTip("Generar el calendario de guardias")
             # Actualizar mensaje para indicar que puede generar
             texto = format_terminal_info(
-                "✅ Cuotas calculadas correctamente.\n\n"
-                "💡 Pulsa 'Generar Asignación' para crear\n"
+                "Cuotas calculadas correctamente.\n\n"
+                "Pulsa 'Generar Asignación' para crear\n"
                 "   el calendario de guardias del curso."
             )
             self.content_text.setHtml(wrap_terminal_html(texto))
@@ -280,7 +283,7 @@ class GeneracionPanel(QGroupBox):
             return
 
         msg = QMessageBox(self)
-        msg.setWindowTitle("⚠️ Confirmar Eliminación")
+        msg.setWindowTitle("Confirmar Eliminación")
         msg.setText(f"¿Eliminar las {count} guardias existentes?")
         msg.setInformativeText("Esta acción no se puede deshacer.")
         msg.setStandardButtons(

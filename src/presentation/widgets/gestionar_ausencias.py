@@ -36,6 +36,7 @@ from services.gestor_ausencias import (
     registrar_ausencia,
 )
 from services.gestor_cursos import GestorCursos
+from utils.icons import icon_for_button
 from utils.ui_helpers import get_corporate_icon
 
 from presentation.forms.base_form import BaseForm
@@ -92,7 +93,7 @@ class GestionarAusenciasForm(BaseForm):
         """Crear panel izquierdo con lista de ausencias."""
         panel = QVBoxLayout()
 
-        titulo_lista = QLabel("📋 AUSENCIAS REGISTRADAS")
+        titulo_lista = QLabel("AUSENCIAS REGISTRADAS")
         titulo_lista.setStyleSheet(styles.STYLE_TITLE_MAIN)
         panel.addWidget(titulo_lista)
 
@@ -131,19 +132,22 @@ class GestionarAusenciasForm(BaseForm):
         # El botón de refrescar fue eliminado porque la tabla se actualiza
         # automáticamente después de cada operación (crear, editar, eliminar, desactivar)
 
-        self.editar_btn = QPushButton("✏️ Editar")
+        self.editar_btn = QPushButton("Editar")
+        self.editar_btn.setIcon(icon_for_button("edit"))
         self.editar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
         self.editar_btn.clicked.connect(self.cargar_ausencia_seleccionada)
         self.editar_btn.setToolTip("Editar la ausencia seleccionada")
         botones.addWidget(self.editar_btn)
 
-        self.delete_btn = QPushButton("🗑️ Eliminar")
+        self.delete_btn = QPushButton("Eliminar")
+        self.delete_btn.setIcon(icon_for_button("delete"))
         self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
         self.delete_btn.clicked.connect(self.eliminar_ausencia_seleccionada)
         self.delete_btn.setToolTip("Eliminar la ausencia seleccionada (Del)")
         botones.addWidget(self.delete_btn)
 
-        self.desactivar_btn = QPushButton("⏸️ Desactivar")
+        self.desactivar_btn = QPushButton("Desactivar")
+        self.desactivar_btn.setIcon(icon_for_button("pause"))
         self.desactivar_btn.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
         self.desactivar_btn.clicked.connect(self.desactivar_ausencia_seleccionada)
         self.desactivar_btn.setToolTip("Desactivar la ausencia sin eliminarla")
@@ -155,7 +159,7 @@ class GestionarAusenciasForm(BaseForm):
         """Crear panel derecho con formulario."""
         panel = QVBoxLayout()
 
-        self.titulo_form = QLabel("✏️ NUEVA AUSENCIA")
+        self.titulo_form = QLabel("NUEVA AUSENCIA")
         self.titulo_form.setStyleSheet(styles.STYLE_TITLE_MAIN)
         panel.addWidget(self.titulo_form)
 
@@ -174,7 +178,7 @@ class GestionarAusenciasForm(BaseForm):
 
     def _crear_grupo_datos(self) -> QGroupBox:
         """Crear grupo de datos de la ausencia."""
-        grupo = QGroupBox("📝 Datos de la Ausencia")
+        grupo = QGroupBox("Datos de la Ausencia")
         grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         layout = QVBoxLayout()
         layout.setSpacing(8)
@@ -255,7 +259,7 @@ class GestionarAusenciasForm(BaseForm):
 
     def _crear_grupo_preview(self) -> QGroupBox:
         """Crear grupo de preview de guardias afectadas."""
-        grupo = QGroupBox("📊 Guardias Afectadas (Preview)")
+        grupo = QGroupBox("Guardias Afectadas (Preview)")
         grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         layout = QVBoxLayout()
 
@@ -274,20 +278,23 @@ class GestionarAusenciasForm(BaseForm):
         """Crear botones de acción del formulario."""
         botones = QHBoxLayout()
 
-        self.guardar_btn = QPushButton("💾 Guardar Ausencia")
+        self.guardar_btn = QPushButton("Guardar Ausencia")
+        self.guardar_btn.setIcon(icon_for_button("save"))
         self.guardar_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.guardar_btn.clicked.connect(self.guardar_ausencia)
         self.guardar_btn.setToolTip("Guardar la ausencia (Ctrl+S)")
         botones.addWidget(self.guardar_btn)
 
-        self.ver_guardias_btn = QPushButton("👁️ Ver Guardias Afectadas")
+        self.ver_guardias_btn = QPushButton("Ver Guardias Afectadas")
+        self.ver_guardias_btn.setIcon(icon_for_button("view"))
         self.ver_guardias_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.ver_guardias_btn.clicked.connect(self.mostrar_guardias_afectadas)
         self.ver_guardias_btn.setToolTip("Ver y reasignar guardias afectadas")
         self.ver_guardias_btn.setEnabled(False)
         botones.addWidget(self.ver_guardias_btn)
 
-        self.cancelar_btn = QPushButton("❌ Cancelar")
+        self.cancelar_btn = QPushButton("Cancelar")
+        self.cancelar_btn.setIcon(icon_for_button("close"))
         self.cancelar_btn.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
         self.cancelar_btn.clicked.connect(self.limpiar_formulario)
         self.cancelar_btn.setToolTip("Cancelar y limpiar formulario (Esc)")
@@ -418,7 +425,7 @@ class GestionarAusenciasForm(BaseForm):
 
             # Guardar referencia para edición
             self.ausencia_actual = ausencia_id
-            self.titulo_form.setText("✏️ EDITAR AUSENCIA")
+            self.titulo_form.setText("EDITAR AUSENCIA")
 
             # Cargar datos
             for i in range(self.profesor_combo.count()):
@@ -564,7 +571,7 @@ class GestionarAusenciasForm(BaseForm):
             fecha_fin = self.fecha_fin_input.date().toPyDate()
 
             if fecha_fin < fecha_inicio:
-                self.preview_text.setPlainText("⚠️ Fecha de fin anterior a fecha de inicio")
+                self.preview_text.setPlainText("Fecha de fin anterior a fecha de inicio")
                 return
 
             guardias = obtener_guardias_afectadas_por_periodo(
@@ -572,9 +579,9 @@ class GestionarAusenciasForm(BaseForm):
             )
 
             if not guardias:
-                self.preview_text.setPlainText("✅ No hay guardias asignadas en este periodo")
+                self.preview_text.setPlainText("No hay guardias asignadas en este periodo")
             else:
-                texto = f"⚠️ {len(guardias)} guardias afectadas:\n\n"
+                texto = f"{len(guardias)} guardias afectadas:\n\n"
                 for g in guardias[:10]:  # Mostrar máximo 10
                     zona_nombre = g.zona.nombre_zona if g.zona else "N/A"
                     texto += f"• {g.fecha.strftime('%d/%m/%Y')} - {g.turno} - Recreo {g.recreo} - {zona_nombre}\n"  # noqa: E501
@@ -616,7 +623,7 @@ class GestionarAusenciasForm(BaseForm):
     def limpiar_formulario(self):
         """Limpiar el formulario y resetear el modo de edición."""
         self.ausencia_actual = None
-        self.titulo_form.setText("✏️ NUEVA AUSENCIA")
+        self.titulo_form.setText("NUEVA AUSENCIA")
         self.profesor_combo.setCurrentIndex(-1)
         self.tipo_combo.setCurrentIndex(0)
         self.fecha_inicio_input.setDate(QDate.currentDate())
@@ -655,7 +662,7 @@ class DialogoReasignacion(QDialog):
         layout = QVBoxLayout(self)
 
         # Título
-        titulo = QLabel(f"📊 Guardias Afectadas ({len(self.guardias)} guardias)")
+        titulo = QLabel(f"Guardias Afectadas ({len(self.guardias)} guardias)")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         layout.addWidget(titulo)
 
@@ -698,17 +705,20 @@ class DialogoReasignacion(QDialog):
         """Crear botones de acción."""
         botones = QHBoxLayout()
 
-        btn_auto = QPushButton("🤖 Reasignar Automáticamente")
+        btn_auto = QPushButton("Reasignar Automáticamente")
+        btn_auto.setIcon(icon_for_button("refresh"))
         btn_auto.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         btn_auto.clicked.connect(self.reasignar_automaticamente)
         botones.addWidget(btn_auto)
 
-        btn_manual = QPushButton("👤 Reasignar Seleccionada")
+        btn_manual = QPushButton("Reasignar Seleccionada")
+        btn_manual.setIcon(icon_for_button("user"))
         btn_manual.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         btn_manual.clicked.connect(self.reasignar_manual)
         botones.addWidget(btn_manual)
 
-        btn_cerrar = QPushButton("❌ Cerrar")
+        btn_cerrar = QPushButton("Cerrar")
+        btn_cerrar.setIcon(icon_for_button("close"))
         btn_cerrar.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
         btn_cerrar.clicked.connect(self.close)
         botones.addWidget(btn_cerrar)
@@ -731,8 +741,8 @@ class DialogoReasignacion(QDialog):
 
                 mensaje = (
                     f"Reasignación completada:\n\n"
-                    f"✅ Reasignadas: {resultados['reasignadas']}\n"
-                    f"❌ Fallidas: {resultados['fallidas']}"
+                    f"Reasignadas: {resultados['reasignadas']}\n"
+                    f"Fallidas: {resultados['fallidas']}"
                 )
 
                 if resultados["fallidas"] > 0:

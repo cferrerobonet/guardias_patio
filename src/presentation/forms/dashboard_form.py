@@ -34,6 +34,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from sqlalchemy.orm import Session
 from utils import get_logger
+from utils.icons import icon_for_button
 
 logger = get_logger(__name__)
 
@@ -123,7 +124,7 @@ class DashboardForm(QWidget):
 
         # Encabezado
         header_layout = QHBoxLayout()
-        titulo = QLabel("📊 Dashboard de Equidad")
+        titulo = QLabel("Dashboard de Equidad")
         titulo.setStyleSheet("""
             font-size: 24px;
             font-weight: bold;
@@ -133,7 +134,8 @@ class DashboardForm(QWidget):
         header_layout.addStretch()
 
         # Botón refrescar
-        self.btn_refrescar = QPushButton("🔄 Actualizar")
+        self.btn_refrescar = QPushButton("Actualizar")
+        self.btn_refrescar.setIcon(icon_for_button("refresh"))
         self.btn_refrescar.setStyleSheet("""
             QPushButton {
                 background-color: #1976D2;
@@ -520,11 +522,11 @@ class DashboardForm(QWidget):
             )
             canvas.draw()
 
-        self.info_label.setText("⚠️ No hay guardias asignadas en el curso actual")
+        self.info_label.setText("No hay guardias asignadas en el curso actual")
 
     def _mostrar_error(self, mensaje: str):
         """Muestra mensaje de error."""
-        self.info_label.setText(f"❌ {mensaje}")
+        self.info_label.setText(mensaje)
 
     def refrescar(self):
         """Refresca el dashboard (para compatibilidad con main_window)."""

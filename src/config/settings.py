@@ -55,7 +55,9 @@ class Settings(BaseSettings):
     environment: Literal["development", "production", "testing"] = "production"
 
     # ========== BASE DE DATOS ==========
-    database_url: str = "sqlite:///guardias_patio.db"
+    # NOTA: database_url es solo fallback. En producción se usa initialize_user_database()
+    # que crea BDs por usuario en data/users/{hash}/guardias_patio.db
+    database_url: str = ""  # Se configura dinámicamente en db_manager.py
     database_echo: bool = False  # SQL logging
     max_retries_db: int = 3
     timeout_db: int = 30

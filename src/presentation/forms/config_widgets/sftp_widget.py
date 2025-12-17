@@ -8,6 +8,7 @@ sincronización de copias de seguridad entre diferentes dispositivos.
 import os
 
 import paramiko
+import ui_styles as styles
 from dotenv import load_dotenv
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -19,9 +20,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
-import ui_styles as styles
 from utils import get_logger
+from utils.icons import icon_for_button
 
 
 class SFTPConfigWidget(QGroupBox):
@@ -43,7 +43,7 @@ class SFTPConfigWidget(QGroupBox):
         Args:
             parent: Widget padre
         """
-        super().__init__("☁️ Configuración SFTP", parent)
+        super().__init__("Configuración SFTP", parent)
         self.logger = get_logger(self.__class__.__name__)
         self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._actual_password = ""
@@ -120,11 +120,13 @@ class SFTPConfigWidget(QGroupBox):
         # Botones de acción
         botones_layout = QHBoxLayout()
 
-        self.modify_sftp_btn = QPushButton("🔓 Modificar Configuración SFTP")
+        self.modify_sftp_btn = QPushButton("Modificar Configuración SFTP")
+        self.modify_sftp_btn.setIcon(icon_for_button("key"))
         self.modify_sftp_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
         self.modify_sftp_btn.clicked.connect(self._toggle_editable)
 
-        self.test_sftp_btn = QPushButton("☁️ Probar Conexión SFTP")
+        self.test_sftp_btn = QPushButton("Probar Conexión SFTP")
+        self.test_sftp_btn.setIcon(icon_for_button("test"))
         self.test_sftp_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.test_sftp_btn.clicked.connect(self._test_connection)
 
@@ -135,7 +137,7 @@ class SFTPConfigWidget(QGroupBox):
 
         # Nota informativa
         info_label = QLabel(
-            "💡 El SFTP se usa para sincronizar copias de seguridad entre "
+            "El SFTP se usa para sincronizar copias de seguridad entre "
             "dispositivos de forma automática."
         )
         info_label.setStyleSheet(
@@ -209,9 +211,9 @@ class SFTPConfigWidget(QGroupBox):
 
         # Actualizar botón
         if new_state:  # Bloqueado (readonly)
-            self.modify_sftp_btn.setText("🔓 Modificar Configuración SFTP")
+            self.modify_sftp_btn.setText("Modificar Configuración SFTP")
         else:  # Editable
-            self.modify_sftp_btn.setText("🔒 Bloquear Configuración SFTP")
+            self.modify_sftp_btn.setText("Bloquear Configuración SFTP")
 
         self.config_changed.emit()
 
@@ -224,12 +226,12 @@ class SFTPConfigWidget(QGroupBox):
         """
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setWindowTitle("⚠️ Configuración SFTP Global")
+        msg.setWindowTitle("Configuración SFTP Global")
         msg.setWindowFlags(
             Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )
         msg.setText(
-            "<h3>⚠️ Advertencia: Configuración SFTP Global</h3>"
+            "<h3>Advertencia: Configuración SFTP Global</h3>"
             "<p style='margin-top: 10px;'>"
             "Estás a punto de modificar la configuración SFTP que afecta a "
             "<b>todos los usuarios de este sistema</b>.</p>"
@@ -495,7 +497,7 @@ class SFTPConfigWidget(QGroupBox):
         """
         success_msg = QMessageBox(self)
         success_msg.setIcon(QMessageBox.Icon.Information)
-        success_msg.setWindowTitle("✅ Conexión SFTP Exitosa")
+        success_msg.setWindowTitle("Conexión SFTP Exitosa")
         success_msg.setWindowFlags(
             Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )

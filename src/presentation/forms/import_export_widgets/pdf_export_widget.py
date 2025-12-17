@@ -60,7 +60,7 @@ class PdfExportWidget(QGroupBox):
         # Información
         info = QLabel(
             "Genera calendarios individuales en PDF. Puedes exportar por mes, curso completo "
-            "o calendario individual optimizado (desde la primera hasta la última guardia del profesor)."
+            "o calendario individual optimizado (desde la primera hasta la última guardia)."
         )
         info.setWordWrap(True)
         info.setStyleSheet(
@@ -107,7 +107,7 @@ class PdfExportWidget(QGroupBox):
         tipo_layout = QVBoxLayout()
         tipo_layout.setSpacing(5)
 
-        tipo_label = QLabel("📋 Tipo de exportación:")
+        tipo_label = QLabel("Tipo de exportación:")
         tipo_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
         tipo_layout.addWidget(tipo_label)
 
@@ -200,7 +200,7 @@ class PdfExportWidget(QGroupBox):
         self.pdf_curso_combo.setStyleSheet(styles.STYLE_INPUT)
         curso_layout.addWidget(self.pdf_curso_combo)
 
-        curso_info = QLabel("ℹ️ Se generarán PDFs de Septiembre a Junio")
+        curso_info = QLabel("Se generarán PDFs de Septiembre a Junio")
         curso_info.setStyleSheet(
             f"""
             color: {TEXT_SECONDARY};
@@ -350,15 +350,15 @@ class PdfExportWidget(QGroupBox):
 
         # Actualizar texto del botón
         if tipo == "mes_todos":
-            self.exportar_pdf_btn.setText("📄 Generar PDFs para Todos (Mes)")
+            self.exportar_pdf_btn.setText("Generar PDFs para Todos (Mes)")
         elif tipo == "mes_seleccionados":
-            self.exportar_pdf_btn.setText("📄 Generar PDFs Seleccionados (Mes)")
+            self.exportar_pdf_btn.setText("Generar PDFs Seleccionados (Mes)")
         elif tipo == "curso_todos":
-            self.exportar_pdf_btn.setText("📚 Generar PDF Curso Completo (Todos)")
+            self.exportar_pdf_btn.setText("Generar PDF Curso Completo (Todos)")
         elif tipo == "curso_seleccionados":
-            self.exportar_pdf_btn.setText("📚 Generar PDF Curso Completo (Seleccionados)")
+            self.exportar_pdf_btn.setText("Generar PDF Curso Completo (Seleccionados)")
         else:  # individual_seleccionados
-            self.exportar_pdf_btn.setText("🗓️ Generar Calendarios Individuales")
+            self.exportar_pdf_btn.setText("Generar Calendarios Individuales")
 
     def _on_seleccionar_todos_changed(self, state):
         """Manejar cambio en el checkbox de seleccionar todos."""

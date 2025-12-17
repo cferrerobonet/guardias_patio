@@ -23,6 +23,8 @@ from core.exceptions import NotFoundError, ValidationError
 from database.db_manager import get_current_user_id
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
     QFileDialog,
     QHBoxLayout,
     QHeaderView,
@@ -35,6 +37,7 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 from sync.sync_manager import UserAuth
+from utils.icons import icon_for_button
 
 from presentation.dialogs.modales_perfil import (
     DialogoCambiarPasswordProfesional,
@@ -96,7 +99,7 @@ class PerfilesUsuarioForm(BaseForm):
         layout.setSpacing(15)
 
         # ===== TÍTULO =====
-        titulo = QLabel("👤 GESTIÓN DE PERFILES DE USUARIO")
+        titulo = QLabel("GESTIÓN DE PERFILES DE USUARIO")
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         layout.addWidget(titulo)
 
@@ -118,7 +121,8 @@ class PerfilesUsuarioForm(BaseForm):
         acciones_layout.addStretch()
 
         # Botón Crear (verde)
-        self.btn_crear = QPushButton("➕ Crear")
+        self.btn_crear = QPushButton("Crear")
+        self.btn_crear.setIcon(icon_for_button("add"))
         self.btn_crear.setStyleSheet(
             styles.STYLE_BUTTON_SUCCESS + "font-size: 12px; padding: 8px 16px; font-weight: bold;"
         )
@@ -127,7 +131,8 @@ class PerfilesUsuarioForm(BaseForm):
         acciones_layout.addWidget(self.btn_crear)
 
         # Botón Editar (azul)
-        self.btn_editar = QPushButton("✏️ Editar")
+        self.btn_editar = QPushButton("Editar")
+        self.btn_editar.setIcon(icon_for_button("edit"))
         self.btn_editar.setStyleSheet(
             styles.STYLE_BUTTON_PRIMARY + "font-size: 12px; padding: 8px 16px;"
         )
@@ -137,7 +142,8 @@ class PerfilesUsuarioForm(BaseForm):
         acciones_layout.addWidget(self.btn_editar)
 
         # Botón Eliminar (rojo)
-        self.btn_eliminar = QPushButton("🗑️ Eliminar")
+        self.btn_eliminar = QPushButton("Eliminar")
+        self.btn_eliminar.setIcon(icon_for_button("delete"))
         self.btn_eliminar.setStyleSheet(
             styles.STYLE_BUTTON_DANGER + "font-size: 12px; padding: 8px 16px;"
         )
@@ -150,7 +156,8 @@ class PerfilesUsuarioForm(BaseForm):
         acciones_layout.addSpacing(20)
 
         # Botón Logo (azul)
-        self.btn_logo = QPushButton("🖼️ Logo")
+        self.btn_logo = QPushButton("Logo")
+        self.btn_logo.setIcon(icon_for_button("open"))
         self.btn_logo.setStyleSheet(
             styles.STYLE_BUTTON_PRIMARY + "font-size: 12px; padding: 8px 16px;"
         )
@@ -160,7 +167,8 @@ class PerfilesUsuarioForm(BaseForm):
         acciones_layout.addWidget(self.btn_logo)
 
         # Botón Contraseña (naranja)
-        self.btn_password = QPushButton("🔐 Contraseña")
+        self.btn_password = QPushButton("Contraseña")
+        self.btn_password.setIcon(icon_for_button("key"))
         self.btn_password.setStyleSheet(
             styles.STYLE_BUTTON_WARNING + "font-size: 12px; padding: 8px 16px;"
         )
@@ -173,7 +181,8 @@ class PerfilesUsuarioForm(BaseForm):
         acciones_layout.addSpacing(20)
 
         # Botón Refrescar (gris)
-        btn_refrescar = QPushButton("🔄")
+        btn_refrescar = QPushButton()
+        btn_refrescar.setIcon(icon_for_button("refresh"))
         btn_refrescar.setStyleSheet("""
             QPushButton {
                 background-color: #607D8B;
@@ -198,7 +207,7 @@ class PerfilesUsuarioForm(BaseForm):
         self.tabla = QTableWidget()
         self.tabla.setColumnCount(6)
         self.tabla.setHorizontalHeaderLabels(
-            ["👤 Usuario", "📧 Email", "💾 BD", "🖼️ Logo", "⭐ Actual", "Acciones"]
+            ["Usuario", "Email", "BD", "Logo", "Actual", "Acciones"]
         )
 
         # Configurar header con anchos optimizados
@@ -359,24 +368,92 @@ class PerfilesUsuarioForm(BaseForm):
             username = self.tabla.item(row, 0).text()
             email = self.tabla.item(row, 1).text()
 
-            # Confirmación con diálogo profesional
-            respuesta = QMessageBox.question(
-                self,
-                "⚠️ Confirmar Eliminación",
-                f"<h3>¿Eliminar el perfil '{username}'?</h3>"
-                f"<p><b>Email:</b> {email}</p>"
-                f"<p style='color: red;'><b>⚠️ ADVERTENCIA:</b> Se eliminará:</p>"
-                f"<ul>"
-                f"<li>El perfil de usuario</li>"
-                f"<li>Su base de datos completa</li>"
-                f"<li>Su logo corporativo (si existe)</li>"
-                f"</ul>"
-                f"<p><b>Esta acción NO se puede deshacer.</b></p>",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
+            # Crear diálogo personalizado para confirmación
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Confirmar Eliminación")
+            dialog.setMinimumWidth(450)
+            dialog.setModal(True)
 
-            if respuesta == QMessageBox.StandardButton.Yes:
+            layout = QVBoxLayout(dialog)
+            layout.setSpacing(15)
+            layout.setContentsMargins(20, 20, 20, 20)
+
+            # Título
+            titulo = QLabel(f"<h3>¿Eliminar el perfil '{username}'?</h3>")
+            titulo.setWordWrap(True)
+            layout.addWidget(titulo)
+
+            # Email
+            email_label = QLabel(f"<b>Email:</b> {email}")
+            layout.addWidget(email_label)
+
+            # Advertencia
+            advertencia = QLabel(
+                "<p style='color: #d32f2f; font-weight: bold;'>⚠️ ADVERTENCIA: Se eliminará:</p>"
+                "<ul style='margin-left: 20px;'>"
+                "<li>El perfil de usuario</li>"
+                "<li>Su base de datos completa</li>"
+                "<li>Su logo corporativo (si existe)</li>"
+                "</ul>"
+            )
+            advertencia.setWordWrap(True)
+            layout.addWidget(advertencia)
+
+            # Mensaje final
+            final = QLabel("<p><b>Esta acción NO se puede deshacer.</b></p>")
+            final.setStyleSheet("color: #d32f2f;")
+            layout.addWidget(final)
+
+            # Espaciador
+            layout.addSpacing(10)
+
+            # Botones
+            button_box = QDialogButtonBox()
+
+            btn_cancelar = QPushButton("Cancelar")
+            btn_cancelar.setMinimumWidth(100)
+            btn_cancelar.setMinimumHeight(35)
+            btn_cancelar.setStyleSheet("""
+                QPushButton {
+                    background-color: #e0e0e0;
+                    border: 1px solid #bdbdbd;
+                    border-radius: 4px;
+                    padding: 8px 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #d0d0d0;
+                }
+            """)
+
+            btn_eliminar = QPushButton("Eliminar Perfil")
+            btn_eliminar.setIcon(icon_for_button("delete"))
+            btn_eliminar.setMinimumWidth(140)
+            btn_eliminar.setMinimumHeight(35)
+            btn_eliminar.setStyleSheet("""
+                QPushButton {
+                    background-color: #d32f2f;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 8px 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #b71c1c;
+                }
+            """)
+
+            button_box.addButton(btn_cancelar, QDialogButtonBox.ButtonRole.RejectRole)
+            button_box.addButton(btn_eliminar, QDialogButtonBox.ButtonRole.AcceptRole)
+
+            btn_cancelar.clicked.connect(dialog.reject)
+            btn_eliminar.clicked.connect(dialog.accept)
+
+            layout.addWidget(button_box)
+
+            # Mostrar diálogo
+            if dialog.exec() == QDialog.DialogCode.Accepted:
                 # Ejecutar use case
                 self.uc_eliminar.execute(username)
 

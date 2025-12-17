@@ -119,13 +119,13 @@ class SyncProgressDialog(QDialog):
     def set_step_connecting(self):
         """Paso 2: Conectando al servidor."""
         self.update_progress(
-            2, "🔗 Conectando al servidor SFTP", "Estableciendo conexión segura..."
+            2, "Conectando al servidor SFTP", "Estableciendo conexión segura..."
         )
 
     def set_step_uploading(self, file_size_kb: int):
         """Paso 3: Subiendo archivo."""
         self.update_progress(
-            3, "⬆️ Subiendo archivo a la nube", f"Enviando {file_size_kb} KB al servidor..."
+            3, "Subiendo archivo a la nube", f"Enviando {file_size_kb} KB al servidor..."
         )
 
     def set_step_complete(self, success: bool = True):
@@ -133,7 +133,7 @@ class SyncProgressDialog(QDialog):
         if success:
             self.update_progress(
                 4,
-                "✅ Sincronización completada con éxito",
+                "Sincronización completada con éxito",
                 "Todos los cambios se guardaron en la nube",
             )
             self.progress_bar.setStyleSheet("""
@@ -144,7 +144,7 @@ class SyncProgressDialog(QDialog):
         else:
             self.update_progress(
                 4,
-                "⚠️ Sincronización completada con advertencias",
+                "Sincronización completada con advertencias",
                 "Algunos cambios pueden no haberse guardado",
             )
             self.progress_bar.setStyleSheet("""
@@ -158,7 +158,7 @@ class SyncProgressDialog(QDialog):
 
     def set_step_error(self, error_message: str):
         """Error en la sincronización."""
-        self.update_progress(self._current_step, "❌ Error en la sincronización", error_message)
+        self.update_progress(self._current_step, "Error en la sincronización", error_message)
         self.progress_bar.setStyleSheet("""
             QProgressBar::chunk {
                 background-color: #F44336;

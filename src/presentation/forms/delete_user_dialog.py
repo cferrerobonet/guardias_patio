@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 )
 from sync.backend_factory import get_default_backend
 from sync.sync_manager import UserAuth
+from utils.icons import icon_for_button
 from utils.ui_helpers import get_corporate_icon
 
 
@@ -30,7 +31,7 @@ class DeleteUserDialog(QDialog):
 
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
-        self.setWindowTitle("🗑️ Eliminar Usuario")
+        self.setWindowTitle("Eliminar Usuario")
         self.setWindowIcon(get_corporate_icon())
         self.setModal(True)
         self.setFixedWidth(500)
@@ -38,7 +39,7 @@ class DeleteUserDialog(QDialog):
         layout = QVBoxLayout(self)
 
         # Advertencia
-        warning = QLabel("⚠️ ADVERTENCIA")
+        warning = QLabel("ADVERTENCIA")
         warning.setStyleSheet("""
             QLabel {
                 font-size: 20px;
@@ -88,7 +89,7 @@ class DeleteUserDialog(QDialog):
         else:
             self.username_combo.addItem("(No hay usuarios)")
             self.username_combo.setEnabled(False)
-        form_layout.addRow("👤 Usuario a eliminar:", self.username_combo)
+        form_layout.addRow("Usuario a eliminar:", self.username_combo)
 
         # Campo de contraseña
         self.password_input = QLineEdit()
@@ -96,12 +97,12 @@ class DeleteUserDialog(QDialog):
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setMinimumHeight(35)
         self.password_input.returnPressed.connect(self.delete_user)
-        form_layout.addRow("🔑 Contraseña:", self.password_input)
+        form_layout.addRow("Contraseña:", self.password_input)
 
         layout.addLayout(form_layout)
 
         # Confirmación adicional
-        confirm_label = QLabel("⚡ Escribe la contraseña del usuario para confirmar la eliminación")
+        confirm_label = QLabel("Escribe la contraseña del usuario para confirmar la eliminación")
         confirm_label.setStyleSheet("color: #DC2626; font-size: 12px; padding: 0px 40px;")
         confirm_label.setWordWrap(True)
         layout.addWidget(confirm_label)
@@ -129,7 +130,8 @@ class DeleteUserDialog(QDialog):
         """)
         buttons_layout.addWidget(cancel_btn)
 
-        delete_btn = QPushButton("🗑️ ELIMINAR PERMANENTEMENTE")
+        delete_btn = QPushButton("ELIMINAR PERMANENTEMENTE")
+        delete_btn.setIcon(icon_for_button("delete"))
         delete_btn.setMinimumHeight(40)
         delete_btn.clicked.connect(self.delete_user)
         delete_btn.setDefault(True)
@@ -184,7 +186,7 @@ class DeleteUserDialog(QDialog):
         # Confirmación final
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Icon.Question)
-        msg.setWindowTitle("⚠️ Confirmación final")
+        msg.setWindowTitle("Confirmación final")
         msg.setTextFormat(Qt.TextFormat.RichText)
         msg.setWindowFlags(
             Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
