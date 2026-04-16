@@ -1,6 +1,6 @@
 """Use Case: Cambiar contraseña del usuario actual."""
 
-import hashlib
+import bcrypt
 
 from application.dtos.perfil_dto import CambiarPasswordDTO
 from core.exceptions import ValidationError
@@ -46,8 +46,7 @@ class CambiarPasswordUseCase:
 
         # Cambiar contraseña
         if dto.username in self.user_auth.users:
-            # Hashear nueva contraseña (igual que en UserAuth)
-            password_hash = hashlib.sha256(dto.password_nueva.encode()).hexdigest()
+            password_hash = bcrypt.hashpw(dto.password_nueva.encode(), bcrypt.gensalt()).decode()
             self.user_auth.users[dto.username]["password_hash"] = password_hash
             self.user_auth._save_users()
             return True

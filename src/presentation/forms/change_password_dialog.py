@@ -4,7 +4,7 @@ Diálogo para cambiar la contraseña del usuario actual.
 Requiere la contraseña actual para verificar la identidad del usuario.
 """
 
-import hashlib
+import bcrypt
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -196,7 +196,7 @@ class ChangePasswordDialog(QDialog):
                 return
 
             # Actualizar contraseña
-            password_hash = hashlib.sha256(new_password.encode()).hexdigest()
+            password_hash = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
             user_data["password_hash"] = password_hash
             self.user_auth._save_users()
 

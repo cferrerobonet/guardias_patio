@@ -1,7 +1,7 @@
 # Auditoría Integral — Guardias de Patio
 
 **Fecha**: 16 de abril de 2026  
-**Versión analizada**: 3.2.1  
+**Versión analizada**: 3.2.1 (actualizado con correcciones v3.1.0)  
 **Alcance**: Análisis completo de arquitectura, seguridad, base de datos, performance, UX/UI, testing, observabilidad, escalabilidad, resiliencia y buenas prácticas.
 
 ---
@@ -39,25 +39,25 @@
 | Dimensión | Estado | Puntuación |
 |---|---|---|
 | Arquitectura | Clean Architecture híbrida con deuda técnica | ★★★☆☆ |
-| Seguridad | Múltiples vulnerabilidades críticas | ★★☆☆☆ |
+| Seguridad | ✅ Críticos resueltos (bcrypt, Fernet, CORS), falta JWT | ★★★☆☆ |
 | Base de datos | Funcional pero con violaciones de normalización | ★★★☆☆ |
-| Performance | Aceptable para la escala actual, con N+1 críticos | ★★★☆☆ |
-| Caching | Implementado pero con bug crítico | ★★☆☆☆ |
+| Performance | ✅ N+1 crítico resuelto, aceptable para la escala | ★★★☆☆ |
+| Caching | ✅ Bug crítico corregido, falta thread-safety | ★★★☆☆ |
 | Async | GUI bien resuelto, SFTP bloqueante | ★★★☆☆ |
 | Escalabilidad | Diseñada para uso local, no escala horizontalmente | ★★☆☆☆ |
 | API REST | Solo lectura, sin auth, con fugas de info | ★★☆☆☆ |
 | Testing | 990 tests, 39.75% coverage | ★★★☆☆ |
 | Observabilidad | Prometheus + structlog bien diseñados | ★★★★☆ |
 | UX/UI | Funcional, sin accesibilidad formal | ★★★☆☆ |
-| Control de acceso | Autenticación débil, sin autorización granular | ★★☆☆☆ |
+| Control de acceso | ✅ bcrypt + Fernet, sin autorización granular | ★★★☆☆ |
 | Multi-tenancy | Aislamiento por BD SQLite — correcto | ★★★★☆ |
 | Idempotencia | Parcial en migraciones y repositorios | ★★★☆☆ |
 | Organización de archivos | Archivos mal ubicados, duplicaciones, ficheros gigantes | ★★☆☆☆ |
 | Features completas | Varias funcionalidades a medio implementar | ★★★☆☆ |
-| Código huérfano | 16+ ficheros muertos, 2500+ líneas sin uso | ★☆☆☆☆ |
-| Sanitización | print() de debug, except:pass, pickle inseguro | ★★☆☆☆ |
+| Código huérfano | ✅ 16 ficheros eliminados en v3.1.0 | ★★★★☆ |
+| Sanitización | ✅ pickle/base64 resueltos, quedan print() y except:pass | ★★★☆☆ |
 | Preparación web | FastAPI existe pero cubre ~15%; servicios portables | ★★★☆☆ |
-| Reparabilidad | Logging dual, sin error boundaries, diagnóstico parcial | ★★☆☆☆ |
+| Reparabilidad | ✅ Logging unificado, sin error boundaries, diagnóstico parcial | ★★★☆☆ |
 
 **Total de hallazgos**: 4 críticos, 10 altos, 12 medios, 8 bajos (original) + 8 críticos, 15 altos, 16 medios, 4 bajos (refactorización/sanitización) + hallazgos de organización/features/web.
 
@@ -91,8 +91,8 @@ Clean Architecture híbrida + DDD táctico. Capas:
 | ARQ-02 | **Presentación accede a BD directamente** | ALTA | 15+ widgets en `src/presentation/` ejecutan queries SQLAlchemy directas en vez de pasar por use cases |
 | ARQ-03 | **3 repositorios retornan modelos ORM** | ALTA | `AusenciaRepository`, `ConfiguracionRepository` y `CursoEscolarRepository` retornan modelos ORM en vez de entidades de dominio |
 | ARQ-04 | **DI manual sin framework** | MEDIA | Factories manuales en `application/factories.py`. Funcional pero propenso a errores al crecer |
-| ARQ-05 | **Dos ventanas principales coexisten** | MEDIA | `main_window.py` (tabs legacy) y `ccleaner_main_window.py` (sidebar moderna) — deuda técnica visual |
-| ARQ-06 | **Capa `models/` es re-export legacy** | BAJA | Solo redirige a `infrastructure/database/models.py` — eliminar tras migrar imports |
+| ARQ-05 | ~~Dos ventanas principales coexisten~~ | ✅ RESUELTO v3.1.0 | `main_window.py` eliminado, solo queda `ccleaner_main_window.py` |
+| ARQ-06 | ~~Capa `models/` es re-export legacy~~ | ✅ RESUELTO v3.1.0 | `models/models.py` eliminado |
 
 ### 2.3 Recomendaciones
 
@@ -110,18 +110,18 @@ Clean Architecture híbrida + DDD táctico. Capas:
 
 | ID | Hallazgo | Severidad | Archivo |
 |---|---|---|---|
-| SEC-01 | **SHA-256 sin salt para contraseñas** | CRÍTICA | `sync/sync_manager.py`, `use_cases/perfil/cambiar_password.py` |
-| SEC-02 | **Base64 como "encriptación" de credenciales SFTP/SMTP** | CRÍTICA | `services/exportador.py` |
-| SEC-03 | **API REST sin autenticación** | CRÍTICA | `api/main.py` |
-| SEC-04 | **Código de recuperación en texto plano en users.json** | CRÍTICA | `presentation/forms/forgot_password_dialog.py` |
+| SEC-01 | ~~SHA-256 sin salt para contraseñas~~ | ✅ RESUELTO v3.1.0 | Migrado a bcrypt con auto-migración de hashes SHA-256 legacy |
+| SEC-02 | ~~Base64 como "encriptación" de credenciales SFTP/SMTP~~ | ✅ RESUELTO v3.1.0 | Migrado a Fernet con backward compat Base64 |
+| SEC-03 | **API REST sin autenticación** | CRÍTICA | `api/main.py` — CORS y bind restringidos en v3.1.0, falta JWT |
+| SEC-04 | ~~Código de recuperación en texto plano en users.json~~ | ✅ RESUELTO v3.1.0 | Solo hash + TTL 15 min, plaintext eliminado |
 
-**SEC-01**: `hashlib.sha256(password.encode()).hexdigest()` — vulnerable a rainbow tables y fuerza bruta con GPU. El propio código tiene un comentario "En producción, usar bcrypt/argon2" que nunca se implementó.
+**SEC-01**: ~~`hashlib.sha256(password.encode()).hexdigest()`~~ → ✅ **RESUELTO v3.1.0**: Migrado a `bcrypt.hashpw()`. Login detecta hashes SHA-256 legacy y auto-migra a bcrypt.
 
-**SEC-02**: `base64.b64encode()` no es cifrado. Las credenciales en `sftp_config.json` y `smtp_config.json` son trivialmente reversibles.
+**SEC-02**: ~~`base64.b64encode()` no es cifrado~~ → ✅ **RESUELTO v3.1.0**: Migrado a `cryptography.fernet.Fernet`. Fallback Base64 para exports antiguos.
 
-**SEC-03**: Todos los endpoints son públicos. Combinado con `allow_origins=["*"]` + `allow_credentials=True` y `host="0.0.0.0"`, cualquier dispositivo en la red accede a datos de profesores/guardias.
+**SEC-03**: ~~Todos los endpoints son públicos con CORS wildcard y 0.0.0.0~~ → ⚠️ **PARCIAL v3.1.0**: CORS restringido a localhost, bind en 127.0.0.1, solo GET. **Falta JWT/API-key**.
 
-**SEC-04**: El código de recuperación se guarda en texto plano Y hasheado en `data/users.json`, sin TTL de expiración.
+**SEC-04**: ~~Recovery code en texto plano sin TTL~~ → ✅ **RESUELTO v3.1.0**: Solo hash guardado + TTL 15 min. Campo plaintext eliminado.
 
 ### 3.2 Hallazgos Altos
 
@@ -130,8 +130,8 @@ Clean Architecture híbrida + DDD táctico. Capas:
 | SEC-05 | **Contraseña mínima: 4 caracteres** | ALTA | Sin requisitos de complejidad |
 | SEC-06 | **Sin protección brute force en login** | ALTA | Sin lockout, sin delay, sin CAPTCHA |
 | SEC-07 | **Credenciales reales en config JSON** | ALTA | Host SFTP de 1&1 IONOS y username expuestos |
-| SEC-08 | **API expone `str(e)` en errores 500** | ALTA | Fuga de rutas, esquema BD, versiones |
-| SEC-09 | **Uvicorn escucha en 0.0.0.0** | ALTA | API expuesta a toda la red |
+| SEC-08 | ~~API expone `str(e)` en errores 500~~ | ✅ RESUELTO v3.1.0 | Reemplazado por mensajes genéricos |
+| SEC-09 | ~~Uvicorn escucha en 0.0.0.0~~ | ✅ RESUELTO v3.1.0 | Cambiado a 127.0.0.1 |
 
 ### 3.3 Hallazgos Medios
 
@@ -154,14 +154,14 @@ Clean Architecture híbrida + DDD táctico. Capas:
 
 ### 3.5 Recomendaciones
 
-- [ ] **P0** — Migrar a `bcrypt` o `argon2id` para hashing de contraseñas con migración de hashes existentes
-- [ ] **P0** — Reemplazar Base64 por `cryptography.fernet` o keyring del SO (`keyring` package)
+- [x] **P0** — ~~Migrar a `bcrypt` para hashing de contraseñas con migración de hashes existentes~~ ✅ v3.1.0
+- [x] **P0** — ~~Reemplazar Base64 por `cryptography.fernet`~~ ✅ v3.1.0
 - [ ] **P0** — Añadir autenticación JWT/API-key a la API REST
-- [ ] **P0** — Eliminar recovery code en texto plano de `users.json`, guardar solo hash + TTL
+- [x] **P0** — ~~Eliminar recovery code en texto plano, guardar solo hash + TTL~~ ✅ v3.1.0
 - [ ] **P1** — Política de contraseñas: mínimo 8 chars + mayúscula + número + símbolo
 - [ ] **P1** — Implementar lockout: 5 intentos → bloqueo 15 min con delay progresivo
-- [ ] **P1** — Cambiar `host="0.0.0.0"` a `host="127.0.0.1"` en uvicorn
-- [ ] **P1** — Reemplazar `str(e)` por mensajes genéricos en errores API
+- [x] **P1** — ~~Cambiar `host="0.0.0.0"` a `host="127.0.0.1"` en uvicorn~~ ✅ v3.1.0
+- [x] **P1** — ~~Reemplazar `str(e)` por mensajes genéricos en errores API~~ ✅ v3.1.0
 - [ ] **P2** — Escapar HTML en plantillas de email (`html.escape()`)
 - [ ] **P2** — Validar y sanitizar `remote_path` contra path traversal
 - [ ] **P2** — Establecer `chmod 600` en `users.json`
@@ -198,10 +198,10 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 
 | ID | Hallazgo | Severidad |
 |---|---|---|
-| DB-01 | `guardias.profesor_id` nullable — una guardia sin profesor no tiene sentido | ALTA |
-| DB-02 | `guardias.zona_id` nullable — una guardia sin zona no tiene sentido | ALTA |
-| DB-03 | Sin `ON DELETE CASCADE` en profesor→guardias/ausencias | ALTA |
-| DB-04 | Sin UniqueConstraint en `guardias(fecha, turno, recreo, zona_id, profesor_id)` | ALTA |
+| DB-01 | ~~`guardias.profesor_id` nullable~~ | ✅ RESUELTO v3.1.0 | NOT NULL + ON DELETE CASCADE |
+| DB-02 | ~~`guardias.zona_id` nullable~~ | ✅ RESUELTO v3.1.0 | NOT NULL + ON DELETE CASCADE |
+| DB-03 | ~~Sin `ON DELETE CASCADE` en profesor→guardias/ausencias~~ | ✅ RESUELTO v3.1.0 | CASCADE añadido |
+| DB-04 | ~~Sin UniqueConstraint en guardias~~ | ✅ RESUELTO v3.1.0 | `uq_guardia_asignacion` añadido |
 | DB-05 | Sin CheckConstraint en `turno`, `ausencias.tipo`, `recreo`, `porcentaje_jornada` | MEDIA |
 | DB-06 | `datetime.utcnow` como default — deprecated en Python 3.12+ | MEDIA |
 | DB-07 | `guardias.curso_id` nullable (justificado como "migración gradual" pero sin cleanup) | MEDIA |
@@ -245,9 +245,9 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 ### 4.7 Recomendaciones
 
 - [ ] Normalizar campos JSON a tablas relacionales (`profesor_dias_semana`, `profesor_recreos`, `recreos_config`)
-- [ ] Añadir `NOT NULL` a `guardias.profesor_id` y `guardias.zona_id`
-- [ ] Añadir `ON DELETE CASCADE` en profesor→guardias y profesor→ausencias
-- [ ] Añadir UniqueConstraint en guardias para evitar asignaciones duplicadas
+- [x] Añadir `NOT NULL` a `guardias.profesor_id` y `guardias.zona_id` ✅ v3.1.0
+- [x] Añadir `ON DELETE CASCADE` en profesor→guardias y profesor→ausencias ✅ v3.1.0
+- [x] Añadir UniqueConstraint en guardias para evitar asignaciones duplicadas ✅ v3.1.0
 - [ ] Añadir CheckConstraints para `turno`, `tipo` de ausencia, `recreo >= 1`
 - [ ] Crear índices faltantes (curso_id, turno, activo, compuesto triple)
 - [ ] Unificar init de BD: solo Alembic, eliminar `_apply_direct_migrations()`
@@ -263,9 +263,9 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 
 | ID | Hallazgo | Severidad | Detalle |
 |---|---|---|---|
-| PERF-01 | **N+1 en API `/api/guardias`** | CRÍTICA | Loop ejecuta 2 queries extra por guardia (zona + profesor). Con limit=100 → ~200 queries adicionales |
+| PERF-01 | ~~N+1 en API `/api/guardias`~~ | ✅ RESUELTO v3.1.0 | Añadido `joinedload` para zona y profesor |
 | PERF-02 | N+1 en `ProfesorRepository.get_all()` | MEDIA | Sin eager loading para `guardias` y `zona_preferida` |
-| PERF-03 | N+1 en `sistema_sugerencias_automaticas.py` | MEDIA | `db.query(Profesor).get(id)` individual en loops |
+| PERF-03 | ~~N+1 en `sistema_sugerencias_automaticas.py`~~ | ✅ RESUELTO v3.1.0 | Fichero eliminado (código muerto) |
 
 ### 5.2 Queries no Optimizadas
 
@@ -277,14 +277,13 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 
 ### 5.3 Buenas Prácticas Existentes
 
-- ✅ `joinedload` correcto en `GuardiaRepository`, `exportador_pdf.py`, `icalendar_service.py`
+- ✅ `joinedload` correcto en `GuardiaRepository`, `exportador_pdf.py`, `icalendar_service.py`, `api/routers/guardias.py` (v3.1.0)
 - ✅ `PRAGMA journal_mode=DELETE` justificado por compatibilidad OneDrive
 - ✅ `NullPool` para SQLite (correcto)
-- ✅ Query optimizer helper disponible (`src/utils/query_optimizer.py`)
 
 ### 5.4 Recomendaciones
 
-- [ ] **P0** — Añadir `joinedload` en el endpoint `/api/guardias` para zona y profesor
+- [x] **P0** — ~~Añadir `joinedload` en el endpoint `/api/guardias`~~ ✅ v3.1.0
 - [ ] Añadir `joinedload(Profesor.zona_preferida)` en `get_all()`
 - [ ] Mover filtro de disponibilidad a la query SQL
 - [ ] Reemplazar `.count() > 0` por `.exists()` o `.first() is not None`
@@ -305,15 +304,15 @@ Sistema in-memory propio con `OrderedDict` LRU en `src/utils/cache.py`:
 
 | ID | Hallazgo | Severidad |
 |---|---|---|
-| CACHE-01 | **`repository_cache.py` re-crea el decorador en cada llamada** — anula completamente el caché | CRÍTICA |
+| CACHE-01 | ~~`repository_cache.py` re-crea el decorador en cada llamada~~ | ✅ RESUELTO v3.1.0 | Decorador cacheado una sola vez |
 | CACHE-02 | **Cache no thread-safe** — `OrderedDict` global sin locks, usado con `QThread` | ALTA |
 | CACHE-03 | Cache volátil — se pierde al reiniciar la app | BAJA |
 
-**CACHE-01 detalle**: En `repository_cache.py` línea ~58, `cached_func = cache_query(ttl=ttl)(func)` crea un nuevo wrapper sin estado previo en cada invocación. El caché nunca retiene datos entre llamadas.
+~~**CACHE-01 detalle**: En `repository_cache.py` línea ~58, `cached_func = cache_query(ttl=ttl)(func)` crea un nuevo wrapper sin estado previo en cada invocación.~~ ✅ **RESUELTO v3.1.0**: Movido a `decorator()` scope.
 
 ### 6.3 Recomendaciones
 
-- [ ] **P0** — Corregir `repository_cache.py` para cachear la función decorada una sola vez
+- [x] **P0** — ~~Corregir `repository_cache.py` para cachear la función decorada una sola vez~~ ✅ v3.1.0
 - [ ] **P1** — Añadir `threading.Lock` al `OrderedDict` del caché
 - [ ] Evaluar `cachetools` como reemplazo (thread-safe, TTLCache, LRUCache built-in)
 
@@ -395,7 +394,7 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 | API-02 | **Sin versionado** — no hay `/v1/` ni header de versión | MEDIA |
 | API-03 | **Sin autenticación** (ver SEC-03) | CRÍTICA |
 | API-04 | **Sin rate limiting** — vulnerable a abuse | ALTA |
-| API-05 | **CORS wildcard** `allow_origins=["*"]` con `allow_credentials=True` | ALTA |
+| API-05 | ~~CORS wildcard `allow_origins=["*"]` con `allow_credentials=True`~~ | ✅ RESUELTO v3.1.0 | Restringido a localhost:3000/8080, solo GET |
 | API-06 | **`/health` hardcodeado** — no usa el `HealthChecker` real | MEDIA |
 | API-07 | Profesores sin paginación — devuelve todos | MEDIA |
 | API-08 | Sin sorting paramétrico | BAJA |
@@ -412,13 +411,13 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 ### 9.4 Recomendaciones
 
 - [ ] Añadir autenticación JWT/API-key
-- [ ] Restringir CORS a orígenes específicos
+- [x] Restringir CORS a orígenes específicos ✅ v3.1.0
 - [ ] Añadir rate limiting (`slowapi` o `fastapi-limiter`)
 - [ ] Conectar `/health` al `HealthChecker` real
 - [ ] Añadir paginación a `/api/profesores`
 - [ ] Añadir versionado `/v1/`
 - [ ] Definir schema de error estándar `{"error": {"code": "...", "message": "..."}}`
-- [ ] Añadir middleware de error handling para no exponer `str(e)`
+- [x] Añadir middleware de error handling para no exponer `str(e)` ✅ v3.1.0
 
 ---
 
@@ -535,7 +534,7 @@ GUI PyQt6 con diseño CCleaner: sidebar oscuro + QStackedWidget.
 | UX-03 | **Sin `setTabOrder`** — navegación por teclado puede ser caótica | MEDIA |
 | UX-04 | **Sin DPI awareness** — no hay `setHighDpiScaleFactorRoundingPolicy` | MEDIA |
 | UX-05 | Dos temas UI coexisten (legacy Material + CCleaner) | BAJA |
-| UX-06 | `screen_validator.py` bloquea la app si resolución < 1280x720 | BAJA |
+| UX-06 | ~~`screen_validator.py` bloquea la app si resolución < 1280x720~~ | ✅ RESUELTO v3.1.0 | Fichero eliminado |
 
 ### 12.5 Recomendaciones
 
@@ -552,7 +551,7 @@ GUI PyQt6 con diseño CCleaner: sidebar oscuro + QStackedWidget.
 
 ### 13.1 Autenticación
 
-- Login por username + password hasheado con SHA-256 (ver SEC-01)
+- Login por username + password hasheado con ~~SHA-256~~ bcrypt (v3.1.0)
 - Usuarios almacenados en `data/users.json`
 - Recuperación de contraseña vía email con código temporal
 
@@ -638,10 +637,10 @@ La app es una **aplicación de escritorio con BD local (SQLite)**. No está dise
 | Archivo | Ubicación actual | Ubicación correcta | Acción |
 |---|---|---|---|
 | `src/ui_styles.py` | Raíz de `src/` | `src/presentation/themes/` | Mover y unificar con `ccleaner_theme.py` |
-| `src/domain/services/ejemplo_integracion.py` | Domain services | `docs/examples/` o eliminar | Es código demo, no pertenece a producción |
+| `src/domain/services/ejemplo_integracion.py` | Domain services | ~~`docs/examples/` o eliminar~~ | ✅ Eliminado v3.1.0 |
 | `src/services/migrar_a_multi_curso.py` | Services | `scripts/` | Es un script de migración one-off |
 | `src/services/README_SISTEMA_HIBRIDO.md` | Services | `docs/architecture/` | Documentación fuera de lugar |
-| `src/models/models.py` | Models (shim legacy) | Eliminar | Re-export deprecado, ya nadie lo importa |
+| `src/models/models.py` | Models (shim legacy) | ~~Eliminar~~ | ✅ Eliminado v3.1.0 |
 | `scripts/test_icalendar.py` | Scripts | `tests/` | Es un test, no un script |
 | `scripts/test_initial_config.py` | Scripts | `tests/` | Es un test, no un script |
 | `scripts/test_contador_tiempo.py` | Scripts | `tests/` | Es un test, no un script |
@@ -666,10 +665,10 @@ La app es una **aplicación de escritorio con BD local (SQLite)**. No está dise
 
 | Duplicación | Archivos involucrados | Recomendación |
 |---|---|---|
-| **Logging** | `src/utils/logger.py` (redirige a core) vs `src/core/logging.py` | Eliminar `utils/logger.py`, actualizar imports |
+| **Logging** | `src/utils/logger.py` (redirige a core) vs `src/core/logging.py` | ✅ **RESUELTO v3.1.0**: `utils/logger.py` es thin re-export de `core/logging` |
 | **Iconos** | `src/utils/icons.py` vs `src/utils/icon_manager.py` | Unificar en un solo módulo |
 | **Estilos UI** | `src/ui_styles.py` (legacy Material) vs `src/presentation/themes/ccleaner_theme.py` | Migrar todo a ccleaner_theme (20+ archivos importan `ui_styles`) |
-| **Models ORM** | `src/models/models.py` vs `src/infrastructure/database/models.py` | Eliminar shim legacy |
+| **Models ORM** | ~~`src/models/models.py` vs `src/infrastructure/database/models.py`~~ | ✅ **RESUELTO v3.1.0**: Shim eliminado |
 | **Benchmarks** | 4 scripts: `benchmark_optimizaciones.py`, `benchmark_performance.py`, `profile_performance.py`, `profile_app.py` | Unificar en 1 script con subcomandos |
 | **Auditoría N+1** | `scripts/audit_n_plus_1.py` + `scripts/audit_queries_n1.py` | Unificar en 1 |
 | **Regenerar guardias** | `scripts/regenerar_guardias.py` + `scripts/regenerar_guardias_v3.py` | Eliminar v1, renombrar v3 |
@@ -813,15 +812,9 @@ Dos TODOs en `gestor_cursos.py` indican que los profesores no están vinculados 
 - Desactivar automáticamente profesores que ya no están en un curso
 - Histórico limpio de qué profesores participaron en cada curso
 
-### 17.6 ML Predictor — Sin Valor Real
+### 17.6 ML Predictor — ✅ Eliminado en v3.1.0
 
-`ml_predictor_estrategia.py` está completamente implementado (sklearn RandomForest + pickle) pero:
-- Requiere datos históricos que no existen al inicio
-- No hay evidencia de integración en el flujo principal de asignación
-- Añade `scikit-learn` + `numpy` como dependencias obligatorias (~200MB)
-- El orquestador ya elige estrategia basándose en heurísticas simples
-
-**Recomendación**: Hacer `sklearn` opcional (`try: import sklearn`) o eliminar el módulo hasta que haya suficiente histórico.
+~~`ml_predictor_estrategia.py` estaba completamente implementado (sklearn RandomForest + pickle) pero nunca se usaba y añadía ~200MB de dependencias.~~ Eliminado junto con `scikit-learn` y `numpy` de requirements.txt.
 
 ### 17.7 Sync Strategy Pattern — Incompleto
 
@@ -870,44 +863,46 @@ Deberían migrar a `ccleaner_theme.py` para consistencia visual.
 
 ### 18.1 Ficheros Python Huérfanos (nunca importados)
 
-| Fichero | Líneas | Severidad | Evidencia |
-|---|---|---|---|
-| `src/services/ml_predictor_estrategia.py` | 392 | **CRÍTICA** | Nunca importado desde `src/`. Además usa `pickle.load()` inseguro (ver §19). Añade ~200MB de deps (sklearn) |
-| `src/services/sistema_sugerencias_automaticas.py` | ~200 | **CRÍTICA** | 0 imports encontrados en todo el proyecto |
-| `src/services/visualizador_conflictos_guardias.py` | ~150 | **CRÍTICA** | 0 imports. Clase completa con matplotlib sin uso |
-| `src/services/cache_soluciones_guardias.py` | ~180 | **CRÍTICA** | 0 imports. Sistema de caché completo sin integrar |
-| `src/services/optimizaciones_asignador.py` | ~200 | **CRÍTICA** | 0 imports. Clases `SlotKey`, `IndiceSlots` sin uso |
-| `src/services/integrador_orquestador_ui.py` | ~250 | **CRÍTICA** | Nunca importado. Además tiene import roto (`src/models/guardia.py` no existe) |
-| `src/domain/services/ejemplo_integracion.py` | ~80 | ALTA | Código demo en producción |
-| `src/models/models.py` | ~30 | ALTA | Shim deprecated. Solo importado por `alembic/env.py` y 1 test |
-| `src/presentation/main_window.py` | ~300 | ALTA | Ventana principal legacy reemplazada por `ccleaner_main_window.py` |
-| `src/presentation/components/top_bar.py` | ~100 | ALTA | Componente UI nunca importado |
-| `src/presentation/components/sidebar_menu.py` | ~120 | ALTA | Sidebar legacy reemplazada por `ccleaner_sidebar.py` |
-| `src/presentation/components/ccleaner_topbar.py` | ~80 | ALTA | 0 imports encontrados |
-| `src/domain/schemas/` (3 ficheros) | ~200 | ALTA | Todo el directorio nunca importado. Pydantic schemas sin uso |
-| `src/utils/query_optimizer.py` | 305 | MEDIA | Nunca importado. Funciones de análisis N+1 sin integrar |
-| `src/utils/screen_validator.py` | ~50 | MEDIA | Nunca importado desde producción |
-| `src/presentation/forms/simple_profesor_form.py` | ~150 | MEDIA | Formulario alternativo sin uso |
+> ✅ **RESUELTO v3.1.0**: Los 16 ficheros huérfanos listados a continuación fueron eliminados en v3.1.0 (~2.800 líneas de código muerto). También se eliminaron 3 tests huérfanos asociados.
 
-**Total: ~2.800 líneas de código muerto en 16 ficheros.**
+| Fichero | Líneas | Estado |
+|---|---|---|
+| ~~`src/services/ml_predictor_estrategia.py`~~ | 392 | ✅ Eliminado v3.1.0 |
+| ~~`src/services/sistema_sugerencias_automaticas.py`~~ | ~200 | ✅ Eliminado v3.1.0 |
+| ~~`src/services/visualizador_conflictos_guardias.py`~~ | ~150 | ✅ Eliminado v3.1.0 |
+| ~~`src/services/cache_soluciones_guardias.py`~~ | ~180 | ✅ Eliminado v3.1.0 |
+| ~~`src/services/optimizaciones_asignador.py`~~ | ~200 | ✅ Eliminado v3.1.0 |
+| ~~`src/services/integrador_orquestador_ui.py`~~ | ~250 | ✅ Eliminado v3.1.0 |
+| ~~`src/domain/services/ejemplo_integracion.py`~~ | ~80 | ✅ Eliminado v3.1.0 |
+| ~~`src/models/models.py`~~ | ~30 | ✅ Eliminado v3.1.0 |
+| ~~`src/presentation/main_window.py`~~ | ~300 | ✅ Eliminado v3.1.0 |
+| ~~`src/presentation/components/top_bar.py`~~ | ~100 | ✅ Eliminado v3.1.0 |
+| ~~`src/presentation/components/sidebar_menu.py`~~ | ~120 | ✅ Eliminado v3.1.0 |
+| ~~`src/presentation/components/ccleaner_topbar.py`~~ | ~80 | ✅ Eliminado v3.1.0 |
+| ~~`src/domain/schemas/` (3 ficheros)~~ | ~200 | ✅ Eliminado v3.1.0 |
+| ~~`src/utils/query_optimizer.py`~~ | 305 | ✅ Eliminado v3.1.0 |
+| ~~`src/utils/screen_validator.py`~~ | ~50 | ✅ Eliminado v3.1.0 |
+| ~~`src/presentation/forms/simple_profesor_form.py`~~ | ~150 | ✅ Eliminado v3.1.0 |
 
 ### 18.2 Recomendaciones de Limpieza
 
-- [ ] **P0** — Eliminar los 6 ficheros CRÍTICOS de `src/services/` (2.500+ líneas muertas)
-- [ ] **P0** — Eliminar `src/domain/schemas/` completo (nunca usado)
-- [ ] **P1** — Eliminar `src/models/models.py`, actualizar `alembic/env.py` para importar de `infrastructure/database/models.py`
-- [ ] **P1** — Eliminar `main_window.py`, `top_bar.py`, `sidebar_menu.py`, `ccleaner_topbar.py` (UI legacy reemplazada)
-- [ ] **P1** — Eliminar `simple_profesor_form.py`, `screen_validator.py`
-- [ ] **P2** — Evaluar integración real de `query_optimizer.py` o eliminarlo
+> ✅ **RESUELTO v3.1.0**: Todas las recomendaciones P0 y P1 de esta sección fueron implementadas.
+
+- [x] **P0** — ~~Eliminar los 6 ficheros CRÍTICOS de `src/services/`~~ ✅ v3.1.0
+- [x] **P0** — ~~Eliminar `src/domain/schemas/` completo~~ ✅ v3.1.0
+- [x] **P1** — ~~Eliminar `src/models/models.py`, actualizar imports~~ ✅ v3.1.0
+- [x] **P1** — ~~Eliminar `main_window.py`, `top_bar.py`, `sidebar_menu.py`, `ccleaner_topbar.py`~~ ✅ v3.1.0
+- [x] **P1** — ~~Eliminar `simple_profesor_form.py`, `screen_validator.py`~~ ✅ v3.1.0
+- [x] **P2** — ~~`query_optimizer.py` eliminado~~ ✅ v3.1.0
 
 ### 18.3 Funcionalidad Duplicada
 
 | Duplicación | Archivos | Acción |
 |---|---|---|
-| **Logging** | `utils/logger.py` vs `core/logging.py` (19+ imports cada uno) | Unificar en `core/logging`, eliminar `utils/logger.py` |
+| **Logging** | `utils/logger.py` vs `core/logging.py` (19+ imports cada uno) | ✅ **RESUELTO v3.1.0**: `utils/logger.py` = thin re-export |
 | **Iconos** | `utils/icons.py` vs `utils/icon_manager.py` | Unificar en un solo módulo |
 | **Estilos UI** | `ui_styles.py` (legacy) vs `presentation/themes/ccleaner_theme.py` (20+ archivos importan el legacy) | Migrar todo a `ccleaner_theme.py` |
-| **Models ORM** | `models/models.py` vs `infrastructure/database/models.py` | Eliminar shim legacy |
+| **Models ORM** | ~~`models/models.py` vs `infrastructure/database/models.py`~~ | ✅ **RESUELTO v3.1.0**: Shim eliminado |
 | **Benchmarks** | 4 scripts: `benchmark_optimizaciones.py`, `benchmark_performance.py`, `profile_performance.py`, `profile_app.py` | Unificar en 1 con subcomandos |
 | **Auditoría N+1** | `audit_n_plus_1.py` + `audit_queries_n1.py` | Unificar en 1 |
 | **Regenerar guardias** | `regenerar_guardias.py` + `regenerar_guardias_v3.py` | Eliminar v1, renombrar v3 |
@@ -930,8 +925,8 @@ Deberían migrar a `ccleaner_theme.py` para consistencia visual.
 
 | ID | Fichero | Problema | Severidad |
 |---|---|---|---|
-| SAN-01 | `services/ml_predictor_estrategia.py` L353-363 | **`pickle.load()` sin validación** — ejecución de código arbitrario si se modifica el fichero `.pkl` | **CRÍTICA** |
-| SAN-02 | `sync/data_exporter.py` L470-505 | Contraseñas "encriptadas" con `base64.b64encode()` — reversible trivialmente | **CRÍTICA** |
+| SAN-01 | ~~`services/ml_predictor_estrategia.py` L353-363~~ | ~~`pickle.load()` sin validación~~ | ✅ RESUELTO v3.1.0 — Fichero eliminado |
+| SAN-02 | ~~`sync/data_exporter.py` L470-505~~ | ~~Contraseñas "encriptadas" con `base64.b64encode()`~~ | ✅ RESUELTO v3.1.0 — Migrado a Fernet |
 | SAN-03 | `services/assignment/profesor_filter.py` L145 | `ast.literal_eval()` en datos de BD — smell, se repite en `profesor_mapper.py` y `parsers.py` | MEDIA |
 | SAN-04 | `database/db_manager.py` L124-236 | SQL hardcodeado en migraciones manuales (`conn.execute(text("ALTER TABLE ..."))`) | ALTA |
 
@@ -981,11 +976,11 @@ Revisar y eliminar bloques de código comentado > 5 líneas — son ruido que di
 
 ### 19.6 Recomendaciones de Sanitización
 
-- [ ] **P0** — Eliminar `ml_predictor_estrategia.py` (contiene `pickle.load` inseguro y es código muerto)
-- [ ] **P0** — Eliminar o reescribir `base64` como "cifrado" en `data_exporter.py`
+- [x] **P0** — ~~Eliminar `ml_predictor_estrategia.py`~~ ✅ v3.1.0
+- [x] **P0** — ~~Reescribir `base64` como "cifrado" en `data_exporter.py`~~ ✅ v3.1.0 (Fernet)
 - [ ] **P1** — Reemplazar los 15 `except Exception: pass` por logging explícito
 - [ ] **P1** — Reemplazar todos los `print()` de debug por `logger.debug()`
-- [ ] **P1** — Unificar sistema de logging dual (`core.logging` vs `utils.logger`)
+- [x] **P1** — ~~Unificar sistema de logging dual~~ ✅ v3.1.0 (`utils/logger.py` = re-export)
 - [ ] **P2** — Normalizar campos JSON en BD para eliminar `ast.literal_eval()` / `json.loads()` defensivos
 - [ ] **P2** — Eliminar código comentado > 5 líneas
 - [ ] **P2** — Extraer magic numbers a constantes o configuración
@@ -1091,18 +1086,18 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 
 ## 21. Reparabilidad y Diagnóstico de Errores
 
-### 21.1 Sistema de Logging (Estado Dual)
+### 21.1 Sistema de Logging (✅ Unificado en v3.1.0)
 
-Coexisten **dos sistemas de logging** que generan confusión y logs inconsistentes:
+~~Coexisten **dos sistemas de logging**~~ → ✅ **RESUELTO v3.1.0**: `utils/logger.py` es ahora un thin re-export de `core/logging`. Todos los imports delegan al mismo sistema.
 
-| Sistema | Módulo | Imports en codebase |
+| Sistema | Módulo | Estado |
 |---|---|---|
-| Estructurado (structlog) | `core.logging.get_logger` | ~19 ficheros |
-| Simple (wrapper) | `utils.logger.get_logger` | ~19 ficheros |
+| Estructurado (structlog) | `core.logging.get_logger` | ✅ Canónico |
+| Simple (wrapper) | `utils.logger.get_logger` | ✅ Re-export de core.logging |
 
-**Problema**: Un desarrollador no sabe cuál usar. Los logs pueden ir a destinos o formatos diferentes según qué import se eligió.
+**Problema**: ~~Un desarrollador no sabe cuál usar.~~ ✅ **RESUELTO v3.1.0**: Ambos imports van al mismo sistema. Usar `core.logging` en código nuevo.
 
-**Recomendación**: Unificar en `core.logging`, eliminar `utils.logger`, actualizar los ~19 imports.
+~~**Recomendación**: Unificar en `core.logging`, eliminar `utils.logger`, actualizar los ~19 imports.~~ ✅ Hecho.
 
 ### 21.2 Manejo de Errores
 
@@ -1111,7 +1106,7 @@ Coexisten **dos sistemas de logging** que generan confusión y logs inconsistent
 | Jerarquía de excepciones | ✅ Bien diseñada | `core/exceptions.py` con excepciones tipadas por dominio |
 | `except Exception: pass` | ❌ 15 bloques | Ocultan fallos reales (ver §19.2) |
 | Error boundaries en GUI | ⚠️ Parcial | `BaseForm` tiene `mostrar_error()`, pero no hay `try/except` global en event handlers |
-| Errores API | ❌ Expone `str(e)` | Fuga de info interna (ver SEC-08) |
+| Errores API | ✅ Mensajes genéricos | Resuelto v3.1.0 |
 | Logging de errores | ⚠️ Inconsistente | Algunos errores se logean, otros se imprimen con `print()`, otros se silencian |
 
 ### 21.3 Trazabilidad
@@ -1135,7 +1130,7 @@ Coexisten **dos sistemas de logging** que generan confusión y logs inconsistent
 
 ### 21.5 Recomendaciones de Reparabilidad
 
-- [ ] **P0** — Unificar logging: eliminar `utils/logger.py`, migrar todo a `core/logging`
+- [x] **P0** — ~~Unificar logging: eliminar `utils/logger.py`, migrar todo a `core/logging`~~ ✅ v3.1.0
 - [ ] **P1** — Añadir correlation IDs para trazar operaciones cross-capa
 - [ ] **P1** — Reemplazar `except Exception: pass` por logging explícito (ver §19.2)
 - [ ] **P1** — Añadir error boundary global en `ccleaner_main_window.py` que capture excepciones no manejadas y las muestre/logee
@@ -1155,7 +1150,7 @@ Coexisten **dos sistemas de logging** que generan confusión y logs inconsistent
 | MEJ-01 | **Completar `pyproject.toml`** | ALTA | Falta `[project]` (name, version, description, authors, license, python-requires), `[project.dependencies]`, `[build-system]`, `[project.scripts]`. Actualmente solo tiene config de ruff/mypy |
 | MEJ-02 | **Migrar de `requirements.txt` a `pyproject.toml`** | MEDIA | Centralizar dependencias en el estándar moderno PEP 621 |
 | MEJ-03 | **Dependencias sin versión máxima** | MEDIA | `fastapi>=0.104.0` sin techo puede traer breaking changes. Usar `>=X,<Y` |
-| MEJ-04 | **sklearn como dependencia obligatoria sin uso real** | MEDIA | ~200MB de dependencias para un módulo ML muerto. Eliminar |
+| MEJ-04 | ~~**sklearn como dependencia obligatoria sin uso real**~~ | ✅ RESUELTO v3.1.0 | Eliminado de requirements.txt junto con numpy |
 
 ### 22.2 Código y Anti-patrones
 
@@ -1204,48 +1199,48 @@ Coexisten **dos sistemas de logging** que generan confusión y logs inconsistent
 
 ### Fase 1 — Seguridad Crítica
 
-| Tarea | Prioridad | Esfuerzo |
+| Tarea | Prioridad | Estado |
 |---|---|---|
-| Migrar a bcrypt/argon2 para contraseñas | P0 | Medio |
-| Cifrado real de credenciales SFTP/SMTP (Fernet/keyring) | P0 | Medio |
-| Autenticación JWT en API REST | P0 | Alto |
-| Eliminar recovery code en texto plano + añadir TTL | P0 | Bajo |
-| Cambiar uvicorn a 127.0.0.1 | P0 | Trivial |
-| Reemplazar str(e) por mensajes genéricos en API | P0 | Bajo |
-| Restringir CORS a orígenes específicos | P0 | Trivial |
+| ~~Migrar a bcrypt para contraseñas~~ | P0 | ✅ v3.1.0 |
+| ~~Cifrado real de credenciales SFTP/SMTP (Fernet)~~ | P0 | ✅ v3.1.0 |
+| Autenticación JWT en API REST | P0 | Pendiente |
+| ~~Eliminar recovery code en texto plano + añadir TTL~~ | P0 | ✅ v3.1.0 |
+| ~~Cambiar uvicorn a 127.0.0.1~~ | P0 | ✅ v3.1.0 |
+| ~~Reemplazar str(e) por mensajes genéricos en API~~ | P0 | ✅ v3.1.0 |
+| ~~Restringir CORS a orígenes específicos~~ | P0 | ✅ v3.1.0 |
 
 ### Fase 2 — Código Muerto y Sanitización
 
-| Tarea | Prioridad | Esfuerzo |
+| Tarea | Prioridad | Estado |
 |---|---|---|
-| Eliminar 6 ficheros CRÍTICOS orphan de `src/services/` (~2.500 líneas) | P0 | Trivial |
-| Eliminar `src/domain/schemas/`, `src/models/models.py`, UI legacy | P0 | Trivial |
-| Eliminar sklearn de requirements.txt (módulo ML muerto) | P0 | Trivial |
-| Reemplazar 15 `except Exception: pass` por logging | P1 | Bajo |
-| Reemplazar `print("DEBUG:...")` por `logger.debug()` | P1 | Bajo |
-| Unificar logging dual → solo `core/logging` | P1 | Bajo |
-| Eliminar `sftp_config.json` y `smtp_config.json` legacy | P1 | Trivial |
-| Limpiar feature flags y settings huérfanos | P2 | Trivial |
+| ~~Eliminar 6 ficheros CRÍTICOS orphan de `src/services/`~~ | P0 | ✅ v3.1.0 |
+| ~~Eliminar `src/domain/schemas/`, `src/models/models.py`, UI legacy~~ | P0 | ✅ v3.1.0 |
+| ~~Eliminar sklearn de requirements.txt~~ | P0 | ✅ v3.1.0 |
+| Reemplazar 15 `except Exception: pass` por logging | P1 | Pendiente |
+| Reemplazar `print("DEBUG:...")` por `logger.debug()` | P1 | Pendiente |
+| ~~Unificar logging dual → solo `core/logging`~~ | P1 | ✅ v3.1.0 |
+| Eliminar `sftp_config.json` y `smtp_config.json` legacy | P1 | Pendiente |
+| Limpiar feature flags y settings huérfanos | P2 | Pendiente |
 
 ### Fase 3 — Performance y Bugs Críticos
 
-| Tarea | Prioridad | Esfuerzo |
+| Tarea | Prioridad | Estado |
 |---|---|---|
-| Corregir N+1 en `/api/guardias` (joinedload) | P0 | Bajo |
-| Corregir bug de `repository_cache.py` (re-creación de wrapper) | P0 | Bajo |
-| Añadir thread-safety al caché (Lock) | P1 | Bajo |
-| Mover sync SFTP a QThread | P1 | Medio |
+| ~~Corregir N+1 en `/api/guardias` (joinedload)~~ | P0 | ✅ v3.1.0 |
+| ~~Corregir bug de `repository_cache.py`~~ | P0 | ✅ v3.1.0 |
+| Añadir thread-safety al caché (Lock) | P1 | Pendiente |
+| Mover sync SFTP a QThread | P1 | Pendiente |
 
 ### Fase 4 — Integridad de BD
 
-| Tarea | Prioridad | Esfuerzo |
+| Tarea | Prioridad | Estado |
 |---|---|---|
-| Añadir NOT NULL a guardias.profesor_id y zona_id | P1 | Bajo |
-| Añadir ON DELETE CASCADE profesor→guardias/ausencias | P1 | Bajo |
-| Añadir UniqueConstraint en guardias | P1 | Bajo |
-| Crear índices faltantes | P1 | Bajo |
-| Resolver inconsistencia cerrado/archivado | P1 | Bajo |
-| Unificar init BD: solo Alembic | P2 | Alto |
+| ~~Añadir NOT NULL a guardias.profesor_id y zona_id~~ | P1 | ✅ v3.1.0 |
+| ~~Añadir ON DELETE CASCADE profesor→guardias/ausencias~~ | P1 | ✅ v3.1.0 |
+| ~~Añadir UniqueConstraint en guardias~~ | P1 | ✅ v3.1.0 |
+| Crear índices faltantes | P1 | Pendiente |
+| Resolver inconsistencia cerrado/archivado | P1 | Pendiente |
+| Unificar init BD: solo Alembic | P2 | Pendiente |
 
 ### Fase 5 — Seguridad Media y Autenticación
 
@@ -1341,4 +1336,4 @@ Coexisten **dos sistemas de logging** que generan confusión y logs inconsistent
 
 ---
 
-*Documento generado automáticamente. Última actualización: 16/04/2026.*
+*Documento generado automáticamente. Última actualización: 16/04/2026 — v3.1.0 (correcciones de seguridad, limpieza y BD).*

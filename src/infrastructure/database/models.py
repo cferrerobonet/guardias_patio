@@ -152,14 +152,19 @@ class Guardia(Base):
     """
 
     __tablename__ = "guardias"
+    __table_args__ = (
+        UniqueConstraint(
+            "curso_id", "fecha", "turno", "recreo", "zona_id", "profesor_id",
+            name="uq_guardia_asignacion",
+        ),
+    )
     id = Column(Integer, primary_key=True)
-    # Nullable para permitir migración gradual
     curso_id = Column(Integer, ForeignKey("cursos_escolares.id"), nullable=True)
-    profesor_id = Column(Integer, ForeignKey("profesores.id"))
+    profesor_id = Column(Integer, ForeignKey("profesores.id", ondelete="CASCADE"), nullable=False)
     fecha = Column(Date, nullable=False)
     turno = Column(String, nullable=False)
     recreo = Column(Integer, nullable=False)  # 1 o 2
-    zona_id = Column(Integer, ForeignKey("zonas.id"))
+    zona_id = Column(Integer, ForeignKey("zonas.id", ondelete="CASCADE"), nullable=False)
 
     # Relaciones
     curso = relationship("CursoEscolar", back_populates="guardias")
@@ -177,7 +182,7 @@ class Ausencia(Base):
 
     __tablename__ = "ausencias"
     id = Column(Integer, primary_key=True)
-    profesor_id = Column(Integer, ForeignKey("profesores.id"), nullable=False)
+    profesor_id = Column(Integer, ForeignKey("profesores.id", ondelete="CASCADE"), nullable=False)
     fecha_inicio = Column(Date, nullable=False)
     fecha_fin = Column(Date, nullable=False)
     tipo = Column(String, nullable=False)  # baja_medica, permiso, vacaciones, otros

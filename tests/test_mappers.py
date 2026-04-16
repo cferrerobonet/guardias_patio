@@ -13,7 +13,7 @@ from src.domain.value_objects import Email, HorasContrato, Turno, TurnoEnum, Zon
 from src.infrastructure.mappers.guardia_mapper import GuardiaMapper
 from src.infrastructure.mappers.profesor_mapper import ProfesorMapper
 from src.infrastructure.mappers.zona_mapper import ZonaMapper
-from src.models.models import Guardia, Profesor, Zona
+from src.infrastructure.database.models import Guardia, Profesor, Zona
 
 
 class TestProfesorMapper:

@@ -7,6 +7,45 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.1.0] - 2026-04-16
+
+### 🎯 Resumen
+
+**Auditoría de seguridad y limpieza**: migración de contraseñas a bcrypt, cifrado Fernet para credenciales, eliminación de 16 ficheros muertos, corrección de integridad de BD.
+
+### ✨ Added
+
+- Migración automática SHA-256 → bcrypt al hacer login (backward compatible)
+- Cifrado Fernet para credenciales SFTP/SMTP (fallback Base64 para exports antiguos)
+- TTL de 15 minutos en códigos de recuperación de contraseña
+- `UniqueConstraint` en guardias (curso, fecha, turno, recreo, zona, profesor)
+- `ON DELETE CASCADE` en FK profesor→guardias/ausencias
+- Migración Alembic `c1d2e3f4a5b6` para integridad BD
+
+### Changed
+
+- CORS restringido a `localhost:3000` y `localhost:8080` (antes `*`)
+- API solo acepta `GET` (antes `*`)
+- uvicorn escucha en `127.0.0.1` (antes `0.0.0.0`)
+- `utils/logger.py` unificado como re-export de `core/logging`
+- `guardias.profesor_id` y `zona_id` ahora `NOT NULL`
+
+### Fixed
+
+- `repository_cache.py`: decorador se recreaba en cada llamada (caché inútil)
+- N+1 en `/api/guardias`: añadido `joinedload` para zona y profesor
+- Errores API ya no exponen `str(e)` al cliente
+- Recovery code se almacenaba en texto plano sin expiración
+
+### 🧹 Housekeeping
+
+- Eliminados 16 ficheros huérfanos (~2.800 líneas de código muerto)
+- Eliminados 3 tests huérfanos asociados
+- Eliminadas dependencias `scikit-learn` y `numpy` (no se usaban)
+- Añadidas dependencias `bcrypt>=4.0.0` y `cryptography>=41.0.0`
+
+---
+
 ## [3.2.1] - 2025-12-08
 
 ### 🎯 Resumen

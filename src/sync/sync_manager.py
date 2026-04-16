@@ -454,8 +454,9 @@ class SyncManager:
 
 class UserAuth:
     """
-    Sistema simple de autenticación de usuarios.
-    En producción, usar bcrypt/argon2 para passwords.
+    Sistema de autenticación de usuarios.
+    Usa bcrypt para hashing de contraseñas.
+    Migra automáticamente hashes SHA-256 legacy a bcrypt en login.
     """
 
     def __init__(self, users_file: Path = None):
@@ -485,10 +486,9 @@ class UserAuth:
             logger.warning(f"Usuario {username} ya existe")
             return False
 
-        # En producción usar bcrypt:
-        # import bcrypt
-        # password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        import bcrypt
+
+        password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
         self.users[username] = {
             "password_hash": password_hash,
@@ -500,13 +500,34 @@ class UserAuth:
         logger.info(f"Usuario registrado: {username}")
         return True
 
+    @staticmethod
+    def _is_legacy_sha256(password_hash: str) -> bool:
+        """Detecta si un hash es SHA-256 legacy (64 chars hex)."""
+        return len(password_hash) == 64 and all(c in "0123456789abcdef" for c in password_hash)
+
     def authenticate(self, username: str, password: str) -> bool:
-        """Autentica un usuario."""
+        """Autentica un usuario. Migra hashes SHA-256 legacy a bcrypt."""
         if username not in self.users:
             return False
 
-        password_hash = hashlib.sha256(password.encode()).hexdigest()
-        return self.users[username]["password_hash"] == password_hash
+        import bcrypt
+
+        stored_hash = self.users[username]["password_hash"]
+
+        if self._is_legacy_sha256(stored_hash):
+            legacy_hash = hashlib.sha256(password.encode()).hexdigest()
+            if stored_hash != legacy_hash:
+                return False
+            new_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+            self.users[username]["password_hash"] = new_hash
+            self._save_users()
+            logger.info(f"Hash de {username} migrado de SHA-256 a bcrypt")
+            return True
+
+        try:
+            return bcrypt.checkpw(password.encode(), stored_hash.encode())
+        except (ValueError, TypeError):
+            return False
 
     def unregister_user(self, username: str) -> bool:
         """

@@ -4,6 +4,7 @@ Diálogo para recuperación de contraseña por email
 
 import hashlib
 import secrets
+from datetime import datetime, timedelta
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -162,9 +163,12 @@ class ForgotPasswordDialog(QDialog):
         # Generar código de recuperación
         recovery_code = secrets.token_urlsafe(32)
 
-        # Guardar código en datos del usuario (temporal)
-        user_data["recovery_code"] = recovery_code
+        # Guardar solo hash + TTL (15 minutos)
         user_data["recovery_code_hash"] = hashlib.sha256(recovery_code.encode()).hexdigest()
+        user_data["recovery_code_expires"] = (
+            datetime.now() + timedelta(minutes=15)
+        ).isoformat()
+        user_data.pop("recovery_code", None)
         self.user_auth._save_users()
 
         # Obtener servicio de email

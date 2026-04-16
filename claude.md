@@ -101,14 +101,6 @@ Después de CADA conjunto de modificaciones, ejecutar en este orden:
 
 ### Crítico — Resolver YA
 
-- **Seguridad**: SHA-256 sin salt para contraseñas → migrar a bcrypt/argon2 (SEC-01)
-- **Seguridad**: Base64 como "cifrado" de credenciales SFTP/SMTP → Fernet/keyring (SEC-02)
-- **Seguridad**: API REST sin autenticación + CORS wildcard + 0.0.0.0 (SEC-03, API-05, SEC-09)
-- **Seguridad**: Recovery code en texto plano en users.json sin TTL (SEC-04)
-- **Código muerto**: 16 ficheros huérfanos (~2.800 líneas), 6 críticos en `src/services/` nunca importados
-- **Código muerto**: `ml_predictor_estrategia.py` con `pickle.load()` inseguro + sklearn ~200MB sin uso
-- **Cache roto**: `repository_cache.py` re-crea el decorador en cada llamada → caché inútil (CACHE-01)
-- **N+1 crítico**: `/api/guardias` ejecuta 2 queries extra por guardia (PERF-01)
 - **BD**: `data/users.json` posiblemente trackeado en git con hashes de contraseñas (ORG-02)
 
 ### Alto — Prioridad siguiente
@@ -118,15 +110,11 @@ Después de CADA conjunto de modificaciones, ejecutar en este orden:
 - **Arquitectura**: 4 domain services importan infraestructura, violando Clean Architecture
 - **Sanitización**: 15 bloques `except Exception: pass` ocultan fallos reales
 - **Sanitización**: 8+ `print("DEBUG:...")` en producción → reemplazar por logger
-- **Logging dual**: `core/logging` vs `utils/logger` (19 imports cada uno) — unificar
-- **BD**: `guardias.profesor_id` y `zona_id` nullable sin sentido (DB-01, DB-02)
-- **BD**: Sin ON DELETE CASCADE en profesor→guardias/ausencias (DB-03)
-- **BD**: Sin UniqueConstraint en guardias (DB-04)
 - **BD**: Triple estrategia de init (Alembic + create_all + SQL directo) (DB-13)
 - **Testing**: 39.75% coverage, 0 tests API REST, 0 tests SFTP/SMTP
 - **Features**: Sistema de sustituciones incompleto (`es_sustitucion`, `profesor_sustituido_id`, `notas` hardcodeados)
 - **Archivos grandes**: 5 ficheros >1000 líneas necesitan split (exportador_pdf 1847, vista_calendario 1368, exportador 1158, asignador_v4 1140, initial_config_dialog 1051)
-- **Duplicación**: logging, iconos, estilos UI, models ORM — todo duplicado
+- **Duplicación**: iconos, estilos UI — duplicados
 
 ### Medio — Planificado
 

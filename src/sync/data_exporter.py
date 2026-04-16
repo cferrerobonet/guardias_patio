@@ -9,9 +9,12 @@ Incluye: Profesores, Zonas, Configuración, Guardias y Ausencias.
 import base64
 import json
 import logging
+import os
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+from cryptography.fernet import Fernet, InvalidToken
 
 from infrastructure.database.models import (
     Ausencia,
@@ -29,39 +32,39 @@ logger = logging.getLogger(__name__)
 class DataExporter:
     """Exporta e importa datos de la base de datos a/desde JSON."""
 
-    @staticmethod
-    def _encriptar_password(password: str) -> str:
-        """
-        Encripta una contraseña usando base64.
+    _fernet_key_env = "GUARDIAS_FERNET_KEY"
 
-        Args:
-            password: Contraseña en texto plano
+    @classmethod
+    def _get_fernet(cls) -> Fernet:
+        key = os.environ.get(cls._fernet_key_env)
+        if not key:
+            key_path = Path.home() / ".guardias_patio_key"
+            if key_path.exists():
+                key = key_path.read_text().strip()
+            else:
+                key = Fernet.generate_key().decode()
+                key_path.write_text(key)
+                key_path.chmod(0o600)
+        return Fernet(key.encode() if isinstance(key, str) else key)
 
-        Returns:
-            Contraseña encriptada en base64
-        """
+    @classmethod
+    def _encriptar_password(cls, password: str) -> str:
         if not password:
             return ""
-        return base64.b64encode(password.encode("utf-8")).decode("utf-8")
+        return cls._get_fernet().encrypt(password.encode("utf-8")).decode("utf-8")
 
-    @staticmethod
-    def _desencriptar_password(encrypted_password: str) -> str:
-        """
-        Desencripta una contraseña desde base64.
-
-        Args:
-            encrypted_password: Contraseña encriptada en base64
-
-        Returns:
-            Contraseña en texto plano
-        """
+    @classmethod
+    def _desencriptar_password(cls, encrypted_password: str) -> str:
         if not encrypted_password:
             return ""
         try:
-            return base64.b64decode(encrypted_password.encode("utf-8")).decode("utf-8")
-        except Exception as e:
-            logger.warning(f"Error al desencriptar contraseña: {e}. Usando valor original.")
-            return encrypted_password  # Si falla, asumir que ya está desencriptada
+            return cls._get_fernet().decrypt(encrypted_password.encode("utf-8")).decode("utf-8")
+        except InvalidToken:
+            try:
+                return base64.b64decode(encrypted_password.encode("utf-8")).decode("utf-8")
+            except Exception:
+                logger.warning("No se pudo desencriptar credencial, usando valor original.")
+                return encrypted_password
 
     @staticmethod
     def _serialize_date(obj: Any) -> str:

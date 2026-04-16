@@ -3,7 +3,9 @@ Diálogo para resetear contraseña con código de recuperación
 """
 
 import hashlib
+from datetime import datetime
 
+import bcrypt
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -152,13 +154,28 @@ class ResetPasswordDialog(QDialog):
             QMessageBox.critical(self, "Error", "Usuario no encontrado")
             return
 
+        # Verificar TTL
+        expires_str = user_data.get("recovery_code_expires")
+        if expires_str:
+            try:
+                expires = datetime.fromisoformat(expires_str)
+                if datetime.now() > expires:
+                    QMessageBox.warning(
+                        self, "Código expirado",
+                        "El código de recuperación ha expirado. Solicita uno nuevo."
+                    )
+                    return
+            except (ValueError, TypeError):
+                pass
+
+        # Verificar código
         code_hash = hashlib.sha256(code.encode()).hexdigest()
         if user_data.get("recovery_code_hash") != code_hash:
             QMessageBox.warning(self, "Código inválido", "El código de recuperación no es correcto")
             return
 
         # Cambiar contraseña
-        password_hash = hashlib.sha256(new_password.encode()).hexdigest()
+        password_hash = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
         user_data["password_hash"] = password_hash
 
         # Limpiar código de recuperación
@@ -166,6 +183,8 @@ class ResetPasswordDialog(QDialog):
             del user_data["recovery_code"]
         if "recovery_code_hash" in user_data:
             del user_data["recovery_code_hash"]
+        if "recovery_code_expires" in user_data:
+            del user_data["recovery_code_expires"]
 
         self.user_auth._save_users()
 

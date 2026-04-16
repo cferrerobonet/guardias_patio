@@ -10,7 +10,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from infrastructure.database.models import Guardia, Profesor, Zona
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from api.dependencies import get_db
 
@@ -80,14 +80,15 @@ def obtener_guardias(
         if turno:
             query = query.filter(Guardia.turno == turno)
 
-        guardias = query.offset(offset).limit(limit).all()
+        guardias = (
+            query.options(joinedload(Guardia.zona), joinedload(Guardia.profesor))
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
 
-        # Enriquecer con nombres
         result = []
         for guardia in guardias:
-            zona = db.query(Zona).get(guardia.zona_id)
-            profesor = db.query(Profesor).get(guardia.profesor_id) if guardia.profesor_id else None
-
             result.append(
                 GuardiaResponse(
                     id=guardia.id,
@@ -95,9 +96,9 @@ def obtener_guardias(
                     recreo=guardia.recreo,
                     turno=guardia.turno,
                     zona_id=guardia.zona_id,
-                    zona_nombre=zona.nombre if zona else None,
+                    zona_nombre=guardia.zona.nombre if guardia.zona else None,
                     profesor_id=guardia.profesor_id,
-                    profesor_nombre=profesor.nombre_completo if profesor else None,
+                    profesor_nombre=guardia.profesor.nombre_completo if guardia.profesor else None,
                     curso_id=guardia.curso_id,
                 )
             )
@@ -105,7 +106,7 @@ def obtener_guardias(
         return result
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
 
 @router.get("/count")
@@ -154,4 +155,4 @@ def contar_guardias(
         return {"total": total}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error al contar guardias")
