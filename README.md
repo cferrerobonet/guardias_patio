@@ -1,106 +1,38 @@
 # Guardias de Patio
 
-<!-- Build & Quality Badges -->
-[![CI/CD Pipeline](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml/badge.svg)](https://github.com/cferrerobonet/guardias_patio/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/cferrerobonet/guardias_patio/branch/main/graph/badge.svg)](https://codecov.io/gh/cferrerobonet/guardias_patio)
-![Tests](https://img.shields.io/badge/Tests-990_passed-success.svg)
-![Coverage](https://img.shields.io/badge/Coverage-39.75%25-yellow.svg)
-
-<!-- Security & Release -->
-[![Security](https://img.shields.io/badge/Security-✅_0_vulnerabilities-success.svg)](docs/archive/auditoria/SECURITY_FIX_20251108.md)
-[![Release](https://img.shields.io/github/v/release/cferrerobonet/guardias_patio)](https://github.com/cferrerobonet/guardias_patio/releases/latest)
 ![Version](https://img.shields.io/badge/Version-3.2.1-blue.svg)
-
-<!-- Tech Stack -->
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.7.0-orange.svg)
-![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-red.svg)
-![OR-Tools](https://img.shields.io/badge/OR--Tools-CP--SAT-blueviolet.svg)
-
-<!-- Architecture & Standards -->
-![Arquitectura](https://img.shields.io/badge/Arquitectura-Clean-brightgreen.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Linting: ruff](https://img.shields.io/badge/linting-ruff-blueviolet.svg)](https://github.com/astral-sh/ruff)
 
-**Aplicación de escritorio profesional** para la gestión integral de guardias de patio en centros educativos. Asignación automática con **equidad perfecta (IE=100%)** usando algoritmo CP-SAT de Google OR-Tools, optimización de consecutividad y preferencia de zona, gestión completa de ausencias y sustituciones, calendario interactivo, y arquitectura limpia.
-
-> 🎯 **v3.2.0 Released** - Algoritmo CP-SAT con 3 objetivos: equidad perfecta, consecutividad y zona
-> 🧪 **v3.1.0** - Mejora suite de tests: 990 passed, 36 skipped
-> 📊 **v3.0.2** - Dashboard de Equidad + API REST con 8 endpoints (FastAPI)
-> 📚 [Ver Changelog](docs/CHANGELOG.md) | [Guía de Usuario](docs/user/USER_GUIDE.md) | [Guía Técnica](docs/dev/TECHNICAL_GUIDE.md)
+**Aplicación de escritorio** para la gestión de guardias de patio en centros educativos. Asignación automática con equidad perfecta (IE=100%) usando Google OR-Tools CP-SAT, calendario interactivo, gestión de ausencias/sustituciones, y exportación PDF/iCal.
 
 ---
 
-## 📋 Tabla de Contenidos
+## Características Principales
 
-- [Características Principales](#-características-principales)
-- [Quick Start](#-quick-start)
-- [Stack Tecnológico](#-stack-tecnológico)
-- [Arquitectura](#-arquitectura)
-- [Documentación](#-documentación)
-- [Compilación y Distribución](#-compilación-y-distribución)
-- [Contribución](#-contribución)
-- [Licencia](#-licencia)
-
----
-
-## ✨ Características Principales
-
-### 🎯 Algoritmo de Asignación CP-SAT
-- ✅ **Equidad Perfecta**: Índice de Equidad (IE) = 100%, máxima desviación = 0
-- ✅ **Guardias Consecutivas**: Minimiza cambios entre días (~30% menos bloques)
-- ✅ **Preferencia de Zona**: ~85% guardias en zona principal por profesor
-- ✅ **Optimización Multi-objetivo**: Jerarquía Equidad >> Consecutividad > Zona
-- ✅ **Solución Óptima Garantizada**: Google OR-Tools CP-SAT solver
-
-### 🗓️ Gestión Completa
-- ✅ **Gestión de Ausencias**: Sistema completo de sustituciones con búsqueda automática
-- ✅ **Calendario Interactivo**: Vista mensual con filtros por profesor, zona y turno
-- ✅ **Dashboard de Equidad**: Visualización con gráficos en tiempo real (matplotlib)
-- ✅ **API REST**: Endpoints FastAPI para integraciones externas y mobile
-- ✅ **Panel de Estadísticas**: Métricas en tiempo real de carga, balance y cobertura
-- ✅ **Exportación Múltiple**: PDF corporativo, iCalendar (.ics), JSON para backup
-
-### 🏗️ Arquitectura Profesional
-- ✅ **Clean Architecture**: 4 capas bien separadas (Domain, Application, Infrastructure, Presentation)
-- ✅ **990 Tests**: 39.75% cobertura con tests unitarios y de integración
-- ✅ **Type Safety**: Validación automática con Pydantic en todas las capas
-- ✅ **Cache Inteligente**: 90-98% reducción de queries en operaciones frecuentes
-- ✅ **12 Widgets Reutilizables**: -40% código en formularios
-- ✅ **Logging Estructurado**: Trazabilidad completa con structlog
-
-### 🎨 UX/UI Moderna
-- ✅ **Fluent Design**: Interfaz moderna inspirada en Windows 11
-- ✅ **Organización por Turno**: Profesores agrupados (☀️ Mañana, 🌙 Tarde, 🔄 Mixto)
-- ✅ **Feedback Visual**: Indicadores de progreso y confirmaciones contextuales
-- ✅ **Tooltips Intuitivos**: ~85% de campos con ayuda contextual
-- ✅ **Atajos de Teclado**: 50+ shortcuts documentados
-- ✅ **Puntuación UX**: 8.2/10 según auditoría independiente
+- **Algoritmo CP-SAT**: Equidad perfecta, minimización de consecutividad, preferencia de zona
+- **Calendario interactivo**: Vista mensual con filtros por profesor, zona y turno
+- **Gestión de ausencias**: Sistema de sustituciones con búsqueda automática
+- **Exportación múltiple**: PDF corporativo, iCalendar (.ics), JSON
+- **API REST**: Endpoints FastAPI para integraciones externas
+- **Dashboard de equidad**: Visualización con gráficos en tiempo real
+- **Multi-usuario**: BD SQLite aislada por usuario con sync SFTP
+- **Observabilidad**: Métricas Prometheus, logging estructurado (structlog)
 
 ---
 
-## 🚀 Quick Start
-
-### Instalación Rápida
+## Quick Start
 
 ```bash
-# 1. Clonar repositorio
-git clone https://github.com/cferrerobonet/guardias_patio.git
-cd guardias_patio
+# Crear entorno virtual (Python 3.11+ requerido)
+python3.11 -m venv .venv
+source .venv/bin/activate
 
-# 2. Crear entorno virtual (Python 3.11+ requerido)
-python3.11 -m venv venv
-source venv/bin/activate  # macOS/Linux
-# venv\Scripts\activate    # Windows
-
-# 3. Instalar dependencias
+# Instalar dependencias
 pip install -r requirements.txt
 
-# 4. Inicializar base de datos
-alembic upgrade head
-
-# 5. Ejecutar aplicación
+# Ejecutar
 python src/main.py
 ```
 
@@ -112,263 +44,84 @@ python src/main.py
 4. **Generar Guardias** → Ejecutar algoritmo de asignación
 5. **Visualizar** → Ver calendario y exportar PDFs
 
-📖 **Guía completa**: [USER_GUIDE.md](docs/user/USER_GUIDE.md)
-
 ---
 
-## 💻 Stack Tecnológico
+## Stack Tecnológico
 
-| Categoría | Tecnología | Versión | Propósito |
-|-----------|------------|---------|-----------|
-| **Lenguaje** | Python | 3.11+ | Type hints, pattern matching |
-| **GUI** | PyQt6 | 6.7.0 | Framework multiplataforma |
-| **ORM** | SQLAlchemy | 2.0.31 | Gestión de base de datos |
-| **Validación** | Pydantic | 2.8.2 | Type safety y schemas |
-| **Migraciones** | Alembic | 1.13.2 | Control de versiones BD |
-| **Testing** | Pytest | 8.3.2 | Framework de tests |
-| **Linter** | Ruff | 0.5.5 | Linting ultra-rápido |
-| **Logging** | Structlog | 24.4.0 | Logs estructurados |
-| **BD** | SQLite | 3.x | Base de datos embebida |
+| Categoría | Tecnología |
+|-----------|------------|
+| GUI | PyQt6 6.7.0 |
+| ORM | SQLAlchemy 2.0 + Alembic |
+| BD | SQLite (per-user) |
+| API | FastAPI + Uvicorn |
+| Optimización | Google OR-Tools (CP-SAT) |
+| Validación | Pydantic 2.x |
+| Testing | pytest + pytest-qt (990 tests) |
+| Logging | structlog + prometheus_client |
+| Linting | Ruff + mypy |
 
 **Compatibilidad**: macOS 11+, Windows 10+, Linux (Ubuntu 20.04+)
 
 ---
 
-## 🏛️ Arquitectura
+## Arquitectura
 
-**Clean Architecture** con separación clara en 4 capas:
+Clean Architecture con separación en capas:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  🟪 PRESENTATION (PyQt6)                            │
-│  ├─ forms/          Formularios CRUD                │
-│  ├─ widgets/        12 widgets reutilizables        │
-│  └─ dialogs/        Diálogos y confirmaciones       │
-├─────────────────────────────────────────────────────┤
-│  🟩 APPLICATION                                     │
-│  ├─ use_cases/      Lógica de negocio              │
-│  ├─ dtos/           Data Transfer Objects           │
-│  └─ cache/          Sistema de caché TTL           │
-├─────────────────────────────────────────────────────┤
-│  🟨 INFRASTRUCTURE                                  │
-│  ├─ repositories/   Persistencia de datos          │
-│  ├─ mappers/        Conversión Modelo ↔ Entidad   │
-│  └─ services/       Servicios externos             │
-├─────────────────────────────────────────────────────┤
-│  🟦 DOMAIN                                          │
-│  ├─ entities/       Entidades de negocio           │
-│  ├─ value_objects/  Objetos de valor               │
-│  └─ interfaces/     Contratos de repositorios      │
-└─────────────────────────────────────────────────────┘
+src/
+├── domain/          Entidades, value objects, interfaces de repositorio
+├── application/     Use cases, DTOs, factories DI
+├── infrastructure/  Repositorios SQLAlchemy, mappers, modelos BD
+├── presentation/    GUI PyQt6 (forms, widgets, dialogs, themes)
+├── services/        Algoritmos de asignación, exportadores, email, iCal
+├── api/             REST API FastAPI
+├── core/            Excepciones, logging, observabilidad
+├── sync/            Sincronización SFTP, bloqueo de sesión
+├── config/          Settings (Pydantic BaseSettings)
+├── database/        Gestión de conexiones y migraciones
+└── utils/           Cache, constantes, helpers
 ```
-
-**Flujo de Datos**: `UI → Use Cases → Services → Repositories → Database`
-
-**Beneficios**:
-- ✅ Testabilidad: 990 tests, 39.75% cobertura
-- ✅ Mantenibilidad: Cambios aislados por capa
-- ✅ Escalabilidad: Fácil añadir features
-- ✅ Independencia: Domain sin dependencias externas
-
-📚 **Documentación completa**: [TECHNICAL_GUIDE.md](docs/dev/TECHNICAL_GUIDE.md)
 
 ---
 
-## 📚 Documentación
-
-📁 **[Documentación completa en docs/](docs/README.md)**
-
-### 📖 Para Usuarios
-
-| Documento | Descripción |
-|-----------|-------------|
-| **[USER_GUIDE.md](docs/user/USER_GUIDE.md)** | Tutorial completo paso a paso |
-
-### 👨‍💻 Para Desarrolladores
-
-| Documento | Descripción |
-|-----------|-------------|
-| **[ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)** | Clean Architecture - 4 capas, dependencias, patrones ⭐⭐⭐⭐ |
-| **[API_REST.md](docs/architecture/API_REST.md)** | API REST con FastAPI - 8 endpoints documentados |
-| **[TECHNICAL_GUIDE.md](docs/dev/TECHNICAL_GUIDE.md)** | Algoritmos, validaciones, cache, logging |
-| **[TESTING.md](docs/dev/TESTING.md)** | 990 tests, 40% coverage, guía completa pytest |
-| **[CONTRIBUTING.md](docs/dev/CONTRIBUTING.md)** | Workflow, estándares de código, PR guidelines |
-| **[REPOSITORY_PATTERN.md](docs/dev/REPOSITORY_PATTERN_GUIDE.md)** | Patrón Repository implementado |
-
-### 🚀 Para DevOps / Mantenedores
-
-| Documento | Descripción |
-|-----------|-------------|
-| **[DEPLOYMENT.md](docs/dev/DEPLOYMENT.md)** | Build macOS/Windows, PyInstaller, DMG |
-| **[CI_CD.md](docs/dev/CI_CD.md)** | GitHub Actions, workflows automáticos |
-| **[MAINTENANCE.md](docs/dev/MAINTENANCE.md)** | Backups, limpieza BD, checklists |
-| **[SECURITY.md](docs/dev/SECURITY.md)** | Política seguridad, reporte vulnerabilidades |
-
-### 📊 Referencia
-
-| Documento | Descripción |
-|-----------|-------------|
-| **[CHANGELOG.md](docs/CHANGELOG.md)** | Historial completo de versiones |
-| **[PREMISAS_ASIGNACION.md](documentacion/PREMISAS_ASIGNACION_GUARDIAS.md)** | Reglas de negocio asignación |
-| **[UX_AUDIT.md](documentacion/UX_AUDIT.md)** | Auditoría UX completa (8.2/10) |
-| **[API Reference](documentacion/api/)** | Documentación técnica de la API |
-
-### 🎯 Por Caso de Uso
-
-**¿Quieres empezar a usar la app?**  
-→ [USER_GUIDE.md](documentacion/USER_GUIDE.md)
-
-**¿Vas a desarrollar o contribuir?**  
-→ [ARCHITECTURE.md](documentacion/ARCHITECTURE.md) + [CONTRIBUTING.md](documentacion/CONTRIBUTING.md)
-
-**¿Necesitas compilar/desplegar?**  
-→ [DEPLOYMENT.md](documentacion/DEPLOYMENT.md)
-
-**¿Configurar CI/CD?**  
-→ [CI_CD.md](documentacion/CI_CD.md) + [BRANCH_PROTECTION](documentacion/guias/BRANCH_PROTECTION_SETUP.md)
-
-### 📝 Índice Completo
-
-Ver [documentacion/README.md](documentacion/README.md) para el índice completo de toda la documentación.
-
-**Resultados de auditoría UX:**
-- ✅ 85% de campos con tooltip/placeholder (objetivo: ≥80%)
-- ✅ 100% de confirmaciones apropiadas
-- ✅ 8.2/10 puntuación global (MUY BUENO)
-- ✅ Patrones documentados para desarrollo consistente
-
-### �🎯 Por Tema
-
-**Instalación y Uso**
-- [Guía de Usuario](documentacion/USER_GUIDE.md) - Tutorial completo paso a paso
-- Requisitos del sistema y resolución de problemas
-
-**Desarrollo**
-- [Guía Técnica](documentacion/TECHNICAL_GUIDE.md) - Arquitectura, algoritmos, validaciones
-- [Guía de Contribución](documentacion/CONTRIBUTING.md) - Workflow, estándares, testing
-
-**Despliegue**
-- [Guía de Despliegue](documentacion/DEPLOYMENT.md) - Build macOS/Windows, distribución
-- Troubleshooting de compilación
-
-**Mantenimiento**
-- [Seguridad](documentacion/SECURITY.md) - Reporte vulnerabilidades, buenas prácticas
-- [Mantenimiento](documentacion/MAINTENANCE.md) - Backups, limpieza, actualizaciones
-
-### 📝 Índice Completo
-
-Ver [documentacion/README.md](documentacion/README.md) para el índice completo de toda la documentación.
-
----
-
-## 🔨 Compilación y Distribución
-
-### Compilación Rápida
+## Compilación
 
 ```bash
-# macOS - Ejecutable + DMG
-./scripts/build/build_simple.sh
-./scripts/build/create_dmg.sh
+# macOS
+make app && make dmg
 
-# Windows - Ejecutable + Instalador
-python -m PyInstaller GuardiasDePatio.spec
-```
-
-### Documentación Completa
-
-📚 **[DEPLOYMENT.md](documentacion/DEPLOYMENT.md)** - Guía completa de despliegue
-
-**Incluye:**
-- ✅ Requisitos de compilación (macOS/Windows)
-- ✅ Configuración del entorno de build
-- ✅ Proceso paso a paso con PyInstaller
-- ✅ Creación de instaladores (DMG/InnoSetup)
-- ✅ Testing de ejecutables
-- ✅ Distribución y release en GitHub
-- ✅ Troubleshooting completo
-- ✅ Checklist de distribución
-
----
-
-## 🤝 Contribución
-
-¡Las contribuciones son bienvenidas! Lee nuestra [**Guía de Contribución**](documentacion/CONTRIBUTING.md) completa.
-
-### Quick Start para Contribuir
-
-1. **Fork** el repositorio
-2. **Crea rama**: `git checkout -b feature/mi-feature`
-3. **Configura entorno**: `python3.11 -m venv venv && pip install -r requirements.txt`
-4. **Haz cambios** siguiendo estándares de código
-5. **Tests**: `pytest` (asegura que todo pasa)
-6. **Commit**: `git commit -m "feat: descripción"` (Conventional Commits)
-7. **Push**: `git push origin feature/mi-feature`
-8. **Pull Request** con descripción detallada
-
-### Convenciones
-
-- **Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
-- **Código**: PEP 8, type hints, docstrings Google Style
-- **Tests**: Obligatorios para features nuevas
-- **Cobertura**: Mínimo 70% en código nuevo
-
-📖 **Documentación completa**: [CONTRIBUTING.md](documentacion/CONTRIBUTING.md)
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la **Licencia MIT**. Ver [LICENSE](LICENSE) para detalles completos.
-
-```
-MIT License - Copyright (c) 2024-2025 Carlos Ferrero Bonet
+# Windows
+powershell scripts/build_windows.ps1
 ```
 
 ---
 
-## 👤 Autor
+## Documentación
 
-**Carlos Ferrero Bonet**
-
-- 💼 GitHub: [@cferrerobonet](https://github.com/cferrerobonet)
-- 📧 Email: cferrerobonet@gmail.com
-- 🔗 Proyecto: [github.com/cferrerobonet/guardias_patio](https://github.com/cferrerobonet/guardias_patio)
-
----
-
-## 📊 Estadísticas del Proyecto
-
-| Métrica | Valor | Descripción |
-|---------|-------|-----------|
-| **Versión** | 3.1.0 | Release actual |
-| **Tests** | 990 | Tests pasando |
-| **Cobertura** | 39.75% | Cobertura de código |
-| **Líneas de código** | ~12,250 | Total líneas Python |
-| **Archivos Python** | 93 | Módulos del proyecto |
-| **Widgets** | 12 | Componentes reutilizables |
-| **Reducción código** | -40% | En formularios (v3.0) |
-| **Última actualización** | 30 nov 2025 | Fecha release |
+| Documento | Descripción |
+|-----------|-------------|
+| [docs/AUDITORIA_INTEGRAL_2026.md](docs/AUDITORIA_INTEGRAL_2026.md) | Auditoría completa: seguridad, performance, arquitectura, roadmap |
+| [CHANGELOG.md](CHANGELOG.md) | Historial de versiones |
+| [tests/README.md](tests/README.md) | Guía de testing y buenas prácticas |
+| [scripts/README.md](scripts/README.md) | Documentación de scripts |
 
 ---
 
-## 🔗 Enlaces Útiles
+## Contribución
 
-- 📦 **[Releases](https://github.com/cferrerobonet/guardias_patio/releases)** - Descargas y changelog
-- 🐛 **[Issues](https://github.com/cferrerobonet/guardias_patio/issues)** - Reportar bugs o sugerir features
-- 📚 **[Documentación](documentacion/README.md)** - Índice completo de docs
-- 🔒 **[Seguridad](documentacion/SECURITY.md)** - Reportar vulnerabilidades
-- 🛠️ **[Mantenimiento](documentacion/MAINTENANCE.md)** - Guía de mantenimiento
+1. Fork el repositorio
+2. Crea rama: `git checkout -b feature/mi-feature`
+3. Tests: `pytest` (asegura que todo pasa)
+4. Commit: `git commit -m "feat: descripción"` (Conventional Commits)
+5. Pull Request con descripción detallada
+
+**Convenciones**: PEP 8, type hints, tests obligatorios para features nuevas.
 
 ---
 
-<div align="center">
+## Licencia
 
-### ⭐ Si este proyecto te resulta útil, dale una estrella en GitHub ⭐
+MIT License — Copyright (c) 2024-2026 Carlos Ferrero Bonet. Ver [LICENSE](LICENSE).
 
-**Made with ❤️ by [Carlos Ferrero Bonet](https://github.com/cferrerobonet)**
-
-![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python&logoColor=white)
-![PyQt6](https://img.shields.io/badge/PyQt6-6.7.0-green?logo=qt&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-
-</div>
+**Carlos Ferrero Bonet** — [@cferrerobonet](https://github.com/cferrerobonet)
