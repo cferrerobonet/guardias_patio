@@ -7,6 +7,18 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.1.3] - 2026-04-17
+
+### 🎯 Resumen
+
+**Bug crítico de BD vacía**: tras una reinstalación o nueva compilación, la BD se creaba vacía aunque el JSON local tuviera todos los datos, porque el sync solo importaba al descargar del SFTP.
+
+### Fixed
+
+- `sync_on_startup` ahora importa el JSON local a la BD si la BD está vacía y el JSON contiene datos, independientemente del resultado del sync remoto
+
+---
+
 ## [3.1.2] - 2026-04-17
 
 ### 🎯 Resumen

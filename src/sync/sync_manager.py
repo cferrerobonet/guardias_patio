@@ -363,6 +363,23 @@ class SyncManager:
         else:
             logger.info("ℹ️  No hay datos en la nube aún")
 
+        # Importar JSON local a la BD si la BD está vacía y el JSON tiene datos.
+        # Cubre el caso de reinstalación o nueva compilación donde la BD se crea vacía
+        # pero el JSON local (procedente de una sync anterior) ya tiene todos los datos.
+        if session and local_json_path.exists() and _count_json_records(local_json_path) > 0:
+            try:
+                from infrastructure.database.models import Profesor
+                db_empty = session.query(Profesor).count() == 0
+                if db_empty:
+                    from sync.data_exporter import DataExporter
+                    logger.info("📊 BD vacía con JSON local disponible — importando datos...")
+                    if DataExporter.import_from_json(session, local_json_path, clear_existing=False):
+                        logger.info("✅ Datos del JSON local importados a la BD")
+                    else:
+                        logger.error("❌ Error al importar JSON local a la BD")
+            except Exception as e:
+                logger.error(f"Error en importación de BD vacía: {e}")
+
         # Guardar timestamp de última sincronización
         self._save_sync_metadata()
 
