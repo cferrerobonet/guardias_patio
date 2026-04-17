@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # ========== APLICACIÓN ==========
     app_name: str = "Gestión de Guardias de Patio"
-    app_version: str = "3.1.3"
+    app_version: str = "3.2.0"
     app_author: str = "Carlos Ferrero Bonet"
     environment: Literal["development", "production", "testing"] = "production"
 
@@ -146,13 +146,6 @@ class Settings(BaseSettings):
     msg_error_bd: str = "❌ Error de base de datos"
     msg_error_validacion: str = "⚠️ Error de validación"
     msg_confirmacion_eliminar: str = "¿Está seguro de que desea eliminar este elemento?"
-
-    # ========== FEATURES FLAGS ==========
-    feature_zona_preferida: bool = True
-    feature_matriz_horario: bool = True
-    feature_ausencias: bool = True
-    feature_sustituciones: bool = True
-    feature_exportacion: bool = True
 
     # ========== DESARROLLO ==========
     debug: bool = False

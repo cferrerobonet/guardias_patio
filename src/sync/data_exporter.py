@@ -10,7 +10,7 @@ import base64
 import json
 import logging
 import os
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -803,12 +803,12 @@ class DataExporter:
                         created_at=(
                             datetime.fromisoformat(a_data["created_at"])
                             if a_data.get("created_at")
-                            else datetime.utcnow()
+                            else datetime.now(timezone.utc)
                         ),
                         updated_at=(
                             datetime.fromisoformat(a_data["updated_at"])
                             if a_data.get("updated_at")
-                            else datetime.utcnow()
+                            else datetime.now(timezone.utc)
                         ),
                     )
                     session.add(ausencia)

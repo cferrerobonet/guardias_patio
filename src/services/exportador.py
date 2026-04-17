@@ -7,7 +7,8 @@ en formato JSON para portabilidad entre equipos.
 import base64
 import json
 import os
-from datetime import date, time
+from datetime import date, time, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -793,12 +794,12 @@ class ExportadorDatos:
                             created_at=(
                                 datetime.fromisoformat(a_data["created_at"])
                                 if a_data.get("created_at")
-                                else datetime.utcnow()
+                                else datetime.now(timezone.utc)
                             ),
                             updated_at=(
                                 datetime.fromisoformat(a_data["updated_at"])
                                 if a_data.get("updated_at")
-                                else datetime.utcnow()
+                                else datetime.now(timezone.utc)
                             ),
                         )
                         session.add(ausencia)
@@ -815,12 +816,12 @@ class ExportadorDatos:
                         created_at=(
                             datetime.fromisoformat(a_data["created_at"])
                             if a_data.get("created_at")
-                            else datetime.utcnow()
+                            else datetime.now(timezone.utc)
                         ),
                         updated_at=(
                             datetime.fromisoformat(a_data["updated_at"])
                             if a_data.get("updated_at")
-                            else datetime.utcnow()
+                            else datetime.now(timezone.utc)
                         ),
                     )
                     session.add(ausencia)

@@ -9,7 +9,7 @@ Este módulo proporciona la lógica de negocio para:
 - Copiar profesores entre cursos
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from core.logging import get_logger
@@ -121,7 +121,7 @@ class GestorCursos:
             nombre=nombre,
             activo=False,  # Se activará después si es necesario
             cerrado=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
 
         session.add(nuevo_curso)

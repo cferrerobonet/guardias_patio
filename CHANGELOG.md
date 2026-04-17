@@ -7,6 +7,29 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.2.0] - 2026-04-17
+
+### 🎯 Resumen
+
+Lote de auditoría técnica: deprecaciones Python 3.12+, rendimiento BD, consistencia ORM/migraciones, limpieza de config y versionado API.
+
+### ✨ Added
+
+- Migración Alembic `e1f2a3b4c5d6`: corrige inconsistencia `archivado`→`cerrado` en `cursos_escolares` y añade 5 índices de rendimiento (`ix_profesores_activo`, `ix_profesores_turno`, `ix_guardias_curso_id`, `ix_guardias_turno`, `ix_guardias_fecha_turno_recreo`)
+- API REST: handler global de errores 500 con respuesta JSON estándar (`error`, `detail`)
+- API REST: prefijo de versionado `/api/v1/` en todos los routers
+
+### Fixed
+
+- `datetime.utcnow()` deprecated (Python 3.12+) reemplazado por `datetime.now(timezone.utc)` en `models.py`, `data_exporter.py`, `exportador.py`, `gestor_cursos.py`
+
+### 🧹 Housekeeping
+
+- Eliminados 5 feature flags huérfanos de `settings.py` (`feature_zona_preferida`, `feature_matriz_horario`, `feature_ausencias`, `feature_sustituciones`, `feature_exportacion`) — nunca consultados en el código
+- Añadido `Index` al import de SQLAlchemy en `models.py`
+
+---
+
 ## [3.1.3] - 2026-04-17
 
 ### 🎯 Resumen

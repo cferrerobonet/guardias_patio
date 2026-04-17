@@ -4,19 +4,20 @@ API REST - FastAPI Application
 Aplicación FastAPI que expone endpoints REST para el sistema de guardias.
 
 Endpoints disponibles:
-- /api/cuotas: Cálculo de cuotas
-- /api/equidad: Análisis de equidad
-- /api/guardias: Gestión de guardias
-- /api/profesores: Información de profesores
-- /api/estadisticas: Estadísticas y métricas
+- /api/v1/cuotas: Cálculo de cuotas
+- /api/v1/equidad: Análisis de equidad
+- /api/v1/guardias: Gestión de guardias
+- /api/v1/profesores: Información de profesores
+- /api/v1/estadisticas: Estadísticas y métricas
 
 Documentación:
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from api.routers import (
     cuotas_router,
@@ -25,6 +26,9 @@ from api.routers import (
     guardias_router,
     profesores_router,
 )
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 # Crear aplicación FastAPI
 app = FastAPI(
@@ -44,45 +48,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Registrar routers
-app.include_router(cuotas_router, prefix="/api")
-app.include_router(equidad_router, prefix="/api")
-app.include_router(guardias_router, prefix="/api")
-app.include_router(profesores_router, prefix="/api")
-app.include_router(estadisticas_router, prefix="/api")
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Error no controlado en %s", request.url)
+    return JSONResponse(
+        status_code=500,
+        content={"error": "internal_server_error", "detail": "Error interno del servidor"},
+    )
+
+
+# Registrar routers bajo /api/v1
+app.include_router(cuotas_router, prefix="/api/v1")
+app.include_router(equidad_router, prefix="/api/v1")
+app.include_router(guardias_router, prefix="/api/v1")
+app.include_router(profesores_router, prefix="/api/v1")
+app.include_router(estadisticas_router, prefix="/api/v1")
 
 
 @app.get("/")
 def root():
-    """
-    Endpoint raíz con información de la API.
-
-    Returns:
-        dict: Información de bienvenida y endpoints disponibles
-    """
     return {
         "nombre": "Guardias de Patio API",
         "version": "3.2.1",
         "descripcion": "API REST para gestión y análisis de guardias de patio",
         "documentacion": {"swagger_ui": "/docs", "redoc": "/redoc"},
         "endpoints": {
-            "cuotas": "/api/cuotas",
-            "equidad": "/api/equidad",
-            "guardias": "/api/guardias",
-            "profesores": "/api/profesores",
-            "estadisticas": "/api/estadisticas",
+            "cuotas": "/api/v1/cuotas",
+            "equidad": "/api/v1/equidad",
+            "guardias": "/api/v1/guardias",
+            "profesores": "/api/v1/profesores",
+            "estadisticas": "/api/v1/estadisticas",
         },
     }
 
 
 @app.get("/health")
 def health_check():
-    """
-    Health check endpoint.
-
-    Returns:
-        dict: Estado de salud de la API
-    """
     return {"status": "healthy", "version": "3.2.1"}
 
 

@@ -18,7 +18,12 @@ O el alias más corto:
     from infrastructure.database import Profesor, Guardia, ...
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def _now_utc() -> datetime:
+    """Devuelve la hora actual UTC compatible con Python 3.12+."""
+    return datetime.now(timezone.utc)
 
 from sqlalchemy import (
     Boolean,
@@ -27,6 +32,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -56,7 +62,7 @@ class CursoEscolar(Base):
     nombre = Column(String, nullable=False)  # "Curso 2024/2025"
     activo = Column(Boolean, default=False, nullable=False)  # Solo uno activo
     cerrado = Column(Boolean, default=False, nullable=False)  # Curso finalizado
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=_now_utc, nullable=False)
 
     # Constraint: solo un curso puede estar activo
     __table_args__ = (UniqueConstraint("anio_inicio", "anio_fin", name="uq_anio_curso"),)
@@ -95,6 +101,11 @@ class Profesor(Base):
     recreos_permitidos = Column(Text, nullable=True)  # JSON: [1..N]
     guardias = relationship("Guardia", back_populates="profesor")
     zona_preferida = relationship("Zona", foreign_keys=[zona_preferida_id])
+
+    __table_args__ = (
+        Index("ix_profesores_activo", "activo"),
+        Index("ix_profesores_turno", "turno"),
+    )
 
 
 class Zona(Base):
@@ -157,6 +168,9 @@ class Guardia(Base):
             "curso_id", "fecha", "turno", "recreo", "zona_id", "profesor_id",
             name="uq_guardia_asignacion",
         ),
+        Index("ix_guardias_curso_id", "curso_id"),
+        Index("ix_guardias_turno", "turno"),
+        Index("ix_guardias_fecha_turno_recreo", "fecha", "turno", "recreo"),
     )
     id = Column(Integer, primary_key=True)
     curso_id = Column(Integer, ForeignKey("cursos_escolares.id"), nullable=True)
@@ -189,8 +203,8 @@ class Ausencia(Base):
     motivo = Column(Text, nullable=True)
     documento_path = Column(String, nullable=True)  # Ruta al justificante
     activa = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_now_utc, nullable=False)
+    updated_at = Column(DateTime, default=_now_utc, onupdate=_now_utc)
 
     # Relación con Profesor
     profesor = relationship("Profesor", backref="ausencias")

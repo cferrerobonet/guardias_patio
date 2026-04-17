@@ -697,7 +697,7 @@ La app es una **aplicación de escritorio con BD local (SQLite)**. No está dise
 | ID | Hallazgo | Severidad |
 |---|---|---|
 | ORG-01 | `src/services/` **no tiene `__init__.py`** — inconsistente con todos los demás paquetes | BAJA |
-| ORG-02 | `data/users.json` posiblemente trackeado en git pese a contener hashes de contraseñas | ALTA |
+| ORG-02 | ~~`data/users.json` trackeado en git con hashes de contraseñas~~ | ✅ RESUELTO v3.1.1 |
 | ORG-03 | `logs/` contiene 13 ficheros JSON de comparación de cuotas — deberían auto-limpiarse | BAJA |
 | ORG-04 | 20+ archivos importan `import ui_styles` desde raíz de `src/` — rompe jerarquía de capas | MEDIA |
 | ORG-05 | `Re-export chain`: `utils/__init__.py` re-exporta `core.exceptions` — coupling innecesario | BAJA |
@@ -978,8 +978,8 @@ Revisar y eliminar bloques de código comentado > 5 líneas — son ruido que di
 
 - [x] **P0** — ~~Eliminar `ml_predictor_estrategia.py`~~ ✅ v3.1.0
 - [x] **P0** — ~~Reescribir `base64` como "cifrado" en `data_exporter.py`~~ ✅ v3.1.0 (Fernet)
-- [ ] **P1** — Reemplazar los 15 `except Exception: pass` por logging explícito
-- [ ] **P1** — Reemplazar todos los `print()` de debug por `logger.debug()`
+- [x] **P1** — ~~Reemplazar los 15 `except Exception: pass` por logging explícito~~ ✅ v3.1.1
+- [x] **P1** — ~~Reemplazar todos los `print()` de debug por `logger.debug()`~~ ✅ v3.1.1
 - [x] **P1** — ~~Unificar sistema de logging dual~~ ✅ v3.1.0 (`utils/logger.py` = re-export)
 - [ ] **P2** — Normalizar campos JSON en BD para eliminar `ast.literal_eval()` / `json.loads()` defensivos
 - [ ] **P2** — Eliminar código comentado > 5 líneas
@@ -1216,8 +1216,8 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 | ~~Eliminar 6 ficheros CRÍTICOS orphan de `src/services/`~~ | P0 | ✅ v3.1.0 |
 | ~~Eliminar `src/domain/schemas/`, `src/models/models.py`, UI legacy~~ | P0 | ✅ v3.1.0 |
 | ~~Eliminar sklearn de requirements.txt~~ | P0 | ✅ v3.1.0 |
-| Reemplazar 15 `except Exception: pass` por logging | P1 | Pendiente |
-| Reemplazar `print("DEBUG:...")` por `logger.debug()` | P1 | Pendiente |
+| ~~Reemplazar 15 `except Exception: pass` por logging~~ | P1 | ✅ v3.1.1 |
+| ~~Reemplazar `print("DEBUG:...")` por `logger.debug()`~~ | P1 | ✅ v3.1.1 |
 | ~~Unificar logging dual → solo `core/logging`~~ | P1 | ✅ v3.1.0 |
 | Eliminar `sftp_config.json` y `smtp_config.json` legacy | P1 | Pendiente |
 | Limpiar feature flags y settings huérfanos | P2 | Pendiente |
