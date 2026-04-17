@@ -152,7 +152,7 @@ class OrquestadorAsignacionGuardias:
         diagnostico = self.diagnosticador.diagnosticar_resultado(guardias_iterativo)
 
         # Mostrar diagnóstico
-        print("\n" + diagnostico.mensaje_resumen)
+        logger.info(diagnostico.mensaje_resumen)
 
         # Decidir si el resultado es aceptable
         cobertura = diagnostico.estadisticas["cobertura_porcentaje"] / 100
@@ -335,7 +335,7 @@ class OrquestadorAsignacionGuardias:
             else:
                 # ILP también falló - problema es infactible
                 logger.error("❌ ILP no pudo encontrar solución (problema infactible)")
-                print("\n" + resultado_ilp.diagnostico_infactibilidad)
+                logger.error(resultado_ilp.diagnostico_infactibilidad)
 
                 return ResultadoOrquestacion(
                     exitoso=False,

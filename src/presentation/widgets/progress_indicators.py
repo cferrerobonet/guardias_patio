@@ -12,6 +12,8 @@ import logging
 import time
 from typing import Callable, Optional
 
+from core.logging import get_logger
+
 from PyQt6.QtCore import (
     QMutex,
     QObject,
@@ -33,6 +35,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from utils.ui_helpers import get_corporate_icon
+
+_logger = get_logger(__name__)
 
 
 class ProgressLogHandler(logging.Handler):
@@ -75,10 +79,7 @@ class ProgressLogHandler(logging.Handler):
                 if msg_clean and self.progress_dialog.text_log:
                     self.progress_dialog.agregar_al_log(msg_clean)
         except Exception:
-            pass
-
-
-class DecisionDialogHandler(QObject):
+            self.handleError(record)
     """Maneja la visualización del diálogo de diagnóstico en el hilo principal."""
 
     def __init__(self, parent_dialog: QDialog, worker: "WorkerThread"):
@@ -377,8 +378,8 @@ class ProgressDialog(QDialog):
             ]
             for logger in loggers_to_capture:
                 logger.addHandler(self._log_handler)
-        except Exception:
-            pass
+        except Exception as e:
+            _logger.debug(f"No se pudo instalar log handler: {e}")
 
     def _desinstalar_log_handler(self):
         """Desinstala el handler de logging."""
@@ -393,8 +394,8 @@ class ProgressDialog(QDialog):
                 for logger in loggers:
                     logger.removeHandler(self._log_handler)
                 self._log_handler = None
-            except Exception:
-                pass
+            except Exception as e:
+                _logger.debug(f"No se pudo desinstalar log handler: {e}")
 
     def actualizar_progreso(self, actual: int, total: int, detalle: str = ""):
         """
@@ -531,8 +532,8 @@ class ProgressDialog(QDialog):
         except ImportError:
             # psutil no disponible
             self.label_cpu.setText("💻 CPU: N/A")
-        except Exception:
-            pass
+        except Exception as e:
+            _logger.debug(f"Error actualizando CPU: {e}")
 
     def _actualizar_eta(self, porcentaje_actual: int):
         """Calcular y actualizar el tiempo estimado de finalización."""
@@ -762,8 +763,8 @@ class WorkerThread(QThread):
             # Intentar desbloquear mutex si quedó bloqueado
             try:
                 self._decision_mutex.unlock()
-            except Exception:
-                pass
+            except Exception as e:
+                _logger.debug(f"No se pudo desbloquear mutex: {e}")
 
             return "error"
 
@@ -896,8 +897,8 @@ def ejecutar_con_progreso(
             # Forzar cierre en caso de error
             try:
                 dialog.close()
-            except Exception:
-                pass
+            except Exception as e:
+                _logger.debug(f"No se pudo cerrar diálogo: {e}")
 
     worker.finalizado.connect(on_finalizado)
     worker.error.connect(on_error)

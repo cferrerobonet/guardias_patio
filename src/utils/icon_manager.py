@@ -12,10 +12,13 @@ Ver: documentacion/SOLUCION_COMPILACION.md para más detalles.
 from pathlib import Path
 from typing import Optional
 
+from core.logging import get_logger
 from core.paths import get_resources_directory
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
+
+logger = get_logger(__name__)
 
 
 class IconManager:
@@ -66,7 +69,7 @@ class IconManager:
         icon_file = self._icons_path / f"{icon_name}.svg"
 
         if not icon_file.exists():
-            print(f"⚠️ Icono no encontrado: {icon_file}")
+            logger.debug(f"Icono no encontrado: {icon_file}")
             return QIcon()  # Retorna icono vacío
 
         # Leer el contenido del SVG

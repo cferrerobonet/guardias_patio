@@ -257,7 +257,7 @@ class ExportadorPDF:
             return True
 
         except Exception as e:
-            print(f"Error al exportar PDF: {e}")
+            logger.warning(f"Error al exportar PDF: {e}")
             return False
 
     @staticmethod
@@ -1175,8 +1175,8 @@ class ExportadorPDF:
                         return config.hora_recreo1_tarde.strftime("%H:%M")
                     elif recreo == 2 and config.hora_recreo2_tarde:
                         return config.hora_recreo2_tarde.strftime("%H:%M")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"No se pudo obtener hora de recreo ({turno}, recreo {recreo}): {e}")
             return ""
 
         try:

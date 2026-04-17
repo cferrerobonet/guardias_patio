@@ -29,15 +29,10 @@ class DialogoCrearCurso(QDialog):
     """Diálogo para crear un nuevo curso escolar."""
 
     def __init__(self, session: Session, parent: Optional[QDialog] = None):
-        print("DEBUG DialogoCrearCurso.__init__() iniciado")
-        print(f"DEBUG Session type: {type(session)}")
-        print(f"DEBUG Parent type: {type(parent)}")
         super().__init__(parent)
         self.session = session  # Guardamos referencia pero usaremos una nueva sesión
         self.curso_creado_id: Optional[int] = None
-        print("DEBUG Llamando a _inicializar_ui()...")
         self._inicializar_ui()
-        print("DEBUG DialogoCrearCurso.__init__() completado")
 
     def _inicializar_ui(self) -> None:
         """Crea la interfaz del diálogo."""

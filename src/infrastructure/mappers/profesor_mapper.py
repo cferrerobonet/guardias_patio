@@ -8,10 +8,13 @@ import ast
 import json
 from typing import Optional
 
+from core.logging import get_logger
 from domain.entities import ProfesorEntity
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
 
 from infrastructure.database.models import Profesor
+
+logger = get_logger(__name__)
 
 
 class ProfesorMapper:
@@ -83,11 +86,11 @@ class ProfesorMapper:
                         except (ValueError, SyntaxError):
                             # Si también falla literal_eval, usar default
                             value = repr(model.dias_semana_permitidos)[:100]
-                            print(f"ERROR: No se pudo parsear dias_semana_permitidos: {value}")
+                            logger.warning(f"No se pudo parsear dias_semana_permitidos: {value}")
                 # Si es otro tipo, usar default
             except Exception as e:
                 # En caso de error, mantener default
-                print(f"Warning: Error parsing dias_semana_permitidos: {type(e).__name__}: {e}")
+                logger.warning(f"Error parsing dias_semana_permitidos: {type(e).__name__}: {e}")
 
         recreos_permitidos = [1, 2]  # Por defecto ambos
         if model.recreos_permitidos:
@@ -106,7 +109,7 @@ class ProfesorMapper:
                         except (ValueError, SyntaxError):
                             # Si también falla literal_eval, usar default
                             value = repr(model.recreos_permitidos)[:100]
-                            print(f"ERROR: No se pudo parsear recreos_permitidos: {value}")
+                            logger.warning(f"No se pudo parsear recreos_permitidos: {value}")
                             parsed = None
                 else:
                     # Si es otro tipo, usar default
@@ -124,7 +127,7 @@ class ProfesorMapper:
                         recreos_permitidos = parsed
             except Exception as e:
                 # En caso de error, mantener default
-                print(f"Warning: Error parsing recreos_permitidos: {type(e).__name__}: {e}")
+                logger.warning(f"Error parsing recreos_permitidos: {type(e).__name__}: {e}")
 
         return ProfesorEntity(
             id=model.id,

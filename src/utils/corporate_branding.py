@@ -7,8 +7,11 @@ de la aplicación sin necesidad de modificar cada archivo.
 
 from pathlib import Path
 
+from core.logging import get_logger
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMessageBox
+
+logger = get_logger(__name__)
 
 # Variable para guardar los métodos originales
 _original_methods = {}
@@ -26,8 +29,8 @@ def _apply_corporate_icon(msg_box: QMessageBox) -> None:
         logo_path = _get_corporate_logo_path()
         if logo_path.exists():
             msg_box.setWindowIcon(QIcon(str(logo_path)))
-    except Exception:
-        pass  # Fallo silencioso, no interrumpir la funcionalidad
+    except Exception as e:
+        logger.debug(f"No se pudo aplicar icono corporativo: {e}")
 
 
 # Wrapper para los métodos estáticos

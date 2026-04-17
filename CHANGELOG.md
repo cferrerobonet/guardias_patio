@@ -7,6 +7,26 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.1.1] - 2026-04-17
+
+### 🎯 Resumen
+
+**Sanitización y seguridad**: eliminación de `data/users.json` del tracking git, reemplazo de `print()` de debug por logger, y sustitución de 15 bloques `except Exception: pass` por logging explícito.
+
+### Fixed
+
+- `data/users.json` con hashes de contraseñas dejó de estar trackeado en git (ORG-02)
+- Eliminadas constantes de backward compatibility huérfanas de `config/settings.py` (TODO obsoleto)
+- 20+ sentencias `print()` de debug reemplazadas por `logger.debug/warning/info` en: `app_initializer`, `ui_helpers`, `icon_manager`, `profesor_mapper`, `ccleaner_sidebar`, `profesor_form`, `exportador`, `exportador_pdf`, `orquestador_asignacion_guardias`, `main`, `dialogo_crear_curso`, `gestion_cursos_widget`
+- 15 bloques `except Exception: pass` reemplazados por logging explícito en: `obtener_guardias`, `sync_manager`, `progress_indicators`, `metrics`, `corporate_branding`, `restricciones_widget`, `exportador_pdf`
+
+### 🧹 Housekeeping
+
+- Añadido `get_logger` a nivel de módulo en: `app_initializer`, `ui_helpers`, `icon_manager`, `profesor_mapper`, `ccleaner_sidebar`, `profesor_form`, `exportador`, `metrics`, `corporate_branding`, `restricciones_widget`, `progress_indicators`
+- `ProgressLogHandler.emit()` ahora llama a `self.handleError(record)` en lugar de silenciar (patrón estándar Python)
+
+---
+
 ## [3.1.0] - 2026-04-16
 
 ### 🎯 Resumen

@@ -10,6 +10,9 @@ from typing import TYPE_CHECKING, Optional
 
 from utils import setup_logging
 from utils.corporate_branding import apply_corporate_branding
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from PyQt6.QtWidgets import QApplication
@@ -32,9 +35,9 @@ def configure_qt_plugins() -> None:
 
         qt_plugin_path = os.path.join(os.path.dirname(PyQt6.__file__), "Qt", "plugins")
         os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = qt_plugin_path
-        print(f"Setting QT_QPA_PLATFORM_PLUGIN_PATH to: {qt_plugin_path}")
+        logger.debug(f"Setting QT_QPA_PLATFORM_PLUGIN_PATH to: {qt_plugin_path}")
     except Exception as e:
-        print(f"Warning: Could not set QT_QPA_PLATFORM_PLUGIN_PATH: {e}")
+        logger.warning(f"Could not set QT_QPA_PLATFORM_PLUGIN_PATH: {e}")
 
 
 def initialize_application() -> Optional["QApplication"]:
@@ -56,10 +59,10 @@ def initialize_application() -> Optional["QApplication"]:
         apply_corporate_branding()
         return app
     except ImportError:
-        print("PyQt6 no disponible. Ejecutando en modo headless.")
+        logger.warning("PyQt6 no disponible. Ejecutando en modo headless.")
         return None
 
 
 def run_smoke_test() -> None:
     """Ejecuta smoke test básico (usado por tests)."""
-    print("¡Hola mundo desde Guardias de Patio!")
+    logger.debug("¡Hola mundo desde Guardias de Patio!")

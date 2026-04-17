@@ -18,6 +18,7 @@ from application.use_cases.profesor import (
     ListarProfesoresUseCase,
     ObtenerProfesorUseCase,
 )
+from core.logging import get_logger
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -51,6 +52,8 @@ from presentation.themes.ccleaner_theme import (
     TEXT_SECONDARY,
 )
 from presentation.widgets.table_manager import TableManager
+
+logger = get_logger(__name__)
 
 
 class ProfesorForm(BaseForm):
@@ -627,7 +630,7 @@ class ProfesorForm(BaseForm):
                 if profesor_model and profesor_model.recreos_permitidos:
                     recreos_raw = profesor_model.recreos_permitidos  # String JSON original
             except Exception as e:
-                print(f"Warning: No se pudo obtener recreos_permitidos raw: {e}")
+                logger.warning(f"No se pudo obtener recreos_permitidos raw: {e}")
 
             # Limpiar formulario
             self._limpiar_formulario()

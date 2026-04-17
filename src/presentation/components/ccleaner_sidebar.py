@@ -6,6 +6,7 @@ Menú lateral oscuro con diseño profesional.
 
 from pathlib import Path
 
+from core.logging import get_logger
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
@@ -22,6 +23,7 @@ from presentation.themes.ccleaner_theme import (
     get_sidebar_style,
 )
 
+logger = get_logger(__name__)
 
 class SidebarMenu(QWidget):
     """Menú lateral estilo CCleaner con categorías"""
@@ -211,7 +213,7 @@ class SidebarMenu(QWidget):
                     """)
                     return
         except Exception as e:
-            print(f"Error al cargar logo corporativo: {e}")
+            logger.warning(f"Error al cargar logo corporativo: {e}")
 
         # Si no hay logo corporativo, usar icono por defecto (school.svg)
         # En este caso usamos color oscuro porque el fondo es claro

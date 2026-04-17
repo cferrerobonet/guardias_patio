@@ -265,11 +265,7 @@ def main():
         logger.exception(f"Error fatal al crear o ejecutar la ventana principal: {e}")
         import traceback
 
-        print("=" * 80)
-        print("ERROR FATAL:")
-        print("=" * 80)
         traceback.print_exc()
-        print("=" * 80)
         exit_code = 1  # Código de error
 
     finally:

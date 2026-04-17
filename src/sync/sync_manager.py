@@ -242,16 +242,16 @@ class SFTPSyncBackend(SyncBackend):
         try:
             if hasattr(self, "sftp") and self.sftp is not None:
                 self.sftp.close()
-        except Exception:
-            pass  # Ignorar errores al cerrar sftp
+        except Exception as e:
+            logger.debug(f"Error cerrando sftp: {e}")
         finally:
             self.sftp = None
 
         try:
             if hasattr(self, "client") and self.client is not None:
                 self.client.close()
-        except Exception:
-            pass  # Ignorar errores al cerrar cliente
+        except Exception as e:
+            logger.debug(f"Error cerrando cliente: {e}")
         finally:
             self.client = None
 

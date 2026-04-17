@@ -15,6 +15,10 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
+from core.logging import get_logger
+
+logger = get_logger(__name__)
+
 try:
     from prometheus_client import (
         Counter,
@@ -341,8 +345,8 @@ class MetricsCollector:
 
             self.set_gauge("system_memory_usage_bytes", float(memory_info.rss))
             self.set_gauge("system_cpu_usage_percent", process.cpu_percent(interval=0.1))
-        except Exception:
-            pass  # Silently fail si no podemos obtener métricas del sistema
+        except Exception as e:
+            logger.debug(f"No se pudieron obtener métricas del sistema: {e}")
 
     # Utilidades
 

@@ -11,10 +11,13 @@ from datetime import date, time
 from pathlib import Path
 from typing import Any, Optional, Union
 
+from core.logging import get_logger
 from cryptography.fernet import Fernet, InvalidToken
 
 from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session, joinedload
+
+logger = get_logger(__name__)
 
 
 class ExportadorDatos:
@@ -211,7 +214,7 @@ class ExportadorDatos:
 
             return {"count": len(usuarios_export), "usuarios": usuarios_export}
         except Exception as e:
-            print(f"Error al exportar usuarios: {e}")
+            logger.warning(f"Error al exportar usuarios: {e}")
             return None
 
     @staticmethod
@@ -257,7 +260,7 @@ class ExportadorDatos:
                 "cursos": cursos_export,
             }
         except Exception as e:
-            print(f"Error al exportar cursos escolares: {e}")
+            logger.warning(f"Error al exportar cursos escolares: {e}")
             return None
 
     @staticmethod
@@ -892,7 +895,7 @@ class ExportadorDatos:
             return True
 
         except Exception as e:
-            print(f"Error al importar configuración SMTP: {e}")
+            logger.warning(f"Error al importar configuración SMTP: {e}")
             return False
 
     @staticmethod
@@ -960,7 +963,7 @@ class ExportadorDatos:
             return True
 
         except Exception as e:
-            print(f"Error al importar configuración SFTP: {e}")
+            logger.warning(f"Error al importar configuración SFTP: {e}")
             return False
 
     @staticmethod
@@ -1003,7 +1006,7 @@ class ExportadorDatos:
             user_auth._save_users()
             return count
         except Exception as e:
-            print(f"Error al importar usuarios: {e}")
+            logger.warning(f"Error al importar usuarios: {e}")
             return 0
 
     @staticmethod
@@ -1074,7 +1077,7 @@ class ExportadorDatos:
             session.commit()
             return count
         except Exception as e:
-            print(f"Error al importar cursos escolares: {e}")
+            logger.warning(f"Error al importar cursos escolares: {e}")
             session.rollback()
             return 0
 

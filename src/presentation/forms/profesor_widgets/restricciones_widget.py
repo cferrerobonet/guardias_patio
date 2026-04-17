@@ -13,6 +13,7 @@ from datetime import date
 from typing import Dict, List, Optional, Tuple
 
 import ui_styles as styles
+from core.logging import get_logger
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -30,6 +31,8 @@ from PyQt6.QtWidgets import (
 )
 
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
+
+logger = get_logger(__name__)
 
 
 class RestriccionesWidget(QGroupBox):
@@ -447,8 +450,8 @@ class RestriccionesWidget(QGroupBox):
             if hasattr(self.parent(), "horario_widget"):
                 turno_widget = self.parent().horario_widget
                 turno_actual = turno_widget.turno_input.currentText()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"No se pudo obtener turno del widget padre: {e}")
 
         # Preseleccionar según turno
         self.preseleccionar_segun_turno(turno_actual)

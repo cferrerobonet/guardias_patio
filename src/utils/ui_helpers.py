@@ -7,9 +7,12 @@ Funciones helper para aplicar marca corporativa de forma discreta.
 from pathlib import Path
 from typing import Optional
 
+from core.logging import get_logger
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QMessageBox, QWidget
+
+logger = get_logger(__name__)
 
 # Estilos consistentes para todos los QMessageBox
 MESSAGEBOX_STYLE = """
@@ -88,7 +91,7 @@ def get_corporate_pixmap(size: int = 64) -> Optional[QPixmap]:
                     Qt.TransformationMode.SmoothTransformation,
                 )
     except Exception as e:
-        print(f"Error cargando logo corporativo: {e}")
+        logger.warning(f"Error cargando logo corporativo: {e}")
     return None
 
 
@@ -120,7 +123,7 @@ def apply_corporate_icon_to_messagebox(msg_box: QMessageBox) -> None:
                 # No establecer un icono estándar, solo el pixmap
                 return
     except Exception as e:
-        print(f"Error aplicando icono corporativo: {e}")
+        logger.warning(f"Error aplicando icono corporativo: {e}")
 
     # Fallback: usar icono estándar de pregunta
     msg_box.setIcon(QMessageBox.Icon.Question)

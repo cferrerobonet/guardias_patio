@@ -400,21 +400,13 @@ class GestionCursosWidget(QWidget):
     def _crear_curso(self) -> None:
         """Abre el diálogo de creación de curso."""
         try:
-            print("=" * 80)
-            print("DEBUG: Iniciando _crear_curso()")
-            print(f"DEBUG: Session type: {type(self.session)}")
-            print(f"DEBUG: Session is None: {self.session is None}")
             logger.info("Abriendo diálogo de creación de curso...")
 
             # Crear diálogo SIN parent para evitar problemas de crash en macOS
-            print("DEBUG: Creando DialogoCrearCurso...")
             dialogo = DialogoCrearCurso(self.session, None)
-            print("DEBUG: DialogoCrearCurso creado exitosamente")
 
             logger.info("Diálogo creado, ejecutando...")
-            print("DEBUG: Llamando a dialogo.exec()...")
             resultado = dialogo.exec()
-            print(f"DEBUG: dialogo.exec() retornó: {resultado}")
             logger.info(f"Diálogo cerrado con resultado: {resultado}")
 
             if resultado:
@@ -422,13 +414,7 @@ class GestionCursosWidget(QWidget):
                 self._cargar_cursos()
                 self.curso_modificado.emit()
                 logger.info("Cursos recargados correctamente")
-            print("DEBUG: _crear_curso() completado exitosamente")
-            print("=" * 80)
         except Exception as e:
-            print(f"DEBUG ERROR: {type(e).__name__}: {e}")
-            import traceback
-
-            traceback.print_exc()
             logger.error(f"Error al abrir diálogo: {type(e).__name__}: {e}", exc_info=True)
             QMessageBox.critical(
                 self, "Error", f"Error al abrir el diálogo:\n{type(e).__name__}: {e}"

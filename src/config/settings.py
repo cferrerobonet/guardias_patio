@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # ========== APLICACIÓN ==========
     app_name: str = "Gestión de Guardias de Patio"
-    app_version: str = "3.1.0"
+    app_version: str = "3.1.1"
     app_author: str = "Carlos Ferrero Bonet"
     environment: Literal["development", "production", "testing"] = "production"
 
@@ -231,20 +231,3 @@ def get_settings() -> Settings:
 
 # Instancia global para conveniencia
 settings = get_settings()
-
-
-# Backward compatibility con constants.py antiguo
-# TODO: Deprecar en v3.1 y eliminar en v4.0
-APP_NAME = settings.app_name
-APP_VERSION = settings.app_version
-APP_AUTHOR = settings.app_author
-DB_FILE = "guardias_patio.db"
-MAX_RETRIES_DB = settings.max_retries_db
-TIMEOUT_DB = settings.timeout_db
-TURNO_MANANA = settings.turno_manana
-TURNO_TARDE = settings.turno_tarde
-TURNO_MIXTO = settings.turno_mixto
-TURNOS_VALIDOS = settings.turnos_validos
-MAX_HORAS_CONTRATO = settings.max_horas_contrato
-MIN_HORAS_CONTRATO = settings.min_horas_contrato
-MAX_GUARDIAS_POR_PROFESOR_DIA = settings.max_guardias_por_profesor_dia
