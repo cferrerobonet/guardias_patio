@@ -7,6 +7,19 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.1.2] - 2026-04-17
+
+### 🎯 Resumen
+
+**Bug crítico de sync**: el `sync_on_startup` podía sobreescribir datos locales con un JSON remoto vacío o con menos registros, provocando pérdida aparente de datos al usar la app compilada.
+
+### Fixed
+
+- `sync_on_startup` ya no sobreescribe el JSON local si el remoto contiene menos registros que el local (guardia de seguridad contra pérdida de datos por sync)
+- El JSON remoto se descarga primero a un archivo temporal antes de comparar y reemplazar
+
+---
+
 ## [3.1.1] - 2026-04-17
 
 ### 🎯 Resumen

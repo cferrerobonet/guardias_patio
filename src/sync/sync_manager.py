@@ -256,6 +256,17 @@ class SFTPSyncBackend(SyncBackend):
             self.client = None
 
 
+def _count_json_records(path: Path) -> int:
+    """Cuenta el total de registros en un JSON de exportación para comparar volumen de datos."""
+    try:
+        import json as _json
+        data = _json.loads(path.read_text(encoding="utf-8"))
+        keys = ("profesores", "guardias", "zonas", "cursos_escolares", "ausencias")
+        return sum(len(data.get(k, [])) for k in keys)
+    except Exception:
+        return 0
+
+
 class SyncManager:
     """
     Gestor principal de sincronización multi-usuario.
@@ -306,23 +317,47 @@ class SyncManager:
             # Descargar si no existe localmente o si el remoto es más nuevo
             if not local_modified or (remote_modified and remote_modified > local_modified):
                 logger.info("📥 Descargando datos actualizados desde la nube...")
-                if self.backend.download_file(remote_path, local_json_path):
-                    logger.info(f"✓ Datos descargados a {local_json_path}")
 
-                    # Importar JSON a la base de datos si se proporciona session
-                    if session:
-                        from sync.data_exporter import DataExporter
+                # Descargar a un archivo temporal para comparar antes de sobreescribir
+                import tempfile
+                tmp_path = Path(tempfile.mktemp(suffix=".json"))
+                try:
+                    if self.backend.download_file(remote_path, tmp_path):
+                        # Guardia de seguridad: no sobreescribir si el remoto tiene menos registros
+                        # que el local, para evitar que un JSON vacío/corrupto machaque datos reales.
+                        remote_records = _count_json_records(tmp_path)
+                        local_records = _count_json_records(local_json_path) if local_json_path.exists() else 0
 
-                        logger.info("📊 Importando datos a la base de datos local...")
-                        if DataExporter.import_from_json(
-                            session, local_json_path, clear_existing=False
-                        ):
-                            logger.info("✅ Datos importados exitosamente")
-                        else:
-                            logger.error("❌ Error al importar datos")
+                        if local_records > 0 and remote_records < local_records:
+                            logger.warning(
+                                f"⚠️  SYNC BLOQUEADO: el JSON remoto tiene {remote_records} registros "
+                                f"pero el local tiene {local_records}. "
+                                "Se conservan los datos locales para evitar pérdida de datos."
+                            )
                             success = False
-                else:
-                    success = False
+                        else:
+                            # Reemplazar el local con el remoto
+                            import shutil
+                            shutil.move(str(tmp_path), str(local_json_path))
+                            logger.info(f"✓ Datos descargados a {local_json_path} ({remote_records} registros)")
+
+                            # Importar JSON a la base de datos si se proporciona session
+                            if session:
+                                from sync.data_exporter import DataExporter
+
+                                logger.info("📊 Importando datos a la base de datos local...")
+                                if DataExporter.import_from_json(
+                                    session, local_json_path, clear_existing=False
+                                ):
+                                    logger.info("✅ Datos importados exitosamente")
+                                else:
+                                    logger.error("❌ Error al importar datos")
+                                    success = False
+                    else:
+                        success = False
+                finally:
+                    if tmp_path.exists():
+                        tmp_path.unlink()
             else:
                 logger.info("✓ Datos locales están actualizados")
         else:
