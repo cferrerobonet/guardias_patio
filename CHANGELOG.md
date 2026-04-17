@@ -7,6 +7,37 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.3.0] - 2026-04-17
+
+### 🎯 Resumen
+
+Segundo lote de auditoría: seguridad de autenticación, thread-safety del caché, health check real en la API, mitigación de XSS/path traversal y corrección de permisos de archivos.
+
+### ✨ Added
+
+- `UserAuth.validate_password_policy()`: política de contraseñas (≥8 chars, mayúscula, número, símbolo especial)
+- `UserAuth.authenticate()` ahora retorna `tuple[bool, str]` con mensaje de error descriptivo (lockout, credenciales incorrectas)
+- Lockout automático: 5 intentos fallidos → bloqueo de 15 minutos (almacenado en `users.json`)
+- `LocalSyncBackend._safe_path()`: previene path traversal verificando que la ruta resuelta esté dentro de `base_path`
+
+### Fixed
+
+- **CACHE-02**: `threading.RLock` añadido a `_cache_store` — accesos thread-safe desde `QThread`
+- **OBS-01**: `/health` conectado al `HealthChecker` real; retorna 503 si algún componente está `UNHEALTHY`
+- **SEC-05/06**: Política de contraseñas elevada a 8 chars + requisitos; lockout brute force implementado
+- **SEC-10**: `html.escape()` aplicado a `username` y `profesor_nombre` en plantillas HTML de email
+- **SEC-11**: Path traversal en `LocalSyncBackend` corregido con `_safe_path()`
+- **SEC-12**: `users.json` se guarda con `chmod 600` tras cada escritura
+- **SEC-14**: Username validado con `re.fullmatch(r"[a-zA-Z0-9._\\-]+")` en `register_user()`
+- **DB-12**: `create_user_database()` ahora ejecuta `alembic stamp head` tras `create_all()` para que las migraciones futuras funcionen
+
+### 🧹 Housekeeping
+
+- Todos los callers de `authenticate()` actualizados para manejar la tupla `(bool, str)`
+- Placeholder del campo contraseña en registro actualizado para reflejar la nueva política
+
+---
+
 ## [3.2.0] - 2026-04-17
 
 ### 🎯 Resumen

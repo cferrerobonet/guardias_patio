@@ -181,7 +181,8 @@ class ChangePasswordDialog(QDialog):
             return
 
         # Verificar contraseña actual
-        if not self.user_auth.authenticate(self.username, current_password):
+        auth_ok, _auth_msg = self.user_auth.authenticate(self.username, current_password)
+        if not auth_ok:
             QMessageBox.warning(
                 self, "Contraseña incorrecta", "La contraseña actual no es correcta"
             )

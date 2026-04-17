@@ -9,9 +9,11 @@ Soporta múltiples usuarios con datos aislados.
 import hashlib
 import json
 import logging
+import os
+import re
 import shutil
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -56,35 +58,55 @@ class LocalSyncBackend(SyncBackend):
         self.base_path.mkdir(parents=True, exist_ok=True)
         logger.info(f"LocalSyncBackend inicializado: {self.base_path}")
 
+    def _safe_path(self, remote_path: str) -> Path:
+        """Resuelve la ruta y verifica que no salga de base_path (path traversal)."""
+        resolved = (self.base_path / remote_path).resolve()
+        base_resolved = self.base_path.resolve()
+        if not str(resolved).startswith(str(base_resolved) + os.sep) and resolved != base_resolved:
+            raise ValueError(f"Path no permitido: {remote_path}")
+        return resolved
+
     def upload_file(self, local_path: Path, remote_path: str) -> bool:
         try:
-            dest = self.base_path / remote_path
+            dest = self._safe_path(remote_path)
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(local_path, dest)
             logger.info(f"Archivo subido: {remote_path}")
             return True
+        except ValueError as e:
+            logger.error(f"Seguridad: {e}")
+            return False
         except Exception as e:
             logger.error(f"Error subiendo archivo: {e}")
             return False
 
     def download_file(self, remote_path: str, local_path: Path) -> bool:
         try:
-            source = self.base_path / remote_path
+            source = self._safe_path(remote_path)
             if not source.exists():
                 return False
             local_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, local_path)
             logger.info(f"Archivo descargado: {remote_path}")
             return True
+        except ValueError as e:
+            logger.error(f"Seguridad: {e}")
+            return False
         except Exception as e:
             logger.error(f"Error descargando archivo: {e}")
             return False
 
     def file_exists(self, remote_path: str) -> bool:
-        return (self.base_path / remote_path).exists()
+        try:
+            return self._safe_path(remote_path).exists()
+        except ValueError:
+            return False
 
     def get_last_modified(self, remote_path: str) -> Optional[datetime]:
-        path = self.base_path / remote_path
+        try:
+            path = self._safe_path(remote_path)
+        except ValueError:
+            return None
         if path.exists():
             return datetime.fromtimestamp(path.stat().st_mtime)
         return None
@@ -528,14 +550,23 @@ class UserAuth:
         return {}
 
     def _save_users(self):
-        """Guarda usuarios en archivo."""
+        """Guarda usuarios en archivo con permisos restrictivos."""
         with open(self.users_file, "w") as f:
             json.dump(self.users, f, indent=2)
+        try:
+            os.chmod(self.users_file, 0o600)
+        except OSError as e:
+            logger.warning(f"No se pudo establecer permisos en users.json: {e}")
 
     def register_user(self, username: str, password: str, email: str = "") -> bool:
         """Registra un nuevo usuario."""
         if username in self.users:
             logger.warning(f"Usuario {username} ya existe")
+            return False
+
+        # Validar username: solo alfanuméricos, puntos, guiones, guiones bajos
+        if not re.fullmatch(r"[a-zA-Z0-9._\-]+", username):
+            logger.warning(f"Username inválido (caracteres no permitidos): {username}")
             return False
 
         import bcrypt
@@ -553,33 +584,81 @@ class UserAuth:
         return True
 
     @staticmethod
+    def validate_password_policy(password: str) -> tuple[bool, str]:
+        """
+        Valida que la contraseña cumpla la política de seguridad.
+        Returns (ok, mensaje_error). Si ok=True, mensaje_error es vacío.
+        """
+        if len(password) < 8:
+            return False, "La contraseña debe tener al menos 8 caracteres"
+        if not any(c.isupper() for c in password):
+            return False, "La contraseña debe contener al menos una mayúscula"
+        if not any(c.isdigit() for c in password):
+            return False, "La contraseña debe contener al menos un número"
+        if not any(c in r"!@#$%^&*()_+-=[]{}|;':,./<>?" for c in password):
+            return False, "La contraseña debe contener al menos un carácter especial"
+        return True, ""
+
+    @staticmethod
     def _is_legacy_sha256(password_hash: str) -> bool:
         """Detecta si un hash es SHA-256 legacy (64 chars hex)."""
         return len(password_hash) == 64 and all(c in "0123456789abcdef" for c in password_hash)
 
-    def authenticate(self, username: str, password: str) -> bool:
-        """Autentica un usuario. Migra hashes SHA-256 legacy a bcrypt."""
+    def authenticate(self, username: str, password: str) -> tuple[bool, str]:
+        """
+        Autentica un usuario. Migra hashes SHA-256 legacy a bcrypt.
+        Returns (ok, mensaje_error). Si ok=True, mensaje_error es vacío.
+        """
         if username not in self.users:
-            return False
+            return False, "Usuario o contraseña incorrectos"
+
+        user = self.users[username]
+
+        # Comprobar bloqueo por intentos fallidos
+        locked_until = user.get("locked_until")
+        if locked_until:
+            lockout_time = datetime.fromisoformat(locked_until)
+            if datetime.now() < lockout_time:
+                remaining = int((lockout_time - datetime.now()).total_seconds() / 60) + 1
+                return False, f"Cuenta bloqueada. Intenta de nuevo en {remaining} minuto(s)"
+            else:
+                user["failed_login_attempts"] = 0
+                user["locked_until"] = None
 
         import bcrypt
 
-        stored_hash = self.users[username]["password_hash"]
+        stored_hash = user["password_hash"]
+        authenticated = False
 
         if self._is_legacy_sha256(stored_hash):
             legacy_hash = hashlib.sha256(password.encode()).hexdigest()
-            if stored_hash != legacy_hash:
-                return False
-            new_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-            self.users[username]["password_hash"] = new_hash
-            self._save_users()
-            logger.info(f"Hash de {username} migrado de SHA-256 a bcrypt")
-            return True
+            if stored_hash == legacy_hash:
+                new_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                user["password_hash"] = new_hash
+                self._save_users()
+                logger.info(f"Hash de {username} migrado de SHA-256 a bcrypt")
+                authenticated = True
+        else:
+            try:
+                authenticated = bcrypt.checkpw(password.encode(), stored_hash.encode())
+            except (ValueError, TypeError):
+                authenticated = False
 
-        try:
-            return bcrypt.checkpw(password.encode(), stored_hash.encode())
-        except (ValueError, TypeError):
-            return False
+        if authenticated:
+            user["failed_login_attempts"] = 0
+            user["locked_until"] = None
+            self._save_users()
+            return True, ""
+        else:
+            attempts = user.get("failed_login_attempts", 0) + 1
+            user["failed_login_attempts"] = attempts
+            if attempts >= 5:
+                user["locked_until"] = (datetime.now() + timedelta(minutes=15)).isoformat()
+                logger.warning(f"Usuario {username} bloqueado por 15 minutos tras {attempts} intentos fallidos")
+                self._save_users()
+                return False, "Demasiados intentos fallidos. Cuenta bloqueada 15 minutos"
+            self._save_users()
+            return False, "Usuario o contraseña incorrectos"
 
     def unregister_user(self, username: str) -> bool:
         """

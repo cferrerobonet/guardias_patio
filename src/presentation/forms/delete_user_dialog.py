@@ -172,12 +172,12 @@ class DeleteUserDialog(QDialog):
             return
 
         # Verificar contraseña
-        if not self.user_auth.authenticate(username, password):
+        auth_ok, auth_msg = self.user_auth.authenticate(username, password)
+        if not auth_ok:
             QMessageBox.critical(
                 self,
                 "❌ Contraseña incorrecta",
-                "La contraseña no coincide con la del usuario.\n\n"
-                "Por seguridad, no se puede eliminar el usuario sin la contraseña correcta.",
+                auth_msg + "\n\nPor seguridad, no se puede eliminar el usuario sin la contraseña correcta.",
             )
             self.password_input.clear()
             self.password_input.setFocus()

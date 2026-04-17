@@ -368,6 +368,20 @@ def create_user_database(username: str) -> bool:
         engine = create_engine(f"sqlite:///{db_path}")
         Base.metadata.create_all(engine)
 
+        # Marcar como head en Alembic para que migraciones futuras funcionen correctamente
+        try:
+            from alembic import command as alembic_command
+            from alembic.config import Config as AlembicConfig
+
+            alembic_ini = Path(__file__).parent.parent.parent / "alembic.ini"
+            if alembic_ini.exists():
+                cfg = AlembicConfig(str(alembic_ini))
+                cfg.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}")
+                alembic_command.stamp(cfg, "head")
+                logger.info(f"Alembic stamp head aplicado a BD de usuario: {username}")
+        except Exception as stamp_err:
+            logger.warning(f"No se pudo aplicar alembic stamp: {stamp_err}")
+
         logger.info(f"Base de datos creada para usuario: {username}")
         return True
 

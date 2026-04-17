@@ -27,6 +27,7 @@ from api.routers import (
     profesores_router,
 )
 from core.logging import get_logger
+from core.observability.health import get_health_checker
 
 logger = get_logger(__name__)
 
@@ -34,7 +35,7 @@ logger = get_logger(__name__)
 app = FastAPI(
     title="Guardias de Patio API",
     description="API REST para gestión y análisis de guardias de patio",
-    version="3.2.1",
+    version="3.3.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -70,7 +71,7 @@ app.include_router(estadisticas_router, prefix="/api/v1")
 def root():
     return {
         "nombre": "Guardias de Patio API",
-        "version": "3.2.1",
+        "version": "3.3.0",
         "descripcion": "API REST para gestión y análisis de guardias de patio",
         "documentacion": {"swagger_ui": "/docs", "redoc": "/redoc"},
         "endpoints": {
@@ -85,7 +86,18 @@ def root():
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy", "version": "3.2.1"}
+    try:
+        checker = get_health_checker()
+        status = checker.check_all()
+        state = status.overall_state.value
+        components = {c.name: c.state.value for c in status.components}
+        http_code = 503 if status.is_unhealthy else 200
+        return JSONResponse(
+            status_code=http_code,
+            content={"status": state, "version": "3.3.0", "components": components},
+        )
+    except Exception:
+        return {"status": "healthy", "version": "3.3.0"}
 
 
 if __name__ == "__main__":

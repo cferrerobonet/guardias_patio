@@ -41,7 +41,8 @@ class CambiarPasswordUseCase:
             raise ValidationError("La contraseña debe tener al menos 4 caracteres")
 
         # Verificar contraseña actual usando authenticate
-        if not self.user_auth.authenticate(dto.username, dto.password_actual):
+        auth_ok, auth_msg = self.user_auth.authenticate(dto.username, dto.password_actual)
+        if not auth_ok:
             raise ValidationError("La contraseña actual es incorrecta")
 
         # Cambiar contraseña

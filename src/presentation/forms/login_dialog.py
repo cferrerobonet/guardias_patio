@@ -71,7 +71,7 @@ class RegisterDialog(QDialog):
         form_layout.addRow("📧 Email *:", self.email_input)
 
         self.password_input = QLineEdit()
-        self.password_input.setPlaceholderText("Mínimo 4 caracteres")
+        self.password_input.setPlaceholderText("Mín. 8 chars, mayúscula, número, símbolo")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setMinimumHeight(35)
         form_layout.addRow("🔑 Contraseña:", self.password_input)
@@ -205,15 +205,18 @@ class RegisterDialog(QDialog):
         if len(password) < 4:
             from utils.ui_helpers import MESSAGEBOX_STYLE
 
-            msg = QMessageBox(self)
-            msg.setIcon(QMessageBox.Icon.Warning)
-            msg.setWindowTitle("Contraseña débil")
-            msg.setWindowIcon(get_corporate_icon())
-            msg.setText("La contraseña debe tener al menos 4 caracteres")
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
-            msg.exec()
-            self.password_input.setFocus()
-            return
+            # Validar política completa de contraseñas
+            policy_ok, policy_msg = self.user_auth.validate_password_policy(password)
+            if not policy_ok:
+                msg = QMessageBox(self)
+                msg.setIcon(QMessageBox.Icon.Warning)
+                msg.setWindowTitle("Contraseña débil")
+                msg.setWindowIcon(get_corporate_icon())
+                msg.setText(policy_msg)
+                msg.setStyleSheet(MESSAGEBOX_STYLE)
+                msg.exec()
+                self.password_input.setFocus()
+                return
 
         if password != password_confirm:
             from utils.ui_helpers import MESSAGEBOX_STYLE
@@ -599,7 +602,8 @@ class LoginDialog(QDialog):
             msg.exec()
             return
 
-        if self.user_auth.authenticate(username, password):
+        auth_ok, auth_msg = self.user_auth.authenticate(username, password)
+        if auth_ok:
             from utils.ui_helpers import MESSAGEBOX_STYLE
 
             self.authenticated_user = username
@@ -627,9 +631,7 @@ class LoginDialog(QDialog):
             msg.setIcon(QMessageBox.Icon.Critical)
             msg.setWindowTitle("Error de autenticación")
             msg.setWindowIcon(get_corporate_icon())
-            msg.setText(
-                "Usuario o contraseña incorrectos.\n\nPor favor, verifica tus credenciales."
-            )
+            msg.setText(auth_msg)
             msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.password_input.clear()

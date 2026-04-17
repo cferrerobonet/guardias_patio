@@ -4,6 +4,7 @@ Servicio de envío de emails para recuperación de contraseña.
 Utiliza SMTP para enviar códigos de recuperación a los usuarios.
 """
 
+import html
 import logging
 import os
 import smtplib
@@ -187,8 +188,9 @@ Sistema de Gestión de Guardias
             """
 
             # Contenido del email (HTML) - Usando plantilla estándar
+            safe_username = html.escape(username)
             contenido_principal = f"""
-      <p>Hola <strong>{username}</strong>,</p>
+      <p>Hola <strong>{safe_username}</strong>,</p>
       <p>Has solicitado recuperar tu contraseña para la aplicación <strong>Guardias de Patio</strong>.</p>
             """
 
@@ -313,8 +315,9 @@ Sistema de Gestión de Guardias
             """
 
             # Contenido del email (HTML) - Usando plantilla estándar
+            safe_nombre = html.escape(profesor_nombre)
             contenido_principal = f"""
-      <p>Hola <strong>{profesor_nombre}</strong>,</p>
+      <p>Hola <strong>{safe_nombre}</strong>,</p>
       <p>Te adjuntamos tu calendario personalizado de guardias de patio para el curso escolar <strong>{curso_escolar}</strong>.</p>
             """
 

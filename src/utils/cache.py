@@ -24,6 +24,7 @@ Ejemplo de uso:
 """
 
 import re
+import threading
 import time
 from collections import OrderedDict
 from functools import wraps
@@ -50,6 +51,9 @@ _cache_stats = {
 
 # Métricas por función
 _function_metrics: Dict[str, Dict[str, int]] = {}
+
+# Lock para acceso thread-safe al cache
+_cache_lock = threading.RLock()
 
 
 def _generate_cache_key(func: Callable, args: tuple, kwargs: dict) -> str:
@@ -148,47 +152,52 @@ def cache_query(ttl: float = 300, key_func: Optional[Callable] = None):
             func_name = func.__name__
 
             # Verificar si existe en caché y no ha expirado
-            if cache_key in _cache_store:
-                cached_result, timestamp, cached_ttl, access_count = _cache_store[cache_key]
-                elapsed = time.time() - timestamp
+            with _cache_lock:
+                if cache_key in _cache_store:
+                    cached_result, timestamp, cached_ttl, access_count = _cache_store[cache_key]
+                    elapsed = time.time() - timestamp
 
-                if elapsed < cached_ttl:
-                    # Cache HIT - mover al final (más reciente)
-                    _cache_store.move_to_end(cache_key)
-                    # Incrementar contador de accesos
-                    _cache_store[cache_key] = (
-                        cached_result,
-                        timestamp,
-                        cached_ttl,
-                        access_count + 1,
-                    )
+                    if elapsed < cached_ttl:
+                        # Cache HIT - mover al final (más reciente)
+                        _cache_store.move_to_end(cache_key)
+                        # Incrementar contador de accesos
+                        _cache_store[cache_key] = (
+                            cached_result,
+                            timestamp,
+                            cached_ttl,
+                            access_count + 1,
+                        )
 
-                    _cache_stats["hits"] += 1
-                    _update_function_metrics(func_name, hit=True)
+                        _cache_stats["hits"] += 1
+                        _update_function_metrics(func_name, hit=True)
 
-                    logger.debug(
-                        f"Cache HIT: {func_name} "
-                        f"(age: {elapsed:.1f}s, ttl: {cached_ttl}s, "
-                        f"accesses: {access_count + 1})"
-                    )
-                    return cached_result
-                else:
-                    # Caché expirado
-                    logger.debug(f"Cache EXPIRED: {func_name} (age: {elapsed:.1f}s)")
-                    del _cache_store[cache_key]
+                        logger.debug(
+                            f"Cache HIT: {func_name} "
+                            f"(age: {elapsed:.1f}s, ttl: {cached_ttl}s, "
+                            f"accesses: {access_count + 1})"
+                        )
+                        return cached_result
+                    else:
+                        # Caché expirado
+                        logger.debug(f"Cache EXPIRED: {func_name} (age: {elapsed:.1f}s)")
+                        del _cache_store[cache_key]
 
-            # Cache MISS: ejecutar función
-            _cache_stats["misses"] += 1
-            _update_function_metrics(func_name, hit=False)
+                # Cache MISS: actualizar estadísticas antes de soltar el lock
+                _cache_stats["misses"] += 1
+                _update_function_metrics(func_name, hit=False)
+
             logger.debug(f"Cache MISS: {func_name}")
 
+            # Ejecutar la función fuera del lock para no bloquear otros hilos
             result = func(*args, **kwargs)
 
-            # Verificar capacidad y evictar si es necesario
-            _evict_if_needed()
+            with _cache_lock:
+                # Verificar capacidad y evictar si es necesario
+                _evict_if_needed()
 
-            # Guardar en caché (se añade al final - más reciente)
-            _cache_store[cache_key] = (result, time.time(), ttl, 1)
+                # Guardar en caché (se añade al final - más reciente)
+                _cache_store[cache_key] = (result, time.time(), ttl, 1)
+
             logger.debug(
                 f"Cache STORED: {func_name} (ttl: {ttl}s, "
                 f"size: {len(_cache_store)}/{MAX_CACHE_SIZE})"
@@ -231,9 +240,10 @@ def invalidate_cache(pattern: str = None, use_regex: bool = False):
     """
     if pattern is None:
         # Invalidar todo
-        count = len(_cache_store)
-        _cache_store.clear()
-        _cache_stats["invalidations"] += count
+        with _cache_lock:
+            count = len(_cache_store)
+            _cache_store.clear()
+            _cache_stats["invalidations"] += count
         logger.info(f"Cache invalidado completamente ({count} entradas)")
         return count
 
@@ -257,13 +267,12 @@ def invalidate_cache(pattern: str = None, use_regex: bool = False):
         matcher = substring_matcher
 
     # Invalidar entradas que coincidan
-    keys_to_delete = [key for key in _cache_store.keys() if matcher(key)]
-
-    for key in keys_to_delete:
-        del _cache_store[key]
-
-    count = len(keys_to_delete)
-    _cache_stats["invalidations"] += count
+    with _cache_lock:
+        keys_to_delete = [key for key in _cache_store.keys() if matcher(key)]
+        for key in keys_to_delete:
+            del _cache_store[key]
+        count = len(keys_to_delete)
+        _cache_stats["invalidations"] += count
 
     if count > 0:
         pattern_type = "regex" if use_regex else "patrón"
@@ -304,10 +313,10 @@ def clear_all_cache():
         importar_datos(archivo)
         clear_all_cache()
     """
-    count = len(_cache_store)
-    _cache_store.clear()
-    _cache_stats["invalidations"] += count
-
+    with _cache_lock:
+        count = len(_cache_store)
+        _cache_store.clear()
+        _cache_stats["invalidations"] += count
     logger.info(f"Cache limpiado completamente ({count} entradas)")
 
 
