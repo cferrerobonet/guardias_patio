@@ -15,8 +15,14 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+from api.auth import get_current_user
 from api.dependencies import get_db
 from api.main import app
+
+
+def _bypass_auth():
+    """Override de get_current_user para tests — devuelve usuario ficticio."""
+    return "test_user"
 
 
 # ---------------------------------------------------------------------------
@@ -36,9 +42,10 @@ def _make_db_override():
 
 @pytest.fixture
 def client_con_db():
-    """TestClient con get_db sobreescrito para no conectar a la BD."""
+    """TestClient con get_db y get_current_user sobreescritos para tests."""
     override, db_mock = _make_db_override()
     app.dependency_overrides[get_db] = override
+    app.dependency_overrides[get_current_user] = _bypass_auth
     c = TestClient(app, raise_server_exceptions=False)
     yield c, db_mock
     app.dependency_overrides.clear()

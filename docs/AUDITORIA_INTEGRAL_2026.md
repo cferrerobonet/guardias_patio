@@ -156,7 +156,7 @@ Clean Architecture híbrida + DDD táctico. Capas:
 
 - [x] **P0** — ~~Migrar a `bcrypt` para hashing de contraseñas con migración de hashes existentes~~ ✅ v3.1.0
 - [x] **P0** — ~~Reemplazar Base64 por `cryptography.fernet`~~ ✅ v3.1.0
-- [ ] **P0** — Añadir autenticación JWT/API-key a la API REST
+- [x] **P0** — ~~Añadir autenticación JWT/API-key a la API REST~~ ✅ RESUELTO v3.8.0
 - [x] **P0** — ~~Eliminar recovery code en texto plano, guardar solo hash + TTL~~ ✅ v3.1.0
 - [ ] **P1** — Política de contraseñas: mínimo 8 chars + mayúscula + número + símbolo
 - [ ] **P1** — Implementar lockout: 5 intentos → bloqueo 15 min con delay progresivo
@@ -1133,8 +1133,8 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 - [x] **P0** — ~~Unificar logging: eliminar `utils/logger.py`, migrar todo a `core/logging`~~ ✅ v3.1.0
 - [ ] **P1** — Añadir correlation IDs para trazar operaciones cross-capa
 - [ ] **P1** — Reemplazar `except Exception: pass` por logging explícito (ver §19.2)
-- [ ] **P1** — Añadir error boundary global en `ccleaner_main_window.py` que capture excepciones no manejadas y las muestre/logee
-- [ ] **P2** — Conectar `HealthChecker` al endpoint `/health`
+- [x] **P1** — ~~Añadir error boundary global en `ccleaner_main_window.py` que capture excepciones no manejadas y las muestre/logee~~ ✅ RESUELTO v3.8.0 (sys.excepthook en main.py)
+- [x] **P2** — ~~Conectar `HealthChecker` al endpoint `/health`~~ ✅ RESUELTO v3.8.0
 - [ ] **P2** — Incluir `user_id` en contexto de logging (structlog `bind()`)
 - [ ] **P2** — Reemplazar `print()` por `logger.*()` (ver §19.3)
 - [ ] **P3** — Configurar alerting real (email/webhook) desde `PerformanceMonitor`
@@ -1296,7 +1296,7 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 | ~~Mover scripts one-off a `scripts/archive/`~~ | P2 | ✅ v3.7.0 |
 | Mover tests sueltos de `scripts/` a `tests/` | P2 | Pendiente |
 | ~~Añadir `__init__.py` a `src/services/`~~ | P2 | ✅ v3.7.0 |
-| Unificar 4 scripts de benchmark en 1 | P3 | Pendiente |
+| ~~Unificar 4 scripts de benchmark en 1~~ | P3 | ✅ RESUELTO v3.8.0 — `scripts/benchmark.py` |
 
 ### Fase 10 — Features Pendientes
 
@@ -1310,7 +1310,7 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 | Implementar import de zonas desde CSV/Excel | P2 | Medio |
 | Implementar backup/restore completo | P2 | Alto |
 | Implementar import de configuración desde otro curso | P2 | Medio |
-| Añadir `capacidad_profesores` y `activa` al modelo Zona | P2 | Bajo |
+| ~~Añadir `capacidad_profesores` y `activa` al modelo Zona~~ | P2 | ✅ RESUELTO v3.8.0 — ORM + migración `c3d4e5f6a7b8` |
 | Vincular profesores a cursos (`curso_id` en Profesor) | P3 | Alto |
 
 ---

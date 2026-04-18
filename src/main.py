@@ -62,6 +62,26 @@ def main():
             logger.critical(line.rstrip())
         logger.critical("=" * 80)
 
+        # Mostrar diálogo de error al usuario si la app Qt ya está en marcha
+        try:
+            from PyQt6.QtWidgets import QApplication, QMessageBox
+
+            if QApplication.instance() is not None:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Icon.Critical)
+                msg.setWindowTitle("Error inesperado")
+                msg.setText(
+                    "Se ha producido un error inesperado en la aplicación.\n"
+                    "El incidente ha sido registrado en el log."
+                )
+                msg.setDetailedText(
+                    f"{exctype.__name__}: {value}\n\n"
+                    + "".join(traceback.format_tb(tb))
+                )
+                msg.exec()
+        except Exception:
+            pass  # Si Qt no está disponible, solo loguear
+
         # Llamar al manejador original
         sys.__excepthook__(exctype, value, tb)
 

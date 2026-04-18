@@ -6,6 +6,26 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [3.8.0] - 2026-04-18
+
+### 🎯 Resumen
+JWT en API REST, campo activa/capacidad en Zona, error boundary GUI, health check dinámico, migración Alembic zonas.
+
+### ✨ Added
+- **P0 seguridad API**: `src/api/auth.py` con autenticación JWT (PyJWT). Endpoint `POST /api/v1/auth/token`, todos los routers protegidos con `Depends(get_current_user)`
+- `PyJWT>=2.9.0` y `python-multipart>=0.0.9` añadidos a `requirements.txt`
+- `config/settings.py`: campos `api_secret_key`, `api_token_expire_minutes`, `api_algorithm`
+- **P2**: `activa` y `capacidad_profesores` añadidos al ORM `Zona` con migración Alembic `c3d4e5f6a7b8`; mapper actualizado (eliminados TODOs)
+- **P2**: Error boundary global en GUI — `sys.excepthook` muestra `QMessageBox.Critical` al usuario
+- **P3**: `scripts/benchmark.py` punto de entrada unificado para los 4 benchmarks
+- **P3**: `scripts/archive/` con benchmarks individuales
+
+### Changed
+- **P2**: `/health` usa versión dinámica desde `get_settings().app_version`
+- `src/api/main.py`: versión leída de settings (sin hardcode), CORS ampliado a `GET`+`POST`
+- `tests/test_api_rest.py`: fixture `client_con_db` inyecta bypass de `get_current_user` para tests
+
+---
 ## [3.7.0] - 2026-04-18
 
 ### Added

@@ -15,13 +15,15 @@ Documentación:
 - ReDoc: http://localhost:8000/redoc
 """
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+from api.auth import create_token_response, get_current_user
 from api.routers import (
     cuotas_router,
     equidad_router,
@@ -31,8 +33,10 @@ from api.routers import (
 )
 from core.logging import get_logger
 from core.observability.health import get_health_checker
+from config.settings import get_settings
 
 logger = get_logger(__name__)
+_version = get_settings().app_version
 
 # Rate limiter — máximo 60 peticiones/minuto por IP
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
@@ -41,7 +45,7 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 app = FastAPI(
     title="Guardias de Patio API",
     description="API REST para gestión y análisis de guardias de patio",
-    version="3.3.0",
+    version=_version,
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -55,7 +59,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:8080"],
     allow_credentials=True,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -69,19 +73,26 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
-# Registrar routers bajo /api/v1
-app.include_router(cuotas_router, prefix="/api/v1")
-app.include_router(equidad_router, prefix="/api/v1")
-app.include_router(guardias_router, prefix="/api/v1")
-app.include_router(profesores_router, prefix="/api/v1")
-app.include_router(estadisticas_router, prefix="/api/v1")
+# Endpoint de autenticación (público)
+@app.post("/api/v1/auth/token", include_in_schema=True, tags=["auth"])
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    return create_token_response(form_data)
+
+
+# Registrar routers bajo /api/v1 (protegidos con JWT)
+_auth = Depends(get_current_user)
+app.include_router(cuotas_router, prefix="/api/v1", dependencies=[_auth])
+app.include_router(equidad_router, prefix="/api/v1", dependencies=[_auth])
+app.include_router(guardias_router, prefix="/api/v1", dependencies=[_auth])
+app.include_router(profesores_router, prefix="/api/v1", dependencies=[_auth])
+app.include_router(estadisticas_router, prefix="/api/v1", dependencies=[_auth])
 
 
 @app.get("/")
 def root():
     return {
         "nombre": "Guardias de Patio API",
-        "version": "3.3.0",
+        "version": _version,
         "descripcion": "API REST para gestión y análisis de guardias de patio",
         "documentacion": {"swagger_ui": "/docs", "redoc": "/redoc"},
         "endpoints": {
@@ -104,10 +115,10 @@ def health_check():
         http_code = 503 if status.is_unhealthy else 200
         return JSONResponse(
             status_code=http_code,
-            content={"status": state, "version": "3.3.0", "components": components},
+            content={"status": state, "version": _version, "components": components},
         )
     except Exception:
-        return {"status": "healthy", "version": "3.3.0"}
+        return {"status": "healthy", "version": _version}
 
 
 if __name__ == "__main__":

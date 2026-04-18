@@ -31,8 +31,8 @@ class ZonaMapper:
             id=model.id,
             nombre_zona=model.nombre_zona,
             descripcion=model.descripcion,
-            capacidad_profesores=None,  # TODO: agregar al modelo si se necesita
-            activa=True,  # TODO: agregar al modelo si se necesita
+            capacidad_profesores=model.capacidad_profesores,
+            activa=model.activa,
         )
 
     @staticmethod
@@ -52,6 +52,8 @@ class ZonaMapper:
 
         model.nombre_zona = entity.nombre_zona
         model.descripcion = entity.descripcion
+        model.activa = entity.activa
+        model.capacidad_profesores = entity.capacidad_profesores
 
         return model
 

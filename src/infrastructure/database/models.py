@@ -122,6 +122,8 @@ class Zona(Base):
     descripcion = Column(String)
     fecha_inicio = Column(Date, nullable=True)  # Fecha inicio operativa (opcional)
     fecha_fin = Column(Date, nullable=True)  # Fecha fin operativa (opcional)
+    activa = Column(Boolean, nullable=False, default=True, server_default="1")
+    capacidad_profesores = Column(Integer, nullable=True)  # Máx. profesores simultáneos (None=sin límite)
     guardias = relationship("Guardia", back_populates="zona")
 
 
