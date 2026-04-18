@@ -7,6 +7,35 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.5.0] - 2026-04-18
+
+### 🎯 Resumen
+
+ARQ-02 Fase 2: eliminación de acceso directo a SQLAlchemy desde 9 widgets de la capa de presentación, mediante el facade `AppServices`.
+
+### ✨ Added
+
+- `src/application/app_services.py`: facade `AppServices` — punto único de acceso para presentación a repos y use cases
+
+### Changed
+
+- **ARQ-02 Fase 2**: 9 widgets migrados para usar `AppServices` en lugar de `session.query(...)` directo:
+  - `ajustes_form.py`: `session.query(Zona).count()` → `AppServices.contar_zonas()`
+  - `zona_form.py`: `session.query(Zona).filter_by(id=...)` → `AppServices.zonas.get_by_id()`
+  - `selector_curso_widget.py`: `session.query(CursoEscolar).filter_by(id=...)` → `AppServices.cursos.get_by_id()`
+  - `dialogo_acerca_de.py`: 6 queries de estadísticas → helpers `AppServices`
+  - `calculo_panel.py`: `session.query(Configuracion).first()` → `AppServices.configuracion_repo.get_first()`
+  - `cuotas_panel.py`: idem
+  - `import_export_form.py`: 4 `count()` queries → helpers `AppServices`
+  - `pdf_export_widget.py`: lista profesores ordenada → `AppServices.profesores.get_all()`
+  - `calendarios_pdf_widget.py`: idem
+
+### 🧹 Housekeeping
+
+- Eliminados imports ORM top-level (`Configuracion`, `Profesor`, `Zona`, `CursoEscolar`) que dejaron de usarse tras la migración
+
+---
+
 ## [3.4.0] - 2026-04-17
 
 ### 🎯 Resumen

@@ -88,7 +88,7 @@ Clean Architecture híbrida + DDD táctico. Capas:
 | ID | Hallazgo | Severidad | Detalle |
 |---|---|---|---|
 | ARQ-01 | ~~Servicios bypasean repositorios~~ | ✅ RESUELTO v3.4.0 | 4 domain services movidos de `domain/services/` a `services/`; imports actualizados en use cases y assignment executor |
-| ARQ-02 | **Presentación accede a BD directamente** | ALTA | 15+ widgets en `src/presentation/` ejecutan queries SQLAlchemy directas en vez de pasar por use cases |
+| ARQ-02 | ~~Presentación accede a BD directamente~~ | ALTA — ✅ Fase 2 RESUELTO v3.5.0 | Facade `AppServices` creado; 9 widgets migrados. Fase 3 pendiente: 12 widgets complejos (dashboard, profesor_form, vista_calendario, gestor_sustituciones, etc.) |
 | ARQ-03 | ~~3 repositorios retornan modelos ORM~~ | ✅ RESUELTO v3.4.0 | `AusenciaRepository`, `ConfiguracionRepository` y `CursoEscolarRepository` retornan entidades de dominio vía mappers |
 | ARQ-04 | **DI manual sin framework** | MEDIA | Factories manuales en `application/factories.py`. Funcional pero propenso a errores al crecer |
 | ARQ-05 | ~~Dos ventanas principales coexisten~~ | ✅ RESUELTO v3.1.0 | `main_window.py` eliminado, solo queda `ccleaner_main_window.py` |

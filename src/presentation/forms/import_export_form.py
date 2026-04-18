@@ -6,7 +6,6 @@ y profesores desde Excel.
 """
 
 import ui_styles as styles
-from infrastructure.database.models import Configuracion, Profesor, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFileDialog,
@@ -191,13 +190,14 @@ class ImportExportForm(BaseForm):
             ExportadorDatos.exportar_todo(self.session, archivo)
 
             # Mostrar resumen
-            from infrastructure.database.models import CursoEscolar
+            from application.app_services import AppServices
             from sync.sync_manager import UserAuth
 
-            prof_count = self.session.query(Profesor).count()
-            zona_count = self.session.query(Zona).count()
-            config_count = self.session.query(Configuracion).count()
-            curso_count = self.session.query(CursoEscolar).count()
+            _svc = AppServices(self.session)
+            prof_count = _svc.contar_profesores()
+            zona_count = _svc.contar_zonas()
+            config_count = _svc.contar_configuraciones()
+            curso_count = _svc.contar_cursos()
 
             # Contar usuarios
             try:

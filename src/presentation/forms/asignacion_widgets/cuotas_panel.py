@@ -149,9 +149,10 @@ class CuotasPanel(QGroupBox):
         """Calcula y muestra las cuotas usando el Use Case."""
         # Obtener configuración activa
         if not self.configuracion_id:
-            from infrastructure.database.models import Configuracion
+            from application.app_services import AppServices
 
-            configuracion = self.session.query(Configuracion).first()
+            config_entity = AppServices(self.session).configuracion_repo.get_first()
+            configuracion = config_entity
 
             if not configuracion:
                 from PyQt6.QtWidgets import QMessageBox

@@ -323,10 +323,10 @@ class AjustesForm(BaseForm):
         import json
         from datetime import time
 
-        from infrastructure.database.models import Zona
+        from application.app_services import AppServices
 
-        # Obtener número de zonas desde la tabla Zona
-        num_zonas = self.session.query(Zona).count()
+        # Obtener número de zonas
+        num_zonas = AppServices(self.session).contar_zonas()
 
         # Si no hay zonas, usar 4 por defecto (compatibilidad)
         if num_zonas == 0:

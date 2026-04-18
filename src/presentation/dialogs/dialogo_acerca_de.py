@@ -333,33 +333,24 @@ class DialogoAcercaDe(QDialog):
         stats = []
         try:
             if self.session:
-                from infrastructure.database.models import Guardia, Profesor, Zona
+                from application.app_services import AppServices
 
-                # Contar profesores activos
-                n_profesores = (
-                    self.session.query(Profesor).filter(Profesor.activo.is_(True)).count()
-                )
+                _svc = AppServices(self.session)
+
+                n_profesores = _svc.contar_profesores_activos()
                 stats.append(("👥 Profesores activos:", str(n_profesores)))
 
-                # Contar profesores inactivos
-                n_inactivos = (
-                    self.session.query(Profesor).filter(Profesor.activo.is_(False)).count()
-                )
+                n_inactivos = _svc.contar_profesores_inactivos()
                 stats.append(("👤 Profesores inactivos:", str(n_inactivos)))
 
-                # Contar zonas
-                n_zonas = self.session.query(Zona).count()
+                n_zonas = _svc.contar_zonas()
                 stats.append(("📍 Zonas:", str(n_zonas)))
 
-                # Contar guardias
-                n_guardias = self.session.query(Guardia).count()
+                n_guardias = _svc.contar_guardias()
                 stats.append(("🛡️ Guardias generadas:", str(n_guardias)))
 
-                # Rango de fechas de guardias
-                from sqlalchemy import func
-
-                fecha_min = self.session.query(func.min(Guardia.fecha)).scalar()
-                fecha_max = self.session.query(func.max(Guardia.fecha)).scalar()
+                fecha_min = _svc.fecha_min_guardias()
+                fecha_max = _svc.fecha_max_guardias()
                 if fecha_min and fecha_max:
                     stats.append(("📅 Período guardias:", f"{fecha_min} → {fecha_max}"))
             else:

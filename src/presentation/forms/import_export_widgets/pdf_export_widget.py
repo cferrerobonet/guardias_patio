@@ -407,7 +407,10 @@ class PdfExportWidget(QGroupBox):
             self.profesor_checkboxes.clear()
 
             # Obtener profesores
-            profesores = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
+            from application.app_services import AppServices
+
+            profesores = AppServices(self.session).profesores.get_all()
+            profesores = sorted(profesores, key=lambda p: p.nombre_completo)
 
             for profesor in profesores:
                 checkbox = QCheckBox(f"{profesor.nombre_completo} ({profesor.turno})")

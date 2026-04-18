@@ -7,7 +7,6 @@ Permite cambiar entre cursos escolares de forma rápida desde la UI principal.
 from typing import Optional
 
 from core.logging import get_logger
-from infrastructure.database.models import CursoEscolar
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QMessageBox, QWidget
 from services.gestor_cursos import GestorCursos
@@ -110,7 +109,9 @@ class SelectorCursoWidget(QWidget):
 
         try:
             # Confirmar cambio
-            curso = self.session.query(CursoEscolar).filter_by(id=curso_id).first()
+            from application.app_services import AppServices
+
+            curso = AppServices(self.session).cursos.get_by_id(curso_id)
             if not curso:
                 return
 

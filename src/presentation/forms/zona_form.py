@@ -478,12 +478,11 @@ class ZonaForm(BaseForm):
 
             id_zona = int(item_id.text())
 
-            # Cargar datos directamente de la BD (sin caché) para datos actualizados
+            # Cargar datos directamente de BD para datos actualizados
             try:
-                from infrastructure.database.models import Zona
+                from application.app_services import AppServices
 
-                zona_model = self.session.query(Zona).filter_by(id=id_zona).first()
-
+                zona_model = AppServices(self.session).zonas.get_by_id(id_zona)
                 if not zona_model:
                     self.mostrar_error("Error", f"No se encontró la zona con ID {id_zona}")
                     return
