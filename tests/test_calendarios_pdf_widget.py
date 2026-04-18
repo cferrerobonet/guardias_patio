@@ -212,11 +212,13 @@ class TestCalendariosPdfWidgetRobustez:
 
     def test_obtener_mes_anio_seleccionado(self, widget):
         """Test: Se puede obtener el mes y año seleccionado."""
+        from datetime import datetime
+        anio_disponible = str(datetime.now().year)
         widget.pdf_mes_combo.setCurrentIndex(9)  # Octubre
-        widget.pdf_anio_combo.setCurrentText("2024")
+        widget.pdf_anio_combo.setCurrentText(anio_disponible)
 
         mes = widget.pdf_mes_combo.currentIndex() + 1  # 1-indexed
         anio = int(widget.pdf_anio_combo.currentText())
 
         assert mes == 10
-        assert anio == 2024
+        assert anio == int(anio_disponible)
