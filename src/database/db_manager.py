@@ -149,6 +149,15 @@ def _apply_direct_migrations(engine):
                     conn.commit()
                     logger.info("✓ Columna profesores.recreos_permitidos añadida")
 
+                # profesores.curso_id
+                if 'curso_id' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.curso_id...")
+                    conn.execute(text(
+                        "ALTER TABLE profesores ADD COLUMN curso_id INTEGER REFERENCES cursos_escolares(id)"
+                    ))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.curso_id añadida")
+
             # ========== TABLA CONFIGURACION ==========
             if 'configuracion' in existing_tables:
                 config_columns = [col['name'] for col in inspector.get_columns('configuracion')]

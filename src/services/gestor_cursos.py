@@ -291,21 +291,21 @@ class GestorCursos:
             raise ValueError("No se encontró curso anterior para copiar")
 
         # Obtener profesores del curso anterior
-        # NOTA: Esta lógica asume que tienes una relación curso_id en Profesor
-        # Si no la tienes, tendrás que ajustar esto
         profesores_antiguos = (
             session.query(Profesor)
-            # TODO: Filtrar por curso_id cuando se añada a Profesor
+            .filter(Profesor.curso_id == curso_anterior.id)
             .all()
         )
 
         contador = 0
         for prof_viejo in profesores_antiguos:
             # Verificar si ya existe un profesor con ese email en el nuevo curso
-            # TODO: Cuando Profesor tenga curso_id, filtrar por curso también
             existe = (
                 session.query(Profesor)
-                .filter_by(email_corporativo=prof_viejo.email_corporativo)
+                .filter_by(
+                    email_corporativo=prof_viejo.email_corporativo,
+                    curso_id=curso_nuevo_id,
+                )
                 .first()
             )
 
@@ -324,6 +324,7 @@ class GestorCursos:
                     zona_preferida_id=prof_viejo.zona_preferida_id,
                     dias_semana_permitidos=prof_viejo.dias_semana_permitidos,
                     recreos_permitidos=prof_viejo.recreos_permitidos,
+                    curso_id=curso_nuevo_id,
                 )
                 session.add(nuevo_prof)
                 contador += 1

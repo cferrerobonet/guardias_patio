@@ -97,14 +97,17 @@ class Profesor(Base):
     fecha_inicio_guardias = Column(Date, nullable=True)
     fecha_fin_guardias = Column(Date, nullable=True)  # Fecha límite para terminar guardias
     zona_preferida_id = Column(Integer, ForeignKey("zonas.id"), nullable=True)  # Zona preferida
+    curso_id = Column(Integer, ForeignKey("cursos_escolares.id"), nullable=True)  # Curso al que pertenece
     dias_semana_permitidos = Column(Text, nullable=True)  # JSON: [0..6]
     recreos_permitidos = Column(Text, nullable=True)  # JSON: [1..N]
     guardias = relationship("Guardia", foreign_keys="Guardia.profesor_id", back_populates="profesor")
     zona_preferida = relationship("Zona", foreign_keys=[zona_preferida_id])
+    curso = relationship("CursoEscolar", foreign_keys=[curso_id])
 
     __table_args__ = (
         Index("ix_profesores_activo", "activo"),
         Index("ix_profesores_turno", "turno"),
+        Index("ix_profesores_curso_id", "curso_id"),
     )
 
 

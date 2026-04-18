@@ -6,6 +6,22 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.4.0] - 2026-04-18
+
+### 🎯 Resumen
+Vinculación de profesores a cursos escolares mediante `curso_id` en ORM.
+
+### ✨ Added
+- Campo `Profesor.curso_id` (FK a `cursos_escolares.id`, nullable) en ORM + relación `profesor.curso`
+- Índice `ix_profesores_curso_id` en BD
+- Migración Alembic `b1c2d3e4f5a6` con `batch_alter_table` para SQLite
+- Fallback en `_apply_direct_migrations` para BDs que no usen Alembic
+- 10 tests nuevos en `tests/test_gestor_cursos_curso_id.py`
+
+### Changed
+- `GestorCursos.copiar_profesores_curso_anterior()`: ahora filtra profesores por `curso_id` del curso origen y asigna `curso_id` al nuevo curso en las copias; la comprobación de duplicados también usa `curso_id`
+
+---
 ## [4.3.0] - 2026-04-18
 
 ### 🎯 Resumen

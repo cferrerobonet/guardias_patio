@@ -4,11 +4,11 @@
 **Versión analizada**: 3.2.1 (actualizado con correcciones v3.1.0)  
 **Alcance**: Análisis completo de arquitectura, seguridad, base de datos, performance, UX/UI, testing, observabilidad, escalabilidad, resiliencia y buenas prácticas.
 
-## ⚡ ESTADO ACTUAL (v4.3.0)
+## ⚡ ESTADO ACTUAL (v4.4.0)
 
-**Completados**: 51/103 items (49.5%)
+**Completados**: 53/103 items (51.5%)
 **En Progreso**: 0
-**Pendientes**: 52/103 items (50.5%)
+**Pendientes**: 50/103 items (48.5%)
 
 ### Releases Ejecutados
 - ✅ **v3.7.0** — Políticas seguridad, campos sustituciones ORM, API use cases, 21 tests REST/SMTP/SFTP
@@ -18,10 +18,10 @@
 - ✅ **v4.1.0** — 14 índices BD, 7 CheckConstraints, optimización .first() is not None
 - ✅ **v4.2.0** — Backup/restore BD por usuario, import zonas CSV/Excel, 23 tests nuevos
 - ✅ **v4.3.0** — Paginación API profesores, schema error estándar, 5 tests nuevos
+- ✅ **v4.4.0** — `Profesor.curso_id` FK + relación ORM + migración + 10 tests
 
 ### Próximas Fases Recomendadas
-1. **v4.4.0 (Features)** — Vincular profesores cursos, import config
-2. **v5.0.0 (Arquitectura)** — Split archivos >1000L, resilencia, async
+1. **v5.0.0 (Arquitectura)** — Split archivos >1000L, resilencia, cache
 
 ---
 
@@ -824,12 +824,11 @@ El widget `GestorSustituciones` existe en la UI pero **no puede persistir** qui�
 | ~~**Restaurar backup**~~ | ✅ RESUELTO v4.2.0 | `restore_database(username, backup_path)` con validación SQLite y backup de seguridad |
 | **Importar desde otro curso** | ❌ No existe | Al crear un curso nuevo hay que re-configurar todo |
 
-### 17.5 Campo `curso_id` en Profesor
+### 17.5 ~~Campo `curso_id` en Profesor~~ ✅ RESUELTO v4.4.0
 
-Dos TODOs en `gestor_cursos.py` indican que los profesores no están vinculados a cursos específicos. Son "globales". Esto impide:
-- Tener plantilla de profesores diferente por curso
-- Desactivar automáticamente profesores que ya no están en un curso
-- Histórico limpio de qué profesores participaron en cada curso
+~~Dos TODOs en `gestor_cursos.py` indican que los profesores no están vinculados a cursos específicos. Son "globales".~~
+
+`Profesor.curso_id` añadido como FK nullable a `cursos_escolares.id`. `GestorCursos.copiar_profesores_curso_anterior()` ahora filtra por `curso_id` y asigna el nuevo en las copias. Migración `b1c2d3e4f5a6`, índice `ix_profesores_curso_id`, 10 tests.
 
 ### 17.6 ML Predictor — ✅ Eliminado en v3.1.0
 
@@ -1330,7 +1329,7 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 | ~~Implementar backup/restore completo~~ | P2 | ✅ RESUELTO v4.2.0 — `backup_database()` + `restore_database()` en `db_manager.py` |
 | Implementar import de configuración desde otro curso | P2 | Medio |
 | ~~Añadir `capacidad_profesores` y `activa` al modelo Zona~~ | P2 | ✅ RESUELTO v3.8.0 — ORM + migración `c3d4e5f6a7b8` |
-| Vincular profesores a cursos (`curso_id` en Profesor) | P3 | Alto |
+| ~~Vincular profesores a cursos (`curso_id` en Profesor)~~ | P3 | ✅ RESUELTO v4.4.0 — FK + relación ORM + migración + 10 tests |
 
 ---
 
