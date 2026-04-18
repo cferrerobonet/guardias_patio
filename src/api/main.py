@@ -16,6 +16,7 @@ Documentación:
 """
 
 from fastapi import Depends, FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -69,7 +70,15 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     logger.exception("Error no controlado en %s", request.url)
     return JSONResponse(
         status_code=500,
-        content={"error": "internal_server_error", "detail": "Error interno del servidor"},
+        content={"error": {"code": "internal_server_error", "message": "Error interno del servidor"}},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={"error": {"code": "validation_error", "message": str(exc.errors())}},
     )
 
 

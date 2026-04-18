@@ -6,6 +6,23 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.3.0] - 2026-04-18
+
+### 🎯 Resumen
+Paginación en API de profesores y schema de error estándar en todos los endpoints.
+
+### ✨ Added
+- Paginación en `GET /api/v1/profesores`: parámetros `offset` (default 0) y `limit` (default 50, máx 200); respuesta `{items, total, offset, limit, has_more}`
+- Schema de error estándar `{"error": {"code": "...", "message": "..."}}` en todos los errores HTTP: 500 desde routers, 422 de validación y errores no controlados desde `main.py`
+- Handler `RequestValidationError` global para errores de validación Pydantic con mismo schema
+- 5 tests nuevos en `test_api_rest.py` (paginación, offset, has_more, limit inválido, schema error)
+
+### Changed
+- `GET /api/v1/profesores` devuelve `PaginatedProfesoresResponse` en lugar de `List[ProfesorResponse]`
+- Error 500 en routers devuelve `{"detail": {"code": "internal_error", "message": "..."}}`
+- Error 404 profesor devuelve `{"detail": {"code": "not_found", "message": "..."}}`
+
+---
 ## [4.2.0] - 2026-04-18
 
 ### 🎯 Resumen

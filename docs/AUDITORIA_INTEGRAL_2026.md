@@ -4,11 +4,11 @@
 **Versión analizada**: 3.2.1 (actualizado con correcciones v3.1.0)  
 **Alcance**: Análisis completo de arquitectura, seguridad, base de datos, performance, UX/UI, testing, observabilidad, escalabilidad, resiliencia y buenas prácticas.
 
-## ⚡ ESTADO ACTUAL (v4.2.0)
+## ⚡ ESTADO ACTUAL (v4.3.0)
 
-**Completados**: 49/103 items (47.6%)
+**Completados**: 51/103 items (49.5%)
 **En Progreso**: 0
-**Pendientes**: 54/103 items (52.4%)
+**Pendientes**: 52/103 items (50.5%)
 
 ### Releases Ejecutados
 - ✅ **v3.7.0** — Políticas seguridad, campos sustituciones ORM, API use cases, 21 tests REST/SMTP/SFTP
@@ -17,11 +17,11 @@
 - ✅ **v4.0.0** — Lockout progresivo, path traversal SFTP, chmod 600 users.json, api_secret_key sin default
 - ✅ **v4.1.0** — 14 índices BD, 7 CheckConstraints, optimización .first() is not None
 - ✅ **v4.2.0** — Backup/restore BD por usuario, import zonas CSV/Excel, 23 tests nuevos
+- ✅ **v4.3.0** — Paginación API profesores, schema error estándar, 5 tests nuevos
 
 ### Próximas Fases Recomendadas
-1. **v4.3.0 (API)** — Paginación, schema error estándar
-2. **v4.4.0 (Features)** — Vincular profesores cursos, import config
-3. **v5.0.0 (Arquitectura)** — Split archivos >1000L, resilencia, async
+1. **v4.4.0 (Features)** — Vincular profesores cursos, import config
+2. **v5.0.0 (Arquitectura)** — Split archivos >1000L, resilencia, async
 
 ---
 
@@ -415,9 +415,9 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 | API-04 | ~~Sin rate limiting~~ | ✅ RESUELTO v3.4.0 | `slowapi` 0.1.9 — 60 req/min por IP |
 | API-05 | ~~CORS wildcard `allow_origins=["*"]` con `allow_credentials=True`~~ | ✅ RESUELTO v3.1.0 | Restringido a localhost:3000/8080, solo GET |
 | API-06 | **`/health` hardcodeado** — no usa el `HealthChecker` real | MEDIA |
-| API-07 | Profesores sin paginación — devuelve todos | MEDIA |
+| API-07 | ~~Profesores sin paginación~~ | ✅ RESUELTO v4.3.0 | `offset`/`limit`/`total`/`has_more` en `GET /api/v1/profesores` |
 | API-08 | Sin sorting paramétrico | BAJA |
-| API-09 | Sin schema de error estándar | MEDIA |
+| API-09 | ~~Sin schema de error estándar~~ | ✅ RESUELTO v4.3.0 | `{"error": {"code": "...", "message": "..."}}` en 500, 404, 422 |
 | API-10 | Cuotas, equidad, estadísticas sin `response_model` tipado | BAJA |
 
 ### 9.3 Buenas Prácticas Existentes
@@ -433,9 +433,9 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 - [x] Restringir CORS a orígenes específicos ✅ v3.1.0
 - [x] Añadir rate limiting (`slowapi` o `fastapi-limiter`) ✅ v3.4.0
 - [x] ~~Conectar `/health` al `HealthChecker` real~~ ✅ RESUELTO v3.8.0
-- [ ] Añadir paginación a `/api/profesores`
+- [x] ~~Añadir paginación a `/api/profesores`~~ ✅ RESUELTO v4.3.0
 - [ ] Añadir versionado `/v1/`
-- [ ] Definir schema de error estándar `{"error": {"code": "...", "message": "..."}}`
+- [x] ~~Definir schema de error estándar `{"error": {"code": "...", "message": "..."}}`~~ ✅ RESUELTO v4.3.0
 - [x] Añadir middleware de error handling para no exponer `str(e)` ✅ v3.1.0
 
 ---

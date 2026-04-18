@@ -126,7 +126,10 @@ def test_listar_profesores_vacio(client_profesores):
         mock_uc.return_value.execute.return_value = []
         r = client.get("/api/v1/profesores")
     assert r.status_code == 200
-    assert r.json() == []
+    data = r.json()
+    assert data["items"] == []
+    assert data["total"] == 0
+    assert data["has_more"] is False
 
 
 def test_listar_profesores_devuelve_lista(client_profesores):
@@ -138,9 +141,10 @@ def test_listar_profesores_devuelve_lista(client_profesores):
         r = client.get("/api/v1/profesores")
     assert r.status_code == 200
     data = r.json()
-    assert len(data) == 2
-    assert data[0]["id"] == 1
-    assert data[1]["id"] == 2
+    assert len(data["items"]) == 2
+    assert data["items"][0]["id"] == 1
+    assert data["items"][1]["id"] == 2
+    assert data["total"] == 2
 
 
 def test_listar_profesores_filtro_activo(client_profesores):
@@ -152,8 +156,8 @@ def test_listar_profesores_filtro_activo(client_profesores):
         r = client.get("/api/v1/profesores?activo=true")
     assert r.status_code == 200
     data = r.json()
-    assert len(data) == 1
-    assert data[0]["activo"] is True
+    assert len(data["items"]) == 1
+    assert data["items"][0]["activo"] is True
 
 
 def test_listar_profesores_filtro_turno(client_profesores):
@@ -165,8 +169,8 @@ def test_listar_profesores_filtro_turno(client_profesores):
         r = client.get("/api/v1/profesores?turno=tarde")
     assert r.status_code == 200
     data = r.json()
-    assert len(data) == 1
-    assert data[0]["turno"] == "tarde"
+    assert len(data["items"]) == 1
+    assert data["items"][0]["turno"] == "tarde"
 
 
 def test_listar_profesores_error_interno(client_profesores):
@@ -176,6 +180,66 @@ def test_listar_profesores_error_interno(client_profesores):
         mock_uc.return_value.execute.side_effect = RuntimeError("DB caída")
         r = client.get("/api/v1/profesores")
     assert r.status_code == 500
+
+
+def test_listar_profesores_error_schema_estandar(client_profesores):
+    """El error 500 devuelve schema estándar {error: {code, message}}."""
+    client, _ = client_profesores
+    with patch("api.routers.profesores.ListarProfesoresUseCase") as mock_uc:
+        mock_uc.return_value.execute.side_effect = RuntimeError("fallo")
+        r = client.get("/api/v1/profesores")
+    assert r.status_code == 500
+    detail = r.json()["detail"]
+    assert detail["code"] == "internal_error"
+    assert "message" in detail
+
+
+def test_listar_profesores_paginacion_offset(client_profesores):
+    """El parámetro offset pagina correctamente."""
+    client, _ = client_profesores
+    profesores = [_profesor_dto(i) for i in range(1, 6)]  # 5 profesores
+    with patch("api.routers.profesores.ListarProfesoresUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = profesores
+        r = client.get("/api/v1/profesores?offset=2&limit=2")
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data["items"]) == 2
+    assert data["items"][0]["id"] == 3
+    assert data["total"] == 5
+    assert data["offset"] == 2
+    assert data["limit"] == 2
+    assert data["has_more"] is True
+
+
+def test_listar_profesores_paginacion_has_more_false(client_profesores):
+    """has_more es False cuando no hay más páginas."""
+    client, _ = client_profesores
+    profesores = [_profesor_dto(i) for i in range(1, 4)]  # 3 profesores
+    with patch("api.routers.profesores.ListarProfesoresUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = profesores
+        r = client.get("/api/v1/profesores?offset=0&limit=10")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["has_more"] is False
+    assert data["total"] == 3
+
+
+def test_listar_profesores_limit_invalido(client_profesores):
+    """limit=0 devuelve 422."""
+    client, _ = client_profesores
+    with patch("api.routers.profesores.ListarProfesoresUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = []
+        r = client.get("/api/v1/profesores?limit=0")
+    assert r.status_code == 422
+
+
+def test_listar_profesores_offset_negativo(client_profesores):
+    """offset negativo devuelve 422."""
+    client, _ = client_profesores
+    with patch("api.routers.profesores.ListarProfesoresUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = []
+        r = client.get("/api/v1/profesores?offset=-1")
+    assert r.status_code == 422
 
 
 # ---------------------------------------------------------------------------
