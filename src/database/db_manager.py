@@ -13,6 +13,7 @@ import hashlib
 import os
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Optional
 
 from core.paths import get_user_data_directory
 from infrastructure.database.models import Base
@@ -426,6 +427,99 @@ def delete_user_database(username: str) -> bool:
             return False
     except Exception as e:
         logger.error(f"Error eliminando base de datos de usuario {username}: {e}")
+        return False
+
+
+def backup_database(username: str, backup_dir: Optional[Path] = None) -> Optional[Path]:
+    """
+    Crea una copia de seguridad de la base de datos de un usuario.
+
+    Args:
+        username: Nombre de usuario
+        backup_dir: Directorio destino del backup. Si None, usa data/backups/
+
+    Returns:
+        Path al archivo de backup creado, o None si falla
+    """
+    import shutil
+    from datetime import datetime
+
+    try:
+        db_path = get_user_database_path(username)
+        if not db_path.exists():
+            logger.error(f"No existe BD para usuario: {username}")
+            return None
+
+        if backup_dir is None:
+            user_hash = _hash_username(username)
+            backup_dir = USER_DATA_DIR / user_hash / "backups"
+
+        backup_dir = Path(backup_dir)
+        backup_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_filename = f"guardias_patio_backup_{timestamp}.db"
+        backup_path = backup_dir / backup_filename
+
+        shutil.copy2(db_path, backup_path)
+        os.chmod(backup_path, 0o600)
+
+        logger.info(f"Backup creado: {backup_path}")
+        return backup_path
+
+    except Exception as e:
+        logger.error(f"Error creando backup de usuario {username}: {e}")
+        return None
+
+
+def restore_database(username: str, backup_path: str | Path) -> bool:
+    """
+    Restaura la base de datos de un usuario desde un backup.
+    Crea un backup automático de la BD actual antes de restaurar.
+
+    Args:
+        username: Nombre de usuario
+        backup_path: Ruta al archivo de backup (.db)
+
+    Returns:
+        bool: True si se restauró correctamente
+    """
+    import shutil
+    import sqlite3
+
+    backup_path = Path(backup_path)
+
+    if not backup_path.exists():
+        logger.error(f"Archivo de backup no encontrado: {backup_path}")
+        return False
+
+    # Validar que sea un SQLite válido
+    try:
+        conn = sqlite3.connect(str(backup_path))
+        conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        conn.close()
+    except sqlite3.DatabaseError as e:
+        logger.error(f"El archivo de backup no es una BD SQLite válida: {e}")
+        return False
+
+    try:
+        db_path = get_user_database_path(username)
+
+        # Auto-backup de la BD actual antes de restaurar
+        if db_path.exists():
+            safety_backup = backup_database(username)
+            if safety_backup:
+                logger.info(f"Backup de seguridad creado antes de restaurar: {safety_backup}")
+
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(backup_path, db_path)
+        os.chmod(db_path, 0o600)
+
+        logger.info(f"BD restaurada para usuario {username} desde: {backup_path}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error restaurando BD de usuario {username}: {e}")
         return False
 
 

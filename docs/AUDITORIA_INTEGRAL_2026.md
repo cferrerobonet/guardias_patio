@@ -4,11 +4,11 @@
 **Versión analizada**: 3.2.1 (actualizado con correcciones v3.1.0)  
 **Alcance**: Análisis completo de arquitectura, seguridad, base de datos, performance, UX/UI, testing, observabilidad, escalabilidad, resiliencia y buenas prácticas.
 
-## ⚡ ESTADO ACTUAL (v4.1.0)
+## ⚡ ESTADO ACTUAL (v4.2.0)
 
-**Completados**: 46/103 items (44.7%)
+**Completados**: 49/103 items (47.6%)
 **En Progreso**: 0
-**Pendientes**: 57/103 items (55.3%)
+**Pendientes**: 54/103 items (52.4%)
 
 ### Releases Ejecutados
 - ✅ **v3.7.0** — Políticas seguridad, campos sustituciones ORM, API use cases, 21 tests REST/SMTP/SFTP
@@ -16,12 +16,12 @@
 - ✅ **v3.9.0** — Export guardias CSV/Excel, import profesores CSV
 - ✅ **v4.0.0** — Lockout progresivo, path traversal SFTP, chmod 600 users.json, api_secret_key sin default
 - ✅ **v4.1.0** — 14 índices BD, 7 CheckConstraints, optimización .first() is not None
+- ✅ **v4.2.0** — Backup/restore BD por usuario, import zonas CSV/Excel, 23 tests nuevos
 
 ### Próximas Fases Recomendadas
-1. **v4.2.0 (Testing)** — Coverage 70%, backup/restore, import zonas
-2. **v4.3.0 (API)** — Paginación, schema error estándar
-3. **v4.4.0 (Features)** — Vincular profesores cursos, import config
-4. **v5.0.0 (Arquitectura)** — Split archivos >1000L, resilencia, async
+1. **v4.3.0 (API)** — Paginación, schema error estándar
+2. **v4.4.0 (Features)** — Vincular profesores cursos, import config
+3. **v5.0.0 (Arquitectura)** — Split archivos >1000L, resilencia, async
 
 ---
 
@@ -811,7 +811,7 @@ El widget `GestorSustituciones` existe en la UI pero **no puede persistir** qui�
 | **PDF informe de ausencias** | ❌ No existe | No hay report de ausencias/sustituciones |
 | **PDF informe trimestral** | ❌ No existe | No hay report de cumplimiento por periodo |
 | **Excel de estadísticas** | ❌ No existe | Dashboard solo visual (matplotlib), no exportable |
-| **Backup completo exportable** | ❌ Parcial | `data_exporter.py` exporta JSON pero no es un backup restaurable |
+| **Backup completo exportable** | ✅ RESUELTO v4.2.0 | `backup_database()` + `restore_database()` en `db_manager.py`, permisos 600, backup seguridad automático |
 
 ### 17.4 Importaciones Faltantes
 
@@ -819,9 +819,9 @@ El widget `GestorSustituciones` existe en la UI pero **no puede persistir** qui�
 |---|---|---|
 | Importar profesores desde Excel | ✅ Funcional | `importar_profesores_desde_excel.py` (como script) |
 | **Importar profesores desde UI** | ⚠️ Parcial | `ImportExportForm` existe pero la integración con el script no es transparente |
-| **Importar zonas desde Excel/CSV** | ❌ No existe | Solo alta manual |
+| ~~**Importar zonas desde Excel/CSV**~~ | ✅ RESUELTO v4.2.0 | `src/services/importador_zonas.py`, función unificada `importar_zonas()` detecta .csv/.xlsx |
 | **Importar festivos desde archivo** | ❌ No existe | Solo configuración manual |
-| **Restaurar backup** | ❌ No existe | No hay importación inversa del export JSON |
+| ~~**Restaurar backup**~~ | ✅ RESUELTO v4.2.0 | `restore_database(username, backup_path)` con validación SQLite y backup de seguridad |
 | **Importar desde otro curso** | ❌ No existe | Al crear un curso nuevo hay que re-configurar todo |
 
 ### 17.5 Campo `curso_id` en Profesor
@@ -1326,8 +1326,8 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 | ~~Añadir export CSV/Excel de guardias~~ | P1 | ✅ RESUELTO v3.9.0 — `GET /api/v1/guardias/export/csv` y `/export/xlsx` |
 | ~~Añadir export PDF de informe de ausencias~~ | P1 | Bajo | Ya existe en `src/services/exportador_pdf.py`
 | ~~Completar import de profesores desde UI (no solo script)~~ | P1 | ✅ RESUELTO v3.9.0 — soporte CSV + función unificada `importar_profesores()` |
-| Implementar import de zonas desde CSV/Excel | P2 | Medio |
-| Implementar backup/restore completo | P2 | Alto |
+| ~~Implementar import de zonas desde CSV/Excel~~ | P2 | ✅ RESUELTO v4.2.0 — `src/services/importador_zonas.py` |
+| ~~Implementar backup/restore completo~~ | P2 | ✅ RESUELTO v4.2.0 — `backup_database()` + `restore_database()` en `db_manager.py` |
 | Implementar import de configuración desde otro curso | P2 | Medio |
 | ~~Añadir `capacidad_profesores` y `activa` al modelo Zona~~ | P2 | ✅ RESUELTO v3.8.0 — ORM + migración `c3d4e5f6a7b8` |
 | Vincular profesores a cursos (`curso_id` en Profesor) | P3 | Alto |

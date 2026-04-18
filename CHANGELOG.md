@@ -6,6 +6,18 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.2.0] - 2026-04-18
+
+### 🎯 Resumen
+Backup/restore de BD por usuario, importación de zonas desde CSV/Excel y 23 tests nuevos.
+
+### ✨ Added
+- `backup_database(username, backup_dir)` en `db_manager.py`: copia la BD a un archivo `.db` con permisos 600, en `data/users/{hash}/backups/`
+- `restore_database(username, backup_path)` en `db_manager.py`: valida el archivo SQLite, crea backup de seguridad automático y restaura
+- `src/services/importador_zonas.py`: importación de zonas desde CSV y Excel con columnas `nombre_zona`, `descripcion`, `activa`, `capacidad_profesores`; función unificada `importar_zonas()` detecta formato por extensión
+- 23 tests nuevos en `tests/test_importador_zonas_backup.py` cubriendo helpers de parseo, importación CSV, detección de formato y backup/restore
+
+---
 ## [4.1.0] - 2026-04-22
 
 ### 🎯 Resumen
