@@ -185,7 +185,7 @@ class GenerarGuardiasUseCase:
         El archivo se guarda en: logs/comparacion_cuotas_YYYYMMDD_HHMMSS.json
         """
         try:
-            from domain.services import DistribucionCuotasService
+            from services.distribucion_cuotas_service import DistribucionCuotasService
 
             # Calcular cuotas ideales
             cuotas_service = DistribucionCuotasService(self.session)

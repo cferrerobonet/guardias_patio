@@ -9,12 +9,10 @@ import json
 from datetime import date, timedelta
 
 import pytest
-from domain.services import (
-    AsignacionGuardiaService,
-    DisponibilidadProfesorService,
-    DistribucionCuotasService,
-    EquidadGuardiasService,
-)
+from services.asignacion_guardia_service import AsignacionGuardiaService
+from services.disponibilidad_profesor_service import DisponibilidadProfesorService
+from services.distribucion_cuotas_service import DistribucionCuotasService
+from services.equidad_guardias_service import EquidadGuardiasService
 from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session
 

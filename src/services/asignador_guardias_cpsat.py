@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from domain.services.distribucion_cuotas_service import DistribucionCuotasService
+from services.distribucion_cuotas_service import DistribucionCuotasService
 from infrastructure.database.models import (
     Ausencia,
     Configuracion,

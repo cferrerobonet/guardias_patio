@@ -8,8 +8,8 @@ Coordina la obtención de datos y presentación de resultados.
 import logging
 from typing import List
 
-from domain.services.distribucion_cuotas_service import DistribucionCuotasService
-from domain.services.equidad_guardias_service import EquidadGuardiasService
+from services.distribucion_cuotas_service import DistribucionCuotasService
+from services.equidad_guardias_service import EquidadGuardiasService
 from infrastructure.database.models import Guardia, Profesor
 from sqlalchemy.orm import Session
 

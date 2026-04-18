@@ -7,6 +7,43 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.4.0] - 2026-04-17
+
+### 🎯 Resumen
+
+Tercer lote de auditoría: normalizado de campos JSON a tablas relacionales, migración de domain services a capa de servicios, creación de entidades de dominio y mappers para 3 aggregates, rate limiting API, mejoras UX (DPI, validators, accesibilidad) e init condicional de BD.
+
+### ✨ Added
+
+- **Entidades de dominio**: `AusenciaEntity`, `CursoEscolarEntity`, `ConfiguracionEntity` con métodos de negocio (`cubre_fecha`, `esta_vigente`, `nombre_display`)
+- **Mappers**: `AusenciaMapper`, `CursoEscolarMapper`, `ConfiguracionMapper` — conversión ORM ↔ Domain Entity
+- **BD-NF**: Migración Alembic `a1b2c3d4e5f7` — tablas `profesor_dias_semana` y `profesor_recreos` normalizan campos JSON de `profesores`
+- `slowapi` rate limiting: 60 req/min por IP en todos los endpoints API
+- `src/services/_asignador_tipos.py`: dataclasses `Slot`, `ContextoAsignacion`, `ResultadoGeneracion` extraidos del asignador principal
+- `src/presentation/widgets/_celda_dia.py`: clase `CeldaDia` extraida de `vista_calendario.py`
+
+### Changed
+
+- **ARQ-01**: 4 domain services movidos de `domain/services/` a `services/` — ya no violan Clean Architecture importando infraestructura desde el dominio
+- **ARQ-03**: Repos `sqlalchemy_ausencia`, `sqlalchemy_configuracion`, `sqlalchemy_curso_escolar` ahora retornan domain entities en lugar de ORM models
+- **DB-13**: `initialize_user_database()` usa Alembic de forma condicional — si OK, no llama `_apply_direct_migrations()` (elimina init triple)
+- `vista_calendario.py`: 1368 → 969 líneas (extracción de `CeldaDia`)
+- `asignador_guardias_v4_hibrido.py`: 1140 → 1066 líneas (extracción de tipos)
+
+### Fixed
+
+- **UX-04**: DPI awareness `Qt.HighDpiScaleFactorRoundingPolicy.PassThrough` antes de crear `QApplication`
+- **UX-01**: `QRegularExpressionValidator` en campo username de `RegisterDialog` — valida en tiempo real
+- **UX-02/03**: `setAccessibleName` + `setTabOrder` explícito en `LoginDialog` y `RegisterDialog`
+- **BUG**: Guard `len(password) < 4` que bloqueaba `validate_password_policy` para contraseñas de 5-7 chars
+
+### 🧹 Housekeeping
+
+- `domain/services/__init__.py` vaciado — ya no re-exporta servicios de infraestructura
+- `src/services/asignacion_guardia_service.py` import interno actualizado de `domain.services` → `services`
+
+---
+
 ## [3.3.0] - 2026-04-17
 
 ### 🎯 Resumen

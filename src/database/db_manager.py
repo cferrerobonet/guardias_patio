@@ -37,13 +37,16 @@ def _hash_username(username: str) -> str:
     return hashlib.sha256(username.encode()).hexdigest()[:16]
 
 
-def _run_alembic_migrations(engine, db_path: Path):
+def _run_alembic_migrations(engine, db_path: Path) -> bool:
     """
     Ejecuta migraciones de Alembic para inicializar/actualizar el esquema.
 
     Args:
         engine: SQLAlchemy engine
         db_path: Ruta al archivo de base de datos
+
+    Returns:
+        True si Alembic completó correctamente, False en caso de fallo.
     """
     try:
         from sqlalchemy import inspect
@@ -72,8 +75,7 @@ def _run_alembic_migrations(engine, db_path: Path):
 
         if not alembic_ini_path.exists():
             logger.warning(f"alembic.ini no encontrado en {alembic_ini_path}")
-            logger.info("Usando create_all() para inicializar esquema")
-            return
+            return False
 
         # Configurar Alembic
         alembic_cfg = Config(str(alembic_ini_path))
@@ -81,8 +83,6 @@ def _run_alembic_migrations(engine, db_path: Path):
 
         if not existing_tables:
             logger.info("Base de datos nueva detectada. Inicializando esquema completo...")
-            # Marcar la base de datos en la versión head sin ejecutar migraciones
-            # ya que vamos a crear todo desde cero con create_all()
             command.stamp(alembic_cfg, "head")
             logger.info("✓ Base de datos marcada con la versión actual del esquema")
         else:
@@ -90,15 +90,15 @@ def _run_alembic_migrations(engine, db_path: Path):
                 f"Base de datos existente con {len(existing_tables)} tablas. "
                 "Verificando migraciones..."
             )
-            # Intentar aplicar migraciones pendientes
-            logger.debug("🔧 EJECUTANDO: command.upgrade(alembic_cfg, 'head')")
             command.upgrade(alembic_cfg, "head")
-            logger.debug("✅ POST-UPGRADE: Migraciones completadas sin crash")
             logger.info("✓ Migraciones de Alembic aplicadas/verificadas correctamente")
+
+        return True
 
     except Exception as e:
         logger.warning(f"No se pudieron ejecutar migraciones de Alembic: {e}")
-        logger.info("La aplicación continuará usando create_all() para el esquema")
+        logger.info("Usando create_all() + migraciones directas como fallback")
+        return False
 
 
 def _apply_direct_migrations(engine):
@@ -311,16 +311,21 @@ def initialize_user_database(username: str):
         cursor.execute("PRAGMA temp_store=MEMORY")
         cursor.close()
 
-    # Primero ejecutar migraciones de Alembic (esto manejará la creación/actualización del esquema)
-    _run_alembic_migrations(engine, db_path)
+    # Ejecutar Alembic como estrategia primaria de init/migración
+    alembic_ok = _run_alembic_migrations(engine, db_path)
 
-    # Como fallback, crear tablas con SQLAlchemy si Alembic falló
-    from infrastructure.database.models import Base
+    if not alembic_ok:
+        # Fallback: create_all + migraciones SQL directas para columnas faltantes
+        logger.info("Alembic no disponible — usando fallback create_all + direct migrations")
+        from infrastructure.database.models import Base
 
-    Base.metadata.create_all(bind=engine)
+        Base.metadata.create_all(bind=engine)
+        _apply_direct_migrations(engine)
+    else:
+        # Alembic fue exitoso; create_all es idempotente y solo añade tablas nuevas si las hubiera
+        from infrastructure.database.models import Base
 
-    # Aplicar migraciones SQL directas para columnas faltantes
-    _apply_direct_migrations(engine)
+        Base.metadata.create_all(bind=engine)
 
     # Session factory para este usuario
     session_factory = sessionmaker(

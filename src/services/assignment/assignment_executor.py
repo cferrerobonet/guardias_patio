@@ -9,12 +9,10 @@ from collections import defaultdict
 from datetime import date
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from domain.services import (
-    AsignacionGuardiaService,
-    DisponibilidadProfesorService,
-    DistribucionCuotasService,
-    EquidadGuardiasService,
-)
+from services.asignacion_guardia_service import AsignacionGuardiaService
+from services.disponibilidad_profesor_service import DisponibilidadProfesorService
+from services.distribucion_cuotas_service import DistribucionCuotasService
+from services.equidad_guardias_service import EquidadGuardiasService
 from infrastructure.database.models import Configuracion, Guardia, Profesor
 from services.assignment.profesor_filter import ProfesorFilter, _limpiar_cache_elegibilidad
 from services.assignment.score_calculator import ScoreCalculator

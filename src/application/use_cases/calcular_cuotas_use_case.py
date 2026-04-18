@@ -8,7 +8,7 @@ Este Use Case NO contiene lógica de negocio, solo coordina.
 import logging
 from typing import List
 
-from domain.services.distribucion_cuotas_service import DistribucionCuotasService
+from services.distribucion_cuotas_service import DistribucionCuotasService
 from infrastructure.database.models import Configuracion, Profesor
 from sqlalchemy.orm import Session
 

@@ -24,7 +24,7 @@ from infrastructure.database.models import Guardia, Profesor, Zona
 from sqlalchemy.orm import Session
 from utils import get_logger
 
-from domain.services.disponibilidad_profesor_service import (
+from services.disponibilidad_profesor_service import (
     DisponibilidadProfesorService,
 )
 

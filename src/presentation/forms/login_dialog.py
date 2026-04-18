@@ -4,7 +4,7 @@ Diálogo de Login para Sistema Multi-Usuario
 
 from core.paths import get_resources_directory
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QRegularExpressionValidator
 from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -63,23 +63,34 @@ class RegisterDialog(QDialog):
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("Ej: carlos@ceip.es")
         self.username_input.setMinimumHeight(35)
+        # UX-01: validar en tiempo real — sólo caracteres permitidos en username
+        username_validator = QRegularExpressionValidator(
+            __import__('PyQt6.QtCore', fromlist=['QRegularExpression']).QRegularExpression(
+                r"[a-zA-Z0-9._\-@]+"
+            )
+        )
+        self.username_input.setValidator(username_validator)
+        self.username_input.setAccessibleName("Campo nombre de usuario")
         form_layout.addRow("👤 Usuario:", self.username_input)
 
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("Ej: carlos@ejemplo.com (OBLIGATORIO)")
         self.email_input.setMinimumHeight(35)
+        self.email_input.setAccessibleName("Campo email")
         form_layout.addRow("📧 Email *:", self.email_input)
 
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Mín. 8 chars, mayúscula, número, símbolo")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setMinimumHeight(35)
+        self.password_input.setAccessibleName("Campo contraseña")
         form_layout.addRow("🔑 Contraseña:", self.password_input)
 
         self.password_confirm_input = QLineEdit()
         self.password_confirm_input.setPlaceholderText("Repite la contraseña")
         self.password_confirm_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_confirm_input.setMinimumHeight(35)
+        self.password_confirm_input.setAccessibleName("Campo confirmar contraseña")
         self.password_confirm_input.returnPressed.connect(self.register)
         form_layout.addRow("🔑 Confirmar:", self.password_confirm_input)
 
@@ -87,7 +98,8 @@ class RegisterDialog(QDialog):
 
         # Requisitos de contraseña
         requirements = QLabel(
-            "✓ Mínimo 4 caracteres\n"
+            "✓ Mínimo 8 caracteres\n"
+            "✓ Al menos una mayúscula, un número y un símbolo\n"
             "✓ Las contraseñas deben coincidir\n"
             "✓ Email obligatorio para recuperación"
         )
@@ -138,6 +150,13 @@ class RegisterDialog(QDialog):
         buttons_layout.addWidget(register_btn)
 
         layout.addLayout(buttons_layout)
+
+        # UX-03: TabOrder explícito para navegación por teclado
+        self.setTabOrder(self.username_input, self.email_input)
+        self.setTabOrder(self.email_input, self.password_input)
+        self.setTabOrder(self.password_input, self.password_confirm_input)
+        self.setTabOrder(self.password_confirm_input, register_btn)
+        self.setTabOrder(register_btn, cancel_btn)
 
     def register(self):
         """Registra un nuevo usuario con validación de contraseñas."""
@@ -205,18 +224,30 @@ class RegisterDialog(QDialog):
         if len(password) < 4:
             from utils.ui_helpers import MESSAGEBOX_STYLE
 
-            # Validar política completa de contraseñas
-            policy_ok, policy_msg = self.user_auth.validate_password_policy(password)
-            if not policy_ok:
-                msg = QMessageBox(self)
-                msg.setIcon(QMessageBox.Icon.Warning)
-                msg.setWindowTitle("Contraseña débil")
-                msg.setWindowIcon(get_corporate_icon())
-                msg.setText(policy_msg)
-                msg.setStyleSheet(MESSAGEBOX_STYLE)
-                msg.exec()
-                self.password_input.setFocus()
-                return
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Campo vacío")
+            msg.setWindowIcon(get_corporate_icon())
+            msg.setText("Por favor introduce una contraseña")
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.exec()
+            self.password_input.setFocus()
+            return
+
+        # Validar política completa de contraseñas
+        policy_ok, policy_msg = self.user_auth.validate_password_policy(password)
+        if not policy_ok:
+            from utils.ui_helpers import MESSAGEBOX_STYLE
+
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Contraseña débil")
+            msg.setWindowIcon(get_corporate_icon())
+            msg.setText(policy_msg)
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.exec()
+            self.password_input.setFocus()
+            return
 
         if password != password_confirm:
             from utils.ui_helpers import MESSAGEBOX_STYLE
@@ -371,6 +402,7 @@ class LoginDialog(QDialog):
         self.username_combo.setPlaceholderText("Selecciona o escribe tu usuario")
         self.username_combo.setMinimumHeight(35)
         self.username_combo.setMinimumWidth(240)
+        self.username_combo.setAccessibleName("Campo selector de usuario")
         self.username_combo.currentTextChanged.connect(self.on_user_selected)
 
         # Label con icono para usuario
@@ -383,6 +415,7 @@ class LoginDialog(QDialog):
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setMinimumHeight(35)
         self.password_input.setMinimumWidth(240)
+        self.password_input.setAccessibleName("Campo contraseña de acceso")
         self.password_input.returnPressed.connect(self.login)
 
         # Label con icono para contraseña
@@ -456,6 +489,12 @@ class LoginDialog(QDialog):
         buttons_layout.addWidget(self.login_btn)
 
         layout.addLayout(buttons_layout)
+
+        # UX-03: TabOrder explícito en LoginDialog
+        self.setTabOrder(self.username_combo, self.password_input)
+        self.setTabOrder(self.password_input, self.login_btn)
+        self.setTabOrder(self.login_btn, self.register_btn)
+        self.setTabOrder(self.register_btn, self.delete_user_btn)
 
         # Link de recuperación de contraseña
         forgot_password_label = QLabel(

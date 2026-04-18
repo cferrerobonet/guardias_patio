@@ -18,6 +18,9 @@ Documentación:
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from api.routers import (
     cuotas_router,
@@ -31,6 +34,9 @@ from core.observability.health import get_health_checker
 
 logger = get_logger(__name__)
 
+# Rate limiter — máximo 60 peticiones/minuto por IP
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+
 # Crear aplicación FastAPI
 app = FastAPI(
     title="Guardias de Patio API",
@@ -39,6 +45,10 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Adjuntar rate limiter al estado de la app
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configurar CORS
 app.add_middleware(

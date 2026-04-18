@@ -28,6 +28,7 @@ from presentation.forms.login_dialog import LoginDialog
 from PyQt6.QtCore import QLibraryInfo, QLocale, QTranslator
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
+from PyQt6.QtCore import Qt
 from sync import SyncManager, get_default_backend
 from utils.corporate_branding import apply_corporate_branding
 
@@ -66,6 +67,11 @@ def main():
 
     sys.excepthook = exception_hook
     logger.info("✓ Manejador global de excepciones instalado")
+
+    # UX-04: DPI awareness — PassThrough evita escalado redondeado en pantallas HiDPI
+    QApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+    )
 
     # Crear la aplicación
     app = QApplication(sys.argv)

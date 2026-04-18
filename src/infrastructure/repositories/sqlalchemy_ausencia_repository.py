@@ -5,54 +5,55 @@ SQLAlchemy Ausencia Repository Implementation
 from datetime import date
 from typing import Optional
 
+from domain.entities.ausencia_entity import AusenciaEntity
 from domain.repositories.ausencia_repository import IAusenciaRepository
-from sqlalchemy.orm import Session
-
 from infrastructure.database.models import Ausencia
+from infrastructure.mappers.ausencia_mapper import AusenciaMapper
+from sqlalchemy.orm import Session
 
 
 class SQLAlchemyAusenciaRepository(IAusenciaRepository):
     """
     Implementación SQLAlchemy del repositorio de ausencias.
+    Retorna entidades de dominio AusenciaEntity, nunca modelos ORM.
     """
 
     def __init__(self, session: Session):
         self.session = session
 
-    def get_by_id(self, entity_id: int) -> Optional[Ausencia]:
-        """Obtiene ausencia por ID."""
-        return self.session.query(Ausencia).get(entity_id)
+    def get_by_id(self, entity_id: int) -> Optional[AusenciaEntity]:
+        model = self.session.query(Ausencia).get(entity_id)
+        return AusenciaMapper.to_entity(model) if model else None
 
-    def get_all(self) -> list[Ausencia]:
-        """Obtiene todas las ausencias."""
-        return self.session.query(Ausencia).all()
+    def get_all(self) -> list[AusenciaEntity]:
+        return [AusenciaMapper.to_entity(m) for m in self.session.query(Ausencia).all()]
 
-    def save(self, entity: Ausencia) -> Ausencia:
-        """Guarda o actualiza ausencia."""
-        self.session.add(entity)
+    def save(self, entity: AusenciaEntity) -> AusenciaEntity:
+        if entity.id:
+            model = self.session.query(Ausencia).get(entity.id) or Ausencia()
+        else:
+            model = Ausencia()
+        AusenciaMapper.to_model(entity, model)
+        self.session.add(model)
         self.session.flush()
-        return entity
+        return AusenciaMapper.to_entity(model)
 
     def delete(self, entity_id: int) -> bool:
-        """Elimina ausencia."""
-        ausencia = self.get_by_id(entity_id)
-        if ausencia:
-            self.session.delete(ausencia)
+        model = self.session.query(Ausencia).get(entity_id)
+        if model:
+            self.session.delete(model)
             self.session.flush()
             return True
         return False
 
     def exists(self, entity_id: int) -> bool:
-        """Verifica si existe una ausencia con el ID dado."""
         return self.session.query(Ausencia).filter_by(id=entity_id).count() > 0
 
     def count(self) -> int:
-        """Cuenta el total de ausencias."""
         return self.session.query(Ausencia).count()
 
-    def find_by_profesor_and_date(self, profesor_id: int, fecha: date) -> Optional[Ausencia]:
-        """Busca ausencia activa de un profesor en una fecha."""
-        return (
+    def find_by_profesor_and_date(self, profesor_id: int, fecha: date) -> Optional[AusenciaEntity]:
+        model = (
             self.session.query(Ausencia)
             .filter(
                 Ausencia.profesor_id == profesor_id,
@@ -62,12 +63,12 @@ class SQLAlchemyAusenciaRepository(IAusenciaRepository):
             )
             .first()
         )
+        return AusenciaMapper.to_entity(model) if model else None
 
     def find_by_profesor_and_period(
         self, profesor_id: int, fecha_inicio: date, fecha_fin: date
-    ) -> list[Ausencia]:
-        """Busca ausencias de un profesor en un periodo."""
-        return (
+    ) -> list[AusenciaEntity]:
+        models = (
             self.session.query(Ausencia)
             .filter(
                 Ausencia.profesor_id == profesor_id,
@@ -76,14 +77,13 @@ class SQLAlchemyAusenciaRepository(IAusenciaRepository):
             )
             .all()
         )
+        return [AusenciaMapper.to_entity(m) for m in models]
 
     def count_by_profesor(self, profesor_id: int) -> int:
-        """Cuenta ausencias totales de un profesor."""
         return self.session.query(Ausencia).filter(Ausencia.profesor_id == profesor_id).count()
 
-    def find_active_in_date(self, fecha: date) -> list[Ausencia]:
-        """Encuentra todas las ausencias activas en una fecha."""
-        return (
+    def find_active_in_date(self, fecha: date) -> list[AusenciaEntity]:
+        models = (
             self.session.query(Ausencia)
             .filter(
                 Ausencia.fecha_inicio <= fecha,
@@ -92,3 +92,4 @@ class SQLAlchemyAusenciaRepository(IAusenciaRepository):
             )
             .all()
         )
+        return [AusenciaMapper.to_entity(m) for m in models]
