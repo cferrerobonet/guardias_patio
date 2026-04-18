@@ -219,7 +219,8 @@ class GeneracionPanel(QGroupBox):
                 config.algoritmo_asignacion = algoritmo_seleccionado
                 self.session.commit()
 
-            count_guardias = self.session.query(Guardia).count()
+            from application.app_services import AppServices
+            count_guardias = AppServices(self.session).contar_guardias()
             eliminar_existentes = True
 
             if count_guardias > 0:
@@ -273,7 +274,8 @@ class GeneracionPanel(QGroupBox):
         from PyQt6.QtWidgets import QMessageBox
         from utils.ui_helpers import MESSAGEBOX_STYLE
 
-        count = self.session.query(Guardia).count()
+        from application.app_services import AppServices
+        count = AppServices(self.session).contar_guardias()
         if count == 0:
             msg = QMessageBox(self)
             msg.setWindowTitle("Sin Guardias")
@@ -437,9 +439,10 @@ class GeneracionPanel(QGroupBox):
             turno_mixto = []
 
             for pid, cnt in resumen.resumen_por_profesor.items():
-                prof = self.session.query(Profesor).get(pid)
+                from application.app_services import AppServices
+                prof = AppServices(self.session).profesores.get_by_id(pid)
                 if prof:
-                    turno = normalizar_turno(prof.turno)
+                    turno = normalizar_turno(str(prof.turno))
                     if turno == "mañana":
                         turno_manana.append((prof, cnt))
                     elif turno == "tarde":
@@ -540,8 +543,10 @@ class GeneracionPanel(QGroupBox):
         lineas.append("")
 
         # Recursos
-        num_zonas = self.session.query(Zona).count()
-        num_prof = self.session.query(Profesor).count()
+        from application.app_services import AppServices
+        _svc = AppServices(self.session)
+        num_zonas = _svc.contar_zonas()
+        num_prof = _svc.contar_profesores()
         lineas.append(format_terminal_label("📊 RECURSOS:"))
         lineas.append(
             f"  • {format_terminal_label('Profesores:')} "
@@ -578,15 +583,8 @@ class GeneracionPanel(QGroupBox):
         lineas = []
 
         # Obtener profesores con fechas especiales
-        profesores_fechas = (
-            self.session.query(Profesor)
-            .filter(
-                Profesor.activo.is_(True),
-                (Profesor.fecha_inicio_guardias.isnot(None))
-                | (Profesor.fecha_fin_guardias.isnot(None)),
-            )
-            .all()
-        )
+        from application.app_services import AppServices
+        profesores_fechas = AppServices(self.session).profesores_activos_con_fechas_especiales()
 
         if not profesores_fechas:
             return lineas  # No hay profesores con fechas especiales
@@ -602,11 +600,8 @@ class GeneracionPanel(QGroupBox):
             guardias_asignadas = resumen.resumen_por_profesor.get(prof.id, 0)
 
             # Obtener guardias del profesor para analizar fechas
-            guardias_prof = (
-                self.session.query(Guardia)
-                .filter(Guardia.profesor_id == prof.id)
-                .all()
-            )
+            from application.app_services import AppServices
+            guardias_prof = AppServices(self.session).guardias.find_by_profesor(prof.id)
 
             fechas_guardias = [g.fecha for g in guardias_prof]
             fecha_min = min(fechas_guardias) if fechas_guardias else None
@@ -706,7 +701,8 @@ class GeneracionPanel(QGroupBox):
 
     def cargar_datos(self):
         """Recarga datos cuando cambia el curso."""
-        count = self.session.query(Guardia).count()
+        from application.app_services import AppServices
+        count = AppServices(self.session).contar_guardias()
         if count == 0:
             self._mostrar_mensaje_inicial()
             self._ultimo_resumen = None

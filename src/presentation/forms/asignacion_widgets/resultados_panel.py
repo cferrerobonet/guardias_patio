@@ -208,9 +208,10 @@ class ResultadosPanel(QGroupBox):
             # Obtener todos los profesores con sus turnos
             profesores_info = []
             for pid, cnt in resumen.resumen_por_profesor.items():
-                prof = self.session.query(Profesor).get(pid)
+                from application.app_services import AppServices
+                prof = AppServices(self.session).profesores.get_by_id(pid)
                 if prof:
-                    turno = (prof.turno or "mixto").lower().strip()
+                    turno = str(prof.turno).lower().strip()
                     # Normalizar turno
                     if turno in ("mañana", "manana", "morning"):
                         turno_norm = "mañana"

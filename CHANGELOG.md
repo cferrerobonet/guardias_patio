@@ -7,6 +7,43 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.6.0] - 2026-04-19
+
+### 🎯 Resumen
+
+ARQ-02 Fase 3: eliminación de acceso directo a SQLAlchemy desde 12 widgets complejos de la capa de presentación.
+
+### ✨ Added
+
+- `SQLAlchemyGuardiaRepository`: 5 nuevos métodos (`find_by_curso`, `count_by_curso`, `count_profesores_distintos_by_curso`, `count_zonas_distintas_by_curso`, `find_by_curso_y_rango_fechas`)
+- `SQLAlchemyAusenciaRepository`: `find_active_in_rango`
+- `SQLAlchemyConfiguracionRepository`: `find_by_curso_activo_id`
+- `AppServices`: 3 helpers cross-aggregate (`profesores_con_guardias_en_curso`, `ausencias_de_profesores_en_curso`, `profesores_activos_con_fechas_especiales`)
+
+### Changed
+
+- **ARQ-02 Fase 3**: 12 widgets migrados para usar `AppServices` en lugar de `session.query(...)` directo:
+  - `dashboard_form.py`: 5 queries (config, guardias, profesores × 2, zona)
+  - `profesor_form.py`: 2 queries de lectura (2 conservadas por formato JSON ORM)
+  - `reportes_form.py`: 3 queries (profesor, guardias, config)
+  - `asignacion_guardias_form.py`: 2 queries `count`
+  - `asignacion_widgets/resultados_panel.py`: 1 query `get_by_id`
+  - `asignacion_widgets/incidencias_panel.py`: 4 queries `count`
+  - `asignacion_widgets/generacion_panel.py`: 7 queries (1 escritura ORM conservada)
+  - `gestion_cursos_widget.py`: 13 queries
+  - `vista_calendario.py`: 7 queries
+  - `gestionar_ausencias.py`: 4 queries
+  - `gestor_sustituciones.py`: 10 queries de lectura (1 escritura ORM justificada)
+- `tests/test_forms_basico.py`: corregido dato inválido `horas_contrato` > 40 en fixture
+- `tests/test_gestor_sustituciones.py`: `isinstance(guardia, Guardia)` → `isinstance(guardia, GuardiaEntity)`
+
+### 🧹 Housekeeping
+
+- Eliminados 50+ bloques `session.query()` directos en capa de presentación
+- ARQ-02 completado: 21 widgets migrados en total (Fase 2: 9, Fase 3: 12)
+
+---
+
 ## [3.5.0] - 2026-04-18
 
 ### 🎯 Resumen

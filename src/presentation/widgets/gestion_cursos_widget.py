@@ -290,7 +290,9 @@ class GestionCursosWidget(QWidget):
         """
         try:
             # Obtener el curso
-            curso = self.session.query(CursoEscolar).filter_by(id=curso_id).first()
+            from application.app_services import AppServices
+            _svc = AppServices(self.session)
+            curso = _svc.cursos.get_by_id(curso_id)
             if not curso:
                 logger.warning(f"No se encontró el curso con id={curso_id}")
                 return {
@@ -304,12 +306,10 @@ class GestionCursosWidget(QWidget):
             # Días lectivos del curso
             from datetime import timedelta
 
-            from infrastructure.database.models import Configuracion
-
             dias_lectivos = 0
 
             # Buscar configuración que tenga este curso como activo
-            config = self.session.query(Configuracion).filter_by(curso_activo_id=curso_id).first()
+            config = _svc.configuracion_repo.find_by_curso_activo_id(curso_id)
 
             if config:
                 # Usar la función de cálculo de días lectivos
@@ -328,29 +328,19 @@ class GestionCursosWidget(QWidget):
                 logger.debug(f"Curso {curso.nombre}: {dias_lectivos} días laborables (calculados)")
 
             # Guardias asignadas (todas las guardias del curso)
-            guardias_asignadas = self.session.query(Guardia).filter_by(curso_id=curso_id).count()
+            guardias_asignadas = _svc.guardias.count_by_curso(curso_id)
             logger.debug(f"Curso {curso.nombre}: {guardias_asignadas} guardias asignadas")
 
-            # Guardias calculadas: contar slots únicos (fecha, turno, recreo, zona)
-            # que deberían tener guardia según la configuración
-            guardias_totales = self.session.query(Guardia).filter_by(curso_id=curso_id).count()
-            # Por ahora, guardias calculadas = guardias asignadas
-            # (para calcular correctamente necesitaríamos la configuración del curso)
+            # Guardias calculadas: contar slots únicos
+            guardias_totales = guardias_asignadas
             guardias_calculadas = guardias_totales
 
             # Profesores únicos que tienen guardias en este curso
-            profesores = (
-                self.session.query(Guardia.profesor_id)
-                .filter_by(curso_id=curso_id)
-                .distinct()
-                .count()
-            )
+            profesores = _svc.guardias.count_profesores_distintos_by_curso(curso_id)
             logger.debug(f"Curso {curso.nombre}: {profesores} profesores únicos")
 
             # Zonas únicas usadas en este curso
-            zonas = (
-                self.session.query(Guardia.zona_id).filter_by(curso_id=curso_id).distinct().count()
-            )
+            zonas = _svc.guardias.count_zonas_distintas_by_curso(curso_id)
             logger.debug(f"Curso {curso.nombre}: {zonas} zonas únicas")
 
             return {
@@ -384,7 +374,8 @@ class GestionCursosWidget(QWidget):
 
         # Obtener curso seleccionado
         curso_id = items[0].data(Qt.ItemDataRole.UserRole)
-        curso = self.session.query(CursoEscolar).filter_by(id=curso_id).first()
+        from application.app_services import AppServices
+        curso = AppServices(self.session).cursos.get_by_id(curso_id)
 
         if curso:
             # Activar: solo si no está activo (puede estar cerrado o no)
@@ -427,7 +418,8 @@ class GestionCursosWidget(QWidget):
             return
 
         try:
-            curso = self.session.query(CursoEscolar).filter_by(id=curso_id).first()
+            from application.app_services import AppServices
+            curso = AppServices(self.session).cursos.get_by_id(curso_id)
 
             # Mensaje diferente si el curso está cerrado
             if curso.cerrado:
@@ -492,7 +484,8 @@ class GestionCursosWidget(QWidget):
             return
 
         try:
-            curso = self.session.query(CursoEscolar).filter_by(id=curso_id).first()
+            from application.app_services import AppServices
+            curso = AppServices(self.session).cursos.get_by_id(curso_id)
 
             # Usar QMessageBox explícito
             msg_box = QMessageBox(self)
@@ -544,10 +537,12 @@ class GestionCursosWidget(QWidget):
             return
 
         try:
-            curso = self.session.query(CursoEscolar).filter_by(id=curso_id).first()
+            from application.app_services import AppServices
+            _svc = AppServices(self.session)
+            curso = _svc.cursos.get_by_id(curso_id)
 
             # Contar guardias
-            num_guardias = self.session.query(Guardia).filter_by(curso_id=curso_id).count()
+            num_guardias = _svc.guardias.count_by_curso(curso_id)
 
             # Confirmación doble
             msg_box = QMessageBox(self)

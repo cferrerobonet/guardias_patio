@@ -253,13 +253,15 @@ class DashboardForm(QWidget):
             logger.info("Cargando datos del dashboard...")
 
             # Obtener configuración activa
-            config = self.session.query(Configuracion).first()
+            from application.app_services import AppServices
+            _svc = AppServices(self.session)
+            config = _svc.configuracion_repo.get_first()
             if not config:
                 self._mostrar_error("No hay configuración activa")
                 return
 
-            # Obtener guardias
-            guardias = self.session.query(Guardia).filter(Guardia.curso_id == config.id).all()
+            # Obtener guardias del curso
+            guardias = _svc.guardias.find_by_curso(config.id)
 
             if not guardias:
                 self._mostrar_sin_datos()
@@ -333,7 +335,8 @@ class DashboardForm(QWidget):
         guardias_por_profesor = {}
         for guardia in guardias:
             if guardia.profesor_id:
-                prof = self.session.query(Profesor).get(guardia.profesor_id)
+                from application.app_services import AppServices
+                prof = AppServices(self.session).profesores.get_by_id(guardia.profesor_id)
                 if prof:
                     nombre = prof.nombre_completo
                     guardias_por_profesor[nombre] = guardias_por_profesor.get(nombre, 0) + 1
@@ -411,7 +414,8 @@ class DashboardForm(QWidget):
         guardias_por_profesor = {}
         for guardia in guardias:
             if guardia.profesor_id:
-                prof = self.session.query(Profesor).get(guardia.profesor_id)
+                from application.app_services import AppServices
+                prof = AppServices(self.session).profesores.get_by_id(guardia.profesor_id)
                 if prof:
                     nombre = prof.nombre_completo
                     guardias_por_profesor[nombre] = guardias_por_profesor.get(nombre, 0) + 1
@@ -461,9 +465,10 @@ class DashboardForm(QWidget):
         zonas_count = {}
         for guardia in guardias:
             if guardia.zona_id:
-                zona = self.session.query(Zona).get(guardia.zona_id)
+                from application.app_services import AppServices
+                zona = AppServices(self.session).zonas.get_by_id(guardia.zona_id)
                 if zona:
-                    zonas_count[zona.nombre] = zonas_count.get(zona.nombre, 0) + 1
+                    zonas_count[zona.nombre_zona] = zonas_count.get(zona.nombre_zona, 0) + 1
 
         if not zonas_count:
             self.canvas_zonas.axes.text(

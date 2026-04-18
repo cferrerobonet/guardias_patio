@@ -184,8 +184,10 @@ class IncidenciasPanel(QGroupBox):
     def _analizar_recursos(self) -> list:
         """Analiza ratio de recursos profesor/zona."""
         lineas = []
-        num_zonas = self.session.query(Zona).count()
-        num_profesores = self.session.query(Profesor).count()
+        from application.app_services import AppServices
+        _svc = AppServices(self.session)
+        num_zonas = _svc.contar_zonas()
+        num_profesores = _svc.contar_profesores()
 
         lineas.append(format_terminal_label("2️⃣ ANÁLISIS DE RECURSOS"))
         lineas.append("")
@@ -243,8 +245,10 @@ class IncidenciasPanel(QGroupBox):
     def _generar_recomendaciones(self) -> list:
         """Genera recomendaciones para solucionar incidencias."""
         lineas = []
-        num_zonas = self.session.query(Zona).count()
-        num_profesores = self.session.query(Profesor).count()
+        from application.app_services import AppServices
+        _svc = AppServices(self.session)
+        num_zonas = _svc.contar_zonas()
+        num_profesores = _svc.contar_profesores()
 
         lineas.append("")
         lineas.append(format_terminal_success("💡 SOLUCIONES RECOMENDADAS:"))

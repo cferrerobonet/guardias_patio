@@ -245,3 +245,60 @@ class AppServices:
         if not todas:
             return None
         return max(g.fecha for g in todas)
+
+    # ------------------------------------------------------------------
+    # Helpers cross-aggregate (queries que involucran múltiples modelos)
+    # ------------------------------------------------------------------
+
+    def profesores_con_guardias_en_curso(self, curso_id: int):
+        """Retorna entidades ProfesorEntity distintas que tienen guardias en el curso dado."""
+        from infrastructure.database.models import Guardia as GuardiaModel, Profesor as ProfesorModel
+        from infrastructure.mappers.profesor_mapper import ProfesorMapper
+
+        models = (
+            self._session.query(ProfesorModel)
+            .join(GuardiaModel, ProfesorModel.id == GuardiaModel.profesor_id)
+            .filter(GuardiaModel.curso_id == curso_id)
+            .distinct()
+            .order_by(ProfesorModel.nombre_completo)
+            .all()
+        )
+        return [ProfesorMapper.to_entity(m) for m in models]
+
+    def ausencias_de_profesores_en_curso(self, curso_id: int):
+        """Retorna ausencias de profesores que tienen guardias en el curso dado."""
+        from infrastructure.database.models import Ausencia as AusenciaModel, Guardia as GuardiaModel
+        from infrastructure.mappers.ausencia_mapper import AusenciaMapper
+
+        profesor_ids = [
+            row[0]
+            for row in self._session.query(GuardiaModel.profesor_id)
+            .filter(GuardiaModel.curso_id == curso_id)
+            .distinct()
+            .all()
+        ]
+        if not profesor_ids:
+            return []
+        models = (
+            self._session.query(AusenciaModel)
+            .filter(AusenciaModel.profesor_id.in_(profesor_ids))
+            .order_by(AusenciaModel.fecha_inicio.desc())
+            .all()
+        )
+        return [AusenciaMapper.to_entity(m) for m in models]
+
+    def profesores_activos_con_fechas_especiales(self):
+        """Retorna profesores activos que tienen fecha_inicio_guardias o fecha_fin_guardias."""
+        from infrastructure.database.models import Profesor as ProfesorModel
+        from infrastructure.mappers.profesor_mapper import ProfesorMapper
+
+        models = (
+            self._session.query(ProfesorModel)
+            .filter(
+                ProfesorModel.activo.is_(True),
+                (ProfesorModel.fecha_inicio_guardias.isnot(None))
+                | (ProfesorModel.fecha_fin_guardias.isnot(None)),
+            )
+            .all()
+        )
+        return [ProfesorMapper.to_entity(m) for m in models]

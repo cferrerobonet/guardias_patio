@@ -93,3 +93,16 @@ class SQLAlchemyAusenciaRepository(IAusenciaRepository):
             .all()
         )
         return [AusenciaMapper.to_entity(m) for m in models]
+
+    def find_active_in_rango(self, fecha_inicio: date, fecha_fin: date) -> list[AusenciaEntity]:
+        """Retorna ausencias activas que se solapan con el rango dado."""
+        models = (
+            self.session.query(Ausencia)
+            .filter(
+                Ausencia.activa == True,  # noqa: E712
+                Ausencia.fecha_inicio <= fecha_fin,
+                Ausencia.fecha_fin >= fecha_inicio,
+            )
+            .all()
+        )
+        return [AusenciaMapper.to_entity(m) for m in models]

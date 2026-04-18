@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import pytest
 from infrastructure.database.models import Guardia, Profesor, Zona
+from domain.entities.guardia_entity import GuardiaEntity
 from presentation.widgets.gestor_sustituciones import GestorSustituciones
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMessageBox
@@ -246,7 +247,7 @@ class TestGestorSustitucionesBuscarGuardias:
         item = gestor.tabla_guardias.item(0, 0)
         guardia = item.data(Qt.ItemDataRole.UserRole)
 
-        assert isinstance(guardia, Guardia)
+        assert isinstance(guardia, GuardiaEntity)
         assert guardia.fecha == date.today()
 
     def test_buscar_guardias_maneja_excepciones(self, gestor):

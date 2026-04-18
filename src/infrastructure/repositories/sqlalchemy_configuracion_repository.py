@@ -59,3 +59,7 @@ class SQLAlchemyConfiguracionRepository(IConfiguracionRepository):
     def get_first(self) -> Optional[ConfiguracionEntity]:
         model = self.session.query(Configuracion).first()
         return ConfiguracionMapper.to_entity(model) if model else None
+
+    def find_by_curso_activo_id(self, curso_id: int) -> Optional[ConfiguracionEntity]:
+        model = self.session.query(Configuracion).filter_by(curso_activo_id=curso_id).first()
+        return ConfiguracionMapper.to_entity(model) if model else None

@@ -261,7 +261,11 @@ class GestorSustituciones(BaseForm):
     def cargar_profesores(self):
         """Cargar la lista de profesores en los combos."""
         try:
-            profesores = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
+            from application.app_services import AppServices
+            profesores = sorted(
+                AppServices(self.session).profesores.get_all(),
+                key=lambda p: p.nombre_completo,
+            )
 
             self.combo_profesor_original.clear()
             self.combo_profesor_sustituto.clear()
@@ -282,19 +286,22 @@ class GestorSustituciones(BaseForm):
             profesor_id = self.combo_profesor_original.currentData()
 
             # Consultar guardias
-            query = self.session.query(Guardia).filter(Guardia.fecha == fecha)
-
-            if profesor_id is not None:
-                query = query.filter(Guardia.profesor_id == profesor_id)
-
-            guardias = query.all()
+            from application.app_services import AppServices
+            _svc = AppServices(self.session)
+            guardias_fecha = _svc.guardias.find_by_fecha(fecha)
+            guardias = [
+                g for g in guardias_fecha
+                if profesor_id is None or g.profesor_id == profesor_id
+            ]
 
             # Llenar tabla
             self.tabla_guardias.setRowCount(len(guardias))
 
             for i, guardia in enumerate(guardias):
-                profesor = self.session.query(Profesor).get(guardia.profesor_id)
-                zona = self.session.query(Zona).get(guardia.zona_id)
+                from application.app_services import AppServices
+                _svc = AppServices(self.session)
+                profesor = _svc.profesores.get_by_id(guardia.profesor_id)
+                zona = _svc.zonas.get_by_id(guardia.zona_id)
 
                 self.tabla_guardias.setItem(i, 0, QTableWidgetItem(str(guardia.id)))
                 self.tabla_guardias.setItem(
@@ -339,13 +346,12 @@ class GestorSustituciones(BaseForm):
             guardia = self.tabla_guardias.item(fila, 0).data(Qt.ItemDataRole.UserRole)
 
             # Buscar profesores que NO tengan guardia ese día
-            guardias_ese_dia = (
-                self.session.query(Guardia.profesor_id).filter(Guardia.fecha == guardia.fecha).all()
-            )
+            from application.app_services import AppServices
+            _svc = AppServices(self.session)
+            guardias_ese_dia = _svc.guardias.find_by_fecha(guardia.fecha)
+            profesores_ocupados = {g.profesor_id for g in guardias_ese_dia}
 
-            profesores_ocupados = {prof_id for (prof_id,) in guardias_ese_dia}
-
-            todos_profesores = self.session.query(Profesor).all()
+            todos_profesores = _svc.profesores.get_all()
             disponibles = [p for p in todos_profesores if p.id not in profesores_ocupados]
 
             if disponibles:
@@ -393,16 +399,13 @@ class GestorSustituciones(BaseForm):
                 return
 
             # Verificar que el sustituto no tenga guardia ese día
-            guardia_existente = (
-                self.session.query(Guardia)
-                .filter(
-                    Guardia.profesor_id == nuevo_profesor_id,
-                    Guardia.fecha == guardia.fecha,
-                )
-                .first()
-            )
+            from application.app_services import AppServices
+            _svc = AppServices(self.session)
+            tiene_guardia = _svc.guardias.contar_guardias_profesor_en_fecha(
+                nuevo_profesor_id, guardia.fecha
+            ) > 0
 
-            if guardia_existente:
+            if tiene_guardia:
                 self.mostrar_advertencia(
                     "Profesor Ocupado",
                     "El profesor seleccionado ya tiene una guardia ese día.\n"
@@ -411,8 +414,10 @@ class GestorSustituciones(BaseForm):
                 return
 
             # Confirmar con el usuario
-            profesor_original = self.session.query(Profesor).get(guardia.profesor_id)
-            profesor_nuevo = self.session.query(Profesor).get(nuevo_profesor_id)
+            from application.app_services import AppServices
+            _svc2 = AppServices(self.session)
+            profesor_original = _svc2.profesores.get_by_id(guardia.profesor_id)
+            profesor_nuevo = _svc2.profesores.get_by_id(nuevo_profesor_id)
 
             respuesta = QMessageBox.question(
                 self,
@@ -426,8 +431,10 @@ class GestorSustituciones(BaseForm):
             )
 
             if respuesta == QMessageBox.StandardButton.Yes:
-                # Realizar sustitución
-                guardia.profesor_id = nuevo_profesor_id
+                # Realizar sustitución — requiere ORM para escritura
+                from infrastructure.database.models import Guardia as GuardiaModel
+                guardia_orm = self.session.query(GuardiaModel).filter_by(id=guardia.id).first()
+                guardia_orm.profesor_id = nuevo_profesor_id
                 self.session.commit()
 
                 self.mostrar_exito(

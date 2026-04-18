@@ -103,7 +103,7 @@ class TestFormulariosCargaMasiva:
             profesor_factory(
                 nombre_completo=f"Profesor {i}",
                 email_corporativo=f"prof{i}@example.com",
-                horas_contrato=20.0 + i,
+                horas_contrato=20.0 + (i % 20),
                 porcentaje_jornada=100.0,
                 turno="mañana",
             )

@@ -314,14 +314,8 @@ class GestionarAusenciasForm(BaseForm):
                 return
 
             # Solo profesores con guardias en el curso activo
-            profesores = (
-                self.session.query(Profesor)
-                .join(Guardia, Profesor.id == Guardia.profesor_id)
-                .filter(Guardia.curso_id == curso_activo.id)
-                .distinct()
-                .order_by(Profesor.nombre_completo)
-                .all()
-            )
+            from application.app_services import AppServices
+            profesores = AppServices(self.session).profesores_con_guardias_en_curso(curso_activo.id)
 
             for p in profesores:
                 self.profesor_combo.addItem(p.nombre_completo, p.id)
@@ -343,22 +337,9 @@ class GestionarAusenciasForm(BaseForm):
                 self.logger.warning("No hay curso activo, no se cargan ausencias")
                 return
 
-            # Filtrar ausencias de profesores que tienen guardias en el curso activo
-            # Subconsulta: IDs de profesores con guardias en el curso activo
-            # Obtener IDs de profesores con guardias
-            profesores_con_guardias = (
-                self.session.query(Guardia.profesor_id)
-                .filter(Guardia.curso_id == curso_activo.id)
-                .distinct()
-            )
-
-            # Ausencias de esos profesores
-            ausencias = (
-                self.session.query(Ausencia)
-                .filter(Ausencia.profesor_id.in_(profesores_con_guardias))
-                .order_by(Ausencia.fecha_inicio.desc())
-                .all()
-            )
+            # Ausencias de profesores con guardias en el curso activo
+            from application.app_services import AppServices
+            ausencias = AppServices(self.session).ausencias_de_profesores_en_curso(curso_activo.id)
 
             for ausencia in ausencias:
                 row = self.tabla_ausencias.rowCount()
@@ -367,7 +348,9 @@ class GestionarAusenciasForm(BaseForm):
                 # Llenar datos
                 self.tabla_ausencias.setItem(row, 0, QTableWidgetItem(str(ausencia.id)))
 
-                profesor_nombre = ausencia.profesor.nombre_completo if ausencia.profesor else "N/A"
+                from application.app_services import AppServices
+                _prof = AppServices(self.session).profesores.get_by_id(ausencia.profesor_id) if ausencia.profesor_id else None
+                profesor_nombre = _prof.nombre_completo if _prof else "N/A"
                 self.tabla_ausencias.setItem(row, 1, QTableWidgetItem(profesor_nombre))
 
                 self.tabla_ausencias.setItem(row, 2, QTableWidgetItem(ausencia.tipo))
@@ -418,7 +401,8 @@ class GestionarAusenciasForm(BaseForm):
             row = selected_rows[0].row()
             ausencia_id = int(self.tabla_ausencias.item(row, 0).text())
 
-            ausencia = self.session.query(Ausencia).get(ausencia_id)
+            from application.app_services import AppServices
+            ausencia = AppServices(self.session).ausencias.get_by_id(ausencia_id)
             if not ausencia:
                 self.mostrar_error("Error", "No se encontró la ausencia")
                 return

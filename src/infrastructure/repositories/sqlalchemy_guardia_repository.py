@@ -355,6 +355,63 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             logger.error("Error al buscar sustituciones", error=str(e))
             raise DatabaseError(f"Error al buscar sustituciones: {e}") from e
 
+    def find_by_curso(self, curso_id: int) -> list[GuardiaEntity]:
+        """Retorna todas las guardias de un curso escolar."""
+        try:
+            models = self.session.query(Guardia).filter_by(curso_id=curso_id).all()
+            return [GuardiaMapper.to_entity(m) for m in models]
+        except Exception as e:
+            raise DatabaseError(f"Error al buscar guardias por curso {curso_id}: {e}") from e
+
+    def count_by_curso(self, curso_id: int) -> int:
+        """Cuenta las guardias de un curso escolar."""
+        try:
+            return self.session.query(Guardia).filter_by(curso_id=curso_id).count()
+        except Exception as e:
+            raise DatabaseError(f"Error al contar guardias del curso {curso_id}: {e}") from e
+
+    def count_profesores_distintos_by_curso(self, curso_id: int) -> int:
+        """Cuenta los profesores únicos con guardias en un curso."""
+        try:
+            return (
+                self.session.query(Guardia.profesor_id)
+                .filter_by(curso_id=curso_id)
+                .distinct()
+                .count()
+            )
+        except Exception as e:
+            raise DatabaseError(f"Error al contar profesores del curso {curso_id}: {e}") from e
+
+    def count_zonas_distintas_by_curso(self, curso_id: int) -> int:
+        """Cuenta las zonas únicas con guardias en un curso."""
+        try:
+            return (
+                self.session.query(Guardia.zona_id)
+                .filter_by(curso_id=curso_id)
+                .distinct()
+                .count()
+            )
+        except Exception as e:
+            raise DatabaseError(f"Error al contar zonas del curso {curso_id}: {e}") from e
+
+    def find_by_curso_y_rango_fechas(
+        self, curso_id: int, fecha_inicio: date, fecha_fin: date
+    ) -> list[GuardiaEntity]:
+        """Retorna guardias de un curso en un rango de fechas."""
+        try:
+            models = (
+                self.session.query(Guardia)
+                .filter(
+                    Guardia.curso_id == curso_id,
+                    Guardia.fecha >= fecha_inicio,
+                    Guardia.fecha <= fecha_fin,
+                )
+                .all()
+            )
+            return [GuardiaMapper.to_entity(m) for m in models]
+        except Exception as e:
+            raise DatabaseError(f"Error al buscar guardias por curso y rango: {e}") from e
+
     @log_function_call()
     def delete_all(self) -> int:
         """

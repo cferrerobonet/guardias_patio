@@ -95,7 +95,8 @@ class VistaCalendario(BaseForm):
             Set de fechas que son días lectivos
         """
         if self._dias_lectivos_cache is None:
-            config = self.session.query(Configuracion).first()
+            from application.app_services import AppServices
+            config = AppServices(self.session).configuracion_repo.get_first()
             if config:
                 dias_list = listar_dias_lectivos(config)
                 self._dias_lectivos_cache = set(dias_list)
@@ -370,12 +371,14 @@ class VistaCalendario(BaseForm):
         zonas_por_recreo = {}
 
         # Obtener configuración
-        config = self.session.query(Configuracion).first()
+        from application.app_services import AppServices
+        _svc = AppServices(self.session)
+        config = _svc.configuracion_repo.get_first()
         if not config:
             return zonas_por_recreo
 
         # Obtener todas las zonas activas en esta fecha
-        zonas = self.session.query(Zona).all()
+        zonas = _svc.zonas.get_all()
         zonas_activas = []
         for zona in zonas:
             # Verificar si la zona está activa en esta fecha
@@ -720,11 +723,8 @@ class VistaCalendario(BaseForm):
         ultimo_dia = date(self.anio_mostrado, mes, dias_en_mes)
 
         # Cargar datos (solo guardias para simplificar)
-        guardias = (
-            self.session.query(Guardia)
-            .filter(Guardia.fecha >= primer_dia, Guardia.fecha <= ultimo_dia)
-            .all()
-        )
+        from application.app_services import AppServices
+        guardias = AppServices(self.session).guardias.find_by_rango_fechas(primer_dia, ultimo_dia)
 
         guardias_por_fecha = defaultdict(int)
         for g in guardias:
@@ -805,24 +805,16 @@ class VistaCalendario(BaseForm):
             Tupla de (guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha)
         """
         # Obtener configuración activa para filtrar por curso
-        from infrastructure.database.models import CursoEscolar
-
-        curso_activo = self.session.query(CursoEscolar).filter_by(activo=True).first()
+        from application.app_services import AppServices
+        _svc = AppServices(self.session)
+        curso_activo = _svc.cursos.find_active()
 
         if not curso_activo:
             # Si no hay curso activo, retornar datos vacíos
             return defaultdict(list), defaultdict(list), defaultdict(list)
 
         # Guardias del curso activo
-        guardias = (
-            self.session.query(Guardia)
-            .filter(
-                Guardia.curso_id == curso_activo.id,
-                Guardia.fecha >= fecha_inicio,
-                Guardia.fecha <= fecha_fin,
-            )
-            .all()
-        )
+        guardias = _svc.guardias.find_by_curso_y_rango_fechas(curso_activo.id, fecha_inicio, fecha_fin)
 
         guardias_por_fecha = defaultdict(list)
         sustituciones_por_fecha = defaultdict(list)
@@ -834,15 +826,8 @@ class VistaCalendario(BaseForm):
                 sustituciones_por_fecha[g.fecha].append(g)
 
         # Ausencias
-        ausencias = (
-            self.session.query(Ausencia)
-            .filter(
-                Ausencia.activa == True,  # noqa: E712
-                Ausencia.fecha_inicio <= fecha_fin,
-                Ausencia.fecha_fin >= fecha_inicio,
-            )
-            .all()
-        )
+        from application.app_services import AppServices
+        ausencias = AppServices(self.session).ausencias.find_active_in_rango(fecha_inicio, fecha_fin)
 
         ausencias_por_fecha = defaultdict(list)
         for ausencia in ausencias:

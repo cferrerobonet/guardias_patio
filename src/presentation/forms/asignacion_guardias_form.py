@@ -220,7 +220,8 @@ class AsignacionGuardiasForm(BaseForm):
         """Generar el calendario completo de guardias"""
         try:
             # Verificar si ya existen guardias
-            count_guardias = self.session.query(Guardia).count()
+            from application.app_services import AppServices
+            count_guardias = AppServices(self.session).contar_guardias()
 
             eliminar_existentes = True  # Por defecto, eliminar
 
@@ -329,7 +330,8 @@ class AsignacionGuardiasForm(BaseForm):
         """Eliminar todas las guardias del sistema"""
         try:
             # Contar guardias actuales
-            count_actual = self.session.query(Guardia).count()
+            from application.app_services import AppServices
+            count_actual = AppServices(self.session).contar_guardias()
 
             if count_actual == 0:
                 self.mostrar_advertencia(

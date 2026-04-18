@@ -498,7 +498,8 @@ class ProfesorForm(BaseForm):
             self.tabla_profesores.setRowCount(0)
 
             # Ordenar por nombre completo (alfabéticamente)
-            profesores = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
+            from application.app_services import AppServices
+            profesores = sorted(AppServices(self.session).profesores.get_all(), key=lambda p: p.nombre_completo)
             total_profesores = len(profesores)
             self.tabla_profesores.setRowCount(total_profesores)
 
@@ -520,7 +521,7 @@ class ProfesorForm(BaseForm):
                 self.tabla_profesores.setItem(i, 2, horas_item)
 
                 # Turno (centrado)
-                turno_item = QTableWidgetItem(prof.turno.capitalize())
+                turno_item = QTableWidgetItem(str(prof.turno).capitalize())
                 turno_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_profesores.setItem(i, 3, turno_item)
 
@@ -564,10 +565,10 @@ class ProfesorForm(BaseForm):
     def cargar_zonas(self):
         """Cargar zonas disponibles en el combo del widget de restricciones."""
         try:
-            from infrastructure.database.models import Zona
+            from application.app_services import AppServices
 
-            zonas = self.session.query(Zona).order_by(Zona.nombre_zona).all()
-            zonas_list = [(z.id, z.nombre_zona) for z in zonas]
+            zonas_all = sorted(AppServices(self.session).zonas.get_all(), key=lambda z: z.nombre_zona)
+            zonas_list = [(z.id, z.nombre_zona) for z in zonas_all]
             self.restricciones_widget.cargar_zonas(zonas_list)
 
         except Exception as e:

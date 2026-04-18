@@ -447,7 +447,8 @@ class ReportesForm(BaseForm):
 
             for idx, profesor_id in enumerate(profesor_ids):
                 # Obtener profesor
-                profesor = self.session.query(Profesor).get(profesor_id)
+                from application.app_services import AppServices
+                profesor = AppServices(self.session).profesores.get_by_id(profesor_id)
                 if not profesor:
                     continue
 
@@ -458,9 +459,8 @@ class ReportesForm(BaseForm):
                     progress_callback(porcentaje, mensaje)
 
                 # Obtener rango de fechas de guardias del profesor
-                guardias = (
-                    self.session.query(Guardia).filter(Guardia.profesor_id == profesor_id).all()
-                )
+                from application.app_services import AppServices
+                guardias = AppServices(self.session).guardias.find_by_profesor(profesor_id)
 
                 if not guardias:
                     continue  # Profesor sin guardias
@@ -519,7 +519,8 @@ class ReportesForm(BaseForm):
                                     ics_path = os.path.join(carpeta, ics_filename)
 
                                     # Obtener configuración para nombre del centro
-                                    config_db = self.session.query(Configuracion).first()
+                                    from application.app_services import AppServices
+                                    config_db = AppServices(self.session).configuracion_repo.get_first()
                                     nombre_centro = "Centro Educativo"
                                     if config_db and hasattr(config_db, "nombre_centro"):
                                         nombre_centro = config_db.nombre_centro
