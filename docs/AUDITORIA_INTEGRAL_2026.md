@@ -158,15 +158,15 @@ Clean Architecture híbrida + DDD táctico. Capas:
 - [x] **P0** — ~~Reemplazar Base64 por `cryptography.fernet`~~ ✅ v3.1.0
 - [x] **P0** — ~~Añadir autenticación JWT/API-key a la API REST~~ ✅ RESUELTO v3.8.0
 - [x] **P0** — ~~Eliminar recovery code en texto plano, guardar solo hash + TTL~~ ✅ v3.1.0
-- [ ] **P1** — Política de contraseñas: mínimo 8 chars + mayúscula + número + símbolo
-- [ ] **P1** — Implementar lockout: 5 intentos → bloqueo 15 min con delay progresivo
+- [x] **P1** — ~~Política de contraseñas: mínimo 8 chars + mayúscula + número + símbolo~~ ✅ v3.7.0
+- [x] **P1** — ~~Implementar lockout: 5 intentos → bloqueo 15 min con delay progresivo~~ ✅ v4.0.0 (API + sync_manager)
 - [x] **P1** — ~~Cambiar `host="0.0.0.0"` a `host="127.0.0.1"` en uvicorn~~ ✅ v3.1.0
 - [x] **P1** — ~~Reemplazar `str(e)` por mensajes genéricos en errores API~~ ✅ v3.1.0
-- [ ] **P2** — Escapar HTML en plantillas de email (`html.escape()`)
-- [ ] **P2** — Validar y sanitizar `remote_path` contra path traversal
-- [ ] **P2** — Establecer `chmod 600` en `users.json`
-- [ ] **P2** — Eliminar valores reales de infraestructura en defaults de config
-- [ ] **P2** — Validar username con regex whitelist (`[a-zA-Z0-9._-]`)
+- [x] **P2** — ~~Escapar HTML en plantillas de email (`html.escape()`)~~ ✅ v3.6.0
+- [x] **P2** — ~~Validar y sanitizar `remote_path` contra path traversal~~ ✅ v4.0.0 (`_sanitize_path()` en SFTP)
+- [x] **P2** — ~~Establecer `chmod 600` en `users.json`~~ ✅ v4.0.0 (`os.open()` con mode 0o600)
+- [x] **P2** — ~~Eliminar valores reales de infraestructura en defaults de config~~ ✅ v4.0.0 (`api_secret_key` vacío)
+- [x] **P2** — ~~Validar username con regex whitelist (`[a-zA-Z0-9._-]`)~~ ✅ v3.6.0
 
 ---
 
@@ -410,10 +410,10 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 
 ### 9.4 Recomendaciones
 
-- [ ] Añadir autenticación JWT/API-key
+- [x] ~~Añadir autenticación JWT/API-key~~ ✅ RESUELTO v3.8.0
 - [x] Restringir CORS a orígenes específicos ✅ v3.1.0
 - [x] Añadir rate limiting (`slowapi` o `fastapi-limiter`) ✅ v3.4.0
-- [ ] Conectar `/health` al `HealthChecker` real
+- [x] ~~Conectar `/health` al `HealthChecker` real~~ ✅ RESUELTO v3.8.0
 - [ ] Añadir paginación a `/api/profesores`
 - [ ] Añadir versionado `/v1/`
 - [ ] Definir schema de error estándar `{"error": {"code": "...", "message": "..."}}`
@@ -1303,9 +1303,9 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 | Tarea | Prioridad | Esfuerzo |
 |---|---|---|
 | ~~Implementar `es_sustitucion`/`profesor_sustituido_id`/`notas` en Guardia~~ | P0 | ✅ v3.7.0 — ORM, migración Alembic `b2c3d4e5f6a7`, mapper y repositorio |
-| Resolver TODO olvidado de settings.py (deprecar v3.1→v4.0) | P0 | Bajo |
+| Resolver TODO olvidado de settings.py (deprecar v3.1→v4.0) | P0 | ✅ Ya eliminado
 | ~~Añadir export CSV/Excel de guardias~~ | P1 | ✅ RESUELTO v3.9.0 — `GET /api/v1/guardias/export/csv` y `/export/xlsx` |
-| Añadir export PDF de informe de ausencias | P1 | Medio |
+| ~~Añadir export PDF de informe de ausencias~~ | P1 | Bajo | Ya existe en `src/services/exportador_pdf.py`
 | ~~Completar import de profesores desde UI (no solo script)~~ | P1 | ✅ RESUELTO v3.9.0 — soporte CSV + función unificada `importar_profesores()` |
 | Implementar import de zonas desde CSV/Excel | P2 | Medio |
 | Implementar backup/restore completo | P2 | Alto |

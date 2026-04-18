@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # ========== APLICACIÓN ==========
     app_name: str = "Gestión de Guardias de Patio"
-    app_version: str = "3.9.0"
+    app_version: str = "4.0.0"
     app_author: str = "Carlos Ferrero Bonet"
     environment: Literal["development", "production", "testing"] = "production"
 
@@ -142,7 +142,9 @@ class Settings(BaseSettings):
     msg_confirmacion_eliminar: str = "¿Está seguro de que desea eliminar este elemento?"
 
     # ========== API SECURITY ==========
-    api_secret_key: str = "change-me-in-production-use-GUARDIAS_API_SECRET_KEY"
+    # Debe especificarse en variable de entorno GUARDIAS_API_SECRET_KEY en producción
+    # Para desarrollo, generar valor seguro: python -c "import secrets; print(secrets.token_urlsafe(32))"
+    api_secret_key: str = ""  # NO usar valores por defecto en producción
     api_token_expire_minutes: int = 60
     api_algorithm: str = "HS256"
 

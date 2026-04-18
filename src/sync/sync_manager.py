@@ -195,8 +195,34 @@ class SFTPSyncBackend(SyncBackend):
             self.close()
             return self._connect()
 
+    def _sanitize_path(self, remote_path: str) -> str:
+        """
+        Valida remote_path contra path traversal.
+        Rechaza: "..", "~", rutas absolutas, etc.
+        """
+        # Normalizar separadores
+        remote_path = remote_path.replace("\\", "/").strip()
+
+        # Rechazar rutas absolutas
+        if remote_path.startswith("/"):
+            raise ValueError(f"Path no permitido (ruta absoluta): {remote_path}")
+
+        # Rechazar traversal
+        if ".." in remote_path or remote_path.startswith("~"):
+            raise ValueError(f"Path no permitido (traversal): {remote_path}")
+
+        # Rechazar componentes que intenten escapar
+        for part in remote_path.split("/"):
+            if part in (".", "..", "~") or not part:
+                continue  # Permitir ".", "..", "~" como componentes intermedios, no son peligrosos
+            if part.startswith("-"):  # Algunos comandos globales problemáticos
+                raise ValueError(f"Path no permitido (componente peligroso): {part}")
+
+        return remote_path
+
     def upload_file(self, local_path: Path, remote_path: str) -> bool:
         try:
+            remote_path = self._sanitize_path(remote_path)
             if not self._ensure_connected():
                 logger.error("No se pudo establecer conexión SFTP")
                 return False
@@ -207,12 +233,16 @@ class SFTPSyncBackend(SyncBackend):
             self.sftp.put(str(local_path), full_path)
             logger.info(f"Archivo subido vía SFTP: {remote_path}")
             return True
+        except ValueError as e:
+            logger.error(f"Seguridad: {e}")
+            return False
         except Exception as e:
             logger.error(f"Error subiendo vía SFTP: {e}")
             return False
 
     def download_file(self, remote_path: str, local_path: Path) -> bool:
         try:
+            remote_path = self._sanitize_path(remote_path)
             if not self._ensure_connected():
                 logger.error("No se pudo establecer conexión SFTP")
                 return False
@@ -222,6 +252,9 @@ class SFTPSyncBackend(SyncBackend):
             self.sftp.get(full_path, str(local_path))
             logger.info(f"Archivo descargado vía SFTP: {remote_path}")
             return True
+        except ValueError as e:
+            logger.error(f"Seguridad: {e}")
+            return False
         except FileNotFoundError:
             return False
         except Exception as e:
@@ -230,22 +263,28 @@ class SFTPSyncBackend(SyncBackend):
 
     def file_exists(self, remote_path: str) -> bool:
         try:
+            remote_path = self._sanitize_path(remote_path)
             if not self._ensure_connected():
                 return False
 
             full_path = f"{self.base_dir}/{remote_path}"
             self.sftp.stat(full_path)
             return True
+        except ValueError:
+            return False
         except FileNotFoundError:
             return False
 
     def get_last_modified(self, remote_path: str) -> Optional[datetime]:
         try:
+            remote_path = self._sanitize_path(remote_path)
             if not self._ensure_connected():
                 return None
             full_path = f"{self.base_dir}/{remote_path}"
             stat = self.sftp.stat(full_path)
             return datetime.fromtimestamp(stat.st_mtime)
+        except ValueError:
+            return None
         except Exception:
             return None
 
@@ -550,13 +589,20 @@ class UserAuth:
         return {}
 
     def _save_users(self):
-        """Guarda usuarios en archivo con permisos restrictivos."""
-        with open(self.users_file, "w") as f:
-            json.dump(self.users, f, indent=2)
+        """Guarda usuarios en archivo con permisos restrictivos (0o600)."""
+        # Usar os.open() para crear/escribir con permisos seguros desde el inicio
+        flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+        mode = 0o600  # Solo lectura/escritura para propietario
+        
         try:
+            fd = os.open(self.users_file, flags, mode)
+            with os.fdopen(fd, "w") as f:
+                json.dump(self.users, f, indent=2)
+            # Asegurar permisos incluso si el archivo existía
             os.chmod(self.users_file, 0o600)
+            logger.debug(f"users.json guardado con permisos 600")
         except OSError as e:
-            logger.warning(f"No se pudo establecer permisos en users.json: {e}")
+            logger.error(f"Error guardando users.json con permisos seguros: {e}")
 
     def register_user(self, username: str, password: str, email: str = "") -> bool:
         """Registra un nuevo usuario."""
@@ -607,8 +653,11 @@ class UserAuth:
     def authenticate(self, username: str, password: str) -> tuple[bool, str]:
         """
         Autentica un usuario. Migra hashes SHA-256 legacy a bcrypt.
+        Implementa lockout: 5 intentos fallidos → 15 min bloqueado con delay progresivo.
         Returns (ok, mensaje_error). Si ok=True, mensaje_error es vacío.
         """
+        import time
+
         if username not in self.users:
             return False, "Usuario o contraseña incorrectos"
 
@@ -652,6 +701,12 @@ class UserAuth:
         else:
             attempts = user.get("failed_login_attempts", 0) + 1
             user["failed_login_attempts"] = attempts
+            
+            # Delay progresivo: 1s, 2s, 4s, 8s, 16s
+            progresive_delays = [1, 2, 4, 8, 16]
+            delay = progresive_delays[min(attempts - 1, len(progresive_delays) - 1)]
+            time.sleep(min(delay, 2))  # Máximo 2 segundos para GUI responsiva
+            
             if attempts >= 5:
                 user["locked_until"] = (datetime.now() + timedelta(minutes=15)).isoformat()
                 logger.warning(f"Usuario {username} bloqueado por 15 minutos tras {attempts} intentos fallidos")

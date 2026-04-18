@@ -6,6 +6,28 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.0.0] - 2026-04-22
+
+### 🎯 Resumen
+Hardening de seguridad: lockout progresivo mejorado, sanitización SFTP, permisos archivo, defaults seguros, validación usuario.
+
+### ✨ Added
+- **P1 Lockout mejorado**: `src/core/security/lockout_manager.py` con delay progresivo [1,2,4,8,16]s en API (`src/api/auth.py`) y sync (`sync_manager.py`); bloqueo de 15 min tras 5 intentos
+- **P2 Path traversal**: `_sanitize_path()` en `SFTPSyncBackend` valida `remote_path` contra `..`, rutas absolutas, etc., rechaza attempts
+
+### Changed
+- **BREAKING**: `api_secret_key` en settings.py ahora es vacío por defecto (requiere env var `GUARDIAS_API_SECRET_KEY` en producción)
+- **P2**: `users.json` guardado con `os.open(flags=0o600, mode=0o600)` — permisos seguros desde creación
+- **P2**: Validación username regex `[a-zA-Z0-9._-]` ya disponible desde v3.6.0 (no hay cambios en v4.0.0)
+- **P2**: HTML escape en emails disponible desde v3.6.0 (no hay cambios en v4.0.0)
+- `SyncBackend` API mejorada: `_sanitize_path()` documentado, manejo de excepciones `ValueError` consistente
+- Todos los métodos SFTP (`upload_file`, `download_file`, `file_exists`, `get_last_modified`) ahora validan path
+
+### 🧹 Housekeeping
+- Imports optimizados en `src/api/auth.py` (agregado `from typing import Optional`)
+- Documentación en `sync_manager.py` sobre protecciones de seguridad SFTP (host key verification, path traversal)
+
+---
 ## [3.9.0] - 2026-04-18
 
 ### 🎯 Resumen
