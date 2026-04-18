@@ -454,8 +454,9 @@ class TestGestionarAusenciasFormIntegracion:
 class TestGestionarAusenciasFormRendimiento:
     """Tests de rendimiento con datos grandes."""
 
-    def test_carga_inicial_rapida(self, qtbot, session, profesor_factory, curso_activo):
+    def test_carga_inicial_rapida(self, qtbot, session, profesor_factory, zona_factory, curso_activo):
         """La carga inicial del formulario debe ser rápida."""
+        zona = zona_factory(nombre_zona="Zona Test")
         # Crear 30 profesores con guardias
         for i in range(30):
             prof = profesor_factory(nombre_completo=f"Profesor {i}", turno="mañana")
@@ -465,6 +466,7 @@ class TestGestionarAusenciasFormRendimiento:
                 turno="mañana",
                 recreo=1,
                 curso_id=curso_activo.id,
+                zona_id=zona.id,
             )
             session.add(g)
         session.commit()

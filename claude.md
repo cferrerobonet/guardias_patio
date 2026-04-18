@@ -81,6 +81,12 @@ Después de CADA conjunto de modificaciones, ejecutar en este orden:
 
 > Preguntar al usuario antes de ejecutar `git push` y `git push --tags`.
 
+## Seguimiento de auditorías/guiones (OBLIGATORIO)
+
+Cuando se implementen cambios a partir de un documento de auditoría, guion técnico o lista de tareas estructurada:
+- Al completar cada ítem, actualizar el documento fuente marcándolo como resuelto (`~~texto~~` + `✅ RESUELTO vX.Y.Z`) antes de pasar al siguiente.
+- Hacer commit del documento actualizado junto con los cambios de código (o inmediatamente después).
+
 ## Archivos protegidos (NO MODIFICAR)
 
 - `sftp_config.json`, `smtp_config.json` — credenciales, gitignored
