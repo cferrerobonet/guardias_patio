@@ -4,11 +4,11 @@
 **Versión analizada**: 3.2.1 (actualizado con correcciones v3.1.0)  
 **Alcance**: Análisis completo de arquitectura, seguridad, base de datos, performance, UX/UI, testing, observabilidad, escalabilidad, resiliencia y buenas prácticas.
 
-## ⚡ ESTADO ACTUAL (v4.4.0)
+## ⚡ ESTADO ACTUAL (v4.5.0)
 
-**Completados**: 53/103 items (51.5%)
+**Completados**: 54/103 items (52.4%)
 **En Progreso**: 0
-**Pendientes**: 50/103 items (48.5%)
+**Pendientes**: 49/103 items (47.6%)
 
 ### Releases Ejecutados
 - ✅ **v3.7.0** — Políticas seguridad, campos sustituciones ORM, API use cases, 21 tests REST/SMTP/SFTP
@@ -19,9 +19,10 @@
 - ✅ **v4.2.0** — Backup/restore BD por usuario, import zonas CSV/Excel, 23 tests nuevos
 - ✅ **v4.3.0** — Paginación API profesores, schema error estándar, 5 tests nuevos
 - ✅ **v4.4.0** — `Profesor.curso_id` FK + relación ORM + migración + 10 tests
+- ✅ **v4.5.0** — Split `asignador_guardias_v4_hibrido.py` en 3 módulos (276+387+341L)
 
 ### Próximas Fases Recomendadas
-1. **v5.0.0 (Arquitectura)** — Split archivos >1000L, resilencia, cache
+1. **v4.6.0 (Resilencia)** — tenacity retry SFTP, circuit breaker, cachetools
 
 ---
 
@@ -672,7 +673,7 @@ La app es una **aplicación de escritorio con BD local (SQLite)**. No está dise
 | ~~`src/services/exportador_pdf.py`~~ | ~~**1847**~~ | ~~CRÍTICA~~ | ✅ RESUELTO v3.4.1 — 476 líneas; módulos extraidos: `_pdf_mes_consolidado.py`, `_pdf_individual_optimizado.py` |
 | `src/presentation/widgets/vista_calendario.py` | **1368** | CRÍTICA | → Separar widget base, renderizado de celdas, diálogos de día, lógica de navegación |
 | ~~`src/services/exportador.py`~~ | ~~**1158**~~ | ~~CRÍTICA~~ | ✅ RESUELTO v3.4.1 — 400 líneas; módulo extraido: `_exportador_import.py` |
-| `src/services/asignador_guardias_v4_hibrido.py` | **1140** | CRÍTICA | → `solver_hibrido.py`, `diagnostico.py`, `sugerencias.py` |
+| ~~`src/services/asignador_guardias_v4_hibrido.py`~~ | **1066** | ✅ RESUELTO v4.5.0 — split en `_asignador_v4_helpers.py` (387L) + `_asignador_v4_fases.py` (341L) + orquestador (276L) |
 | ~~`src/presentation/dialogs/initial_config_dialog.py`~~ | ~~**1051**~~ | ~~CRÍTICA~~ | ✅ RESUELTO v3.4.1 — 743 líneas; módulo extraido: `_initial_config_tabs.py` |
 | `src/presentation/widgets/progress_indicators.py` | 947 | ALTA | → `worker_thread.py`, `progress_dialog.py`, `decision_handler.py` |
 | `src/presentation/forms/profesor_form.py` | 847 | ALTA | → Separar tabla, formulario de edición, validaciones |

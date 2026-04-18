@@ -6,6 +6,18 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.5.0] - 2026-04-18
+
+### 🎯 Resumen
+Split de `asignador_guardias_v4_hibrido.py` (1066L) en tres módulos.
+
+### 🧹 Housekeeping
+- `asignador_guardias_v4_hibrido.py`: 1066 → 276L (orquestador + re-exports)
+- `_asignador_v4_helpers.py` (387L): preparación, elegibilidad, scoring, registro
+- `_asignador_v4_fases.py` (341L): rondas equitativas, completitud forzada, validación, métricas
+- Sin cambios de comportamiento; compatibilidad de imports preservada
+
+---
 ## [4.4.0] - 2026-04-18
 
 ### 🎯 Resumen
