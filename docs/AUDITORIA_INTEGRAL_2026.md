@@ -4,6 +4,25 @@
 **Versión analizada**: 3.2.1 (actualizado con correcciones v3.1.0)  
 **Alcance**: Análisis completo de arquitectura, seguridad, base de datos, performance, UX/UI, testing, observabilidad, escalabilidad, resiliencia y buenas prácticas.
 
+## ⚡ ESTADO ACTUAL (v4.1.0)
+
+**Completados**: 46/103 items (44.7%)
+**En Progreso**: 0
+**Pendientes**: 57/103 items (55.3%)
+
+### Releases Ejecutados
+- ✅ **v3.7.0** — Políticas seguridad, campos sustituciones ORM, API use cases, 21 tests REST/SMTP/SFTP
+- ✅ **v3.8.0** — JWT auth API, campos Zona (activa+capacidad), error boundary, health dinámico
+- ✅ **v3.9.0** — Export guardias CSV/Excel, import profesores CSV
+- ✅ **v4.0.0** — Lockout progresivo, path traversal SFTP, chmod 600 users.json, api_secret_key sin default
+- ✅ **v4.1.0** — 14 índices BD, 7 CheckConstraints, optimización .first() is not None
+
+### Próximas Fases Recomendadas
+1. **v4.2.0 (Testing)** — Coverage 70%, backup/restore, import zonas
+2. **v4.3.0 (API)** — Paginación, schema error estándar
+3. **v4.4.0 (Features)** — Vincular profesores cursos, import config
+4. **v5.0.0 (Arquitectura)** — Split archivos >1000L, resilencia, async
+
 ---
 
 ## Índice
