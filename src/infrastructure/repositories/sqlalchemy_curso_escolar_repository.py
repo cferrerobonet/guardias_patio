@@ -47,7 +47,7 @@ class SQLAlchemyCursoEscolarRepository(ICursoEscolarRepository):
         return False
 
     def exists(self, entity_id: int) -> bool:
-        return self.session.query(CursoEscolar).filter_by(id=entity_id).count() > 0
+        return self.session.query(CursoEscolar).filter_by(id=entity_id).first() is not None
 
     def count(self) -> int:
         return self.session.query(CursoEscolar).count()

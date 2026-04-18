@@ -106,7 +106,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
 
     def exists(self, entity_id: int) -> bool:
         """Verifica si existe un profesor."""
-        return self.session.query(Profesor).filter(Profesor.id == entity_id).count() > 0
+        return self.session.query(Profesor).filter(Profesor.id == entity_id).first() is not None
 
     def count(self) -> int:
         """Cuenta el total de profesores."""

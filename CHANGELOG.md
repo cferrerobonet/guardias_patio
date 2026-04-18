@@ -6,6 +6,20 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.1.0] - 2026-04-22
+
+### 🎯 Resumen
+Optimizaciones query, índices BD, CheckConstraints para integridad de datos.
+
+### ✨ Added
+- **Índices de performance**: Cursos, turnos, fechas, profesor+fecha, zona+fecha en guardias; turnos y activo en profesores; profesor+fecha en ausencias
+- **CheckConstraints**: Turno válido (mañana/tarde/mixto), horas > 0, recreo >= 1, tipo ausencia válido, fecha_fin >= fecha_inicio
+
+### Changed
+- **Optimización queries**: Reemplazar `.count() > 0` por `.first() is not None` en 4 repositorios (mejor performance en BD pequeña)
+- Migración Alembic: `a0b1c2d3e4f5_add_indexes_and_constraints.py`
+
+---
 ## [4.0.0] - 2026-04-22
 
 ### 🎯 Resumen

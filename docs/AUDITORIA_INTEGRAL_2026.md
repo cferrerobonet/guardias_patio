@@ -248,10 +248,10 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 - [x] Añadir `NOT NULL` a `guardias.profesor_id` y `guardias.zona_id` ✅ v3.1.0
 - [x] Añadir `ON DELETE CASCADE` en profesor→guardias y profesor→ausencias ✅ v3.1.0
 - [x] Añadir UniqueConstraint en guardias para evitar asignaciones duplicadas ✅ v3.1.0
-- [ ] Añadir CheckConstraints para `turno`, `tipo` de ausencia, `recreo >= 1`
-- [ ] Crear índices faltantes (curso_id, turno, activo, compuesto triple)
+- [x] ~~Añadir CheckConstraints para `turno`, `tipo` de ausencia, `recreo >= 1`~~ ✅ v4.1.0 (7 constraints)
+- [x] ~~Crear índices faltantes (curso_id, turno, activo, compuesto triple)~~ ✅ v4.1.0 (14 índices)
 - [x] Unificar init de BD: solo Alembic, eliminar `_apply_direct_migrations()` ✅ v3.4.0
-- [ ] Reemplazar `datetime.utcnow` por `datetime.now(timezone.utc)`
+- [x] ~~Reemplazar `datetime.utcnow` por `datetime.now(timezone.utc)`~~ ✅ v4.0+ (ya no está en código)
 - [ ] Resolver inconsistencia `cerrado` vs `archivado`
 - [ ] Añadir locks o thread-local storage en `db_manager.py`
 
@@ -272,7 +272,7 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 | ID | Hallazgo | Severidad |
 |---|---|---|
 | PERF-04 | `find_disponibles_en_fecha()` carga todos los profesores del turno y filtra en Python | MEDIA |
-| PERF-05 | `.count() > 0` en vez de `.exists()` en varios repos | BAJA |
+| PERF-05 | ~~`.count() > 0` en vez de `.first() is not None`~~ | ✅ RESUELTO v4.1.0 | 4 repositorios optimizados |
 | PERF-06 | `get_all()` sin paginación en todos los repositorios | BAJA (escala actual) |
 
 ### 5.3 Buenas Prácticas Existentes
