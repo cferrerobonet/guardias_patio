@@ -650,11 +650,11 @@ La app es una **aplicación de escritorio con BD local (SQLite)**. No está dise
 
 | Archivo | Líneas | Severidad | Propuesta de split |
 |---|---|---|---|
-| `src/services/exportador_pdf.py` | **1847** | CRÍTICA | → `pdf_calendario_individual.py`, `pdf_calendario_general.py`, `pdf_estilos.py`, `pdf_utils.py` |
+| ~~`src/services/exportador_pdf.py`~~ | ~~**1847**~~ | ~~CRÍTICA~~ | ✅ RESUELTO v3.4.1 — 476 líneas; módulos extraidos: `_pdf_mes_consolidado.py`, `_pdf_individual_optimizado.py` |
 | `src/presentation/widgets/vista_calendario.py` | **1368** | CRÍTICA | → Separar widget base, renderizado de celdas, diálogos de día, lógica de navegación |
-| `src/services/exportador.py` | **1158** | CRÍTICA | → `exportador_json.py`, `exportador_base.py`, separar lógica de cifrado |
+| ~~`src/services/exportador.py`~~ | ~~**1158**~~ | ~~CRÍTICA~~ | ✅ RESUELTO v3.4.1 — 400 líneas; módulo extraido: `_exportador_import.py` |
 | `src/services/asignador_guardias_v4_hibrido.py` | **1140** | CRÍTICA | → `solver_hibrido.py`, `diagnostico.py`, `sugerencias.py` |
-| `src/presentation/dialogs/initial_config_dialog.py` | **1051** | CRÍTICA | → Separar pasos del wizard en clases/archivos individuales |
+| ~~`src/presentation/dialogs/initial_config_dialog.py`~~ | ~~**1051**~~ | ~~CRÍTICA~~ | ✅ RESUELTO v3.4.1 — 743 líneas; módulo extraido: `_initial_config_tabs.py` |
 | `src/presentation/widgets/progress_indicators.py` | 947 | ALTA | → `worker_thread.py`, `progress_dialog.py`, `decision_handler.py` |
 | `src/presentation/forms/profesor_form.py` | 847 | ALTA | → Separar tabla, formulario de edición, validaciones |
 | `src/services/asignador_guardias_cpsat.py` | 845 | ALTA | → `cpsat_model.py`, `cpsat_constraints.py`, `cpsat_solver.py` |
