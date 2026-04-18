@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from services.exportador import ExportadorDatos
-from services.importador_profesores import importar_profesores_desde_excel
+from services.importador_profesores import importar_profesores
 from utils import get_logger
 from utils.icons import icon_for_button
 
@@ -315,9 +315,9 @@ class ImportExportForm(BaseForm):
             # Diálogo para seleccionar archivo Excel
             archivo, _ = QFileDialog.getOpenFileName(
                 self,
-                "Seleccionar archivo Excel de profesores",
+                "Seleccionar archivo de profesores",
                 "",
-                "Archivos Excel (*.xlsx *.xls)",
+                "Archivos compatibles (*.xlsx *.xls *.csv);;Excel (*.xlsx *.xls);;CSV (*.csv)",
             )
 
             if not archivo:
@@ -325,7 +325,7 @@ class ImportExportForm(BaseForm):
 
             # Importar con indicador de progreso
             def tarea_importacion(progress_callback):
-                return importar_profesores_desde_excel(
+                return importar_profesores(
                     self.session,
                     archivo,
                     skip_rows=9,

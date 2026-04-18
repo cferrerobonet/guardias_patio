@@ -6,6 +6,17 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [3.9.0] - 2026-04-18
+
+### 🎯 Resumen
+Export CSV/Excel de guardias vía API REST e import de profesores con soporte CSV desde UI.
+
+### ✨ Added
+- **P1 Export guardias**: `GET /api/v1/guardias/export/csv` y `/export/xlsx` — descargan archivo con filtros opcionales (fecha, profesor, zona, turno)
+- **P1 Import profesores CSV**: `importar_profesores_desde_csv()` + función unificada `importar_profesores()` que detecta formato por extensión (.xlsx/.xls/.csv)
+- Diálogo de import en UI acepta ahora `*.xlsx *.xls *.csv`
+
+---
 ## [3.8.0] - 2026-04-18
 
 ### 🎯 Resumen

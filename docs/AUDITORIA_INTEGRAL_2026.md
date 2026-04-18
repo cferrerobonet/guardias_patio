@@ -1304,9 +1304,9 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 |---|---|---|
 | ~~Implementar `es_sustitucion`/`profesor_sustituido_id`/`notas` en Guardia~~ | P0 | ✅ v3.7.0 — ORM, migración Alembic `b2c3d4e5f6a7`, mapper y repositorio |
 | Resolver TODO olvidado de settings.py (deprecar v3.1→v4.0) | P0 | Bajo |
-| Añadir export CSV/Excel de guardias | P1 | Medio |
+| ~~Añadir export CSV/Excel de guardias~~ | P1 | ✅ RESUELTO v3.9.0 — `GET /api/v1/guardias/export/csv` y `/export/xlsx` |
 | Añadir export PDF de informe de ausencias | P1 | Medio |
-| Completar import de profesores desde UI (no solo script) | P1 | Medio |
+| ~~Completar import de profesores desde UI (no solo script)~~ | P1 | ✅ RESUELTO v3.9.0 — soporte CSV + función unificada `importar_profesores()` |
 | Implementar import de zonas desde CSV/Excel | P2 | Medio |
 | Implementar backup/restore completo | P2 | Alto |
 | Implementar import de configuración desde otro curso | P2 | Medio |
