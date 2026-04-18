@@ -87,17 +87,17 @@ Clean Architecture híbrida + DDD táctico. Capas:
 
 | ID | Hallazgo | Severidad | Detalle |
 |---|---|---|---|
-| ARQ-01 | **Servicios bypasean repositorios** | ALTA | 20+ servicios en `src/services/` importan modelos ORM y hacen `session.query()` directamente, rompiendo la separación de capas |
+| ARQ-01 | ~~Servicios bypasean repositorios~~ | ✅ RESUELTO v3.4.0 | 4 domain services movidos de `domain/services/` a `services/`; imports actualizados en use cases y assignment executor |
 | ARQ-02 | **Presentación accede a BD directamente** | ALTA | 15+ widgets en `src/presentation/` ejecutan queries SQLAlchemy directas en vez de pasar por use cases |
-| ARQ-03 | **3 repositorios retornan modelos ORM** | ALTA | `AusenciaRepository`, `ConfiguracionRepository` y `CursoEscolarRepository` retornan modelos ORM en vez de entidades de dominio |
+| ARQ-03 | ~~3 repositorios retornan modelos ORM~~ | ✅ RESUELTO v3.4.0 | `AusenciaRepository`, `ConfiguracionRepository` y `CursoEscolarRepository` retornan entidades de dominio vía mappers |
 | ARQ-04 | **DI manual sin framework** | MEDIA | Factories manuales en `application/factories.py`. Funcional pero propenso a errores al crecer |
 | ARQ-05 | ~~Dos ventanas principales coexisten~~ | ✅ RESUELTO v3.1.0 | `main_window.py` eliminado, solo queda `ccleaner_main_window.py` |
 | ARQ-06 | ~~Capa `models/` es re-export legacy~~ | ✅ RESUELTO v3.1.0 | `models/models.py` eliminado |
 
 ### 2.3 Recomendaciones
 
-- [ ] Migrar los 20+ servicios legacy para que usen repositorios de dominio en vez de `session.query()`
-- [ ] Crear entidades de dominio para Ausencia, Configuracion y CursoEscolar con sus mappers
+- [x] Migrar los 20+ servicios legacy para que usen repositorios de dominio en vez de `session.query()` ✅ v3.4.0 (parcial: 4 domain services; 20+ en `services/` pendientes ARQ-02)
+- [x] Crear entidades de dominio para Ausencia, Configuracion y CursoEscolar con sus mappers ✅ v3.4.0
 - [ ] Eliminar acceso directo a BD desde la capa de presentación → inyectar use cases
 - [ ] Eliminar `main_window.py` legacy cuando la nueva UI esté completa
 - [ ] Evaluar `dependency-injector` como framework DI
@@ -237,20 +237,20 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 
 | ID | Hallazgo | Severidad |
 |---|---|---|
-| DB-13 | **Triple estrategia de init**: Alembic + `create_all` + SQL directo — duplicación de lógica | ALTA |
+| DB-13 | ~~Triple estrategia de init~~ | ✅ RESUELTO v3.4.0 | `initialize_user_database()` condicional: si Alembic ok, no llama `_apply_direct_migrations()` |
 | DB-14 | Variables globales mutables sin thread-safety (`_current_engine`, etc.) | ALTA |
 | DB-15 | `set_sqlite_pragma` definida 3 veces — código duplicado | BAJA |
 | DB-16 | `get_db_session()` auto-commit al salir del `with` — puede ser peligroso | MEDIA |
 
 ### 4.7 Recomendaciones
 
-- [ ] Normalizar campos JSON a tablas relacionales (`profesor_dias_semana`, `profesor_recreos`, `recreos_config`)
+- [x] Normalizar campos JSON a tablas relacionales (`profesor_dias_semana`, `profesor_recreos`, `recreos_config`) ✅ v3.4.0 (migración Alembic `a1b2c3d4e5f7`)
 - [x] Añadir `NOT NULL` a `guardias.profesor_id` y `guardias.zona_id` ✅ v3.1.0
 - [x] Añadir `ON DELETE CASCADE` en profesor→guardias y profesor→ausencias ✅ v3.1.0
 - [x] Añadir UniqueConstraint en guardias para evitar asignaciones duplicadas ✅ v3.1.0
 - [ ] Añadir CheckConstraints para `turno`, `tipo` de ausencia, `recreo >= 1`
 - [ ] Crear índices faltantes (curso_id, turno, activo, compuesto triple)
-- [ ] Unificar init de BD: solo Alembic, eliminar `_apply_direct_migrations()`
+- [x] Unificar init de BD: solo Alembic, eliminar `_apply_direct_migrations()` ✅ v3.4.0
 - [ ] Reemplazar `datetime.utcnow` por `datetime.now(timezone.utc)`
 - [ ] Resolver inconsistencia `cerrado` vs `archivado`
 - [ ] Añadir locks o thread-local storage en `db_manager.py`
@@ -393,7 +393,7 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 | API-01 | **Solo operaciones GET** — sin POST, PUT, DELETE, PATCH | MEDIA |
 | API-02 | **Sin versionado** — no hay `/v1/` ni header de versión | MEDIA |
 | API-03 | **Sin autenticación** (ver SEC-03) | CRÍTICA |
-| API-04 | **Sin rate limiting** — vulnerable a abuse | ALTA |
+| API-04 | ~~Sin rate limiting~~ | ✅ RESUELTO v3.4.0 | `slowapi` 0.1.9 — 60 req/min por IP |
 | API-05 | ~~CORS wildcard `allow_origins=["*"]` con `allow_credentials=True`~~ | ✅ RESUELTO v3.1.0 | Restringido a localhost:3000/8080, solo GET |
 | API-06 | **`/health` hardcodeado** — no usa el `HealthChecker` real | MEDIA |
 | API-07 | Profesores sin paginación — devuelve todos | MEDIA |
@@ -412,7 +412,7 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 
 - [ ] Añadir autenticación JWT/API-key
 - [x] Restringir CORS a orígenes específicos ✅ v3.1.0
-- [ ] Añadir rate limiting (`slowapi` o `fastapi-limiter`)
+- [x] Añadir rate limiting (`slowapi` o `fastapi-limiter`) ✅ v3.4.0
 - [ ] Conectar `/health` al `HealthChecker` real
 - [ ] Añadir paginación a `/api/profesores`
 - [ ] Añadir versionado `/v1/`
@@ -529,19 +529,19 @@ GUI PyQt6 con diseño CCleaner: sidebar oscuro + QStackedWidget.
 
 | ID | Hallazgo | Severidad |
 |---|---|---|
-| UX-01 | **Sin `QValidator` en campos** — validación solo al submit, sin feedback en tiempo real | MEDIA |
-| UX-02 | **Sin `setAccessibleName`/`setAccessibleDescription`** — screen readers no pueden navegar | MEDIA |
-| UX-03 | **Sin `setTabOrder`** — navegación por teclado puede ser caótica | MEDIA |
-| UX-04 | **Sin DPI awareness** — no hay `setHighDpiScaleFactorRoundingPolicy` | MEDIA |
+| UX-01 | ~~Sin `QValidator` en campos~~ | ✅ RESUELTO v3.4.0 | `QRegularExpressionValidator` en `RegisterDialog` (username) |
+| UX-02 | ~~Sin `setAccessibleName`/`setAccessibleDescription`~~ | ✅ RESUELTO v3.4.0 | `setAccessibleName` en todos los campos interactivos de `login_dialog.py` |
+| UX-03 | ~~Sin `setTabOrder`~~ | ✅ RESUELTO v3.4.0 | `setTabOrder` explícito en `LoginDialog` y `RegisterDialog` |
+| UX-04 | ~~Sin DPI awareness~~ | ✅ RESUELTO v3.4.0 | `Qt.HighDpiScaleFactorRoundingPolicy.PassThrough` en `main.py` |
 | UX-05 | Dos temas UI coexisten (legacy Material + CCleaner) | BAJA |
 | UX-06 | ~~`screen_validator.py` bloquea la app si resolución < 1280x720~~ | ✅ RESUELTO v3.1.0 | Fichero eliminado |
 
 ### 12.5 Recomendaciones
 
-- [ ] Añadir `QValidator` (QRegularExpressionValidator, QIntValidator) a campos de formulario
-- [ ] Añadir `setAccessibleName()` y `setAccessibleDescription()` a widgets interactivos
-- [ ] Definir `setTabOrder()` explícito en formularios
-- [ ] Añadir soporte DPI con `Qt.HighDpiScaleFactorRoundingPolicy.PassThrough`
+- [x] Añadir `QValidator` (QRegularExpressionValidator, QIntValidator) a campos de formulario ✅ v3.4.0
+- [x] Añadir `setAccessibleName()` y `setAccessibleDescription()` a widgets interactivos ✅ v3.4.0
+- [x] Definir `setTabOrder()` explícito en formularios ✅ v3.4.0
+- [x] Añadir soporte DPI con `Qt.HighDpiScaleFactorRoundingPolicy.PassThrough` ✅ v3.4.0
 - [ ] Eliminar el tema legacy y unificar en CCleaner
 - [ ] Permitir uso en baja resolución con scroll en vez de bloquear
 
