@@ -141,7 +141,7 @@ class TestVistaCalendarioBasico:
 
     def test_window_title(self, vista_calendario):
         """Test que tiene título de ventana correcto"""
-        assert vista_calendario.windowTitle() == "📅 Calendario de Guardias"
+        assert vista_calendario.windowTitle() == "Calendario de Guardias"
 
 
 # ========================================
