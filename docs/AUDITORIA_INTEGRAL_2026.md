@@ -98,8 +98,8 @@ Clean Architecture híbrida + DDD táctico. Capas:
 
 - [x] Migrar los 20+ servicios legacy para que usen repositorios de dominio en vez de `session.query()` ✅ v3.4.0 (parcial: 4 domain services; 20+ en `services/` pendientes ARQ-02)
 - [x] Crear entidades de dominio para Ausencia, Configuracion y CursoEscolar con sus mappers ✅ v3.4.0
-- [ ] Eliminar acceso directo a BD desde la capa de presentación → inyectar use cases
-- [ ] Eliminar `main_window.py` legacy cuando la nueva UI esté completa
+- [x] ~~Eliminar acceso directo a BD desde la capa de presentación → inyectar use cases~~ ✅ v3.6.0 — ARQ-02 completo: 21 widgets migrados vía facade `AppServices`
+- [x] ~~Eliminar `main_window.py` legacy cuando la nueva UI esté completa~~ ✅ v3.1.0 (ARQ-05)
 - [ ] Evaluar `dependency-injector` como framework DI
 
 ---
@@ -1063,14 +1063,14 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 
 ### 20.7 Cambios a Adoptar AHORA para Facilitar Migración
 
-| Cambio | Impacto para web | Esfuerzo |
+| Cambio | Impacto para web | Estado |
 |---|---|---|
-| **Limpiar `domain/services/`** de imports ORM | Restaura Clean Architecture, dominio portable | Medio |
-| **Hacer que los routers de profesores/guardias/estadísticas usen use cases** (ya existen) | API lista para CRUD | Bajo |
-| **Condicionar PRAGMAs al dialecto SQLite** en `db_manager.py` | Permite cambiar a PostgreSQL con 1 env var | Trivial |
-| **Extraer `integrador_orquestador_ui.py`** a `presentation/` (si se mantiene) | Deja `services/` 100% libre de PyQt6 | Trivial |
-| **Añadir `user_id` como concepto en domain** (no tabla aún) | Prepara para multi-tenant | Bajo |
-| **Eliminar queries directas desde presentation/** | Desacopla UI de BD | Alto |
+| ~~**Limpiar `domain/services/`** de imports ORM~~ | Restaura Clean Architecture, dominio portable | ✅ v3.4.0 (ARQ-01) |
+| **Hacer que los routers de profesores/guardias/estadísticas usen use cases** (ya existen) | API lista para CRUD | Pendiente |
+| **Condicionar PRAGMAs al dialecto SQLite** en `db_manager.py` | Permite cambiar a PostgreSQL con 1 env var | Pendiente |
+| **Extraer `integrador_orquestador_ui.py`** a `presentation/` (si se mantiene) | Deja `services/` 100% libre de PyQt6 | Pendiente |
+| **Añadir `user_id` como concepto en domain** (no tabla aún) | Prepara para multi-tenant | Pendiente |
+| ~~**Eliminar queries directas desde presentation/**~~ | Desacopla UI de BD | ✅ v3.6.0 (ARQ-02) |
 
 ### 20.8 Scorecard de Preparación Web
 
@@ -1246,12 +1246,12 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 
 | Tarea | Prioridad | Esfuerzo |
 |---|---|---|
-| Política contraseñas: 8+ chars + complejidad | P1 | Bajo |
-| Lockout tras 5 intentos fallidos | P1 | Bajo |
-| Rate limiting en API | P1 | Medio |
-| Escapar HTML en emails | P2 | Bajo |
-| Sanitizar paths en sync | P2 | Bajo |
-| Validar/sanitizar username | P2 | Bajo |
+| Política contraseñas: 8+ chars + complejidad | P1 | Pendiente |
+| Lockout tras 5 intentos fallidos | P1 | Pendiente |
+| ~~Rate limiting en API~~ | P1 | ✅ v3.4.0 (`slowapi`) |
+| Escapar HTML en emails | P2 | Pendiente |
+| Sanitizar paths en sync | P2 | Pendiente |
+| Validar/sanitizar username | P2 | Pendiente |
 
 ### Fase 6 — Testing y Observabilidad
 
@@ -1266,37 +1266,37 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 
 ### Fase 7 — Arquitectura y Preparación Web
 
-| Tarea | Prioridad | Esfuerzo |
+| Tarea | Prioridad | Estado |
 |---|---|---|
-| Limpiar domain/services de imports ORM (4 ficheros) | P1 | Medio |
-| Hacer que routers API usen use cases (ya existen) | P1 | Bajo |
-| Condicionar PRAGMAs SQLite al dialecto en db_manager | P1 | Trivial |
-| Migrar servicios legacy a usar repositorios | P2 | Alto |
-| Crear entidades dominio para Ausencia/Config/Curso | P2 | Medio |
-| Eliminar acceso directo a BD desde presentación (36 imports) | P2 | Alto |
-| Normalizar campos JSON a tablas relacionales | P2 | Alto |
-| Expandir API a CRUD completo | P2 | Alto |
+| ~~Limpiar domain/services de imports ORM (4 ficheros)~~ | P1 | ✅ v3.4.0 (ARQ-01) |
+| Hacer que routers API usen use cases (ya existen) | P1 | Pendiente |
+| Condicionar PRAGMAs SQLite al dialecto en db_manager | P1 | Pendiente |
+| Migrar servicios legacy a usar repositorios | P2 | Pendiente |
+| ~~Crear entidades dominio para Ausencia/Config/Curso~~ | P2 | ✅ v3.4.0 (ARQ-03) |
+| ~~Eliminar acceso directo a BD desde presentación (36 imports)~~ | P2 | ✅ v3.6.0 (ARQ-02) |
+| ~~Normalizar campos JSON a tablas relacionales~~ | P2 | ✅ v3.4.0 (migración `a1b2c3d4e5f7`) |
+| Expandir API a CRUD completo | P2 | Pendiente |
 
 ### Fase 8 — UX/UI
 
-| Tarea | Prioridad | Esfuerzo |
+| Tarea | Prioridad | Estado |
 |---|---|---|
-| Añadir QValidator a formularios | P2 | Medio |
-| Migrar 20+ imports de `ui_styles.py` a `ccleaner_theme.py` | P2 | Medio |
-| Accesibilidad (AccessibleName, TabOrder) | P3 | Medio |
-| Eliminar tema/ventana legacy | P3 | Bajo |
-| Homogeneizar CSS inline en 3 formularios | P3 | Bajo |
+| ~~Añadir QValidator a formularios~~ | P2 | ✅ v3.4.0 (UX-01) |
+| Migrar 20+ imports de `ui_styles.py` a `ccleaner_theme.py` | P2 | Pendiente |
+| ~~Accesibilidad (AccessibleName, TabOrder)~~ | P3 | ✅ v3.4.0 (UX-02/03) |
+| ~~Eliminar ventana legacy (`main_window.py`)~~ / tema legacy pendiente | P3 | ✅ ventana v3.1.0 (ARQ-05) / tema pendiente |
+| Homogeneizar CSS inline en 3 formularios | P3 | Pendiente |
 
 ### Fase 9 — Organización y Limpieza
 
-| Tarea | Prioridad | Esfuerzo |
+| Tarea | Prioridad | Estado |
 |---|---|---|
-| `git rm --cached data/users.json` | P0 | Trivial |
-| Unificar `utils/icons.py` + `utils/icon_manager.py` | P1 | Bajo |
-| Mover scripts one-off a `scripts/archive/` | P2 | Trivial |
-| Mover tests sueltos de `scripts/` a `tests/` | P2 | Trivial |
-| Añadir `__init__.py` a `src/services/` | P2 | Trivial |
-| Unificar 4 scripts de benchmark en 1 | P3 | Bajo |
+| ~~`git rm --cached data/users.json`~~ | P0 | ✅ v3.1.1 (ORG-02) |
+| Unificar `utils/icons.py` + `utils/icon_manager.py` | P1 | Pendiente |
+| Mover scripts one-off a `scripts/archive/` | P2 | Pendiente |
+| Mover tests sueltos de `scripts/` a `tests/` | P2 | Pendiente |
+| Añadir `__init__.py` a `src/services/` | P2 | Pendiente |
+| Unificar 4 scripts de benchmark en 1 | P3 | Pendiente |
 
 ### Fase 10 — Features Pendientes
 
