@@ -92,7 +92,7 @@ class ChangePasswordDialog(QDialog):
         form_layout.addRow("🔑 Contraseña Actual:", self.current_password_input)
 
         self.new_password_input = QLineEdit()
-        self.new_password_input.setPlaceholderText("Nueva contraseña (mín. 4 caracteres)")
+        self.new_password_input.setPlaceholderText("8+ chars, mayúscula, número y símbolo")
         self.new_password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.new_password_input.setMinimumHeight(35)
         form_layout.addRow("🔒 Nueva Contraseña:", self.new_password_input)
@@ -165,11 +165,10 @@ class ChangePasswordDialog(QDialog):
             QMessageBox.warning(self, "Campo vacío", "Por favor introduce la nueva contraseña")
             return
 
-        # Validar longitud de nueva contraseña
-        if len(new_password) < 4:
-            QMessageBox.warning(
-                self, "Contraseña débil", "La nueva contraseña debe tener al menos 4 caracteres"
-            )
+        # Validar política de contraseñas
+        policy_ok, policy_msg = self.user_auth.validate_password_policy(new_password)
+        if not policy_ok:
+            QMessageBox.warning(self, "Contraseña débil", policy_msg)
             return
 
         # Validar confirmación

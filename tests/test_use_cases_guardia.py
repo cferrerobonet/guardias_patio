@@ -58,12 +58,7 @@ class TestAsignarGuardiaUseCase:
         assert guardia_bd.profesor_id == profesor.id
 
     def test_asignar_guardia_sustitucion(self, session, profesor_factory, zona_factory):
-        """Asignar una guardia como sustitución.
-
-        NOTA: El modelo de BD actual no almacena es_sustitucion ni profesor_sustituido_id.
-        Estos campos existen en la entidad de dominio GuardiaEntity pero no en el modelo BD.
-        Este test verifica que el use case maneja correctamente el DTO de entrada.
-        """
+        """Asignar una guardia como sustitución."""
         profesor_titular = profesor_factory(nombre_completo="Titular")
         profesor_sustituto = profesor_factory(
             nombre_completo="Sustituto",
@@ -86,11 +81,10 @@ class TestAsignarGuardiaUseCase:
 
         resultado = use_case.execute(dto)
 
-        # Verificar que la guardia se creó exitosamente
         assert resultado.id is not None
         assert resultado.profesor_id == profesor_sustituto.id
-        # NOTA: El DTO de salida tendrá es_sustitucion=False porque el modelo BD no lo almacena
-        # En una versión futura se podría agregar estos campos a la BD
+        assert resultado.es_sustitucion is True
+        assert resultado.profesor_sustituido_id == profesor_titular.id
 
     def test_asignar_guardia_profesor_no_existe(self, session, zona_factory):
         """Error al asignar guardia a profesor inexistente."""
@@ -436,14 +430,14 @@ class TestObtenerGuardiasUseCase:
             turno="mañana",
             recreo=1,
         )
-        # Guardia sustitución (nota: el modelo BD no tiene es_sustitucion,
-        # pero podemos testearlo a través de la entidad/use case)
+        # Guardia sustitución con es_sustitucion=True en BD
         guardia_factory(
             profesor_id=profesor.id,
             zona_id=zona.id,
             fecha=date(2024, 10, 16),
             turno="mañana",
             recreo=1,
+            es_sustitucion=True,
         )
 
         use_case = ObtenerGuardiasUseCase(session)
@@ -451,10 +445,9 @@ class TestObtenerGuardiasUseCase:
 
         resultado = use_case.execute(filtros)
 
-        # Con el modelo actual que no tiene es_sustitucion en BD,
-        # este filtro no funcionará. Lo dejamos como documentación
-        # de funcionalidad futura
         assert isinstance(resultado, list)
+        assert len(resultado) == 1
+        assert resultado[0].es_sustitucion is True
 
     def test_obtener_guardias_filtros_multiples(
         self, session, profesor_factory, zona_factory, guardia_factory

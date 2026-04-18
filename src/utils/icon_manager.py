@@ -1,24 +1,11 @@
 """
-Gestor de iconos para la aplicación.
-Permite cargar iconos SVG y aplicarles colores personalizados.
+Alias de compatibilidad para utils.icons.
 
-IMPORTANTE: Este módulo usa get_resources_directory() de core.paths para
-determinar la ubicación correcta de los iconos tanto en desarrollo como
-en la aplicación compilada. NO usar rutas hardcodeadas o relativas.
-
-Ver: documentacion/SOLUCION_COMPILACION.md para más detalles.
+Este módulo era el gestor de iconos original. Ahora delega en utils.icons
+(implementación unificada). Mantener este alias para no romper imports existentes.
 """
 
-from pathlib import Path
-from typing import Optional
-
-from core.logging import get_logger
-from core.paths import get_resources_directory
-from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QColor, QIcon, QPainter, QPixmap
-from PyQt6.QtSvg import QSvgRenderer
-
-logger = get_logger(__name__)
+from utils.icons import Icons, get_icon  # noqa: F401
 
 
 class IconManager:

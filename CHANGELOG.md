@@ -6,6 +6,23 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [3.7.0] - 2026-04-18
+
+### Added
+- `tests/test_api_rest.py`: 21 tests para API REST (profesores, guardias, SMTP mock, SFTP mock, path traversal)
+- `src/services/__init__.py`: módulo init para el paquete services
+- `scripts/archive/`: scripts one-off movidos fuera del raíz
+
+### Changed
+- **SEC-05**: política de contraseñas (8+ chars, mayúscula, número, símbolo) aplicada en use cases `crear_perfil`, `cambiar_password` y 3 diálogos Qt
+- **Fase 10 P0**: campos `es_sustitucion`, `profesor_sustituido_id`, `notas` añadidos al ORM `Guardia` con migración Alembic `b2c3d4e5f6a7`; mapper y repositorio actualizados
+- `find_sustituciones()` en repositorio filtra realmente por `es_sustitucion=True`
+- `utils/icon_manager.py` unificado como alias de `utils/icons.py`
+- `src/api/routers/profesores.py`: migrado a `ListarProfesoresUseCase` / `ObtenerProfesorUseCase` (sin ORM directo)
+- `src/api/routers/guardias.py`: migrado a `ObtenerGuardiasUseCase` y `FiltroGuardiasDTO` (sin ORM directo)
+- `requirements.txt`: añadida dependencia `httpx>=0.27.0` (necesaria para TestClient de FastAPI)
+
+---
 ## [3.6.1] - 2026-04-18
 
 ### 🎯 Resumen

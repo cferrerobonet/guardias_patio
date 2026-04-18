@@ -2,6 +2,7 @@
 
 import ui_styles as styles
 from application.dtos.perfil_dto import ActualizarPerfilDTO, CambiarPasswordDTO, CrearPerfilDTO
+from sync.sync_manager import UserAuth
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -57,7 +58,7 @@ class DialogoCrearPerfilProfesional(QDialog):
 
         self.input_password = QLineEdit()
         self.input_password.setEchoMode(QLineEdit.EchoMode.Password)
-        self.input_password.setPlaceholderText("Mínimo 4 caracteres")
+        self.input_password.setPlaceholderText("8+ chars, mayúscula, número y símbolo")
         self.input_password.setMinimumHeight(32)
         form_layout.addRow("Contraseña:", self.input_password)
 
@@ -104,8 +105,9 @@ class DialogoCrearPerfilProfesional(QDialog):
         if "@" not in self.input_email.text() or "." not in self.input_email.text():
             return False, "El email no es válido"
 
-        if len(self.input_password.text()) < 4:
-            return False, "La contraseña debe tener al menos 4 caracteres"
+        policy_ok, policy_msg = UserAuth.validate_password_policy(self.input_password.text())
+        if not policy_ok:
+            return False, policy_msg
 
         if self.input_password.text() != self.input_password_confirm.text():
             return False, "Las contraseñas no coinciden"
@@ -250,7 +252,7 @@ class DialogoCambiarPasswordProfesional(QDialog):
 
         self.input_nueva = QLineEdit()
         self.input_nueva.setEchoMode(QLineEdit.EchoMode.Password)
-        self.input_nueva.setPlaceholderText("Nueva contraseña (mín. 4 caracteres)")
+        self.input_nueva.setPlaceholderText("8+ chars, mayúscula, número y símbolo")
         self.input_nueva.setMinimumHeight(32)
         form_layout.addRow("Nueva:", self.input_nueva)
 
@@ -291,8 +293,9 @@ class DialogoCambiarPasswordProfesional(QDialog):
         if not self.input_actual.text():
             return False, "Debes ingresar tu contraseña actual"
 
-        if len(self.input_nueva.text()) < 4:
-            return False, "La nueva contraseña debe tener al menos 4 caracteres"
+        policy_ok, policy_msg = UserAuth.validate_password_policy(self.input_nueva.text())
+        if not policy_ok:
+            return False, policy_msg
 
         if self.input_nueva.text() != self.input_confirmar.text():
             return False, "Las contraseñas nuevas no coinciden"

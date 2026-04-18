@@ -444,7 +444,7 @@ class TestAislamientoDatos:
         # Act: Obtener profesores con guardias en cada curso
         profesores_2024 = (
             session.query(Profesor)
-            .join(Guardia)
+            .join(Guardia, Profesor.id == Guardia.profesor_id)
             .filter(Guardia.curso_id == curso_2024_2025.id)
             .distinct()
             .all()
@@ -452,7 +452,7 @@ class TestAislamientoDatos:
 
         profesores_2025 = (
             session.query(Profesor)
-            .join(Guardia)
+            .join(Guardia, Profesor.id == Guardia.profesor_id)
             .filter(Guardia.curso_id == curso_2025_2026.id)
             .distinct()
             .all()

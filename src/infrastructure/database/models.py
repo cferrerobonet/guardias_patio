@@ -99,7 +99,7 @@ class Profesor(Base):
     zona_preferida_id = Column(Integer, ForeignKey("zonas.id"), nullable=True)  # Zona preferida
     dias_semana_permitidos = Column(Text, nullable=True)  # JSON: [0..6]
     recreos_permitidos = Column(Text, nullable=True)  # JSON: [1..N]
-    guardias = relationship("Guardia", back_populates="profesor")
+    guardias = relationship("Guardia", foreign_keys="Guardia.profesor_id", back_populates="profesor")
     zona_preferida = relationship("Zona", foreign_keys=[zona_preferida_id])
 
     __table_args__ = (
@@ -179,10 +179,14 @@ class Guardia(Base):
     turno = Column(String, nullable=False)
     recreo = Column(Integer, nullable=False)  # 1 o 2
     zona_id = Column(Integer, ForeignKey("zonas.id", ondelete="CASCADE"), nullable=False)
+    es_sustitucion = Column(Boolean, nullable=False, default=False, server_default="0")
+    profesor_sustituido_id = Column(Integer, ForeignKey("profesores.id", ondelete="SET NULL"), nullable=True)
+    notas = Column(Text, nullable=True)
 
     # Relaciones
     curso = relationship("CursoEscolar", back_populates="guardias")
-    profesor = relationship("Profesor", back_populates="guardias")
+    profesor = relationship("Profesor", foreign_keys=[profesor_id], back_populates="guardias")
+    profesor_sustituido = relationship("Profesor", foreign_keys=[profesor_sustituido_id])
     zona = relationship("Zona", back_populates="guardias")
 
 

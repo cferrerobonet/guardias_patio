@@ -34,9 +34,9 @@ class GuardiaMapper:
             fecha=model.fecha,
             turno=model.turno,
             recreo=model.recreo,
-            es_sustitucion=False,  # TODO: agregar al modelo si se necesita
-            profesor_sustituido_id=None,  # TODO: agregar al modelo si se necesita
-            notas=None,  # TODO: agregar al modelo si se necesita
+            es_sustitucion=bool(model.es_sustitucion),
+            profesor_sustituido_id=model.profesor_sustituido_id,
+            notas=model.notas,
         )
 
     @staticmethod
@@ -59,6 +59,9 @@ class GuardiaMapper:
         model.fecha = entity.fecha
         model.turno = entity.turno
         model.recreo = entity.recreo
+        model.es_sustitucion = entity.es_sustitucion
+        model.profesor_sustituido_id = entity.profesor_sustituido_id
+        model.notas = entity.notas
 
         return model
 

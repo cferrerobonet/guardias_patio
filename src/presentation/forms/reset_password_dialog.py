@@ -137,10 +137,9 @@ class ResetPasswordDialog(QDialog):
             QMessageBox.warning(self, "Campo vacío", "Por favor introduce la nueva contraseña")
             return
 
-        if len(new_password) < 4:
-            QMessageBox.warning(
-                self, "Contraseña débil", "La contraseña debe tener al menos 4 caracteres"
-            )
+        policy_ok, policy_msg = self.user_auth.validate_password_policy(new_password)
+        if not policy_ok:
+            QMessageBox.warning(self, "Contraseña débil", policy_msg)
             return
 
         if new_password != confirm_password:

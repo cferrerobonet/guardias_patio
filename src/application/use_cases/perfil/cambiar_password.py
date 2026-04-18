@@ -36,9 +36,10 @@ class CambiarPasswordUseCase:
         if dto.password_nueva != dto.password_confirmacion:
             raise ValidationError("Las contraseñas nuevas no coinciden")
 
-        # Validar longitud mínima
-        if len(dto.password_nueva) < 4:
-            raise ValidationError("La contraseña debe tener al menos 4 caracteres")
+        # Validar política de contraseñas
+        policy_ok, policy_msg = self.user_auth.validate_password_policy(dto.password_nueva)
+        if not policy_ok:
+            raise ValidationError(policy_msg)
 
         # Verificar contraseña actual usando authenticate
         auth_ok, auth_msg = self.user_auth.authenticate(dto.username, dto.password_actual)

@@ -127,8 +127,8 @@ Clean Architecture híbrida + DDD táctico. Capas:
 
 | ID | Hallazgo | Severidad | Detalle |
 |---|---|---|---|
-| SEC-05 | **Contraseña mínima: 4 caracteres** | ALTA | Sin requisitos de complejidad |
-| SEC-06 | **Sin protección brute force en login** | ALTA | Sin lockout, sin delay, sin CAPTCHA |
+| SEC-05 | ~~Contraseña mínima: 4 caracteres~~ | ✅ RESUELTO v3.7.0 | Política 8+ chars, mayúscula, número y símbolo aplicada en use cases y 3 diálogos Qt |
+| SEC-06 | ~~Sin protección brute force en login~~ | ✅ RESUELTO v3.6.0 | Lockout tras 5 intentos en `UserAuth.authenticate()` |
 | SEC-07 | **Credenciales reales en config JSON** | ALTA | Host SFTP de 1&1 IONOS y username expuestos |
 | SEC-08 | ~~API expone `str(e)` en errores 500~~ | ✅ RESUELTO v3.1.0 | Reemplazado por mensajes genéricos |
 | SEC-09 | ~~Uvicorn escucha en 0.0.0.0~~ | ✅ RESUELTO v3.1.0 | Cambiado a 127.0.0.1 |
@@ -137,11 +137,11 @@ Clean Architecture híbrida + DDD táctico. Capas:
 
 | ID | Hallazgo | Severidad | Detalle |
 |---|---|---|---|
-| SEC-10 | XSS potencial en templates email HTML | MEDIA | Username sin escapar en HTML |
-| SEC-11 | Path traversal en LocalSyncBackend | MEDIA | `remote_path` sin sanitizar |
+| SEC-10 | ~~XSS potencial en templates email HTML~~ | ✅ RESUELTO v3.6.0 | `html.escape(username)` en `email_service.py` |
+| SEC-11 | ~~Path traversal en LocalSyncBackend~~ | ✅ RESUELTO v3.6.0 | `_safe_path()` valida que la ruta resuelta esté dentro de `base_path` |
 | SEC-12 | `users.json` sin permisos restrictivos | MEDIA | Guardado con permisos por defecto (644) |
 | SEC-13 | Valores fallback en config exponen infraestructura | MEDIA | Host SFTP y username como defaults |
-| SEC-14 | Username sin validación en registro | MEDIA | Acepta cualquier string tras `strip()` |
+| SEC-14 | ~~Username sin validación en registro~~ | ✅ RESUELTO v3.6.0 | `re.fullmatch(r"[a-zA-Z0-9._\-]+", username)` en `register_user` |
 
 ### 3.4 Buenas Prácticas Detectadas
 
@@ -1257,8 +1257,8 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 
 | Tarea | Prioridad | Esfuerzo |
 |---|---|---|
-| Tests de API REST con TestClient | P1 | Medio |
-| Tests de SFTP/SMTP con mocks | P1 | Medio |
+| ~~Tests de API REST con TestClient~~ | P1 | ✅ v3.7.0 (21 tests en `test_api_rest.py`) |
+| ~~Tests de SFTP/SMTP con mocks~~ | P1 | ✅ v3.7.0 (incluidos en `test_api_rest.py`) |
 | Conectar /health al HealthChecker real | P2 | Bajo |
 | Target: coverage 70%+ | P2 | Alto |
 | Añadir correlation IDs para trazabilidad | P2 | Medio |
@@ -1269,8 +1269,8 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 | Tarea | Prioridad | Estado |
 |---|---|---|
 | ~~Limpiar domain/services de imports ORM (4 ficheros)~~ | P1 | ✅ v3.4.0 (ARQ-01) |
-| Hacer que routers API usen use cases (ya existen) | P1 | Pendiente |
-| Condicionar PRAGMAs SQLite al dialecto en db_manager | P1 | Pendiente |
+| ~~Hacer que routers API usen use cases (ya existen)~~ | P1 | ✅ v3.7.0 — profesores y guardias migrados |
+| ~~Condicionar PRAGMAs SQLite al dialecto en db_manager~~ | P1 | ✅ v3.6.1 — ya condicional con `IS_SQLITE` |
 | Migrar servicios legacy a usar repositorios | P2 | Pendiente |
 | ~~Crear entidades dominio para Ausencia/Config/Curso~~ | P2 | ✅ v3.4.0 (ARQ-03) |
 | ~~Eliminar acceso directo a BD desde presentación (36 imports)~~ | P2 | ✅ v3.6.0 (ARQ-02) |
@@ -1292,17 +1292,17 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 | Tarea | Prioridad | Estado |
 |---|---|---|
 | ~~`git rm --cached data/users.json`~~ | P0 | ✅ v3.1.1 (ORG-02) |
-| Unificar `utils/icons.py` + `utils/icon_manager.py` | P1 | Pendiente |
-| Mover scripts one-off a `scripts/archive/` | P2 | Pendiente |
+| ~~Unificar `utils/icons.py` + `utils/icon_manager.py`~~ | P1 | ✅ v3.7.0 — `icon_manager.py` es alias de `icons.py` |
+| ~~Mover scripts one-off a `scripts/archive/`~~ | P2 | ✅ v3.7.0 |
 | Mover tests sueltos de `scripts/` a `tests/` | P2 | Pendiente |
-| Añadir `__init__.py` a `src/services/` | P2 | Pendiente |
+| ~~Añadir `__init__.py` a `src/services/`~~ | P2 | ✅ v3.7.0 |
 | Unificar 4 scripts de benchmark en 1 | P3 | Pendiente |
 
 ### Fase 10 — Features Pendientes
 
 | Tarea | Prioridad | Esfuerzo |
 |---|---|---|
-| Implementar `es_sustitucion`/`profesor_sustituido_id`/`notas` en Guardia | P0 | Medio |
+| ~~Implementar `es_sustitucion`/`profesor_sustituido_id`/`notas` en Guardia~~ | P0 | ✅ v3.7.0 — ORM, migración Alembic `b2c3d4e5f6a7`, mapper y repositorio |
 | Resolver TODO olvidado de settings.py (deprecar v3.1→v4.0) | P0 | Bajo |
 | Añadir export CSV/Excel de guardias | P1 | Medio |
 | Añadir export PDF de informe de ausencias | P1 | Medio |

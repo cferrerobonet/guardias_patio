@@ -347,10 +347,11 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             Lista de guardias que son sustituciones
         """
         try:
-            # Por ahora, como no tenemos el campo es_sustitucion en el modelo,
-            # retornamos lista vacía
-            # TODO: Agregar campo es_sustitucion al modelo Guardia
-            return []
+            query = self.session.query(Guardia).filter(Guardia.es_sustitucion.is_(True))
+            if fecha_inicio:
+                query = query.filter(Guardia.fecha >= fecha_inicio)
+            models = query.order_by(Guardia.fecha).all()
+            return [GuardiaMapper.to_entity(m) for m in models]
         except Exception as e:
             logger.error("Error al buscar sustituciones", error=str(e))
             raise DatabaseError(f"Error al buscar sustituciones: {e}") from e

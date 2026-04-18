@@ -36,8 +36,11 @@ class CrearPerfilUseCase:
         if "@" not in dto.email or "." not in dto.email:
             raise ValidationError("El email no es válido")
 
-        if not dto.password or len(dto.password) < 4:
-            raise ValidationError("La contraseña debe tener al menos 4 caracteres")
+        if not dto.password:
+            raise ValidationError("La contraseña es obligatoria")
+        policy_ok, policy_msg = self.user_auth.validate_password_policy(dto.password)
+        if not policy_ok:
+            raise ValidationError(policy_msg)
 
         username = dto.username.strip()
         email = dto.email.strip()
