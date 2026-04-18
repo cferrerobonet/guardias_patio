@@ -7,7 +7,7 @@ informando al usuario de cada paso del proceso.
 
 import logging
 
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QDialog,
@@ -18,6 +18,33 @@ from PyQt6.QtWidgets import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class SyncWorker(QThread):
+    """Worker que ejecuta la sincronización SFTP en un hilo separado."""
+
+    progress_updated = pyqtSignal(str, dict)  # (step, details)
+    finished = pyqtSignal(bool)  # success
+
+    def __init__(self, sync_manager, session=None, parent=None):
+        super().__init__(parent)
+        self._sync_manager = sync_manager
+        self._session = session
+
+    def run(self):
+        def on_progress(step: str, details: dict):
+            self.progress_updated.emit(step, details)
+
+        try:
+            success = self._sync_manager.sync_on_shutdown(
+                session=self._session, progress_callback=on_progress
+            )
+        except Exception as e:
+            logger.error(f"Error en SyncWorker: {e}")
+            self.progress_updated.emit("error", {"message": str(e)})
+            success = False
+
+        self.finished.emit(success)
 
 
 class SyncProgressDialog(QDialog):

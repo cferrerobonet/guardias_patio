@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # ========== APLICACIÓN ==========
     app_name: str = "Gestión de Guardias de Patio"
-    app_version: str = "3.6.0"
+    app_version: str = "3.6.1"
     app_author: str = "Carlos Ferrero Bonet"
     environment: Literal["development", "production", "testing"] = "production"
 
@@ -113,12 +113,6 @@ class Settings(BaseSettings):
     ajuste_tutores: float = 0.9  # Alias para compatibilidad
     ajuste_no_tutores: float = 1.0  # Alias para compatibilidad
     festivos_comunidad: int = 1  # 1 = Valencia
-
-    # ========== RECREOS (horarios por defecto) ==========
-    recreo_manana_1: str = "10:30"
-    recreo_manana_2: str = "12:00"
-    recreo_tarde_1: str = "15:30"
-    recreo_tarde_2: str = "17:00"
 
     # ========== EXPORTACIÓN ==========
     export_format_json: str = "json"

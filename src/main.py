@@ -291,63 +291,48 @@ def main():
             if backend_disponible:
                 logger.info("Cerrando aplicación. Sincronizando cambios...")
 
-                # Importar el diálogo de progreso
-                from presentation.widgets.sync_progress_dialog import SyncProgressDialog
+                from presentation.widgets.sync_progress_dialog import SyncProgressDialog, SyncWorker
 
-                # Crear diálogo de progreso
                 progress_dialog = SyncProgressDialog()
-                progress_dialog.show()
 
-                # Callback de progreso
+                # Worker ejecuta la sync en hilo separado — no bloquea GUI
+                worker = SyncWorker(sync_manager, session=session)
+
                 def on_progress(step: str, details: dict):
-                    """Actualiza el diálogo según el paso de sincronización."""
                     if step == "exporting":
-                        # Contar registros (aproximado)
-                        from infrastructure.database.models import Ausencia, Guardia, Profesor, Zona
-
+                        from application.app_services import AppServices
                         try:
+                            svc = AppServices(session)
                             total = (
-                                session.query(Profesor).count()
-                                + session.query(Zona).count()
-                                + session.query(Guardia).count()
-                                + session.query(Ausencia).count()
+                                len(svc.profesores.get_all())
+                                + len(svc.zonas.get_all())
+                                + svc.contar_guardias()
                             )
-                            progress_dialog.set_step_exporting(total)
-                        except Exception as e:
-                            logger.error(f"Error contando registros: {e}")
-                            progress_dialog.set_step_exporting(0)
-
+                        except Exception:
+                            total = 0
+                        progress_dialog.set_step_exporting(total)
                     elif step == "connecting":
                         progress_dialog.set_step_connecting()
-
                     elif step == "uploading":
-                        file_size_kb = details.get("file_size_kb", 0)
-                        progress_dialog.set_step_uploading(file_size_kb)
-
+                        progress_dialog.set_step_uploading(details.get("file_size_kb", 0))
                     elif step == "complete":
                         progress_dialog.set_step_complete(success=True)
-
                     elif step == "error":
-                        error_msg = details.get("message", "Error desconocido")
-                        progress_dialog.set_step_error(error_msg)
+                        progress_dialog.set_step_error(details.get("message", "Error desconocido"))
 
-                try:
-                    # Ejecutar sincronización con callback de progreso
-                    success = sync_manager.sync_on_shutdown(
-                        session=session, progress_callback=on_progress
-                    )
-
+                def on_finished(success: bool):
                     if success:
                         logger.info("✓ Sincronización final completada")
                     else:
                         logger.warning("⚠ La sincronización final tuvo problemas")
+                        progress_dialog.set_step_complete(success=False)
 
-                except Exception as e:
-                    logger.error(f"Error en sincronización final: {e}")
-                    progress_dialog.set_step_error(str(e))
+                worker.progress_updated.connect(on_progress)
+                worker.finished.connect(on_finished)
+                worker.start()
 
-                # Esperar a que el usuario cierre el diálogo
                 progress_dialog.exec()
+                worker.wait()  # Asegurar que el hilo termina antes de liberar recursos
             else:
                 logger.info(
                     "Backend de sincronización no disponible. Omitiendo sincronización final."

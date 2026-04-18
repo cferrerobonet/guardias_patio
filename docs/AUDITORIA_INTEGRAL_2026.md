@@ -305,7 +305,7 @@ Sistema in-memory propio con `OrderedDict` LRU en `src/utils/cache.py`:
 | ID | Hallazgo | Severidad |
 |---|---|---|
 | CACHE-01 | ~~`repository_cache.py` re-crea el decorador en cada llamada~~ | ✅ RESUELTO v3.1.0 | Decorador cacheado una sola vez |
-| CACHE-02 | **Cache no thread-safe** — `OrderedDict` global sin locks, usado con `QThread` | ALTA |
+| CACHE-02 | ~~**Cache no thread-safe**~~ | ✅ RESUELTO v3.6.1 | `threading.RLock` en `utils/cache.py` protege `_cache_store` y `_cache_stats` |
 | CACHE-03 | Cache volátil — se pierde al reiniciar la app | BAJA |
 
 ~~**CACHE-01 detalle**: En `repository_cache.py` línea ~58, `cached_func = cache_query(ttl=ttl)(func)` crea un nuevo wrapper sin estado previo en cada invocación.~~ ✅ **RESUELTO v3.1.0**: Movido a `decorator()` scope.
@@ -313,7 +313,7 @@ Sistema in-memory propio con `OrderedDict` LRU en `src/utils/cache.py`:
 ### 6.3 Recomendaciones
 
 - [x] **P0** — ~~Corregir `repository_cache.py` para cachear la función decorada una sola vez~~ ✅ v3.1.0
-- [ ] **P1** — Añadir `threading.Lock` al `OrderedDict` del caché
+- [x] **P1** — ~~Añadir `threading.Lock` al `OrderedDict` del caché~~ ✅ v3.6.1 (`threading.RLock`)
 - [ ] Evaluar `cachetools` como reemplazo (thread-safe, TTLCache, LRUCache built-in)
 
 ---
@@ -335,13 +335,13 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 
 | ID | Hallazgo | Severidad |
 |---|---|---|
-| ASYNC-01 | **Sync SFTP no usa QThread** — solo `self.repaint()` manual. Potencial freeze de GUI | ALTA |
+| ASYNC-01 | ~~**Sync SFTP no usa QThread**~~ | ✅ RESUELTO v3.6.1 | `SyncWorker(QThread)` en `sync_progress_dialog.py`; `main.py` usa señales Qt |
 | ASYNC-02 | FastAPI endpoints síncronos (`def` en vez de `async def`) | BAJA (aceptable con SQLite) |
 | ASYNC-03 | No hay asyncio, multiprocessing ni thread pools | BAJA |
 
 ### 7.3 Recomendaciones
 
-- [ ] **P1** — Mover sincronización SFTP a `QThread` con `ProgressDialog`
+- [x] **P1** — ~~Mover sincronización SFTP a `QThread` con `ProgressDialog`~~ ✅ v3.6.1 (`SyncWorker`)
 - [ ] Evaluar `async def` + `run_in_threadpool` para endpoints FastAPI si se migra a PostgreSQL
 
 ---
@@ -1219,8 +1219,8 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 | ~~Reemplazar 15 `except Exception: pass` por logging~~ | P1 | ✅ v3.1.1 |
 | ~~Reemplazar `print("DEBUG:...")` por `logger.debug()`~~ | P1 | ✅ v3.1.1 |
 | ~~Unificar logging dual → solo `core/logging`~~ | P1 | ✅ v3.1.0 |
-| Eliminar `sftp_config.json` y `smtp_config.json` legacy | P1 | Pendiente |
-| Limpiar feature flags y settings huérfanos | P2 | Pendiente |
+| Eliminar `sftp_config.json` y `smtp_config.json` legacy | P1 | No aplica — son archivos de credenciales en producción, usados activamente |
+| ~~Limpiar feature flags y settings huérfanos~~ | P2 | ✅ v3.6.1 — `recreo_manana_1/2`, `recreo_tarde_1/2` eliminados de `settings.py` |
 
 ### Fase 3 — Performance y Bugs Críticos
 
@@ -1228,8 +1228,8 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 |---|---|---|
 | ~~Corregir N+1 en `/api/guardias` (joinedload)~~ | P0 | ✅ v3.1.0 |
 | ~~Corregir bug de `repository_cache.py`~~ | P0 | ✅ v3.1.0 |
-| Añadir thread-safety al caché (Lock) | P1 | Pendiente |
-| Mover sync SFTP a QThread | P1 | Pendiente |
+| ~~Añadir thread-safety al caché (Lock)~~ | P1 | ✅ v3.6.1 (`threading.RLock`) |
+| ~~Mover sync SFTP a QThread~~ | P1 | ✅ v3.6.1 (`SyncWorker`) |
 
 ### Fase 4 — Integridad de BD
 

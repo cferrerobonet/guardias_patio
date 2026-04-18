@@ -6,7 +6,24 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [3.6.1] - 2026-04-18
 
+### 🎯 Resumen
+
+Fases 2-3 del roadmap de auditoría: thread-safety del caché, SFTP asíncrono en QThread y limpieza de settings huérfanos.
+
+### Changed
+
+- **ASYNC-01 resuelto**: `sync_progress_dialog.py` — nuevo `SyncWorker(QThread)` que ejecuta `sync_on_shutdown()` en hilo separado; `main.py` usa señales Qt (`progress_updated`, `finished`) en lugar de llamada bloqueante en el hilo GUI
+- **CACHE-02 resuelto**: `utils/cache.py` ya tenía `threading.RLock` — confirmado y documentado
+- `settings.py`: eliminados 4 campos huérfanos (`recreo_manana_1/2`, `recreo_tarde_1/2`) que nunca se leían — la config real de recreos viene de la BD
+
+### 🧹 Housekeeping
+
+- Auditoría actualizada: Fase 3 completada al 100% (CACHE-02 ✅, ASYNC-01 ✅)
+- Fase 2 actualizada: settings huérfanos eliminados
+
+---
 ## [3.6.0] - 2026-04-19
 
 ### 🎯 Resumen
