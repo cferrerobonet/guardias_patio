@@ -203,7 +203,7 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 | DB-03 | ~~Sin `ON DELETE CASCADE` en profesor→guardias/ausencias~~ | ✅ RESUELTO v3.1.0 | CASCADE añadido |
 | DB-04 | ~~Sin UniqueConstraint en guardias~~ | ✅ RESUELTO v3.1.0 | `uq_guardia_asignacion` añadido |
 | DB-05 | Sin CheckConstraint en `turno`, `ausencias.tipo`, `recreo`, `porcentaje_jornada` | MEDIA |
-| DB-06 | `datetime.utcnow` como default — deprecated en Python 3.12+ | MEDIA |
+| DB-06 | ~~`datetime.utcnow` como default — deprecated en Python 3.12+~~ | ✅ RESUELTO (anterior a auditoría) | `datetime.now(timezone.utc)` ya usado en `models.py`, `gestor_cursos.py`, `exportador.py` |
 | DB-07 | `guardias.curso_id` nullable (justificado como "migración gradual" pero sin cleanup) | MEDIA |
 
 ### 4.4 Índices
@@ -213,13 +213,13 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 - `idx_guardias_fecha_turno` (compuesto)
 - `idx_ausencias_profesor`, `idx_ausencias_fechas`, `idx_ausencias_activa`
 
-**Faltantes**:
-- `guardias.curso_id` — se filtra frecuentemente por curso
-- `guardias(fecha, turno, recreo)` — compuesto triple, usado en `find_by_fecha_turno_recreo()`
-- `profesores.turno` — filtro habitual
-- `profesores.activo` — filtro muy frecuente
-- `ausencias(profesor_id, fecha_inicio, fecha_fin, activa)` — compuesto para queries de rango
-- `zonas.nombre_zona` — para `find_by_nombre()`
+**Faltantes** ~~(resueltos — anterior a auditoría)~~:
+- ~~`guardias.curso_id`~~ → `ix_guardias_curso_id` ✅ en `models.py`
+- ~~`guardias(fecha, turno, recreo)`~~ → `ix_guardias_fecha_turno_recreo` ✅ en `models.py`
+- ~~`profesores.turno`~~ → `ix_profesores_turno` ✅ en `models.py`
+- ~~`profesores.activo`~~ → `ix_profesores_activo` ✅ en `models.py`
+- `ausencias(profesor_id, fecha_inicio, fecha_fin, activa)` — compuesto para queries de rango (pendiente)
+- `zonas.nombre_zona` — para `find_by_nombre()` (pendiente)
 
 ### 4.5 Migraciones (Alembic)
 
@@ -230,7 +230,7 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 | DB-08 | Migración duplicada vacía `b939a8969a45` → `0122b6bbdc61` | BAJA |
 | DB-09 | Columnas `fecha_inicio/fin` añadidas a zonas en 2 migraciones diferentes | MEDIA |
 | DB-10 | Downgrade vacío en `a1b2c3d4e5f6` — rollback imposible | ALTA |
-| DB-11 | Inconsistencia modelo/migración: ORM dice `cerrado`, migración crea `archivado` | ALTA |
+| DB-11 | ~~Inconsistencia modelo/migración: ORM dice `cerrado`, migración crea `archivado`~~ | ✅ RESUELTO (anterior a auditoría) | Migración `e1f2a3b4c5d6_fix_cerrado_indices.py` renombra `archivado` → `cerrado`; ORM consistente |
 | DB-12 | `create_user_database()` no ejecuta Alembic stamp — BD sin versión | ALTA |
 
 ### 4.6 Database Manager
@@ -1238,9 +1238,9 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 | ~~Añadir NOT NULL a guardias.profesor_id y zona_id~~ | P1 | ✅ v3.1.0 |
 | ~~Añadir ON DELETE CASCADE profesor→guardias/ausencias~~ | P1 | ✅ v3.1.0 |
 | ~~Añadir UniqueConstraint en guardias~~ | P1 | ✅ v3.1.0 |
-| Crear índices faltantes | P1 | Pendiente |
-| Resolver inconsistencia cerrado/archivado | P1 | Pendiente |
-| Unificar init BD: solo Alembic | P2 | Pendiente |
+| ~~Crear índices faltantes~~ | P1 | ✅ anterior a auditoría (parcial) |
+| ~~Resolver inconsistencia cerrado/archivado~~ | P1 | ✅ anterior a auditoría |
+| ~~Unificar init BD: solo Alembic~~ | P2 | ✅ v3.4.0 |
 
 ### Fase 5 — Seguridad Media y Autenticación
 
