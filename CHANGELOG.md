@@ -6,6 +6,26 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.9.8] - 2026-04-19
+
+### 🎯 Resumen
+OBS-03 resuelto con instrumentación de métricas de negocio en endpoints clave de guardias.
+
+### Changed
+- `src/api/routers/guardias.py` añade logs estructurados de negocio en:
+  - listado de guardias (total, devueltas, paginación, duración)
+  - conteo de guardias (total, duración)
+  - exportaciones CSV/XLSX (registros, duración)
+  - asignación y limpieza de guardias (IDs relevantes, volumen, duración)
+- Se añade logging de excepciones en rutas de guardias para mejorar trazabilidad operativa.
+
+### Fixed
+- **OBS-03**: incorporadas métricas de negocio en logs estructurados para operaciones críticas.
+
+### Audit
+- `docs/AUDITORIA_INTEGRAL_2026.md`: OBS-03 marcado como ✅ RESUELTO v5.9.8.
+
+---
 ## [5.9.7] - 2026-04-19
 
 ### 🎯 Resumen

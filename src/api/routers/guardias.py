@@ -7,6 +7,7 @@ Endpoints para gestión de guardias (consultar, generar, asignar).
 import csv
 import io
 from datetime import date
+from time import perf_counter
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -21,9 +22,11 @@ from application.use_cases.guardia.asignar_guardia import AsignarGuardiaUseCase
 from application.use_cases.guardia.limpiar_guardias import LimpiarGuardiasUseCase
 from application.use_cases.guardia.obtener_guardias import ObtenerGuardiasUseCase
 from core.exceptions import BusinessLogicError, ValidationError
+from core.logging import get_logger
 from infrastructure.repositories import SQLAlchemyGuardiaRepository
 
 router = APIRouter(prefix="/guardias", tags=["guardias"])
+logger = get_logger(__name__)
 
 
 class GuardiaResponse(BaseModel):
@@ -89,6 +92,7 @@ def obtener_guardias(
     Examples:
         GET /api/guardias?configuracion_id=1&turno=mañana&limit=50
     """
+    start = perf_counter()
     try:
         filtros = FiltroGuardiasDTO(
             fecha_inicio=fecha_inicio,
@@ -122,9 +126,23 @@ def obtener_guardias(
             for g in paginados
         ]
 
+        duration_ms = (perf_counter() - start) * 1000
+        logger.info(
+            "Metrica negocio: listado guardias",
+            extra={
+                "metric": "guardias_listado",
+                "total": total,
+                "devueltas": len(items),
+                "page": page,
+                "offset": offset,
+                "limit": limit,
+                "duration_ms": round(duration_ms, 2),
+            },
+        )
         return PaginatedGuardiasResponse(items=items, total=total, page=page, size=len(items), pages=pages)
 
     except (ValueError, TypeError, OSError) as e:
+        logger.exception("Error en listado de guardias")
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
 
@@ -156,6 +174,7 @@ def contar_guardias(
     Examples:
         GET /api/guardias/count?configuracion_id=1&turno=tarde
     """
+    start = perf_counter()
     try:
         filtros = FiltroGuardiasDTO(
             fecha_inicio=fecha_inicio,
@@ -166,9 +185,20 @@ def contar_guardias(
         )
         use_case = ObtenerGuardiasUseCase(db)
         dtos = use_case.execute(filtros)
-        return {"total": len(dtos)}
+        total = len(dtos)
+        duration_ms = (perf_counter() - start) * 1000
+        logger.info(
+            "Metrica negocio: conteo guardias",
+            extra={
+                "metric": "guardias_conteo",
+                "total": total,
+                "duration_ms": round(duration_ms, 2),
+            },
+        )
+        return {"total": total}
 
     except (ValueError, TypeError, OSError) as e:
+        logger.exception("Error en conteo de guardias")
         raise HTTPException(status_code=500, detail="Error al contar guardias")
 
 
@@ -210,9 +240,11 @@ def exportar_guardias_csv(
     db: Session = Depends(get_db),
 ):
     """Exporta las guardias filtradas como archivo CSV (UTF-8 con BOM para Excel)."""
+    start = perf_counter()
     try:
         dtos = _get_guardias_dtos(configuracion_id, fecha_inicio, fecha_fin, profesor_id, zona_id, turno, db)
     except (ValueError, TypeError, OSError) as e:
+        logger.exception("Error al exportar guardias CSV")
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
     buf = io.StringIO()
@@ -223,6 +255,15 @@ def exportar_guardias_csv(
         writer.writerow(_dto_to_row(g))
 
     content = buf.getvalue().encode("utf-8")
+    duration_ms = (perf_counter() - start) * 1000
+    logger.info(
+        "Metrica negocio: exportacion guardias CSV",
+        extra={
+            "metric": "guardias_export_csv",
+            "registros": len(dtos),
+            "duration_ms": round(duration_ms, 2),
+        },
+    )
     return Response(
         content=content,
         media_type="text/csv; charset=utf-8",
@@ -241,6 +282,7 @@ def exportar_guardias_xlsx(
     db: Session = Depends(get_db),
 ):
     """Exporta las guardias filtradas como archivo Excel (.xlsx)."""
+    start = perf_counter()
     try:
         import openpyxl
         from openpyxl.styles import Font, PatternFill
@@ -250,6 +292,7 @@ def exportar_guardias_xlsx(
     try:
         dtos = _get_guardias_dtos(configuracion_id, fecha_inicio, fecha_fin, profesor_id, zona_id, turno, db)
     except (ValueError, TypeError, OSError) as e:
+        logger.exception("Error al exportar guardias XLSX")
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
     wb = openpyxl.Workbook()
@@ -275,6 +318,15 @@ def exportar_guardias_xlsx(
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
+    duration_ms = (perf_counter() - start) * 1000
+    logger.info(
+        "Metrica negocio: exportacion guardias XLSX",
+        extra={
+            "metric": "guardias_export_xlsx",
+            "registros": len(dtos),
+            "duration_ms": round(duration_ms, 2),
+        },
+    )
 
     return StreamingResponse(
         buf,
@@ -286,8 +338,21 @@ def exportar_guardias_xlsx(
 @router.post("", response_model=GuardiaResponse, status_code=201, summary="Asignar guardia")
 def asignar_guardia(guardia: CrearGuardiaDTO, db: Session = Depends(get_db)):
     """Asigna manualmente una guardia a un profesor en una zona y fecha concretas."""
+    start = perf_counter()
     try:
         dto = AsignarGuardiaUseCase(db).execute(guardia)
+        duration_ms = (perf_counter() - start) * 1000
+        logger.info(
+            "Metrica negocio: guardia asignada",
+            extra={
+                "metric": "guardia_asignada",
+                "guardia_id": dto.id,
+                "profesor_id": dto.profesor_id,
+                "zona_id": dto.zona_id,
+                "turno": dto.turno,
+                "duration_ms": round(duration_ms, 2),
+            },
+        )
         return GuardiaResponse(
             id=dto.id,
             fecha=dto.fecha,
@@ -302,16 +367,28 @@ def asignar_guardia(guardia: CrearGuardiaDTO, db: Session = Depends(get_db)):
     except (ValidationError, BusinessLogicError) as e:
         raise HTTPException(status_code=422, detail={"code": "validation_error", "message": str(e)})
     except (ValueError, TypeError, OSError) as e:
+        logger.exception("Error al asignar guardia")
         raise HTTPException(status_code=500, detail={"code": "internal_error", "message": str(e)})
 
 
 @router.delete("", status_code=200, summary="Eliminar todas las guardias")
 def limpiar_guardias(db: Session = Depends(get_db)):
     """Elimina TODAS las guardias del sistema. Operación irreversible."""
+    start = perf_counter()
     try:
         repo = SQLAlchemyGuardiaRepository(db)
         total = LimpiarGuardiasUseCase(repo).execute()
+        duration_ms = (perf_counter() - start) * 1000
+        logger.info(
+            "Metrica negocio: limpieza de guardias",
+            extra={
+                "metric": "guardias_limpieza",
+                "eliminadas": total,
+                "duration_ms": round(duration_ms, 2),
+            },
+        )
         return {"eliminadas": total}
     except (ValueError, OSError) as e:
+        logger.exception("Error al limpiar guardias")
         raise HTTPException(status_code=500, detail={"code": "internal_error", "message": str(e)})
 

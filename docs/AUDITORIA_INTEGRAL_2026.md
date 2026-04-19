@@ -823,7 +823,7 @@ def test_login_dialog(qtbot):
 
 ## 10. Observabilidad
 
-### OBS-03 — Sin métricas de negocio (P3)
+### ~~OBS-03 — Sin métricas de negocio (P3)~~ ✅ RESUELTO v5.9.8
 
 **Cómo resolver**: Añadir logs estructurados en operaciones clave:
 ```python
@@ -1370,7 +1370,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | 12 | API-14 | WebSocket para progreso de generación guardias | L |
 | 13 | TEST-06 | ~~Mutation testing con mutmut~~ ✅ RESUELTO v5.9.7 | M |
 | 14 | TEST-07 | Tests regresión UI con pytest-qt | M |
-| 15 | OBS-03 | Métricas de negocio en logs | M |
+| 15 | OBS-03 | ~~Métricas de negocio en logs~~ ✅ RESUELTO v5.9.8 | M |
 | 16 | ~~OBS-05~~ | ~~RotatingFileHandler (10MB, 5 backups)~~ ✅ RESUELTO (pre-existente) | S |
 | 17 | OBS-06 | Alertas de error (Sentry o webhook) | M |
 | 18 | A11Y-08 | Tema alto contraste | L |
@@ -1811,7 +1811,7 @@ Debug prints que deberían ser `logger.debug()`.
 
 **Acción**: Reemplazar todos por logger apropiado.
 
-### OBS-03 — Sin métricas de negocio (P3)
+### ~~OBS-03 — Sin métricas de negocio (P3)~~ ✅ RESUELTO v5.9.8
 No se trackean: guardias generadas/día, tiempo de generación, errores por tipo.
 
 **Acción**: Instrumentar con contadores en logger estructurado.
