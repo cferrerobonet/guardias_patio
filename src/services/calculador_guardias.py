@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Tuple
 from infrastructure.database.models import Configuracion, Profesor, Zona
 from services.gestor_cursos import GestorCursos
 from services.validators import TurnoValidator
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -308,6 +308,7 @@ def calcular_distribucion_cruda(session: Session) -> Dict[int, float]:
     # Esto permite calcular distribución desde cero
     profesores = (
         session.query(Profesor)
+        .options(joinedload(Profesor.zona_preferida))
         .filter(Profesor.activo == True)  # noqa: E712
         .all()
     )

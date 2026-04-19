@@ -5,10 +5,11 @@ Endpoints para obtener estadísticas y métricas agregadas.
 """
 
 from datetime import date
-from typing import Optional
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from infrastructure.database.models import Guardia, Profesor
+from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -17,7 +18,33 @@ from api.dependencies import get_db
 router = APIRouter(prefix="/estadisticas", tags=["estadisticas"])
 
 
-@router.get("/resumen")
+class TopProfesorResponse(BaseModel):
+    id: int
+    nombre: str
+    total_guardias: int
+
+
+class ResumenEstadisticasResponse(BaseModel):
+    total_guardias: int
+    asignadas: int
+    sin_asignar: int
+    cobertura_porcentaje: float
+    por_turno: Dict[str, int]
+    top_profesor: Optional[TopProfesorResponse] = None
+
+
+class EstadisticaProfesorResponse(BaseModel):
+    id: int
+    nombre: str
+    total_guardias: int
+
+
+class EstadisticasPorProfesorResponse(BaseModel):
+    profesores: List[EstadisticaProfesorResponse]
+    total_profesores: int
+
+
+@router.get("/resumen", response_model=ResumenEstadisticasResponse)
 def obtener_resumen(
     configuracion_id: int,
     fecha_inicio: Optional[date] = None,
@@ -77,7 +104,7 @@ def obtener_resumen(
             if profesor:
                 top_profesor_info = {
                     "id": profesor.id,
-                    "nombre": profesor.nombre_completo,
+                    "nombre": str(profesor.nombre_completo),
                     "total_guardias": top_profesor[1],
                 }
 
@@ -95,7 +122,7 @@ def obtener_resumen(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/por-profesor")
+@router.get("/por-profesor", response_model=EstadisticasPorProfesorResponse)
 def estadisticas_por_profesor(configuracion_id: int, db: Session = Depends(get_db)):
     """
     Obtiene estadísticas de guardias por profesor.

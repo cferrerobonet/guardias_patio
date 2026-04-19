@@ -317,7 +317,12 @@ class ExportadorPDF:
         profesores_dict = {}
         if profesor_ids:
             ids_list = [pid for (pid,) in profesor_ids]
-            profesores = session.query(Profesor).filter(Profesor.id.in_(ids_list)).all()
+            profesores = (
+                session.query(Profesor)
+                .options(joinedload(Profesor.zona_preferida))
+                .filter(Profesor.id.in_(ids_list))
+                .all()
+            )
             profesores_dict = {p.id: p for p in profesores}
 
         total_profesores = len(profesores_dict)
@@ -438,7 +443,12 @@ class ExportadorPDF:
             carpeta.mkdir(parents=True, exist_ok=True)
 
             # Cargar profesores seleccionados
-            profesores = session.query(Profesor).filter(Profesor.id.in_(profesor_ids)).all()
+            profesores = (
+                session.query(Profesor)
+                .options(joinedload(Profesor.zona_preferida))
+                .filter(Profesor.id.in_(profesor_ids))
+                .all()
+            )
             total_profesores = len(profesores)
 
             if total_profesores == 0:

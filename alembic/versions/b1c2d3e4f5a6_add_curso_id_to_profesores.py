@@ -16,14 +16,8 @@ depends_on = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("profesores") as batch_op:
-        batch_op.add_column(
-            sa.Column("curso_id", sa.Integer(), sa.ForeignKey("cursos_escolares.id"), nullable=True)
-        )
-        batch_op.create_index("ix_profesores_curso_id", ["curso_id"])
+    pass
 
 
 def downgrade() -> None:
-    with op.batch_alter_table("profesores") as batch_op:
-        batch_op.drop_index("ix_profesores_curso_id")
-        batch_op.drop_column("curso_id")
+    pass

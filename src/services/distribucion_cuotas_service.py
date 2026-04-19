@@ -28,7 +28,7 @@ from services.calculador_guardias import (
     _parse_recreos_config,
     listar_dias_lectivos,
 )
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -108,7 +108,12 @@ class DistribucionCuotasService:
             >>> print(f"Profesor 1: {cuotas[1]} guardias")
         """
         if profesores is None:
-            profesores = self.session.query(Profesor).filter(Profesor.activo).all()
+            profesores = (
+                self.session.query(Profesor)
+                .options(joinedload(Profesor.zona_preferida))
+                .filter(Profesor.activo)
+                .all()
+            )
 
         if not profesores:
             self.logger.warning("No hay profesores activos para calcular cuotas")
@@ -182,7 +187,12 @@ class DistribucionCuotasService:
         if not config:
             raise ValueError("No se encontró configuración activa")
 
-        profesores = self.session.query(Profesor).filter(Profesor.activo).all()
+        profesores = (
+            self.session.query(Profesor)
+            .options(joinedload(Profesor.zona_preferida))
+            .filter(Profesor.activo)
+            .all()
+        )
         total_slots = self._calcular_total_slots(config)
         factores = self._calcular_factores_participacion(profesores, config)
 

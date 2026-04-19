@@ -38,6 +38,10 @@ class GuardiaResponse(BaseModel):
         from_attributes = True
 
 
+class GuardiasCountResponse(BaseModel):
+    total: int
+
+
 @router.get("", response_model=List[GuardiaResponse])
 def obtener_guardias(
     configuracion_id: int,
@@ -104,7 +108,7 @@ def obtener_guardias(
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
 
-@router.get("/count")
+@router.get("/count", response_model=GuardiasCountResponse)
 def contar_guardias(
     configuracion_id: int,
     fecha_inicio: Optional[date] = None,

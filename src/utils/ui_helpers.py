@@ -9,7 +9,7 @@ from typing import Optional
 
 from core.logging import get_logger
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtGui import QIcon, QPixmap, QPixmapCache
 from PyQt6.QtWidgets import QMessageBox, QWidget
 
 logger = get_logger(__name__)
@@ -52,6 +52,24 @@ MESSAGEBOX_STYLE = """
 """
 
 
+def _get_logo_path() -> Path:
+    return Path(__file__).parent.parent.parent / "imagenes" / "logo.png"
+
+
+def _get_cached_pixmap(path: Path) -> Optional[QPixmap]:
+    cache_key = str(path)
+    cached = QPixmapCache.find(cache_key)
+    if cached is not None:
+        return cached
+
+    pixmap = QPixmap(str(path))
+    if pixmap.isNull():
+        return None
+
+    QPixmapCache.insert(cache_key, pixmap)
+    return pixmap
+
+
 def get_corporate_icon() -> QIcon:
     """
     Obtiene el icono corporativo de forma discreta.
@@ -60,8 +78,7 @@ def get_corporate_icon() -> QIcon:
         QIcon con el logo corporativo si existe, icono vacío si no.
     """
     try:
-        # Ruta relativa desde src/utils/ hasta imagenes/
-        icon_path = Path(__file__).parent.parent.parent / "imagenes" / "logo.png"
+        icon_path = _get_logo_path()
         if icon_path.exists():
             return QIcon(str(icon_path))
     except Exception:
@@ -80,10 +97,10 @@ def get_corporate_pixmap(size: int = 64) -> Optional[QPixmap]:
         QPixmap con el logo corporativo escalado, None si no existe.
     """
     try:
-        icon_path = Path(__file__).parent.parent.parent / "imagenes" / "logo.png"
+        icon_path = _get_logo_path()
         if icon_path.exists():
-            pixmap = QPixmap(str(icon_path))
-            if not pixmap.isNull():
+            pixmap = _get_cached_pixmap(icon_path)
+            if pixmap is not None:
                 return pixmap.scaled(
                     size,
                     size,
@@ -106,11 +123,10 @@ def apply_corporate_icon_to_messagebox(msg_box: QMessageBox) -> None:
         msg_box: El QMessageBox al que aplicar el icono
     """
     try:
-        icon_path = Path(__file__).parent.parent.parent / "imagenes" / "logo.png"
+        icon_path = _get_logo_path()
         if icon_path.exists():
-            # Cargar el pixmap original
-            pixmap = QPixmap(str(icon_path))
-            if not pixmap.isNull():
+            pixmap = _get_cached_pixmap(icon_path)
+            if pixmap is not None:
                 # Escalar el pixmap
                 scaled_pixmap = pixmap.scaled(
                     64,

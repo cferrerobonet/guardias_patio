@@ -30,6 +30,17 @@ try:
 except ImportError:
     _TENACITY_AVAILABLE = False
 
+try:
+    import pybreaker
+    _sftp_breaker = pybreaker.CircuitBreaker(fail_max=3, reset_timeout=60)
+    _smtp_breaker = pybreaker.CircuitBreaker(fail_max=3, reset_timeout=60)
+    _PYBREAKER_AVAILABLE = True
+except ImportError:
+    pybreaker = None  # type: ignore[assignment]
+    _PYBREAKER_AVAILABLE = False
+    _sftp_breaker = None
+    _smtp_breaker = None
+
 # Configurar logger
 logger = logging.getLogger(__name__)
 
@@ -154,7 +165,15 @@ class SFTPSyncBackend(SyncBackend):
         self._connect()
 
     def _connect(self) -> bool:
-        """Establece la conexión SFTP con reintentos exponenciales."""
+        """Establece la conexión SFTP con circuit breaker y reintentos exponenciales."""
+        if _PYBREAKER_AVAILABLE and _sftp_breaker is not None:
+            try:
+                if _TENACITY_AVAILABLE:
+                    return _sftp_breaker.call(self._connect_with_retry)
+                return _sftp_breaker.call(self._connect_once)
+            except pybreaker.CircuitBreakerError:
+                logger.warning("SFTP: circuit breaker abierto, omitiendo intento de conexión")
+                return False
         if _TENACITY_AVAILABLE:
             return self._connect_with_retry()
         return self._connect_once()
@@ -180,8 +199,17 @@ class SFTPSyncBackend(SyncBackend):
             self.client.set_missing_host_key_policy(paramiko.RejectPolicy())
 
             self.client.connect(
-                self._host, port=self._port, username=self._username, password=self._password
+                self._host,
+                port=self._port,
+                username=self._username,
+                password=self._password,
+                timeout=30,
+                banner_timeout=30,
+                auth_timeout=30,
             )
+            transport = self.client.get_transport()
+            if transport is not None:
+                transport.set_keepalive(30)
             self.sftp = self.client.open_sftp()
             logger.info(
                 f"SFTP conectado a {self._host}:{self._port} con verificación de host key ✅"

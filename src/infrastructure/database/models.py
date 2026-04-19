@@ -27,6 +27,7 @@ def _now_utc() -> datetime:
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     Date,
     DateTime,
@@ -108,6 +109,9 @@ class Profesor(Base):
         Index("ix_profesores_activo", "activo"),
         Index("ix_profesores_turno", "turno"),
         Index("ix_profesores_curso_id", "curso_id"),
+        CheckConstraint("turno IN ('ma\u00f1ana','tarde','completo','mixto')", name="ck_profesor_turno"),
+        CheckConstraint("porcentaje_jornada >= 0 AND porcentaje_jornada <= 100", name="ck_profesor_porcentaje"),
+        CheckConstraint("horas_contrato >= 0", name="ck_profesor_horas_contrato"),
     )
 
 
@@ -128,6 +132,10 @@ class Zona(Base):
     activa = Column(Boolean, nullable=False, default=True, server_default="1")
     capacidad_profesores = Column(Integer, nullable=True)  # Máx. profesores simultáneos (None=sin límite)
     guardias = relationship("Guardia", back_populates="zona")
+
+    __table_args__ = (
+        CheckConstraint("capacidad_profesores IS NULL OR capacidad_profesores >= 1", name="ck_zona_capacidad"),
+    )
 
 
 class Configuracion(Base):
@@ -158,6 +166,11 @@ class Configuracion(Base):
     # Relación con curso activo
     curso_activo = relationship("CursoEscolar", foreign_keys=[curso_activo_id])
 
+    __table_args__ = (
+        CheckConstraint("ajuste_tutores > 0", name="ck_config_ajuste_tutores"),
+        CheckConstraint("ajuste_no_tutores > 0", name="ck_config_ajuste_no_tutores"),
+    )
+
 
 class Guardia(Base):
     """
@@ -176,6 +189,8 @@ class Guardia(Base):
         Index("ix_guardias_curso_id", "curso_id"),
         Index("ix_guardias_turno", "turno"),
         Index("ix_guardias_fecha_turno_recreo", "fecha", "turno", "recreo"),
+        CheckConstraint("turno IN ('ma\u00f1ana','tarde')", name="ck_guardia_turno"),
+        CheckConstraint("recreo >= 1", name="ck_guardia_recreo_positivo"),
     )
     id = Column(Integer, primary_key=True)
     curso_id = Column(Integer, ForeignKey("cursos_escolares.id"), nullable=True)
@@ -217,6 +232,14 @@ class Ausencia(Base):
 
     # Relación con Profesor
     profesor = relationship("Profesor", backref="ausencias")
+
+    __table_args__ = (
+        CheckConstraint(
+            "tipo IN ('baja_medica','permiso','vacaciones','otros')",
+            name="ck_ausencia_tipo"
+        ),
+        CheckConstraint("fecha_fin >= fecha_inicio", name="ck_ausencia_fechas"),
+    )
 
 
 # Exportar todos los modelos

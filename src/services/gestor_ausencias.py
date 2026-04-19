@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Tuple
 
 from infrastructure.database.models import Ausencia, Guardia, Profesor
 from services.validators import AusenciaChecker, TurnoValidator
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
@@ -206,6 +206,7 @@ def obtener_guardias_afectadas(
     # Buscar guardias del profesor en el rango de fechas
     guardias = (
         session.query(Guardia)
+        .options(joinedload(Guardia.zona), joinedload(Guardia.profesor))
         .filter(
             Guardia.profesor_id == ausencia.profesor_id,
             Guardia.fecha >= ausencia.fecha_inicio,
@@ -242,6 +243,7 @@ def obtener_guardias_afectadas_por_periodo(
     """
     guardias = (
         session.query(Guardia)
+        .options(joinedload(Guardia.zona), joinedload(Guardia.profesor))
         .filter(
             Guardia.profesor_id == profesor_id,
             Guardia.fecha >= fecha_inicio,
@@ -274,7 +276,7 @@ def obtener_profesores_disponibles(
         Lista de tuplas (Profesor, guardias_asignadas_hoy)
         Ordenada por menor carga actual
     """
-    profesores = session.query(Profesor).all()
+    profesores = session.query(Profesor).options(joinedload(Profesor.zona_preferida)).all()
 
     # Crear checker de ausencias
     checker = AusenciaChecker(session)

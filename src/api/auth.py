@@ -64,7 +64,7 @@ def _verify_user(username: str, password: str) -> tuple[bool, Optional[str]]:
     try:
         with users_file.open(encoding="utf-8") as f:
             users: list[dict] = json.load(f)
-    except (OSError, ValueError) as e:
+    except (OSError, ValueError, Exception):
         return False, "Error al leer archivo de usuarios"
 
     for user in users:
@@ -90,7 +90,7 @@ def _verify_user(username: str, password: str) -> tuple[bool, Optional[str]]:
                         remaining = lockout_mgr.get_remaining_lockout_time(username)
                         return False, f"Usuario bloqueado. Intente en {remaining:.0f}s"
                     return False, "Credenciales incorrectas"
-            except (ValueError, TypeError, OSError) as e:
+            except (ValueError, TypeError, OSError, Exception):
                 locked, delay = lockout_mgr.record_failed_attempt(username)
                 if delay:
                     time.sleep(min(delay, 2))

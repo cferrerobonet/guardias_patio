@@ -45,12 +45,11 @@ def upgrade():
                 GROUP BY curso_id, fecha, turno, recreo, zona_id, profesor_id
             )
         """))
-        op.create_unique_constraint(
-            "uq_guardia_asignacion",
-            "guardias",
-            ["curso_id", "fecha", "turno", "recreo", "zona_id", "profesor_id"],
-        )
+        # Desactivado temporalmente para evitar fallos de SQLite.
+        # Se creará en la nueva migración generada con render_as_batch=True.
+        pass
 
 
 def downgrade():
-    op.drop_constraint("uq_guardia_asignacion", "guardias", type_="unique")
+    with op.batch_alter_table("guardias") as batch_op:
+        batch_op.drop_constraint("uq_guardia_asignacion", type_="unique")

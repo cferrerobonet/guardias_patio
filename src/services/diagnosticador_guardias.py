@@ -10,7 +10,7 @@ from typing import Dict, List
 from infrastructure.database.models import Configuracion, Guardia, Profesor
 from services.validators import TurnoValidator
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 # Instancia del validador de turnos
 _turno_validator = TurnoValidator()
@@ -96,7 +96,12 @@ class DiagnosticadorGuardias:
         """Detecta profesores activos sin guardias asignadas."""
         problemas = []
 
-        profesores_activos = self.db.query(Profesor).filter(Profesor.activo).all()
+        profesores_activos = (
+            self.db.query(Profesor)
+            .options(joinedload(Profesor.zona_preferida))
+            .filter(Profesor.activo)
+            .all()
+        )
 
         profesores_con_guardias = {g.profesor_id for g in guardias}
         profesores_sin_guardias = [

@@ -1,6 +1,6 @@
-# Auditoría Integral — Guardias de Patio v5.0.0
+# Auditoría Integral — Guardias de Patio v5.2.1
 
-> **Fecha**: 19 de abril de 2026 · **Versión**: v5.0.0 · **Tests**: 1.342 passing · **Coverage**: 47,81%
+> **Fecha**: 19 de abril de 2026 · **Versión**: v5.2.1 · **Tests**: 1.342 passing · **Coverage**: 47,81%
 >
 > **SOLO ÍTEMS PENDIENTES** — Los 73+ ítems resueltos (v3.7.0–v5.0.0) han sido eliminados de este documento.
 > Cada ítem incluye instrucciones detalladas para que un modelo de IA pueda implementarlo sin ambigüedad.
@@ -328,25 +328,9 @@ if not re.match(r"^[a-zA-Z0-9._-]{3,50}$", username):
 
 ---
 
-### SEC-18 — Sin security headers en API (P3)
+### ~~SEC-18 — Sin security headers en API (P3)~~ ✅ RESUELTO v5.2.1
 
-**Problema**: FastAPI en `src/api/main.py` no configura Content-Security-Policy, X-Frame-Options, etc.
-
-**Cómo resolver**: Añadir middleware en `src/api/main.py` después de crear la app:
-```python
-from starlette.middleware.base import BaseHTTPMiddleware
-
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        return response
-
-app.add_middleware(SecurityHeadersMiddleware)
-```
+Implementado middleware de seguridad en `src/api/main.py` con `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Strict-Transport-Security`, `Referrer-Policy` y versionado de API por header.
 
 ---
 
@@ -611,22 +595,9 @@ Usar con: `self.worker = WorkerThread(generar_guardias, params); self.worker.fin
 
 ---
 
-### CACHE-03 — Sin caché de assets UI (P3)
+### ~~CACHE-03 — Sin caché de assets UI (P3)~~ ✅ RESUELTO v5.2.1
 
-**Problema**: Iconos y pixmaps se cargan desde disco en cada render.
-
-**Cómo resolver**: Usar `QPixmapCache` de Qt:
-```python
-from PyQt6.QtGui import QPixmapCache, QPixmap
-
-def get_cached_pixmap(path: str) -> QPixmap:
-    pixmap = QPixmapCache.find(path)
-    if pixmap is None:
-        pixmap = QPixmap(path)
-        QPixmapCache.insert(path, pixmap)
-    return pixmap
-```
-Colocar en `src/utils/ui_helpers.py` y usar en vez de `QPixmap(path)` directo.
+Implementado `QPixmapCache` en `src/utils/ui_helpers.py` para reutilizar el pixmap del logo corporativo y evitar cargas repetidas desde disco.
 
 ---
 
@@ -645,42 +616,17 @@ Colocar en `src/utils/ui_helpers.py` y usar en vez de `QPixmap(path)` directo.
 
 ---
 
-### ASYNC-02 — SFTP sin timeout robusto (P2)
+### ~~ASYNC-02 — SFTP sin timeout robusto (P2)~~ ✅ RESUELTO v5.2.1
 
-**Problema**: Aunque ya hay retry con tenacity (backoff 2s, 4s, 8s), las operaciones SFTP individuales pueden bloquear el hilo si el servidor cuelga sin cerrar conexión.
-
-**Dónde**: `src/sync/sync_manager.py`, clase `SFTPSyncBackend`.
-
-**Cómo resolver**: En la conexión SFTP (buscar `paramiko.Transport` o `paramiko.SFTPClient`), añadir:
-```python
-transport = paramiko.Transport((host, port))
-transport.set_keepalive(30)  # keepalive cada 30s
-transport.connect(username=user, password=password)
-transport.get_security_options().ciphers = (...)  # si necesario
-# O con timeout en connect:
-sock = socket.create_connection((host, port), timeout=30)
-transport = paramiko.Transport(sock)
-```
+La conexión SFTP en `src/sync/sync_manager.py` ahora usa `timeout=30`, `banner_timeout=30`, `auth_timeout=30` y `transport.set_keepalive(30)`.
 
 ---
 
 ## 7. Resiliencia
 
-### RES-02 — Sin circuit breaker para servicios externos (P3)
+### ~~RES-02 — Sin circuit breaker para servicios externos (P3)~~ ✅ RESUELTO v5.2.1
 
-**Problema**: SFTP y SMTP pueden fallar repetidamente. Sin circuit breaker, cada operación intenta conectar de nuevo.
-
-**Cómo resolver**:
-1. `pip install pybreaker`
-2. En `src/sync/sync_manager.py`:
-   ```python
-   import pybreaker
-   sftp_breaker = pybreaker.CircuitBreaker(fail_max=3, reset_timeout=60)
-
-   @sftp_breaker
-   def conectar_sftp(self):
-       ...
-   ```
+Integrado `pybreaker` en `src/sync/sync_manager.py` con circuit breaker para la conexión SFTP y dependencias actualizadas en `requirements.txt` y `pyproject.toml`.
 
 ---
 
@@ -783,27 +729,15 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
 ---
 
-### API-10 — Versionado parcial (P2)
+### ~~API-10 — Versionado parcial (P2)~~ ✅ RESUELTO v5.2.1
 
-**Problema**: Rutas usan `/v1/` en el prefix pero no hay mecanismo real para múltiples versiones.
-
-**Cómo resolver**: Documentar la estrategia en un comentario en `src/api/main.py`. Añadir header `API-Version: 1` en respuestas:
-```python
-response.headers["API-Version"] = "1"
-```
+Añadido header `API-Version: 1` en todas las respuestas HTTP desde `src/api/main.py`, complementando el prefijo `/api/v1` ya existente.
 
 ---
 
-### API-12 — Pocos `response_model` en endpoints (P2)
+### ~~API-12 — Pocos `response_model` en endpoints (P2)~~ ✅ RESUELTO v5.2.1
 
-**Problema**: Solo 3 endpoints tienen `response_model` Pydantic:
-- `GET /profesores` → `PaginatedProfesoresResponse`
-- `GET /profesores/{id}` → `ProfesorResponse`
-- `GET /guardias` → `List[GuardiaResponse]`
-
-Los demás devuelven dicts sin tipado.
-
-**Cómo resolver**: Para cada endpoint sin `response_model`, crear schema Pydantic en `src/api/schemas/` y añadir `response_model=` al decorador.
+Añadidos `response_model` en endpoints de cuotas, equidad, conteo de guardias, resumen estadístico y estadísticas por profesor, usando modelos Pydantic alineados con la respuesta real.
 
 ---
 
@@ -837,23 +771,9 @@ async def generar_guardias_ws(websocket: WebSocket):
 
 ---
 
-### API-15 — Sin middleware de logging estructurado (P2)
+### ~~API-15 — Sin middleware de logging estructurado (P2)~~ ✅ RESUELTO v5.2.1
 
-**Cómo resolver**: Añadir en `src/api/main.py`:
-```python
-import uuid, time
-from starlette.middleware.base import BaseHTTPMiddleware
-
-class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        request_id = str(uuid.uuid4())[:8]
-        start = time.time()
-        response = await call_next(request)
-        duration = time.time() - start
-        logger.info(f"[{request_id}] {request.method} {request.url.path} → {response.status_code} ({duration:.3f}s)")
-        response.headers["X-Request-ID"] = request_id
-        return response
-```
+Implementado middleware de logging en `src/api/main.py` con `request_id`, duración de petición, método, path, `status_code` y header `X-Request-ID`.
 
 ---
 
@@ -1517,11 +1437,11 @@ Mostrar asterisco en título: `self.setWindowTitle(f"{'*' if self._dirty else ''
 | 6 | SEC-12 | ~~chmod 600 en users.json al crear/modificar~~ ✅ RESUELTO v5.0.x | S |
 | 7 | SEC-14 | Validar username con regex en backend (UserAuth) | S |
 | 8 | SEC-17 | ~~Reemplazar ~30 print() por logger en db_manager.py y cache.py ~~ ✅ RESUELTO v5.1.0| S |
-| 9 | DB-05 | Añadir CheckConstraints + migración Alembic | S |
+| 9 | DB-05 | ~~Añadir CheckConstraints + migración Alembic~~ ✅ RESUELTO v5.2.0 | S |
 | 10 | DB-09 | ~~Añadir threading.Lock en db_manager.py~~ ✅ RESUELTO v5.1.2 | S |
 | 11 | DB-11 | Unificar init BD en Alembic (eliminar create_all + SQL directo) | M |
 | 12 | DB-13 | Implementar backup/restore automático | L |
-| 13 | PERF-02 | Eager loading (joinedload) en queries de listados | M |
+| 13 | PERF-02 | ~~Eager loading (joinedload) en queries de listados~~ ✅ RESUELTO v5.2.0 | M |
 | 14 | PERF-03 | Mover filtro disponibilidad de Python a SQL | M |
 | 15 | PERF-05 | QThread para operaciones pesadas (PDF, Excel, CP-SAT) | L |
 | 16 | CACHE-01 | Implementar cachetools.TTLCache para queries frecuentes | M |
@@ -1772,10 +1692,8 @@ Statements de debug que podrían exponer información sensible.
 
 **Acción**: Reemplazar por `logger.debug()`.
 
-### SEC-18 — Sin CSP ni security headers en API (P3)
-FastAPI no configura Content-Security-Policy, X-Frame-Options, etc.
-
-**Acción**: Añadir middleware de security headers.
+### ~~SEC-18 — Sin CSP ni security headers en API (P3)~~ ✅ RESUELTO v5.2.1
+FastAPI ya añade security headers vía middleware en `src/api/main.py`.
 
 ---
 
@@ -1884,10 +1802,8 @@ No hay caché para queries frecuentes (listado profesores, configuración curso,
 
 **Acción**: Cachear con TTL de 60s, invalidar en escritura.
 
-### CACHE-03 — Sin caché de assets UI (P3)
-Iconos y pixmaps se cargan desde disco en cada render.
-
-**Acción**: Usar `QPixmapCache` para assets estáticos.
+### ~~CACHE-03 — Sin caché de assets UI (P3)~~ ✅ RESUELTO v5.2.1
+Los pixmaps del logo corporativo ya se sirven con `QPixmapCache` desde `src/utils/ui_helpers.py`.
 
 ---
 
@@ -1898,10 +1814,8 @@ Todos los endpoints usan `def` síncrono con SQLAlchemy síncrono. En producció
 
 **Acción**: Si se migra a PostgreSQL, usar `async def` + `asyncpg` + `run_in_threadpool`.
 
-### ASYNC-02 — SFTP síncrono sin timeout robusto (P2)
-Operaciones SFTP bloquean el hilo durante minutos si el servidor no responde.
-
-**Acción**: Implementar timeout + retry con `tenacity`.
+### ~~ASYNC-02 — SFTP síncrono sin timeout robusto (P2)~~ ✅ RESUELTO v5.2.1
+La conexión SFTP ya aplica timeouts explícitos y `keepalive` en `src/sync/sync_manager.py`.
 
 ---
 
@@ -1912,10 +1826,8 @@ Fallo de red = fallo total. Sin reintentos.
 
 **Acción**: `tenacity.retry` con backoff exponencial (max 3 reintentos).
 
-### RES-02 — Sin circuit breaker (P3)
-Servicios externos (SFTP, SMTP) sin protección contra fallos en cascada.
-
-**Acción**: Evaluar `pybreaker` para circuit breaker pattern.
+### ~~RES-02 — Sin circuit breaker (P3)~~ ✅ RESUELTO v5.2.1
+La conexión SFTP ya está protegida con `pybreaker` en `src/sync/sync_manager.py`.
 
 ### RES-03 — Sin retry BD configurado (P2)
 `settings.py` tiene config de retry pero no se usa.
@@ -1955,20 +1867,16 @@ No hay `POST`, `PUT`, `DELETE` para CRUD completo. La API no es funcional para u
 
 **Acción**: Implementar `?page=1&size=20` con `Link` headers.
 
-### API-10 — Versionado parcial (P2)
-Rutas usan `/v1/` pero no hay mecanismo para múltiples versiones.
-
-**Acción**: Documentar estrategia de versionado. Añadir header `API-Version`.
+### ~~API-10 — Versionado parcial (P2)~~ ✅ RESUELTO v5.2.1
+La API ya expone el header `API-Version: 1` además del prefijo `/api/v1`.
 
 ### API-11 — Sin schema de error estándar (P2)
 Errores devuelven formatos inconsistentes.
 
 **Acción**: Implementar `{"error": {"code": "RESOURCE_NOT_FOUND", "message": "...", "details": {}}}`.
 
-### API-12 — 3 `response_model` en toda la API (P2)
-Mayoría de endpoints sin modelo de respuesta tipado.
-
-**Acción**: Añadir `response_model` Pydantic a todos los endpoints.
+### ~~API-12 — 3 `response_model` en toda la API (P2)~~ ✅ RESUELTO v5.2.1
+Los endpoints clave de cuotas, equidad, guardias count y estadísticas ya exponen `response_model` Pydantic.
 
 ### API-13 — Sin OpenAPI enrichment (P3)
 Schemas sin descripciones, ejemplos, ni tags organizados.
@@ -1980,10 +1888,8 @@ Generación de guardias es proceso largo sin feedback.
 
 **Acción**: Evaluar WebSocket para progreso de generación.
 
-### API-15 — Sin middleware de logging estructurado (P2)
-Requests no se logean de forma estructurada.
-
-**Acción**: Middleware con request_id, duration, status_code.
+### ~~API-15 — Sin middleware de logging estructurado (P2)~~ ✅ RESUELTO v5.2.1
+Las requests ya se registran con `request_id`, duración, método, path y `status_code` desde middleware en `src/api/main.py`.
 
 ---
 
@@ -2445,14 +2351,14 @@ Fase 4 — Frontend Web (P2)
 | 8 | SEC-13 | Eliminar defaults de infra en config | S |
 | 9 | SEC-14 | Validar username con regex | S |
 | 10 | SEC-17 | ~~Reemplazar print() por logger ~~ ✅ RESUELTO v5.1.0| M |
-| 11 | DB-05 | CheckConstraints | S |
+| 11 | DB-05 | ~~CheckConstraints~~ ✅ RESUELTO v5.2.0 | S |
 | 12 | DB-06 | Índices faltantes | S |
 | 13 | DB-07 | datetime.utcnow deprecated | S |
 | 14 | DB-08 | Inconsistencia cerrado/archivado | S |
 | 15 | DB-09 | ~~Locks en db_manager~~ ✅ RESUELTO v5.1.2 | S |
 | 16 | DB-11 | Triple init BD | M |
 | 17 | DB-13 | Backup/restore automático | L |
-| 18 | PERF-02 | Eager loading | M |
+| 18 | PERF-02 | ~~Eager loading~~ ✅ RESUELTO v5.2.0 | M |
 | 19 | PERF-03 | Filtro disponibilidad a SQL | M |
 | 20 | PERF-05 | GUI no-blocking (QThread) | L |
 | 21 | CACHE-01 | Caché de queries frecuentes | M |

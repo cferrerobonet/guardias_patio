@@ -6,6 +6,40 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.2.1] - 2026-04-19
+
+### 🎯 Resumen
+Refuerzo de resiliencia y tipado de la API: headers de seguridad, request tracing, timeout/circuit breaker SFTP y response models adicionales.
+
+### ✨ Added
+- **SEC-18 / API-10 / API-15**: Middleware en la API para añadir `X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`, `API-Version`, `X-Correlation-ID` y `X-Request-ID`, además de logging estructurado por petición.
+- **RES-02**: Integrado `pybreaker` para proteger la conexión SFTP con circuit breaker.
+
+### Changed
+- **API-12**: Añadidos `response_model` en endpoints de cuotas, equidad, conteo de guardias y estadísticas, mejorando el tipado OpenAPI.
+- **ASYNC-02**: Endurecida la conexión SFTP con `timeout`, `banner_timeout`, `auth_timeout` y `keepalive`.
+- **CACHE-03**: Cacheo de pixmaps del logo corporativo con `QPixmapCache` en utilidades de UI.
+
+### Fixed
+- Actualizado el documento de auditoría para marcar como resueltos los ítems cerrados en esta versión.
+
+---
+## [5.2.0] - 2026-04-19
+
+### 🎯 Resumen
+Implementación de integridad de datos (DB-05) y optimizaciones de performance (PERF-02).
+
+### ✨ Added
+- **DB-05**: Implementación de `CheckConstraint` a nivel de base de datos para todos los modelos ORM (`Profesor`, `Guardia`, `Ausencia`, `Zona`, `Configuracion`), asegurando validaciones de rangos y valores enumerados.
+- Resolución de conflictos en el sistema de migraciones Alembic mediante el uso de `batch_alter_table` (necesario para SQLite) y consolidación de ramas de migración.
+
+### Changed
+- **PERF-02**: Implementación de `joinedload` en servicios críticos (`calculador_guardias`, `exportador_pdf`, `gestor_ausencias`, `diagnosticador_guardias`, `distribucion_cuotas_service`) para eliminar el problema de consultas N+1 y mejorar la velocidad de carga de listados.
+
+### 🧹 Housekeeping
+- Eliminadas tablas obsoletas de la base de datos (`profesor_dias_semana`, `profesor_recreos`) que ya no se utilizaban en los modelos actuales.
+
+---
 ## [5.1.2] - 2026-04-19
 
 ### 🎯 Resumen

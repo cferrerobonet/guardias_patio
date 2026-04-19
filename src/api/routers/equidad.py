@@ -5,10 +5,12 @@ Endpoints para análisis de equidad de guardias.
 """
 
 from dataclasses import asdict
+from typing import Any, Dict, List
 
 from application.dtos.domain_services_dtos import AnalisisEquidadRequest
 from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
@@ -16,7 +18,15 @@ from api.dependencies import get_db
 router = APIRouter(prefix="/equidad", tags=["equidad"])
 
 
-@router.get("")
+class AnalisisEquidadApiResponse(BaseModel):
+    exitoso: bool
+    metricas: Dict[str, Any]
+    cuotas: List[Dict[str, Any]]
+    recomendaciones: List[str]
+    mensaje: str
+
+
+@router.get("", response_model=AnalisisEquidadApiResponse)
 def analizar_equidad(
     configuracion_id: int,
     umbral_desbalance: float = 0.15,
@@ -47,11 +57,23 @@ def analizar_equidad(
         )
         response = use_case.execute(request)
 
-        # Convertir DTOs a dict
+        metricas = asdict(response.metricas)
+        nivel_equidad = getattr(response.metricas, "nivel_equidad", None)
+        metricas["nivel_equidad"] = (
+            nivel_equidad if isinstance(nivel_equidad, str) else str(nivel_equidad or "")
+        )
+
+        cuotas = []
+        for dto in response.cuotas:
+            cuota = asdict(dto)
+            cuota["porcentaje_cumplimiento"] = dto.porcentaje_cumplimiento
+            cuota["deficit"] = dto.deficit
+            cuotas.append(cuota)
+
         return {
             "exitoso": response.exitoso,
-            "metricas": asdict(response.metricas),
-            "cuotas": [asdict(dto) for dto in response.cuotas],
+            "metricas": metricas,
+            "cuotas": cuotas,
             "recomendaciones": response.recomendaciones,
             "mensaje": response.mensaje,
         }

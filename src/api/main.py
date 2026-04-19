@@ -15,6 +15,7 @@ Documentación:
 - ReDoc: http://localhost:8000/redoc
 """
 
+import time
 import uuid
 
 from fastapi import Depends, FastAPI, Request
@@ -25,6 +26,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from api.auth import create_token_response, get_current_user
 from api.routers import (
@@ -67,12 +69,41 @@ app.add_middleware(
 )
 
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Añade security headers HTTP a todas las respuestas (SEC-18)."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["API-Version"] = "1"
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+
 @app.middleware("http")
-async def correlation_id_middleware(request: Request, call_next):
-    """Añade X-Correlation-ID a cada petición para trazabilidad cross-capa."""
+async def request_logging_middleware(request: Request, call_next):
+    """Añade X-Correlation-ID, X-Request-ID y log estructurado por petición (API-10, API-15)."""
     correlation_id = request.headers.get("X-Correlation-ID", str(uuid.uuid4()))
+    request_id = str(uuid.uuid4())[:8]
+    start = time.time()
     response = await call_next(request)
+    duration = time.time() - start
+    logger.info(
+        "[%s] %s %s → %s (%.3fs)",
+        request_id,
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration,
+    )
     response.headers["X-Correlation-ID"] = correlation_id
+    response.headers["X-Request-ID"] = request_id
     return response
 
 

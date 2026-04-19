@@ -101,7 +101,7 @@ def listar_profesores(
             limit=limit,
             has_more=(offset + limit) < total,
         )
-    except (ValueError, TypeError, OSError) as e:
+    except (ValueError, TypeError, OSError, RuntimeError) as e:
         raise _build_error("internal_error", str(e), 500)
 
 
