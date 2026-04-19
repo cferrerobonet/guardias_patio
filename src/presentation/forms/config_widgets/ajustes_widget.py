@@ -8,7 +8,8 @@ Combina:
 """
 
 import ui_styles as styles
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QRegularExpression, pyqtSignal
+from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtWidgets import QGroupBox, QLabel, QLineEdit, QVBoxLayout
 
 
@@ -56,6 +57,9 @@ class AjustesWidget(QGroupBox):
         self.ajuste_tutores_input.setStyleSheet(
             styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;"
         )
+        self.ajuste_tutores_input.setValidator(
+            QRegularExpressionValidator(QRegularExpression(r"[0-9]*\.?[0-9]*"))
+        )
         self.ajuste_tutores_input.setToolTip(
             "Factor multiplicador para tutores (valores < 1.0 reducen su carga de guardias)\n"
             "Ejemplo: 0.90 = 10% menos guardias que un profesor normal"
@@ -74,6 +78,9 @@ class AjustesWidget(QGroupBox):
         self.ajuste_no_tutores_input.setPlaceholderText("1.00")
         self.ajuste_no_tutores_input.setStyleSheet(
             styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;"
+        )
+        self.ajuste_no_tutores_input.setValidator(
+            QRegularExpressionValidator(QRegularExpression(r"[0-9]*\.?[0-9]*"))
         )
         self.ajuste_no_tutores_input.setToolTip(
             "Factor multiplicador para no tutores (valores > 1.0 aumentan su carga)\n"

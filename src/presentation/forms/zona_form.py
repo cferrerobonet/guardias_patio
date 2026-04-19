@@ -108,8 +108,11 @@ class ZonaForm(BaseForm):
 
     def _setup_shortcuts(self):
         """Configurar atajos de teclado"""
+        QShortcut(QKeySequence("Ctrl+S"), self).activated.connect(self.guardar_zona)
         QShortcut(QKeySequence("Del"), self).activated.connect(self.eliminar_zona)
         QShortcut(QKeySequence("Ctrl+A"), self).activated.connect(self.seleccionar_todas)
+        QShortcut(QKeySequence("F5"), self).activated.connect(self.cargar_zonas)
+        QShortcut(QKeySequence("Esc"), self).activated.connect(self.limpiar_formulario)
 
     def seleccionar_todas(self):
         """Seleccionar todas las zonas de la tabla."""

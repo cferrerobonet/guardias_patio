@@ -11,7 +11,8 @@ Este widget encapsula los campos de información de la zona:
 from datetime import date
 from typing import Optional, Tuple
 
-from PyQt6.QtCore import QDate, pyqtSignal
+from PyQt6.QtCore import QDate, QRegularExpression, pyqtSignal
+from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtWidgets import (
     QCheckBox,
     QDateEdit,
@@ -61,6 +62,9 @@ class DatosZonaWidget(QGroupBox):
         self.nombre_zona_input.setPlaceholderText("Ej: Patio Principal, Porche, etc.")
         self.nombre_zona_input.setStyleSheet(styles.STYLE_INPUT)
         self.nombre_zona_input.setMaximumWidth(350)
+        self.nombre_zona_input.setValidator(
+            QRegularExpressionValidator(QRegularExpression(r".{2,80}"))
+        )
         layout_datos.addWidget(self.nombre_zona_input)
 
         # Campo: Descripción

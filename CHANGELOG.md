@@ -6,6 +6,23 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.3.0] - 2026-04-19
+
+### 🎯 Resumen
+Mejoras de accesibilidad y UX: validators en formularios, atajos de teclado ampliados e indicador de cambios sin guardar.
+
+### ✨ Added
+- **A11Y-03**: `QRegularExpressionValidator` en campos clave: nombre/email del profesor (`datos_basicos_widget.py`), nombre de zona (`datos_zona_widget.py`) y multiplicadores de ajuste decimal (`ajustes_widget.py`).
+- **A11Y-05**: Atajos de teclado en `zona_form.py` (Ctrl+S, F5, Esc) y Ctrl+S en `ajustes_form.py`.
+- **UXF-05**: Indicador visual `● Cambios sin guardar` en `ajustes_form.py` con `_dirty` flag; se muestra al modificar cualquier campo y desaparece al guardar o recargar.
+
+### Changed
+- `_conectar_senales_cambio()` en `ajustes_form.py` conecta las señales de los sub-widgets tras la carga inicial para evitar falsos positivos.
+
+### Fixed
+- **UXF-02**: Documentado como ya resuelto — todos los métodos de borrado ya tenían confirmación implícita.
+
+---
 ## [5.2.1] - 2026-04-19
 
 ### 🎯 Resumen

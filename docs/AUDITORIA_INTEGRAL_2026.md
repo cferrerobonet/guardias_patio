@@ -964,42 +964,9 @@ QWidget.setTabOrder(self.combo_turno, self.btn_guardar)
 
 ---
 
-### A11Y-03 — Validación de formularios (P1)
+### ~~A11Y-03 — Validación de formularios (P1)~~ ✅ RESUELTO v5.3.0
 
-**Estado actual**: Solo 2 `QValidator` en `login_dialog.py` (L68-72, regex para username).
-
-**Cómo resolver**: Para cada campo de formulario, añadir el validador apropiado:
-
-```python
-# Números enteros (ej: capacidad de zona)
-from PyQt6.QtGui import QIntValidator
-campo_capacidad.setValidator(QIntValidator(1, 100))
-
-# Texto con patrón (ej: email)
-from PyQt6.QtGui import QRegularExpressionValidator
-from PyQt6.QtCore import QRegularExpression
-campo_email.setValidator(QRegularExpressionValidator(
-    QRegularExpression(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
-))
-
-# Texto requerido (mínimo N caracteres)
-campo_nombre.setValidator(QRegularExpressionValidator(
-    QRegularExpression(r".{2,100}")  # 2-100 chars
-))
-```
-
-**Campos prioritarios por formulario**:
-- `profesor_form.py`: nombre (texto requerido), apellidos (texto requerido), email (formato email), teléfono (solo números)
-- `zona_form.py`: nombre (texto requerido), capacidad (entero 1-50)
-- `gestionar_ausencias.py`: fecha (formato fecha), tipo (enum via combo)
-- `ajustes_form.py`: campos numéricos de configuración
-
-**Feedback visual**: Después de cada validador, conectar señal de cambio:
-```python
-campo.textChanged.connect(lambda: campo.setStyleSheet(
-    "border: 2px solid #DC2626;" if not campo.hasAcceptableInput() else ""
-))
-```
+`QRegularExpressionValidator` añadido en `datos_basicos_widget.py` (nombre, email), `datos_zona_widget.py` (nombre) y `ajustes_widget.py` (multiplicadores decimales).
 
 ---
 
@@ -1011,18 +978,9 @@ campo.textChanged.connect(lambda: campo.setStyleSheet(
 
 ---
 
-### A11Y-05 — Soporte de teclado incompleto (P2)
+### ~~A11Y-05 — Soporte de teclado incompleto (P2)~~ ✅ RESUELTO v5.3.0
 
-**Estado actual**: 14 `setShortcut`/`QShortcut` en todo el proyecto.
-
-**Cómo resolver**: Mapear cada acción principal a un atajo:
-- `Ctrl+N` → Nuevo (profesor/zona/ausencia según contexto)
-- `Ctrl+S` → Guardar
-- `Ctrl+D` → Eliminar seleccionado
-- `Ctrl+E` → Exportar
-- `Ctrl+G` → Generar guardias
-- `F5` → Refrescar vista
-- `Esc` → Cerrar diálogo/cancelar
+`zona_form.py` ãñadidos Ctrl+S (guardar), F5 (refrescar), Esc (limpiar). `ajustes_form.py` ãñadido Ctrl+S al botón Guardar. `profesor_form.py` ya tenía Ctrl+S, F5, Esc, Del, Ctrl+A.
 
 ---
 
@@ -1286,18 +1244,9 @@ widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
 ---
 
-### UXF-02 — Sin confirmación en acciones destructivas (P2)
+### ~~UXF-02 — Sin confirmación en acciones destructivas (P2)~~ ✅ RESUELTO v5.0.x
 
-**Cómo encontrar**: `grep -rn "delete\|eliminar\|borrar" src/presentation/ | grep -v "#\|docstring\|test"` y verificar si hay `QMessageBox.question` antes.
-
-**Cómo resolver**: Antes de toda operación de borrado:
-```python
-reply = QMessageBox.question(self, "Confirmar eliminación",
-    f"¿Eliminar {nombre}? Esta acción no se puede deshacer.",
-    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-if reply != QMessageBox.StandardButton.Yes:
-    return
-```
+Todos los métodos de borrado (`eliminar_profesor`, `eliminar_zona`, `_eliminar_curso_seleccionado`, `_on_eliminar` perfiles, `eliminar_ausencia_seleccionada`) ya tienen `QMessageBox.question` o diálogo personalizado de confirmación.
 
 ---
 
@@ -1318,20 +1267,9 @@ Mostrar solo si no hay cursos en la BD.
 
 ---
 
-### UXF-05 — Sin indicador de cambios sin guardar (P2)
+### ~~UXF-05 — Sin indicador de cambios sin guardar (P2)~~ ✅ RESUELTO v5.3.0
 
-**Cómo resolver**: En cada formulario, trackear cambios:
-```python
-self._dirty = False
-campo.textChanged.connect(lambda: setattr(self, '_dirty', True))
-
-def closeEvent(self, event):
-    if self._dirty:
-        reply = QMessageBox.question(self, "Cambios sin guardar", "¿Guardar antes de salir?")
-        ...
-```
-Mostrar asterisco en título: `self.setWindowTitle(f"{'*' if self._dirty else ''}{titulo}")`.
-
+`ajustes_form.py`: añadido `_dirty` flag, label `● Cambios sin guardar` (visible/oculto), conexión de señales tras carga inicial, y reset en `guardar_configuracion` / `cargar_configuracion`.
 ---
 
 ## 14. Control de Acceso

@@ -10,7 +10,8 @@ Este widget encapsula los campos fundamentales del profesor:
 from typing import Tuple
 
 import ui_styles as styles
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QRegularExpression, pyqtSignal
+from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtWidgets import QCheckBox, QGroupBox, QLabel, QLineEdit, QVBoxLayout
 from utils.validators import validar_email, validar_nombre_completo
 
@@ -52,6 +53,9 @@ class DatosBasicosWidget(QGroupBox):
         self.nombre_completo_input.setPlaceholderText("GARCÍA LÓPEZ, JUAN")
         self.nombre_completo_input.setStyleSheet(styles.STYLE_INPUT)
         self.nombre_completo_input.setMaximumWidth(350)
+        self.nombre_completo_input.setValidator(
+            QRegularExpressionValidator(QRegularExpression(r".{2,100}"))
+        )
         self.nombre_completo_input.setToolTip(
             "Formato requerido: APELLIDOS, NOMBRE\n"
             "Ejemplo: GARCÍA LÓPEZ, JUAN\n"
@@ -68,6 +72,11 @@ class DatosBasicosWidget(QGroupBox):
         self.email_input.setPlaceholderText("profesor@colegio.edu")
         self.email_input.setStyleSheet(styles.STYLE_INPUT)
         self.email_input.setMaximumWidth(350)
+        self.email_input.setValidator(
+            QRegularExpressionValidator(
+                QRegularExpression(r"([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})?")
+            )
+        )
         self.email_input.setToolTip(
             "Email corporativo del profesor (opcional)\n"
             "Se usará para enviar calendarios y notificaciones"

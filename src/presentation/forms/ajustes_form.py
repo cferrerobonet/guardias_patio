@@ -13,6 +13,7 @@ from application.use_cases.configuracion import (
 )
 from core.exceptions import NotFoundError
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -58,11 +59,17 @@ class AjustesForm(BaseForm):
         self.obtener_config_uc = ObtenerConfiguracionUseCase(session)
         self.actualizar_config_uc = ActualizarConfiguracionUseCase(session)
 
+        # Control de cambios sin guardar
+        self._dirty = False
+
         # Configurar UI
         self.setup_ui()
 
         # Cargar configuración existente si hay
         self.cargar_configuracion()
+
+        # Conectar señales de cambio DESPUÉS de cargar (para no marcar dirty en carga inicial)
+        self._conectar_senales_cambio()
 
     # ===== PROPIEDADES DE COMPATIBILIDAD PARA TESTS =====
     # Delegan a los widgets internos para mantener la API anterior
@@ -147,6 +154,12 @@ class AjustesForm(BaseForm):
         titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
         content_layout.addWidget(titulo)
 
+        # Indicador de cambios sin guardar
+        self._dirty_label = QLabel("● Cambios sin guardar")
+        self._dirty_label.setStyleSheet("color: #D97706; font-size: 11px; font-weight: bold;")
+        self._dirty_label.setVisible(False)
+        content_layout.addWidget(self._dirty_label)
+
         # ===== FILA 1: Fechas y Recreos =====
         self.fechas_recreos_widget = FechasRecreosWidget(self)
         content_layout.addWidget(self.fechas_recreos_widget)
@@ -196,6 +209,8 @@ class AjustesForm(BaseForm):
         self.save_btn.setIcon(icon_for_button("save"))
         self.save_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
         self.save_btn.clicked.connect(self.guardar_configuracion)
+        self.save_btn.setShortcut(QKeySequence("Ctrl+S"))
+        self.save_btn.setToolTip("Guardar configuración (Ctrl+S)")
 
         self.load_btn = QPushButton("Cargar Actual")
         self.load_btn.setIcon(icon_for_button("refresh"))
@@ -259,6 +274,7 @@ class AjustesForm(BaseForm):
             )
 
             self.mostrar_exito("Configuración Guardada", mensaje_exito)
+            self._marcar_guardado()
 
         except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "guardar configuración")
@@ -299,6 +315,7 @@ class AjustesForm(BaseForm):
             )
 
             self.logger.info("Configuración cargada correctamente")
+            self._marcar_guardado()
 
         except NotFoundError:
             # No hay configuración, usar valores por defecto
@@ -311,7 +328,24 @@ class AjustesForm(BaseForm):
         # No aplica para configuración ya que solo hay un registro
         pass
 
-    def _generar_recreos_config_json(self) -> str:
+    def _conectar_senales_cambio(self) -> None:
+        """Conecta señales para detectar cambios sin guardar."""
+        self.fechas_recreos_widget.config_changed.connect(self._marcar_pendiente)
+        self.ajustes_widget.config_changed.connect(self._marcar_pendiente)
+        self.festivos_widget.config_changed.connect(self._marcar_pendiente)
+
+    def _marcar_pendiente(self) -> None:
+        """Marca que hay cambios sin guardar."""
+        self._dirty = True
+        self._dirty_label.setVisible(True)
+
+    def _marcar_guardado(self) -> None:
+        """Marca que todos los cambios han sido guardados."""
+        self._dirty = False
+        if hasattr(self, "_dirty_label"):
+            self._dirty_label.setVisible(False)
+
+
         """
         Genera el JSON de configuración de recreos basado en los valores del formulario.
 
