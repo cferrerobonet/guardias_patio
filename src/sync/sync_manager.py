@@ -217,7 +217,7 @@ class SFTPSyncBackend(SyncBackend):
             logger.error(f"SFTP: todos los reintentos agotados: {e}")
             return False
 
-    def _check_connection(self) -> bool:
+    def _ensure_connected(self) -> bool:
         """Verifica la conexión y reconecta si es necesario."""
         if self.sftp is None:
             logger.info("Conexión SFTP perdida. Reconectando...")

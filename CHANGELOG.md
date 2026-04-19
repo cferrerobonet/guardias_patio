@@ -6,6 +6,22 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.7.0] - 2026-04-19
+
+### 🎯 Resumen
+Eager loading, validaciones, retry BD, correlation IDs y correcciones.
+
+### ✨ Added
+- `ProfesorRepository.get_all()`: `joinedload(zona_preferida, curso)` — elimina N+1 queries
+- `api/main.py`: middleware `X-Correlation-ID` para trazabilidad cross-capa
+- `db_manager.get_db_session()`: retry con backoff exponencial usando `max_retries_db` de settings
+- `db_manager._hash_username()`: valida username no vacío (raises `ValueError`)
+
+### Fixed
+- `sync_manager.SFTPSyncBackend`: `_check_connection` renombrado a `_ensure_connected` (faltaba definición correcta)
+- `tests/test_domain_services.py`: aserción `test_calcular_cuotas_simple` corregida a `<= 2` (distribución por turno puede acumular redondeo)
+
+---
 ## [4.6.0] - 2026-04-18
 
 ### 🎯 Resumen

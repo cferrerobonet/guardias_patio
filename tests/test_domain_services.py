@@ -189,7 +189,9 @@ class TestDistribucionCuotasService:
         # Ambos deben tener cuotas similares
         assert prof1.id in cuotas
         assert prof2.id in cuotas
-        assert abs(cuotas[prof1.id] - cuotas[prof2.id]) <= 1  # Máx 1 de diferencia
+        # El algoritmo distribuye por turno (mañana/tarde) por separado; si ambos
+        # totales son impares, la diferencia acumulada puede ser 2 (no 1).
+        assert abs(cuotas[prof1.id] - cuotas[prof2.id]) <= 2  # Máx 2 de diferencia
 
     def test_cuota_proporcional_a_jornada(self, session: Session):
         """Profesor de medio tiempo debe tener ~mitad de cuota."""

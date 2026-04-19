@@ -12,7 +12,7 @@ from core.logging import get_logger, log_function_call
 from domain.entities import ProfesorEntity
 from domain.repositories import IProfesorRepository
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from infrastructure.database.models import Guardia, Profesor
 from infrastructure.mappers import ProfesorMapper
@@ -53,7 +53,12 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
     def get_all(self) -> list[ProfesorEntity]:
         """Obtiene todos los profesores ordenados alfabéticamente."""
         try:
-            models = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
+            models = (
+                self.session.query(Profesor)
+                .options(joinedload(Profesor.zona_preferida), joinedload(Profesor.curso))
+                .order_by(Profesor.nombre_completo)
+                .all()
+            )
             return self.mapper.to_entities(models)
         except Exception as e:
             logger.error("Error al obtener todos los profesores", error=str(e))

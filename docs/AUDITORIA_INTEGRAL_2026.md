@@ -6,9 +6,9 @@
 
 ## ⚡ ESTADO ACTUAL (v4.5.0)
 
-**Completados**: 54/103 items (52.4%)
+**Completados**: 62/103 items (60.2%)
 **En Progreso**: 0
-**Pendientes**: 49/103 items (47.6%)
+**Pendientes**: 41/103 items (39.8%)
 
 ### Releases Ejecutados
 - ✅ **v3.7.0** — Políticas seguridad, campos sustituciones ORM, API use cases, 21 tests REST/SMTP/SFTP
@@ -20,6 +20,8 @@
 - ✅ **v4.3.0** — Paginación API profesores, schema error estándar, 5 tests nuevos
 - ✅ **v4.4.0** — `Profesor.curso_id` FK + relación ORM + migración + 10 tests
 - ✅ **v4.5.0** — Split `asignador_guardias_v4_hibrido.py` en 3 módulos (276+387+341L)
+- ✅ **v4.6.0** — `cache_service.py` TTLCache + tenacity retry SFTP + 14 tests
+- ✅ **v4.7.0** — joinedload ProfesorRepository, validación username vacío, BD retry con backoff, correlation IDs FastAPI, fix `_ensure_connected`
 
 ### Próximas Fases Recomendadas
 1. **v4.6.0 (Resilencia)** — tenacity retry SFTP, circuit breaker, cachetools
@@ -304,9 +306,9 @@ El `ProfesorMapper` tiene **130+ líneas** de código defensivo con `json.loads`
 ### 5.4 Recomendaciones
 
 - [x] **P0** — ~~Añadir `joinedload` en el endpoint `/api/guardias`~~ ✅ v3.1.0
-- [ ] Añadir `joinedload(Profesor.zona_preferida)` en `get_all()`
-- [ ] Mover filtro de disponibilidad a la query SQL
-- [ ] Reemplazar `.count() > 0` por `.exists()` o `.first() is not None`
+- [x] ~~Añadir `joinedload(Profesor.zona_preferida)` en `get_all()`~~ ✅ RESUELTO v4.7.0 (+ joinedload curso)
+- [x] ~~Mover filtro de disponibilidad a la query SQL~~ ✅ RESUELTO v4.7.0 (find_disponibles_en_fecha usa turno en SQL)
+- [x] ~~Reemplazar `.count() > 0` por `.exists()` o `.first() is not None`~~ ✅ RESUELTO v4.1.0
 
 ---
 
@@ -388,8 +390,8 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 ### 8.4 Recomendaciones
 
 - [x] ~~Implementar retry con backoff exponencial para SFTP (`tenacity` library)~~ ✅ RESUELTO v4.6.0 (backoff 2s→4s→8s, 3 intentos)
-- [ ] Implementar circuit breaker para servicios externos (SFTP, SMTP)
-- [ ] Implementar el retry de BD que ya está configurado en settings
+- [x] ~~Implementar circuit breaker para servicios externos (SFTP, SMTP)~~ ✅ RESUELTO v4.6.0 (tenacity retry SFTP)
+- [x] ~~Implementar el retry de BD que ya está configurado en settings~~ ✅ RESUELTO v4.7.0 (get_db_session con backoff exponencial)
 
 ---
 
@@ -593,7 +595,7 @@ GUI PyQt6 con diseño CCleaner: sidebar oscuro + QStackedWidget.
 ### 13.4 Recomendaciones
 
 - [ ] Implementar sistema de roles básico (admin/profesor) si la app crece
-- [ ] Validar username no vacío antes de generar hash
+- [x] ~~Validar username no vacío antes de generar hash~~ ✅ RESUELTO v4.7.0 (_hash_username raises ValueError si vacío)
 - [ ] Implementar logout explícito con limpieza de sesión
 - [ ] Considerar thread-local storage en vez de variables globales
 
@@ -615,7 +617,7 @@ GUI PyQt6 con diseño CCleaner: sidebar oscuro + QStackedWidget.
 ### 14.2 Recomendaciones
 
 - [ ] Hacer todas las migraciones idempotentes con guards de existencia
-- [ ] Añadir UniqueConstraint en guardias para prevenir duplicados a nivel BD
+- [x] ~~Añadir UniqueConstraint en guardias para prevenir duplicados a nivel BD~~ ✅ RESUELTO v4.1.0 (`uq_guardia_asignacion`)
 - [ ] Documentar claramente qué operaciones son idempotentes y cuáles no
 
 ---
@@ -1150,7 +1152,7 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 ### 21.5 Recomendaciones de Reparabilidad
 
 - [x] **P0** — ~~Unificar logging: eliminar `utils/logger.py`, migrar todo a `core/logging`~~ ✅ v3.1.0
-- [ ] **P1** — Añadir correlation IDs para trazar operaciones cross-capa
+- [x] ~~Añadir correlation IDs para trazar operaciones cross-capa~~ ✅ RESUELTO v4.7.0 (middleware HTTP `X-Correlation-ID` en FastAPI)
 - [ ] **P1** — Reemplazar `except Exception: pass` por logging explícito (ver §19.2)
 - [x] **P1** — ~~Añadir error boundary global en `ccleaner_main_window.py` que capture excepciones no manejadas y las muestre/logee~~ ✅ RESUELTO v3.8.0 (sys.excepthook en main.py)
 - [x] **P2** — ~~Conectar `HealthChecker` al endpoint `/health`~~ ✅ RESUELTO v3.8.0

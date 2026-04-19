@@ -11,6 +11,7 @@ Características:
 
 import hashlib
 import os
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
@@ -18,6 +19,7 @@ from typing import Optional
 from core.paths import get_user_data_directory
 from infrastructure.database.models import Base
 from sqlalchemy import create_engine, event, pool
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 from utils.constants import TIMEOUT_DB
 from utils.logger import get_logger
@@ -35,6 +37,8 @@ _current_session_factory = None
 
 def _hash_username(username: str) -> str:
     """Genera un hash del nombre de usuario para usar como nombre de carpeta."""
+    if not username or not username.strip():
+        raise ValueError("El nombre de usuario no puede estar vacío")
     return hashlib.sha256(username.encode()).hexdigest()[:16]
 
 
@@ -692,6 +696,28 @@ def get_db_session():
     try:
         yield session
         session.commit()
+    except OperationalError as e:
+        session.rollback()
+        # Retry con backoff en errores de BD (tabla bloqueada, BD ocupada)
+        from config.settings import get_settings
+
+        max_retries = get_settings().max_retries_db
+        for attempt in range(1, max_retries + 1):
+            wait = 0.5 * (2 ** attempt)  # 1s, 2s, 4s
+            logger.warning(f"Error BD, reintento {attempt}/{max_retries} en {wait:.1f}s: {e}")
+            time.sleep(wait)
+            session2 = session_factory()
+            try:
+                yield session2
+                session2.commit()
+                break
+            except Exception as e2:
+                logger.error(f"Error en reintento {attempt}: {e2}", exc_info=True)
+                session2.rollback()
+                if attempt == max_retries:
+                    raise
+            finally:
+                session2.close()
     except Exception as e:
         logger.error(f"Error en sesión de BD: {e}", exc_info=True)
         session.rollback()

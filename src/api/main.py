@@ -15,6 +15,8 @@ Documentación:
 - ReDoc: http://localhost:8000/redoc
 """
 
+import uuid
+
 from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -63,6 +65,15 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def correlation_id_middleware(request: Request, call_next):
+    """Añade X-Correlation-ID a cada petición para trazabilidad cross-capa."""
+    correlation_id = request.headers.get("X-Correlation-ID", str(uuid.uuid4()))
+    response = await call_next(request)
+    response.headers["X-Correlation-ID"] = correlation_id
+    return response
 
 
 @app.exception_handler(Exception)
