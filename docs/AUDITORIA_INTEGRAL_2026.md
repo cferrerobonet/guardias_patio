@@ -4,7 +4,7 @@
 **Versión analizada**: 3.2.1 (actualizado con correcciones v3.1.0)  
 **Alcance**: Análisis completo de arquitectura, seguridad, base de datos, performance, UX/UI, testing, observabilidad, escalabilidad, resiliencia y buenas prácticas.
 
-## ⚡ ESTADO ACTUAL (v4.11.0)
+## ⚡ ESTADO ACTUAL (v5.0.0)
 
 **Completados**: 63/103 items (61.2%)
 **En Progreso**: 1 (TEST-01 cobertura parcial)
@@ -26,6 +26,7 @@
 - ✅ **v4.9.0** — 63 tests nuevos (estadísticas, validador, importadores, data exporter), cobertura 41.5% → 43.55%, 1143 tests totales
 - ✅ **v4.10.0** — 47 tests nuevos (sync/auth/lock/factory), cobertura 43.55% → 44.96%, 1190 tests totales
 - ✅ **v4.11.0** — 32 tests nuevos (data exporter + orquestador + estadísticas), cobertura 44.96% → 46.02%, 1222 tests totales
+- ✅ **v5.0.0** — 120 tests nuevos (api/auth, routers REST, cache, factories, ausencia_checker, migrar_multi_curso), cobertura 46.02% → 47.81%, 1342 tests totales
 ### Próximas Fases Recomendadas
 1. **v4.6.0 (Resilencia)** — tenacity retry SFTP, circuit breaker, cachetools
 

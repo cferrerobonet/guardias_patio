@@ -6,6 +6,26 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.0.0] - 2026-04-19
+
+### 🎯 Resumen
+Cobertura reforzada en autenticación API, routers REST, cache, factories, validador de ausencias y migración multi-curso.
+
+### ✨ Added
+- `tests/test_api_auth_extras.py`: 67 tests
+  - `api/auth.py`: `_verify_user`, `create_access_token`, `get_current_user` endpoint
+  - Routers: estadísticas (con y sin filtro de fecha), equidad, cuotas, guardias (count + export)
+- `tests/test_factories_ausencia_checker.py`: 28 tests
+  - `application/factories.py`: 5 factory functions (100% cobertura)
+  - `services/validators/ausencia_checker.py`: ausencias activas, solapamientos, guardias del día
+- `tests/test_utils_cache.py`: 34 tests
+  - `utils/cache.py`: LRU+TTL cache, métricas, invalidación, `cache_short/medium/long`, evicción LRU
+- `tests/test_migrar_multi_curso.py`: 19 tests
+  - `services/migrar_a_multi_curso.py`: `necesita_migracion`, detección año-curso, creación, asignación, flujo completo
+- Tests totales: 1222 → 1342
+- Cobertura: 46.02% → 47.81%
+
+---
 ## [4.11.0] - 2026-04-19
 
 ### 🎯 Resumen
