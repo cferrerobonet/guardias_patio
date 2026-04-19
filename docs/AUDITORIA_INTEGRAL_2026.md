@@ -1690,7 +1690,7 @@ Fallo de red = fallo total. Sin reintentos.
 ### ~~RES-02 — Sin circuit breaker (P3)~~ ✅ RESUELTO v5.2.1
 La conexión SFTP ya está protegida con `pybreaker` en `src/sync/sync_manager.py`.
 
-### RES-03 — Sin retry BD configurado (P2)
+### ~~RES-03 — Sin retry BD configurado (P2)~~ ✅ RESUELTO v5.9.5
 `settings.py` tiene config de retry pero no se usa.
 
 **Acción**: Implementar el retry que ya está configurado.
@@ -2227,7 +2227,7 @@ Fase 4 — Frontend Web (P2)
 | 23 | ASYNC-01 | FastAPI async (con PostgreSQL) | XL |
 | 24 | ASYNC-02 | ~~SFTP con timeout + retry~~ ✅ RESUELTO v5.2.1 | M |
 | 25 | RES-01 | ~~Retry SFTP con tenacity~~ ✅ RESUELTO v5.2.1 | M |
-| 26 | RES-03 | Implementar retry BD | S |
+| 26 | RES-03 | ~~Implementar retry BD~~ ✅ RESUELTO v5.9.5 | S |
 | 27 | API-10 | ~~Versionado API~~ ✅ RESUELTO v5.2.1 | S |
 | 28 | API-11 | Schema error estándar | M |
 | 29 | API-12 | ~~response_model en endpoints~~ ✅ RESUELTO v5.2.1 | M |
@@ -2668,6 +2668,7 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 | ID | Hallazgo | Severidad |
 |---|---|---|
 | RES-01 | ~~Sin retry en conexión SFTP — un fallo = operación perdida~~ ✅ RESUELTO v5.2.1 (tenacity + backoff exponencial) | MEDIA |
+| RES-03 | ~~Sin retry en BD configurado~~ ✅ RESUELTO v5.9.5 (`_create_session_with_retry` + `max_retries_db`) | MEDIA |
 | RES-02 | ~~Sin circuit breaker para SFTP/SMTP~~ ✅ RESUELTO v5.2.1 (pybreaker) | MEDIA |
 
 ### 8.2 Circuit Breaker

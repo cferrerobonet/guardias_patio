@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Optional
 
 from core.paths import get_user_data_directory
-from sqlalchemy import create_engine, event, pool
+from sqlalchemy import create_engine, event, pool, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 from utils.constants import TIMEOUT_DB
@@ -671,6 +671,29 @@ SessionLocal = _SmartSessionLocal()
 logger.info(f"Database manager inicializado: {DATABASE_URL[:50]}")
 
 
+def _create_session_with_retry(session_factory):
+    """Crea sesión de BD con retry y backoff ante errores operacionales."""
+    from config.settings import get_settings
+
+    max_retries = max(1, int(get_settings().max_retries_db))
+    for attempt in range(1, max_retries + 1):
+        session = session_factory()
+        try:
+            # Fuerza checkout de conexión para detectar locks/errores tempranos.
+            session.execute(text("SELECT 1"))
+            return session
+        except OperationalError as e:
+            session.close()
+            if attempt == max_retries:
+                raise
+            wait = 0.5 * (2 ** attempt)  # 1s, 2s, 4s
+            logger.warning(
+                f"Error BD al abrir sesión, reintento {attempt}/{max_retries} "
+                f"en {wait:.1f}s: {e}"
+            )
+            time.sleep(wait)
+
+
 def get_session():
     """
     Generador de sesión de base de datos.
@@ -692,7 +715,7 @@ def get_session():
     with _db_lock:
         session_factory = _current_session_factory if _current_session_factory else _base_session_factory
 
-    db = session_factory()
+    db = _create_session_with_retry(session_factory)
     try:
         yield db
     except Exception as e:
@@ -726,32 +749,10 @@ def get_db_session():
     with _db_lock:
         session_factory = _current_session_factory if _current_session_factory else _base_session_factory
 
-    session = session_factory()
+    session = _create_session_with_retry(session_factory)
     try:
         yield session
         session.commit()
-    except OperationalError as e:
-        session.rollback()
-        # Retry con backoff en errores de BD (tabla bloqueada, BD ocupada)
-        from config.settings import get_settings
-
-        max_retries = get_settings().max_retries_db
-        for attempt in range(1, max_retries + 1):
-            wait = 0.5 * (2 ** attempt)  # 1s, 2s, 4s
-            logger.warning(f"Error BD, reintento {attempt}/{max_retries} en {wait:.1f}s: {e}")
-            time.sleep(wait)
-            session2 = session_factory()
-            try:
-                yield session2
-                session2.commit()
-                break
-            except Exception as e2:
-                logger.error(f"Error en reintento {attempt}: {e2}", exc_info=True)
-                session2.rollback()
-                if attempt == max_retries:
-                    raise
-            finally:
-                session2.close()
     except Exception as e:
         logger.error(f"Error en sesión de BD: {e}", exc_info=True)
         session.rollback()

@@ -6,6 +6,23 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.9.5] - 2026-04-19
+
+### 🎯 Resumen
+RES-03 resuelto con retry de apertura de sesión/conexión de BD usando la configuración existente.
+
+### Changed
+- `src/database/db_manager.py` añade `_create_session_with_retry()` con backoff exponencial.
+- `get_session()` y `get_db_session()` usan ahora creación de sesión con retry.
+- Eliminado patrón de retry defectuoso en `get_db_session()` que reintentaba con doble `yield`.
+
+### Fixed
+- **RES-03**: `max_retries_db` pasa a aplicarse de forma efectiva al abrir sesiones de BD.
+
+### Audit
+- `docs/AUDITORIA_INTEGRAL_2026.md`: RES-03 marcado como ✅ RESUELTO v5.9.5 en sección y roadmap.
+
+---
 ## [5.9.4] - 2026-04-19
 
 ### 🎯 Resumen
