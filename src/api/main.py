@@ -17,6 +17,7 @@ Documentación:
 
 import time
 import uuid
+from typing import Any
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -40,6 +41,7 @@ from api.routers import (
 from core.logging import get_logger
 from core.observability.health import get_health_checker
 from config.settings import get_settings
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 logger = get_logger(__name__)
 _version = get_settings().app_version
@@ -87,6 +89,62 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.add_middleware(SecurityHeadersMiddleware)
 
 
+def _default_error_code(status_code: int) -> str:
+    if status_code == 400:
+        return "bad_request"
+    if status_code == 401:
+        return "unauthorized"
+    if status_code == 403:
+        return "forbidden"
+    if status_code == 404:
+        return "not_found"
+    if status_code == 409:
+        return "conflict"
+    if status_code == 422:
+        return "validation_error"
+    if status_code >= 500:
+        return "internal_server_error"
+    return "http_error"
+
+
+def _normalize_error_payload(detail: Any, status_code: int) -> dict[str, Any]:
+    if isinstance(detail, dict) and "error" in detail and isinstance(detail["error"], dict):
+        error_obj = detail["error"]
+        return {
+            "error": {
+                "code": error_obj.get("code", _default_error_code(status_code)),
+                "message": error_obj.get("message", "Error de API"),
+                "details": error_obj.get("details", {}),
+            }
+        }
+
+    if isinstance(detail, dict):
+        return {
+            "error": {
+                "code": detail.get("code", _default_error_code(status_code)),
+                "message": detail.get("message", "Error de API"),
+                "details": detail.get("details", {}),
+            }
+        }
+
+    return {
+        "error": {
+            "code": _default_error_code(status_code),
+            "message": str(detail) if detail else "Error de API",
+            "details": {},
+        }
+    }
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=_normalize_error_payload(exc.detail, exc.status_code),
+        headers=exc.headers,
+    )
+
+
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
     """Añade X-Correlation-ID, X-Request-ID y log estructurado por petición (API-10, API-15)."""
@@ -113,7 +171,13 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     logger.exception("Error no controlado en %s", request.url)
     return JSONResponse(
         status_code=500,
-        content={"error": {"code": "internal_server_error", "message": "Error interno del servidor"}},
+        content={
+            "error": {
+                "code": "internal_server_error",
+                "message": "Error interno del servidor",
+                "details": {},
+            }
+        },
     )
 
 
@@ -121,7 +185,13 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     return JSONResponse(
         status_code=422,
-        content={"error": {"code": "validation_error", "message": str(exc.errors())}},
+        content={
+            "error": {
+                "code": "validation_error",
+                "message": "Solicitud inválida",
+                "details": {"errors": exc.errors()},
+            }
+        },
     )
 
 

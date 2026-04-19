@@ -6,6 +6,24 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.9.6] - 2026-04-19
+
+### 🎯 Resumen
+API-11 resuelto con schema de error estándar aplicado de forma centralizada en FastAPI.
+
+### Changed
+- `src/api/main.py` añade normalización global de `HTTPException` al formato:
+  - `{"error": {"code": "...", "message": "...", "details": {...}}}`
+- `RequestValidationError` y errores no controlados devuelven ahora el mismo schema estándar.
+- `tests/test_api_rest.py` actualizado al nuevo formato de error.
+
+### Fixed
+- **API-11**: eliminada inconsistencia entre respuestas con `detail` y respuestas con `error`.
+
+### Audit
+- `docs/AUDITORIA_INTEGRAL_2026.md`: API-11 marcado como ✅ RESUELTO v5.9.6.
+
+---
 ## [5.9.5] - 2026-04-19
 
 ### 🎯 Resumen

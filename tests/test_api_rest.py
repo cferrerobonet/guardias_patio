@@ -189,9 +189,9 @@ def test_listar_profesores_error_schema_estandar(client_profesores):
         mock_uc.return_value.execute.side_effect = RuntimeError("fallo")
         r = client.get("/api/v1/profesores")
     assert r.status_code == 500
-    detail = r.json()["detail"]
-    assert detail["code"] == "internal_error"
-    assert "message" in detail
+    error = r.json()["error"]
+    assert error["code"] == "internal_error"
+    assert "message" in error
 
 
 def test_listar_profesores_paginacion_offset(client_profesores):

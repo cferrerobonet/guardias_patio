@@ -1731,7 +1731,7 @@ No hay `POST`, `PUT`, `DELETE` para CRUD completo. La API no es funcional para u
 ### ~~API-10 — Versionado parcial (P2)~~ ✅ RESUELTO v5.2.1
 La API ya expone el header `API-Version: 1` además del prefijo `/api/v1`.
 
-### API-11 — Sin schema de error estándar (P2)
+### ~~API-11 — Sin schema de error estándar (P2)~~ ✅ RESUELTO v5.9.6
 Errores devuelven formatos inconsistentes.
 
 **Acción**: Implementar `{"error": {"code": "RESOURCE_NOT_FOUND", "message": "...", "details": {}}}`.
@@ -2229,7 +2229,7 @@ Fase 4 — Frontend Web (P2)
 | 25 | RES-01 | ~~Retry SFTP con tenacity~~ ✅ RESUELTO v5.2.1 | M |
 | 26 | RES-03 | ~~Implementar retry BD~~ ✅ RESUELTO v5.9.5 | S |
 | 27 | API-10 | ~~Versionado API~~ ✅ RESUELTO v5.2.1 | S |
-| 28 | API-11 | Schema error estándar | M |
+| 28 | API-11 | ~~Schema error estándar~~ ✅ RESUELTO v5.9.6 | M |
 | 29 | API-12 | ~~response_model en endpoints~~ ✅ RESUELTO v5.2.1 | M |
 | 30 | API-15 | ~~Middleware logging estructurado~~ ✅ RESUELTO v5.2.1 | M |
 | 31 | TEST-04 | ~~Tests SFTP/SMTP~~ ✅ RESUELTO (pre-existente) | L |
