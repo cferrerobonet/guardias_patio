@@ -35,6 +35,7 @@ from api.routers import (
     estadisticas_router,
     guardias_router,
     profesores_router,
+    zonas_router,
 )
 from core.logging import get_logger
 from core.observability.health import get_health_checker
@@ -137,6 +138,7 @@ app.include_router(equidad_router, prefix="/api/v1", dependencies=[_auth])
 app.include_router(guardias_router, prefix="/api/v1", dependencies=[_auth])
 app.include_router(profesores_router, prefix="/api/v1", dependencies=[_auth])
 app.include_router(estadisticas_router, prefix="/api/v1", dependencies=[_auth])
+app.include_router(zonas_router, prefix="/api/v1", dependencies=[_auth])
 
 
 @app.get("/")

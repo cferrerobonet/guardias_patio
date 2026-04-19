@@ -16,7 +16,12 @@ from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
 from application.dtos import FiltroGuardiasDTO
+from application.dtos.guardia_dto import CrearGuardiaDTO
+from application.use_cases.guardia.asignar_guardia import AsignarGuardiaUseCase
+from application.use_cases.guardia.limpiar_guardias import LimpiarGuardiasUseCase
 from application.use_cases.guardia.obtener_guardias import ObtenerGuardiasUseCase
+from core.exceptions import BusinessLogicError, ValidationError
+from infrastructure.repositories import SQLAlchemyGuardiaRepository
 
 router = APIRouter(prefix="/guardias", tags=["guardias"])
 
@@ -276,4 +281,37 @@ def exportar_guardias_xlsx(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment; filename=guardias.xlsx"},
     )
+
+
+@router.post("", response_model=GuardiaResponse, status_code=201, summary="Asignar guardia")
+def asignar_guardia(guardia: CrearGuardiaDTO, db: Session = Depends(get_db)):
+    """Asigna manualmente una guardia a un profesor en una zona y fecha concretas."""
+    try:
+        dto = AsignarGuardiaUseCase(db).execute(guardia)
+        return GuardiaResponse(
+            id=dto.id,
+            fecha=dto.fecha,
+            recreo=dto.numero_recreo,
+            turno=dto.turno,
+            zona_id=dto.zona_id,
+            zona_nombre=dto.zona_nombre,
+            profesor_id=dto.profesor_id,
+            profesor_nombre=dto.profesor_nombre,
+            es_sustitucion=dto.es_sustitucion,
+        )
+    except (ValidationError, BusinessLogicError) as e:
+        raise HTTPException(status_code=422, detail={"code": "validation_error", "message": str(e)})
+    except (ValueError, TypeError, OSError) as e:
+        raise HTTPException(status_code=500, detail={"code": "internal_error", "message": str(e)})
+
+
+@router.delete("", status_code=200, summary="Eliminar todas las guardias")
+def limpiar_guardias(db: Session = Depends(get_db)):
+    """Elimina TODAS las guardias del sistema. Operación irreversible."""
+    try:
+        repo = SQLAlchemyGuardiaRepository(db)
+        total = LimpiarGuardiasUseCase(repo).execute()
+        return {"eliminadas": total}
+    except (ValueError, OSError) as e:
+        raise HTTPException(status_code=500, detail={"code": "internal_error", "message": str(e)})
 

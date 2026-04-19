@@ -5,6 +5,7 @@ from .equidad import router as equidad_router
 from .estadisticas import router as estadisticas_router
 from .guardias import router as guardias_router
 from .profesores import router as profesores_router
+from .zonas import router as zonas_router
 
 __all__ = [
     "cuotas_router",
@@ -12,4 +13,5 @@ __all__ = [
     "guardias_router",
     "profesores_router",
     "estadisticas_router",
+    "zonas_router",
 ]

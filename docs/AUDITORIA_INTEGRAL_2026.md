@@ -626,9 +626,9 @@ En `src/api/main.py` (FastAPI): Ya gestionado por uvicorn.
 
 ## 8. API REST
 
-### API-08 — Solo endpoints GET, sin CRUD completo (P1)
+### ~~API-08 — Solo endpoints GET, sin CRUD completo (P1)~~ ✅ RESUELTO v5.8.0
 
-**Problema**: La API en `src/api/` solo tiene estos endpoints:
+**Problema**: La API en `src/api/` solo tenía endpoints GET.
 - `POST /api/v1/auth/token` (login)
 - `GET /api/v1/profesores` (con paginación, `response_model=PaginatedProfesoresResponse`)
 - `GET /api/v1/profesores/{id}` (`response_model=ProfesorResponse`)
@@ -752,7 +752,7 @@ Implementado middleware de logging en `src/api/main.py` con `request_id`, duraci
 
 ---
 
-### TEST-04 — 0 tests SFTP/SMTP (P2)
+### ~~TEST-04 — 0 tests SFTP/SMTP (P2)~~ ✅ RESUELTO (pre-existente)
 
 **Archivos a testear**: `src/sync/sync_manager.py`, `src/sync/data_exporter.py`, `src/services/email_service.py`
 
@@ -774,7 +774,7 @@ def test_send_email(mock_smtp):
 
 ---
 
-### TEST-05 — Sin tests de integración BD (P2)
+### ~~TEST-05 — Sin tests de integración BD (P2)~~ ✅ RESUELTO (pre-existente)
 
 **Cómo resolver**: Crear `tests/test_integration/` con SQLite in-memory:
 ```python

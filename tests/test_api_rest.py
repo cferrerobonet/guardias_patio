@@ -281,7 +281,7 @@ def test_listar_guardias_vacio(client_con_db):
         mock_uc.return_value.execute.return_value = []
         r = client.get("/api/v1/guardias?configuracion_id=1")
     assert r.status_code == 200
-    assert r.json() == []
+    assert r.json()["items"] == []
 
 
 def test_listar_guardias_devuelve_datos(client_con_db):
@@ -293,9 +293,9 @@ def test_listar_guardias_devuelve_datos(client_con_db):
         r = client.get("/api/v1/guardias?configuracion_id=1")
     assert r.status_code == 200
     data = r.json()
-    assert len(data) == 2
-    assert data[0]["id"] == 1
-    assert data[0]["zona_nombre"] == "Patio central"
+    assert len(data["items"]) == 2
+    assert data["items"][0]["id"] == 1
+    assert data["items"][0]["zona_nombre"] == "Patio central"
 
 
 def test_listar_guardias_paginacion(client_con_db):
@@ -306,7 +306,7 @@ def test_listar_guardias_paginacion(client_con_db):
         mock_uc.return_value.execute.return_value = guardias
         r = client.get("/api/v1/guardias?configuracion_id=1&limit=2")
     assert r.status_code == 200
-    assert len(r.json()) == 2
+    assert len(r.json()["items"]) == 2
 
 
 def test_listar_guardias_offset(client_con_db):
@@ -317,7 +317,7 @@ def test_listar_guardias_offset(client_con_db):
         mock_uc.return_value.execute.return_value = guardias
         r = client.get("/api/v1/guardias?configuracion_id=1&offset=3&limit=10")
     assert r.status_code == 200
-    data = r.json()
+    data = r.json()["items"]
     assert len(data) == 2
     assert data[0]["id"] == 4
 
@@ -478,3 +478,242 @@ def test_local_backend_safe_path_bloquea_traversal(tmp_path):
 
     with pytest.raises(ValueError, match="Path no permitido"):
         backend._safe_path("../../etc/passwd")
+
+
+# ---------------------------------------------------------------------------
+# POST /api/v1/profesores — crear_profesor
+# ---------------------------------------------------------------------------
+
+
+def test_crear_profesor_ok(client_profesores):
+    """POST /profesores crea un profesor y devuelve 201."""
+    client, db_mock = client_profesores
+    nuevo = _profesor_dto(id_=10)
+    with patch("api.routers.profesores.CrearProfesorUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = nuevo
+        r = client.post(
+            "/api/v1/profesores",
+            json={
+                "nombre_completo": "Nuevo Profesor",
+                "horas_contrato": 18.0,
+                "turno": "mañana",
+            },
+        )
+    assert r.status_code == 201
+    assert r.json()["id"] == 10
+
+
+def test_crear_profesor_validacion_falla(client_profesores):
+    """POST /profesores con datos inválidos devuelve 422."""
+    client, _ = client_profesores
+    r = client.post("/api/v1/profesores", json={"nombre_completo": "x"})
+    assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# PUT /api/v1/profesores/{id} — actualizar_profesor
+# ---------------------------------------------------------------------------
+
+
+def test_actualizar_profesor_ok(client_profesores):
+    """PUT /profesores/{id} actualiza y devuelve 200."""
+    client, db_mock = client_profesores
+    actualizado = _profesor_dto(id_=1)
+    with patch("api.routers.profesores.ActualizarProfesorUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = actualizado
+        r = client.put("/api/v1/profesores/1", json={"nombre_completo": "Nombre Nuevo"})
+    assert r.status_code == 200
+    assert r.json()["id"] == 1
+
+
+def test_actualizar_profesor_no_encontrado(client_profesores):
+    """PUT /profesores/{id} cuando no existe devuelve 404."""
+    client, db_mock = client_profesores
+    with patch("api.routers.profesores.ActualizarProfesorUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = None
+        r = client.put("/api/v1/profesores/999", json={"nombre_completo": "Nombre Inexistente"})
+    assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# DELETE /api/v1/profesores/{id} — eliminar_profesor
+# ---------------------------------------------------------------------------
+
+
+def test_eliminar_profesor_ok(client_profesores):
+    """DELETE /profesores/{id} elimina y devuelve 204."""
+    client, db_mock = client_profesores
+    with patch("api.routers.profesores.EliminarProfesorUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = None
+        r = client.delete("/api/v1/profesores/1")
+    assert r.status_code == 204
+
+
+# ---------------------------------------------------------------------------
+# Zonas — fixtures y helpers
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def client_zonas(client_con_db):
+    """TestClient preparado para tests de zonas."""
+    client, db_mock = client_con_db
+    return client, db_mock
+
+
+def _zona_dto(id_: int = 1):
+    dto = MagicMock()
+    dto.id = id_
+    dto.nombre_zona = f"Zona {id_}"
+    dto.descripcion = "Descripción"
+    return dto
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/zonas
+# ---------------------------------------------------------------------------
+
+
+def test_listar_zonas_vacio(client_zonas):
+    """GET /zonas con lista vacía devuelve 200 y []."""
+    client, _ = client_zonas
+    with patch("api.routers.zonas.ListarZonasUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = []
+        r = client.get("/api/v1/zonas")
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_listar_zonas_devuelve_lista(client_zonas):
+    """GET /zonas devuelve todas las zonas."""
+    client, _ = client_zonas
+    with patch("api.routers.zonas.ListarZonasUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = [_zona_dto(1), _zona_dto(2)]
+        r = client.get("/api/v1/zonas")
+    assert r.status_code == 200
+    assert len(r.json()) == 2
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/zonas/{id}
+# ---------------------------------------------------------------------------
+
+
+def test_obtener_zona_existente(client_zonas):
+    """GET /zonas/{id} devuelve la zona correcta."""
+    client, _ = client_zonas
+    with patch("api.routers.zonas.ObtenerZonaUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = _zona_dto(5)
+        r = client.get("/api/v1/zonas/5")
+    assert r.status_code == 200
+    assert r.json()["id"] == 5
+
+
+def test_obtener_zona_no_encontrada(client_zonas):
+    """GET /zonas/{id} con zona inexistente devuelve 404."""
+    client, _ = client_zonas
+    with patch("api.routers.zonas.ObtenerZonaUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = None
+        r = client.get("/api/v1/zonas/999")
+    assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# POST /api/v1/zonas
+# ---------------------------------------------------------------------------
+
+
+def test_crear_zona_ok(client_zonas):
+    """POST /zonas crea una zona y devuelve 201."""
+    client, _ = client_zonas
+    with patch("api.routers.zonas.CrearZonaUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = _zona_dto(7)
+        r = client.post("/api/v1/zonas", json={"nombre_zona": "Patio nuevo"})
+    assert r.status_code == 201
+    assert r.json()["id"] == 7
+
+
+def test_crear_zona_nombre_muy_corto(client_zonas):
+    """POST /zonas con nombre inválido devuelve 422."""
+    client, _ = client_zonas
+    r = client.post("/api/v1/zonas", json={"nombre_zona": "x"})
+    assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# PUT /api/v1/zonas/{id}
+# ---------------------------------------------------------------------------
+
+
+def test_actualizar_zona_ok(client_zonas):
+    """PUT /zonas/{id} actualiza y devuelve 200."""
+    client, _ = client_zonas
+    with patch("api.routers.zonas.ActualizarZonaUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = _zona_dto(3)
+        r = client.put("/api/v1/zonas/3", json={"nombre_zona": "Zona actualizada"})
+    assert r.status_code == 200
+
+
+def test_actualizar_zona_no_encontrada(client_zonas):
+    """PUT /zonas/{id} con zona inexistente devuelve 404."""
+    client, _ = client_zonas
+    with patch("api.routers.zonas.ActualizarZonaUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = None
+        r = client.put("/api/v1/zonas/999", json={"nombre_zona": "Zona Inexistente"})
+    assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# DELETE /api/v1/zonas/{id}
+# ---------------------------------------------------------------------------
+
+
+def test_eliminar_zona_ok(client_zonas):
+    """DELETE /zonas/{id} elimina y devuelve 204."""
+    client, _ = client_zonas
+    with patch("api.routers.zonas.EliminarZonaUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = None
+        r = client.delete("/api/v1/zonas/3")
+    assert r.status_code == 204
+
+
+# ---------------------------------------------------------------------------
+# POST /api/v1/guardias — asignar_guardia
+# ---------------------------------------------------------------------------
+
+
+def test_asignar_guardia_ok(client_con_db):
+    """POST /guardias asigna una guardia y devuelve 201."""
+    client, _ = client_con_db
+    dto = _guardia_dto(99)
+    with patch("api.routers.guardias.AsignarGuardiaUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = dto
+        r = client.post(
+            "/api/v1/guardias",
+            json={
+                "fecha": "2025-09-10",
+                "turno": "mañana",
+                "numero_recreo": 2,
+                "profesor_id": 5,
+                "zona_id": 1,
+            },
+        )
+    assert r.status_code == 201
+    assert r.json()["id"] == 99
+
+
+# ---------------------------------------------------------------------------
+# DELETE /api/v1/guardias — limpiar_guardias
+# ---------------------------------------------------------------------------
+
+
+def test_limpiar_guardias_ok(client_con_db):
+    """DELETE /guardias elimina todas y devuelve total."""
+    client, _ = client_con_db
+    with patch("api.routers.guardias.LimpiarGuardiasUseCase") as mock_uc:
+        mock_uc.return_value.execute.return_value = 42
+        with patch("api.routers.guardias.SQLAlchemyGuardiaRepository"):
+            r = client.delete("/api/v1/guardias")
+    assert r.status_code == 200
+    assert r.json()["eliminadas"] == 42
+

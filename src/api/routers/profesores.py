@@ -11,8 +11,13 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
+from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
+from application.use_cases.profesor.actualizar_profesor import ActualizarProfesorUseCase
+from application.use_cases.profesor.crear_profesor import CrearProfesorUseCase
+from application.use_cases.profesor.eliminar_profesor import EliminarProfesorUseCase
 from application.use_cases.profesor.listar_profesores import ListarProfesoresUseCase
 from application.use_cases.profesor.obtener_profesor import ObtenerProfesorUseCase
+from core.exceptions import BusinessLogicError, ValidationError
 
 router = APIRouter(prefix="/profesores", tags=["profesores"])
 
@@ -126,5 +131,62 @@ def obtener_profesor(profesor_id: int, db: Session = Depends(get_db)):
         )
     except HTTPException:
         raise
+    except (ValueError, TypeError, OSError) as e:
+        raise _build_error("internal_error", str(e), 500)
+
+
+@router.post("", response_model=ProfesorResponse, status_code=201, summary="Crear profesor")
+def crear_profesor(profesor: CrearProfesorDTO, db: Session = Depends(get_db)):
+    """Crea un nuevo profesor."""
+    try:
+        dto = CrearProfesorUseCase(db).execute(profesor)
+        return ProfesorResponse(
+            id=dto.id,
+            nombre_completo=dto.nombre_completo,
+            horas_contrato=dto.horas_contrato,
+            porcentaje_jornada=dto.porcentaje_jornada,
+            turno=dto.turno,
+            activo=dto.activo,
+            email=dto.email_corporativo,
+        )
+    except (ValidationError, BusinessLogicError) as e:
+        raise _build_error("validation_error", str(e), 422)
+    except (ValueError, TypeError, OSError) as e:
+        raise _build_error("internal_error", str(e), 500)
+
+
+@router.put("/{profesor_id}", response_model=ProfesorResponse, summary="Actualizar profesor")
+def actualizar_profesor(
+    profesor_id: int, profesor: ActualizarProfesorDTO, db: Session = Depends(get_db)
+):
+    """Actualiza los datos de un profesor existente."""
+    try:
+        dto = ActualizarProfesorUseCase(db).execute(profesor_id, profesor)
+        if not dto:
+            raise _build_error("not_found", f"Profesor {profesor_id} no encontrado", 404)
+        return ProfesorResponse(
+            id=dto.id,
+            nombre_completo=dto.nombre_completo,
+            horas_contrato=dto.horas_contrato,
+            porcentaje_jornada=dto.porcentaje_jornada,
+            turno=dto.turno,
+            activo=dto.activo,
+            email=dto.email_corporativo,
+        )
+    except HTTPException:
+        raise
+    except (ValidationError, BusinessLogicError) as e:
+        raise _build_error("validation_error", str(e), 422)
+    except (ValueError, TypeError, OSError) as e:
+        raise _build_error("internal_error", str(e), 500)
+
+
+@router.delete("/{profesor_id}", status_code=204, summary="Eliminar profesor")
+def eliminar_profesor(profesor_id: int, db: Session = Depends(get_db)):
+    """Elimina un profesor del sistema."""
+    try:
+        EliminarProfesorUseCase(db).execute(profesor_id)
+    except (BusinessLogicError, ValidationError) as e:
+        raise _build_error("conflict", str(e), 409)
     except (ValueError, TypeError, OSError) as e:
         raise _build_error("internal_error", str(e), 500)

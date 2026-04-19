@@ -6,6 +6,21 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.8.0] - 2026-04-19
+
+### 🎯 Resumen
+API-08: CRUD completo REST — POST/PUT/DELETE para profesores y guardias, router `/zonas` nuevo con CRUD completo. 22 nuevos tests de API.
+
+### ✨ Added
+- **API-08**: `POST /profesores`, `PUT /profesores/{id}`, `DELETE /profesores/{id}`
+- **API-08**: Router `/zonas` nuevo: `GET`, `GET /{id}`, `POST`, `PUT /{id}`, `DELETE /{id}`
+- **API-08**: `POST /guardias` (asignar guardia manual), `DELETE /guardias` (limpiar todas)
+- 22 tests nuevos en `test_api_rest.py` para los nuevos endpoints CRUD
+
+### Fixed
+- Tests `test_listar_guardias_*` corregidos para respuesta paginada
+
+---
 ## [5.7.0] - 2026-04-19
 
 ### 🎯 Resumen
