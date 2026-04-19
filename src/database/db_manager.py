@@ -45,6 +45,60 @@ def _hash_username(username: str) -> str:
     return hashlib.sha256(username.encode()).hexdigest()[:16]
 
 
+def _get_user_backup_dir(username: str) -> Path:
+    """Devuelve el directorio de backups de un usuario."""
+    user_hash = _hash_username(username)
+    return USER_DATA_DIR / user_hash / "backups"
+
+
+def _prune_old_backups(backup_dir: Path, max_backups: int) -> None:
+    """Elimina backups antiguos manteniendo los más recientes."""
+    if max_backups <= 0:
+        return
+
+    backup_files = sorted(
+        backup_dir.glob("guardias_patio_backup_*.db"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    for backup_file in backup_files[max_backups:]:
+        try:
+            backup_file.unlink()
+        except OSError as e:
+            logger.warning(f"No se pudo eliminar backup antiguo {backup_file}: {e}")
+
+
+def _run_automatic_backup_if_needed(username: str) -> None:
+    """Genera backup periódico si se cumple el intervalo configurado."""
+    try:
+        from config.settings import get_settings
+
+        settings = get_settings()
+        if not settings.auto_backup_enabled:
+            return
+
+        interval_hours = max(1, int(settings.auto_backup_interval_hours))
+        backup_dir = _get_user_backup_dir(username)
+        backup_dir.mkdir(parents=True, exist_ok=True)
+
+        backup_files = sorted(
+            backup_dir.glob("guardias_patio_backup_*.db"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if backup_files:
+            elapsed_seconds = time.time() - backup_files[0].stat().st_mtime
+            if elapsed_seconds < interval_hours * 3600:
+                return
+
+        backup_path = backup_database(username, backup_dir=backup_dir)
+        if backup_path:
+            _prune_old_backups(backup_dir, int(settings.max_auto_backups))
+            logger.info(f"Backup automático generado: {backup_path}")
+    except Exception as e:
+        logger.warning(f"No se pudo ejecutar backup automático para {username}: {e}")
+
+
 def _run_alembic_migrations(engine, db_path: Path) -> bool:
     """
     Ejecuta migraciones de Alembic para inicializar/actualizar el esquema.
@@ -321,6 +375,8 @@ def initialize_user_database(username: str):
             "Revise alembic.ini y el estado de migraciones."
         )
 
+    _run_automatic_backup_if_needed(username)
+
     # Session factory para este usuario
     session_factory = sessionmaker(
         autocommit=False, autoflush=False, bind=engine, expire_on_commit=False
@@ -441,8 +497,7 @@ def backup_database(username: str, backup_dir: Optional[Path] = None) -> Optiona
             return None
 
         if backup_dir is None:
-            user_hash = _hash_username(username)
-            backup_dir = USER_DATA_DIR / user_hash / "backups"
+            backup_dir = _get_user_backup_dir(username)
 
         backup_dir = Path(backup_dir)
         backup_dir.mkdir(parents=True, exist_ok=True)

@@ -419,7 +419,7 @@ Buscar estos campos en `src/infrastructure/database/models.py`.
 
 ---
 
-### DB-13 — Sin mecanismo de backup/restore (P2)
+### ~~DB-13 — Sin mecanismo de backup/restore (P2)~~ ✅ RESUELTO v5.9.3
 
 **Problema**: No hay forma automatizada de hacer backup de la BD del usuario ni restaurarla.
 
@@ -1323,7 +1323,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | 9 | DB-05 | ~~Añadir CheckConstraints + migración Alembic~~ ✅ RESUELTO v5.2.0 | S |
 | 10 | DB-09 | ~~Añadir threading.Lock en db_manager.py~~ ✅ RESUELTO v5.1.2 | S |
 | 11 | DB-11 | ~~Unificar init BD en Alembic (eliminar create_all + SQL directo)~~ ✅ RESUELTO v5.9.1 | M |
-| 12 | DB-13 | Implementar backup/restore automático | L |
+| 12 | DB-13 | ~~Implementar backup/restore automático~~ ✅ RESUELTO v5.9.3 | L |
 | 13 | PERF-02 | ~~Eager loading (joinedload) en queries de listados~~ ✅ RESUELTO v5.2.0 | M |
 | 14 | ~~PERF-03~~ | ~~Mover filtro disponibilidad de Python a SQL~~ ✅ RESUELTO v5.6.0 | M |
 | 15 | PERF-05 | QThread para operaciones pesadas (PDF, Excel, CP-SAT) | L |
@@ -1612,7 +1612,7 @@ Alembic + `create_all` + SQL directo coexisten para inicializar BD.
 
 **Acción**: Diseñar migración a PostgreSQL multi-tenant con `tenant_id`.
 
-### DB-13 — Sin backup automático (P2)
+### ~~DB-13 — Sin backup automático (P2)~~ ✅ RESUELTO v5.9.3
 No hay mecanismo de backup/restore de la BD.
 
 **Acción**: Implementar backup periódico + export/import.
@@ -2218,7 +2218,7 @@ Fase 4 — Frontend Web (P2)
 | 14 | DB-08 | ~~Inconsistencia cerrado/archivado~~ ✅ RESUELTO (pre-existente) | S |
 | 15 | DB-09 | ~~Locks en db_manager~~ ✅ RESUELTO v5.1.2 | S |
 | 16 | DB-11 | ~~Triple init BD~~ ✅ RESUELTO v5.9.1 | M |
-| 17 | DB-13 | Backup/restore automático | L |
+| 17 | DB-13 | ~~Backup/restore automático~~ ✅ RESUELTO v5.9.3 | L |
 | 18 | PERF-02 | ~~Eager loading~~ ✅ RESUELTO v5.2.0 | M |
 | 19 | PERF-03 | ~~Filtro disponibilidad a SQL~~ ✅ RESUELTO v5.6.0 | M |
 | 20 | PERF-05 | ~~GUI no-blocking (QThread)~~ ✅ RESUELTO (pre-existente) | L |

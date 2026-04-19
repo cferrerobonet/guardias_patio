@@ -6,6 +6,26 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.9.3] - 2026-04-19
+
+### 🎯 Resumen
+DB-13 resuelto con backup automático periódico por usuario y retención configurable.
+
+### ✨ Added
+- `src/database/db_manager.py`: backup automático al inicializar BD de usuario cuando se cumple el intervalo configurado.
+- Retención de backups antiguos (`guardias_patio_backup_*.db`) manteniendo solo los más recientes.
+- Nueva configuración en `settings`:
+  - `auto_backup_enabled`
+  - `auto_backup_interval_hours`
+  - `max_auto_backups`
+
+### Fixed
+- **DB-13**: implementado mecanismo automático de backup/restore operativo sobre la infraestructura ya existente.
+
+### Audit
+- `docs/AUDITORIA_INTEGRAL_2026.md`: DB-13 marcado como ✅ RESUELTO v5.9.3 en secciones y roadmap.
+
+---
 ## [5.9.2] - 2026-04-19
 
 ### 🎯 Resumen

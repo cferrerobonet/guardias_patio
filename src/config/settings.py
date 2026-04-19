@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # ========== APLICACIÓN ==========
     app_name: str = "Gestión de Guardias de Patio"
-    app_version: str = "5.9.2"
+    app_version: str = "5.9.3"
     app_author: str = "Carlos Ferrero Bonet"
     environment: Literal["development", "production", "testing"] = "production"
 
@@ -63,6 +63,11 @@ class Settings(BaseSettings):
     timeout_db: int = 30
     pool_size: int = 5
     max_overflow: int = 10
+
+    # ========== BACKUPS ==========
+    auto_backup_enabled: bool = True
+    auto_backup_interval_hours: int = 24
+    max_auto_backups: int = 15
 
     # ========== LOGGING ==========
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
