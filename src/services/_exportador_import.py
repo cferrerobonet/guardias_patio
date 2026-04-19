@@ -17,6 +17,7 @@ from cryptography.fernet import Fernet, InvalidToken
 
 from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 logger = get_logger(__name__)
 
@@ -49,7 +50,7 @@ def _desencriptar_password(encrypted_password: str) -> str:
     except InvalidToken:
         try:
             return base64.b64decode(encrypted_password.encode("utf-8")).decode("utf-8")
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             return encrypted_password
 
 
@@ -468,7 +469,7 @@ def _importar_smtp_config(smtp_data: dict[str, str]) -> bool:
 
         return True
 
-    except Exception as e:
+    except (OSError, ValueError) as e:
         logger.warning(f"Error al importar configuración SMTP: {e}")
         return False
 
@@ -517,7 +518,7 @@ def _importar_sftp_config(sftp_data: dict[str, str]) -> bool:
 
         return True
 
-    except Exception as e:
+    except (OSError, ValueError) as e:
         logger.warning(f"Error al importar configuración SFTP: {e}")
         return False
 
@@ -551,7 +552,7 @@ def importar_usuarios(
 
         user_auth._save_users()
         return count
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         logger.warning(f"Error al importar usuarios: {e}")
         return 0
 
@@ -605,7 +606,7 @@ def importar_cursos_escolares(
 
         session.commit()
         return count
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.warning(f"Error al importar cursos escolares: {e}")
         session.rollback()
         return 0

@@ -224,7 +224,7 @@ class DeleteUserDialog(QDialog):
                     # o simplemente dejarlo (se puede limpiar manualmente)
                     pass
 
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 logger = self.user_auth.logger if hasattr(self.user_auth, "logger") else None
                 if logger:
                     logger.warning(f"No se pudieron eliminar archivos en la nube: {e}")
@@ -250,7 +250,7 @@ class DeleteUserDialog(QDialog):
                     "Revisa los logs para más información.",
                 )
 
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             QMessageBox.critical(
                 self,
                 "❌ Error al eliminar",

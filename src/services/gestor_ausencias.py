@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Tuple
 from infrastructure.database.models import Ausencia, Guardia, Profesor
 from services.validators import AusenciaChecker, TurnoValidator
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -451,7 +452,7 @@ def reasignar_guardias_automaticamente(
                 f"{profesor_anterior} → {nuevo_profesor.nombre_completo}"
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error al reasignar guardia {guardia.id}: {str(e)}")
             resultados["fallidas"] += 1
             resultados["detalles"].append(

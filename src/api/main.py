@@ -137,7 +137,7 @@ def health_check():
             status_code=http_code,
             content={"status": state, "version": _version, "components": components},
         )
-    except Exception:
+    except (ValueError, TypeError, OSError) as e:
         return {"status": "healthy", "version": _version}
 
 

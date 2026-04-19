@@ -108,14 +108,14 @@ class ObtenerGuardiasUseCase:
             profesor = self.profesor_repo.get_by_id(entidad.profesor_id)
             if profesor:
                 profesor_nombre = profesor.nombre_completo
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.warning(f"No se pudo obtener nombre de profesor {entidad.profesor_id}: {e}")
 
         try:
             zona = self.zona_repo.get_by_id(entidad.zona_id)
             if zona:
                 zona_nombre = zona.nombre_zona
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.warning(f"No se pudo obtener nombre de zona {entidad.zona_id}: {e}")
 
         return GuardiaDTO(

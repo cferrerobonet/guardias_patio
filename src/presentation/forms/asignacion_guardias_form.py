@@ -208,7 +208,7 @@ class AsignacionGuardiasForm(BaseForm):
 
         except BusinessLogicError as e:
             self.estadisticas_panel.mostrar_error(str(e))
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar estadísticas")
 
     def calcular_distribucion(self):
@@ -305,7 +305,7 @@ class AsignacionGuardiasForm(BaseForm):
                             )
                         else:
                             logger.warning("⚠ Problemas al sincronizar con la nube")
-                    except Exception as e:
+                    except (ValueError, TypeError, OSError) as e:
                         from utils.logger import get_logger
 
                         logger = get_logger(__name__)
@@ -315,7 +315,7 @@ class AsignacionGuardiasForm(BaseForm):
         except BusinessLogicError as e:
             self.mostrar_error("Error en Generación", str(e))
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "generar guardias")
 
     def limpiar_formulario(self):
@@ -368,7 +368,7 @@ class AsignacionGuardiasForm(BaseForm):
                 "• Generar nuevas guardias desde cero",
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "limpiar guardias")
 
     def validar_formulario(self) -> bool:

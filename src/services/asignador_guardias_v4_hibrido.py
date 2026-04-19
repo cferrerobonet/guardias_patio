@@ -45,6 +45,7 @@ from services.calculador_guardias import (
     listar_dias_lectivos,
 )
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -79,7 +80,7 @@ def generar_guardias_v4_hibrido(
         if progress_callback:
             try:
                 progress_callback(porcentaje, mensaje)
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 logger.warning(f"Error en callback de progreso: {e}")
 
     logger.info("=" * 80)
@@ -141,7 +142,7 @@ def generar_guardias_v4_hibrido(
         distribucion_service = DistribucionCuotasService(session)
         cuotas_ideales = distribucion_service.calcular_cuotas(profesores)
         logger.info("  ✓ Cuotas calculadas con DistribucionCuotasService")
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         logger.warning(f"  ⚠️ Fallback a calcular_guardias_por_profesor: {e}")
         cuotas_ideales = calcular_guardias_por_profesor(session)
 
@@ -270,7 +271,7 @@ def guardar_guardias_en_bd(session: Session, guardias: List[Guardia]) -> None:
                 session.add(guardia)
         session.commit()
         logger.info(f"✓ {len(guardias)} guardias guardadas en BD")
-    except Exception as e:
+    except SQLAlchemyError as e:
         session.rollback()
-        logger.error(f"Error al guardar guardias: {e}")
+        logger.exception(f"Error de base de datos al guardar: {e}") guardias: {e}")
         raise

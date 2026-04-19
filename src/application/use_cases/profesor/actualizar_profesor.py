@@ -150,7 +150,7 @@ class ActualizarProfesorUseCase:
 
             return self._convertir_a_dto(profesor)
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al actualizar el profesor: {str(e)}") from e
 

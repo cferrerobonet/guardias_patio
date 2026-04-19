@@ -210,7 +210,7 @@ class DialogoCrearCurso(QDialog):
             msg_warning.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg_warning.setFixedSize(450, 200)
             msg_warning.exec()
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             # Error inesperado
             logger.error(f"Error inesperado al crear curso: {type(e).__name__}: {e}", exc_info=True)
             msg_error = QMessageBox(self)

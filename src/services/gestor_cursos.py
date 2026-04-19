@@ -16,6 +16,7 @@ from core.logging import get_logger
 from infrastructure.database.models import CursoEscolar, Profesor
 from infrastructure.repositories.repository_factory import RepositoryFactory
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 logger = get_logger(__name__)
 

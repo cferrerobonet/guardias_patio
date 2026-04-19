@@ -212,7 +212,7 @@ class SidebarMenu(QWidget):
                         }
                     """)
                     return
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.warning(f"Error al cargar logo corporativo: {e}")
 
         # Si no hay logo corporativo, usar icono por defecto (school.svg)

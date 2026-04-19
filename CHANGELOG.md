@@ -6,6 +6,17 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.1.1] - 2026-04-19
+
+### 🎯 Resumen
+Refactorización de seguridad SEC-16: Eliminación masiva de bloques de excepciones genéricas silenciosas.
+
+### Fixed
+- **SEC-16**: Reemplazados más de 230 bloques `except Exception` por captura de excepciones específicas (`SQLAlchemyError`, `OSError`, `ValueError`, `TypeError`, `KeyError`) en las capas `services/`, `presentation/`, `sync/`, `infrastructure/`, `application/` y `api/`.
+- Añadido logueo de stacktraces (`logger.exception()`) en excepciones previamente silenciosas (`except Exception: pass`), especialmente en operaciones I/O y callbacks de UI.
+- Reducido el número total de excepciones genéricas de 273 a 40, cumpliendo el objetivo de la auditoría (<50).
+
+---
 ## [5.1.0] - 2026-04-19
 
 ### 🎯 Resumen

@@ -256,7 +256,7 @@ class ExportadorPDF:
             doc.build(elements)
             return True
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.warning(f"Error al exportar PDF: {e}")
             return False
 
@@ -288,7 +288,7 @@ class ExportadorPDF:
             if progress_callback:
                 try:
                     progress_callback(porcentaje, mensaje)
-                except Exception as e:
+                except (ValueError, TypeError, OSError) as e:
                     logger.warning(f"Error al reportar progreso: {e}")
 
         reportar_progreso(0, "Preparando exportación de PDFs...")
@@ -428,7 +428,7 @@ class ExportadorPDF:
             if progress_callback:
                 try:
                     progress_callback(porcentaje, mensaje)
-                except Exception as e:
+                except (ValueError, TypeError, OSError) as e:
                     logger.warning(f"Error al reportar progreso: {e}")
 
         try:
@@ -469,7 +469,7 @@ class ExportadorPDF:
 
             return exitos
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error al exportar profesores seleccionados: {e}")
             if progress_callback:
                 progress_callback(0, f"Error: {str(e)}")

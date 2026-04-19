@@ -51,7 +51,7 @@ def exportar_profesor_individual_optimizado(
         if progress_callback:
             try:
                 progress_callback(porcentaje, mensaje)
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 logger.warning(f"Error al reportar progreso: {e}")
 
     def crear_mini_calendario(
@@ -289,7 +289,7 @@ def exportar_profesor_individual_optimizado(
                     return config.hora_recreo1_tarde.strftime("%H:%M")
                 elif recreo == 2 and config.hora_recreo2_tarde:
                     return config.hora_recreo2_tarde.strftime("%H:%M")
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.debug(f"No se pudo obtener hora de recreo ({turno}, recreo {recreo}): {e}")
         return ""
 
@@ -820,7 +820,7 @@ def exportar_profesor_individual_optimizado(
         reportar_progreso(100, "PDF generado exitosamente")
         return True
 
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         logger.error(f"Error al exportar profesor individual: {e}")
         if progress_callback:
             progress_callback(0, f"Error: {str(e)}")

@@ -446,7 +446,7 @@ class CalendariosPdfWidget(QGroupBox):
                     }
                 """
                 )
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.curso_activo_label.setText(f"Error al obtener curso: {e}")
 
     def refrescar_curso_activo(self):
@@ -486,7 +486,7 @@ class CalendariosPdfWidget(QGroupBox):
                 self.profesores_checks_layout.addWidget(checkbox)
                 self.profesor_checkboxes.append(checkbox)
 
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             # No lanzar excepción, solo no cargar profesores
             pass
 

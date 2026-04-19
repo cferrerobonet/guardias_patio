@@ -100,7 +100,7 @@ def obtener_guardias(
             for g in paginados
         ]
 
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
 
@@ -144,7 +144,7 @@ def contar_guardias(
         dtos = use_case.execute(filtros)
         return {"total": len(dtos)}
 
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail="Error al contar guardias")
 
 
@@ -188,7 +188,7 @@ def exportar_guardias_csv(
     """Exporta las guardias filtradas como archivo CSV (UTF-8 con BOM para Excel)."""
     try:
         dtos = _get_guardias_dtos(configuracion_id, fecha_inicio, fecha_fin, profesor_id, zona_id, turno, db)
-    except Exception:
+    except (ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
     buf = io.StringIO()
@@ -225,7 +225,7 @@ def exportar_guardias_xlsx(
 
     try:
         dtos = _get_guardias_dtos(configuracion_id, fecha_inicio, fecha_fin, profesor_id, zona_id, turno, db)
-    except Exception:
+    except (ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
     wb = openpyxl.Workbook()

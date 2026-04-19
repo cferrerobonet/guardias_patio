@@ -270,7 +270,7 @@ class GestionCursosWidget(QWidget):
 
             logger.info(f"Cargados {len(cursos)} cursos en tabla de gestión")
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error al cargar cursos: {e}")
             msg_box = QMessageBox(self)
             msg_box.setIcon(QMessageBox.Icon.Critical)
@@ -351,7 +351,7 @@ class GestionCursosWidget(QWidget):
                 "zonas": zonas,
             }
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error al calcular estadísticas del curso {curso_id}: {e}", exc_info=True)
             return {
                 "dias_lectivos": 0,
@@ -405,7 +405,7 @@ class GestionCursosWidget(QWidget):
                 self._cargar_cursos()
                 self.curso_modificado.emit()
                 logger.info("Cursos recargados correctamente")
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error al abrir diálogo: {type(e).__name__}: {e}", exc_info=True)
             QMessageBox.critical(
                 self, "Error", f"Error al abrir el diálogo:\n{type(e).__name__}: {e}"
@@ -466,7 +466,7 @@ class GestionCursosWidget(QWidget):
                 self._cargar_cursos()
                 self.curso_modificado.emit()
 
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             logger.error(f"Error al activar curso: {e}")
 
             msg_error = QMessageBox(self)
@@ -519,7 +519,7 @@ class GestionCursosWidget(QWidget):
                 self._cargar_cursos()
                 self.curso_modificado.emit()
 
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             logger.error(f"Error al cerrar curso: {e}")
 
             msg_error = QMessageBox(self)
@@ -601,7 +601,7 @@ class GestionCursosWidget(QWidget):
                 self._cargar_cursos()
                 self.curso_modificado.emit()
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error al eliminar curso: {e}")
             self.session.rollback()
 

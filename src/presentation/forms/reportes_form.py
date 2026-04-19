@@ -192,7 +192,7 @@ class ReportesForm(BaseForm):
             elif tipo == "individual_seleccionados":
                 self._exportar_individual_seleccionados(config, carpeta)
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "generar PDFs")
             self.resultado_text.setText(f"Error al generar PDFs: {e}")
 
@@ -539,7 +539,7 @@ class ReportesForm(BaseForm):
                                             f"{profesor.nombre_completo}"
                                         )
                                         ics_path = None
-                                except Exception as e:
+                                except (ValueError, TypeError, OSError) as e:
                                     logger.warning(f"Error al generar iCalendar: {e}")
                                     ics_path = None
 
@@ -566,7 +566,7 @@ class ReportesForm(BaseForm):
                                         f"{profesor.email_corporativo}: {mensaje_email}"
                                     )
 
-                except Exception as e:
+                except (ValueError, TypeError, OSError) as e:
                     logger.error(f"Error al exportar PDF para profesor {profesor_id}: {e}")
 
             # Progreso final

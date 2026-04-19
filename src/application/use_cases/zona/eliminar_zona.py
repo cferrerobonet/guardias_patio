@@ -67,6 +67,6 @@ class EliminarZonaUseCase:
             invalidate_zonas_cache()
             logger.info(f"Zona eliminada y cache invalidado: {nombre_zona} (ID: {zona_id})")
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al eliminar la zona: {str(e)}") from e

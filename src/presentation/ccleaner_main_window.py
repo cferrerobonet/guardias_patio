@@ -216,7 +216,7 @@ class CCleanerMainWindow(QMainWindow):
             try:
                 # No emitir realmente, solo verificar que el objeto está listo
                 logger.info("✅ Conexión verificada - lista para recibir señales")
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 logger.error(f"❌ Error al verificar conexión: {e}")
         else:
             logger.warning("⚠️ No se pudo conectar señal - selector_curso no disponible")

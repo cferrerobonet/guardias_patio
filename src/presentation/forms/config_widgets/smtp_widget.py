@@ -383,7 +383,7 @@ class SMTPConfigWidget(QGroupBox):
 
             return True
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             self.logger.error(f"Error al guardar SMTP: {str(e)}")
             return False
 
@@ -431,7 +431,7 @@ class SMTPConfigWidget(QGroupBox):
             self.logger.info(f"Nombre del remitente SMTP guardado: {smtp_from_name}")
             return True
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             self.logger.error(f"Error al guardar nombre del remitente SMTP: {str(e)}")
             return False
 
@@ -642,7 +642,7 @@ Sistema de Gestión de Guardias de Patio
             )
             self.logger.error("Error de autenticación SMTP")
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self._show_error(
                 "❌ Error de Conexión",
                 f"No se pudo conectar al servidor SMTP:\n\n{str(e)}\n\n"

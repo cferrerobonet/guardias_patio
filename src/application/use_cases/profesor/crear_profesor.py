@@ -132,7 +132,7 @@ class CrearProfesorUseCase:
         except ValidationError:
             self.session.rollback()
             raise
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.session.rollback()
             logger.error("Error al crear profesor", error=str(e))
             raise ValidationError(f"Error al crear profesor: {e}") from e

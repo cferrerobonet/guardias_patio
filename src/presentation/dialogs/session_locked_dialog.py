@@ -143,5 +143,5 @@ class SessionLockedDialog(QDialog):
 
             dt = datetime.fromisoformat(iso_string)
             return dt.strftime("%d/%m/%Y %H:%M:%S")
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             return iso_string

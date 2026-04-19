@@ -265,7 +265,7 @@ class DialogoAcercaDe(QDialog):
             from PyQt6.QtCore import PYQT_VERSION_STR
 
             return PYQT_VERSION_STR
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             return "No disponible"
 
     def _get_sqlalchemy_version(self) -> str:
@@ -274,7 +274,7 @@ class DialogoAcercaDe(QDialog):
             import sqlalchemy
 
             return sqlalchemy.__version__
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             return "No disponible"
 
     def _get_ortools_version(self) -> str:
@@ -283,7 +283,7 @@ class DialogoAcercaDe(QDialog):
             from ortools import __version__
 
             return __version__
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             return "No disponible"
 
     def _get_db_info(self) -> list:
@@ -324,7 +324,7 @@ class DialogoAcercaDe(QDialog):
                     info.append(("🗄️ Base de datos:", db_url))
             else:
                 info.append(("🗄️ Base de datos:", "Sesión no disponible"))
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             info.append(("🗄️ Base de datos:", f"Error: {e}"))
         return info
 
@@ -355,6 +355,6 @@ class DialogoAcercaDe(QDialog):
                     stats.append(("📅 Período guardias:", f"{fecha_min} → {fecha_max}"))
             else:
                 stats.append(("⚠️ Sesión:", "No disponible"))
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             stats.append(("❌ Error:", str(e)))
         return stats

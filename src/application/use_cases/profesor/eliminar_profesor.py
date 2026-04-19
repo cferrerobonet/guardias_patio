@@ -72,6 +72,6 @@ class EliminarProfesorUseCase:
                 f"Profesor eliminado y cache invalidado: {nombre_profesor} (ID: {profesor_id})"
             )
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al eliminar el profesor: {str(e)}") from e

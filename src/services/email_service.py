@@ -248,7 +248,7 @@ Sistema de Gestión de Guardias
             logger.error(error_msg)
             return False, error_msg
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             error_msg = f"Error al enviar email: {str(e)}"
             logger.error(error_msg)
             return False, error_msg
@@ -432,7 +432,7 @@ Sistema de Gestión de Guardias
             logger.error(error_msg)
             return False, error_msg
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             error_msg = f"Error al enviar email: {str(e)}"
             logger.error(error_msg)
             return False, error_msg

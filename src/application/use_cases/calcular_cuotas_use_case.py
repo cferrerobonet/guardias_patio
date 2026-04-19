@@ -95,7 +95,7 @@ class CalcularCuotasUseCase:
                 mensaje=f"Cuotas calculadas correctamente para {len(cuotas)} profesores",
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error calculando cuotas: {e}", exc_info=True)
             return CalcularCuotasResponse(
                 exitoso=False,

@@ -296,7 +296,7 @@ class DashboardForm(QWidget):
 
             logger.info("Dashboard actualizado correctamente")
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error cargando dashboard: {e}", exc_info=True)
             self._mostrar_error(f"Error: {str(e)}")
 

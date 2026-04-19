@@ -392,7 +392,7 @@ class SFTPConfigWidget(QGroupBox):
 
             return True
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             self.logger.error(f"Error al guardar SFTP: {str(e)}")
             return False
 
@@ -439,7 +439,7 @@ class SFTPConfigWidget(QGroupBox):
             try:
                 files = sftp.listdir(sftp_basedir)
                 file_count = len(files)
-            except Exception:
+            except (OSError, ValueError) as e:
                 # Si no existe el directorio, intentar crearlo
                 sftp.mkdir(sftp_basedir)
                 file_count = 0
@@ -469,7 +469,7 @@ class SFTPConfigWidget(QGroupBox):
             )
             self.logger.error("Error de autenticación SFTP")
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             self._show_error(
                 "❌ Error de Conexión",
                 f"No se pudo conectar al servidor SFTP:\n\n{str(e)}\n\n"

@@ -431,7 +431,7 @@ class PdfExportWidget(QGroupBox):
                 self.profesores_checks_layout.addWidget(checkbox)
                 self.profesor_checkboxes.append(checkbox)
 
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             # No lanzar excepción, solo no cargar profesores
             pass
 

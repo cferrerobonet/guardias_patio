@@ -52,5 +52,5 @@ class ActualizarLogoUseCase:
         try:
             shutil.copy(archivo_origen, destino)
             return str(destino)
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             raise ValidationError(f"Error al copiar la imagen: {str(e)}")

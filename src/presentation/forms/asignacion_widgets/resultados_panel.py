@@ -194,7 +194,7 @@ class ResultadosPanel(QGroupBox):
                     lineas.append(format_terminal_success("✅ Sin desbalances significativos"))
             else:
                 lineas.append(format_terminal_info("(análisis de equidad no disponible)"))
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             lineas.append(format_terminal_info("(análisis de equidad no disponible)"))
 
         lineas.append("")

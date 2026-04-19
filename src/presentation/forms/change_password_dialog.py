@@ -242,5 +242,5 @@ class ChangePasswordDialog(QDialog):
 
             self.accept()
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             QMessageBox.critical(self, "Error", f"Error al cambiar la contraseña: {str(e)}")

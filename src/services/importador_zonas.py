@@ -14,6 +14,7 @@ from typing import Callable, Optional
 
 from infrastructure.database.models import Zona
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
 try:
@@ -69,8 +70,8 @@ def importar_zonas_desde_csv(
         if progress_callback:
             try:
                 progress_callback(pct, msg)
-            except Exception:
-                pass
+            except (ValueError, TypeError, OSError) as e:
+                logger.exception("Error en progress_callback: %s", e)
 
     _progress(0, "Leyendo archivo CSV...")
 
@@ -78,8 +79,8 @@ def importar_zonas_desde_csv(
         with open(archivo_path, newline="", encoding="utf-8-sig") as f:
             reader = csv_module.DictReader(f)
             filas = list(reader)
-    except Exception as e:
-        logger.error(f"Error leyendo CSV de zonas: {e}")
+    except (OSError, IOError, ValueError) as e:
+        logger.exception(f"Error de E/S o lectura: {e}") CSV de zonas: {e}")
         resultados["errores"] += 1
         resultados["detalles"].append(f"Error lectura: {e}")
         return resultados
@@ -112,9 +113,9 @@ def importar_zonas_desde_csv(
 
     try:
         session.commit()
-    except Exception as e:
+    except SQLAlchemyError as e:
         session.rollback()
-        logger.error(f"Error al guardar zonas importadas: {e}")
+        logger.exception(f"Error de base de datos al guardar: {e}") zonas importadas: {e}")
         resultados["errores"] += resultados["importadas"]
         resultados["importadas"] = 0
         resultados["detalles"].append(f"Error al guardar en BD: {e}")
@@ -159,8 +160,8 @@ def importar_zonas_desde_excel(
         if progress_callback:
             try:
                 progress_callback(pct, msg)
-            except Exception:
-                pass
+            except (ValueError, TypeError, OSError) as e:
+                logger.exception("Error en progress_callback: %s", e)
 
     _progress(0, "Leyendo archivo Excel...")
 
@@ -168,8 +169,8 @@ def importar_zonas_desde_excel(
         df = pd.read_excel(archivo_path, sheet_name=sheet_name, dtype=str)
         df.columns = [c.strip().lower() for c in df.columns]
         filas = df.to_dict("records")
-    except Exception as e:
-        logger.error(f"Error leyendo Excel de zonas: {e}")
+    except (OSError, IOError, ValueError) as e:
+        logger.exception(f"Error de E/S o lectura: {e}") Excel de zonas: {e}")
         resultados["errores"] += 1
         resultados["detalles"].append(f"Error lectura: {e}")
         return resultados
@@ -202,9 +203,9 @@ def importar_zonas_desde_excel(
 
     try:
         session.commit()
-    except Exception as e:
+    except SQLAlchemyError as e:
         session.rollback()
-        logger.error(f"Error al guardar zonas importadas: {e}")
+        logger.exception(f"Error de base de datos al guardar: {e}") zonas importadas: {e}")
         resultados["errores"] += resultados["importadas"]
         resultados["importadas"] = 0
         resultados["detalles"].append(f"Error al guardar en BD: {e}")

@@ -276,7 +276,7 @@ class PerfilesUsuarioForm(BaseForm):
                 # Acciones (vacío, se usan botones de arriba)
                 self.tabla.setItem(row, 5, QTableWidgetItem(""))
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.mostrar_error("Error al cargar perfiles", str(e))
 
     def _on_seleccion_cambiada(self):
@@ -321,7 +321,7 @@ class PerfilesUsuarioForm(BaseForm):
 
         except ValidationError as e:
             QMessageBox.warning(self, "⚠️ Validación", str(e))
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             self.mostrar_error("Error al crear perfil", str(e))
 
     def _on_editar(self):
@@ -355,7 +355,7 @@ class PerfilesUsuarioForm(BaseForm):
             QMessageBox.warning(self, "⚠️ Validación", str(e))
         except NotFoundError as e:
             QMessageBox.warning(self, "⚠️ No Encontrado", str(e))
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             self.mostrar_error("Error al actualizar perfil", str(e))
 
     def _on_eliminar(self):
@@ -471,7 +471,7 @@ class PerfilesUsuarioForm(BaseForm):
             QMessageBox.warning(self, "⚠️ Validación", str(e))
         except NotFoundError as e:
             QMessageBox.warning(self, "⚠️ No Encontrado", str(e))
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             self.mostrar_error("Error al eliminar perfil", str(e))
 
     def _on_logo(self):
@@ -509,7 +509,7 @@ class PerfilesUsuarioForm(BaseForm):
             QMessageBox.warning(self, "⚠️ Validación", str(e))
         except NotFoundError as e:
             QMessageBox.warning(self, "⚠️ No Encontrado", str(e))
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             self.mostrar_error("Error al actualizar logo", str(e))
 
     def _on_password(self):
@@ -545,5 +545,5 @@ class PerfilesUsuarioForm(BaseForm):
 
         except ValidationError as e:
             QMessageBox.warning(self, "⚠️ Validación", str(e))
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             self.mostrar_error("Error al cambiar contraseña", str(e))

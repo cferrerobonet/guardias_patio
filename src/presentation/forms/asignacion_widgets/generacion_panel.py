@@ -266,7 +266,7 @@ class GeneracionPanel(QGroupBox):
                 if self.sync_manager:
                     self._sincronizar()
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self._mostrar_error(f"Error al generar: {e}")
 
     def _limpiar_guardias(self):
@@ -305,7 +305,7 @@ class GeneracionPanel(QGroupBox):
                 if self.sync_manager:
                     self._sincronizar()
 
-            except Exception as e:
+            except SQLAlchemyError as e:
                 self._mostrar_error(f"Error al limpiar: {e}")
 
     def _sincronizar(self):
@@ -316,7 +316,7 @@ class GeneracionPanel(QGroupBox):
             logger.info("Sincronizando con la nube...")
             if self.sync_manager.sync_on_shutdown(session=self.session):
                 logger.info("✓ Sincronizado correctamente")
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             from utils.logger import get_logger
             logger = get_logger(__name__)
             logger.warning(f"⚠ Error al sincronizar: {e}")
@@ -410,7 +410,7 @@ class GeneracionPanel(QGroupBox):
                     lineas.append(format_terminal_success("✅ Sin desbalances"))
             else:
                 lineas.append(format_terminal_info("(equidad no disponible)"))
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             lineas.append(format_terminal_info("(equidad no disponible)"))
 
         lineas.append("")

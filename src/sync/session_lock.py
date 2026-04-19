@@ -60,7 +60,7 @@ class SessionLock:
             ip = s.getsockname()[0]
             s.close()
             return ip
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             return "127.0.0.1"
 
     def _get_remote_lock_path(self) -> str:
@@ -244,7 +244,7 @@ class SessionLockManager:
         """Callback del timer de heartbeat."""
         try:
             self.session_lock.update_heartbeat()
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error en heartbeat: {e}")
 
     def stop_heartbeat(self):

@@ -377,7 +377,7 @@ class InitialConfigDialog(QDialog):
                 "Ahora puedes guardar la configuración.",
             )
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             QMessageBox.critical(
                 self,
                 "❌ Error de Conexión",
@@ -426,7 +426,7 @@ class InitialConfigDialog(QDialog):
                 "Para Gmail, necesitas usar una App Password, no tu contraseña normal.",
             )
 
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             QMessageBox.critical(
                 self,
                 "❌ Error de Conexión",
@@ -478,7 +478,7 @@ class InitialConfigDialog(QDialog):
                 "Ahora puedes continuar usando la aplicación.",
             )
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             QMessageBox.critical(
                 self,
                 "❌ Error al Guardar",
@@ -533,7 +533,7 @@ class InitialConfigDialog(QDialog):
                 "Ya puedes enviar emails desde la aplicación.",
             )
 
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             QMessageBox.critical(
                 self,
                 "❌ Error al Guardar",
@@ -633,7 +633,7 @@ class InitialConfigDialog(QDialog):
         """Desencripta un valor codificado en base64."""
         try:
             return base64.b64decode(encrypted_value.encode("utf-8")).decode("utf-8")
-        except Exception:
+        except (OSError, ValueError) as e:
             return encrypted_value  # Si falla, asumir que ya está desencriptado
 
     def _load_sftp_from_json(self) -> None:
@@ -681,7 +681,7 @@ class InitialConfigDialog(QDialog):
                 "❌ Error",
                 "El archivo no es un JSON válido.",
             )
-        except Exception as e:
+        except (OSError, ValueError) as e:
             QMessageBox.critical(
                 self,
                 "❌ Error",
@@ -734,7 +734,7 @@ class InitialConfigDialog(QDialog):
                 "❌ Error",
                 "El archivo no es un JSON válido.",
             )
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             QMessageBox.critical(
                 self,
                 "❌ Error",

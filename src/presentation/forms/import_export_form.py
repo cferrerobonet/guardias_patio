@@ -203,7 +203,7 @@ class ImportExportForm(BaseForm):
             try:
                 user_auth = UserAuth()
                 usuario_count = len(user_auth.users)
-            except Exception:
+            except (ValueError, TypeError, OSError) as e:
                 usuario_count = 0
 
             mensaje = (
@@ -219,7 +219,7 @@ class ImportExportForm(BaseForm):
             self.resultado_text.setText(mensaje)
             self.mostrar_exito("Datos exportados", "Los datos se exportaron correctamente.")
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "exportar datos")
             self.resultado_text.setText(f"Error al exportar: {e}")
 
@@ -305,7 +305,7 @@ class ImportExportForm(BaseForm):
             msg.setStyleSheet(self.parent().styleSheet() if self.parent() else "")
             msg.exec()
 
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             self.manejar_excepcion(e, "importar datos")
             self.resultado_text.setText(f"Error al importar: {e}")
 
@@ -369,6 +369,6 @@ class ImportExportForm(BaseForm):
                     f"ya existían en la base de datos.",
                 )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "importar profesores desde Excel")
             self.resultado_text.setText(f"Error al importar profesores: {e}")

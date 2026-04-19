@@ -110,7 +110,7 @@ class AnalisisEquidadUseCase:
                 mensaje=f"Análisis completado. Nivel de equidad: {metricas.nivel_equidad}",
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error en análisis de equidad: {e}", exc_info=True)
             return AnalisisEquidadResponse(
                 exitoso=False,

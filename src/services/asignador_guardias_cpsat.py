@@ -43,6 +43,7 @@ from services.calculador_guardias import (
     listar_dias_lectivos,
 )
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -296,7 +297,7 @@ def generar_guardias_cpsat(
         if progress_callback:
             try:
                 progress_callback(porcentaje, mensaje)
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 logger.warning(f"Error en callback de progreso: {e}")
 
     logger.info("=" * 80)
@@ -839,7 +840,7 @@ def guardar_guardias_cpsat_en_bd(session: Session, guardias: List[Guardia]) -> N
                 session.add(guardia)
         session.commit()
         logger.info(f"✓ {len(guardias)} guardias guardadas en BD")
-    except Exception as e:
+    except SQLAlchemyError as e:
         session.rollback()
-        logger.error(f"Error al guardar guardias: {e}")
+        logger.exception(f"Error de base de datos al guardar: {e}") guardias: {e}")
         raise

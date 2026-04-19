@@ -211,7 +211,7 @@ class PanelEstadisticas(BaseForm):
             self._actualizar_tabla_profesores_ui()
             self._actualizar_tabla_zonas_ui()
             self._actualizar_graficos_ui()
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "actualizar estadísticas")
 
     def _actualizar_resumen_ui(self):

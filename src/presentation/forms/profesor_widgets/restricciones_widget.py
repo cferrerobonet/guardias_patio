@@ -450,7 +450,7 @@ class RestriccionesWidget(QGroupBox):
             if hasattr(self.parent(), "horario_widget"):
                 turno_widget = self.parent().horario_widget
                 turno_actual = turno_widget.turno_input.currentText()
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.debug(f"No se pudo obtener turno del widget padre: {e}")
 
         # Preseleccionar según turno

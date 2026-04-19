@@ -43,7 +43,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
             if model:
                 return self.mapper.to_entity(model)
             return None
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al obtener zona por ID", zona_id=entity_id, error=str(e))
             raise DatabaseError(f"Error al obtener zona {entity_id}: {e}") from e
 
@@ -53,7 +53,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
         try:
             models = self.session.query(Zona).all()
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al obtener todas las zonas", error=str(e))
             raise DatabaseError(f"Error al obtener zonas: {e}") from e
 
@@ -81,7 +81,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
 
         except NotFoundError:
             raise
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al guardar zona", zona_id=entity.id, error=str(e))
             raise DatabaseError(f"Error al guardar zona: {e}") from e
 
@@ -97,7 +97,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
             self.session.flush()
             return True
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al eliminar zona", zona_id=entity_id, error=str(e))
             raise DatabaseError(f"Error al eliminar zona {entity_id}: {e}") from e
 
@@ -105,7 +105,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
         """Verifica si existe una zona por ID."""
         try:
             return self.session.query(Zona.id).filter(Zona.id == entity_id).first() is not None
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al verificar existencia de zona", zona_id=entity_id, error=str(e))
             raise DatabaseError(f"Error al verificar zona {entity_id}: {e}") from e
 
@@ -113,7 +113,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
         """Cuenta el total de zonas."""
         try:
             return self.session.query(Zona).count()
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al contar zonas", error=str(e))
             raise DatabaseError(f"Error al contar zonas: {e}") from e
 
@@ -127,7 +127,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
             if model:
                 return self.mapper.to_entity(model)
             return None
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al buscar zona por nombre", nombre=nombre, error=str(e))
             raise DatabaseError(f"Error al buscar zona por nombre: {e}") from e
 
@@ -139,7 +139,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
             # Retornamos todas las zonas
             models = self.session.query(Zona).all()
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al obtener zonas activas", error=str(e))
             raise DatabaseError(f"Error al obtener zonas activas: {e}") from e
 
@@ -167,7 +167,7 @@ class SQLAlchemyZonaRepository(IZonaRepository):
             # y filtrar las que tienen capacidad
             models = self.session.query(Zona).all()
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(
                 "Error al buscar zonas con capacidad",
                 fecha=fecha,

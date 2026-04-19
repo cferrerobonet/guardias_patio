@@ -78,7 +78,7 @@ class ProgressLogHandler(logging.Handler):
                 msg_clean = msg.replace("=" * 70, "").strip()
                 if msg_clean and self.progress_dialog.text_log:
                     self.progress_dialog.agregar_al_log(msg_clean)
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             self.handleError(record)
     """Maneja la visualización del diálogo de diagnóstico en el hilo principal."""
 
@@ -108,7 +108,7 @@ class ProgressLogHandler(logging.Handler):
             logger.info(f"✅ Usuario eligió: {resultado_decision}")
             self.worker.set_decision_resultado(resultado_decision)
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"❌ Error mostrando diálogo de decisión: {str(e)}")
             import traceback
 
@@ -378,7 +378,7 @@ class ProgressDialog(QDialog):
             ]
             for logger in loggers_to_capture:
                 logger.addHandler(self._log_handler)
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             _logger.debug(f"No se pudo instalar log handler: {e}")
 
     def _desinstalar_log_handler(self):
@@ -394,7 +394,7 @@ class ProgressDialog(QDialog):
                 for logger in loggers:
                     logger.removeHandler(self._log_handler)
                 self._log_handler = None
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 _logger.debug(f"No se pudo desinstalar log handler: {e}")
 
     def actualizar_progreso(self, actual: int, total: int, detalle: str = ""):
@@ -532,7 +532,7 @@ class ProgressDialog(QDialog):
         except ImportError:
             # psutil no disponible
             self.label_cpu.setText("💻 CPU: N/A")
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             _logger.debug(f"Error actualizando CPU: {e}")
 
     def _actualizar_eta(self, porcentaje_actual: int):
@@ -697,7 +697,7 @@ class WorkerThread(QThread):
         except InterruptedError as e:
             # Cancelación del usuario
             self.error.emit(e)
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             # Log del error con traceback completo
             import traceback
 
@@ -754,7 +754,7 @@ class WorkerThread(QThread):
             logger.info(f"✅ Decisión del usuario recibida: {result}")
             return result
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"❌ Error en solicitar_decision_usuario: {str(e)}")
             import traceback
 
@@ -763,7 +763,7 @@ class WorkerThread(QThread):
             # Intentar desbloquear mutex si quedó bloqueado
             try:
                 self._decision_mutex.unlock()
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 _logger.debug(f"No se pudo desbloquear mutex: {e}")
 
             return "error"
@@ -892,12 +892,12 @@ def ejecutar_con_progreso(
             else:
                 # Si fue cancelación del usuario, simplemente cerrar
                 dialog.close()
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error cerrando diálogo: {e}")
             # Forzar cierre en caso de error
             try:
                 dialog.close()
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 _logger.debug(f"No se pudo cerrar diálogo: {e}")
 
     worker.finalizado.connect(on_finalizado)

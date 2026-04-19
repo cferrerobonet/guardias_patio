@@ -55,5 +55,5 @@ def analizar_equidad(
             "recomendaciones": response.recomendaciones,
             "mensaje": response.mensaje,
         }
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail=str(e))

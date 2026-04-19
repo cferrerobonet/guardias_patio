@@ -205,7 +205,7 @@ class CuotasPanel(QGroupBox):
             else:
                 self._mostrar_error_terminal(response.mensaje)
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self._mostrar_error_terminal(f"Error al calcular cuotas: {str(e)}")
         finally:
             # Rehabilitar botón

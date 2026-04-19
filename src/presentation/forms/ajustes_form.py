@@ -260,7 +260,7 @@ class AjustesForm(BaseForm):
 
             self.mostrar_exito("Configuración Guardada", mensaje_exito)
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "guardar configuración")
 
     def cargar_configuracion(self) -> None:
@@ -303,7 +303,7 @@ class AjustesForm(BaseForm):
         except NotFoundError:
             # No hay configuración, usar valores por defecto
             self.logger.info("No hay configuración guardada, usando valores por defecto")
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar configuración")
 
     def limpiar_formulario(self) -> None:
@@ -449,7 +449,7 @@ class AjustesForm(BaseForm):
             else:
                 return False
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.logger.error(f"Error al guardar email: {str(e)}")
             return False
 
@@ -481,7 +481,7 @@ class AjustesForm(BaseForm):
             else:
                 self.mostrar_advertencia("Error", "No se encontró el usuario actual")
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "actualizar email")
 
     def cambiar_contrasena(self) -> None:
@@ -492,5 +492,5 @@ class AjustesForm(BaseForm):
             dialog = ChangePasswordDialog(self.current_username, self)
             dialog.exec()
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "abrir diálogo de cambio de contraseña")

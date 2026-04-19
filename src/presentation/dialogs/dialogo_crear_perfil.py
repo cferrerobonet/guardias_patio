@@ -136,5 +136,5 @@ class DialogoCrearPerfil(QDialog):
 
             self.accept()
 
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             QMessageBox.critical(self, "Error", f"Error al crear el perfil:\n{str(e)}")

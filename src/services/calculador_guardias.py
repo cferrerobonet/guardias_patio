@@ -141,7 +141,7 @@ def _parse_custom_no_lectivos(csv_text: Optional[str]) -> set:
         try:
             y, m, d = [int(x) for x in t.split("-")]
             fechas.add(date(y, m, d))
-        except Exception:
+        except (ValueError, TypeError, OSError) as e:
             continue
     return fechas
 
@@ -188,7 +188,7 @@ def _parse_recreos_config(config: Configuracion) -> List[dict]:
                 }
             )
         return out
-    except Exception:
+    except (ValueError, KeyError) as e:
         return []
 
 
@@ -275,7 +275,7 @@ def calcular_slots_reales(session: Session, config: Configuracion) -> int:
     try:
         slots_list = _generar_slots(config, session)
         return len(slots_list)
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         logger.error(f"Error al calcular slots reales: {e}")
         return 0
 

@@ -168,7 +168,7 @@ class AsignacionCalculoForm(BaseForm):
 
         except BusinessLogicError as e:
             self.calculo_panel.mostrar_error(str(e))
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar estadísticas")
 
     def limpiar_formulario(self):

@@ -91,7 +91,7 @@ def obtener_resumen(
             "top_profesor": top_profesor_info,
         }
 
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -132,5 +132,5 @@ def estadisticas_por_profesor(configuracion_id: int, db: Session = Depends(get_d
             "total_profesores": len(resultados),
         }
 
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail=str(e))

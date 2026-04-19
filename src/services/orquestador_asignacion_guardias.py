@@ -209,7 +209,7 @@ class OrquestadorAsignacionGuardias:
             logger.info("⏳ Esperando decisión del usuario...")
             decision = callback_decision_usuario(diagnostico)
             logger.info(f"✓ Decisión recibida del usuario: {decision}")
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"❌ Error al obtener decisión del usuario: {str(e)}")
             import traceback
 
@@ -370,7 +370,7 @@ class OrquestadorAsignacionGuardias:
                     "Por ahora, se usa resultado iterativo con problemas."
                 ),
             )
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error inesperado en ILP: {e}", exc_info=True)
             return ResultadoOrquestacion(
                 exitoso=False,

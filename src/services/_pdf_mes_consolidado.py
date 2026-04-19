@@ -49,7 +49,7 @@ def exportar_mes_consolidado(
         if progress_callback:
             try:
                 progress_callback(porcentaje, mensaje)
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 logger.warning(f"Error al reportar progreso: {e}")
 
     try:
@@ -264,7 +264,7 @@ def exportar_mes_consolidado(
         logger.info(f"PDF consolidado generado: {ruta_salida}")
         return True
 
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         logger.error(f"Error al exportar mes consolidado: {e}", exc_info=True)
         reportar_progreso(100, f"Error: {str(e)}")
         return False
@@ -296,7 +296,7 @@ def exportar_curso_completo(
         if progress_callback:
             try:
                 progress_callback(porcentaje, mensaje)
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 logger.warning(f"Error al reportar progreso: {e}")
 
     try:
@@ -547,7 +547,7 @@ def exportar_curso_completo(
         reportar_progreso(100, f"PDF generado: {nombre_archivo}")
         return True
 
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         logger.error(f"Error al exportar curso completo: {e}")
         if progress_callback:
             progress_callback(0, f"Error: {str(e)}")

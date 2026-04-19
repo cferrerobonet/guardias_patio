@@ -45,7 +45,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
             if model is None:
                 return None
             return self.mapper.to_entity(model)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al obtener profesor por ID", entity_id=entity_id, error=str(e))
             raise DatabaseError(message=f"Error al obtener profesor {entity_id}", original_error=e)
 
@@ -60,7 +60,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
                 .all()
             )
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al obtener todos los profesores", error=str(e))
             raise DatabaseError(message="Error al obtener lista de profesores", original_error=e)
 
@@ -87,7 +87,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
 
         except ProfesorNotFoundError:
             raise
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al guardar profesor", profesor_id=entity.id, error=str(e))
             raise DatabaseError(
                 message=f"Error al guardar profesor {entity.nombre_completo}", original_error=e
@@ -105,7 +105,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
             logger.info("Profesor eliminado", profesor_id=entity_id)
             return True
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al eliminar profesor", profesor_id=entity_id, error=str(e))
             raise DatabaseError(message=f"Error al eliminar profesor {entity_id}", original_error=e)
 
@@ -128,7 +128,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
                 .all()
             )
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al buscar por nombre", nombre=nombre, error=str(e))
             raise DatabaseError(message="Error en búsqueda por nombre", original_error=e)
 
@@ -137,7 +137,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
         try:
             model = self.session.query(Profesor).filter(Profesor.email_corporativo == email).first()
             return self.mapper.to_entity(model) if model else None
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al buscar por email", email=email, error=str(e))
             raise DatabaseError(message="Error en búsqueda por email", original_error=e)
 
@@ -146,7 +146,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
         try:
             models = self.session.query(Profesor).filter(Profesor.turno == turno).all()
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al buscar por turno", turno=turno, error=str(e))
             raise DatabaseError(message="Error en búsqueda por turno", original_error=e)
 
@@ -155,7 +155,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
         try:
             models = self.session.query(Profesor).filter(Profesor.tutor).all()
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al buscar tutores", error=str(e))
             raise DatabaseError(message="Error en búsqueda de tutores", original_error=e)
 
@@ -176,7 +176,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
 
             return disponibles
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(
                 "Error al buscar disponibles", fecha=fecha, turno=turno, recreo=recreo, error=str(e)
             )
@@ -205,7 +205,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
 
             return self.mapper.to_entities(models)
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al buscar con menos guardias", limite=limite, error=str(e))
             raise DatabaseError(
                 message="Error en búsqueda de profesores con menos guardias", original_error=e

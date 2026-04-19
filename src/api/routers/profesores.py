@@ -101,7 +101,7 @@ def listar_profesores(
             limit=limit,
             has_more=(offset + limit) < total,
         )
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         raise _build_error("internal_error", str(e), 500)
 
 
@@ -126,5 +126,5 @@ def obtener_profesor(profesor_id: int, db: Session = Depends(get_db)):
         )
     except HTTPException:
         raise
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         raise _build_error("internal_error", str(e), 500)

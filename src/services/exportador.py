@@ -66,7 +66,7 @@ class ExportadorDatos:
         except InvalidToken:
             try:
                 return base64.b64decode(encrypted_password.encode("utf-8")).decode("utf-8")
-            except Exception:
+            except (ValueError, TypeError, OSError) as e:
                 return encrypted_password
 
     @staticmethod
@@ -226,7 +226,7 @@ class ExportadorDatos:
                 )
 
             return {"count": len(usuarios_export), "usuarios": usuarios_export}
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.warning(f"Error al exportar usuarios: {e}")
             return None
 
@@ -272,7 +272,7 @@ class ExportadorDatos:
                 "curso_actual": curso_actual,
                 "cursos": cursos_export,
             }
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.warning(f"Error al exportar cursos escolares: {e}")
             return None
 

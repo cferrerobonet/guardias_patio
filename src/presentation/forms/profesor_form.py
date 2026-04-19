@@ -486,7 +486,7 @@ class ProfesorForm(BaseForm):
                     "Profesor creado", "El profesor ha sido creado correctamente."
                 )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "guardar profesor")
 
     def cargar_profesores(self):
@@ -559,7 +559,7 @@ class ProfesorForm(BaseForm):
             if self.table_manager:
                 self.table_manager.restore_selection()
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar profesores")
 
     def cargar_zonas(self):
@@ -571,7 +571,7 @@ class ProfesorForm(BaseForm):
             zonas_list = [(z.id, z.nombre_zona) for z in zonas_all]
             self.restricciones_widget.cargar_zonas(zonas_list)
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar zonas")
 
     def filtrar_profesores(self):
@@ -630,7 +630,7 @@ class ProfesorForm(BaseForm):
                 profesor_model = self.session.query(Profesor).filter_by(id=id_profesor).first()
                 if profesor_model and profesor_model.recreos_permitidos:
                     recreos_raw = profesor_model.recreos_permitidos  # String JSON original
-            except Exception as e:
+            except SQLAlchemyError as e:
                 logger.warning(f"No se pudo obtener recreos_permitidos raw: {e}")
 
             # Limpiar formulario
@@ -670,7 +670,7 @@ class ProfesorForm(BaseForm):
             self.submit_btn.setText("Guardar Cambios")
             self.cancelar_btn.setVisible(False)
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar datos del profesor")
 
     def editar_profesor(self):
@@ -731,7 +731,7 @@ class ProfesorForm(BaseForm):
                     }
                 )
 
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 self.manejar_excepcion(e, "cargar datos del profesor")
                 return
 
@@ -746,7 +746,7 @@ class ProfesorForm(BaseForm):
                 self.table_manager.enable_table_interactions(False)
             self.busqueda_input.setEnabled(False)
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "editar profesor")
 
     def eliminar_profesor(self):
@@ -808,7 +808,7 @@ class ProfesorForm(BaseForm):
                     try:
                         self.eliminar_use_case.execute(id_profesor)
                         eliminados += 1
-                    except Exception as e:
+                    except (ValueError, TypeError) as e:
                         errores.append(f"{nombre_profesor}: {str(e)}")
 
                 # Mostrar resultado
@@ -837,7 +837,7 @@ class ProfesorForm(BaseForm):
                         "Error", "No se pudo eliminar ningún profesor:\n• " + "\n• ".join(errores)
                     )
 
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 self.manejar_excepcion(e, "eliminar profesores")
 
     def _actualizar_matriz_restricciones_por_turno(self, turno: str):

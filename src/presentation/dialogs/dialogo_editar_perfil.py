@@ -109,5 +109,5 @@ class DialogoEditarPerfil(QDialog):
             else:
                 QMessageBox.critical(self, "Error", "No se encontró el usuario")
 
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             QMessageBox.critical(self, "Error", f"Error al guardar los cambios:\n{str(e)}")

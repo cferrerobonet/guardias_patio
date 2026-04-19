@@ -139,7 +139,7 @@ class ActualizarConfiguracionUseCase:
                 algoritmo_asignacion=getattr(config, "algoritmo_asignacion", "v2.9"),
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.session.rollback()
             logger.error(f"Error al actualizar configuración: {e}")
             raise

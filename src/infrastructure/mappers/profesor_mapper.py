@@ -88,7 +88,7 @@ class ProfesorMapper:
                             value = repr(model.dias_semana_permitidos)[:100]
                             logger.warning(f"No se pudo parsear dias_semana_permitidos: {value}")
                 # Si es otro tipo, usar default
-            except Exception as e:
+            except (ValueError, KeyError) as e:
                 # En caso de error, mantener default
                 logger.warning(f"Error parsing dias_semana_permitidos: {type(e).__name__}: {e}")
 
@@ -125,7 +125,7 @@ class ProfesorMapper:
                         recreos_permitidos = sorted(list(recreos_set)) if recreos_set else [1, 2]
                     elif isinstance(parsed, list):
                         recreos_permitidos = parsed
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 # En caso de error, mantener default
                 logger.warning(f"Error parsing recreos_permitidos: {type(e).__name__}: {e}")
 

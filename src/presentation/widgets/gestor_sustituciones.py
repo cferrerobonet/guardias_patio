@@ -276,7 +276,7 @@ class GestorSustituciones(BaseForm):
                 self.combo_profesor_original.addItem(profesor.nombre_completo, profesor.id)
                 self.combo_profesor_sustituto.addItem(profesor.nombre_completo, profesor.id)
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar profesores")
 
     def buscar_guardias(self):
@@ -325,7 +325,7 @@ class GestorSustituciones(BaseForm):
                     f"No se encontraron guardias para la fecha {fecha.strftime('%d/%m/%Y')}",
                 )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "buscar guardias")
 
     def guardia_seleccionada_cambio(self):
@@ -379,7 +379,7 @@ class GestorSustituciones(BaseForm):
                     "No hay profesores disponibles ese día (todos tienen al menos 1 guardia).",
                 )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "buscar profesores disponibles")
 
     def confirmar_sustitucion(self):
@@ -446,7 +446,7 @@ class GestorSustituciones(BaseForm):
                 self.limpiar_formulario()
                 self.buscar_guardias()
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             self.manejar_excepcion(e, "confirmar sustitución")
 
     def limpiar_formulario(self):

@@ -229,7 +229,7 @@ class CalculoPanel(QGroupBox):
             else:
                 self._mostrar_error(response.mensaje)
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self._mostrar_error(str(e))
 
         finally:

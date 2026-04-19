@@ -18,7 +18,7 @@ Después de CADA conjunto de modificaciones, ejecutar en este orden:
    ```
 4. **Verificar** — Abrir CHANGELOG.md para revisión
 
-> Preguntar al usuario antes de ejecutar `git push` y `git push --tags`.
+> Ejecutar SIEMPRE el `git push` y `git push --tags` de forma automática al finalizar los pasos anteriores, no pedir confirmación.
 
 ## Seguimiento de auditorías/guiones (OBLIGATORIO)
 

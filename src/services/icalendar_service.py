@@ -137,7 +137,7 @@ class ICalendarService:
             logger.info(f"Archivo iCalendar generado: {ruta_salida} ({len(guardias)} guardias)")
             return True
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error(f"Error al generar iCalendar: {e}")
             return False
 

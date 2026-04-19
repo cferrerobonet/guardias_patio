@@ -164,7 +164,7 @@ class AsignarGuardiaUseCase:
         except (NotFoundError, ValidationError, BusinessLogicError):
             self.session.rollback()
             raise
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.session.rollback()
             logger.error("Error al asignar guardia", error=str(e))
             raise ValidationError(f"Error al asignar guardia: {e}") from e

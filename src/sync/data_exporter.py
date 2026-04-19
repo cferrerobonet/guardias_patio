@@ -62,7 +62,7 @@ class DataExporter:
         except InvalidToken:
             try:
                 return base64.b64decode(encrypted_password.encode("utf-8")).decode("utf-8")
-            except Exception:
+            except (ValueError, TypeError, OSError) as e:
                 logger.warning("No se pudo desencriptar credencial, usando valor original.")
                 return encrypted_password
 
@@ -198,7 +198,7 @@ class DataExporter:
             logger.info("Configuración SMTP GLOBAL actualizada desde JSON")
             return True
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error(f"Error al importar configuración SMTP: {e}")
             return False
 
@@ -301,7 +301,7 @@ class DataExporter:
             logger.info("Configuración SFTP GLOBAL actualizada desde JSON")
             return True
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error(f"Error al importar configuración SFTP: {e}")
             return False
 
@@ -479,7 +479,7 @@ class DataExporter:
             )
             return True
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error(f"❌ Error exportando datos a JSON: {e}")
             return False
 
@@ -819,7 +819,7 @@ class DataExporter:
             logger.info("✅ Importación completada exitosamente")
             return True
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"❌ Error importando datos desde JSON: {e}", exc_info=True)
             session.rollback()
             return False

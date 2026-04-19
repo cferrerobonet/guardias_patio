@@ -75,7 +75,7 @@ class SelectorCursoWidget(QWidget):
 
             logger.info(f"Cargados {len(cursos)} cursos en selector")
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error al cargar cursos en selector: {e}")
             msg_box = QMessageBox(self)
             msg_box.setIcon(QMessageBox.Icon.Critical)
@@ -190,7 +190,7 @@ class SelectorCursoWidget(QWidget):
                 # Restaurar selección anterior
                 self._cargar_cursos()
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error al cambiar curso: {e}")
             msg_error = QMessageBox(self)
             msg_error.setIcon(QMessageBox.Icon.Critical)

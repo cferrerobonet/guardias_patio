@@ -51,5 +51,5 @@ def calcular_cuotas(
             "total_guardias": response.total_guardias,
             "mensaje": response.mensaje,
         }
-    except Exception as e:
+    except (ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail=str(e))

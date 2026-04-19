@@ -87,7 +87,7 @@ class LocalSyncBackend(SyncBackend):
         except ValueError as e:
             logger.error(f"Seguridad: {e}")
             return False
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error subiendo archivo: {e}")
             return False
 
@@ -103,7 +103,7 @@ class LocalSyncBackend(SyncBackend):
         except ValueError as e:
             logger.error(f"Seguridad: {e}")
             return False
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error descargando archivo: {e}")
             return False
 
@@ -190,7 +190,7 @@ class SFTPSyncBackend(SyncBackend):
         except ImportError:
             logger.error("Paramiko no instalado. Ejecutar: pip install paramiko")
             return False
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error(f"Error conectando SFTP: {e}")
             if "paramiko" in str(type(e).__module__):
                 logger.error("El servidor no está en known_hosts. Agregarlo con:")
@@ -213,7 +213,7 @@ class SFTPSyncBackend(SyncBackend):
         try:
             result = _do_connect()
             return result if result is not None else False
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"SFTP: todos los reintentos agotados: {e}")
             return False
 
@@ -227,7 +227,7 @@ class SFTPSyncBackend(SyncBackend):
         try:
             self.sftp.stat(self.base_dir)
             return True
-        except Exception:
+        except (OSError, ValueError) as e:
             logger.info("Conexión SFTP inactiva. Reconectando...")
             self.close()
             return self._connect()
@@ -273,7 +273,7 @@ class SFTPSyncBackend(SyncBackend):
         except ValueError as e:
             logger.error(f"Seguridad: {e}")
             return False
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error(f"Error subiendo vía SFTP: {e}")
             return False
 
@@ -294,7 +294,7 @@ class SFTPSyncBackend(SyncBackend):
             return False
         except FileNotFoundError:
             return False
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error(f"Error descargando vía SFTP: {e}")
             return False
 
@@ -322,7 +322,8 @@ class SFTPSyncBackend(SyncBackend):
             return datetime.fromtimestamp(stat.st_mtime)
         except ValueError:
             return None
-        except Exception:
+        except (ConnectionError, OSError) as e:
+            logger.warning(f"Error de conexión o I/O al obtener last_modified para {remote_path}: {e}")
             return None
 
     def _mkdir_p(self, remote_dir: str):
@@ -340,7 +341,7 @@ class SFTPSyncBackend(SyncBackend):
         try:
             if hasattr(self, "sftp") and self.sftp is not None:
                 self.sftp.close()
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.debug(f"Error cerrando sftp: {e}")
         finally:
             self.sftp = None
@@ -348,7 +349,7 @@ class SFTPSyncBackend(SyncBackend):
         try:
             if hasattr(self, "client") and self.client is not None:
                 self.client.close()
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.debug(f"Error cerrando cliente: {e}")
         finally:
             self.client = None
@@ -361,7 +362,7 @@ def _count_json_records(path: Path) -> int:
         data = _json.loads(path.read_text(encoding="utf-8"))
         keys = ("profesores", "guardias", "zonas", "cursos_escolares", "ausencias")
         return sum(len(data.get(k, [])) for k in keys)
-    except Exception:
+    except (ValueError, KeyError) as e:
         return 0
 
 
@@ -475,7 +476,7 @@ class SyncManager:
                         logger.info("✅ Datos del JSON local importados a la BD")
                     else:
                         logger.error("❌ Error al importar JSON local a la BD")
-            except Exception as e:
+            except SQLAlchemyError as e:
                 logger.error(f"Error en importación de BD vacía: {e}")
 
         # Guardar timestamp de última sincronización
@@ -552,7 +553,7 @@ class SyncManager:
                     success = False
                     if progress_callback:
                         progress_callback("error", {"message": "Error al subir datos a la nube"})
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 logger.error(f"❌ Excepción al subir datos a la nube: {e}")
                 success = False
                 if progress_callback:
@@ -566,7 +567,7 @@ class SyncManager:
         # Guardar timestamp de última sincronización
         try:
             self._save_sync_metadata()
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.warning(f"Error al guardar metadata de sincronización: {e}")
 
         return success
@@ -587,7 +588,7 @@ class SyncManager:
         try:
             remote_path = self.get_remote_path("last_sync.json")
             self.backend.upload_file(metadata_path, remote_path)
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"No se pudo subir metadata a la nube: {e}")
 
     def manual_sync(self) -> bool:

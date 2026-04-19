@@ -45,7 +45,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             if model:
                 return self.mapper.to_entity(model)
             return None
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al obtener guardia por ID", guardia_id=entity_id, error=str(e))
             raise DatabaseError(f"Error al obtener guardia {entity_id}: {e}") from e
 
@@ -59,7 +59,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .all()
             )
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al obtener todas las guardias", error=str(e))
             raise DatabaseError(f"Error al obtener guardias: {e}") from e
 
@@ -87,7 +87,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
 
         except NotFoundError:
             raise
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al guardar guardia", guardia_id=entity.id, error=str(e))
             raise DatabaseError(f"Error al guardar guardia: {e}") from e
 
@@ -103,7 +103,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             self.session.flush()
             return True
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al eliminar guardia", guardia_id=entity_id, error=str(e))
             raise DatabaseError(f"Error al eliminar guardia {entity_id}: {e}") from e
 
@@ -113,7 +113,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             return (
                 self.session.query(Guardia.id).filter(Guardia.id == entity_id).first() is not None
             )
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(
                 "Error al verificar existencia de guardia", guardia_id=entity_id, error=str(e)
             )
@@ -123,7 +123,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
         """Cuenta el total de guardias."""
         try:
             return self.session.query(Guardia).count()
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al contar guardias", error=str(e))
             raise DatabaseError(f"Error al contar guardias: {e}") from e
 
@@ -140,7 +140,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .all()
             )
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al buscar guardias por fecha", fecha=fecha, error=str(e))
             raise DatabaseError(f"Error al buscar guardias por fecha: {e}") from e
 
@@ -155,7 +155,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .all()
             )
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(
                 "Error al buscar guardias por profesor", profesor_id=profesor_id, error=str(e)
             )
@@ -172,7 +172,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .all()
             )
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al buscar guardias por zona", zona_id=zona_id, error=str(e))
             raise DatabaseError(f"Error al buscar guardias por zona: {e}") from e
 
@@ -190,7 +190,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .all()
             )
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(
                 "Error al buscar guardias por momento",
                 fecha=fecha,
@@ -211,7 +211,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .all()
             )
             return self.mapper.to_entities(models)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(
                 "Error al buscar guardias por rango",
                 fecha_inicio=fecha_inicio,
@@ -238,7 +238,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .first()
                 is not None
             )
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(
                 "Error al verificar guardia de profesor",
                 profesor_id=profesor_id,
@@ -267,7 +267,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .first()
                 is not None
             )
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(
                 "Error al verificar guardia de zona",
                 zona_id=zona_id,
@@ -283,7 +283,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
         """Cuenta el total de guardias de un profesor."""
         try:
             return self.session.query(Guardia).filter(Guardia.profesor_id == profesor_id).count()
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(
                 "Error al contar guardias de profesor", profesor_id=profesor_id, error=str(e)
             )
@@ -298,7 +298,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .filter(and_(Guardia.profesor_id == profesor_id, Guardia.fecha == fecha))
                 .count()
             )
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(
                 "Error al contar guardias de profesor en fecha",
                 profesor_id=profesor_id,
@@ -325,7 +325,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             )
             self.session.flush()
             return count
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(
                 "Error al eliminar guardias por momento",
                 fecha=fecha,
@@ -352,7 +352,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 query = query.filter(Guardia.fecha >= fecha_inicio)
             models = query.order_by(Guardia.fecha).all()
             return [GuardiaMapper.to_entity(m) for m in models]
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error("Error al buscar sustituciones", error=str(e))
             raise DatabaseError(f"Error al buscar sustituciones: {e}") from e
 
@@ -361,14 +361,14 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
         try:
             models = self.session.query(Guardia).filter_by(curso_id=curso_id).all()
             return [GuardiaMapper.to_entity(m) for m in models]
-        except Exception as e:
+        except SQLAlchemyError as e:
             raise DatabaseError(f"Error al buscar guardias por curso {curso_id}: {e}") from e
 
     def count_by_curso(self, curso_id: int) -> int:
         """Cuenta las guardias de un curso escolar."""
         try:
             return self.session.query(Guardia).filter_by(curso_id=curso_id).count()
-        except Exception as e:
+        except SQLAlchemyError as e:
             raise DatabaseError(f"Error al contar guardias del curso {curso_id}: {e}") from e
 
     def count_profesores_distintos_by_curso(self, curso_id: int) -> int:
@@ -380,7 +380,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .distinct()
                 .count()
             )
-        except Exception as e:
+        except SQLAlchemyError as e:
             raise DatabaseError(f"Error al contar profesores del curso {curso_id}: {e}") from e
 
     def count_zonas_distintas_by_curso(self, curso_id: int) -> int:
@@ -392,7 +392,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .distinct()
                 .count()
             )
-        except Exception as e:
+        except SQLAlchemyError as e:
             raise DatabaseError(f"Error al contar zonas del curso {curso_id}: {e}") from e
 
     def find_by_curso_y_rango_fechas(
@@ -410,7 +410,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 .all()
             )
             return [GuardiaMapper.to_entity(m) for m in models]
-        except Exception as e:
+        except SQLAlchemyError as e:
             raise DatabaseError(f"Error al buscar guardias por curso y rango: {e}") from e
 
     @log_function_call()
@@ -432,7 +432,7 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             logger.info(f"Eliminadas {count} guardias del sistema")
             return count
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             self.session.rollback()
             logger.error("Error al eliminar todas las guardias", error=str(e))
             raise DatabaseError(f"Error al eliminar todas las guardias: {e}") from e

@@ -22,6 +22,7 @@ from core.exceptions import (
 )
 from infrastructure.database.models import Guardia, Profesor, Zona
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
 from services.disponibilidad_profesor_service import (

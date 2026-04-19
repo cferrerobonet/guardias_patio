@@ -323,7 +323,7 @@ class GestionarAusenciasForm(BaseForm):
             self.logger.info(
                 f"Cargados {len(profesores)} profesores del curso {curso_activo.nombre}"
             )
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar profesores")
 
     def cargar_ausencias(self):
@@ -385,7 +385,7 @@ class GestionarAusenciasForm(BaseForm):
                 f"del curso {curso_activo.nombre}"
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar ausencias")
 
     def cargar_ausencia_seleccionada(self):
@@ -442,7 +442,7 @@ class GestionarAusenciasForm(BaseForm):
 
             self.logger.info(f"Ausencia {ausencia_id} cargada para edición")
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar ausencia seleccionada")
 
     def guardar_ausencia(self):
@@ -489,7 +489,7 @@ class GestionarAusenciasForm(BaseForm):
             self.limpiar_formulario()
             self.cargar_ausencias()
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "guardar ausencia")
 
     def eliminar_ausencia_seleccionada(self):
@@ -520,7 +520,7 @@ class GestionarAusenciasForm(BaseForm):
                 self.mostrar_exito("Éxito", "Ausencia eliminada correctamente")
                 self.cargar_ausencias()
                 self.limpiar_formulario()
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 self.manejar_excepcion(e, "eliminar ausencia")
 
     def desactivar_ausencia_seleccionada(self):
@@ -540,7 +540,7 @@ class GestionarAusenciasForm(BaseForm):
             self.mostrar_exito("Éxito", "Ausencia desactivada correctamente")
             self.cargar_ausencias()
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "desactivar ausencia")
 
     def actualizar_preview_guardias(self):
@@ -575,7 +575,7 @@ class GestionarAusenciasForm(BaseForm):
 
                 self.preview_text.setPlainText(texto)
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "actualizar preview guardias")
             self.preview_text.setPlainText(f"Error al cargar guardias: {str(e)}")
 
@@ -601,7 +601,7 @@ class GestionarAusenciasForm(BaseForm):
             # Actualizar tabla si hubo cambios
             self.cargar_ausencias()
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "mostrar guardias afectadas")
 
     def limpiar_formulario(self):
@@ -746,7 +746,7 @@ class DialogoReasignacion(QDialog):
                 if resultados["reasignadas"] > 0:
                     self.close()
 
-            except Exception as e:
+            except (ValueError, TypeError) as e:
                 QMessageBox.critical(self, "Error", f"Error al reasignar:\n{str(e)}")
 
     def reasignar_manual(self):
@@ -810,5 +810,5 @@ class DialogoReasignacion(QDialog):
 
                 self.close()
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             QMessageBox.critical(self, "Error", f"Error al reasignar:\n{str(e)}")

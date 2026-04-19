@@ -146,7 +146,7 @@ class GenerarGuardiasUseCase:
                 resumen_por_profesor=resumen,
                 mensaje=mensaje,
             )
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             self.session.rollback()
             logger.error(f"Error al generar guardias: {str(e)}")
             raise BusinessLogicError(f"No se pudo generar: {str(e)}") from e
@@ -254,5 +254,5 @@ class GenerarGuardiasUseCase:
 
             logger.info(f"📊 Comparación exportada a: {filepath}")
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"No se pudo exportar comparación: {e}")

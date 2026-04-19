@@ -15,6 +15,7 @@ from infrastructure.database.models import CursoEscolar, Guardia
 from services.gestor_cursos import GestorCursos
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 logger = get_logger(__name__)
 
@@ -266,7 +267,7 @@ class MigradorMultiCurso:
                 f"asignadas al curso {curso.nombre}"
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, OSError) as e:
             logger.error(f"❌ Error durante la migración: {e}")
             session.rollback()
             raise

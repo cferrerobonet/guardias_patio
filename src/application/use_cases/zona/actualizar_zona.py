@@ -90,6 +90,6 @@ class ActualizarZonaUseCase:
 
             return ZonaDTO.model_validate(zona)
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al actualizar la zona: {str(e)}") from e

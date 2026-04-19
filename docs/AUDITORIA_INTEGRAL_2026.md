@@ -1494,7 +1494,7 @@ Mostrar asterisco en título: `self.setWindowTitle(f"{'*' if self._dirty else ''
 
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
-| 1 | SEC-16 | Reducir 273 `except Exception` a <50 con excepciones específicas | XL |
+| 1 | SEC-16 | ~~Reducir 273 `except Exception` a <50 con excepciones específicas~~ ✅ RESUELTO v5.1.1 | XL |
 | 2 | ARQ-01 | Migrar 5 servicios core de Session a repositorios inyectados | XL |
 | 3 | API-08 | CRUD completo API (POST/PUT/DELETE) para 5 entidades | XL |
 | 4 | TEST-03 | Subir coverage de 47,81% a 70% | XL |
@@ -2423,7 +2423,7 @@ Fase 4 — Frontend Web (P2)
 | 9 | API-09 | Paginación en listados | M |
 | 10 | SEC-09 | Account lockout | S |
 | 11 | SEC-15 | Verificar/limpiar users.json de git | S |
-| 12 | SEC-16 | Resolver except Exception: pass (5 peores) | S |
+| 12 | SEC-16 | ~~Resolver except Exception: pass (5 peores)~~ ✅ RESUELTO v5.1.1 | S |
 | 13 | DB-12 | Diseñar migración SQLite → PostgreSQL | L |
 | 14 | TEST-03 | Coverage al 70% | XL |
 | 15 | SAN-01 | Except Exception → excepciones específicas (fase 1) | M |

@@ -11,6 +11,7 @@ from typing import Callable, Optional
 
 from infrastructure.database.models import Profesor
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
 try:
@@ -69,7 +70,7 @@ def importar_profesores_desde_excel(
         if progress_callback:
             try:
                 progress_callback(porcentaje, mensaje)
-            except Exception as e:
+            except (ValueError, TypeError, OSError) as e:
                 logger.warning(f"Error al reportar progreso: {e}")
 
     resultados = {
@@ -180,7 +181,7 @@ def importar_profesores_desde_excel(
                 )
                 logger.info(f"✅ Importado: {nombre_completo} ({email})")
 
-            except Exception as e:
+            except SQLAlchemyError as e:
                 logger.error(f"Error al procesar fila {idx}: {str(e)}")
                 resultados["errores"] += 1
                 resultados["detalles"].append(
@@ -203,7 +204,7 @@ def importar_profesores_desde_excel(
             f"{resultados['existentes']} ya existentes, {resultados['errores']} errores",
         )
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         error_msg = f"Error al procesar archivo: {str(e)}"
         logger.error(error_msg)
         resultados["errores"] += 1
@@ -239,8 +240,8 @@ def importar_profesores_desde_csv(
         if progress_callback:
             try:
                 progress_callback(pct, msg)
-            except Exception:
-                pass
+            except (ValueError, TypeError, OSError) as e:
+                logger.exception("Error en progress_callback: %s", e)
 
     resultados: dict = {
         "archivo": Path(archivo_path).name,
@@ -315,7 +316,7 @@ def importar_profesores_desde_csv(
         session.commit()
         reportar(100, f"✅ {resultados['importados']} nuevos, {resultados['existentes']} ya existentes, {resultados['errores']} errores")
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         error_msg = str(e)
         logger.error(f"Error al importar CSV: {error_msg}")
         resultados["errores"] += 1
