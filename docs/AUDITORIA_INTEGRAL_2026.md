@@ -1,5 +1,1599 @@
 # Auditoría Integral — Guardias de Patio v5.0.0
 
+> **Fecha**: 19 de abril de 2026 · **Versión**: v5.0.0 · **Tests**: 1.342 passing · **Coverage**: 47,81%
+>
+> **SOLO ÍTEMS PENDIENTES** — Los 73+ ítems resueltos (v3.7.0–v5.0.0) han sido eliminados de este documento.
+> Cada ítem incluye instrucciones detalladas para que un modelo de IA pueda implementarlo sin ambigüedad.
+
+---
+
+## Contexto técnico del proyecto
+
+- **Stack**: Python 3.11+, PyQt6 6.7.0, SQLAlchemy 2.0, FastAPI, OR-Tools CP-SAT, Pydantic v2
+- **Arquitectura**: Clean Architecture híbrida + DDD táctico (entities, VOs, repo pattern)
+- **BD**: SQLite per-user (`data/users/{hash}/guardias_patio.db`), migraciones Alembic
+- **Entry points**: GUI (`src/main.py`), API REST (`src/api/main.py`)
+- **Linter**: Ruff (line-length=100, quote-style=double)
+- **Types**: mypy strict progresivo — obligatorio en `domain/`, relajado en `presentation/`
+- **Tests**: pytest + pytest-qt. Ejecutar con `make test` o `pytest tests/ -v`
+- **Presentación**: 59 archivos PyQt6 (36 forms, 10 dialogs, 10 widgets, 1 component, 1 theme, 1 main window)
+
+---
+
+## Puntuación Global: 29/60
+
+| Dimensión | Nota | Estado |
+|---|---|---|
+| Arquitectura | 2/4 | ⚠️ |
+| Seguridad | 3/4 | ✅ |
+| Base de Datos | 2/4 | ⚠️ |
+| Rendimiento | 2/4 | ⚠️ |
+| Caché | 1/4 | 🔴 |
+| Async/Concurrencia | 1/4 | 🔴 |
+| Resiliencia | 1/4 | 🔴 |
+| API REST | 2/4 | ⚠️ |
+| Testing | 2/4 | ⚠️ |
+| Observabilidad | 2/4 | ⚠️ |
+| UX/UI y Accesibilidad | 1/4 | 🔴 |
+| Diseño Visual | 2/4 | ⚠️ |
+| Casos de Uso | 3/4 | ✅ |
+| Control de Acceso | 3/4 | ✅ |
+| Organización | 2/4 | ⚠️ |
+
+---
+
+## Resumen: 74 ítems pendientes
+
+| Severidad | Cantidad |
+|---|---|
+| P1 — Alto | 10 |
+| P2 — Medio | 38 |
+| P3 — Bajo | 26 |
+
+---
+
+## 1. Arquitectura
+
+### ARQ-01 — 28 servicios acoplados a ORM (P1)
+
+**Problema**: 28 archivos en `src/services/` hacen `from sqlalchemy.orm import Session` e invocan `session.query()`, `session.add()`, `session.commit()` directamente. Viola Clean Architecture: la capa de aplicación/servicios no debería conocer SQLAlchemy.
+
+**Archivos afectados** (lista completa):
+1. `src/services/asignacion_guardia_service.py` (L24)
+2. `src/services/distribucion_cuotas_service.py` (L31)
+3. `src/services/importador_profesores.py` (L13)
+4. `src/services/icalendar_service.py` (L10)
+5. `src/services/_pdf_mes_consolidado.py` (L19)
+6. `src/services/disponibilidad_profesor_service.py` (L18)
+7. `src/services/migrar_a_multi_curso.py` (L17)
+8. `src/services/equidad_guardias_service.py` (L20)
+9. `src/services/_exportador_import.py` (L19)
+10. `src/services/validador_guardias.py` (L17)
+11. `src/services/exportador.py` (L31)
+12. `src/services/assignment/assignment_executor.py` (L21)
+13. `src/services/assignment/slot_builder.py` (L14)
+14. `src/services/assignment/profesor_filter.py` (L17)
+15. `src/services/gestor_ausencias.py` (L11)
+16. `src/services/asignador_guardias_cpsat.py` (L45)
+17. `src/services/_pdf_individual_optimizado.py` (L20)
+18. `src/services/estadisticas_service.py` (L13)
+19. `src/services/orquestador_asignacion_guardias.py` (L14)
+20. `src/services/calculador_guardias.py` (L20)
+21. `src/services/importador_zonas.py` (L16)
+22. `src/services/diagnosticador_guardias.py` (L13)
+23. `src/services/validators/ausencia_checker.py` (L15)
+24. `src/services/asignador_guardias_v4_hibrido.py` (L47)
+25. `src/services/gestor_cursos.py` (L18)
+26. `src/services/_asignador_v4_fases.py` (L21)
+27. `src/services/_asignador_v4_helpers.py` (L19)
+28. `src/services/exportador_pdf.py` (L28)
+
+**Cómo resolver** (progresivo, no hace falta todo de golpe):
+
+1. **Para cada servicio**, identificar qué queries ORM hace (ej: `session.query(Profesor).filter_by(activo=True).all()`).
+2. **Crear interfaz de repositorio** en `src/domain/repositories/` si no existe (ej: `ProfesorRepositoryInterface` con método `obtener_activos() -> list[Profesor]`).
+3. **Crear implementación** en `src/infrastructure/repositories/` que use SQLAlchemy (ej: `SQLAlchemyProfesorRepository`).
+4. **Refactorizar el servicio** para recibir el repositorio por constructor en vez de `Session`.
+5. **Priorizar estos 5 servicios core** primero:
+   - `asignador_guardias_cpsat.py` (845L, motor de generación)
+   - `calculador_guardias.py` (servicio central)
+   - `orquestador_asignacion_guardias.py` (coordinador)
+   - `gestor_cursos.py` (CRUD cursos)
+   - `gestor_ausencias.py` (CRUD ausencias)
+
+**Verificación**: `grep -rn "from sqlalchemy" src/services/ | wc -l` debe reducirse progresivamente a 0.
+
+---
+
+### ARQ-02 — 22 archivos de presentación importan Session (P2)
+
+**Problema**: 22 archivos en `src/presentation/` importan `Session` de SQLAlchemy. 3 de ellos ejecutan queries directas.
+
+**Queries directas (peor caso — resolver primero)**:
+- `src/presentation/forms/asignacion_widgets/generacion_panel.py` L217: `self.session.query(Configuracion).first()`
+- `src/presentation/forms/profesor_form.py` L630 y L697: `self.session.query(Profesor).filter_by(id=id_profesor).first()`
+- `src/presentation/widgets/gestor_sustituciones.py` L436: `self.session.query(GuardiaModel).filter_by(id=guardia.id).first()`
+
+**Archivos con import de Session** (22, sin query directa — reciben Session como parámetro):
+`ajustes_form.py`, `incidencias_panel.py`, `calculo_panel.py`, `cuotas_panel.py`, `resultados_panel.py`, `asignacion_calculo_form.py`, `dashboard_form.py`, `pdf_export_widget.py`, `calendarios_pdf_widget.py`, `informes_estadisticos_widget.py`, `zona_form.py`, `conectividad_form.py`, `asignacion_guardias_form.py`, `base_form.py`, `perfiles_usuario_form.py`, `ccleaner_main_window.py`, `dialogo_crear_curso.py`, `gestion_cursos_widget.py`, `selector_curso_widget.py`
+
+**Cómo resolver**:
+1. **Fase 1**: Las 3 queries directas → extraer a use cases en `src/application/use_cases/`:
+   - `generacion_panel.py:217` → crear `obtener_configuracion_actual.py`
+   - `profesor_form.py:630,697` → crear `obtener_profesor_por_id.py`
+   - `gestor_sustituciones.py:436` → crear `obtener_guardia_por_id.py`
+2. **Fase 2**: Cambiar firma de constructores de widgets para recibir servicios/use cases en vez de `Session`.
+
+**Verificación**: `grep -rn "session\.query" src/presentation/` debe devolver 0 resultados.
+
+---
+
+### ARQ-04 — Sin contenedor de inyección de dependencias (P2)
+
+**Problema**: Los servicios se instancian manualmente pasando `Session` como argumento. No hay lifecycle management ni wiring automático.
+
+**Cómo resolver**:
+1. Instalar: `pip install dependency-injector`
+2. Crear `src/infrastructure/container.py` con un `DeclarativeContainer`:
+   ```python
+   from dependency_injector import containers, providers
+   from src.infrastructure.repositories.sqlalchemy_profesor_repo import SQLAlchemyProfesorRepository
+
+   class Container(containers.DeclarativeContainer):
+       config = providers.Configuration()
+       db_session = providers.Singleton(...)  # Session factory
+       profesor_repo = providers.Factory(SQLAlchemyProfesorRepository, session=db_session)
+       # ... más repos y servicios
+   ```
+3. Wiring automático en `src/main.py` y `src/api/main.py`.
+4. Añadir `dependency-injector` a `requirements.txt`.
+
+**Dependencia**: Resolver ARQ-01 primero (repositorios) antes de conectar con DI.
+
+---
+
+### ARQ-05 — 7 archivos >800 líneas (P2)
+
+**Archivos y líneas exactas**:
+
+| Archivo | Líneas | Sugerencia de split |
+|---|---|---|
+| `src/presentation/widgets/vista_calendario.py` | 957 | → `calendario_view.py` + `calendario_renderer.py` + `calendario_events.py` |
+| `src/presentation/widgets/progress_indicators.py` | 948 | → Separar cada indicador en su archivo |
+| `src/presentation/forms/profesor_form.py` | 851 | → `profesor_form.py` + `profesor_table_manager.py` + `profesor_dialogs.py` |
+| `src/services/asignador_guardias_cpsat.py` | 845 | → `cpsat_model_builder.py` + `cpsat_solver.py` + `cpsat_result_mapper.py` |
+| `src/services/_pdf_individual_optimizado.py` | 827 | → `pdf_header.py` + `pdf_body.py` + `pdf_footer.py` |
+| `src/sync/data_exporter.py` | 825 | → `data_export_builder.py` + `data_import_parser.py` |
+| `src/presentation/widgets/gestionar_ausencias.py` | 814 | → `ausencias_view.py` + `ausencias_table.py` + `ausencias_dialogs.py` |
+
+**Cómo resolver**: Para cada archivo, identificar clases/métodos que se pueden extraer a un módulo propio. Mantener imports relativos. Ejecutar tests después de cada split.
+
+---
+
+### ARQ-06 — `ui_styles.py` legacy centralizado (P2)
+
+**Problema**: `src/ui_styles.py` (351L) define constantes de color y estilos QSS. 40 archivos lo importan. Pero muchos widgets ignoran estas constantes y usan colores inline.
+
+**Archivos que importan `ui_styles`**: 40 (usar `grep -rn "from src.ui_styles\|from src import ui_styles\|import ui_styles" src/` para listar).
+
+**Cómo resolver** (depende de VIS-01 y VIS-02):
+1. Primero resolver VIS-01 (design tokens) y VIS-02 (QSS global).
+2. Migrar constantes de `ui_styles.py` a `src/presentation/theme/tokens.py`.
+3. Reemplazar cada `from src.ui_styles import X` por `from src.presentation.theme.tokens import X`.
+4. Una vez que todos los importadores estén migrados, eliminar `src/ui_styles.py`.
+
+---
+
+### ARQ-07 — Sin capa anticorrupción para sync (P3)
+
+**Problema**: `src/sync/data_exporter.py` (825L) accede directamente a modelos ORM para serializar/deserializar datos de sincronización.
+
+**Cómo resolver**: Crear DTOs específicos para sync en `src/sync/dtos.py`. El exporter convierte ORM → DTO, serializa DTO → JSON. El importer deserializa JSON → DTO, convierte DTO → ORM.
+
+---
+
+### ARQ-08 — `pyproject.toml` incompleto (P2)
+
+**Problema**: `pyproject.toml` solo tiene `[tool.ruff]` y `[tool.mypy]`. Falta toda la metadata del proyecto.
+
+**Cómo resolver**: Añadir al inicio de `pyproject.toml`:
+
+```toml
+[project]
+name = "guardias-de-patio"
+version = "5.0.0"
+description = "Sistema de gestión de guardias de patio para centros educativos"
+requires-python = ">=3.11"
+dependencies = [
+    # Copiar de requirements.txt
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project.scripts]
+guardias-gui = "src.main:main"
+guardias-api = "src.api.main:app"
+```
+
+**Verificación**: `pip install -e .` debe funcionar sin error.
+
+---
+
+### ARQ-09 — 5 feature flags huérfanos en settings.py (P3)
+
+**Problema**: 5 flags en `src/config/settings.py` que NUNCA se consultan en el código:
+
+| Flag | Línea aprox. | Valor default |
+|---|---|---|
+| `enable_query_optimization` | ~L80 | `True` |
+| `enable_eager_loading` | ~L81 | `True` |
+| `enable_profiling` | ~L82 | `False` |
+| `enable_metrics` | ~L83 | `False` |
+| `cache_enabled` | ~L84 | `True` |
+
+**Nota**: `structured_logging` SÍ se usa en `src/core/logging.py` — NO eliminar.
+
+**Cómo resolver**: Eliminar las 5 líneas de `src/config/settings.py`. Buscar con `grep -rn "enable_query_optimization\|enable_eager_loading\|enable_profiling\|enable_metrics\|cache_enabled" src/` para confirmar que no se usan.
+
+---
+
+## 2. Seguridad
+
+### SEC-12 — `users.json` sin permisos restrictivos (P2)
+
+**Problema**: `data/users.json` contiene hashes bcrypt de contraseñas. No se aplican permisos 600 al crear/modificar.
+
+**Dónde está la lógica**: `src/sync/sync_manager.py`, clase `UserAuth`. Buscar los métodos que escriben a `users.json` (probablemente `save_users()` o similar).
+
+**Cómo resolver**: Después de cada escritura a `users.json`, añadir:
+```python
+import os
+os.chmod(users_json_path, 0o600)
+```
+
+**Verificación**: `ls -la data/users.json` debe mostrar `-rw-------`.
+
+---
+
+### SEC-14 — Username sin validación backend (P2)
+
+**Problema**: El frontend (`src/presentation/forms/login_dialog.py` L68-72) tiene `QRegularExpressionValidator` para username en el registro. Pero el backend (`UserAuth` en `src/sync/sync_manager.py`) no valida el username recibido.
+
+**Cómo resolver**: En el método de `UserAuth` que crea usuarios (buscar `register`, `create_user` o similar en `src/sync/sync_manager.py`), añadir al inicio:
+```python
+import re
+if not re.match(r"^[a-zA-Z0-9._-]{3,50}$", username):
+    raise ValueError("Username debe contener solo letras, números, puntos, guiones y guiones bajos (3-50 chars)")
+```
+
+**Verificación**: Intentar crear usuario con username `"../../etc"` debe fallar.
+
+---
+
+### SEC-16 — 273 bloques `except Exception` (P1)
+
+**Problema**: 273 bloques capturan `Exception` genérica. Distribución:
+
+| Directorio | Cantidad |
+|---|---|
+| `presentation/` | 111 |
+| `services/` | 45 |
+| `infrastructure/` | 44 |
+| `sync/` | 23 |
+| `core/` | 18 |
+| `application/` | 15 |
+| `api/` | 13 |
+| `utils/` | 4 |
+
+**El peor caso** (silencia completamente el error):
+- `src/sync/sync_manager.py` L325: `except Exception: return None`
+
+**Cómo resolver** (por fases):
+
+**Fase 1 — Eliminar los silenciosos** (1 bloque):
+- En `src/sync/sync_manager.py:325`: Reemplazar `except Exception: return None` por `except (ConnectionError, OSError) as e: logger.warning("..."); return None`.
+
+**Fase 2 — Migrar los de `services/` (45 bloques)**:
+- Para cada bloque, analizar qué operación se hace dentro del `try`.
+- Si es query SQLAlchemy: `except SQLAlchemyError as e:`
+- Si es I/O de archivos: `except (OSError, IOError) as e:`
+- Si es serialización: `except (ValueError, KeyError) as e:`
+- Siempre añadir `logger.exception("Descripción del contexto")` dentro del except.
+
+**Fase 3 — Migrar `presentation/` (111 bloques)**: Mismo patrón pero con excepciones Qt.
+
+**Verificación**: `grep -rn "except Exception" src/ | wc -l` debe reducirse progresivamente. Target: <50.
+
+---
+
+### SEC-17 — ~30 `print()` en funciones diagnóstico (P2)
+
+**Problema**: ~30 print() reales en producción, concentrados en 2 archivos de diagnóstico:
+
+| Archivo | Líneas | Función |
+|---|---|---|
+| `src/database/db_manager.py` | L738, L771-785 | `print_pool_status()` |
+| `src/utils/cache.py` | L340-341, L375, L380, L420, L469-506, L519 | `print_cache_report()`, `print_stats()` |
+
+**Nota**: Muchos otros `print()` detectados en el codebase son ejemplos en docstrings (`>>> print(...)`) — NO tocarlos.
+
+**Cómo resolver**:
+1. En `src/database/db_manager.py`: Reemplazar `print(...)` por `logger.debug(...)` en la función `print_pool_status()`.
+2. En `src/utils/cache.py`: Reemplazar `print(...)` por `logger.debug(...)` en `print_cache_report()` y `print_stats()`.
+3. Importar `from src.core.logging import get_logger` y crear `logger = get_logger(__name__)` al inicio de cada archivo si no existe.
+
+**Verificación**: `grep -rn "^\s*print(" src/database/db_manager.py src/utils/cache.py` debe devolver 0.
+
+---
+
+### SEC-18 — Sin security headers en API (P3)
+
+**Problema**: FastAPI en `src/api/main.py` no configura Content-Security-Policy, X-Frame-Options, etc.
+
+**Cómo resolver**: Añadir middleware en `src/api/main.py` después de crear la app:
+```python
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+```
+
+---
+
+## 3. Base de Datos
+
+### DB-05 — Sin CheckConstraints en ORM (P2)
+
+**Problema**: `src/infrastructure/database/models.py` no tiene `CheckConstraint` para validar datos a nivel de BD.
+
+**Campos que necesitan constraints**:
+- `Guardia.turno` debe ser `'M'` o `'T'`
+- `Guardia.recreo` debe ser `>= 1`
+- `Ausencia.tipo` debe estar en lista de tipos válidos (buscar el enum/constantes en el código)
+- `Profesor.turno` debe ser `'M'`, `'T'` o `'MT'` (verificar valores válidos)
+
+**Cómo resolver**:
+1. En `src/infrastructure/database/models.py`, añadir al `__table_args__` de cada modelo:
+   ```python
+   from sqlalchemy import CheckConstraint
+
+   class Guardia(Base):
+       __table_args__ = (
+           CheckConstraint("turno IN ('M', 'T')", name="ck_guardia_turno"),
+           CheckConstraint("recreo >= 1", name="ck_guardia_recreo_positivo"),
+           # ... UniqueConstraints existentes ...
+       )
+   ```
+2. Crear migración Alembic: `alembic revision --autogenerate -m "add_check_constraints"`
+3. Aplicar: `alembic upgrade head`
+
+**Verificación**: Insertar una guardia con `turno='X'` debe fallar con `IntegrityError`.
+
+---
+
+### DB-09 — Sin threading locks en db_manager.py (P2)
+
+**Problema**: `src/database/db_manager.py` (785L) usa variables globales `_current_engine` y `_current_session_factory` que se modifican sin lock. SQLite no soporta escritura concurrente.
+
+**Nota**: Ya existe retry con backoff para `OperationalError` en `get_db_session()` (L700-720). Lo que falta es un lock explícito para proteger las variables globales.
+
+**Cómo resolver**: Al inicio de `src/database/db_manager.py`:
+```python
+import threading
+_db_lock = threading.Lock()
+```
+Envolver las funciones que modifican `_current_engine` / `_current_session_factory` con:
+```python
+with _db_lock:
+    _current_engine = create_engine(...)
+    _current_session_factory = sessionmaker(bind=_current_engine)
+```
+
+**Verificación**: Tests con acceso concurrente no deben producir `OperationalError: database is locked`.
+
+---
+
+### DB-10 — Campos JSON violan 1NF (P3)
+
+**Problema**: Estos campos almacenan JSON como TEXT en SQLite:
+- `dias_semana_permitidos` (lista de días)
+- `recreos_permitidos` (lista de recreos)
+- `recreos_config` (configuración de recreos)
+
+Buscar estos campos en `src/infrastructure/database/models.py`.
+
+**Cómo resolver** (solo si se migra a PostgreSQL): Crear tablas auxiliares:
+- `profesor_dias_permitidos` (profesor_id, dia_semana)
+- `profesor_recreos_permitidos` (profesor_id, recreo)
+- `curso_recreos_config` (curso_id, turno, recreo, hora_inicio, hora_fin)
+
+**Nota**: En SQLite esto es aceptable. Solo priorizar si se migra a PostgreSQL.
+
+---
+
+### DB-11 — Triple estrategia de init de BD (P2)
+
+**Problema**: `src/database/db_manager.py` usa 3 mecanismos para inicializar la BD:
+
+1. **Alembic** (L48-106): `_run_alembic_migrations()` — Intenta aplicar migraciones
+2. **SQL directo** (L108-270): `_apply_direct_migrations()` — Fallback con `CREATE TABLE IF NOT EXISTS`, `ALTER TABLE ADD COLUMN` (crea tablas `cursos_escolares` L210, `ausencias` L251, y muchos ALTER TABLE)
+3. **`create_all`** (L336, L342, L388): Se ejecuta SIEMPRE, tanto si Alembic funciona como si no
+
+**Flujo actual**: Alembic → si falla → `create_all` + SQL directo. Si Alembic tiene éxito → `create_all` de todas formas.
+
+**Cómo resolver**:
+1. Asegurar que TODAS las tablas y columnas estén representadas en migraciones Alembic.
+2. Eliminar `_apply_direct_migrations()` (las ~160 líneas de SQL directo, L108-270).
+3. Eliminar las llamadas a `Base.metadata.create_all()` (L336, L342, L388).
+4. El flujo debe ser: Solo Alembic. Si falla, error claro al usuario.
+
+**Verificación**: Borrar BD de test, ejecutar app → debe crear BD solo con Alembic.
+
+---
+
+### DB-12 — Patrón SQLite per-user bloquea migración web (P1)
+
+**Problema**: Cada usuario tiene su propia BD SQLite en `data/users/{hash}/guardias_patio.db`. Esto hace imposible:
+- Queries cross-user
+- Concurrencia de escritura
+- Migración a servidor web compartido
+
+**Cómo resolver** (diseño, no implementación inmediata):
+1. Diseñar schema PostgreSQL multi-tenant con columna `tenant_id` (o `user_id`) en todas las tablas.
+2. Script de migración: para cada BD SQLite, leer datos → insertar en PostgreSQL con `tenant_id`.
+3. Configurar `DATABASE_URL` como variable de entorno.
+4. Patrón: middleware que extrae `tenant_id` del JWT y lo inyecta en queries.
+
+**Este ítem es de diseño/planificación**. No implementar hasta que la API esté completa (API-08).
+
+---
+
+### DB-13 — Sin mecanismo de backup/restore (P2)
+
+**Problema**: No hay forma automatizada de hacer backup de la BD del usuario ni restaurarla.
+
+**Cómo resolver**:
+1. Crear `src/services/backup_service.py` con:
+   - `crear_backup(db_path: Path) -> Path`: Copia el archivo `.db` con timestamp.
+   - `restaurar_backup(backup_path: Path, db_path: Path)`: Reemplaza la BD actual.
+   - `listar_backups(user_dir: Path) -> list[BackupInfo]`: Lista backups disponibles.
+2. Almacenar backups en `data/users/{hash}/backups/`.
+3. Añadir opción en UI (menú Ajustes o similar) para crear/restaurar backup.
+
+---
+
+## 4. Rendimiento
+
+### PERF-02 — Sin eager loading en queries ORM (P2)
+
+**Problema**: Queries ORM cargan relaciones con lazy loading por defecto. Produce N+1 queries.
+
+**Cómo resolver**: En los repositorios/servicios que cargan profesores con sus guardias, o guardias con sus zonas, añadir:
+```python
+from sqlalchemy.orm import joinedload
+session.query(Profesor).options(joinedload(Profesor.guardias)).all()
+```
+Buscar queries que acceden a relaciones en loops: `grep -rn "\.guardias\|\.zona\|\.profesor\|\.curso" src/services/ src/presentation/`.
+
+---
+
+### PERF-03 — Filtro de disponibilidad en Python (P2)
+
+**Problema**: La disponibilidad de profesores se filtra en Python (carga todos, filtra en memoria) en vez de en SQL.
+
+**Dónde buscar**: `src/services/disponibilidad_profesor_service.py` (L18) y `src/services/assignment/profesor_filter.py` (L17).
+
+**Cómo resolver**: Mover la lógica de filtrado a una query SQL con `WHERE` y `JOIN`. Ejemplo:
+```python
+# En vez de:
+profesores = session.query(Profesor).all()
+disponibles = [p for p in profesores if p.esta_disponible(fecha, turno, recreo)]
+
+# Hacer:
+disponibles = session.query(Profesor).filter(
+    Profesor.activo == True,
+    Profesor.turno.in_([turno, "MT"]),
+    ~Profesor.id.in_(
+        session.query(Ausencia.profesor_id).filter(
+            Ausencia.fecha == fecha
+        )
+    )
+).all()
+```
+
+---
+
+### PERF-04 — `.count() > 0` en vez de `.exists()` (P3)
+
+**Problema**: Queries que solo necesitan saber si hay resultados usan `.count()` (cuenta todos) en vez de `.exists()` (para al primero).
+
+**Cómo encontrar**: `grep -rn "\.count()" src/services/ src/infrastructure/`
+
+**Cómo resolver**: Reemplazar `session.query(X).filter(...).count() > 0` por `session.query(session.query(X).filter(...).exists()).scalar()` o `session.query(X).filter(...).first() is not None`.
+
+---
+
+### PERF-05 — GUI se bloquea en operaciones pesadas (P2)
+
+**Problema**: Generación de PDFs, export Excel y cálculo de guardias (OR-Tools CP-SAT) ejecutan en el hilo principal de Qt, congelando la interfaz.
+
+**Dónde**: Buscar en `src/presentation/` las llamadas a servicios pesados (asignador, exportador_pdf, etc.).
+
+**Cómo resolver**: Para cada operación pesada:
+```python
+from PyQt6.QtCore import QThread, pyqtSignal
+
+class WorkerThread(QThread):
+    finished = pyqtSignal(object)
+    error = pyqtSignal(str)
+
+    def __init__(self, func, *args):
+        super().__init__()
+        self.func = func
+        self.args = args
+
+    def run(self):
+        try:
+            result = self.func(*self.args)
+            self.finished.emit(result)
+        except Exception as e:
+            self.error.emit(str(e))
+```
+Usar con: `self.worker = WorkerThread(generar_guardias, params); self.worker.finished.connect(self.on_done); self.worker.start()`
+
+**Nota**: `progress_indicators.py` (948L) ya tiene indicadores de progreso — conectar las señales.
+
+---
+
+### PERF-06 — 535 `setStyleSheet` inline (P3)
+
+**Problema**: 535 llamadas a `setStyleSheet()` en widgets individuales. Cada una fuerza un repintado. No es cacheable.
+
+**Cómo resolver**: Ver VIS-02 (migrar a QSS global). Una vez migrado, eliminar los `setStyleSheet` inline.
+
+---
+
+## 5. Caché
+
+### CACHE-01 — Sin caché para queries frecuentes (P2)
+
+**Problema**: Listados de profesores, configuración del curso y zonas se consultan en cada operación sin cachear.
+
+**Cómo resolver**:
+1. `pip install cachetools` (ya en requirements.txt, verificar).
+2. Crear `src/utils/cache_decorators.py`:
+   ```python
+   from cachetools import TTLCache
+   from functools import wraps
+
+   _caches: dict[str, TTLCache] = {}
+
+   def cached(ttl=60, maxsize=128):
+       def decorator(func):
+           cache = TTLCache(maxsize=maxsize, ttl=ttl)
+           _caches[func.__qualname__] = cache
+           @wraps(func)
+           def wrapper(*args, **kwargs):
+               key = str(args) + str(sorted(kwargs.items()))
+               if key in cache:
+                   return cache[key]
+               result = func(*args, **kwargs)
+               cache[key] = result
+               return result
+           wrapper.cache_clear = cache.clear
+           return wrapper
+       return decorator
+
+   def invalidate_all():
+       for cache in _caches.values():
+           cache.clear()
+   ```
+3. Decorar queries frecuentes: `@cached(ttl=60)` en `obtener_configuracion`, listado de zonas, etc.
+4. Invalidar caché en operaciones de escritura: llamar `cache.cache_clear()` después de cada insert/update/delete.
+
+---
+
+### CACHE-02 — Configuración releída en cada operación (P2)
+
+**Problema**: El use case `src/application/use_cases/obtener_configuracion.py` (o servicio equivalente) ejecuta `session.query(Configuracion).first()` en cada llamada.
+
+**Cómo resolver**: Aplicar `@cached(ttl=60)` de CACHE-01 al método que obtiene configuración. Invalidar al guardar configuración.
+
+---
+
+### CACHE-03 — Sin caché de assets UI (P3)
+
+**Problema**: Iconos y pixmaps se cargan desde disco en cada render.
+
+**Cómo resolver**: Usar `QPixmapCache` de Qt:
+```python
+from PyQt6.QtGui import QPixmapCache, QPixmap
+
+def get_cached_pixmap(path: str) -> QPixmap:
+    pixmap = QPixmapCache.find(path)
+    if pixmap is None:
+        pixmap = QPixmap(path)
+        QPixmapCache.insert(path, pixmap)
+    return pixmap
+```
+Colocar en `src/utils/ui_helpers.py` y usar en vez de `QPixmap(path)` directo.
+
+---
+
+## 6. Async/Concurrencia
+
+### ASYNC-01 — FastAPI endpoints síncronos (P2)
+
+**Problema**: Todos los endpoints en `src/api/` usan `def` síncrono. Con SQLAlchemy síncrono está bien para desktop, pero en producción web multi-usuario bloqueará el event loop de uvicorn.
+
+**Cómo resolver** (solo cuando se migre a PostgreSQL):
+1. Cambiar SQLAlchemy sync por async: `from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine`
+2. Cambiar endpoints de `def` a `async def`
+3. Usar `asyncpg` como driver de PostgreSQL
+
+**No implementar ahora**. Este ítem se resuelve junto con DB-12 (migración a PostgreSQL).
+
+---
+
+### ASYNC-02 — SFTP sin timeout robusto (P2)
+
+**Problema**: Aunque ya hay retry con tenacity (backoff 2s, 4s, 8s), las operaciones SFTP individuales pueden bloquear el hilo si el servidor cuelga sin cerrar conexión.
+
+**Dónde**: `src/sync/sync_manager.py`, clase `SFTPSyncBackend`.
+
+**Cómo resolver**: En la conexión SFTP (buscar `paramiko.Transport` o `paramiko.SFTPClient`), añadir:
+```python
+transport = paramiko.Transport((host, port))
+transport.set_keepalive(30)  # keepalive cada 30s
+transport.connect(username=user, password=password)
+transport.get_security_options().ciphers = (...)  # si necesario
+# O con timeout en connect:
+sock = socket.create_connection((host, port), timeout=30)
+transport = paramiko.Transport(sock)
+```
+
+---
+
+## 7. Resiliencia
+
+### RES-02 — Sin circuit breaker para servicios externos (P3)
+
+**Problema**: SFTP y SMTP pueden fallar repetidamente. Sin circuit breaker, cada operación intenta conectar de nuevo.
+
+**Cómo resolver**:
+1. `pip install pybreaker`
+2. En `src/sync/sync_manager.py`:
+   ```python
+   import pybreaker
+   sftp_breaker = pybreaker.CircuitBreaker(fail_max=3, reset_timeout=60)
+
+   @sftp_breaker
+   def conectar_sftp(self):
+       ...
+   ```
+
+---
+
+### RES-04 — Health check sin verificar dependencias (P3)
+
+**Problema**: `GET /health` en `src/api/main.py` devuelve versión pero no verifica BD ni disco.
+
+**Cómo resolver**: En `src/api/main.py`, modificar el endpoint `/health`:
+```python
+@app.get("/health")
+def health_check():
+    checks = {"version": get_settings().app_version, "status": "ok"}
+    # Check BD
+    try:
+        session = get_db_session()
+        session.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception:
+        checks["database"] = "error"
+        checks["status"] = "degraded"
+    return checks
+```
+
+---
+
+### RES-05 — Sin graceful shutdown (P3)
+
+**Problema**: La app no gestiona `SIGTERM`/`SIGINT` para cerrar conexiones.
+
+**Cómo resolver**: En `src/main.py` (GUI):
+```python
+import signal
+signal.signal(signal.SIGTERM, lambda s, f: app.quit())
+signal.signal(signal.SIGINT, lambda s, f: app.quit())
+```
+En `src/api/main.py` (FastAPI): Ya gestionado por uvicorn.
+
+---
+
+## 8. API REST
+
+### API-08 — Solo endpoints GET, sin CRUD completo (P1)
+
+**Problema**: La API en `src/api/` solo tiene estos endpoints:
+- `POST /api/v1/auth/token` (login)
+- `GET /api/v1/profesores` (con paginación, `response_model=PaginatedProfesoresResponse`)
+- `GET /api/v1/profesores/{id}` (`response_model=ProfesorResponse`)
+- `GET /api/v1/guardias` (`response_model=List[GuardiaResponse]`)
+- `GET /api/v1/guardias/count`
+- `GET /api/v1/guardias/export/csv`
+- `GET /api/v1/guardias/export/xlsx`
+- `GET /api/v1/cuotas`
+- `GET /api/v1/equidad`
+- `GET /api/v1/estadisticas/resumen`
+- `GET /api/v1/estadisticas/por-profesor`
+- `GET /health`
+
+**Faltan**: `POST`, `PUT`, `DELETE` para profesores, guardias, zonas, cursos, ausencias.
+
+**Cómo resolver**: Para cada entidad, crear endpoints CRUD. Ejemplo para profesores (en `src/api/routers/profesores.py`):
+
+```python
+@router.post("/", response_model=ProfesorResponse, status_code=201)
+def crear_profesor(profesor: ProfesorCreate, session: Session = Depends(get_db)):
+    ...
+
+@router.put("/{profesor_id}", response_model=ProfesorResponse)
+def actualizar_profesor(profesor_id: int, profesor: ProfesorUpdate, ...):
+    ...
+
+@router.delete("/{profesor_id}", status_code=204)
+def eliminar_profesor(profesor_id: int, ...):
+    ...
+```
+
+Crear schemas Pydantic `ProfesorCreate` y `ProfesorUpdate` en `src/api/schemas/`. Repetir para: guardias, zonas, cursos, ausencias, configuración.
+
+**Routers a crear/ampliar** (5):
+1. `profesores.py` — POST, PUT, DELETE
+2. `guardias.py` — POST (generar), DELETE
+3. `zonas.py` — GET, POST, PUT, DELETE (router nuevo)
+4. `cursos.py` — GET, POST, PUT, DELETE (router nuevo)
+5. `ausencias.py` — GET, POST, PUT, DELETE (router nuevo)
+
+---
+
+### API-09 — Sin paginación en otros endpoints (P1)
+
+**Problema**: Profesores YA tiene paginación (`PaginatedProfesoresResponse`). Pero guardias, estadísticas, cuotas y equidad NO.
+
+**Cómo resolver**: Aplicar el mismo patrón de paginación de profesores a los demás endpoints que devuelven listas. Crear schema genérico:
+```python
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+    page: int
+    size: int
+    pages: int
+```
+
+---
+
+### API-10 — Versionado parcial (P2)
+
+**Problema**: Rutas usan `/v1/` en el prefix pero no hay mecanismo real para múltiples versiones.
+
+**Cómo resolver**: Documentar la estrategia en un comentario en `src/api/main.py`. Añadir header `API-Version: 1` en respuestas:
+```python
+response.headers["API-Version"] = "1"
+```
+
+---
+
+### API-12 — Pocos `response_model` en endpoints (P2)
+
+**Problema**: Solo 3 endpoints tienen `response_model` Pydantic:
+- `GET /profesores` → `PaginatedProfesoresResponse`
+- `GET /profesores/{id}` → `ProfesorResponse`
+- `GET /guardias` → `List[GuardiaResponse]`
+
+Los demás devuelven dicts sin tipado.
+
+**Cómo resolver**: Para cada endpoint sin `response_model`, crear schema Pydantic en `src/api/schemas/` y añadir `response_model=` al decorador.
+
+---
+
+### API-13 — Sin OpenAPI enrichment (P3)
+
+**Cómo resolver**: Añadir metadata a cada endpoint:
+```python
+@router.get("/", summary="Listar profesores", description="Devuelve lista paginada de profesores", tags=["Profesores"])
+```
+Y configurar en `src/api/main.py`:
+```python
+app = FastAPI(title="Guardias de Patio API", version="1.0.0", description="API para gestión de guardias de patio")
+```
+
+---
+
+### API-14 — Sin WebSocket para operaciones largas (P3)
+
+**Problema**: Generación de guardias (OR-Tools CP-SAT) puede tardar minutos. Sin feedback real-time.
+
+**Cómo resolver** (futuro):
+```python
+from fastapi import WebSocket
+
+@app.websocket("/ws/guardias/generar")
+async def generar_guardias_ws(websocket: WebSocket):
+    await websocket.accept()
+    # Ejecutar generación en background, enviar progreso
+    await websocket.send_json({"progress": 50, "message": "Resolviendo..."})
+```
+
+---
+
+### API-15 — Sin middleware de logging estructurado (P2)
+
+**Cómo resolver**: Añadir en `src/api/main.py`:
+```python
+import uuid, time
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class LoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        request_id = str(uuid.uuid4())[:8]
+        start = time.time()
+        response = await call_next(request)
+        duration = time.time() - start
+        logger.info(f"[{request_id}] {request.method} {request.url.path} → {response.status_code} ({duration:.3f}s)")
+        response.headers["X-Request-ID"] = request_id
+        return response
+```
+
+---
+
+## 9. Testing
+
+### TEST-03 — Coverage 47,81% (target: 70%) (P1)
+
+**Coverage estimada por módulo**:
+| Módulo | Estimación | Target |
+|---|---|---|
+| `domain/` | ~65% | 90% |
+| `application/` | ~55% | 80% |
+| `services/` | ~40% | 70% |
+| `presentation/` | ~25% | 50% |
+| `api/` | ~50% | 80% |
+| `sync/` | ~10% | 60% |
+| `infrastructure/` | ~45% | 70% |
+
+**Cómo priorizar**: Ejecutar `pytest --cov=src --cov-report=html` y abrir `htmlcov/index.html`. Ordenar por coverage ascendente. Escribir tests para los archivos más críticos con menos coverage.
+
+**Módulos más rentables** (más impacto por test):
+1. `src/domain/` — lógica pura, fácil de testear sin mocks
+2. `src/application/use_cases/` — mockear repos, testear lógica
+3. `src/services/` que ya tengan repos (si se resuelve ARQ-01)
+
+---
+
+### TEST-04 — 0 tests SFTP/SMTP (P2)
+
+**Archivos a testear**: `src/sync/sync_manager.py`, `src/sync/data_exporter.py`, `src/services/email_service.py`
+
+**Cómo resolver**: Crear `tests/test_sync/`:
+```python
+from unittest.mock import MagicMock, patch
+
+@patch("src.sync.sync_manager.paramiko.SFTPClient")
+def test_upload_file(mock_sftp):
+    mock_sftp.put.return_value = None
+    backend = SFTPSyncBackend(config=test_config)
+    result = backend.upload("/local/path", "/remote/path")
+    mock_sftp.put.assert_called_once()
+
+@patch("src.services.email_service.smtplib.SMTP")
+def test_send_email(mock_smtp):
+    ...
+```
+
+---
+
+### TEST-05 — Sin tests de integración BD (P2)
+
+**Cómo resolver**: Crear `tests/test_integration/` con SQLite in-memory:
+```python
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from src.infrastructure.database.models import Base
+
+@pytest.fixture
+def db_session():
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    yield session
+    session.close()
+
+def test_crear_profesor(db_session):
+    profesor = Profesor(nombre="Test", activo=True, turno="M")
+    db_session.add(profesor)
+    db_session.commit()
+    assert db_session.query(Profesor).count() == 1
+```
+
+---
+
+### TEST-06 — Sin mutation testing (P3)
+
+**Cómo resolver**: `pip install mutmut && mutmut run --paths-to-mutate=src/domain/`
+
+---
+
+### TEST-07 — Sin tests de regresión UI (P3)
+
+**Cómo resolver**: Usar `pytest-qt` para tests funcionales de widgets:
+```python
+def test_login_dialog(qtbot):
+    dialog = LoginDialog()
+    qtbot.addWidget(dialog)
+    qtbot.keyClicks(dialog.username_input, "admin")
+    qtbot.keyClicks(dialog.password_input, "pass")
+    assert dialog.username_input.text() == "admin"
+```
+
+---
+
+## 10. Observabilidad
+
+### OBS-03 — Sin métricas de negocio (P3)
+
+**Cómo resolver**: Añadir logs estructurados en operaciones clave:
+```python
+logger.info("guardias_generadas", extra={"curso_id": curso.id, "cantidad": len(guardias), "duracion_s": elapsed})
+```
+
+---
+
+### OBS-04 — Sin request tracing en API (P2)
+
+**Ya incluido en API-15** (middleware de logging con X-Request-ID). Implementar junto con API-15.
+
+---
+
+### OBS-05 — Logs sin rotación (P3)
+
+**Dónde**: `src/core/logging.py`
+
+**Cómo resolver**: Reemplazar `FileHandler` por `RotatingFileHandler`:
+```python
+from logging.handlers import RotatingFileHandler
+handler = RotatingFileHandler("logs/app.log", maxBytes=10*1024*1024, backupCount=5)
+```
+
+---
+
+### OBS-06 — Sin alertas de error (P3)
+
+**Cómo resolver** (futuro, para producción web): Integrar con servicio de alertas (Sentry, o webhook a email). No necesario para versión desktop.
+
+---
+
+## 11. UX/UI y Accesibilidad (1/4) 🔴
+
+> **Área más débil del proyecto.** 59 archivos de presentación, solo 1 tiene accesibilidad (login_dialog.py).
+
+### Métricas actuales
+
+| Métrica | Actual | Target |
+|---|---|---|
+| `setAccessibleName` | 6 (1 archivo) | ~200+ (59 archivos) |
+| `setAccessibleDescription` | 0 | ~100+ |
+| `setTabOrder` | 9 (1 archivo) | ~50+ |
+| `QValidator` | 2 (1 archivo) | ~30+ |
+| `setToolTip` | 49 | ~100+ |
+| `setFocusPolicy` | 1 | ~20+ |
+
+### A11Y-01 — Accessible names (P1)
+
+**Estado actual**: Solo en `src/presentation/forms/login_dialog.py`:
+- L73: `username_input.setAccessibleName("Campo nombre de usuario")`
+- L79: `email_input.setAccessibleName("Campo email")`
+- L86: `password_input.setAccessibleName("Campo contraseña")`
+- L93: `password_confirm_input.setAccessibleName("Campo confirmar contraseña")`
+- L405: `username_combo.setAccessibleName("Campo selector de usuario")`
+- L418: `password_input.setAccessibleName("Campo contraseña de acceso")`
+
+**Cómo resolver**: En CADA archivo de `src/presentation/` que cree widgets interactivos (inputs, botones, combos, tablas, checkboxes), añadir `widget.setAccessibleName("Descripción")` después de crear el widget.
+
+**Archivos prioritarios** (formularios con más inputs):
+1. `profesor_form.py` (851L) — campos: nombre, apellidos, email, teléfono, turno, activo
+2. `zona_form.py` — campos: nombre, capacidad, activa
+3. `ajustes_form.py` — campos de configuración
+4. `gestionar_ausencias.py` (814L) — campos: profesor, fecha, tipo, motivo
+5. `asignacion_calculo_form.py` — campos de generación
+6. `dashboard_form.py` — botones y controles principales
+7. `conectividad_form.py` — campos SFTP/SMTP
+8. `import_export_form.py` — botones de import/export
+9. `reportes_form.py` — selectores de reportes
+10. Todos los diálogos en `src/presentation/dialogs/`
+
+**Convención de nombres accesibles**: Usar formato descriptivo en español: `"Nombre del profesor"`, `"Botón guardar profesor"`, `"Tabla de guardias asignadas"`, `"Selector de turno"`.
+
+---
+
+### A11Y-02 — Tab order (P1)
+
+**Estado actual**: Solo en `login_dialog.py` L495-498.
+
+**Cómo resolver**: En cada formulario, después de crear todos los widgets, definir el orden de tabulación:
+```python
+QWidget.setTabOrder(self.campo_nombre, self.campo_apellidos)
+QWidget.setTabOrder(self.campo_apellidos, self.campo_email)
+QWidget.setTabOrder(self.campo_email, self.combo_turno)
+QWidget.setTabOrder(self.combo_turno, self.btn_guardar)
+```
+
+**Regla**: El tab order debe seguir el orden visual de arriba abajo, izquierda a derecha.
+
+---
+
+### A11Y-03 — Validación de formularios (P1)
+
+**Estado actual**: Solo 2 `QValidator` en `login_dialog.py` (L68-72, regex para username).
+
+**Cómo resolver**: Para cada campo de formulario, añadir el validador apropiado:
+
+```python
+# Números enteros (ej: capacidad de zona)
+from PyQt6.QtGui import QIntValidator
+campo_capacidad.setValidator(QIntValidator(1, 100))
+
+# Texto con patrón (ej: email)
+from PyQt6.QtGui import QRegularExpressionValidator
+from PyQt6.QtCore import QRegularExpression
+campo_email.setValidator(QRegularExpressionValidator(
+    QRegularExpression(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+))
+
+# Texto requerido (mínimo N caracteres)
+campo_nombre.setValidator(QRegularExpressionValidator(
+    QRegularExpression(r".{2,100}")  # 2-100 chars
+))
+```
+
+**Campos prioritarios por formulario**:
+- `profesor_form.py`: nombre (texto requerido), apellidos (texto requerido), email (formato email), teléfono (solo números)
+- `zona_form.py`: nombre (texto requerido), capacidad (entero 1-50)
+- `gestionar_ausencias.py`: fecha (formato fecha), tipo (enum via combo)
+- `ajustes_form.py`: campos numéricos de configuración
+
+**Feedback visual**: Después de cada validador, conectar señal de cambio:
+```python
+campo.textChanged.connect(lambda: campo.setStyleSheet(
+    "border: 2px solid #DC2626;" if not campo.hasAcceptableInput() else ""
+))
+```
+
+---
+
+### A11Y-04 — Contraste de colores sin verificar (P2)
+
+**Problema**: 415 colores hexadecimales hardcodeados en `src/presentation/`. WCAG 2.1 exige ratio mínimo 4.5:1 para texto y 3:1 para componentes UI.
+
+**Cómo resolver**: Esto se resuelve junto con VIS-01 (design tokens). Al definir la paleta, verificar cada par foreground/background con una herramienta de contraste (WebAIM Contrast Checker).
+
+---
+
+### A11Y-05 — Soporte de teclado incompleto (P2)
+
+**Estado actual**: 14 `setShortcut`/`QShortcut` en todo el proyecto.
+
+**Cómo resolver**: Mapear cada acción principal a un atajo:
+- `Ctrl+N` → Nuevo (profesor/zona/ausencia según contexto)
+- `Ctrl+S` → Guardar
+- `Ctrl+D` → Eliminar seleccionado
+- `Ctrl+E` → Exportar
+- `Ctrl+G` → Generar guardias
+- `F5` → Refrescar vista
+- `Esc` → Cerrar diálogo/cancelar
+
+---
+
+### A11Y-06 — Sin feedback para screen readers (P2)
+
+**Cómo resolver**: Después de operaciones importantes (guardar, generar, error), anunciar:
+```python
+from PyQt6.QtWidgets import QAccessibleEvent
+from PyQt6.QtCore import QAccessible
+
+# Anunciar un cambio
+event = QAccessibleEvent(self.status_label, QAccessible.Event.NameChanged)
+QAccessible.updateAccessibility(event)
+```
+
+---
+
+### A11Y-07 — Tamaños de fuente fijos (P2)
+
+**Problema**: 269 fuentes hardcodeadas (ej: `setFont(QFont("Arial", 12))`).
+
+**Cómo resolver**: En vez de tamaños absolutos, usar escala relativa basada en la fuente del sistema:
+```python
+base_font = QApplication.font()
+base_size = base_font.pointSize()  # Tamaño del sistema
+
+heading_font = QFont(base_font)
+heading_font.setPointSize(int(base_size * 1.5))  # 150% para headings
+```
+
+Se resuelve junto con VIS-05 (escala tipográfica).
+
+---
+
+### A11Y-08 — Sin tema de alto contraste (P3)
+
+**Cómo resolver**: Crear `src/presentation/theme/high_contrast.qss` con colores blanco/negro puros y bordes gruesos. Cargar cuando el usuario lo seleccione en ajustes.
+
+---
+
+### A11Y-09 — Sin internacionalización (P3)
+
+**Estado actual**: Solo 2 usos de `tr()` en todo el proyecto.
+
+**Cómo resolver** (futuro): Wrappear todos los strings visibles con `self.tr("texto")`. Generar archivos `.ts` con `pylupdate6`. Compilar a `.qm` con `lrelease`.
+
+---
+
+### A11Y-10 — Sin DPI awareness (P2)
+
+**Problema**: 191 tamaños fijos (`setMinimumSize`, `setFixedSize`, `setGeometry`). En pantallas HiDPI se ven diminutos.
+
+**Cómo resolver**:
+1. En `src/main.py`, ANTES de crear `QApplication`:
+   ```python
+   from PyQt6.QtCore import Qt
+   # PyQt6 tiene HiDPI habilitado por defecto, pero verificar que no se desactive
+   ```
+2. Reemplazar progresivamente `setFixedSize(400, 300)` por `setMinimumSize(400, 300)` + `setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)`.
+3. Buscar: `grep -rn "setFixedSize\|setGeometry\|setMinimumWidth\|setMinimumHeight\|setMaximumWidth\|setMaximumHeight" src/presentation/`
+
+---
+
+## 12. Diseño Visual y Consistencia
+
+### Métricas actuales
+
+| Métrica | Valor |
+|---|---|
+| `setStyleSheet` inline | 535 |
+| Colores hex hardcodeados | 415 |
+| Fuentes hardcodeadas | 269 |
+| Imports de `ui_styles.py` | 40 |
+| Tamaños fijos | 191 |
+
+### VIS-01 — Crear sistema de design tokens (P1)
+
+**Problema**: 415 colores hardcodeados inline. No hay paleta centralizada.
+
+**Cómo resolver**:
+1. Crear `src/presentation/theme/__init__.py` (vacío).
+2. Crear `src/presentation/theme/tokens.py`:
+   ```python
+   """Design tokens centralizados para toda la aplicación."""
+
+   class Colors:
+       # Primarios
+       PRIMARY = "#1976D2"
+       PRIMARY_LIGHT = "#42A5F5"
+       PRIMARY_DARK = "#1565C0"
+       # Semánticos
+       SUCCESS = "#10B981"
+       WARNING = "#F59E0B"
+       ERROR = "#DC2626"
+       INFO = "#3B82F6"
+       # Superficies
+       BACKGROUND = "#FFFFFF"
+       SURFACE = "#F8FAFC"
+       BORDER = "#E2E8F0"
+       # Texto
+       TEXT_PRIMARY = "#1E293B"
+       TEXT_SECONDARY = "#64748B"
+       TEXT_DISABLED = "#94A3B8"
+       TEXT_ON_PRIMARY = "#FFFFFF"
+
+   class Spacing:
+       XS = 4
+       SM = 8
+       MD = 12
+       LG = 16
+       XL = 24
+       XXL = 32
+
+   class FontSize:
+       CAPTION = 11
+       BODY = 13
+       SUBTITLE = 15
+       TITLE = 18
+       H2 = 22
+       H1 = 28
+
+   class BorderRadius:
+       SM = 4
+       MD = 8
+       LG = 12
+   ```
+3. Reemplazar progresivamente los colores hardcodeados: `"#DC2626"` → `Colors.ERROR`, `"#1976D2"` → `Colors.PRIMARY`, etc.
+
+**Verificación**: `grep -rn "#[0-9a-fA-F]\{6\}" src/presentation/ | wc -l` debe reducirse de 415 a 0 progresivamente.
+
+---
+
+### VIS-02 — Migrar 535 `setStyleSheet` a QSS global (P1)
+
+**Cómo resolver**:
+1. Crear `src/presentation/theme/light.qss`:
+   ```css
+   QPushButton {
+       background-color: #1976D2;
+       color: white;
+       border-radius: 8px;
+       padding: 8px 16px;
+       font-size: 13px;
+   }
+   QPushButton:hover {
+       background-color: #1565C0;
+   }
+   /* ... más estilos base para todos los widgets estándar */
+   ```
+2. En `src/main.py`, al crear `QApplication`:
+   ```python
+   with open("src/presentation/theme/light.qss") as f:
+       app.setStyleSheet(f.read())
+   ```
+3. Eliminar progresivamente los `setStyleSheet(...)` inline de cada widget que ya esté cubierto por el QSS global.
+
+**Buscar inline styles**: `grep -rn "setStyleSheet" src/presentation/ | wc -l` (objetivo: reducir de 535 a <50 para estilos truly custom).
+
+---
+
+### VIS-03 — Deprecar `ui_styles.py` legacy (P2)
+
+**Archivo**: `src/ui_styles.py` (351L). Define constantes de color (L7-16), estilos QSS como strings (L18+), y función `wrap_terminal_html()` (L290).
+
+**40 archivos lo importan** (`from src.ui_styles import ...` o `from src import ui_styles`).
+
+**Cómo resolver** (después de VIS-01 y VIS-02):
+1. Mover constantes de color a `tokens.py` (VIS-01).
+2. Mover estilos a `light.qss` (VIS-02).
+3. Mover `wrap_terminal_html()` a `src/utils/html_helpers.py`.
+4. Actualizar los 40 imports.
+5. Eliminar `src/ui_styles.py`.
+
+---
+
+### VIS-04 — Iconografía inconsistente (P2)
+
+**Cómo resolver**: Elegir una familia de iconos (Material Design Icons, Feather, o similar). Descargar SVGs. Colocar en `src/presentation/assets/icons/`. Crear helper:
+```python
+def get_icon(name: str) -> QIcon:
+    return QIcon(f"src/presentation/assets/icons/{name}.svg")
+```
+
+---
+
+### VIS-05 — Sin escala tipográfica (P2)
+
+**Cómo resolver**: Ya definida en VIS-01 (`FontSize`). Reemplazar fuentes hardcodeadas por los tokens:
+```python
+# En vez de: font.setPointSize(14)
+from src.presentation.theme.tokens import FontSize
+font.setPointSize(FontSize.BODY)
+```
+
+---
+
+### VIS-06 — Espaciado inconsistente (P2)
+
+**Cómo resolver**: Ya definido en VIS-01 (`Spacing`). Usar en layouts:
+```python
+from src.presentation.theme.tokens import Spacing
+layout.setContentsMargins(Spacing.LG, Spacing.LG, Spacing.LG, Spacing.LG)
+layout.setSpacing(Spacing.MD)
+```
+
+---
+
+### VIS-07 — Sin tema oscuro (P3)
+
+**Cómo resolver** (después de VIS-01 y VIS-02):
+1. Crear `src/presentation/theme/dark.qss` con colores invertidos.
+2. Crear `src/presentation/theme/dark_tokens.py` con la paleta oscura.
+3. Añadir selector de tema en ajustes.
+
+---
+
+### VIS-08 — Sin animaciones/transiciones (P3)
+
+**Cómo resolver**: Usar `QPropertyAnimation` para transiciones clave:
+```python
+from PyQt6.QtCore import QPropertyAnimation, QEasingCurve
+
+anim = QPropertyAnimation(widget, b"windowOpacity")
+anim.setDuration(200)
+anim.setStartValue(0)
+anim.setEndValue(1)
+anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+anim.start()
+```
+
+---
+
+### VIS-09 — Sin responsive layout (P2)
+
+**Cómo resolver**: Reemplazar tamaños fijos por policies:
+```python
+# En vez de: widget.setFixedSize(400, 300)
+widget.setMinimumSize(300, 200)
+widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+```
+
+---
+
+### VIS-10 — Sin guía de estilo documentada (P3)
+
+**Cómo resolver**: Crear `docs/DESIGN_SYSTEM.md` documentando tokens de color, tipografía, espaciado, y componentes.
+
+---
+
+## 13. Casos de Uso y Flujos
+
+### UXF-01 — Sustituciones incompletas (P2)
+
+**Problema**: Los campos ORM existen en `src/infrastructure/database/models.py` (`es_sustitucion`, `profesor_sustituido_id`, `notas` en el modelo `Guardia`) pero la UI en `src/presentation/widgets/gestor_sustituciones.py` está incompleta.
+
+**Cómo resolver**: Completar el widget `gestor_sustituciones.py` con:
+1. Selector de profesor a sustituir (QComboBox con profesores del mismo turno)
+2. Campo de notas (QTextEdit)
+3. Checkbox para marcar como sustitución
+4. Lógica para crear guardia con `es_sustitucion=True` y `profesor_sustituido_id=X`
+
+---
+
+### UXF-02 — Sin confirmación en acciones destructivas (P2)
+
+**Cómo encontrar**: `grep -rn "delete\|eliminar\|borrar" src/presentation/ | grep -v "#\|docstring\|test"` y verificar si hay `QMessageBox.question` antes.
+
+**Cómo resolver**: Antes de toda operación de borrado:
+```python
+reply = QMessageBox.question(self, "Confirmar eliminación",
+    f"¿Eliminar {nombre}? Esta acción no se puede deshacer.",
+    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+if reply != QMessageBox.StandardButton.Yes:
+    return
+```
+
+---
+
+### UXF-03 — Sin undo/redo (P3)
+
+**Cómo resolver** (futuro): Implementar `QUndoStack` + `QUndoCommand` para las operaciones CRUD principales.
+
+---
+
+### UXF-04 — Sin onboarding wizard (P3)
+
+**Cómo resolver**: Crear `src/presentation/dialogs/wizard_primer_uso.py` con `QWizard`:
+- Página 1: Crear curso escolar
+- Página 2: Importar/crear zonas
+- Página 3: Importar/crear profesores
+- Página 4: Configurar recreos
+Mostrar solo si no hay cursos en la BD.
+
+---
+
+### UXF-05 — Sin indicador de cambios sin guardar (P2)
+
+**Cómo resolver**: En cada formulario, trackear cambios:
+```python
+self._dirty = False
+campo.textChanged.connect(lambda: setattr(self, '_dirty', True))
+
+def closeEvent(self, event):
+    if self._dirty:
+        reply = QMessageBox.question(self, "Cambios sin guardar", "¿Guardar antes de salir?")
+        ...
+```
+Mostrar asterisco en título: `self.setWindowTitle(f"{'*' if self._dirty else ''}{titulo}")`.
+
+---
+
+## 14. Control de Acceso
+
+### MT-04 — Sin roles/permisos (P3)
+
+**Problema**: Todos los usuarios autenticados tienen acceso completo.
+
+**Cómo resolver** (futuro, cuando sea necesario):
+1. Añadir campo `role` a `users.json` (valores: `admin`, `editor`, `viewer`).
+2. En API: verificar role en cada endpoint con dependency.
+3. En GUI: deshabilitar botones según role.
+
+---
+
+## 15. Organización de Código
+
+### ORG-01 — Archivos mal ubicados (P2)
+
+**Problema**: Servicios que deberían ser use cases, utils que son domain services.
+
+**Cómo resolver**: Auditar `src/services/` y mover lo que sea lógica de aplicación a `src/application/use_cases/`. Auditar `src/utils/` y mover lo que sea lógica de dominio a `src/domain/services/`.
+
+---
+
+### ORG-02 — Duplicación de estilos (P2)
+
+**Ya cubierto por VIS-01, VIS-02 y VIS-03.** Se resuelve con el sistema de temas.
+
+---
+
+### ORG-03 — Archivos grandes (P3)
+
+**Ya cubierto por ARQ-05.** Split de los 7 archivos >800L.
+
+---
+
+## 16. Sanitización
+
+### SAN-01 — 273 `except Exception` genéricos (P1)
+
+**Ya cubierto por SEC-16.** Mismo ítem.
+
+---
+
+### SAN-03 — 1 TODO pendiente (P3)
+
+**Cómo encontrar**: `grep -rn "TODO\|FIXME\|HACK\|XXX" src/`
+
+**Cómo resolver**: Leer el TODO, resolverlo o eliminarlo si ya no aplica.
+
+---
+
+## 17. Preparación Web (5/10)
+
+| Aspecto | Estado | Bloqueador |
+|---|---|---|
+| API REST existe | ✅ | — |
+| JWT + CORS + Rate Limit | ✅ | — |
+| Error schema estándar | ✅ | — |
+| Paginación (profesores) | ✅ | — |
+| CRUD completo API | 🔴 | Solo GET → API-08 |
+| Paginación (otros) | 🔴 | → API-09 |
+| BD multi-tenant | 🔴 | SQLite per-user → DB-12 |
+| Domain logic puro | ⚠️ | 28 servicios acoplados → ARQ-01 |
+| Async endpoints | ⚠️ | → ASYNC-01 (con PostgreSQL) |
+| Frontend desacoplado | 🔴 | UI = PyQt6 monolítica |
+
+**Ruta de migración**:
+1. **Fase 1**: CRUD completo API (API-08) + paginación (API-09) + response_model (API-12)
+2. **Fase 2**: Desacoplar servicios de ORM (ARQ-01) + eliminar queries de presentation (ARQ-02)
+3. **Fase 3**: Migrar SQLite → PostgreSQL (DB-12) + async (ASYNC-01)
+4. **Fase 4**: Frontend web (SPA React/Vue consumiendo API)
+
+---
+
+## 18. Roadmap Priorizado
+
+### P1 — 10 ítems críticos
+
+| # | ID | Descripción | Esfuerzo |
+|---|---|---|---|
+| 1 | SEC-16 | Reducir 273 `except Exception` a <50 con excepciones específicas | XL |
+| 2 | ARQ-01 | Migrar 5 servicios core de Session a repositorios inyectados | XL |
+| 3 | API-08 | CRUD completo API (POST/PUT/DELETE) para 5 entidades | XL |
+| 4 | TEST-03 | Subir coverage de 47,81% a 70% | XL |
+| 5 | A11Y-01 | `setAccessibleName` en todos los widgets interactivos | L |
+| 6 | A11Y-02 | `setTabOrder` en todos los formularios y diálogos | M |
+| 7 | A11Y-03 | `QValidator` en todos los campos de formularios | L |
+| 8 | VIS-01 | Crear sistema de design tokens centralizado | M |
+| 9 | VIS-02 | QSS global, eliminar `setStyleSheet` inline | XL |
+| 10 | DB-12 | Diseñar migración SQLite → PostgreSQL multi-tenant | L |
+
+### P2 — 38 ítems
+
+| # | ID | Descripción | Esfuerzo |
+|---|---|---|---|
+| 1 | ARQ-02 | Eliminar 3 queries directas + 22 imports Session de presentation/ | L |
+| 2 | ARQ-04 | Implementar contenedor DI con dependency-injector | L |
+| 3 | ARQ-05 | Split 7 archivos >800L | L |
+| 4 | ARQ-06 | Migrar imports de ui_styles.py a nuevo sistema temas | M |
+| 5 | ARQ-08 | Completar pyproject.toml ([project], [build-system]) | S |
+| 6 | SEC-12 | chmod 600 en users.json al crear/modificar | S |
+| 7 | SEC-14 | Validar username con regex en backend (UserAuth) | S |
+| 8 | SEC-17 | Reemplazar ~30 print() por logger en db_manager.py y cache.py | S |
+| 9 | DB-05 | Añadir CheckConstraints + migración Alembic | S |
+| 10 | DB-09 | Añadir threading.Lock en db_manager.py | S |
+| 11 | DB-11 | Unificar init BD en Alembic (eliminar create_all + SQL directo) | M |
+| 12 | DB-13 | Implementar backup/restore automático | L |
+| 13 | PERF-02 | Eager loading (joinedload) en queries de listados | M |
+| 14 | PERF-03 | Mover filtro disponibilidad de Python a SQL | M |
+| 15 | PERF-05 | QThread para operaciones pesadas (PDF, Excel, CP-SAT) | L |
+| 16 | CACHE-01 | Implementar cachetools.TTLCache para queries frecuentes | M |
+| 17 | CACHE-02 | Cachear obtener_configuracion con TTL 60s | S |
+| 18 | ASYNC-01 | FastAPI async (cuando se migre a PostgreSQL) | XL |
+| 19 | ASYNC-02 | Timeout robusto en conexiones SFTP (transport.set_keepalive) | S |
+| 20 | API-09 | Paginación en endpoints de guardias, estadísticas | M |
+| 21 | API-10 | Documentar estrategia versionado + header API-Version | S |
+| 22 | API-12 | response_model Pydantic en todos los endpoints | M |
+| 23 | API-15 | Middleware logging estructurado con X-Request-ID | M |
+| 24 | TEST-04 | Tests SFTP/SMTP con Paramiko/smtplib mockeado | L |
+| 25 | TEST-05 | Tests integración BD con SQLite in-memory | L |
+| 26 | OBS-04 | Request tracing (junto con API-15) | M |
+| 27 | A11Y-04 | Auditar contraste colores WCAG 2.1 | M |
+| 28 | A11Y-05 | Atajos de teclado para acciones principales | M |
+| 29 | A11Y-06 | Feedback QAccessible para screen readers | M |
+| 30 | A11Y-07 | Tamaños fuente relativos (no hardcoded) | M |
+| 31 | A11Y-10 | DPI awareness + reemplazar setFixedSize por policies | M |
+| 32 | VIS-03 | Deprecar y eliminar ui_styles.py | M |
+| 33 | VIS-04 | Iconografía consistente (Material Icons o similar) | M |
+| 34 | VIS-05 | Escala tipográfica con FontSize tokens | S |
+| 35 | VIS-06 | Escala de espaciado con Spacing tokens | S |
+| 36 | VIS-09 | Responsive layouts (reemplazar tamaños fijos) | L |
+| 37 | UXF-01 | Completar UI de sustituciones | M |
+| 38 | UXF-02 | Confirmación en acciones destructivas | S |
+| 39 | UXF-05 | Indicador de cambios sin guardar | M |
+
+### P3 — 26 ítems
+
+| # | ID | Descripción | Esfuerzo |
+|---|---|---|---|
+| 1 | ARQ-07 | Capa anticorrupción para sync (DTOs) | M |
+| 2 | ARQ-09 | Eliminar 5 feature flags huérfanos de settings.py | S |
+| 3 | SEC-18 | Security headers middleware en API | S |
+| 4 | DB-10 | Normalizar campos JSON a tablas (si PostgreSQL) | L |
+| 5 | PERF-04 | .exists() en vez de .count() > 0 | S |
+| 6 | PERF-06 | Reducir setStyleSheet inline (con VIS-02) | L |
+| 7 | CACHE-03 | QPixmapCache para assets UI | S |
+| 8 | RES-02 | Circuit breaker con pybreaker para SFTP/SMTP | M |
+| 9 | RES-04 | Health check con verificación de BD/disco | S |
+| 10 | RES-05 | Graceful shutdown (signal handlers) | S |
+| 11 | API-13 | OpenAPI enrichment (tags, descriptions, examples) | S |
+| 12 | API-14 | WebSocket para progreso de generación guardias | L |
+| 13 | TEST-06 | Mutation testing con mutmut | M |
+| 14 | TEST-07 | Tests regresión UI con pytest-qt | M |
+| 15 | OBS-03 | Métricas de negocio en logs | M |
+| 16 | OBS-05 | RotatingFileHandler (10MB, 5 backups) | S |
+| 17 | OBS-06 | Alertas de error (Sentry o webhook) | M |
+| 18 | A11Y-08 | Tema alto contraste | L |
+| 19 | A11Y-09 | Internacionalización con tr() | XL |
+| 20 | VIS-07 | Tema oscuro | L |
+| 21 | VIS-08 | Animaciones/transiciones (QPropertyAnimation) | M |
+| 22 | VIS-10 | Guía de estilo documentada (DESIGN_SYSTEM.md) | M |
+| 23 | MT-04 | Roles/permisos RBAC (admin/editor/viewer) | L |
+| 24 | UXF-03 | Undo/redo con QUndoStack | L |
+| 25 | UXF-04 | Onboarding wizard para primer uso | M |
+| 26 | SAN-03 | Resolver/eliminar TODO pendiente | S |
+
+### Escala de esfuerzo
+
+| Escala | Horas estimadas |
+|---|---|
+| S (Small) | < 2h |
+| M (Medium) | 2–6h |
+| L (Large) | 6–16h |
+| XL (Extra Large) | 16+h |
+
+---
+
+*Última actualización: 19 de abril de 2026 — Solo ítems pendientes, con instrucciones detalladas para implementación.*
+# Auditoría Integral — Guardias de Patio v5.0.0
+
 > **Fecha**: 19 de abril de 2026
 > **Versión auditada**: v5.0.0 (commit `68b6a79`)
 > **Autor**: Auditoría automatizada + revisión manual
