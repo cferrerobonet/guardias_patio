@@ -50,7 +50,7 @@ def _desencriptar_password(encrypted_password: str) -> str:
     except InvalidToken:
         try:
             return base64.b64decode(encrypted_password.encode("utf-8")).decode("utf-8")
-        except (ValueError, TypeError, OSError) as e:
+        except (ValueError, TypeError, OSError, UnicodeDecodeError):
             return encrypted_password
 
 
@@ -580,25 +580,30 @@ def importar_cursos_escolares(
             if existe:
                 existe.activo = curso.get("activo", False)
                 existe.cerrado = curso.get("cerrado", False)
-                if curso.get("fecha_cierre"):
-                    existe.fecha_cierre = datetime.fromisoformat(curso["fecha_cierre"])
             else:
-                fecha_creacion = (
-                    datetime.fromisoformat(curso["fecha_creacion"])
-                    if curso.get("fecha_creacion")
-                    else datetime.now()
+                anio_inicio = curso.get("anio_inicio")
+                anio_fin = curso.get("anio_fin")
+                if anio_inicio is None or anio_fin is None:
+                    continue
+
+                fecha_inicio = (
+                    date.fromisoformat(curso["fecha_inicio"])
+                    if curso.get("fecha_inicio")
+                    else date(int(anio_inicio), 9, 1)
                 )
-                fecha_cierre = (
-                    datetime.fromisoformat(curso["fecha_cierre"])
-                    if curso.get("fecha_cierre")
-                    else None
+                fecha_fin = (
+                    date.fromisoformat(curso["fecha_fin"])
+                    if curso.get("fecha_fin")
+                    else date(int(anio_fin), 6, 30)
                 )
                 nuevo_curso = CursoEscolar(
                     nombre=nombre,
+                    anio_inicio=int(anio_inicio),
+                    anio_fin=int(anio_fin),
+                    fecha_inicio=fecha_inicio,
+                    fecha_fin=fecha_fin,
                     activo=curso.get("activo", False),
                     cerrado=curso.get("cerrado", False),
-                    fecha_creacion=fecha_creacion,
-                    fecha_cierre=fecha_cierre,
                 )
                 session.add(nuevo_curso)
 

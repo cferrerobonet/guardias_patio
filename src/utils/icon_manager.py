@@ -5,7 +5,18 @@ Este módulo era el gestor de iconos original. Ahora delega en utils.icons
 (implementación unificada). Mantener este alias para no romper imports existentes.
 """
 
+import logging
+from pathlib import Path
+from typing import Optional
+
+from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtGui import QColor, QIcon, QPainter, QPixmap
+from PyQt6.QtSvg import QSvgRenderer
+
 from utils.icons import Icons, get_icon  # noqa: F401
+from core.paths import get_resources_directory
+
+logger = logging.getLogger(__name__)
 
 
 class IconManager:

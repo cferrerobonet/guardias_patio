@@ -70,7 +70,7 @@ def importar_profesores_desde_excel(
         if progress_callback:
             try:
                 progress_callback(porcentaje, mensaje)
-            except (ValueError, TypeError, OSError) as e:
+            except Exception as e:
                 logger.warning(f"Error al reportar progreso: {e}")
 
     resultados = {
@@ -204,7 +204,7 @@ def importar_profesores_desde_excel(
             f"{resultados['existentes']} ya existentes, {resultados['errores']} errores",
         )
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         error_msg = f"Error al procesar archivo: {str(e)}"
         logger.error(error_msg)
         resultados["errores"] += 1
@@ -240,7 +240,7 @@ def importar_profesores_desde_csv(
         if progress_callback:
             try:
                 progress_callback(pct, msg)
-            except (ValueError, TypeError, OSError) as e:
+            except Exception as e:
                 logger.exception("Error en progress_callback: %s", e)
 
     resultados: dict = {
@@ -316,7 +316,7 @@ def importar_profesores_desde_csv(
         session.commit()
         reportar(100, f"✅ {resultados['importados']} nuevos, {resultados['existentes']} ya existentes, {resultados['errores']} errores")
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         error_msg = str(e)
         logger.error(f"Error al importar CSV: {error_msg}")
         resultados["errores"] += 1

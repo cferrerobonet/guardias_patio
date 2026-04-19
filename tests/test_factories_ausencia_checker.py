@@ -78,7 +78,7 @@ def _make_profesor(session, nombre="Profe Test", activo=True):
     return p
 
 
-def _make_ausencia(session, profesor_id, fecha_inicio, fecha_fin, tipo="enfermedad"):
+def _make_ausencia(session, profesor_id, fecha_inicio, fecha_fin, tipo="baja_medica"):
     a = Ausencia(
         profesor_id=profesor_id,
         fecha_inicio=fecha_inicio,

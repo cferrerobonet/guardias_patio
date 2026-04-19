@@ -204,7 +204,7 @@ class TestDataExporterImportHappyPath:
         assert DataExporter.import_from_json(session, p, clear_existing=True) is True
 
     def test_export_with_real_config_and_reimport_returns_false(self, session, tmp_path):
-        """Actualmente el export no incluye anio_inicio_curso y el reimport falla (comportamiento actual)."""
+        """El export incluye anio_inicio_curso y el reimport debe ser exitoso."""
         config = Configuracion(
             anio_inicio_curso=2025,
             fecha_inicio_curso=date(2025, 9, 1),
@@ -220,4 +220,4 @@ class TestDataExporterImportHappyPath:
         out = tmp_path / "exp.json"
         assert DataExporter.export_to_json(session, out) is True
         assert out.exists()
-        assert DataExporter.import_from_json(session, out, clear_existing=True) is False
+        assert DataExporter.import_from_json(session, out, clear_existing=True) is True

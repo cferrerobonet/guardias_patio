@@ -6,6 +6,28 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.10.0] - 2026-04-19
+
+### 🎯 Resumen
+Incremento de cobertura de tests del 54% al 64% añadiendo baterías de tests sobre use cases, servicios, widgets y utilidades.
+
+### ✨ Added
+- `tests/test_forms_extra.py` — RestriccionesWidget, ZonaForm
+- `tests/test_assignment_services.py` — Slot, SlotBuilder, ProfesorFilter, LimpiarGuardiasUseCase, ActualizarLogoUseCase, CursoEscolarEntity
+- `tests/test_use_cases_extra.py` — EliminarProfesorUseCase, EliminarZonaUseCase, ActualizarLogoUseCase (rutas de error)
+- `tests/test_pdf_services.py` — exportar_mes_consolidado, exportar_curso_completo, exportar_profesor_individual_optimizado
+- `tests/test_exportador_import.py` — deserialización, desencriptación, importar_zonas, importar_profesores, importar_configuracion
+- `tests/test_validador_diagnosticador.py` — ResultadoValidacion, ValidadorGuardias, DiagnosticadorGuardias
+- `tests/test_calculador_data_exporter.py` — calcular_dias_lectivos, ajustar_redondeo, DataExporter JSON
+- `tests/test_widgets_services_extra.py` — GestionarAusenciasForm, ProgressDialog, AnalisisEquidadUseCase
+- `tests/test_config_widgets_extra.py` — SMTPConfigWidget, SFTPConfigWidget, ZonaForm extra, LoginDialog
+- `tests/test_perfiles_ausencias_extra.py` — PerfilesUsuarioForm, GestionarAusenciasForm métodos extra
+- `tests/test_use_cases_zona_profesor.py` — CrearZonaUseCase, ActualizarZonaUseCase, ActualizarProfesorUseCase, CalcularCuotasUseCase
+
+### 🧹 Housekeeping
+- Cobertura global: 54% → 64% (+10 pp), suite: ~1050 → 2052 tests.
+
+---
 ## [5.9.8] - 2026-04-19
 
 ### 🎯 Resumen

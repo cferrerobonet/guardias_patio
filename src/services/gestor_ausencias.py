@@ -454,7 +454,7 @@ def reasignar_guardias_automaticamente(
                 f"{profesor_anterior} → {nuevo_profesor.nombre_completo}"
             )
 
-        except (ValueError, TypeError, OSError) as e:
+        except Exception as e:
             logger.error(f"Error al reasignar guardia {guardia.id}: {str(e)}")
             resultados["fallidas"] += 1
             resultados["detalles"].append(

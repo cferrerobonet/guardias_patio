@@ -220,7 +220,7 @@ class ImportExportForm(BaseForm):
             self.resultado_text.setText(mensaje)
             self.mostrar_exito("Datos exportados", "Los datos se exportaron correctamente.")
 
-        except (ValueError, TypeError, OSError) as e:
+        except Exception as e:
             self.manejar_excepcion(e, "exportar datos")
             self.resultado_text.setText(f"Error al exportar: {e}")
 

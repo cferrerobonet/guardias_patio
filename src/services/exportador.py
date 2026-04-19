@@ -259,11 +259,9 @@ class ExportadorDatos:
                         "activo": curso.activo,
                         "cerrado": curso.cerrado,
                         "fecha_creacion": (
-                            curso.fecha_creacion.isoformat() if curso.fecha_creacion else None
+                            curso.created_at.isoformat() if curso.created_at else None
                         ),
-                        "fecha_cierre": (
-                            curso.fecha_cierre.isoformat() if curso.fecha_cierre else None
-                        ),
+                        "fecha_cierre": None,
                     }
                 )
 

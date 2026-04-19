@@ -443,7 +443,7 @@ class TestSyncManagerFlow:
         local_json.write_text(json.dumps({"profesores": [{"id": 1}]}), encoding="utf-8")
 
         session = MagicMock()
-        session.query.return_value.count.return_value = 0
+        session.query.return_value.first.return_value = None  # BD vacía
 
         with (
             patch("sync.sync_manager._count_json_records", return_value=1),

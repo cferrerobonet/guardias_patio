@@ -697,7 +697,7 @@ class WorkerThread(QThread):
         except InterruptedError as e:
             # Cancelación del usuario
             self.error.emit(e)
-        except (ValueError, TypeError, OSError) as e:
+        except Exception as e:
             # Log del error con traceback completo
             import traceback
 

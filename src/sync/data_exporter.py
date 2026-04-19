@@ -24,6 +24,7 @@ from infrastructure.database.models import (
     Profesor,
     Zona,
 )
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -402,6 +403,7 @@ class DataExporter:
                 data["configuracion"].append(
                     {
                         "id": c.id,
+                        "anio_inicio_curso": c.anio_inicio_curso,
                         "fecha_inicio_curso": DataExporter._serialize_date(c.fecha_inicio_curso),
                         "fecha_fin_curso": DataExporter._serialize_date(c.fecha_fin_curso),
                         "hora_recreo1_manana": c.hora_recreo1_manana.isoformat()
@@ -720,6 +722,7 @@ class DataExporter:
                     # Crear nueva
                     config = Configuracion(
                         id=c_data["id"],
+                        anio_inicio_curso=c_data.get("anio_inicio_curso"),
                         fecha_inicio_curso=DataExporter._parse_date(c_data["fecha_inicio_curso"]),
                         fecha_fin_curso=DataExporter._parse_date(c_data["fecha_fin_curso"]),
                         hora_recreo1_manana=DataExporter._parse_time(
