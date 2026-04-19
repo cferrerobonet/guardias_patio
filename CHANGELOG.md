@@ -6,6 +6,18 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.9.2] - 2026-04-19
+
+### 🎯 Resumen
+Cierre documental de DB-08 al verificar que la inconsistencia `archivado/cerrado` ya estaba resuelta por migración previa.
+
+### Fixed
+- **DB-08**: marcado como ✅ RESUELTO (pre-existente) en auditoría.
+
+### Audit
+- `docs/AUDITORIA_INTEGRAL_2026.md`: DB-08 actualizado en la sección de hallazgos y en el roadmap P2.
+
+---
 ## [5.9.1] - 2026-04-19
 
 ### 🎯 Resumen

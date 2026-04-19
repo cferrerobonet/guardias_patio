@@ -1585,7 +1585,7 @@ No hay constraints para: turno (M/T), tipo ausencia, recreo >= 1.
 ### ~~DB-07 — `datetime.utcnow` deprecated (P2)~~ ✅ RESUELTO (pre-existente)
 No hay ninguna ocurrencia de `datetime.utcnow()` en `src/`. Verificado con `grep -rn "utcnow" src/`.
 
-### DB-08 — Inconsistencia `cerrado` vs `archivado` (P2)
+### ~~DB-08 — Inconsistencia `cerrado` vs `archivado` (P2)~~ ✅ RESUELTO (pre-existente)
 ORM define estado `cerrado`, migración crea `archivado`.
 
 **Acción**: Unificar nomenclatura + migración.
@@ -2215,7 +2215,7 @@ Fase 4 — Frontend Web (P2)
 | 11 | DB-05 | ~~CheckConstraints~~ ✅ RESUELTO v5.2.0 | S |
 | 12 | DB-06 | ~~Índices faltantes~~ ✅ RESUELTO (pre-existente) | S |
 | 13 | DB-07 | ~~datetime.utcnow deprecated~~ ✅ RESUELTO (pre-existente) | S |
-| 14 | DB-08 | Inconsistencia cerrado/archivado | S |
+| 14 | DB-08 | ~~Inconsistencia cerrado/archivado~~ ✅ RESUELTO (pre-existente) | S |
 | 15 | DB-09 | ~~Locks en db_manager~~ ✅ RESUELTO v5.1.2 | S |
 | 16 | DB-11 | ~~Triple init BD~~ ✅ RESUELTO v5.9.1 | M |
 | 17 | DB-13 | Backup/restore automático | L |
