@@ -1,6 +1,6 @@
-# Auditoría Integral — Guardias de Patio v5.2.1
+# Auditoría Integral — Guardias de Patio v5.4.0
 
-> **Fecha**: 19 de abril de 2026 · **Versión**: v5.2.1 · **Tests**: 1.342 passing · **Coverage**: 47,81%
+> **Fecha**: 19 de abril de 2026 · **Versión**: v5.4.0 · **Tests**: 1.342 passing · **Coverage**: 47,81%
 >
 > **SOLO ÍTEMS PENDIENTES** — Los 73+ ítems resueltos (v3.7.0–v5.0.0) han sido eliminados de este documento.
 > Cada ítem incluye instrucciones detalladas para que un modelo de IA pueda implementarlo sin ambigüedad.
@@ -299,23 +299,9 @@ os.chmod(users_json_path, 0o600)
 
 ---
 
-### SEC-17 — ~30 `print()` en funciones diagnóstico (P2)
+### ~~SEC-17 — ~30 `print()` en funciones diagnóstico (P2)~~ ✅ RESUELTO (pre-existente)
 
-**Problema**: ~30 print() reales en producción, concentrados en 2 archivos de diagnóstico:
-
-| Archivo | Líneas | Función |
-|---|---|---|
-| `src/database/db_manager.py` | L738, L771-785 | `print_pool_status()` |
-| `src/utils/cache.py` | L340-341, L375, L380, L420, L469-506, L519 | `print_cache_report()`, `print_stats()` |
-
-**Nota**: Muchos otros `print()` detectados en el codebase son ejemplos en docstrings (`>>> print(...)`) — NO tocarlos.
-
-**Cómo resolver**:
-1. En `src/database/db_manager.py`: Reemplazar `print(...)` por `logger.debug(...)` en la función `print_pool_status()`.
-2. En `src/utils/cache.py`: Reemplazar `print(...)` por `logger.debug(...)` en `print_cache_report()` y `print_stats()`.
-3. Importar `from src.core.logging import get_logger` y crear `logger = get_logger(__name__)` al inicio de cada archivo si no existe.
-
-**Verificación**: `grep -rn "^\s*print(" src/database/db_manager.py src/utils/cache.py` debe devolver 0.
+Verificado: todos los `print()` en `db_manager.py` y `cache.py` son ejemplos en docstrings (`>>> print(...)`). Las implementaciones reales ya usan `logger.debug()`.
 
 ---
 
@@ -1317,7 +1303,7 @@ Mostrar solo si no hay cursos en la BD.
 | 4 | TEST-03 | Subir coverage de 47,81% a 70% | XL |
 | 5 | A11Y-01 | `setAccessibleName` en todos los widgets interactivos | L |
 | 6 | A11Y-02 | `setTabOrder` en todos los formularios y diálogos | M |
-| 7 | A11Y-03 | `QValidator` en todos los campos de formularios | L |
+| 7 | ~~A11Y-03~~ | ~~`QValidator` en todos los campos de formularios~~ ✅ RESUELTO v5.3.0 | L |
 | 8 | VIS-01 | ~~Crear sistema de design tokens centralizado ~~ ✅ RESUELTO v5.1.0| M |
 | 9 | VIS-02 | ~~QSS global, eliminar `setStyleSheet` inline ~~ ✅ RESUELTO v5.1.0| XL |
 | 10 | DB-12 | Diseñar migración SQLite → PostgreSQL multi-tenant | L |
@@ -1332,7 +1318,7 @@ Mostrar solo si no hay cursos en la BD.
 | 4 | ARQ-06 | Migrar imports de ui_styles.py a nuevo sistema temas | M |
 | 5 | ARQ-08 | ~~Completar pyproject.toml ([project], [build-system]) ~~ ✅ RESUELTO v5.1.0| S |
 | 6 | SEC-12 | ~~chmod 600 en users.json al crear/modificar~~ ✅ RESUELTO v5.0.x | S |
-| 7 | SEC-14 | Validar username con regex en backend (UserAuth) | S |
+| 7 | ~~SEC-14~~ | ~~Validar username con regex en backend (UserAuth)~~ ✅ RESUELTO v5.4.0 | S |
 | 8 | SEC-17 | ~~Reemplazar ~30 print() por logger en db_manager.py y cache.py ~~ ✅ RESUELTO v5.1.0| S |
 | 9 | DB-05 | ~~Añadir CheckConstraints + migración Alembic~~ ✅ RESUELTO v5.2.0 | S |
 | 10 | DB-09 | ~~Añadir threading.Lock en db_manager.py~~ ✅ RESUELTO v5.1.2 | S |
@@ -1344,16 +1330,16 @@ Mostrar solo si no hay cursos en la BD.
 | 16 | CACHE-01 | Implementar cachetools.TTLCache para queries frecuentes | M |
 | 17 | CACHE-02 | Cachear obtener_configuracion con TTL 60s | S |
 | 18 | ASYNC-01 | FastAPI async (cuando se migre a PostgreSQL) | XL |
-| 19 | ASYNC-02 | Timeout robusto en conexiones SFTP (transport.set_keepalive) | S |
+| 19 | ~~ASYNC-02~~ | ~~Timeout robusto en conexiones SFTP (transport.set_keepalive)~~ ✅ RESUELTO v5.2.1 | S |
 | 20 | API-09 | Paginación en endpoints de guardias, estadísticas | M |
-| 21 | API-10 | Documentar estrategia versionado + header API-Version | S |
-| 22 | API-12 | response_model Pydantic en todos los endpoints | M |
-| 23 | API-15 | Middleware logging estructurado con X-Request-ID | M |
+| 21 | ~~API-10~~ | ~~Documentar estrategia versionado + header API-Version~~ ✅ RESUELTO v5.2.1 | S |
+| 22 | ~~API-12~~ | ~~response_model Pydantic en todos los endpoints~~ ✅ RESUELTO v5.2.1 | M |
+| 23 | ~~API-15~~ | ~~Middleware logging estructurado con X-Request-ID~~ ✅ RESUELTO v5.2.1 | M |
 | 24 | TEST-04 | Tests SFTP/SMTP con Paramiko/smtplib mockeado | L |
 | 25 | TEST-05 | Tests integración BD con SQLite in-memory | L |
-| 26 | OBS-04 | Request tracing (junto con API-15) | M |
+| 26 | ~~OBS-04~~ | ~~Request tracing (junto con API-15)~~ ✅ RESUELTO v5.2.1 | M |
 | 27 | A11Y-04 | Auditar contraste colores WCAG 2.1 | M |
-| 28 | A11Y-05 | Atajos de teclado para acciones principales | M |
+| 28 | ~~A11Y-05~~ | ~~Atajos de teclado para acciones principales~~ ✅ RESUELTO v5.3.0 | M |
 | 29 | A11Y-06 | Feedback QAccessible para screen readers | M |
 | 30 | A11Y-07 | Tamaños fuente relativos (no hardcoded) | M |
 | 31 | A11Y-10 | DPI awareness + reemplazar setFixedSize por policies | M |
@@ -1363,8 +1349,8 @@ Mostrar solo si no hay cursos en la BD.
 | 35 | VIS-06 | Escala de espaciado con Spacing tokens | S |
 | 36 | VIS-09 | Responsive layouts (reemplazar tamaños fijos) | L |
 | 37 | UXF-01 | Completar UI de sustituciones | M |
-| 38 | UXF-02 | Confirmación en acciones destructivas | S |
-| 39 | UXF-05 | Indicador de cambios sin guardar | M |
+| 38 | ~~UXF-02~~ | ~~Confirmación en acciones destructivas~~ ✅ RESUELTO v5.0.x | S |
+| 39 | ~~UXF-05~~ | ~~Indicador de cambios sin guardar~~ ✅ RESUELTO v5.3.0 | M |
 
 ### P3 — 26 ítems
 
@@ -1372,20 +1358,20 @@ Mostrar solo si no hay cursos en la BD.
 |---|---|---|---|
 | 1 | ARQ-07 | Capa anticorrupción para sync (DTOs) | M |
 | 2 | ARQ-09 | ~~Eliminar 5 feature flags huérfanos de settings.py ~~ ✅ RESUELTO v5.1.0| S |
-| 3 | SEC-18 | Security headers middleware en API | S |
+| 3 | ~~SEC-18~~ | ~~Security headers middleware en API~~ ✅ RESUELTO v5.2.1 | S |
 | 4 | DB-10 | Normalizar campos JSON a tablas (si PostgreSQL) | L |
-| 5 | PERF-04 | .exists() en vez de .count() > 0 | S |
+| 5 | ~~PERF-04~~ | ~~.exists() en vez de .count() > 0~~ ✅ RESUELTO v5.4.0 | S |
 | 6 | PERF-06 | Reducir setStyleSheet inline (con VIS-02) | L |
-| 7 | CACHE-03 | QPixmapCache para assets UI | S |
-| 8 | RES-02 | Circuit breaker con pybreaker para SFTP/SMTP | M |
-| 9 | RES-04 | Health check con verificación de BD/disco | S |
+| 7 | ~~CACHE-03~~ | ~~QPixmapCache para assets UI~~ ✅ RESUELTO v5.2.1 | S |
+| 8 | ~~RES-02~~ | ~~Circuit breaker con pybreaker para SFTP/SMTP~~ ✅ RESUELTO v5.2.1 | M |
+| 9 | ~~RES-04~~ | ~~Health check con verificación de BD/disco~~ ✅ RESUELTO (pre-existente) | S |
 | 10 | RES-05 | ~~Graceful shutdown (signal handlers) ~~ ✅ RESUELTO v5.1.0| S |
-| 11 | API-13 | OpenAPI enrichment (tags, descriptions, examples) | S |
+| 11 | ~~API-13~~ | ~~OpenAPI enrichment (tags, descriptions, examples)~~ ✅ RESUELTO v5.4.0 | S |
 | 12 | API-14 | WebSocket para progreso de generación guardias | L |
 | 13 | TEST-06 | Mutation testing con mutmut | M |
 | 14 | TEST-07 | Tests regresión UI con pytest-qt | M |
 | 15 | OBS-03 | Métricas de negocio en logs | M |
-| 16 | OBS-05 | RotatingFileHandler (10MB, 5 backups) | S |
+| 16 | ~~OBS-05~~ | ~~RotatingFileHandler (10MB, 5 backups)~~ ✅ RESUELTO (pre-existente) | S |
 | 17 | OBS-06 | Alertas de error (Sentry o webhook) | M |
 | 18 | A11Y-08 | Tema alto contraste | L |
 | 19 | A11Y-09 | Internacionalización con tr() | XL |
@@ -1408,7 +1394,7 @@ Mostrar solo si no hay cursos en la BD.
 
 ---
 
-*Última actualización: 19 de abril de 2026 — Solo ítems pendientes, con instrucciones detalladas para implementación.*
+*Última actualización: 19 de abril de 2026 (v5.4.0) — Solo ítems pendientes, con instrucciones detalladas para implementación.*
 # Auditoría Integral — Guardias de Patio v5.0.0
 
 > **Fecha**: 19 de abril de 2026
