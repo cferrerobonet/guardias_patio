@@ -6,6 +6,21 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.10.0] - 2026-04-19
+
+### 🎯 Resumen
+Refuerzo de cobertura en la capa de sincronización con tests de `UserAuth`, `SessionLock`, `SyncManager` y `backend_factory`.
+
+### ✨ Added
+- `tests/test_sync_auth_lock_factory.py`: 47 tests
+  - `UserAuth`: policy, registro, autenticación (incluye lockout), migración SHA-256 legacy a bcrypt
+  - `SessionLock` y `SessionLockManager`: adquisición/liberación de lock y heartbeat
+  - `backend_factory`: rutas local/sftp, validaciones y fallback
+  - `SyncManager`: flujos `sync_on_startup`, `sync_on_shutdown`, metadata y `manual_sync`
+- Tests totales: 1143 → 1190
+- Cobertura: 43.55% → 44.96%
+
+---
 ## [4.9.0] - 2026-04-19
 
 ### 🎯 Resumen

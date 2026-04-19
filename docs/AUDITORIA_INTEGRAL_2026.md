@@ -4,7 +4,7 @@
 **Versión analizada**: 3.2.1 (actualizado con correcciones v3.1.0)  
 **Alcance**: Análisis completo de arquitectura, seguridad, base de datos, performance, UX/UI, testing, observabilidad, escalabilidad, resiliencia y buenas prácticas.
 
-## ⚡ ESTADO ACTUAL (v4.9.0)
+## ⚡ ESTADO ACTUAL (v4.10.0)
 
 **Completados**: 63/103 items (61.2%)
 **En Progreso**: 1 (TEST-01 cobertura parcial)
@@ -24,6 +24,7 @@
 - ✅ **v4.7.0** — joinedload ProfesorRepository, validación username vacío, BD retry con backoff, correlation IDs FastAPI, fix `_ensure_connected`
 - ✅ **v4.8.0** — 39 tests nuevos (perfiles, iCalendar, cuotas), cobertura 16.4% → 41.5%, 1080 tests totales
 - ✅ **v4.9.0** — 63 tests nuevos (estadísticas, validador, importadores, data exporter), cobertura 41.5% → 43.55%, 1143 tests totales
+- ✅ **v4.10.0** — 47 tests nuevos (sync/auth/lock/factory), cobertura 43.55% → 44.96%, 1190 tests totales
 ### Próximas Fases Recomendadas
 1. **v4.6.0 (Resilencia)** — tenacity retry SFTP, circuit breaker, cachetools
 
@@ -69,7 +70,7 @@
 | Async | GUI bien resuelto, SFTP bloqueante | ★★★☆☆ |
 | Escalabilidad | Diseñada para uso local, no escala horizontalmente | ★★☆☆☆ |
 | API REST | Solo lectura, sin auth, con fugas de info | ★★☆☆☆ |
-| Testing | ~~990 tests, 39.75% coverage~~ 1143 tests, 43.55% coverage | ★★★☆☆ |
+| Testing | ~~990 tests, 39.75% coverage~~ 1190 tests, 44.96% coverage | ★★★☆☆ |
 | Observabilidad | Prometheus + structlog bien diseñados | ★★★★☆ |
 | UX/UI | Funcional, sin accesibilidad formal | ★★★☆☆ |
 | Control de acceso | ✅ bcrypt + Fernet, sin autorización granular | ★★★☆☆ |
@@ -448,7 +449,7 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 
 ### 10.1 Estado Actual
 
-- **1143 tests**, 43.55% coverage
+- **1190 tests**, 44.96% coverage
 - **52 archivos de test** + `tests/utils/`
 - Markers: `unit`, `integration`, `ui`, `slow`, `db`, `multicurso`
 - pytest-qt para GUI, pytest-mock, coverage con branch
@@ -466,7 +467,7 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 
 | ID | Hallazgo | Severidad |
 |---|---|---|
-| TEST-01 | ~~**39.75% coverage**~~ **43.55% coverage (v4.9.0)** — en progreso, target 70% | ALTA | ✅ PARCIAL v4.9.0 |
+| TEST-01 | ~~**39.75% coverage**~~ **44.96% coverage (v4.10.0)** — en progreso, target 70% | ALTA | ✅ PARCIAL v4.10.0 |
 | TEST-02 | ~~**0 tests para SFTP/SMTP**~~ Cobertura inicial añadida (v3.7.0+) | MEDIA |
 | TEST-03 | ~~**0 tests para API REST**~~ Cobertura inicial añadida (v3.7.0+) | MEDIA |
 | TEST-04 | GUI tests solo verifican inicialización, no interacción | MEDIA |
@@ -1187,7 +1188,7 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 
 | ID | Sugerencia | Prioridad | Detalle |
 |---|---|---|---|
-| MEJ-09 | ~~**Coverage 39.75% → target 70%**~~ **43.55% (v4.9.0), sigue en progreso** | ALTA | Priorizar tests en: servicios de asignación, exportadores, sync, API |
+| MEJ-09 | ~~**Coverage 39.75% → target 70%**~~ **44.96% (v4.10.0), sigue en progreso** | ALTA | Priorizar tests en: servicios de asignación, exportadores, sync, API |
 | MEJ-10 | **ProfesorMapper: 130+ líneas de parsing defensivo** | MEDIA | Normalizar campos JSON a tablas eliminaría este código frágil |
 | MEJ-11 | **Añadir `py.typed` marker y tipado estricto progresivo** | BAJA | Ya existe `py.typed` y mypy strict en dominio. Expandir a application y services |
 
