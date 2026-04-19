@@ -801,7 +801,7 @@ def test_crear_profesor(db_session):
 
 ---
 
-### TEST-06 — Sin mutation testing (P3)
+### ~~TEST-06 — Sin mutation testing (P3)~~ ✅ RESUELTO v5.9.7
 
 **Cómo resolver**: `pip install mutmut && mutmut run --paths-to-mutate=src/domain/`
 
@@ -1368,7 +1368,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | 10 | RES-05 | ~~Graceful shutdown (signal handlers) ~~ ✅ RESUELTO v5.1.0| S |
 | 11 | ~~API-13~~ | ~~OpenAPI enrichment (tags, descriptions, examples)~~ ✅ RESUELTO v5.4.0 | S |
 | 12 | API-14 | WebSocket para progreso de generación guardias | L |
-| 13 | TEST-06 | Mutation testing con mutmut | M |
+| 13 | TEST-06 | ~~Mutation testing con mutmut~~ ✅ RESUELTO v5.9.7 | M |
 | 14 | TEST-07 | Tests regresión UI con pytest-qt | M |
 | 15 | OBS-03 | Métricas de negocio en logs | M |
 | 16 | ~~OBS-05~~ | ~~RotatingFileHandler (10MB, 5 backups)~~ ✅ RESUELTO (pre-existente) | S |
@@ -1789,7 +1789,7 @@ Tests unitarios mockean repositorios pero no verifican queries reales.
 
 **Acción**: Tests de integración con SQLite in-memory.
 
-### TEST-06 — Sin mutation testing (P3)
+### ~~TEST-06 — Sin mutation testing (P3)~~ ✅ RESUELTO v5.9.7
 No se verifica calidad de los tests existentes.
 
 **Acción**: Evaluar `mutmut` para mutation testing.

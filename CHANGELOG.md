@@ -6,6 +6,19 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.9.7] - 2026-04-19
+
+### 🎯 Resumen
+TEST-06 resuelto con integración de mutation testing mediante `mutmut`.
+
+### ✨ Added
+- Dependencia `mutmut>=2.4.4` añadida en `requirements.txt` y `pyproject.toml`.
+- Nuevo comando `make mutation` en `Makefile` para ejecutar mutation testing sobre `src/domain`.
+
+### Audit
+- `docs/AUDITORIA_INTEGRAL_2026.md`: TEST-06 marcado como ✅ RESUELTO v5.9.7 en secciones y roadmap.
+
+---
 ## [5.9.6] - 2026-04-19
 
 ### 🎯 Resumen

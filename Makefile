@@ -1,4 +1,4 @@
-.PHONY: help install icon app dmg clean test windows
+.PHONY: help install icon app dmg clean test mutation windows
 
 help:
 	@echo "🛠️  Guardias de Patio - Comandos disponibles:"
@@ -18,6 +18,7 @@ help:
 	@echo "  ────────────────────────────────────────"
 	@echo "  make clean       - Limpiar archivos de build"
 	@echo "  make test        - Ejecutar tests"
+	@echo "  make mutation    - Ejecutar mutation testing (mutmut)"
 	@echo "  make run         - Ejecutar aplicación"
 	@echo ""
 
@@ -49,6 +50,10 @@ clean:
 test:
 	@echo "🧪 Ejecutando tests..."
 	pytest tests/ -v
+
+mutation:
+	@echo "🧬 Ejecutando mutation testing con mutmut..."
+	mutmut run --paths-to-mutate=src/domain
 
 run:
 	@echo "🚀 Ejecutando aplicación..."
