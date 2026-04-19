@@ -382,7 +382,7 @@ Buscar estos campos en `src/infrastructure/database/models.py`.
 
 ---
 
-### DB-11 — Triple estrategia de init de BD (P2)
+### ~~DB-11 — Triple estrategia de init de BD (P2)~~ ✅ RESUELTO v5.9.1
 
 **Problema**: `src/database/db_manager.py` usa 3 mecanismos para inicializar la BD:
 
@@ -1322,7 +1322,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | 8 | SEC-17 | ~~Reemplazar ~30 print() por logger en db_manager.py y cache.py ~~ ✅ RESUELTO v5.1.0| S |
 | 9 | DB-05 | ~~Añadir CheckConstraints + migración Alembic~~ ✅ RESUELTO v5.2.0 | S |
 | 10 | DB-09 | ~~Añadir threading.Lock en db_manager.py~~ ✅ RESUELTO v5.1.2 | S |
-| 11 | DB-11 | Unificar init BD en Alembic (eliminar create_all + SQL directo) | M |
+| 11 | DB-11 | ~~Unificar init BD en Alembic (eliminar create_all + SQL directo)~~ ✅ RESUELTO v5.9.1 | M |
 | 12 | DB-13 | Implementar backup/restore automático | L |
 | 13 | PERF-02 | ~~Eager loading (joinedload) en queries de listados~~ ✅ RESUELTO v5.2.0 | M |
 | 14 | ~~PERF-03~~ | ~~Mover filtro disponibilidad de Python a SQL~~ ✅ RESUELTO v5.6.0 | M |
@@ -1600,7 +1600,7 @@ SQLite no soporta escritura concurrente. Sin locks explícitos para multi-thread
 
 **Acción**: Evaluar normalización a tablas auxiliares (priorizar si migra a PostgreSQL).
 
-### DB-11 — Triple estrategia de init (P2)
+### ~~DB-11 — Triple estrategia de init (P2)~~ ✅ RESUELTO v5.9.1
 Alembic + `create_all` + SQL directo coexisten para inicializar BD.
 
 **Acción**: Unificar en Alembic como única fuente de verdad.
@@ -2194,7 +2194,7 @@ Fase 4 — Frontend Web (P2)
 | 13 | DB-12 | Diseñar migración SQLite → PostgreSQL | L |
 | 14 | TEST-03 | Coverage al 70% | XL |
 | 15 | SAN-01 | ~~Except Exception → excepciones específicas (fase 1)~~ ✅ RESUELTO (pre-existente) | M |
-| 16 | DB-11 | Unificar init BD en Alembic | M |
+| 16 | DB-11 | ~~Unificar init BD en Alembic~~ ✅ RESUELTO v5.9.1 | M |
 | 17 | A11Y-10 | ~~DPI awareness~~ ✅ RESUELTO (pre-existente) | M |
 | 18 | ARQ-08 | ~~Completar pyproject.toml ~~ ✅ RESUELTO v5.1.0| S |
 
@@ -2217,7 +2217,7 @@ Fase 4 — Frontend Web (P2)
 | 13 | DB-07 | ~~datetime.utcnow deprecated~~ ✅ RESUELTO (pre-existente) | S |
 | 14 | DB-08 | Inconsistencia cerrado/archivado | S |
 | 15 | DB-09 | ~~Locks en db_manager~~ ✅ RESUELTO v5.1.2 | S |
-| 16 | DB-11 | Triple init BD | M |
+| 16 | DB-11 | ~~Triple init BD~~ ✅ RESUELTO v5.9.1 | M |
 | 17 | DB-13 | Backup/restore automático | L |
 | 18 | PERF-02 | ~~Eager loading~~ ✅ RESUELTO v5.2.0 | M |
 | 19 | PERF-03 | ~~Filtro disponibilidad a SQL~~ ✅ RESUELTO v5.6.0 | M |

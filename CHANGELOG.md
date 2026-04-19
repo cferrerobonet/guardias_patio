@@ -6,6 +6,23 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.9.1] - 2026-04-19
+
+### 🎯 Resumen
+DB-11 resuelto: inicialización de base de datos unificada en Alembic como fuente única de verdad.
+
+### Changed
+- `src/database/db_manager.py` elimina `create_all()` y SQL directo del flujo de inicialización de usuario.
+- `initialize_user_database()` ahora exige migración Alembic exitosa y falla explícitamente si no puede migrar.
+- `create_user_database()` migra exclusivamente con Alembic (`upgrade head`) y devuelve error claro si falla.
+
+### Fixed
+- **DB-11**: resuelta la triple estrategia de init (`Alembic + create_all + SQL directo`) en favor de solo Alembic.
+
+### Audit
+- `docs/AUDITORIA_INTEGRAL_2026.md`: DB-11 marcado como ✅ RESUELTO v5.9.1 en secciones y roadmap.
+
+---
 ## [5.9.0] - 2026-04-20
 
 ### 🎯 Resumen
