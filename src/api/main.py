@@ -156,7 +156,7 @@ def root():
     }
 
 
-@app.get("/health")
+@app.get("/health", tags=["sistema"], summary="Estado del sistema")
 def health_check():
     try:
         checker = get_health_checker()

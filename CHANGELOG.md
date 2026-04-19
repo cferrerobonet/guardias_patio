@@ -6,6 +6,22 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.4.0] - 2026-04-19
+
+### 🎯 Resumen
+Hardening de seguridad backend, OpenAPI enrichment y optimización puntual de queries.
+
+### ✨ Added
+- **SEC-14**: Validación regex `^[a-zA-Z0-9._-]{3,50}$` en `crear_perfil.py` para rechazar usernames con path traversal y caracteres especiales.
+- **API-13**: `summary=` añadido a todos los endpoints REST; `/health` etiquetado en tag `sistema`.
+
+### Changed
+- **PERF-04**: `sync_manager.py` usa `first() is None` en vez de `count() == 0` para comprobar BD vacía.
+
+### 🧹 Housekeeping
+- Verificado que RES-04 (health con DB check), OBS-05 (RotatingFileHandler) y SEC-17 (print en docstrings) ya estaban resueltos previamente.
+
+---
 ## [5.3.0] - 2026-04-19
 
 ### 🎯 Resumen

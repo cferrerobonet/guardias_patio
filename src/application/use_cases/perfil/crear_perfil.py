@@ -1,5 +1,7 @@
 """Use Case: Crear un nuevo perfil de usuario."""
 
+import re
+
 from core.exceptions import ValidationError
 from database.db_manager import create_user_database, get_current_user_id
 from sync.sync_manager import UserAuth
@@ -44,6 +46,12 @@ class CrearPerfilUseCase:
 
         username = dto.username.strip()
         email = dto.email.strip()
+
+        if not re.match(r"^[a-zA-Z0-9._-]{3,50}$", username):
+            raise ValidationError(
+                "El username solo puede contener letras, números, puntos, guiones "
+                "y guiones bajos (3-50 caracteres)"
+            )
 
         # Verificar que no exista
         if username in self.user_auth.users:

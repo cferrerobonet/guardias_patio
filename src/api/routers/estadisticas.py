@@ -44,7 +44,7 @@ class EstadisticasPorProfesorResponse(BaseModel):
     total_profesores: int
 
 
-@router.get("/resumen", response_model=ResumenEstadisticasResponse)
+@router.get("/resumen", response_model=ResumenEstadisticasResponse, summary="Resumen estadístico de guardias")
 def obtener_resumen(
     configuracion_id: int,
     fecha_inicio: Optional[date] = None,
@@ -122,7 +122,7 @@ def obtener_resumen(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/por-profesor", response_model=EstadisticasPorProfesorResponse)
+@router.get("/por-profesor", response_model=EstadisticasPorProfesorResponse, summary="Estadísticas por profesor")
 def estadisticas_por_profesor(configuracion_id: int, db: Session = Depends(get_db)):
     """
     Obtiene estadísticas de guardias por profesor.

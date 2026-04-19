@@ -58,7 +58,7 @@ def _build_error(code: str, message: str, status_code: int) -> HTTPException:
     )
 
 
-@router.get("", response_model=PaginatedProfesoresResponse)
+@router.get("", response_model=PaginatedProfesoresResponse, summary="Listar profesores")
 def listar_profesores(
     activo: Optional[bool] = None,
     turno: Optional[str] = None,
@@ -105,7 +105,7 @@ def listar_profesores(
         raise _build_error("internal_error", str(e), 500)
 
 
-@router.get("/{profesor_id}", response_model=ProfesorResponse)
+@router.get("/{profesor_id}", response_model=ProfesorResponse, summary="Obtener profesor por ID")
 def obtener_profesor(profesor_id: int, db: Session = Depends(get_db)):
     """
     Obtiene un profesor por ID.

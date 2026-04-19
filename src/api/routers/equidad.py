@@ -26,7 +26,7 @@ class AnalisisEquidadApiResponse(BaseModel):
     mensaje: str
 
 
-@router.get("", response_model=AnalisisEquidadApiResponse)
+@router.get("", response_model=AnalisisEquidadApiResponse, summary="Análisis de equidad")
 def analizar_equidad(
     configuracion_id: int,
     umbral_desbalance: float = 0.15,

@@ -496,7 +496,7 @@ class SyncManager:
         if session and local_json_path.exists() and _count_json_records(local_json_path) > 0:
             try:
                 from infrastructure.database.models import Profesor
-                db_empty = session.query(Profesor).count() == 0
+                db_empty = session.query(Profesor).first() is None
                 if db_empty:
                     from sync.data_exporter import DataExporter
                     logger.info("📊 BD vacía con JSON local disponible — importando datos...")

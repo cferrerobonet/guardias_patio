@@ -257,18 +257,9 @@ os.chmod(users_json_path, 0o600)
 
 ---
 
-### SEC-14 — Username sin validación backend (P2)
+### ~~SEC-14 — Username sin validación backend (P2)~~ ✅ RESUELTO v5.4.0
 
-**Problema**: El frontend (`src/presentation/forms/login_dialog.py` L68-72) tiene `QRegularExpressionValidator` para username en el registro. Pero el backend (`UserAuth` en `src/sync/sync_manager.py`) no valida el username recibido.
-
-**Cómo resolver**: En el método de `UserAuth` que crea usuarios (buscar `register`, `create_user` o similar en `src/sync/sync_manager.py`), añadir al inicio:
-```python
-import re
-if not re.match(r"^[a-zA-Z0-9._-]{3,50}$", username):
-    raise ValueError("Username debe contener solo letras, números, puntos, guiones y guiones bajos (3-50 chars)")
-```
-
-**Verificación**: Intentar crear usuario con username `"../../etc"` debe fallar.
+`crear_perfil.py`: añadida validación con `re.match(r"^[a-zA-Z0-9._-]{3,50}$", username)` — rechaza path traversal y caracteres especiales.
 
 ---
 
@@ -497,13 +488,9 @@ disponibles = session.query(Profesor).filter(
 
 ---
 
-### PERF-04 — `.count() > 0` en vez de `.exists()` (P3)
+### ~~PERF-04 — `.count() > 0` en vez de `.exists()` (P3)~~ ✅ RESUELTO v5.4.0
 
-**Problema**: Queries que solo necesitan saber si hay resultados usan `.count()` (cuenta todos) en vez de `.exists()` (para al primero).
-
-**Cómo encontrar**: `grep -rn "\.count()" src/services/ src/infrastructure/`
-
-**Cómo resolver**: Reemplazar `session.query(X).filter(...).count() > 0` por `session.query(session.query(X).filter(...).exists()).scalar()` o `session.query(X).filter(...).first() is not None`.
+`sync_manager.py:499`: cambiado `session.query(Profesor).count() == 0` por `session.query(Profesor).first() is None`.
 
 ---
 
@@ -630,24 +617,9 @@ Integrado `pybreaker` en `src/sync/sync_manager.py` con circuit breaker para la 
 
 ---
 
-### RES-04 — Health check sin verificar dependencias (P3)
+### ~~RES-04 — Health check sin verificar dependencias (P3)~~ ✅ RESUELTO (pre-existente)
 
-**Problema**: `GET /health` en `src/api/main.py` devuelve versión pero no verifica BD ni disco.
-
-**Cómo resolver**: En `src/api/main.py`, modificar el endpoint `/health`:
-```python
-@app.get("/health")
-def health_check():
-    checks = {"version": get_settings().app_version, "status": "ok"}
-    # Check BD
-    try:
-        session = get_db_session()
-        session.execute(text("SELECT 1"))
-        checks["database"] = "ok"
-    except Exception:
-        checks["database"] = "error"
-        checks["status"] = "degraded"
-    return checks
+`/health` ya usa `get_health_checker()` de `src/core/observability/health.py` que verifica BD, caché, configuración y recursos del sistema.
 ```
 
 ---
@@ -741,16 +713,9 @@ Añadidos `response_model` en endpoints de cuotas, equidad, conteo de guardias, 
 
 ---
 
-### API-13 — Sin OpenAPI enrichment (P3)
+### ~~API-13 — Sin OpenAPI enrichment (P3)~~ ✅ RESUELTO v5.4.0
 
-**Cómo resolver**: Añadir metadata a cada endpoint:
-```python
-@router.get("/", summary="Listar profesores", description="Devuelve lista paginada de profesores", tags=["Profesores"])
-```
-Y configurar en `src/api/main.py`:
-```python
-app = FastAPI(title="Guardias de Patio API", version="1.0.0", description="API para gestión de guardias de patio")
-```
+`summary=` añadido a todos los endpoints REST (`profesores`, `guardias`, `cuotas`, `equidad`, `estadísticas`). `/health` añadido a tag `sistema`. FastAPI ya tenía `title` y `description`.
 
 ---
 
@@ -881,21 +846,15 @@ logger.info("guardias_generadas", extra={"curso_id": curso.id, "cantidad": len(g
 
 ---
 
-### OBS-04 — Sin request tracing en API (P2)
+### ~~OBS-04 — Sin request tracing en API (P2)~~ ✅ RESUELTO v5.2.1
 
-**Ya incluido en API-15** (middleware de logging con X-Request-ID). Implementar junto con API-15.
+**Ya incluido en API-15** (middleware de logging con X-Request-ID).
 
 ---
 
-### OBS-05 — Logs sin rotación (P3)
+### ~~OBS-05 — Logs sin rotación (P3)~~ ✅ RESUELTO (pre-existente)
 
-**Dónde**: `src/core/logging.py`
-
-**Cómo resolver**: Reemplazar `FileHandler` por `RotatingFileHandler`:
-```python
-from logging.handlers import RotatingFileHandler
-handler = RotatingFileHandler("logs/app.log", maxBytes=10*1024*1024, backupCount=5)
-```
+`RotatingFileHandler` ya estaba implementado en `src/core/logging.py` (10 MB, 5 backups).
 
 ---
 

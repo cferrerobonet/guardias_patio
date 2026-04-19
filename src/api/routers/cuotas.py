@@ -37,7 +37,7 @@ class CalcularCuotasApiResponse(BaseModel):
     mensaje: str
 
 
-@router.get("", response_model=CalcularCuotasApiResponse)
+@router.get("", response_model=CalcularCuotasApiResponse, summary="Calcular cuotas por profesor")
 def calcular_cuotas(
     configuracion_id: int, solo_activos: bool = True, db: Session = Depends(get_db)
 ):
