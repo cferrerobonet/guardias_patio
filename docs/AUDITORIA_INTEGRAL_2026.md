@@ -4,11 +4,11 @@
 **Versión analizada**: 3.2.1 (actualizado con correcciones v3.1.0)  
 **Alcance**: Análisis completo de arquitectura, seguridad, base de datos, performance, UX/UI, testing, observabilidad, escalabilidad, resiliencia y buenas prácticas.
 
-## ⚡ ESTADO ACTUAL (v4.5.0)
+## ⚡ ESTADO ACTUAL (v4.8.0)
 
-**Completados**: 62/103 items (60.2%)
-**En Progreso**: 0
-**Pendientes**: 41/103 items (39.8%)
+**Completados**: 63/103 items (61.2%)
+**En Progreso**: 1 (TEST-01 cobertura parcial)
+**Pendientes**: 39/103 items (37.8%)
 
 ### Releases Ejecutados
 - ✅ **v3.7.0** — Políticas seguridad, campos sustituciones ORM, API use cases, 21 tests REST/SMTP/SFTP
@@ -22,7 +22,7 @@
 - ✅ **v4.5.0** — Split `asignador_guardias_v4_hibrido.py` en 3 módulos (276+387+341L)
 - ✅ **v4.6.0** — `cache_service.py` TTLCache + tenacity retry SFTP + 14 tests
 - ✅ **v4.7.0** — joinedload ProfesorRepository, validación username vacío, BD retry con backoff, correlation IDs FastAPI, fix `_ensure_connected`
-
+  - ✅ **v4.8.0** — 39 tests nuevos (perfiles, iCalendar, cuotas), cobertura 16.4% → 41.5%, 1080 tests totales
 ### Próximas Fases Recomendadas
 1. **v4.6.0 (Resilencia)** — tenacity retry SFTP, circuit breaker, cachetools
 
@@ -68,7 +68,7 @@
 | Async | GUI bien resuelto, SFTP bloqueante | ★★★☆☆ |
 | Escalabilidad | Diseñada para uso local, no escala horizontalmente | ★★☆☆☆ |
 | API REST | Solo lectura, sin auth, con fugas de info | ★★☆☆☆ |
-| Testing | 990 tests, 39.75% coverage | ★★★☆☆ |
+| Testing | ~~990 tests, 39.75% coverage~~ 1080 tests, 41.5% coverage | ★★★☆☆ |
 | Observabilidad | Prometheus + structlog bien diseñados | ★★★★☆ |
 | UX/UI | Funcional, sin accesibilidad formal | ★★★☆☆ |
 | Control de acceso | ✅ bcrypt + Fernet, sin autorización granular | ★★★☆☆ |
@@ -465,7 +465,7 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 
 | ID | Hallazgo | Severidad |
 |---|---|---|
-| TEST-01 | **39.75% coverage** — insuficiente, 60% sin validar | ALTA |
+| TEST-01 | ~~**39.75% coverage**~~ **41.5% coverage (v4.8.0)** — en progreso, target 70% | ALTA | ✅ PARCIAL v4.8.0 |
 | TEST-02 | **0 tests para SFTP/SMTP** — sync sin cobertura | ALTA |
 | TEST-03 | **0 tests para API REST** — endpoints no validados | ALTA |
 | TEST-04 | GUI tests solo verifican inicialización, no interacción | MEDIA |
@@ -1186,7 +1186,7 @@ Esto **viola la regla fundamental** de Clean Architecture: el dominio no deberí
 
 | ID | Sugerencia | Prioridad | Detalle |
 |---|---|---|---|
-| MEJ-09 | **Coverage 39.75% → target 70%** | ALTA | Priorizar tests en: servicios de asignación, exportadores, sync, API |
+| MEJ-09 | ~~**Coverage 39.75% → target 70%**~~ **41.5% (v4.8.0), sigue en progreso** | ALTA | Priorizar tests en: servicios de asignación, exportadores, sync, API |
 | MEJ-10 | **ProfesorMapper: 130+ líneas de parsing defensivo** | MEDIA | Normalizar campos JSON a tablas eliminaría este código frágil |
 | MEJ-11 | **Añadir `py.typed` marker y tipado estricto progresivo** | BAJA | Ya existe `py.typed` y mypy strict en dominio. Expandir a application y services |
 

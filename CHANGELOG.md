@@ -6,6 +6,17 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.8.0] - 2026-04-20
+
+### 🎯 Resumen
+Aumento de cobertura de tests del 16.4% al 41.5% mediante nuevos tests unitarios.
+
+### ✨ Added
+- `tests/test_use_cases_perfil.py`: 24 tests para `CrearPerfilUseCase`, `ListarPerfilesUseCase`, `ActualizarPerfilUseCase`, `EliminarPerfilUseCase` y `CambiarPasswordUseCase`
+- `tests/test_icalendar_cuotas.py`: 15 tests para `ICalendarService` (métodos estáticos + generación .ics) y `CalcularCuotasUseCase`
+- Cobertura: 1080 tests totales (1046 → 1080), cobertura 16.4% → 41.5%
+
+---
 ## [4.7.0] - 2026-04-19
 
 ### 🎯 Resumen
