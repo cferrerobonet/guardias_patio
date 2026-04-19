@@ -6,6 +6,17 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.9.0] - 2026-04-19
+
+### 🎯 Resumen
+Aumento de cobertura hacia 55%+ mediante 63 tests nuevos en servicios críticos.
+
+### ✨ Added
+- `tests/test_estadisticas_validador.py`: 27 tests — `EstadisticasService` (métodos puros) + `ResultadoValidacion` + `ValidadorGuardias`
+- `tests/test_importadores_exporter.py`: 36 tests — `importador_zonas` (CSV + helpers), `importador_profesores` (CSV), `DataExporter` (serialize/parse/encrypt + export/import JSON BD)
+- Tests totales: 1080 → 1143, todos pasan
+
+---
 ## [4.8.0] - 2026-04-20
 
 ### 🎯 Resumen
