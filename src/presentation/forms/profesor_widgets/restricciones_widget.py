@@ -12,7 +12,7 @@ import json
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from core.logging import get_logger
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtWidgets import (

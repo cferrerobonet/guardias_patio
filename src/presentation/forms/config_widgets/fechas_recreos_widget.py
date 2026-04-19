@@ -7,7 +7,8 @@ Encapsula la lógica de configuración de:
 - Recreos de tarde (2 recreos opcionales)
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
+from presentation.theme.tokens import Spacing
 from PyQt6.QtCore import QDate, QTime, pyqtSignal
 from PyQt6.QtWidgets import (
     QDateEdit,
@@ -47,8 +48,8 @@ class FechasRecreosWidget(QGroupBox):
         """Configura la interfaz del widget."""
         # Layout horizontal para fechas y recreos
         main_layout = QHBoxLayout()
-        main_layout.setSpacing(8)
-        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setSpacing(Spacing.SM)
+        main_layout.setContentsMargins(Spacing.SM, Spacing.SM, Spacing.SM, Spacing.SM)
 
         # GRUPO 1: Fechas del curso
         fechas_grupo = self._crear_grupo_fechas()

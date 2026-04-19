@@ -6,7 +6,7 @@ Combina:
 - Días no lectivos personalizados (lista de fechas)
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QGroupBox, QLabel, QLineEdit, QVBoxLayout
 

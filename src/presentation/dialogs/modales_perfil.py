@@ -1,6 +1,6 @@
 """Diálogos modales profesionales para gestión de perfiles."""
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from application.dtos.perfil_dto import ActualizarPerfilDTO, CambiarPasswordDTO, CrearPerfilDTO
 from sync.sync_manager import UserAuth
 from PyQt6.QtCore import Qt

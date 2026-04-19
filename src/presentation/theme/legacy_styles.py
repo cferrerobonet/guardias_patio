@@ -1,48 +1,7 @@
 """
-Módulo de estilos UI para la aplicación de Guardias de Patio.
-Define estilos CSS consistentes para toda la interfaz.
-
-⚠️  OBSOLETO — Migrado a src/presentation/theme/legacy_styles.py
+Estilos UI para la aplicación Guardias de Patio.
+Módulo centralizado en presentation/theme/ (migrado desde src/ui_styles.py).
 """
-
-import warnings
-
-warnings.warn(
-    "El módulo ui_styles.py está obsoleto y será eliminado. "
-    "Por favor, migra a src/presentation/theme/legacy_styles.py",
-    DeprecationWarning,
-    stacklevel=2,
-)
-
-# Re-exportar todo desde la nueva ubicación para compatibilidad hacia atrás
-from presentation.theme.legacy_styles import *  # noqa: F401, F403, E402
-from presentation.theme.legacy_styles import (  # noqa: E402
-    COLOR_BG_LIGHT,
-    COLOR_BG_MEDIUM,
-    COLOR_DANGER,
-    COLOR_INFO,
-    COLOR_PRIMARY,
-    COLOR_SUCCESS,
-    COLOR_TEXT_DARK,
-    COLOR_TEXT_MEDIUM,
-    COLOR_WARNING,
-    apply_compact_layout,
-    create_title_label,
-    format_terminal_error,
-    format_terminal_header,
-    format_terminal_info,
-    format_terminal_label,
-    format_terminal_number,
-    format_terminal_profesor,
-    format_terminal_prompt,
-    format_terminal_success,
-    format_terminal_value,
-    format_terminal_warning,
-    set_max_width_for_inputs,
-    wrap_terminal_html,
-)
-
-
 # ========== COLORES ==========
 COLOR_PRIMARY = "#2196F3"  # Azul principal
 COLOR_SUCCESS = "#4CAF50"  # Verde para acciones positivas

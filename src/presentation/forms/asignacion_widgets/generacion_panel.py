@@ -6,10 +6,12 @@ Combina:
 - Análisis de incidencias y recomendaciones
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
+from presentation.theme.tokens import Spacing
 from application.dtos.domain_services_dtos import AnalisisEquidadRequest
 from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
 from application.use_cases.asignacion_guardias import GenerarGuardiasUseCase
+from application.use_cases.configuracion.actualizar_configuracion import ActualizarConfiguracionUseCase
 from application.use_cases.guardia import LimpiarGuardiasUseCase
 from infrastructure.database.models import Guardia, Profesor, Zona
 from infrastructure.repositories import SQLAlchemyGuardiaRepository
@@ -24,7 +26,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from sqlalchemy.orm import Session
-from ui_styles import (
+from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
     format_terminal_label,
@@ -104,7 +106,7 @@ class GeneracionPanel(QGroupBox):
         # Selector de algoritmo
         algoritmo_container = QHBoxLayout()
         algoritmo_container.setContentsMargins(0, 0, 0, 4)
-        algoritmo_container.setSpacing(8)
+        algoritmo_container.setSpacing(Spacing.SM)
 
         algoritmo_label = QLabel("Algoritmo:")
         algoritmo_label.setStyleSheet("font-weight: bold; color: #374151;")
@@ -205,7 +207,6 @@ class GeneracionPanel(QGroupBox):
 
     def _generar_guardias(self):
         """Genera el calendario de guardias."""
-        from infrastructure.database.models import Configuracion
         from PyQt6.QtWidgets import QMessageBox
         from utils.ui_helpers import show_question_with_cancel
 
@@ -214,10 +215,10 @@ class GeneracionPanel(QGroupBox):
         try:
             # Obtener algoritmo seleccionado y actualizar configuración
             algoritmo_seleccionado = self.algoritmo_combo.currentData()
-            config = self.session.query(Configuracion).first()
-            if config:
-                config.algoritmo_asignacion = algoritmo_seleccionado
-                self.session.commit()
+            from application.dtos import ActualizarConfiguracionDTO
+            ActualizarConfiguracionUseCase(self.session).execute(
+                ActualizarConfiguracionDTO(algoritmo_asignacion=algoritmo_seleccionado)
+            )
 
             from application.app_services import AppServices
             count_guardias = AppServices(self.session).contar_guardias()

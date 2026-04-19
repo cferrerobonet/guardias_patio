@@ -12,6 +12,7 @@ from typing import Dict, List, Tuple
 from infrastructure.database.models import Ausencia, Guardia, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
+from presentation.theme.tokens import FontSize
 from PyQt6.QtWidgets import (
     QFrame,
     QGroupBox,
@@ -63,7 +64,7 @@ class CeldaDia(QGroupBox):
         label_dia = QLabel(str(self.fecha.day))
         font_dia = QFont()
         font_dia.setBold(True)
-        font_dia.setPointSize(11)
+        font_dia.setPointSize(FontSize.CAPTION)
         label_dia.setFont(font_dia)
         header_layout.addWidget(label_dia)
 

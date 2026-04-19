@@ -5,7 +5,8 @@ Permite calcular la distribución teórica de guardias por profesor
 y generar el calendario de guardias.
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
+from presentation.theme.tokens import Spacing
 from application.use_cases.asignacion_guardias import (
     ObtenerEstadisticasUseCase,
 )
@@ -106,8 +107,8 @@ class AsignacionCalculoForm(BaseForm):
         # Widget contenedor del contenido
         content_widget = QWidget()
         grid_layout = QGridLayout()
-        grid_layout.setSpacing(12)
-        grid_layout.setVerticalSpacing(12)
+        grid_layout.setSpacing(Spacing.MD)
+        grid_layout.setVerticalSpacing(Spacing.MD)
         grid_layout.setContentsMargins(10, 10, 10, 10)
         content_widget.setLayout(grid_layout)
 
@@ -116,7 +117,7 @@ class AsignacionCalculoForm(BaseForm):
         left_container = QWidget()
         left_layout = QVBoxLayout()
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(8)
+        left_layout.setSpacing(Spacing.SM)
 
         # Panel combinado de estadísticas y cuotas
         self.calculo_panel = CalculoPanel(self.session)
@@ -130,7 +131,7 @@ class AsignacionCalculoForm(BaseForm):
         right_container = QWidget()
         right_layout = QVBoxLayout()
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(8)
+        right_layout.setSpacing(Spacing.SM)
 
         # Panel de generación y resultados
         self.generacion_panel = GeneracionPanel(

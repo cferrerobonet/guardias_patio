@@ -9,6 +9,7 @@ from datetime import datetime
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
+from presentation.theme.tokens import FontSize
 from PyQt6.QtWidgets import (
     QDialog,
     QFrame,
@@ -92,7 +93,7 @@ class DialogoAcercaDe(QDialog):
         info_layout.setSpacing(2)
 
         name_label = QLabel(APP_NAME)
-        name_label.setFont(QFont("", 18, QFont.Weight.Bold))
+        name_label.setFont(QFont("", FontSize.H3, QFont.Weight.Bold))
         name_label.setStyleSheet("color: #2c3e50;")
         info_layout.addWidget(name_label)
 

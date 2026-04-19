@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
 )
 from sqlalchemy.orm import Session
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from presentation.forms.base_form import BaseForm
 from presentation.forms.config_widgets import SFTPConfigWidget, SMTPConfigWidget
 

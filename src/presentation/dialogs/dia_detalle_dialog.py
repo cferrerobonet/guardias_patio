@@ -12,6 +12,7 @@ from typing import Dict, List, Tuple
 from infrastructure.database.models import Ausencia, Guardia, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
+from presentation.theme.tokens import FontSize
 from PyQt6.QtWidgets import (
     QDialog,
     QFrame,
@@ -87,7 +88,7 @@ class DiaDetalleDialog(QDialog):
 
         label_fecha = QLabel(f"{nombre_dia}, {fecha_formateada}")
         font_fecha = QFont()
-        font_fecha.setPointSize(14)
+        font_fecha.setPointSize(FontSize.BODY)
         font_fecha.setBold(True)
         label_fecha.setFont(font_fecha)
         header_layout.addWidget(label_fecha)
@@ -212,7 +213,7 @@ class DiaDetalleDialog(QDialog):
 
             label_valor = QLabel(str(valor))
             font_valor = QFont()
-            font_valor.setPointSize(18)
+            font_valor.setPointSize(FontSize.H3)
             font_valor.setBold(True)
             label_valor.setFont(font_valor)
             label_valor.setStyleSheet("color: #333;")
@@ -347,7 +348,7 @@ class DiaDetalleDialog(QDialog):
         # Texto de alerta
         label_alerta = QLabel("SIN GUARDIA ASIGNADA")
         font_alerta = QFont()
-        font_alerta.setPointSize(10)
+        font_alerta.setPointSize(FontSize.CAPTION)
         font_alerta.setBold(True)
         label_alerta.setFont(font_alerta)
         label_alerta.setStyleSheet("color: #B71C1C; padding-left: 8px;")
@@ -393,7 +394,7 @@ class DiaDetalleDialog(QDialog):
 
         label_profesor = QLabel(nombre)
         font_profesor = QFont()
-        font_profesor.setPointSize(10)
+        font_profesor.setPointSize(FontSize.CAPTION)
         label_profesor.setFont(font_profesor)
         label_profesor.setStyleSheet("color: #333; padding-left: 8px; qproperty-wordWrap: false;")
         label_profesor.setMinimumWidth(200)  # Asegurar espacio suficiente

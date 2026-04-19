@@ -5,7 +5,8 @@ Este módulo implementa la UI para exportar/importar datos en JSON
 y profesores desde Excel.
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
+from presentation.theme.tokens import Spacing
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFileDialog,
@@ -75,7 +76,7 @@ class ImportExportForm(BaseForm):
         """Construir la interfaz del formulario."""
         # Layout principal
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setContentsMargins(Spacing.XL, Spacing.XL, Spacing.XL, Spacing.XL)
         main_layout.setSpacing(15)
 
         # Título

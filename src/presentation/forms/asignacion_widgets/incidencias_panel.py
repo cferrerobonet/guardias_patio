@@ -3,11 +3,12 @@
 Analiza problemas en la generación y sugiere soluciones.
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
+from presentation.theme.tokens import Spacing
 from infrastructure.database.models import Profesor, Zona
 from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
 from sqlalchemy.orm import Session
-from ui_styles import (
+from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
     format_terminal_label,

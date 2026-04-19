@@ -6,7 +6,7 @@ Permite generar calendarios PDF e informes estadísticos.
 
 import os
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from infrastructure.database.models import Configuracion, Guardia, Profesor
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (

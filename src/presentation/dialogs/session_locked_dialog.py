@@ -6,6 +6,7 @@ import logging
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
+from presentation.theme.tokens import FontSize
 from PyQt6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 from utils.icons import icon_for_button
 
@@ -39,7 +40,7 @@ class SessionLockedDialog(QDialog):
         # Icono y título
         title_label = QLabel("Sesión Bloqueada")
         title_font = QFont()
-        title_font.setPointSize(16)
+        title_font.setPointSize(FontSize.SUBTITLE)
         title_font.setBold(True)
         title_label.setFont(title_font)
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)

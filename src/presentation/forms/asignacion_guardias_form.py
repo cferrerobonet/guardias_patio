@@ -4,7 +4,7 @@ Formulario de asignación de guardias.
 Permite calcular distribución y generar el calendario completo de guardias.
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from application.use_cases.asignacion_guardias import (
     CalcularDistribucionUseCase,
     GenerarGuardiasUseCase,

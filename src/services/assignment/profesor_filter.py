@@ -77,6 +77,11 @@ class ProfesorFilter:
             profesor_ids = _cache_elegibilidad[cache_key]
             return [p for p in profesores if p.id in profesor_ids]
 
+        # Precarga ausencias de esta fecha en una sola query SQL (evita N+1)
+        self.ausencia_checker.prefetch_ausencias(
+            slot.fecha, [p.id for p in profesores]
+        )
+
         elegibles = []
 
         for profesor in profesores:

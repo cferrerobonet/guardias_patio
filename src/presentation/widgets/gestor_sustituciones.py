@@ -6,7 +6,7 @@ Permite registrar ausencias y reasignar guardias automáticamente.
 
 from datetime import date
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from infrastructure.database.models import Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -431,11 +431,18 @@ class GestorSustituciones(BaseForm):
             )
 
             if respuesta == QMessageBox.StandardButton.Yes:
-                # Realizar sustitución — requiere ORM para escritura
-                from infrastructure.database.models import Guardia as GuardiaModel
-                guardia_orm = self.session.query(GuardiaModel).filter_by(id=guardia.id).first()
-                guardia_orm.profesor_id = nuevo_profesor_id
-                self.session.commit()
+                # Realizar sustitución a través del repositorio (sin query directa a ORM)
+                from application.app_services import AppServices
+                _svc_sust = AppServices(self.session)
+                guardia_entity = _svc_sust.guardias.get_by_id(guardia.id)
+                if guardia_entity:
+                    guardia_entity.marcar_como_sustitucion(guardia.profesor_id)
+                    guardia_entity.profesor_id = nuevo_profesor_id
+                    notas_texto = self.text_observaciones.toPlainText().strip()
+                    if notas_texto:
+                        guardia_entity.notas = notas_texto
+                    _svc_sust.guardias.save(guardia_entity)
+                    self.session.commit()
 
                 self.mostrar_exito(
                     "Sustitución Completada",

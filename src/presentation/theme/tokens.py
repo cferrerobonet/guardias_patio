@@ -45,6 +45,7 @@ class FontSize:
     CAPTION = 11
     BODY = 14
     SUBTITLE = 16
+    H3 = 18
     TITLE = 20
     H2 = 24
     H1 = 28

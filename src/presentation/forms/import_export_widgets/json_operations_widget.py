@@ -4,7 +4,7 @@ Widget para operaciones de JSON (exportar/importar).
 Agrupa las funcionalidades de exportación e importación de datos en JSON.
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,

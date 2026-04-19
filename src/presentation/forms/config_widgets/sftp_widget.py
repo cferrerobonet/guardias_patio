@@ -8,7 +8,7 @@ sincronización de copias de seguridad entre diferentes dispositivos.
 import os
 
 import paramiko
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from dotenv import load_dotenv
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (

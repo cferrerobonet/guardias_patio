@@ -4,7 +4,8 @@ Formulario de gestión de zonas de recreo.
 Permite realizar operaciones CRUD sobre las zonas usando patrón MVP.
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
+from presentation.theme.tokens import Spacing
 from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
 from application.use_cases.zona import (
     ActualizarZonaUseCase,
@@ -255,7 +256,7 @@ class ZonaForm(BaseForm):
 
         # Botones de gestión
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(8)
+        btn_layout.setSpacing(Spacing.SM)
 
         # Botón "Actualizar" eliminado - la tabla se actualiza automáticamente
         # después de cada operación (crear, editar, eliminar)

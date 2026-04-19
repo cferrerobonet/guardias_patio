@@ -79,7 +79,7 @@ def main():
                     + "".join(traceback.format_tb(tb))
                 )
                 msg.exec()
-        except Exception:
+        except (RuntimeError, AttributeError):
             pass  # Si Qt no está disponible, solo loguear
 
         # Llamar al manejador original
@@ -336,7 +336,7 @@ def main():
                                 + len(svc.zonas.get_all())
                                 + svc.contar_guardias()
                             )
-                        except Exception:
+                        except (ValueError, TypeError, AttributeError):
                             total = 0
                         progress_dialog.set_step_exporting(total)
                     elif step == "connecting":

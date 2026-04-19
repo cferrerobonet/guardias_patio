@@ -5,7 +5,8 @@ Form para gestionar los ajustes del curso escolar.
 Sigue el patrón MVP usando Use Cases.
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
+from presentation.theme.tokens import Spacing
 from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
 from application.use_cases.configuracion import (
     ActualizarConfiguracionUseCase,
@@ -146,8 +147,8 @@ class AjustesForm(BaseForm):
         # Widget contenedor del contenido
         content_widget = QWidget()
         content_layout = QVBoxLayout()
-        content_layout.setContentsMargins(12, 12, 12, 12)
-        content_layout.setSpacing(8)
+        content_layout.setContentsMargins(Spacing.MD, Spacing.MD, Spacing.MD, Spacing.MD)
+        content_layout.setSpacing(Spacing.SM)
 
         # Título principal
         titulo = QLabel("AJUSTES DEL CURSO ESCOLAR")

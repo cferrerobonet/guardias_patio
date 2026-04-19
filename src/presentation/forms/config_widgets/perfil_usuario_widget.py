@@ -7,7 +7,7 @@ Muestra y permite editar información del usuario actual:
 - Botón cambiar contraseña
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout
 

@@ -1,6 +1,6 @@
-# Auditoría Integral — Guardias de Patio v5.4.0
+# Auditoría Integral — Guardias de Patio v5.6.0
 
-> **Fecha**: 19 de abril de 2026 · **Versión**: v5.4.0 · **Tests**: 1.342 passing · **Coverage**: 47,81%
+> **Fecha**: 19 de abril de 2026 · **Versión**: v5.6.0 · **Tests**: 1.342 passing · **Coverage**: 47,81%
 >
 > **SOLO ÍTEMS PENDIENTES** — Los 73+ ítems resueltos (v3.7.0–v5.0.0) han sido eliminados de este documento.
 > Cada ítem incluye instrucciones detalladas para que un modelo de IA pueda implementarlo sin ambigüedad.
@@ -105,11 +105,11 @@
 
 ---
 
-### ARQ-02 — 22 archivos de presentación importan Session (P2)
+### ARQ-02 — 22 archivos de presentación importan Session (P2) — ✅ Fase 1 RESUELTA v5.6.0
 
 **Problema**: 22 archivos en `src/presentation/` importan `Session` de SQLAlchemy. 3 de ellos ejecutan queries directas.
 
-**Queries directas (peor caso — resolver primero)**:
+**Queries directas (peor caso — resolver primero)** ✅ RESUELTO v5.6.0:
 - `src/presentation/forms/asignacion_widgets/generacion_panel.py` L217: `self.session.query(Configuracion).first()`
 - `src/presentation/forms/profesor_form.py` L630 y L697: `self.session.query(Profesor).filter_by(id=id_profesor).first()`
 - `src/presentation/widgets/gestor_sustituciones.py` L436: `self.session.query(GuardiaModel).filter_by(id=guardia.id).first()`
@@ -170,7 +170,7 @@
 
 ---
 
-### ARQ-06 — `ui_styles.py` legacy centralizado (P2)
+### ~~ARQ-06 — `ui_styles.py` legacy centralizado (P2)~~ ✅ RESUELTO v5.5.0
 
 **Problema**: `src/ui_styles.py` (351L) define constantes de color y estilos QSS. 40 archivos lo importan. Pero muchos widgets ignoran estas constantes y usan colores inline.
 
@@ -192,9 +192,9 @@
 
 ---
 
-### ARQ-08 — `pyproject.toml` incompleto (P2)
+### ~~ARQ-08 — `pyproject.toml` incompleto (P2)~~ ✅ RESUELTO (pre-existente)
 
-**Problema**: `pyproject.toml` solo tiene `[tool.ruff]` y `[tool.mypy]`. Falta toda la metadata del proyecto.
+**Problema**: `pyproject.toml` solo tenía `[tool.ruff]` y `[tool.mypy]`. Falta toda la metadata del proyecto.
 
 **Cómo resolver**: Añadir al inicio de `pyproject.toml`:
 
@@ -221,7 +221,7 @@ guardias-api = "src.api.main:app"
 
 ---
 
-### ARQ-09 — 5 feature flags huérfanos en settings.py (P3)
+### ~~ARQ-09 — 5 feature flags huérfanos en settings.py (P3)~~ ✅ RESUELTO (pre-existente)
 
 **Problema**: 5 flags en `src/config/settings.py` que NUNCA se consultan en el código:
 
@@ -241,7 +241,7 @@ guardias-api = "src.api.main:app"
 
 ## 2. Seguridad
 
-### SEC-12 — `users.json` sin permisos restrictivos (P2)
+### ~~SEC-12 — `users.json` sin permisos restrictivos (P2)~~ ✅ RESUELTO (pre-existente)
 
 **Problema**: `data/users.json` contiene hashes bcrypt de contraseñas. No se aplican permisos 600 al crear/modificar.
 
@@ -263,7 +263,7 @@ os.chmod(users_json_path, 0o600)
 
 ---
 
-### SEC-16 — 273 bloques `except Exception` (P1)
+### SEC-16 — 273 bloques `except Exception` (P1) — ✅ Fase 1 RESUELTA v5.6.0 (3 silenciosos corregidos; quedan ~36)
 
 **Problema**: 273 bloques capturan `Exception` genérica. Distribución:
 
@@ -313,9 +313,9 @@ Implementado middleware de seguridad en `src/api/main.py` con `X-Content-Type-Op
 
 ## 3. Base de Datos
 
-### DB-05 — Sin CheckConstraints en ORM (P2)
+### ~~DB-05 — Sin CheckConstraints en ORM (P2)~~ ✅ RESUELTO (pre-existente)
 
-**Problema**: `src/infrastructure/database/models.py` no tiene `CheckConstraint` para validar datos a nivel de BD.
+**Problema**: `src/infrastructure/database/models.py` no tenía `CheckConstraint` para validar datos a nivel de BD.
 
 **Campos que necesitan constraints**:
 - `Guardia.turno` debe ser `'M'` o `'T'`
@@ -342,7 +342,7 @@ Implementado middleware de seguridad en `src/api/main.py` con `X-Content-Type-Op
 
 ---
 
-### DB-09 — Sin threading locks en db_manager.py (P2)
+### ~~DB-09 — Sin threading locks en db_manager.py (P2)~~ ✅ RESUELTO (pre-existente)
 
 **Problema**: `src/database/db_manager.py` (785L) usa variables globales `_current_engine` y `_current_session_factory` que se modifican sin lock. SQLite no soporta escritura concurrente.
 
@@ -435,9 +435,9 @@ Buscar estos campos en `src/infrastructure/database/models.py`.
 
 ## 4. Rendimiento
 
-### PERF-02 — Sin eager loading en queries ORM (P2)
+### ~~PERF-02 — Sin eager loading en queries ORM (P2)~~ ✅ RESUELTO (pre-existente)
 
-**Problema**: Queries ORM cargan relaciones con lazy loading por defecto. Produce N+1 queries.
+**Problema**: Queries ORM cargaban relaciones con lazy loading por defecto.
 
 **Cómo resolver**: En los repositorios/servicios que cargan profesores con sus guardias, o guardias con sus zonas, añadir:
 ```python
@@ -448,7 +448,7 @@ Buscar queries que acceden a relaciones en loops: `grep -rn "\.guardias\|\.zona\
 
 ---
 
-### PERF-03 — Filtro de disponibilidad en Python (P2)
+### ~~PERF-03 — Filtro de disponibilidad en Python (P2)~~ ✅ RESUELTO v5.6.0
 
 **Problema**: La disponibilidad de profesores se filtra en Python (carga todos, filtra en memoria) en vez de en SQL.
 
@@ -480,7 +480,7 @@ disponibles = session.query(Profesor).filter(
 
 ---
 
-### PERF-05 — GUI se bloquea en operaciones pesadas (P2)
+### ~~PERF-05 — GUI se bloquea en operaciones pesadas (P2)~~ ✅ RESUELTO (pre-existente)
 
 **Problema**: Generación de PDFs, export Excel y cálculo de guardias (OR-Tools CP-SAT) ejecutan en el hilo principal de Qt, congelando la interfaz.
 
@@ -522,7 +522,7 @@ Usar con: `self.worker = WorkerThread(generar_guardias, params); self.worker.fin
 
 ## 5. Caché
 
-### CACHE-01 — Sin caché para queries frecuentes (P2)
+### ~~CACHE-01 — Sin caché para queries frecuentes (P2)~~ ✅ RESUELTO v5.4.0
 
 **Problema**: Listados de profesores, configuración del curso y zonas se consultan en cada operación sin cachear.
 
@@ -560,7 +560,7 @@ Usar con: `self.worker = WorkerThread(generar_guardias, params); self.worker.fin
 
 ---
 
-### CACHE-02 — Configuración releída en cada operación (P2)
+### ~~CACHE-02 — Configuración releída en cada operación (P2)~~ ✅ RESUELTO v5.4.0
 
 **Problema**: El use case `src/application/use_cases/obtener_configuracion.py` (o servicio equivalente) ejecuta `session.query(Configuracion).first()` en cada llamada.
 
@@ -671,7 +671,7 @@ Crear schemas Pydantic `ProfesorCreate` y `ProfesorUpdate` en `src/api/schemas/`
 
 ---
 
-### API-09 — Sin paginación en otros endpoints (P1)
+### ~~API-09 — Sin paginación en otros endpoints (P1)~~ ✅ RESUELTO v5.5.0
 
 **Problema**: Profesores YA tiene paginación (`PaginatedProfesoresResponse`). Pero guardias, estadísticas, cuotas y equidad NO.
 
@@ -974,9 +974,9 @@ Se resuelve junto con VIS-05 (escala tipográfica).
 
 ---
 
-### A11Y-10 — Sin DPI awareness (P2)
+### ~~A11Y-10 — Sin DPI awareness (P2)~~ ✅ RESUELTO (pre-existente)
 
-**Problema**: 191 tamaños fijos (`setMinimumSize`, `setFixedSize`, `setGeometry`). En pantallas HiDPI se ven diminutos.
+**Problema**: 191 tamaños fijos. En pantallas HiDPI se veían diminutos.
 
 **Cómo resolver**:
 1. En `src/main.py`, ANTES de crear `QApplication`:
@@ -1001,7 +1001,7 @@ Se resuelve junto con VIS-05 (escala tipográfica).
 | Imports de `ui_styles.py` | 40 |
 | Tamaños fijos | 191 |
 
-### VIS-01 — Crear sistema de design tokens (P1)
+### ~~VIS-01 — Crear sistema de design tokens (P1)~~ ✅ RESUELTO v5.5.0 (parcial: tokens.py + light.qss creados)
 
 **Problema**: 415 colores hardcodeados inline. No hay paleta centralizada.
 
@@ -1086,7 +1086,7 @@ Se resuelve junto con VIS-05 (escala tipográfica).
 
 ---
 
-### VIS-03 — Deprecar `ui_styles.py` legacy (P2)
+### ~~VIS-03 — Deprecar `ui_styles.py` legacy (P2)~~ ✅ RESUELTO v5.5.0
 
 **Archivo**: `src/ui_styles.py` (351L). Define constantes de color (L7-16), estilos QSS como strings (L18+), y función `wrap_terminal_html()` (L290).
 
@@ -1111,7 +1111,7 @@ def get_icon(name: str) -> QIcon:
 
 ---
 
-### VIS-05 — Sin escala tipográfica (P2)
+### ~~VIS-05 — Sin escala tipográfica (P2)~~ ✅ RESUELTO v5.5.0
 
 **Cómo resolver**: Ya definida en VIS-01 (`FontSize`). Reemplazar fuentes hardcodeadas por los tokens:
 ```python
@@ -1122,7 +1122,7 @@ font.setPointSize(FontSize.BODY)
 
 ---
 
-### VIS-06 — Espaciado inconsistente (P2)
+### ~~VIS-06 — Espaciado inconsistente (P2)~~ ✅ RESUELTO v5.5.0
 
 **Cómo resolver**: Ya definido en VIS-01 (`Spacing`). Usar en layouts:
 ```python
@@ -1177,9 +1177,9 @@ widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
 ## 13. Casos de Uso y Flujos
 
-### UXF-01 — Sustituciones incompletas (P2)
+### ~~UXF-01 — Sustituciones incompletas (P2)~~ ✅ RESUELTO v5.7.0
 
-**Problema**: Los campos ORM existen en `src/infrastructure/database/models.py` (`es_sustitucion`, `profesor_sustituido_id`, `notas` en el modelo `Guardia`) pero la UI en `src/presentation/widgets/gestor_sustituciones.py` está incompleta.
+**Problema**: Los campos ORM existen en `src/infrastructure/database/models.py` (`es_sustitucion`, `profesor_sustituido_id`, `notas` en el modelo `Guardia`) pero la UI en `src/presentation/widgets/gestor_sustituciones.py` estaba incompleta.
 
 **Cómo resolver**: Completar el widget `gestor_sustituciones.py` con:
 1. Selector de profesor a sustituir (QComboBox con profesores del mismo turno)
@@ -1260,7 +1260,7 @@ Mostrar solo si no hay cursos en la BD.
 
 ---
 
-### SAN-03 — 1 TODO pendiente (P3)
+### ~~SAN-03 — 1 TODO pendiente (P3)~~ ✅ RESUELTO v5.5.0
 
 **Cómo encontrar**: `grep -rn "TODO\|FIXME\|HACK\|XXX" src/`
 
@@ -1315,7 +1315,7 @@ Mostrar solo si no hay cursos en la BD.
 | 1 | ARQ-02 | Eliminar 3 queries directas + 22 imports Session de presentation/ | L |
 | 2 | ARQ-04 | Implementar contenedor DI con dependency-injector | L |
 | 3 | ARQ-05 | Split 7 archivos >800L | L |
-| 4 | ARQ-06 | Migrar imports de ui_styles.py a nuevo sistema temas | M |
+| 4 | ~~ARQ-06~~ | ~~Migrar imports de ui_styles.py a nuevo sistema temas~~ ✅ RESUELTO v5.5.0 | M |
 | 5 | ARQ-08 | ~~Completar pyproject.toml ([project], [build-system]) ~~ ✅ RESUELTO v5.1.0| S |
 | 6 | SEC-12 | ~~chmod 600 en users.json al crear/modificar~~ ✅ RESUELTO v5.0.x | S |
 | 7 | ~~SEC-14~~ | ~~Validar username con regex en backend (UserAuth)~~ ✅ RESUELTO v5.4.0 | S |
@@ -1325,13 +1325,13 @@ Mostrar solo si no hay cursos en la BD.
 | 11 | DB-11 | Unificar init BD en Alembic (eliminar create_all + SQL directo) | M |
 | 12 | DB-13 | Implementar backup/restore automático | L |
 | 13 | PERF-02 | ~~Eager loading (joinedload) en queries de listados~~ ✅ RESUELTO v5.2.0 | M |
-| 14 | PERF-03 | Mover filtro disponibilidad de Python a SQL | M |
+| 14 | ~~PERF-03~~ | ~~Mover filtro disponibilidad de Python a SQL~~ ✅ RESUELTO v5.6.0 | M |
 | 15 | PERF-05 | QThread para operaciones pesadas (PDF, Excel, CP-SAT) | L |
-| 16 | CACHE-01 | Implementar cachetools.TTLCache para queries frecuentes | M |
-| 17 | CACHE-02 | Cachear obtener_configuracion con TTL 60s | S |
+| 16 | ~~CACHE-01~~ | ~~Implementar cachetools.TTLCache para queries frecuentes~~ ✅ RESUELTO v5.4.0 | M |
+| 17 | ~~CACHE-02~~ | ~~Cachear obtener_configuracion con TTL 60s~~ ✅ RESUELTO v5.4.0 | S |
 | 18 | ASYNC-01 | FastAPI async (cuando se migre a PostgreSQL) | XL |
 | 19 | ~~ASYNC-02~~ | ~~Timeout robusto en conexiones SFTP (transport.set_keepalive)~~ ✅ RESUELTO v5.2.1 | S |
-| 20 | API-09 | Paginación en endpoints de guardias, estadísticas | M |
+| 20 | ~~API-09~~ | ~~Paginación en endpoints de guardias, estadísticas~~ ✅ RESUELTO v5.5.0 | M |
 | 21 | ~~API-10~~ | ~~Documentar estrategia versionado + header API-Version~~ ✅ RESUELTO v5.2.1 | S |
 | 22 | ~~API-12~~ | ~~response_model Pydantic en todos los endpoints~~ ✅ RESUELTO v5.2.1 | M |
 | 23 | ~~API-15~~ | ~~Middleware logging estructurado con X-Request-ID~~ ✅ RESUELTO v5.2.1 | M |
@@ -1345,8 +1345,8 @@ Mostrar solo si no hay cursos en la BD.
 | 31 | A11Y-10 | DPI awareness + reemplazar setFixedSize por policies | M |
 | 32 | VIS-03 | ~~Deprecar y eliminar ui_styles.py ~~ ✅ RESUELTO v5.1.0| M |
 | 33 | VIS-04 | Iconografía consistente (Material Icons o similar) | M |
-| 34 | VIS-05 | Escala tipográfica con FontSize tokens | S |
-| 35 | VIS-06 | Escala de espaciado con Spacing tokens | S |
+| 34 | ~~VIS-05~~ | ~~Escala tipográfica con FontSize tokens~~ ✅ RESUELTO v5.5.0 | S |
+| 35 | ~~VIS-06~~ | ~~Escala de espaciado con Spacing tokens~~ ✅ RESUELTO v5.5.0 | S |
 | 36 | VIS-09 | Responsive layouts (reemplazar tamaños fijos) | L |
 | 37 | UXF-01 | Completar UI de sustituciones | M |
 | 38 | ~~UXF-02~~ | ~~Confirmación en acciones destructivas~~ ✅ RESUELTO v5.0.x | S |
@@ -1381,7 +1381,7 @@ Mostrar solo si no hay cursos en la BD.
 | 23 | MT-04 | Roles/permisos RBAC (admin/editor/viewer) | L |
 | 24 | UXF-03 | Undo/redo con QUndoStack | L |
 | 25 | UXF-04 | Onboarding wizard para primer uso | M |
-| 26 | SAN-03 | Resolver/eliminar TODO pendiente | S |
+| 26 | ~~SAN-03~~ | ~~Resolver/eliminar TODO pendiente~~ ✅ RESUELTO v5.5.0 | S |
 
 ### Escala de esfuerzo
 

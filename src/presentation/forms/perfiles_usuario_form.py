@@ -10,7 +10,7 @@ CRUD Profesional con:
 - Cambio de contraseña seguro (solo perfil actual)
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from application.use_cases.perfil import (
     ActualizarLogoUseCase,
     ActualizarPerfilUseCase,

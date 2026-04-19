@@ -9,6 +9,7 @@ import logging
 
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont
+from presentation.theme.tokens import FontSize
 from PyQt6.QtWidgets import (
     QDialog,
     QLabel,
@@ -80,7 +81,7 @@ class SyncProgressDialog(QDialog):
         # Título
         title_label = QLabel("Guardando cambios en la nube")
         title_font = QFont()
-        title_font.setPointSize(14)
+        title_font.setPointSize(FontSize.BODY)
         title_font.setBold(True)
         title_label.setFont(title_font)
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)

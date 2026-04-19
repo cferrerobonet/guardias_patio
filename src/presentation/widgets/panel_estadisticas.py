@@ -9,7 +9,7 @@ import matplotlib
 
 matplotlib.use("QtAgg")
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from application.use_cases.asignacion_guardias import ObtenerEstadisticasPanelUseCase
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402

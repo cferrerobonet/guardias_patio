@@ -7,7 +7,7 @@ Combina:
 - Información del algoritmo de asignación (solo lectura)
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from PyQt6.QtCore import QRegularExpression, pyqtSignal
 from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtWidgets import QGroupBox, QLabel, QLineEdit, QVBoxLayout

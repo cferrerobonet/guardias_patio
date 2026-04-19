@@ -81,7 +81,7 @@ def get_corporate_icon() -> QIcon:
         icon_path = _get_logo_path()
         if icon_path.exists():
             return QIcon(str(icon_path))
-    except Exception:
+    except (OSError, ValueError, RuntimeError):
         pass
     return QIcon()  # Fallback a icono por defecto
 

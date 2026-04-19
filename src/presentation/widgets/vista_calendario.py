@@ -19,6 +19,7 @@ from core.logging import get_logger
 from infrastructure.database.models import Ausencia, Configuracion, Guardia, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
+from presentation.theme.tokens import FontSize
 from PyQt6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -195,7 +196,7 @@ class VistaCalendario(BaseForm):
         self.label_periodo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_periodo.setMinimumWidth(250)
         font_periodo = QFont()
-        font_periodo.setPointSize(14)
+        font_periodo.setPointSize(FontSize.BODY)
         font_periodo.setBold(True)
         self.label_periodo.setFont(font_periodo)
         self.label_periodo.setStyleSheet("""
@@ -519,7 +520,7 @@ class VistaCalendario(BaseForm):
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             font = QFont()
             font.setBold(True)
-            font.setPointSize(10)
+            font.setPointSize(FontSize.CAPTION)
             label.setFont(font)
             label.setStyleSheet("""
                 QLabel {
@@ -606,7 +607,7 @@ class VistaCalendario(BaseForm):
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             font = QFont()
             font.setBold(True)
-            font.setPointSize(10)
+            font.setPointSize(FontSize.CAPTION)
             label.setFont(font)
             label.setStyleSheet("""
                 QLabel {

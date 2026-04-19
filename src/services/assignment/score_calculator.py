@@ -5,7 +5,7 @@ Responsabilidad: Calcular scores para seleccionar el mejor
 profesor candidato para cada slot.
 """
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Dict, List, Set, Tuple
 
 from infrastructure.database.models import Profesor
@@ -139,9 +139,15 @@ class ScoreCalculator:
         penalizacion = 0.0
 
         for dia_offset in range(1, 4):
-            # TODO: Restar días para verificar guardias recientes
-            # Por ahora, score neutro
-            pass
+            fecha_reciente = slot.fecha - timedelta(days=dia_offset)
+            guardias_en_ese_dia = [
+                profesores_ids
+                for (fecha, _recreo_id), profesores_ids in guardias_en_fecha.items()
+                if fecha == fecha_reciente and profesor.id in profesores_ids
+            ]
+            if guardias_en_ese_dia:
+                # Penalización decreciente: -20 ayer, -10 hace 2 días, -5 hace 3
+                penalizacion -= 20.0 / dia_offset
 
         return penalizacion
 

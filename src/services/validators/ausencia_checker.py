@@ -9,7 +9,7 @@ Fase 1.2 - Quick Wins: Centralización de validación de ausencias
 
 import logging
 from datetime import date
-from typing import List, Optional
+from typing import Dict, List, Optional, Set, Tuple
 
 from infrastructure.database.models import Ausencia, Profesor
 from sqlalchemy.orm import Session
@@ -39,10 +39,50 @@ class AusenciaChecker:
             session: Sesión de SQLAlchemy para consultas a BD
         """
         self.session = session
+        # Cache de instancia: (profesor_id, fecha) -> bool
+        self._cache: Dict[Tuple[int, date], bool] = {}
+        # Fechas ya precargadas en bulk
+        self._fechas_precargadas: Set[date] = set()
+
+    def prefetch_ausencias(self, fecha: date, profesor_ids: Optional[List[int]] = None) -> None:
+        """
+        Precarga en memoria todas las ausencias de una fecha con una sola query SQL.
+        Llamar antes de iterar sobre profesores para evitar N+1 queries.
+
+        Args:
+            fecha: Fecha a precargar
+            profesor_ids: Si se indica, restringe la precarga a esos profesores
+        """
+        if fecha in self._fechas_precargadas:
+            return
+
+        q = self.session.query(Ausencia.profesor_id).filter(
+            Ausencia.fecha_inicio <= fecha,
+            Ausencia.fecha_fin >= fecha,
+        )
+        if profesor_ids:
+            q = q.filter(Ausencia.profesor_id.in_(profesor_ids))
+
+        ausentes: Set[int] = {row[0] for row in q.all()}
+
+        if profesor_ids:
+            for pid in profesor_ids:
+                self._cache[(pid, fecha)] = pid in ausentes
+        else:
+            # Marcamos solo los ausentes; el resto se consultará si se pide
+            for pid in ausentes:
+                self._cache[(pid, fecha)] = True
+
+        self._fechas_precargadas.add(fecha)
+        logger.debug("prefetch ausencias %s: %d ausentes", fecha, len(ausentes))
 
     def profesor_ausente(self, profesor_id: int, fecha: date) -> bool:
         """
         Verificar si un profesor está ausente en una fecha específica.
+
+        Usa cache de instancia para evitar N+1 queries cuando se llama
+        en bucle para múltiples profesores. Llamar a prefetch_ausencias()
+        antes de iterar para máximo rendimiento.
 
         Args:
             profesor_id: ID del profesor a verificar
@@ -58,6 +98,10 @@ class AusenciaChecker:
             >>> checker.profesor_ausente(5, date(2025, 12, 25))
             True
         """
+        key = (profesor_id, fecha)
+        if key in self._cache:
+            return self._cache[key]
+
         ausencia = (
             self.session.query(Ausencia)
             .filter(
@@ -67,7 +111,9 @@ class AusenciaChecker:
             )
             .first()
         )
-        return ausencia is not None
+        resultado = ausencia is not None
+        self._cache[key] = resultado
+        return resultado
 
     def obtener_ausencia(self, profesor_id: int, fecha: date) -> Optional[Ausencia]:
         """

@@ -42,7 +42,17 @@ class GuardiasCountResponse(BaseModel):
     total: int
 
 
-@router.get("", response_model=List[GuardiaResponse], summary="Listar guardias")
+class PaginatedGuardiasResponse(BaseModel):
+    """Respuesta paginada de guardias."""
+
+    items: List[GuardiaResponse]
+    total: int
+    page: int
+    size: int
+    pages: int
+
+
+@router.get("", response_model=PaginatedGuardiasResponse, summary="Listar guardias")
 def obtener_guardias(
     configuracion_id: int,
     fecha_inicio: Optional[date] = None,
@@ -87,9 +97,12 @@ def obtener_guardias(
 
         # Filtrar por curso y paginar
         dtos = [g for g in dtos if True]  # curso_id se filtra en el use case si se añade
+        total = len(dtos)
         paginados = dtos[offset: offset + limit]
+        page = (offset // limit) + 1 if limit > 0 else 1
+        pages = (total + limit - 1) // limit if limit > 0 else 1
 
-        return [
+        items = [
             GuardiaResponse(
                 id=g.id,
                 fecha=g.fecha,
@@ -103,6 +116,8 @@ def obtener_guardias(
             )
             for g in paginados
         ]
+
+        return PaginatedGuardiasResponse(items=items, total=total, page=page, size=len(items), pages=pages)
 
     except (ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail="Error al obtener guardias")

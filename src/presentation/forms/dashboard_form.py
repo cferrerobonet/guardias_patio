@@ -35,6 +35,7 @@ from matplotlib.figure import Figure
 from sqlalchemy.orm import Session
 from utils import get_logger
 from utils.icons import icon_for_button
+from presentation.theme.tokens import Spacing
 
 logger = get_logger(__name__)
 
@@ -110,8 +111,8 @@ class DashboardForm(QWidget):
     def _init_ui(self):
         """Inicializa la interfaz de usuario."""
         layout = QVBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        layout.setContentsMargins(Spacing.XL, Spacing.XL, Spacing.XL, Spacing.XL)
+        layout.setSpacing(Spacing.XL)
 
         # Scroll area para contenido
         scroll = QScrollArea()
@@ -120,7 +121,7 @@ class DashboardForm(QWidget):
 
         contenedor = QWidget()
         contenedor_layout = QVBoxLayout()
-        contenedor_layout.setSpacing(20)
+        contenedor_layout.setSpacing(Spacing.XL)
 
         # Encabezado
         header_layout = QHBoxLayout()

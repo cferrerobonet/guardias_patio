@@ -8,7 +8,7 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 import json
 from typing import Optional
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
 from application.use_cases.profesor import (
     ActualizarProfesorUseCase,
@@ -621,17 +621,13 @@ class ProfesorForm(BaseForm):
             # Usar Use Case para obtener el profesor
             profesor_dto = self.obtener_use_case.execute(id_profesor)
 
-            # 🔧 OBTENER recreos_permitidos RAW desde la BD (sin procesar)
-            # El DTO pierde la estructura por día al convertir dict a lista
+            # Obtener recreos_permitidos en formato JSON raw desde el DTO ya cargado
             recreos_raw = None
             try:
-                from infrastructure.database.models import Profesor
-
-                profesor_model = self.session.query(Profesor).filter_by(id=id_profesor).first()
-                if profesor_model and profesor_model.recreos_permitidos:
-                    recreos_raw = profesor_model.recreos_permitidos  # String JSON original
-            except SQLAlchemyError as e:
-                logger.warning(f"No se pudo obtener recreos_permitidos raw: {e}")
+                if profesor_dto.recreos_permitidos is not None:
+                    recreos_raw = json.dumps(profesor_dto.recreos_permitidos)
+            except (TypeError, ValueError):
+                recreos_raw = None
 
             # Limpiar formulario
             self._limpiar_formulario()
@@ -691,43 +687,43 @@ class ProfesorForm(BaseForm):
 
             # Cargar datos del profesor seleccionado
             try:
-                # Obtener directamente de BD (sin caché) para datos actualizados
-                from infrastructure.database.models import Profesor
+                # Obtener a través del use case (sin query directa a BD)
+                profesor_dto = self.obtener_use_case.execute(id_profesor)
 
-                profesor_model = self.session.query(Profesor).filter_by(id=id_profesor).first()
-
-                if not profesor_model:
+                if not profesor_dto:
                     self.mostrar_error("Error", f"No se encontró el profesor con ID {id_profesor}")
                     return
 
                 # Limpiar formulario
                 self._limpiar_formulario()
 
-                # Cargar datos en widgets directamente desde el modelo de BD
+                # Cargar datos en widgets desde el DTO
                 self.datos_basicos_widget.set_datos(
                     {
-                        "nombre_completo": profesor_model.nombre_completo or "",
-                        "email": profesor_model.email_corporativo or "",
-                        "es_tutor": profesor_model.tutor or False,
+                        "nombre_completo": profesor_dto.nombre_completo or "",
+                        "email": profesor_dto.email_corporativo or "",
+                        "es_tutor": profesor_dto.tutor or False,
                     }
                 )
 
                 self.horario_widget.set_datos(
                     {
-                        "horas_contrato": profesor_model.horas_contrato,
-                        "turno": profesor_model.turno,
-                        "horas_manana": profesor_model.horas_manana,
-                        "horas_tarde": profesor_model.horas_tarde,
+                        "horas_contrato": profesor_dto.horas_contrato,
+                        "turno": profesor_dto.turno,
+                        "horas_manana": profesor_dto.horas_manana,
+                        "horas_tarde": profesor_dto.horas_tarde,
                     }
                 )
 
                 self.restricciones_widget.set_datos(
                     {
-                        "fecha_inicio": profesor_model.fecha_inicio_guardias,
-                        "fecha_fin": profesor_model.fecha_fin_guardias,
-                        "zona_preferida_id": profesor_model.zona_preferida_id,
-                        "recreos_permitidos": profesor_model.recreos_permitidos,
-                        "turno": profesor_model.turno,
+                        "fecha_inicio": profesor_dto.fecha_inicio_guardias,
+                        "fecha_fin": profesor_dto.fecha_fin_guardias,
+                        "zona_preferida_id": profesor_dto.zona_preferida_id,
+                        "recreos_permitidos": json.dumps(profesor_dto.recreos_permitidos)
+                        if profesor_dto.recreos_permitidos is not None
+                        else None,
+                        "turno": profesor_dto.turno,
                     }
                 )
 

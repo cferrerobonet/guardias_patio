@@ -3,7 +3,7 @@
 Integra estadísticas del curso y cuotas calculadas en un solo panel.
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from application.dtos.domain_services_dtos import CalcularCuotasRequest
 from application.use_cases.calcular_cuotas_use_case import CalcularCuotasUseCase
 from PyQt6.QtCore import pyqtSignal
@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from sqlalchemy.orm import Session
-from ui_styles import (
+from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
     format_terminal_label,

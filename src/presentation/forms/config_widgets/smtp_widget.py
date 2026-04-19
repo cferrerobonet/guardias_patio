@@ -14,7 +14,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
+from presentation.theme.tokens import Spacing
 from dotenv import load_dotenv
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -136,7 +137,7 @@ class SMTPConfigWidget(QGroupBox):
 
         # Botones SMTP
         smtp_btn_layout = QHBoxLayout()
-        smtp_btn_layout.setSpacing(8)
+        smtp_btn_layout.setSpacing(Spacing.SM)
 
         self.modify_smtp_btn = QPushButton("Modificar Configuración SMTP")
         self.modify_smtp_btn.setIcon(icon_for_button("key"))

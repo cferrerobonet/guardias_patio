@@ -9,7 +9,8 @@ Permite configurar opciones de generación de PDFs con diferentes modos:
 from datetime import datetime
 from typing import List
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
+from presentation.theme.tokens import Spacing
 from infrastructure.database.models import Profesor
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -54,7 +55,7 @@ class CalendariosPdfWidget(QGroupBox):
     def _setup_ui(self):
         """Construir la interfaz del widget."""
         layout = QVBoxLayout()
-        layout.setSpacing(12)
+        layout.setSpacing(Spacing.MD)
         layout.setContentsMargins(15, 20, 15, 15)
 
         # Información

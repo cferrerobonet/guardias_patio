@@ -6,6 +6,52 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.7.0] - 2026-04-19
+
+### 🎯 Resumen
+Documentación de ítems ya resueltos (ARQ-08/09, SEC-12, DB-05/09, PERF-02/05, A11Y-10, VIS-01/03) y UXF-01: sustituciones completan `es_sustitucion`, `profesor_sustituido_id` y `notas`.
+
+### ✨ Added
+- **UXF-01**: `confirmar_sustitucion()` llama a `marcar_como_sustitucion(profesor_id)` y guarda `notas` en la entidad
+
+### Fixed
+- Corregidos marcadores de auditoría: 11 ítems marcados como RESUELTO (pre-existente o v5.5.0/5.6.0)
+
+---
+## [5.6.0] - 2026-04-19
+
+### 🎯 Resumen
+Optimización N+1 en ausencias (PERF-03), eliminación de 3 queries directas en presentation (ARQ-02 Fase 1) y reducción de `except Exception` silenciosos (SEC-16 Fase 1).
+
+### ✨ Added
+- **PERF-03**: `AusenciaChecker.prefetch_ausencias()` — precarga ausencias de una fecha en una sola query SQL; cache de instancia en `AusenciaChecker` evita N+1 queries durante la asignación. `ProfesorFilter` llama automáticamente a `prefetch_ausencias` antes del bucle de elegibilidad.
+
+### Changed
+- **ARQ-02 Fase 1**: Eliminadas las 3 queries directas a ORM en `presentation/`:
+  - `generacion_panel.py`: usa `ActualizarConfiguracionUseCase` para actualizar algoritmo
+  - `profesor_form.py` ×2: usa `ObtenerProfesorUseCase` + serialización JSON para `recreos_permitidos`
+  - `gestor_sustituciones.py`: usa `AppServices.guardias.get_by_id + save` para reasignar guardia
+- **SEC-16 Fase 1**: 3 `except Exception` silenciosos sustituidos por tipos específicos (`OSError`, `ValueError`, `RuntimeError`, `AttributeError`) en `ui_helpers.py` y `main.py`
+
+---
+## [5.5.0] - 2026-04-19
+
+### 🎯 Resumen
+Design tokens aplicados (VIS-05/06), migración ARQ-06 completa, paginación API-09 en guardias y TODO SAN-03 resuelto.
+
+### ✨ Added
+- **API-09**: `PaginatedGuardiasResponse` en `GET /guardias` — devuelve `items`, `total`, `page`, `size`, `pages`
+- **ARQ-06**: `src/presentation/theme/legacy_styles.py` como destino definitivo de constantes QSS; `ui_styles.py` reducido a wrapper de retro-compatibilidad; ~34 archivos migrados a `from presentation.theme import legacy_styles as styles`
+
+### Changed
+- **VIS-05**: Fuentes hardcodeadas sustituidas por tokens `FontSize.*` en 6 archivos de presentación
+- **VIS-06**: Márgenes y espaciados hardcodeados sustituidos por tokens `Spacing.*` en 13 archivos de presentación
+- **SAN-03**: Implementado `_score_guardias_recientes()` en `score_calculator.py` (penalización -20/-10/-5 por día reciente)
+
+### 🧹 Housekeeping
+- **CACHE-01/CACHE-02**: Marcados como resueltos (ya implementados en v5.4.0 con `@cache_profesores` y `@cache_configuracion`)
+
+---
 ## [5.4.0] - 2026-04-19
 
 ### 🎯 Resumen

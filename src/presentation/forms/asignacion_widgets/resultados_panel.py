@@ -4,13 +4,14 @@ Muestra el resumen de guardias generadas, cobertura y métricas de equidad.
 Estilo terminal negro consistente con otros widgets.
 """
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
+from presentation.theme.tokens import Spacing
 from application.dtos.domain_services_dtos import AnalisisEquidadRequest
 from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
 from infrastructure.database.models import Profesor
 from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
 from sqlalchemy.orm import Session
-from ui_styles import (
+from presentation.theme.legacy_styles import (
     format_terminal_info,
     format_terminal_label,
     format_terminal_number,

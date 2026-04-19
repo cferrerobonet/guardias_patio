@@ -6,7 +6,7 @@ Permite visualizar todos los cursos y realizar operaciones de gestión.
 
 from typing import Optional
 
-import ui_styles as styles
+from presentation.theme import legacy_styles as styles
 from core.logging import get_logger
 from infrastructure.database.models import CursoEscolar, Guardia
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
