@@ -10,6 +10,7 @@ import json
 from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
 from infrastructure.database.models import Profesor
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from utils.logger import get_logger
 from utils.repository_cache import invalidate_profesores_cache
@@ -151,6 +152,9 @@ class ActualizarProfesorUseCase:
             return self._convertir_a_dto(profesor)
 
         except SQLAlchemyError as e:
+            self.session.rollback()
+            raise BusinessLogicError(f"Error al actualizar el profesor: {str(e)}") from e
+        except Exception as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al actualizar el profesor: {str(e)}") from e
 

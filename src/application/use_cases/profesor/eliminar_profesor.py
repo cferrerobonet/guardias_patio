@@ -8,6 +8,7 @@ Invalida cache de profesores tras eliminar.
 from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
 from infrastructure.database.models import Guardia, Profesor
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from utils.logger import get_logger
 from utils.repository_cache import invalidate_profesores_cache

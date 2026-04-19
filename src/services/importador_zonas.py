@@ -80,7 +80,7 @@ def importar_zonas_desde_csv(
             reader = csv_module.DictReader(f)
             filas = list(reader)
     except (OSError, IOError, ValueError) as e:
-        logger.exception(f"Error de E/S o lectura: {e}") CSV de zonas: {e}")
+        logger.exception(f"Error de E/S o lectura CSV de zonas: {e}")
         resultados["errores"] += 1
         resultados["detalles"].append(f"Error lectura: {e}")
         return resultados
@@ -115,7 +115,7 @@ def importar_zonas_desde_csv(
         session.commit()
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error de base de datos al guardar: {e}") zonas importadas: {e}")
+        logger.exception(f"Error de base de datos al guardar zonas importadas: {e}")
         resultados["errores"] += resultados["importadas"]
         resultados["importadas"] = 0
         resultados["detalles"].append(f"Error al guardar en BD: {e}")
@@ -170,7 +170,7 @@ def importar_zonas_desde_excel(
         df.columns = [c.strip().lower() for c in df.columns]
         filas = df.to_dict("records")
     except (OSError, IOError, ValueError) as e:
-        logger.exception(f"Error de E/S o lectura: {e}") Excel de zonas: {e}")
+        logger.exception(f"Error de E/S o lectura Excel de zonas: {e}")
         resultados["errores"] += 1
         resultados["detalles"].append(f"Error lectura: {e}")
         return resultados
@@ -205,7 +205,7 @@ def importar_zonas_desde_excel(
         session.commit()
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error de base de datos al guardar: {e}") zonas importadas: {e}")
+        logger.exception(f"Error de base de datos al guardar zonas importadas: {e}")
         resultados["errores"] += resultados["importadas"]
         resultados["importadas"] = 0
         resultados["detalles"].append(f"Error al guardar en BD: {e}")

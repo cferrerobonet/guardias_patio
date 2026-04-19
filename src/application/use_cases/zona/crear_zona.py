@@ -8,6 +8,7 @@ Invalida cache de zonas tras crear.
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
 from infrastructure.database.models import Zona
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from utils.logger import get_logger
 from utils.repository_cache import invalidate_zonas_cache
@@ -77,5 +78,8 @@ class CrearZonaUseCase:
             return ZonaDTO.model_validate(nueva_zona)
 
         except SQLAlchemyError as e:
+            self.session.rollback()
+            raise BusinessLogicError(f"Error al crear la zona: {str(e)}") from e
+        except Exception as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al crear la zona: {str(e)}") from e

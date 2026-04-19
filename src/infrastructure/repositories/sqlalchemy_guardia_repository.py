@@ -12,6 +12,7 @@ from core.logging import get_logger, log_function_call
 from domain.entities import GuardiaEntity
 from domain.repositories import IGuardiaRepository
 from sqlalchemy import and_
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, joinedload
 
 from infrastructure.database.models import Guardia

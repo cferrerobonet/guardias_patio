@@ -273,5 +273,5 @@ def guardar_guardias_en_bd(session: Session, guardias: List[Guardia]) -> None:
         logger.info(f"✓ {len(guardias)} guardias guardadas en BD")
     except SQLAlchemyError as e:
         session.rollback()
-        logger.exception(f"Error de base de datos al guardar: {e}") guardias: {e}")
+        logger.exception(f"Error de base de datos al guardar guardias: {e}")
         raise

@@ -168,6 +168,10 @@ class AsignarGuardiaUseCase:
             self.session.rollback()
             logger.error("Error al asignar guardia", error=str(e))
             raise ValidationError(f"Error al asignar guardia: {e}") from e
+        except Exception as e:
+            self.session.rollback()
+            logger.error("Error inesperado al asignar guardia", error=str(e))
+            raise ValidationError(f"Error al asignar guardia: {e}") from e
 
     def _entidad_to_dto(
         self, entidad: GuardiaEntity, profesor: ProfesorEntity, zona: ZonaEntity

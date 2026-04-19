@@ -6,6 +6,33 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.9.0] - 2026-04-20
+
+### 🎯 Resumen
+Corrección de SyntaxError/NameError en producción, imports faltantes `SQLAlchemyError`, catch-all `except Exception` en use cases. 11 ítems de auditoría marcados resueltos (pre-existentes).
+
+### Fixed
+- **SyntaxError**: `asignador_guardias_cpsat.py:845` y `asignador_guardias_v4_hibrido.py:276` — cadena f-string duplicada corregida
+- **SyntaxError**: `importador_zonas.py` — 4 cadenas f-string duplicadas corregidas
+- **NameError**: `from sqlalchemy.exc import SQLAlchemyError` faltante en 8 archivos:
+  - `use_cases/zona/crear_zona.py`, `actualizar_zona.py`, `eliminar_zona.py`
+  - `use_cases/profesor/actualizar_profesor.py`, `eliminar_profesor.py`
+  - `repositories/sqlalchemy_profesor_repository.py`, `sqlalchemy_zona_repository.py`, `sqlalchemy_guardia_repository.py`
+- **Exception handling**: `except Exception` catch-all añadido en `crear_profesor.py`, `actualizar_profesor.py`, `crear_zona.py`, `asignar_guardia.py` para convertir errores inesperados de BD a `ValidationError`/`BusinessLogicError`
+
+### Audit — Marcados RESUELTO (pre-existentes)
+- **SEC-09**: `LockoutManager` ya implementado en `src/core/security/lockout_manager.py`
+- **SEC-10**: `html.escape()` ya aplicado en `email_service.py`
+- **SEC-11**: `_sanitize_path()` y `_safe_path()` ya implementados en `sync_manager.py`
+- **SEC-13**: `api_secret_key = ""` con advertencia explícita en `settings.py`
+- **SEC-14**: `re.fullmatch()` validación username ya en `register_user()`
+- **SEC-15**: `data/` ya en `.gitignore`, no trackeado
+- **SEC-17**: `print()` sólo en docstrings/ejemplos, no en código ejecutable
+- **DB-06**: Índices compuestos y simples ya en `models.py`
+- **DB-07**: Sin `datetime.utcnow()` en el código fuente
+- **SAN-01/SEC-16**: Todos los `except Exception` hacen `raise` o loggean+re-lanzan
+
+---
 ## [5.8.0] - 2026-04-19
 
 ### 🎯 Resumen

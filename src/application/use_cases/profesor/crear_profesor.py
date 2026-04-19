@@ -136,6 +136,10 @@ class CrearProfesorUseCase:
             self.session.rollback()
             logger.error("Error al crear profesor", error=str(e))
             raise ValidationError(f"Error al crear profesor: {e}") from e
+        except Exception as e:
+            self.session.rollback()
+            logger.error("Error inesperado al crear profesor", error=str(e))
+            raise ValidationError(f"Error al crear profesor: {e}") from e
 
     def _entidad_to_dto(self, entidad: ProfesorEntity) -> ProfesorDTO:
         """Convierte una entidad a DTO."""

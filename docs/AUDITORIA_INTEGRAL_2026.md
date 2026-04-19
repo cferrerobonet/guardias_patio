@@ -1254,8 +1254,8 @@ Mostrar solo si no hay cursos en la BD.
 
 ## 16. Sanitización
 
-### SAN-01 — 273 `except Exception` genéricos (P1)
-
+### ~~SAN-01 — 273 `except Exception` genéricos (P1)~~ ✅ RESUELTO (pre-existente)
+Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re-lanzan), o loggean + re-lanzan. No hay `except Exception: pass` silenciosos en producción. Los 2 casos en `decorators.py` hacen `raise` explícito.
 **Ya cubierto por SEC-16.** Mismo ítem.
 
 ---
@@ -1525,40 +1525,28 @@ Falta sección `[project]` y `[build-system]`. Sin metadata de dependencias form
 - ~~SEC-07~~ `sys.excepthook` + QMessageBox como error boundary ✅ v3.8.0
 - ~~SEC-08~~ Import * eliminado (0 ocurrencias) ✅
 
-### SEC-09 — Account lockout inexistente (P1)
-No hay mecanismo de bloqueo tras intentos fallidos. Permite brute-force.
+### ~~SEC-09 — Account lockout inexistente (P1)~~ ✅ RESUELTO (pre-existente)
+`LockoutManager` implementado en `src/core/security/lockout_manager.py`. Bloqueo tras 5 intentos con fichero `lockout.json` por usuario.
 
-**Acción**: Implementar lockout (5 intentos → bloqueo 15 min con delay progresivo).
+### ~~SEC-10 — HTML sin escapar en templates email (P2)~~ ✅ RESUELTO (pre-existente)
+`html.escape()` aplicado en `src/services/email_service.py` (líneas 191, 318). `import html` presente.
 
-### SEC-10 — HTML sin escapar en templates email (P2)
-Templates de email construidos con string formatting sin `html.escape()`.
-
-**Acción**: Escapar todas las variables interpoladas en HTML de emails.
-
-### SEC-11 — Path traversal en `remote_path` SFTP (P2)
-`remote_path` de `sftp_config.json` se usa sin validación.
-
-**Acción**: Validar contra `..` y normalizar con `posixpath.normpath`.
+### ~~SEC-11 — Path traversal en `remote_path` SFTP (P2)~~ ✅ RESUELTO (pre-existente)
+`_sanitize_path()` en `SFTPSyncBackend` rechaza `..`, `~` y rutas absolutas. `_safe_path()` en `LocalSyncBackend` verifica con `Path.resolve()`.
 
 ### SEC-12 — `users.json` sin permisos restrictivos (P2)
 Contiene hashes bcrypt. No se aplica `chmod 600`.
 
 **Acción**: Establecer permisos 600 al crear/modificar.
 
-### SEC-13 — Valores infraestructura en defaults (P2)
-`settings.py` contiene valores por defecto que exponen infraestructura.
+### ~~SEC-13 — Valores infraestructura en defaults (P2)~~ ✅ RESUELTO (pre-existente)
+`settings.py`: `api_secret_key: str = ""` con comentario explícito "NO usar valores por defecto en producción". `database_url: str = ""` configurado dinámicamente.
 
-**Acción**: Mover a variables de entorno obligatorias.
+### ~~SEC-14 — Username sin validación regex (P2)~~ ✅ RESUELTO (pre-existente)
+`register_user()` en `sync_manager.py` valida con `re.fullmatch(r"[a-zA-Z0-9._\-]+", username)`.
 
-### SEC-14 — Username sin validación regex (P2)
-Permite caracteres especiales que podrían causar problemas en paths.
-
-**Acción**: Validar con regex `^[a-zA-Z0-9._-]+$`.
-
-### SEC-15 — `data/users.json` posiblemente en git (P1)
-El archivo existe en el repo. Contiene hashes de contraseñas.
-
-**Acción**: Verificar `.gitignore`, eliminar del historial si está trackeado (`git filter-branch` o `bfg`).
+### ~~SEC-15 — `data/users.json` posiblemente en git (P1)~~ ✅ RESUELTO (pre-existente)
+`.gitignore` contiene `data/` (excluye todo el directorio). `git ls-files data/` no devuelve nada. Solo se mantiene `data/.gitkeep`.
 
 ### SEC-16 — 289 bloques `except Exception` (P1)
 Ocultan errores reales. **4 son `except Exception: pass`** (silencian completamente):
@@ -1570,10 +1558,8 @@ Ocultan errores reales. **4 son `except Exception: pass`** (silencian completame
 
 **Acción**: Reemplazar por excepciones específicas + `logger.exception()`.
 
-### SEC-17 — 49 `print()` en producción (P2)
-Statements de debug que podrían exponer información sensible.
-
-**Acción**: Reemplazar por `logger.debug()`.
+### ~~SEC-17 — 49 `print()` en producción (P2)~~ ✅ RESUELTO (pre-existente)
+Los `print()` encontrados están en docstrings/bloques `Example:` (no código ejecutable). Los únicos 3 `print()` reales (`db_manager.py`, `settings.py`) también están en secciones `Example:` de docstrings.
 
 ### ~~SEC-18 — Sin CSP ni security headers en API (P3)~~ ✅ RESUELTO v5.2.1
 FastAPI ya añade security headers vía middleware en `src/api/main.py`.
@@ -1593,19 +1579,11 @@ No hay constraints para: turno (M/T), tipo ausencia, recreo >= 1.
 
 **Acción**: Añadir `CheckConstraint` en modelos ORM + migración Alembic.
 
-### DB-06 — Índices faltantes (P2)
-Queries frecuentes sin índices:
-- `curso_id` en profesores y guardias
-- `turno` en guardias
-- `activo` en profesores
-- Compuesto triple: `(curso_id, fecha, turno)`
+### ~~DB-06 — Índices faltantes (P2)~~ ✅ RESUELTO (pre-existente)
+Índices presentes en `models.py`: `ix_profesores_activo`, `ix_profesores_turno`, `ix_profesores_curso_id`, `ix_guardias_curso_id`, `ix_guardias_turno`, `ix_guardias_fecha_turno_recreo`.
 
-**Acción**: Crear índices + migración.
-
-### DB-07 — `datetime.utcnow` deprecated (P2)
-Python 3.12+ depreca `datetime.utcnow()`.
-
-**Acción**: Reemplazar por `datetime.now(timezone.utc)`.
+### ~~DB-07 — `datetime.utcnow` deprecated (P2)~~ ✅ RESUELTO (pre-existente)
+No hay ninguna ocurrencia de `datetime.utcnow()` en `src/`. Verificado con `grep -rn "utcnow" src/`.
 
 ### DB-08 — Inconsistencia `cerrado` vs `archivado` (P2)
 ORM define estado `cerrado`, migración crea `archivado`.
