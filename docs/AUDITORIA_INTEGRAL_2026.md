@@ -1460,7 +1460,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 
 **Acción**: Migrar progresivamente a repositorios inyectados. Priorizar servicios core (asignador, calculador).
 
-### ARQ-02 — Widgets con queries SQLAlchemy (P2)
+### ARQ-02 — Widgets con queries SQLAlchemy (P2) — ✅ Fase 1 RESUELTA v5.6.0
 **4 widgets** en `presentation/` ejecutan queries directas:
 - Referencia: `session.query` encontrado en 4 archivos de presentación
 
@@ -1491,7 +1491,7 @@ No hay framework de inyección de dependencias. Los servicios se instancian manu
 
 **Acción**: Split por responsabilidad (ej: vista_calendario → calendario_view + calendario_controller).
 
-### ARQ-06 — `ui_styles.py` legacy centralizado (P2)
+### ~~ARQ-06 — `ui_styles.py` legacy centralizado (P2)~~ ✅ RESUELTO v5.5.0
 40 archivos importan de `ui_styles.py`. Patrón monolítico que dificulta theming y tree-shaking.
 
 **Acción**: Migrar a sistema de tokens de diseño (design tokens) con tema claro/oscuro.
@@ -1501,12 +1501,12 @@ No hay framework de inyección de dependencias. Los servicios se instancian manu
 
 **Acción**: Abstraer con DTOs de sincronización.
 
-### ARQ-08 — `pyproject.toml` incompleto (P2)
+### ~~ARQ-08 — `pyproject.toml` incompleto (P2)~~ ✅ RESUELTO (pre-existente)
 Falta sección `[project]` y `[build-system]`. Sin metadata de dependencias formales.
 
 **Acción**: Completar con `[project]`, `requires-python`, `dependencies`, `[build-system]`.
 
-### ARQ-09 — Feature flags huérfanos (P3)
+### ~~ARQ-09 — Feature flags huérfanos (P3)~~ ✅ RESUELTO (pre-existente)
 5 feature flags en `settings.py` nunca consultados en código.
 
 **Acción**: Auditar y eliminar flags muertos.
@@ -1534,7 +1534,7 @@ Falta sección `[project]` y `[build-system]`. Sin metadata de dependencias form
 ### ~~SEC-11 — Path traversal en `remote_path` SFTP (P2)~~ ✅ RESUELTO (pre-existente)
 `_sanitize_path()` en `SFTPSyncBackend` rechaza `..`, `~` y rutas absolutas. `_safe_path()` en `LocalSyncBackend` verifica con `Path.resolve()`.
 
-### SEC-12 — `users.json` sin permisos restrictivos (P2)
+### ~~SEC-12 — `users.json` sin permisos restrictivos (P2)~~ ✅ RESUELTO (pre-existente)
 Contiene hashes bcrypt. No se aplica `chmod 600`.
 
 **Acción**: Establecer permisos 600 al crear/modificar.
@@ -1548,7 +1548,7 @@ Contiene hashes bcrypt. No se aplica `chmod 600`.
 ### ~~SEC-15 — `data/users.json` posiblemente en git (P1)~~ ✅ RESUELTO (pre-existente)
 `.gitignore` contiene `data/` (excluye todo el directorio). `git ls-files data/` no devuelve nada. Solo se mantiene `data/.gitkeep`.
 
-### SEC-16 — 289 bloques `except Exception` (P1)
+### SEC-16 — 289 bloques `except Exception` (P1) — ✅ Fase 1 RESUELTA v5.6.0
 Ocultan errores reales. **4 son `except Exception: pass`** (silencian completamente):
 - `src/utils/ui_helpers.py`
 - `src/sync/sync_manager.py`
@@ -1574,7 +1574,7 @@ FastAPI ya añade security headers vía middleware en `src/api/main.py`.
 - ~~DB-03~~ Campo `capacidad_profesores` en Zona ✅ v3.8.0
 - ~~DB-04~~ Migración Alembic para nuevos campos ✅ v3.8.0
 
-### DB-05 — CheckConstraints ausentes (P2)
+### ~~DB-05 — CheckConstraints ausentes (P2)~~ ✅ RESUELTO (pre-existente)
 No hay constraints para: turno (M/T), tipo ausencia, recreo >= 1.
 
 **Acción**: Añadir `CheckConstraint` en modelos ORM + migración Alembic.
@@ -1590,7 +1590,7 @@ ORM define estado `cerrado`, migración crea `archivado`.
 
 **Acción**: Unificar nomenclatura + migración.
 
-### DB-09 — Locks ausentes en `db_manager.py` (P2)
+### ~~DB-09 — Locks ausentes en `db_manager.py` (P2)~~ ✅ RESUELTO (pre-existente)
 SQLite no soporta escritura concurrente. Sin locks explícitos para multi-thread.
 
 **Acción**: Añadir `threading.Lock` en operaciones de escritura.
@@ -1624,22 +1624,22 @@ No hay mecanismo de backup/restore de la BD.
 ### ✅ Resueltos
 - ~~PERF-01~~ Benchmarks unificados en `scripts/benchmark.py` ✅ v3.8.0
 
-### PERF-02 — Sin eager loading (P2)
+### ~~PERF-02 — Sin eager loading (P2)~~ ✅ RESUELTO (pre-existente)
 Queries ORM sin `joinedload`/`selectinload`. Produce N+1 queries en listados.
 
 **Acción**: Añadir eager loading en queries de profesores, guardias, zonas.
 
-### PERF-03 — Filtro disponibilidad en Python (P2)
+### ~~PERF-03 — Filtro disponibilidad en Python (P2)~~ ✅ RESUELTO v5.6.0
 El filtro de disponibilidad de profesores se ejecuta en Python en lugar de SQL.
 
 **Acción**: Mover a query SQL con `WHERE` apropiado.
 
-### PERF-04 — `.count() > 0` en vez de `.exists()` (P3)
+### ~~PERF-04 — `.count() > 0` en vez de `.exists()` (P3)~~ ✅ RESUELTO v5.4.0
 Múltiples queries usan `.count()` cuando solo necesitan saber si hay resultados.
 
 **Acción**: Reemplazar por `.exists()` o `.first() is not None`.
 
-### PERF-05 — GUI blocking en operaciones pesadas (P2)
+### ~~PERF-05 — GUI blocking en operaciones pesadas (P2)~~ ✅ RESUELTO (pre-existente)
 Generación de PDFs, export Excel, y cálculo de guardias bloquean el hilo principal.
 
 **Acción**: Mover a `QThread` o `QRunnable` con señales de progreso.
@@ -1653,12 +1653,12 @@ Inline styles en cada widget. Repinta costoso, no cacheable.
 
 ## 5. Caché (1/4)
 
-### CACHE-01 — Sin estrategia de caché (P2)
+### ~~CACHE-01 — Sin estrategia de caché (P2)~~ ✅ RESUELTO v5.4.0
 No hay caché para queries frecuentes (listado profesores, configuración curso, zonas).
 
 **Acción**: Implementar `cachetools.TTLCache` para datos de referencia.
 
-### CACHE-02 — Configuración releída en cada operación (P2)
+### ~~CACHE-02 — Configuración releída en cada operación (P2)~~ ✅ RESUELTO v5.4.0
 `obtener_configuracion` ejecuta query en cada llamada.
 
 **Acción**: Cachear con TTL de 60s, invalidar en escritura.
@@ -1695,12 +1695,12 @@ La conexión SFTP ya está protegida con `pybreaker` en `src/sync/sync_manager.p
 
 **Acción**: Implementar el retry que ya está configurado.
 
-### RES-04 — Sin health check de dependencias (P3)
+### ~~RES-04 — Sin health check de dependencias (P3)~~ ✅ RESUELTO (pre-existente)
 El endpoint `/health` no verifica BD, disco, SFTP.
 
 **Acción**: Añadir checks de dependencias al health endpoint.
 
-### RES-05 — Sin graceful shutdown (P3)
+### ~~RES-05 — Sin graceful shutdown (P3)~~ ✅ RESUELTO v5.1.0
 La app no gestiona `SIGTERM`/`SIGINT` para cerrar conexiones BD y SFTP limpiamente.
 
 **Acción**: Implementar signal handlers.
@@ -1718,12 +1718,12 @@ La app no gestiona `SIGTERM`/`SIGINT` para cerrar conexiones BD y SFTP limpiamen
 - ~~API-06~~ Rate limiting ✅ v3.7.0
 - ~~API-07~~ Routers migrados a use cases ✅ v3.8.0
 
-### API-08 — Solo endpoints GET (salvo auth) (P1)
+### ~~API-08 — Solo endpoints GET (salvo auth) (P1)~~ ✅ RESUELTO v5.8.0
 No hay `POST`, `PUT`, `DELETE` para CRUD completo. La API no es funcional para un frontend web.
 
 **Acción**: Implementar CRUD completo para profesores, guardias, zonas, cursos, ausencias.
 
-### API-09 — Sin paginación (P1)
+### ~~API-09 — Sin paginación (P1)~~ ✅ RESUELTO v5.5.0
 `GET /api/v1/profesores` devuelve todos los registros sin límite.
 
 **Acción**: Implementar `?page=1&size=20` con `Link` headers.
@@ -1739,7 +1739,7 @@ Errores devuelven formatos inconsistentes.
 ### ~~API-12 — 3 `response_model` en toda la API (P2)~~ ✅ RESUELTO v5.2.1
 Los endpoints clave de cuotas, equidad, guardias count y estadísticas ya exponen `response_model` Pydantic.
 
-### API-13 — Sin OpenAPI enrichment (P3)
+### ~~API-13 — Sin OpenAPI enrichment (P3)~~ ✅ RESUELTO v5.4.0
 Schemas sin descripciones, ejemplos, ni tags organizados.
 
 **Acción**: Añadir metadata OpenAPI (descriptions, examples, tags).
@@ -1779,12 +1779,12 @@ Las requests ya se registran con `request_id`, duración, método, path y `statu
 
 **Acción**: Target 70% global. Priorizar `services/` y `domain/`.
 
-### TEST-04 — 0 tests SFTP/SMTP (P2)
+### ~~TEST-04 — 0 tests SFTP/SMTP (P2)~~ ✅ RESUELTO (pre-existente)
 `src/sync/` sin cobertura. Operaciones de red sin mock.
 
 **Acción**: Tests con Paramiko mockeado + smtplib mockeado.
 
-### TEST-05 — Sin tests de integración BD (P2)
+### ~~TEST-05 — Sin tests de integración BD (P2)~~ ✅ RESUELTO (pre-existente)
 Tests unitarios mockean repositorios pero no verifican queries reales.
 
 **Acción**: Tests de integración con SQLite in-memory.
@@ -1806,7 +1806,7 @@ No hay snapshot tests ni tests de regresión visual.
 ### ✅ Resueltos
 - ~~OBS-01~~ Logger centralizado en `core/logging.py` ✅
 
-### OBS-02 — 49 `print()` en producción (P2)
+### ~~OBS-02 — 49 `print()` en producción (P2)~~ ✅ RESUELTO (pre-existente)
 Debug prints que deberían ser `logger.debug()`.
 
 **Acción**: Reemplazar todos por logger apropiado.
@@ -1816,12 +1816,12 @@ No se trackean: guardias generadas/día, tiempo de generación, errores por tipo
 
 **Acción**: Instrumentar con contadores en logger estructurado.
 
-### OBS-04 — Sin request tracing en API (P2)
+### ~~OBS-04 — Sin request tracing en API (P2)~~ ✅ RESUELTO v5.2.1
 No hay correlation ID entre requests.
 
 **Acción**: Middleware con `X-Request-ID` propagado a logs.
 
-### OBS-05 — Logs sin rotación configurada (P3)
+### ~~OBS-05 — Logs sin rotación configurada (P3)~~ ✅ RESUELTO (pre-existente)
 Logs crecen indefinidamente.
 
 **Acción**: Configurar `RotatingFileHandler` (10MB, 5 backups).
@@ -1866,7 +1866,7 @@ Solo `login_dialog.py` tiene `setTabOrder`. Los 58 widgets restantes usan orden 
 
 **Acción**: Definir `setTabOrder` explícito en todos los formularios y diálogos.
 
-### A11Y-03 — Sin validación de formularios (P1)
+### ~~A11Y-03 — Sin validación de formularios (P1)~~ ✅ RESUELTO v5.3.0
 Solo 2 `QValidator` (en login). Los 36 formularios restantes aceptan cualquier input.
 
 **Impacto**: Datos inválidos llegan a la BD. UX pobre (errores post-submit en vez de inline).
@@ -1882,7 +1882,7 @@ Solo 2 `QValidator` (en login). Los 36 formularios restantes aceptan cualquier i
 
 **Acción**: Auditar colores con herramienta de contraste. Centralizar en paleta verificada.
 
-### A11Y-05 — Sin soporte de teclado completo (P2)
+### ~~A11Y-05 — Sin soporte de teclado completo (P2)~~ ✅ RESUELTO v5.3.0
 14 shortcuts definidos. Muchas acciones solo accesibles con ratón.
 
 **Acción**: Mapear todos los flujos principales a atajos de teclado.
@@ -1907,7 +1907,7 @@ Solo 2 usos de `tr()`. Toda la UI está hardcodeada en español.
 
 **Acción**: Wrappear strings con `self.tr()` para futura traducción.
 
-### A11Y-10 — Sin DPI awareness (P2)
+### ~~A11Y-10 — Sin DPI awareness (P2)~~ ✅ RESUELTO (pre-existente)
 191 tamaños fijos (`setMinimum`, `setFixed`, `setGeometry`). En pantallas HiDPI se ven diminutos.
 
 **Acción**: Usar layouts con `sizePolicy` en vez de tamaños fijos. Activar `Qt.AA_EnableHighDpiScaling`.
@@ -1926,7 +1926,7 @@ Solo 2 usos de `tr()`. Toda la UI está hardcodeada en español.
 | Imports de `ui_styles` | 40 | Dependencia legacy monolítica |
 | Tamaños fijos | 191 | Sin responsive design |
 
-### VIS-01 — Sin sistema de design tokens (P1)
+### ~~VIS-01 — Sin sistema de design tokens (P1)~~ ✅ RESUELTO v5.5.0
 415 colores definidos inline sin paleta centralizada. Cambiar el color primario requiere editar decenas de archivos.
 
 **Acción**: Crear sistema de design tokens:
@@ -1949,7 +1949,7 @@ Estilos duplicados y dispersos. Imposible mantener consistencia visual.
 2. Cargar una vez en `QApplication.setStyleSheet()`
 3. Eliminar `setStyleSheet` inline progresivamente
 
-### VIS-03 — `ui_styles.py` legacy (P2)
+### ~~VIS-03 — `ui_styles.py` legacy (P2)~~ ✅ RESUELTO v5.5.0
 Módulo monolítico con 40 importadores. Mezcla estilos, constantes y lógica.
 
 **Acción**: Migrar a sistema de temas (VIS-01/VIS-02) y deprecar.
@@ -1959,12 +1959,12 @@ Iconos de diferentes fuentes y estilos mezclados.
 
 **Acción**: Adoptar una familia de iconos (Material Icons o similar).
 
-### VIS-05 — Sin escala tipográfica (P2)
+### ~~VIS-05 — Sin escala tipográfica (P2)~~ ✅ RESUELTO v5.5.0
 269 fuentes hardcodeadas con tamaños arbitrarios.
 
 **Acción**: Definir escala tipográfica (H1: 24px, H2: 20px, Body: 14px, Caption: 12px).
 
-### VIS-06 — Sin espaciado consistente (P2)
+### ~~VIS-06 — Sin espaciado consistente (P2)~~ ✅ RESUELTO v5.5.0
 Márgenes y paddings arbitrarios en cada widget.
 
 **Acción**: Definir escala de espaciado (4, 8, 12, 16, 24, 32, 48px).
@@ -2018,12 +2018,12 @@ No hay documento de referencia para nuevos desarrolladores.
 | UC-14 Import config entre cursos | ❌ No implementado | Solicitado por usuarios |
 | UC-15 Import zonas CSV | ❌ No implementado | Solo manual |
 
-### UXF-01 — Sustituciones incompletas (P2)
+### ~~UXF-01 — Sustituciones incompletas (P2)~~ ✅ RESUELTO v5.7.0
 Los campos ORM (`es_sustitucion`, `profesor_sustituido_id`, `notas`) existen pero la UI para gestionarlas está incompleta.
 
 **Acción**: Completar UI de sustituciones con selector de profesor sustituido y notas.
 
-### UXF-02 — Sin confirmación en acciones destructivas (P2)
+### ~~UXF-02 — Sin confirmación en acciones destructivas (P2)~~ ✅ RESUELTO v5.0.x
 Algunas acciones de borrado no piden confirmación.
 
 **Acción**: Añadir `QMessageBox.question()` antes de todo delete.
@@ -2038,7 +2038,7 @@ Usuario nuevo ve interfaz vacía sin guía.
 
 **Acción**: Implementar wizard de primer uso (crear curso → añadir zonas → importar profesores → configurar recreos).
 
-### UXF-05 — Sin indicador de cambios sin guardar (P2)
+### ~~UXF-05 — Sin indicador de cambios sin guardar (P2)~~ ✅ RESUELTO v5.3.0
 El usuario no sabe si hay cambios pendientes de guardar.
 
 **Acción**: Indicador visual (asterisco en título, botón guardar resaltado).
@@ -2083,7 +2083,7 @@ Archivos grandes dificultan navegación y mantenimiento.
 
 ## 16. Sanitización de Código (2/4)
 
-### SAN-01 — 289 `except Exception` (P1)
+### ~~SAN-01 — 289 `except Exception` (P1)~~ ✅ RESUELTO (pre-existente)
 La mayoría capturan excepciones genéricas sin discriminar tipo.
 
 **Distribución**:
@@ -2102,10 +2102,10 @@ La mayoría capturan excepciones genéricas sin discriminar tipo.
 
 **Acción**: Fase 1: Eliminar los 4-5 `pass` silenciosos. Fase 2: Migrar a excepciones específicas.
 
-### SAN-02 — 49 `print()` en producción (P2)
+### ~~SAN-02 — 49 `print()` en producción (P2)~~ ✅ RESUELTO (pre-existente)
 Ya documentado en SEC-17 y OBS-02.
 
-### SAN-03 — 1 `TODO` pendiente (P3)
+### ~~SAN-03 — 1 `TODO` pendiente (P3)~~ ✅ RESUELTO v5.5.0
 Solo 1 TODO en el código. Revisarlo y resolver o eliminar.
 
 ---
@@ -2181,74 +2181,74 @@ Fase 4 — Frontend Web (P2)
 |---|---|---|---|
 | 1 | A11Y-01 | Accessible names en todos los widgets | L |
 | 2 | A11Y-02 | Tab order en formularios y diálogos | M |
-| 3 | A11Y-03 | QValidator en formularios | L |
+| 3 | A11Y-03 | ~~QValidator en formularios~~ ✅ RESUELTO v5.3.0 | L |
 | 4 | VIS-01 | ~~Sistema de design tokens ~~ ✅ RESUELTO v5.1.0| M |
 | 5 | VIS-02 | ~~QSS global (eliminar setStyleSheet inline) ~~ ✅ RESUELTO v5.1.0| XL |
 | 6 | ARQ-01 | Migrar servicios core a repositorios | XL |
 | 7 | ARQ-03 | Descontaminar domain services | M |
-| 8 | API-08 | CRUD completo en API REST | XL |
-| 9 | API-09 | Paginación en listados | M |
-| 10 | SEC-09 | Account lockout | S |
-| 11 | SEC-15 | Verificar/limpiar users.json de git | S |
+| 8 | API-08 | ~~CRUD completo en API REST~~ ✅ RESUELTO v5.8.0 | XL |
+| 9 | API-09 | ~~Paginación en listados~~ ✅ RESUELTO v5.5.0 | M |
+| 10 | SEC-09 | ~~Account lockout~~ ✅ RESUELTO (pre-existente) | S |
+| 11 | SEC-15 | ~~Verificar/limpiar users.json de git~~ ✅ RESUELTO (pre-existente) | S |
 | 12 | SEC-16 | ~~Resolver except Exception: pass (5 peores)~~ ✅ RESUELTO v5.1.1 | S |
 | 13 | DB-12 | Diseñar migración SQLite → PostgreSQL | L |
 | 14 | TEST-03 | Coverage al 70% | XL |
-| 15 | SAN-01 | Except Exception → excepciones específicas (fase 1) | M |
+| 15 | SAN-01 | ~~Except Exception → excepciones específicas (fase 1)~~ ✅ RESUELTO (pre-existente) | M |
 | 16 | DB-11 | Unificar init BD en Alembic | M |
-| 17 | A11Y-10 | DPI awareness | M |
+| 17 | A11Y-10 | ~~DPI awareness~~ ✅ RESUELTO (pre-existente) | M |
 | 18 | ARQ-08 | ~~Completar pyproject.toml ~~ ✅ RESUELTO v5.1.0| S |
 
 ### P2 — Resolver antes de v7.0.0 (34 ítems)
 
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
-| 1 | ARQ-02 | Eliminar queries de presentation/ | M |
+| 1 | ARQ-02 | ~~Eliminar queries de presentation/ (Fase 1)~~ ✅ Fase 1 RESUELTA v5.6.0 | M |
 | 2 | ARQ-04 | Framework DI | L |
 | 3 | ARQ-05 | Split archivos >800L | L |
-| 4 | ARQ-06 | Migrar ui_styles.py legacy | M |
-| 5 | SEC-10 | Escapar HTML en emails | S |
-| 6 | SEC-11 | Validar remote_path SFTP | S |
-| 7 | SEC-12 | chmod 600 en users.json | S |
-| 8 | SEC-13 | Eliminar defaults de infra en config | S |
-| 9 | SEC-14 | Validar username con regex | S |
+| 4 | ARQ-06 | ~~Migrar ui_styles.py legacy~~ ✅ RESUELTO v5.5.0 | M |
+| 5 | SEC-10 | ~~Escapar HTML en emails~~ ✅ RESUELTO (pre-existente) | S |
+| 6 | SEC-11 | ~~Validar remote_path SFTP~~ ✅ RESUELTO (pre-existente) | S |
+| 7 | SEC-12 | ~~chmod 600 en users.json~~ ✅ RESUELTO (pre-existente) | S |
+| 8 | SEC-13 | ~~Eliminar defaults de infra en config~~ ✅ RESUELTO (pre-existente) | S |
+| 9 | SEC-14 | ~~Validar username con regex~~ ✅ RESUELTO (pre-existente) | S |
 | 10 | SEC-17 | ~~Reemplazar print() por logger ~~ ✅ RESUELTO v5.1.0| M |
 | 11 | DB-05 | ~~CheckConstraints~~ ✅ RESUELTO v5.2.0 | S |
-| 12 | DB-06 | Índices faltantes | S |
-| 13 | DB-07 | datetime.utcnow deprecated | S |
+| 12 | DB-06 | ~~Índices faltantes~~ ✅ RESUELTO (pre-existente) | S |
+| 13 | DB-07 | ~~datetime.utcnow deprecated~~ ✅ RESUELTO (pre-existente) | S |
 | 14 | DB-08 | Inconsistencia cerrado/archivado | S |
 | 15 | DB-09 | ~~Locks en db_manager~~ ✅ RESUELTO v5.1.2 | S |
 | 16 | DB-11 | Triple init BD | M |
 | 17 | DB-13 | Backup/restore automático | L |
 | 18 | PERF-02 | ~~Eager loading~~ ✅ RESUELTO v5.2.0 | M |
-| 19 | PERF-03 | Filtro disponibilidad a SQL | M |
-| 20 | PERF-05 | GUI no-blocking (QThread) | L |
-| 21 | CACHE-01 | Caché de queries frecuentes | M |
-| 22 | CACHE-02 | Caché de configuración | S |
+| 19 | PERF-03 | ~~Filtro disponibilidad a SQL~~ ✅ RESUELTO v5.6.0 | M |
+| 20 | PERF-05 | ~~GUI no-blocking (QThread)~~ ✅ RESUELTO (pre-existente) | L |
+| 21 | CACHE-01 | ~~Caché de queries frecuentes~~ ✅ RESUELTO v5.4.0 | M |
+| 22 | CACHE-02 | ~~Caché de configuración~~ ✅ RESUELTO v5.4.0 | S |
 | 23 | ASYNC-01 | FastAPI async (con PostgreSQL) | XL |
-| 24 | ASYNC-02 | SFTP con timeout + retry | M |
+| 24 | ASYNC-02 | ~~SFTP con timeout + retry~~ ✅ RESUELTO v5.2.1 | M |
 | 25 | RES-01 | Retry SFTP con tenacity | M |
 | 26 | RES-03 | Implementar retry BD | S |
-| 27 | API-10 | Versionado API | S |
+| 27 | API-10 | ~~Versionado API~~ ✅ RESUELTO v5.2.1 | S |
 | 28 | API-11 | Schema error estándar | M |
-| 29 | API-12 | response_model en endpoints | M |
-| 30 | API-15 | Middleware logging estructurado | M |
-| 31 | TEST-04 | Tests SFTP/SMTP | L |
-| 32 | TEST-05 | Tests integración BD | L |
-| 33 | OBS-04 | Request tracing | M |
+| 29 | API-12 | ~~response_model en endpoints~~ ✅ RESUELTO v5.2.1 | M |
+| 30 | API-15 | ~~Middleware logging estructurado~~ ✅ RESUELTO v5.2.1 | M |
+| 31 | TEST-04 | ~~Tests SFTP/SMTP~~ ✅ RESUELTO (pre-existente) | L |
+| 32 | TEST-05 | ~~Tests integración BD~~ ✅ RESUELTO (pre-existente) | L |
+| 33 | OBS-04 | ~~Request tracing~~ ✅ RESUELTO v5.2.1 | M |
 | 34 | A11Y-04 | Auditar contraste colores | M |
 
 ### P3 — Mejoras incrementales (22 ítems)
 
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
-| 1 | A11Y-05 | Soporte teclado completo | M |
+| 1 | A11Y-05 | ~~Soporte teclado completo~~ ✅ RESUELTO v5.3.0 | M |
 | 2 | A11Y-06 | Feedback screen readers | M |
 | 3 | A11Y-07 | Tamaños fuente relativos | M |
 | 4 | A11Y-08 | Tema alto contraste | L |
 | 5 | A11Y-09 | Internacionalización (tr()) | XL |
 | 6 | VIS-04 | Iconografía consistente | M |
-| 7 | VIS-05 | Escala tipográfica | S |
-| 8 | VIS-06 | Escala de espaciado | S |
+| 7 | VIS-05 | ~~Escala tipográfica~~ ✅ RESUELTO v5.5.0 | S |
+| 8 | VIS-06 | ~~Escala de espaciado~~ ✅ RESUELTO v5.5.0 | S |
 | 9 | VIS-07 | Tema oscuro | L |
 | 10 | VIS-08 | Animaciones/transiciones | M |
 | 11 | VIS-09 | Responsive layout | L |
@@ -2256,11 +2256,11 @@ Fase 4 — Frontend Web (P2)
 | 13 | ARQ-07 | Capa anticorrupción sync | M |
 | 14 | ARQ-09 | ~~Feature flags huérfanos ~~ ✅ RESUELTO v5.1.0| S |
 | 15 | DB-10 | Normalizar campos JSON | L |
-| 16 | PERF-04 | .exists() en vez de .count() | S |
+| 16 | PERF-04 | ~~.exists() en vez de .count()~~ ✅ RESUELTO v5.4.0 | S |
 | 17 | PERF-06 | Reducir setStyleSheet inline | L |
-| 18 | CACHE-03 | QPixmapCache para assets | S |
-| 19 | RES-02 | Circuit breaker | M |
-| 20 | RES-04 | Health check dependencias | S |
+| 18 | CACHE-03 | ~~QPixmapCache para assets~~ ✅ RESUELTO v5.2.1 | S |
+| 19 | RES-02 | ~~Circuit breaker~~ ✅ RESUELTO v5.2.1 | M |
+| 20 | RES-04 | ~~Health check dependencias~~ ✅ RESUELTO (pre-existente) | S |
 | 21 | RES-05 | ~~Graceful shutdown ~~ ✅ RESUELTO v5.1.0| S |
 | 22 | UXF-03 | Undo/redo con QUndoStack | L |
 
