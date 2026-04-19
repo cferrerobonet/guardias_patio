@@ -145,7 +145,8 @@ class Settings(BaseSettings):
 
     # ========== API SECURITY ==========
     # Debe especificarse en variable de entorno GUARDIAS_API_SECRET_KEY en producción
-    # Para desarrollo, generar valor seguro: python -c "import secrets; print(secrets.token_urlsafe(32))"
+    # Para desarrollo, generar valor seguro con:
+    # python -c "import secrets; print(secrets.token_urlsafe(32))"
     api_secret_key: str = ""  # NO usar valores por defecto en producción
     api_token_expire_minutes: int = 60
     api_algorithm: str = "HS256"
