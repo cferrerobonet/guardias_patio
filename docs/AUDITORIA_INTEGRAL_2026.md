@@ -1682,7 +1682,7 @@ La conexión SFTP ya aplica timeouts explícitos y `keepalive` en `src/sync/sync
 
 ## 7. Escalabilidad y Resiliencia (1/4)
 
-### RES-01 — Sin retry en SFTP (P2)
+### ~~RES-01 — Sin retry en SFTP (P2)~~ ✅ RESUELTO v5.2.1
 Fallo de red = fallo total. Sin reintentos.
 
 **Acción**: `tenacity.retry` con backoff exponencial (max 3 reintentos).
@@ -2226,7 +2226,7 @@ Fase 4 — Frontend Web (P2)
 | 22 | CACHE-02 | ~~Caché de configuración~~ ✅ RESUELTO v5.4.0 | S |
 | 23 | ASYNC-01 | FastAPI async (con PostgreSQL) | XL |
 | 24 | ASYNC-02 | ~~SFTP con timeout + retry~~ ✅ RESUELTO v5.2.1 | M |
-| 25 | RES-01 | Retry SFTP con tenacity | M |
+| 25 | RES-01 | ~~Retry SFTP con tenacity~~ ✅ RESUELTO v5.2.1 | M |
 | 26 | RES-03 | Implementar retry BD | S |
 | 27 | API-10 | ~~Versionado API~~ ✅ RESUELTO v5.2.1 | S |
 | 28 | API-11 | Schema error estándar | M |
@@ -2667,8 +2667,8 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 
 | ID | Hallazgo | Severidad |
 |---|---|---|
-| RES-01 | `max_retries_db: int = 3` en settings pero **no implementado en código** | MEDIA |
-| RES-02 | Sin retry en conexión SFTP — un fallo = operación perdida | MEDIA |
+| RES-01 | ~~Sin retry en conexión SFTP — un fallo = operación perdida~~ ✅ RESUELTO v5.2.1 (tenacity + backoff exponencial) | MEDIA |
+| RES-02 | ~~Sin circuit breaker para SFTP/SMTP~~ ✅ RESUELTO v5.2.1 (pybreaker) | MEDIA |
 
 ### 8.2 Circuit Breaker
 

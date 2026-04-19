@@ -6,6 +6,21 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.9.4] - 2026-04-19
+
+### 🎯 Resumen
+Cierre documental de RES-01 al verificar retry SFTP activo con tenacity en producción.
+
+### Fixed
+- **RES-01**: marcado como ✅ RESUELTO v5.2.1 (retry SFTP con backoff exponencial).
+
+### Changed
+- Alineada tabla histórica de resiliencia para reflejar estado real de RES-01/RES-02.
+
+### Audit
+- `docs/AUDITORIA_INTEGRAL_2026.md`: RES-01 actualizado en sección principal, roadmap P2 y tabla histórica.
+
+---
 ## [5.9.3] - 2026-04-19
 
 ### 🎯 Resumen
