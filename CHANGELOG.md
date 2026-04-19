@@ -6,6 +6,21 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.6.0] - 2026-04-18
+
+### 🎯 Resumen
+Cache en memoria TTL (cachetools) + retry SFTP con backoff exponencial (tenacity).
+
+### ✨ Added
+- `services/cache_service.py`: TTLCache thread-safe (5 min) para Configuracion, Zona, Profesor
+- `invalidar_cache()`, `invalidar_configuracion()`, `invalidar_zonas()`, `invalidar_profesores()`
+- `tenacity>=8.2.0` y `cachetools>=5.3.0` añadidos a `requirements.txt`
+- 14 tests nuevos en `tests/test_cache_resilencia.py`
+
+### Changed
+- `sync_manager.SFTPSyncBackend._connect()`: retry automático con backoff 2s→4s→8s (tenacity)
+
+---
 ## [4.5.0] - 2026-04-18
 
 ### 🎯 Resumen

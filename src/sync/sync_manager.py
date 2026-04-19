@@ -19,6 +19,17 @@ from typing import Optional
 
 from core.paths import get_user_data_directory
 
+try:
+    from tenacity import (
+        retry,
+        retry_if_exception_type,
+        stop_after_attempt,
+        wait_exponential,
+    )
+    _TENACITY_AVAILABLE = True
+except ImportError:
+    _TENACITY_AVAILABLE = False
+
 # Configurar logger
 logger = logging.getLogger(__name__)
 
@@ -143,7 +154,13 @@ class SFTPSyncBackend(SyncBackend):
         self._connect()
 
     def _connect(self) -> bool:
-        """Establece la conexión SFTP."""
+        """Establece la conexión SFTP con reintentos exponenciales."""
+        if _TENACITY_AVAILABLE:
+            return self._connect_with_retry()
+        return self._connect_once()
+
+    def _connect_once(self) -> bool:
+        """Lógica de conexión SFTP sin retry."""
         try:
             import paramiko
 
@@ -180,7 +197,27 @@ class SFTPSyncBackend(SyncBackend):
                 logger.error(f"  ssh-keyscan -H {self._host} >> ~/.ssh/known_hosts")
             return False
 
-    def _ensure_connected(self) -> bool:
+    def _connect_with_retry(self) -> bool:
+        """Conecta con backoff exponencial (3 intentos: 2s, 4s, 8s)."""
+        import paramiko
+
+        @retry(
+            retry=retry_if_exception_type((OSError, paramiko.SSHException)),
+            wait=wait_exponential(multiplier=2, min=2, max=8),
+            stop=stop_after_attempt(3),
+            reraise=False,
+        )
+        def _do_connect():
+            return self._connect_once()
+
+        try:
+            result = _do_connect()
+            return result if result is not None else False
+        except Exception as e:
+            logger.error(f"SFTP: todos los reintentos agotados: {e}")
+            return False
+
+    def _check_connection(self) -> bool:
         """Verifica la conexión y reconecta si es necesario."""
         if self.sftp is None:
             logger.info("Conexión SFTP perdida. Reconectando...")

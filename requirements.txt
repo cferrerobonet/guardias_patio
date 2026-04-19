@@ -21,6 +21,10 @@ uvicorn[standard]>=0.24.0
 # SFTP sync
 paramiko>=4.0.0
 
+# Resilencia y caché
+tenacity>=8.2.0
+cachetools>=5.3.0
+
 # Security
 bcrypt>=4.0.0
 cryptography>=41.0.0

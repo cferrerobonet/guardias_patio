@@ -334,7 +334,7 @@ Sistema in-memory propio con `OrderedDict` LRU en `src/utils/cache.py`:
 
 - [x] **P0** — ~~Corregir `repository_cache.py` para cachear la función decorada una sola vez~~ ✅ v3.1.0
 - [x] **P1** — ~~Añadir `threading.Lock` al `OrderedDict` del caché~~ ✅ v3.6.1 (`threading.RLock`)
-- [ ] Evaluar `cachetools` como reemplazo (thread-safe, TTLCache, LRUCache built-in)
+- [x] ~~Evaluar `cachetools` como reemplazo (thread-safe, TTLCache, LRUCache built-in)~~ ✅ RESUELTO v4.6.0 (`cache_service.py` con TTLCache 5 min)
 
 ---
 
@@ -387,7 +387,7 @@ Usado en: generación de guardias (CP-SAT solver), exportación PDF, importació
 
 ### 8.4 Recomendaciones
 
-- [ ] Implementar retry con backoff exponencial para SFTP (`tenacity` library)
+- [x] ~~Implementar retry con backoff exponencial para SFTP (`tenacity` library)~~ ✅ RESUELTO v4.6.0 (backoff 2s→4s→8s, 3 intentos)
 - [ ] Implementar circuit breaker para servicios externos (SFTP, SMTP)
 - [ ] Implementar el retry de BD que ya está configurado en settings
 
