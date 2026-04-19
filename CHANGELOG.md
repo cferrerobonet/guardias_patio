@@ -6,6 +6,25 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [4.11.0] - 2026-04-19
+
+### 🎯 Resumen
+Cobertura reforzada en DataExporter y orquestación de asignación, con foco en ramas de configuración, validación de esquema y decisiones de fallback.
+
+### ✨ Added
+- `tests/test_data_exporter_config_schema.py`: 15 tests
+  - Export/import SMTP y SFTP en `.env`
+  - Fallbacks de desencriptado
+  - Guards de esquema en importación JSON
+- `tests/test_orquestador_asignacion_guardias.py`: 13 tests
+  - Flujo iterativo aceptable/no aceptable
+  - Decisiones de usuario (`ajustar`, `continuar_ilp`, `timeout`, `cancelar`, error)
+  - Mensajería de éxito/intervención
+- Ampliación en `tests/test_estadisticas_validador.py` para `generar_resumen_completo`, conflictos y `log_resumen`
+- Tests totales: 1190 → 1222
+- Cobertura: 44.96% → 46.02%
+
+---
 ## [4.10.0] - 2026-04-19
 
 ### 🎯 Resumen

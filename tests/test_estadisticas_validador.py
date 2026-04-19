@@ -202,6 +202,60 @@ class TestEstadisticasService:
         assert result[10] == 2
         assert result[20] == 1
 
+    def test_detectar_conflictos_mismo_dia(self):
+        d = date(2025, 10, 1)
+        guardias = [_guardia(1, d), _guardia(1, d), _guardia(2, d)]
+        conflictos = self.svc.detectar_profesores_con_multiples_guardias_mismo_dia(guardias)
+        assert len(conflictos) == 1
+        assert conflictos[0][0] == 1
+        assert conflictos[0][2] == 2
+
+    def test_generar_resumen_completo_con_cuotas_y_slots(self):
+        guardias = [_guardia(1, date(2025, 10, 1), zona_id=10), _guardia(1, date(2025, 10, 1), zona_id=20), _guardia(2, date(2025, 10, 2), zona_id=10)]
+        profesores = [_profesor(1), _profesor(2), _profesor(3)]
+        resumen = self.svc.generar_resumen_completo(
+            guardias=guardias,
+            profesores=profesores,
+            cuotas={1: 2, 2: 2, 3: 1},
+            total_slots=5,
+        )
+        assert resumen["total_guardias"] == 3
+        assert resumen["profesores_sin_guardias"] == 1
+        assert "cobertura_porcentaje" in resumen
+        assert "participacion_porcentaje" in resumen
+        assert "desviacion_promedio" in resumen
+        assert "guardias_por_fecha" in resumen
+        assert "guardias_por_zona" in resumen
+
+    def test_generar_resumen_completo_sin_guardias(self):
+        resumen = self.svc.generar_resumen_completo(guardias=[], profesores=[_profesor(1)], cuotas=None)
+        assert resumen["total_guardias"] == 0
+        assert resumen["min_guardias"] == 0
+        assert resumen["max_guardias"] == 0
+
+    def test_log_resumen(self):
+        resumen = {
+            "total_guardias": 3,
+            "profesores_con_guardias": 2,
+            "total_profesores": 3,
+            "participacion_porcentaje": 66.7,
+            "cobertura_porcentaje": 75.0,
+            "promedio_guardias": 1.5,
+            "min_guardias": 1,
+            "max_guardias": 2,
+            "desviacion_promedio": 0.1,
+            "balance": 0.25,
+            "profesores_sin_guardias": 1,
+            "conflictos_mismo_dia": 1,
+        }
+        from unittest.mock import patch
+
+        with patch("services.estadisticas_service.logger") as log:
+            self.svc.log_resumen(resumen)
+        assert log.info.called
+        assert log.warning.called
+        assert log.error.called
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ValidadorGuardias — con BD SQLite en memoria
