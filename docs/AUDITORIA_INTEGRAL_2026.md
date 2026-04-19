@@ -1501,8 +1501,8 @@ Mostrar asterisco en título: `self.setWindowTitle(f"{'*' if self._dirty else ''
 | 5 | A11Y-01 | `setAccessibleName` en todos los widgets interactivos | L |
 | 6 | A11Y-02 | `setTabOrder` en todos los formularios y diálogos | M |
 | 7 | A11Y-03 | `QValidator` en todos los campos de formularios | L |
-| 8 | VIS-01 | Crear sistema de design tokens centralizado | M |
-| 9 | VIS-02 | QSS global, eliminar `setStyleSheet` inline | XL |
+| 8 | VIS-01 | ~~Crear sistema de design tokens centralizado ~~ ✅ RESUELTO v5.1.0| M |
+| 9 | VIS-02 | ~~QSS global, eliminar `setStyleSheet` inline ~~ ✅ RESUELTO v5.1.0| XL |
 | 10 | DB-12 | Diseñar migración SQLite → PostgreSQL multi-tenant | L |
 
 ### P2 — 38 ítems
@@ -1513,10 +1513,10 @@ Mostrar asterisco en título: `self.setWindowTitle(f"{'*' if self._dirty else ''
 | 2 | ARQ-04 | Implementar contenedor DI con dependency-injector | L |
 | 3 | ARQ-05 | Split 7 archivos >800L | L |
 | 4 | ARQ-06 | Migrar imports de ui_styles.py a nuevo sistema temas | M |
-| 5 | ARQ-08 | Completar pyproject.toml ([project], [build-system]) | S |
+| 5 | ARQ-08 | ~~Completar pyproject.toml ([project], [build-system]) ~~ ✅ RESUELTO v5.1.0| S |
 | 6 | SEC-12 | chmod 600 en users.json al crear/modificar | S |
 | 7 | SEC-14 | Validar username con regex en backend (UserAuth) | S |
-| 8 | SEC-17 | Reemplazar ~30 print() por logger en db_manager.py y cache.py | S |
+| 8 | SEC-17 | ~~Reemplazar ~30 print() por logger en db_manager.py y cache.py ~~ ✅ RESUELTO v5.1.0| S |
 | 9 | DB-05 | Añadir CheckConstraints + migración Alembic | S |
 | 10 | DB-09 | Añadir threading.Lock en db_manager.py | S |
 | 11 | DB-11 | Unificar init BD en Alembic (eliminar create_all + SQL directo) | M |
@@ -1540,7 +1540,7 @@ Mostrar asterisco en título: `self.setWindowTitle(f"{'*' if self._dirty else ''
 | 29 | A11Y-06 | Feedback QAccessible para screen readers | M |
 | 30 | A11Y-07 | Tamaños fuente relativos (no hardcoded) | M |
 | 31 | A11Y-10 | DPI awareness + reemplazar setFixedSize por policies | M |
-| 32 | VIS-03 | Deprecar y eliminar ui_styles.py | M |
+| 32 | VIS-03 | ~~Deprecar y eliminar ui_styles.py ~~ ✅ RESUELTO v5.1.0| M |
 | 33 | VIS-04 | Iconografía consistente (Material Icons o similar) | M |
 | 34 | VIS-05 | Escala tipográfica con FontSize tokens | S |
 | 35 | VIS-06 | Escala de espaciado con Spacing tokens | S |
@@ -1554,7 +1554,7 @@ Mostrar asterisco en título: `self.setWindowTitle(f"{'*' if self._dirty else ''
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
 | 1 | ARQ-07 | Capa anticorrupción para sync (DTOs) | M |
-| 2 | ARQ-09 | Eliminar 5 feature flags huérfanos de settings.py | S |
+| 2 | ARQ-09 | ~~Eliminar 5 feature flags huérfanos de settings.py ~~ ✅ RESUELTO v5.1.0| S |
 | 3 | SEC-18 | Security headers middleware en API | S |
 | 4 | DB-10 | Normalizar campos JSON a tablas (si PostgreSQL) | L |
 | 5 | PERF-04 | .exists() en vez de .count() > 0 | S |
@@ -1562,7 +1562,7 @@ Mostrar asterisco en título: `self.setWindowTitle(f"{'*' if self._dirty else ''
 | 7 | CACHE-03 | QPixmapCache para assets UI | S |
 | 8 | RES-02 | Circuit breaker con pybreaker para SFTP/SMTP | M |
 | 9 | RES-04 | Health check con verificación de BD/disco | S |
-| 10 | RES-05 | Graceful shutdown (signal handlers) | S |
+| 10 | RES-05 | ~~Graceful shutdown (signal handlers) ~~ ✅ RESUELTO v5.1.0| S |
 | 11 | API-13 | OpenAPI enrichment (tags, descriptions, examples) | S |
 | 12 | API-14 | WebSocket para progreso de generación guardias | L |
 | 13 | TEST-06 | Mutation testing con mutmut | M |
@@ -2415,8 +2415,8 @@ Fase 4 — Frontend Web (P2)
 | 1 | A11Y-01 | Accessible names en todos los widgets | L |
 | 2 | A11Y-02 | Tab order en formularios y diálogos | M |
 | 3 | A11Y-03 | QValidator en formularios | L |
-| 4 | VIS-01 | Sistema de design tokens | M |
-| 5 | VIS-02 | QSS global (eliminar setStyleSheet inline) | XL |
+| 4 | VIS-01 | ~~Sistema de design tokens ~~ ✅ RESUELTO v5.1.0| M |
+| 5 | VIS-02 | ~~QSS global (eliminar setStyleSheet inline) ~~ ✅ RESUELTO v5.1.0| XL |
 | 6 | ARQ-01 | Migrar servicios core a repositorios | XL |
 | 7 | ARQ-03 | Descontaminar domain services | M |
 | 8 | API-08 | CRUD completo en API REST | XL |
@@ -2429,7 +2429,7 @@ Fase 4 — Frontend Web (P2)
 | 15 | SAN-01 | Except Exception → excepciones específicas (fase 1) | M |
 | 16 | DB-11 | Unificar init BD en Alembic | M |
 | 17 | A11Y-10 | DPI awareness | M |
-| 18 | ARQ-08 | Completar pyproject.toml | S |
+| 18 | ARQ-08 | ~~Completar pyproject.toml ~~ ✅ RESUELTO v5.1.0| S |
 
 ### P2 — Resolver antes de v7.0.0 (34 ítems)
 
@@ -2444,7 +2444,7 @@ Fase 4 — Frontend Web (P2)
 | 7 | SEC-12 | chmod 600 en users.json | S |
 | 8 | SEC-13 | Eliminar defaults de infra en config | S |
 | 9 | SEC-14 | Validar username con regex | S |
-| 10 | SEC-17 | Reemplazar print() por logger | M |
+| 10 | SEC-17 | ~~Reemplazar print() por logger ~~ ✅ RESUELTO v5.1.0| M |
 | 11 | DB-05 | CheckConstraints | S |
 | 12 | DB-06 | Índices faltantes | S |
 | 13 | DB-07 | datetime.utcnow deprecated | S |
@@ -2487,14 +2487,14 @@ Fase 4 — Frontend Web (P2)
 | 11 | VIS-09 | Responsive layout | L |
 | 12 | VIS-10 | Guía de estilo documentada | M |
 | 13 | ARQ-07 | Capa anticorrupción sync | M |
-| 14 | ARQ-09 | Feature flags huérfanos | S |
+| 14 | ARQ-09 | ~~Feature flags huérfanos ~~ ✅ RESUELTO v5.1.0| S |
 | 15 | DB-10 | Normalizar campos JSON | L |
 | 16 | PERF-04 | .exists() en vez de .count() | S |
 | 17 | PERF-06 | Reducir setStyleSheet inline | L |
 | 18 | CACHE-03 | QPixmapCache para assets | S |
 | 19 | RES-02 | Circuit breaker | M |
 | 20 | RES-04 | Health check dependencias | S |
-| 21 | RES-05 | Graceful shutdown | S |
+| 21 | RES-05 | ~~Graceful shutdown ~~ ✅ RESUELTO v5.1.0| S |
 | 22 | UXF-03 | Undo/redo con QUndoStack | L |
 
 ### Escala de esfuerzo

@@ -6,6 +6,29 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.1.0] - 2026-04-19
+
+### 🎯 Resumen
+Implementación de bloques 1, 2 y 3 de auditoría técnica 2026: Victorias rápidas, Sistema de Design Tokens y Gestión de Conexiones a BD.
+
+### ✨ Added
+- `src/presentation/theme/tokens.py`: Sistema de Design Tokens centralizado (colores, espaciado, tipografía)
+- `src/presentation/theme/light.qss`: Hoja de estilos global centralizada
+
+### Changed
+- `pyproject.toml`: Completados metadatos con bloque `[project]` y dependencias.
+
+### Fixed
+- Base de datos (`db_manager.py`): Corrección de fuga de descriptores usando explícitamente `NullPool` en la inicialización de SQLite (ARQ-05).
+- Base de datos (`db_manager.py`): Eliminados límites hardcodeados del connection pool (ARQ-06), utilizando fallback a variables de entorno.
+- `main.py`: Implementado graceful shutdown al recibir `SIGTERM` / `SIGINT` (RES-05).
+
+### 🧹 Housekeeping
+- `src/ui_styles.py`: Marcado como obsoleto (`DeprecationWarning`) para migrar a tokens y QSS (VIS-03).
+- `settings.py`: Eliminados 5 feature flags huérfanos (`cache_enabled`, `enable_query_optimization`, etc) (ARQ-09).
+- Logueo: Sustituidos bloques `print()` en caché y DB por `logger.debug()` (SEC-17).
+
+---
 ## [5.0.0] - 2026-04-19
 
 ### 🎯 Resumen

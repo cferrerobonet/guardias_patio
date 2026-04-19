@@ -466,24 +466,24 @@ def print_cache_stats(detailed: bool = False):
     """
     stats = get_cache_stats()
 
-    print("=" * 50)
-    print("Cache Statistics".center(50))
-    print("=" * 50)
-    print(f"Hits:           {stats['hits']:5d} ({stats['hit_rate']:.1f}%)")
-    print(f"Misses:         {stats['misses']:5d}")
-    print(f"Invalidations:  {stats['invalidations']:5d}")
-    print(f"Evictions:      {stats['evictions']:5d}")
-    print(
+    logger.debug("=" * 50)
+    logger.debug("Cache Statistics".center(50))
+    logger.debug("=" * 50)
+    logger.debug(f"Hits:           {stats['hits']:5d} ({stats['hit_rate']:.1f}%)")
+    logger.debug(f"Misses:         {stats['misses']:5d}")
+    logger.debug(f"Invalidations:  {stats['invalidations']:5d}")
+    logger.debug(f"Evictions:      {stats['evictions']:5d}")
+    logger.debug(
         f"Cache size:     {stats['size']:5d} / {stats['max_size']} "
         f"({stats['size'] / stats['max_size'] * 100:.1f}% full)"
     )
-    print(f"Total requests: {stats['total_requests']:5d}")
-    print("=" * 50)
+    logger.debug(f"Total requests: {stats['total_requests']:5d}")
+    logger.debug("=" * 50)
 
     if detailed:
-        print()
-        print("Per-Function Metrics".center(50))
-        print("=" * 50)
+        logger.debug("")
+        logger.debug("Per-Function Metrics".center(50))
+        logger.debug("=" * 50)
 
         function_metrics = get_function_metrics()
         if function_metrics:
@@ -495,15 +495,15 @@ def print_cache_stats(detailed: bool = False):
             for func_name, metrics in sorted_funcs:
                 # Truncar nombre de función si es muy largo
                 display_name = func_name[:40] + "..." if len(func_name) > 43 else func_name
-                print(
+                logger.debug(
                     f"{display_name:43s} | "
                     f"Total: {metrics['total']:4d} | "
                     f"Hit Rate: {metrics['hit_rate']:5.1f}%"
                 )
         else:
-            print("No function metrics available yet".center(50))
+            logger.debug("No function metrics available yet".center(50))
 
-        print("=" * 50)
+        logger.debug("=" * 50)
 
 
 def reset_cache_stats():

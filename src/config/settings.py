@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # ========== APLICACIÓN ==========
     app_name: str = "Gestión de Guardias de Patio"
-    app_version: str = "5.0.0"
+    app_version: str = "5.1.0"
     app_author: str = "Carlos Ferrero Bonet"
     environment: Literal["development", "production", "testing"] = "production"
 
@@ -98,13 +98,10 @@ class Settings(BaseSettings):
     max_width_input_xlarge: int = 500
 
     # ========== CACHE ==========
-    cache_enabled: bool = True
     cache_ttl: int = 300  # 5 minutos
     cache_max_size: int = 1000
 
     # ========== PERFORMANCE ==========
-    enable_query_optimization: bool = True
-    enable_eager_loading: bool = True
     batch_size: int = 100
 
     # ========== CÁLCULO DE GUARDIAS ==========
@@ -150,8 +147,6 @@ class Settings(BaseSettings):
 
     # ========== DESARROLLO ==========
     debug: bool = False
-    enable_profiling: bool = False
-    enable_metrics: bool = False
 
     # Configuración del modelo
     model_config = SettingsConfigDict(

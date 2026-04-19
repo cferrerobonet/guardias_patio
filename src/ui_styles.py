@@ -3,6 +3,19 @@ Módulo de estilos UI para la aplicación de Guardias de Patio.
 Define estilos CSS consistentes para toda la interfaz.
 """
 
+import warnings
+import logging
+
+warnings.warn(
+    "El módulo ui_styles.py está obsoleto y será eliminado. "
+    "Por favor, migra a src/presentation/theme/tokens.py y light.qss",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+logger = logging.getLogger(__name__)
+logger.warning("Importando módulo obsoleto: ui_styles.py. Migrar a src.presentation.theme.tokens")
+
 # ========== COLORES ==========
 COLOR_PRIMARY = "#2196F3"  # Azul principal
 COLOR_SUCCESS = "#4CAF50"  # Verde para acciones positivas

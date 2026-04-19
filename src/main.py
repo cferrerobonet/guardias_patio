@@ -96,6 +96,11 @@ def main():
     # Crear la aplicación
     app = QApplication(sys.argv)
 
+    # Manejar señales de terminación para graceful shutdown
+    import signal
+    signal.signal(signal.SIGTERM, lambda s, f: app.quit())
+    signal.signal(signal.SIGINT, lambda s, f: app.quit())
+
     # Aplicar branding corporativo a todos los QMessageBox
     apply_corporate_branding()
 
@@ -149,9 +154,12 @@ def main():
     app.setFont(font)
 
     # Aplicar stylesheet global a toda la aplicación
-    from presentation.themes.ccleaner_theme import get_complete_stylesheet
-
-    app.setStyleSheet(get_complete_stylesheet())
+    theme_path = Path(__file__).parent / "presentation" / "theme" / "light.qss"
+    if theme_path.exists():
+        with open(theme_path, "r", encoding="utf-8") as f:
+            app.setStyleSheet(f.read())
+    else:
+        logger.warning(f"Stylesheet no encontrado: {theme_path}")
 
     # ==========================================
     # Sistema de Login y Sincronización SFTP

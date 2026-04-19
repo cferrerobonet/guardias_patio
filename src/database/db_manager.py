@@ -384,7 +384,11 @@ def create_user_database(username: str) -> bool:
         db_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Crear base de datos con todas las tablas
-        engine = create_engine(f"sqlite:///{db_path}")
+        engine = create_engine(
+            f"sqlite:///{db_path}",
+            poolclass=pool.NullPool,
+            connect_args={"check_same_thread": False, "timeout": TIMEOUT_DB}
+        )
         Base.metadata.create_all(engine)
 
         # Marcar como head en Alembic para que migraciones futuras funcionen correctamente
@@ -574,28 +578,32 @@ if IS_SQLITE:
         logger.debug("SQLite pragmas configurados")
 
 elif IS_POSTGRESQL:
+    pool_size = int(os.getenv("DB_POOL_SIZE", "10"))
+    max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "20"))
     engine = create_engine(
         DATABASE_URL,
         echo=False,
         future=True,
         poolclass=pool.QueuePool,
-        pool_size=10,
-        max_overflow=20,
+        pool_size=pool_size,
+        max_overflow=max_overflow,
         pool_timeout=30,
         pool_recycle=3600,
         pool_pre_ping=True,
     )
 
-    logger.info("Engine PostgreSQL creado: pool_size=10, max_overflow=20, timeout=30s")
+    logger.info(f"Engine PostgreSQL creado: pool_size={pool_size}, max_overflow={max_overflow}, timeout=30s")
 
 else:
+    pool_size = int(os.getenv("DB_POOL_SIZE", "5"))
+    max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "10"))
     engine = create_engine(
         DATABASE_URL,
         echo=False,
         future=True,
         poolclass=pool.QueuePool,
-        pool_size=5,
-        max_overflow=10,
+        pool_size=pool_size,
+        max_overflow=max_overflow,
         pool_timeout=30,
     )
 
@@ -768,18 +776,18 @@ def print_pool_status():
     """
     status = get_pool_status()
 
-    print("=" * 45)
-    print("Connection Pool Status".center(45))
-    print("=" * 45)
+    logger.debug("=" * 45)
+    logger.debug("Connection Pool Status".center(45))
+    logger.debug("=" * 45)
 
     if "note" in status:
-        print(f"Type: {status['type']}")
-        print(f"Note: {status['note']}")
+        logger.debug(f"Type: {status['type']}")
+        logger.debug(f"Note: {status['note']}")
     else:
-        print(f"Type:           {status['type']}")
-        print(f"Size:           {status['size']}")
-        print(f"Checked out:    {status['checked_out']}")
-        print(f"Overflow:       {status['overflow']}")
-        print(f"Total:          {status['total']}")
+        logger.debug(f"Type:           {status['type']}")
+        logger.debug(f"Size:           {status['size']}")
+        logger.debug(f"Checked out:    {status['checked_out']}")
+        logger.debug(f"Overflow:       {status['overflow']}")
+        logger.debug(f"Total:          {status['total']}")
 
-    print("=" * 45)
+    logger.debug("=" * 45)
