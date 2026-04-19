@@ -1,3 +1,931 @@
+# Auditoría Integral — Guardias de Patio v5.0.0
+
+> **Fecha**: 19 de abril de 2026
+> **Versión auditada**: v5.0.0 (commit `68b6a79`)
+> **Autor**: Auditoría automatizada + revisión manual
+> **Alcance**: Arquitectura, seguridad, BD, rendimiento, API, testing, UX/UI, accesibilidad, diseño visual, casos de uso, escalabilidad, preparación web
+
+---
+
+## Puntuación Global de Salud
+
+| Dimensión | Puntuación (0-4) | Estado |
+|---|---|---|
+| Arquitectura | 2 | ⚠️ Aceptable |
+| Seguridad | 3 | ✅ Bueno |
+| Base de Datos | 2 | ⚠️ Aceptable |
+| Rendimiento | 2 | ⚠️ Aceptable |
+| Caché | 1 | 🔴 Deficiente |
+| Async/Concurrencia | 1 | 🔴 Deficiente |
+| Escalabilidad y Resiliencia | 1 | 🔴 Deficiente |
+| API REST | 2 | ⚠️ Aceptable |
+| Testing | 2 | ⚠️ Aceptable |
+| Observabilidad | 2 | ⚠️ Aceptable |
+| **UX/UI y Accesibilidad** | **1** | **🔴 Deficiente** |
+| **Diseño Visual y Consistencia** | **2** | **⚠️ Aceptable** |
+| **Casos de Uso y Flujos** | **3** | **✅ Bueno** |
+| Control de Acceso | 3 | ✅ Bueno |
+| Organización de Código | 2 | ⚠️ Aceptable |
+| **TOTAL** | **29/60** | **⚠️ Aceptable** |
+
+---
+
+## Resumen Ejecutivo
+
+**147 hallazgos** clasificados por severidad:
+
+| Severidad | Cantidad | Descripción |
+|---|---|---|
+| P0 — Crítico | 0 | Bloqueantes de producción |
+| P1 — Alto | 18 | Deben resolverse antes de próxima major |
+| P2 — Medio | 34 | Planificar en próximos sprints |
+| P3 — Bajo | 22 | Mejoras incrementales |
+| ✅ Resuelto | 73 | Completados en v3.7.0–v5.0.0 |
+
+**Fortalezas**: Autenticación JWT completa, política contraseñas robusta, 1.342 tests passing, error boundary GUI, benchmarks unificados, import/export CSV/Excel funcional.
+
+**Debilidades principales**: Accesibilidad casi inexistente (6 `setAccessibleName` en 59 widgets), 28 servicios acoplados a ORM, 289 bloques `except Exception`, 415 colores hardcodeados, arquitectura SQLite per-user bloquea migración web.
+
+---
+
+## 1. Arquitectura (2/4)
+
+### ARQ-01 — Servicios acoplados a ORM (P1)
+**28 servicios** en `src/services/` importan `Session` de SQLAlchemy directamente, violando Clean Architecture. La capa de aplicación debería depender solo de interfaces de repositorio.
+
+**Archivos afectados** (24 con `session.query`, 248 refs totales):
+- `src/services/asignador_guardias_cpsat.py` (845L)
+- `src/services/_pdf_individual_optimizado.py` (827L)
+- `src/services/exportador_pdf.py`
+- `src/services/calculador_guardias.py`
+- `src/services/gestor_sustituciones_service.py`
+- Y 19+ más
+
+**Acción**: Migrar progresivamente a repositorios inyectados. Priorizar servicios core (asignador, calculador).
+
+### ARQ-02 — Widgets con queries SQLAlchemy (P2)
+**4 widgets** en `presentation/` ejecutan queries directas:
+- Referencia: `session.query` encontrado en 4 archivos de presentación
+
+**Acción**: Extraer a use cases en `application/`.
+
+### ARQ-03 — Domain services contaminados (P1)
+4 domain services importan infraestructura (SQLAlchemy, paths de BD), violando la regla de dependencia DDD.
+
+**Acción**: Invertir dependencias con interfaces en `domain/repositories/`.
+
+### ARQ-04 — Ausencia de contenedor DI (P2)
+No hay framework de inyección de dependencias. Los servicios se instancian manualmente con `Session` hardcodeada.
+
+**Acción**: Evaluar `dependency-injector` para gestión de lifecycle y wiring automático.
+
+### ARQ-05 — Archivos grandes sin split (P2)
+**8 archivos >800 líneas**:
+
+| Archivo | Líneas |
+|---|---|
+| `presentation/widgets/vista_calendario.py` | 957 |
+| `presentation/widgets/progress_indicators.py` | 948 |
+| `presentation/forms/profesor_form.py` | 851 |
+| `services/asignador_guardias_cpsat.py` | 845 |
+| `services/_pdf_individual_optimizado.py` | 827 |
+| `sync/data_exporter.py` | 825 |
+| `presentation/widgets/gestionar_ausencias.py` | 814 |
+
+**Acción**: Split por responsabilidad (ej: vista_calendario → calendario_view + calendario_controller).
+
+### ARQ-06 — `ui_styles.py` legacy centralizado (P2)
+40 archivos importan de `ui_styles.py`. Patrón monolítico que dificulta theming y tree-shaking.
+
+**Acción**: Migrar a sistema de tokens de diseño (design tokens) con tema claro/oscuro.
+
+### ARQ-07 — Sin capa anticorrupción para sync (P3)
+`src/sync/` accede directamente a modelos ORM y construye SQL.
+
+**Acción**: Abstraer con DTOs de sincronización.
+
+### ARQ-08 — `pyproject.toml` incompleto (P2)
+Falta sección `[project]` y `[build-system]`. Sin metadata de dependencias formales.
+
+**Acción**: Completar con `[project]`, `requires-python`, `dependencies`, `[build-system]`.
+
+### ARQ-09 — Feature flags huérfanos (P3)
+5 feature flags en `settings.py` nunca consultados en código.
+
+**Acción**: Auditar y eliminar flags muertos.
+
+---
+
+## 2. Seguridad (3/4)
+
+### ✅ Resueltos (v3.7.0–v5.0.0)
+- ~~SEC-01~~ Autenticación JWT con `POST /api/v1/auth/token` ✅ v3.8.0
+- ~~SEC-02~~ Password hashing con bcrypt ✅ v3.7.0
+- ~~SEC-03~~ Política contraseñas (8+ chars, mayúscula, número, símbolo) ✅ v3.7.0
+- ~~SEC-04~~ CORS configurado ✅ v3.7.0
+- ~~SEC-05~~ Rate limiting en API ✅ v3.7.0
+- ~~SEC-06~~ Todos los routers protegidos con JWT ✅ v3.8.0
+- ~~SEC-07~~ `sys.excepthook` + QMessageBox como error boundary ✅ v3.8.0
+- ~~SEC-08~~ Import * eliminado (0 ocurrencias) ✅
+
+### SEC-09 — Account lockout inexistente (P1)
+No hay mecanismo de bloqueo tras intentos fallidos. Permite brute-force.
+
+**Acción**: Implementar lockout (5 intentos → bloqueo 15 min con delay progresivo).
+
+### SEC-10 — HTML sin escapar en templates email (P2)
+Templates de email construidos con string formatting sin `html.escape()`.
+
+**Acción**: Escapar todas las variables interpoladas en HTML de emails.
+
+### SEC-11 — Path traversal en `remote_path` SFTP (P2)
+`remote_path` de `sftp_config.json` se usa sin validación.
+
+**Acción**: Validar contra `..` y normalizar con `posixpath.normpath`.
+
+### SEC-12 — `users.json` sin permisos restrictivos (P2)
+Contiene hashes bcrypt. No se aplica `chmod 600`.
+
+**Acción**: Establecer permisos 600 al crear/modificar.
+
+### SEC-13 — Valores infraestructura en defaults (P2)
+`settings.py` contiene valores por defecto que exponen infraestructura.
+
+**Acción**: Mover a variables de entorno obligatorias.
+
+### SEC-14 — Username sin validación regex (P2)
+Permite caracteres especiales que podrían causar problemas en paths.
+
+**Acción**: Validar con regex `^[a-zA-Z0-9._-]+$`.
+
+### SEC-15 — `data/users.json` posiblemente en git (P1)
+El archivo existe en el repo. Contiene hashes de contraseñas.
+
+**Acción**: Verificar `.gitignore`, eliminar del historial si está trackeado (`git filter-branch` o `bfg`).
+
+### SEC-16 — 289 bloques `except Exception` (P1)
+Ocultan errores reales. **4 son `except Exception: pass`** (silencian completamente):
+- `src/utils/ui_helpers.py`
+- `src/sync/sync_manager.py`
+- `src/services/importador_profesores.py`
+- `src/services/calculador_guardias.py`
+- `src/services/importador_zonas.py`
+
+**Acción**: Reemplazar por excepciones específicas + `logger.exception()`.
+
+### SEC-17 — 49 `print()` en producción (P2)
+Statements de debug que podrían exponer información sensible.
+
+**Acción**: Reemplazar por `logger.debug()`.
+
+### SEC-18 — Sin CSP ni security headers en API (P3)
+FastAPI no configura Content-Security-Policy, X-Frame-Options, etc.
+
+**Acción**: Añadir middleware de security headers.
+
+---
+
+## 3. Base de Datos (2/4)
+
+### ✅ Resueltos
+- ~~DB-01~~ Campos sustituciones ORM (`es_sustitucion`, `profesor_sustituido_id`, `notas`) ✅ v3.7.0
+- ~~DB-02~~ Campo `activa` en Zona ✅ v3.8.0
+- ~~DB-03~~ Campo `capacidad_profesores` en Zona ✅ v3.8.0
+- ~~DB-04~~ Migración Alembic para nuevos campos ✅ v3.8.0
+
+### DB-05 — CheckConstraints ausentes (P2)
+No hay constraints para: turno (M/T), tipo ausencia, recreo >= 1.
+
+**Acción**: Añadir `CheckConstraint` en modelos ORM + migración Alembic.
+
+### DB-06 — Índices faltantes (P2)
+Queries frecuentes sin índices:
+- `curso_id` en profesores y guardias
+- `turno` en guardias
+- `activo` en profesores
+- Compuesto triple: `(curso_id, fecha, turno)`
+
+**Acción**: Crear índices + migración.
+
+### DB-07 — `datetime.utcnow` deprecated (P2)
+Python 3.12+ depreca `datetime.utcnow()`.
+
+**Acción**: Reemplazar por `datetime.now(timezone.utc)`.
+
+### DB-08 — Inconsistencia `cerrado` vs `archivado` (P2)
+ORM define estado `cerrado`, migración crea `archivado`.
+
+**Acción**: Unificar nomenclatura + migración.
+
+### DB-09 — Locks ausentes en `db_manager.py` (P2)
+SQLite no soporta escritura concurrente. Sin locks explícitos para multi-thread.
+
+**Acción**: Añadir `threading.Lock` en operaciones de escritura.
+
+### DB-10 — Campos JSON violan 1NF (P3)
+`dias_semana_permitidos`, `recreos_permitidos`, `recreos_config` almacenan JSON en columnas TEXT.
+
+**Acción**: Evaluar normalización a tablas auxiliares (priorizar si migra a PostgreSQL).
+
+### DB-11 — Triple estrategia de init (P2)
+Alembic + `create_all` + SQL directo coexisten para inicializar BD.
+
+**Acción**: Unificar en Alembic como única fuente de verdad.
+
+### DB-12 — Patrón SQLite per-user (P1)
+`data/users/{hash}/guardias_patio.db` — cada usuario tiene su propia BD SQLite.
+
+**Impacto**: Bloquea migración a servidor web (no escala, no permite queries cross-user).
+
+**Acción**: Diseñar migración a PostgreSQL multi-tenant con `tenant_id`.
+
+### DB-13 — Sin backup automático (P2)
+No hay mecanismo de backup/restore de la BD.
+
+**Acción**: Implementar backup periódico + export/import.
+
+---
+
+## 4. Rendimiento (2/4)
+
+### ✅ Resueltos
+- ~~PERF-01~~ Benchmarks unificados en `scripts/benchmark.py` ✅ v3.8.0
+
+### PERF-02 — Sin eager loading (P2)
+Queries ORM sin `joinedload`/`selectinload`. Produce N+1 queries en listados.
+
+**Acción**: Añadir eager loading en queries de profesores, guardias, zonas.
+
+### PERF-03 — Filtro disponibilidad en Python (P2)
+El filtro de disponibilidad de profesores se ejecuta en Python en lugar de SQL.
+
+**Acción**: Mover a query SQL con `WHERE` apropiado.
+
+### PERF-04 — `.count() > 0` en vez de `.exists()` (P3)
+Múltiples queries usan `.count()` cuando solo necesitan saber si hay resultados.
+
+**Acción**: Reemplazar por `.exists()` o `.first() is not None`.
+
+### PERF-05 — GUI blocking en operaciones pesadas (P2)
+Generación de PDFs, export Excel, y cálculo de guardias bloquean el hilo principal.
+
+**Acción**: Mover a `QThread` o `QRunnable` con señales de progreso.
+
+### PERF-06 — 535 llamadas a `setStyleSheet` (P3)
+Inline styles en cada widget. Repinta costoso, no cacheable.
+
+**Acción**: Migrar a QSS global cargado una vez.
+
+---
+
+## 5. Caché (1/4)
+
+### CACHE-01 — Sin estrategia de caché (P2)
+No hay caché para queries frecuentes (listado profesores, configuración curso, zonas).
+
+**Acción**: Implementar `cachetools.TTLCache` para datos de referencia.
+
+### CACHE-02 — Configuración releída en cada operación (P2)
+`obtener_configuracion` ejecuta query en cada llamada.
+
+**Acción**: Cachear con TTL de 60s, invalidar en escritura.
+
+### CACHE-03 — Sin caché de assets UI (P3)
+Iconos y pixmaps se cargan desde disco en cada render.
+
+**Acción**: Usar `QPixmapCache` para assets estáticos.
+
+---
+
+## 6. Async/Concurrencia (1/4)
+
+### ASYNC-01 — FastAPI síncrono (P2)
+Todos los endpoints usan `def` síncrono con SQLAlchemy síncrono. En producción multi-usuario bloqueará el event loop.
+
+**Acción**: Si se migra a PostgreSQL, usar `async def` + `asyncpg` + `run_in_threadpool`.
+
+### ASYNC-02 — SFTP síncrono sin timeout robusto (P2)
+Operaciones SFTP bloquean el hilo durante minutos si el servidor no responde.
+
+**Acción**: Implementar timeout + retry con `tenacity`.
+
+---
+
+## 7. Escalabilidad y Resiliencia (1/4)
+
+### RES-01 — Sin retry en SFTP (P2)
+Fallo de red = fallo total. Sin reintentos.
+
+**Acción**: `tenacity.retry` con backoff exponencial (max 3 reintentos).
+
+### RES-02 — Sin circuit breaker (P3)
+Servicios externos (SFTP, SMTP) sin protección contra fallos en cascada.
+
+**Acción**: Evaluar `pybreaker` para circuit breaker pattern.
+
+### RES-03 — Sin retry BD configurado (P2)
+`settings.py` tiene config de retry pero no se usa.
+
+**Acción**: Implementar el retry que ya está configurado.
+
+### RES-04 — Sin health check de dependencias (P3)
+El endpoint `/health` no verifica BD, disco, SFTP.
+
+**Acción**: Añadir checks de dependencias al health endpoint.
+
+### RES-05 — Sin graceful shutdown (P3)
+La app no gestiona `SIGTERM`/`SIGINT` para cerrar conexiones BD y SFTP limpiamente.
+
+**Acción**: Implementar signal handlers.
+
+---
+
+## 8. API REST (2/4)
+
+### ✅ Resueltos
+- ~~API-01~~ Autenticación JWT ✅ v3.8.0
+- ~~API-02~~ Health check dinámico ✅ v3.8.0
+- ~~API-03~~ Export CSV/Excel ✅ v3.9.0
+- ~~API-04~~ Import profesores CSV ✅ v3.9.0
+- ~~API-05~~ CORS ✅ v3.7.0
+- ~~API-06~~ Rate limiting ✅ v3.7.0
+- ~~API-07~~ Routers migrados a use cases ✅ v3.8.0
+
+### API-08 — Solo endpoints GET (salvo auth) (P1)
+No hay `POST`, `PUT`, `DELETE` para CRUD completo. La API no es funcional para un frontend web.
+
+**Acción**: Implementar CRUD completo para profesores, guardias, zonas, cursos, ausencias.
+
+### API-09 — Sin paginación (P1)
+`GET /api/v1/profesores` devuelve todos los registros sin límite.
+
+**Acción**: Implementar `?page=1&size=20` con `Link` headers.
+
+### API-10 — Versionado parcial (P2)
+Rutas usan `/v1/` pero no hay mecanismo para múltiples versiones.
+
+**Acción**: Documentar estrategia de versionado. Añadir header `API-Version`.
+
+### API-11 — Sin schema de error estándar (P2)
+Errores devuelven formatos inconsistentes.
+
+**Acción**: Implementar `{"error": {"code": "RESOURCE_NOT_FOUND", "message": "...", "details": {}}}`.
+
+### API-12 — 3 `response_model` en toda la API (P2)
+Mayoría de endpoints sin modelo de respuesta tipado.
+
+**Acción**: Añadir `response_model` Pydantic a todos los endpoints.
+
+### API-13 — Sin OpenAPI enrichment (P3)
+Schemas sin descripciones, ejemplos, ni tags organizados.
+
+**Acción**: Añadir metadata OpenAPI (descriptions, examples, tags).
+
+### API-14 — Sin WebSocket para real-time (P3)
+Generación de guardias es proceso largo sin feedback.
+
+**Acción**: Evaluar WebSocket para progreso de generación.
+
+### API-15 — Sin middleware de logging estructurado (P2)
+Requests no se logean de forma estructurada.
+
+**Acción**: Middleware con request_id, duration, status_code.
+
+---
+
+## 9. Testing (2/4)
+
+### Métricas actuales
+- **Tests**: 1.342 passing, 5 skipped
+- **Coverage**: 47,81%
+- **Archivos test**: 63
+
+### ✅ Resueltos
+- ~~TEST-01~~ Tests API REST (21 tests) ✅ v3.8.0
+- ~~TEST-02~~ 120 tests nuevos v5.0.0 ✅ v5.0.0
+
+### TEST-03 — Coverage insuficiente (P1)
+47,81% está por debajo del mínimo recomendado (70%).
+
+**Distribución estimada**:
+- `domain/` ~65% (mejor cubierto)
+- `application/` ~55%
+- `services/` ~40%
+- `presentation/` ~25%
+- `api/` ~50%
+- `sync/` ~10%
+- `infrastructure/` ~45%
+
+**Acción**: Target 70% global. Priorizar `services/` y `domain/`.
+
+### TEST-04 — 0 tests SFTP/SMTP (P2)
+`src/sync/` sin cobertura. Operaciones de red sin mock.
+
+**Acción**: Tests con Paramiko mockeado + smtplib mockeado.
+
+### TEST-05 — Sin tests de integración BD (P2)
+Tests unitarios mockean repositorios pero no verifican queries reales.
+
+**Acción**: Tests de integración con SQLite in-memory.
+
+### TEST-06 — Sin mutation testing (P3)
+No se verifica calidad de los tests existentes.
+
+**Acción**: Evaluar `mutmut` para mutation testing.
+
+### TEST-07 — Sin tests de regresión UI (P3)
+No hay snapshot tests ni tests de regresión visual.
+
+**Acción**: Evaluar `pytest-qt` snapshots o visual regression testing.
+
+---
+
+## 10. Observabilidad (2/4)
+
+### ✅ Resueltos
+- ~~OBS-01~~ Logger centralizado en `core/logging.py` ✅
+
+### OBS-02 — 49 `print()` en producción (P2)
+Debug prints que deberían ser `logger.debug()`.
+
+**Acción**: Reemplazar todos por logger apropiado.
+
+### OBS-03 — Sin métricas de negocio (P3)
+No se trackean: guardias generadas/día, tiempo de generación, errores por tipo.
+
+**Acción**: Instrumentar con contadores en logger estructurado.
+
+### OBS-04 — Sin request tracing en API (P2)
+No hay correlation ID entre requests.
+
+**Acción**: Middleware con `X-Request-ID` propagado a logs.
+
+### OBS-05 — Logs sin rotación configurada (P3)
+Logs crecen indefinidamente.
+
+**Acción**: Configurar `RotatingFileHandler` (10MB, 5 backups).
+
+### OBS-06 — Sin alertas de error (P3)
+Errores críticos no generan notificación.
+
+**Acción**: Evaluar integración con servicio de alertas para producción web.
+
+---
+
+## 11. UX/UI y Accesibilidad (1/4) 🔴
+
+> **Esta es el área más débil del proyecto.** Con 59 archivos de presentación, la accesibilidad es prácticamente inexistente.
+
+### Métricas de accesibilidad
+
+| Métrica | Valor | Esperado | Estado |
+|---|---|---|---|
+| `setAccessibleName` | 6 | ~200+ | 🔴 3% cobertura |
+| `setAccessibleDescription` | 0 | ~100+ | 🔴 0% |
+| `setTabOrder` | 9 | ~50+ | 🔴 Solo en login |
+| `QValidator` | 2 | ~30+ | 🔴 Solo en login |
+| `setToolTip` | 49 | ~100+ | ⚠️ 50% |
+| `QShortcut/setShortcut` | 14 | ~30+ | ⚠️ |
+| `setFocusPolicy` | 1 | ~20+ | 🔴 |
+| `setStatusTip` | 0 | ~20+ | 🔴 |
+| `setWhatsThis` | 0 | ~10+ | 🔴 |
+| `setPlaceholderText` | 69 | ~80+ | ✅ Aceptable |
+
+### A11Y-01 — Accessible names casi inexistentes (P1)
+**Solo 6 `setAccessibleName`**, todos en `login_dialog.py`. Los 58 widgets restantes son invisibles para lectores de pantalla.
+
+**Impacto**: La app es **inutilizable** con tecnología asistiva (VoiceOver, NVDA, JAWS).
+
+**Acción**: Añadir `setAccessibleName` a TODOS los widgets interactivos:
+- Botones, inputs, comboboxes, tablas, checkboxes
+- Mínimo: todos los formularios (36) + todos los diálogos (10)
+
+### A11Y-02 — Tab order no definido (P1)
+Solo `login_dialog.py` tiene `setTabOrder`. Los 58 widgets restantes usan orden de creación (impredecible).
+
+**Acción**: Definir `setTabOrder` explícito en todos los formularios y diálogos.
+
+### A11Y-03 — Sin validación de formularios (P1)
+Solo 2 `QValidator` (en login). Los 36 formularios restantes aceptan cualquier input.
+
+**Impacto**: Datos inválidos llegan a la BD. UX pobre (errores post-submit en vez de inline).
+
+**Acción**: Añadir `QValidator` o validación inline a todos los campos:
+- Números: `QIntValidator`, `QDoubleValidator`
+- Texto: `QRegularExpressionValidator`
+- Emails, teléfonos: validators custom
+- Feedback visual: borde rojo + mensaje de error junto al campo
+
+### A11Y-04 — Contraste de colores sin verificar (P2)
+415 colores hardcodeados sin verificar ratio WCAG 2.1 (mínimo 4.5:1 para texto, 3:1 para UI).
+
+**Acción**: Auditar colores con herramienta de contraste. Centralizar en paleta verificada.
+
+### A11Y-05 — Sin soporte de teclado completo (P2)
+14 shortcuts definidos. Muchas acciones solo accesibles con ratón.
+
+**Acción**: Mapear todos los flujos principales a atajos de teclado.
+
+### A11Y-06 — Sin feedback de estado para screen readers (P2)
+Operaciones largas (generación guardias, export PDF) no anuncian progreso a tecnología asistiva.
+
+**Acción**: Usar `QAccessible.updateAccessibility()` para anunciar cambios de estado.
+
+### A11Y-07 — Tamaños de fuente fijos (P2)
+269 fuentes hardcodeadas. No respetan preferencias del sistema.
+
+**Acción**: Usar tamaños relativos o respetar `QApplication.font()`.
+
+### A11Y-08 — Sin soporte de alto contraste (P3)
+No hay tema de alto contraste. Usuarios con baja visión no tienen opción.
+
+**Acción**: Implementar tema de alto contraste como alternativa.
+
+### A11Y-09 — Sin internacionalización (P3)
+Solo 2 usos de `tr()`. Toda la UI está hardcodeada en español.
+
+**Acción**: Wrappear strings con `self.tr()` para futura traducción.
+
+### A11Y-10 — Sin DPI awareness (P2)
+191 tamaños fijos (`setMinimum`, `setFixed`, `setGeometry`). En pantallas HiDPI se ven diminutos.
+
+**Acción**: Usar layouts con `sizePolicy` en vez de tamaños fijos. Activar `Qt.AA_EnableHighDpiScaling`.
+
+---
+
+## 12. Diseño Visual y Consistencia (2/4)
+
+### Métricas visuales
+
+| Métrica | Valor | Problema |
+|---|---|---|
+| `setStyleSheet` | 535 | Estilos inline dispersos |
+| Colores hardcodeados | 415 | Sin paleta centralizada |
+| Fuentes hardcodeadas | 269 | Sin escala tipográfica |
+| Imports de `ui_styles` | 40 | Dependencia legacy monolítica |
+| Tamaños fijos | 191 | Sin responsive design |
+
+### VIS-01 — Sin sistema de design tokens (P1)
+415 colores definidos inline sin paleta centralizada. Cambiar el color primario requiere editar decenas de archivos.
+
+**Acción**: Crear sistema de design tokens:
+```python
+# src/presentation/theme/tokens.py
+class ColorTokens:
+    PRIMARY = "#1976D2"
+    PRIMARY_DARK = "#1565C0"
+    SURFACE = "#FFFFFF"
+    ERROR = "#D32F2F"
+    TEXT_PRIMARY = "#212121"
+    TEXT_SECONDARY = "#757575"
+```
+
+### VIS-02 — 535 `setStyleSheet` inline (P1)
+Estilos duplicados y dispersos. Imposible mantener consistencia visual.
+
+**Acción**: Migrar a QSS global:
+1. Crear `src/presentation/theme/light.qss` y `dark.qss`
+2. Cargar una vez en `QApplication.setStyleSheet()`
+3. Eliminar `setStyleSheet` inline progresivamente
+
+### VIS-03 — `ui_styles.py` legacy (P2)
+Módulo monolítico con 40 importadores. Mezcla estilos, constantes y lógica.
+
+**Acción**: Migrar a sistema de temas (VIS-01/VIS-02) y deprecar.
+
+### VIS-04 — Sin iconografía consistente (P2)
+Iconos de diferentes fuentes y estilos mezclados.
+
+**Acción**: Adoptar una familia de iconos (Material Icons o similar).
+
+### VIS-05 — Sin escala tipográfica (P2)
+269 fuentes hardcodeadas con tamaños arbitrarios.
+
+**Acción**: Definir escala tipográfica (H1: 24px, H2: 20px, Body: 14px, Caption: 12px).
+
+### VIS-06 — Sin espaciado consistente (P2)
+Márgenes y paddings arbitrarios en cada widget.
+
+**Acción**: Definir escala de espaciado (4, 8, 12, 16, 24, 32, 48px).
+
+### VIS-07 — Sin tema oscuro (P3)
+Solo tema claro disponible.
+
+**Acción**: Implementar tema oscuro con los design tokens.
+
+### VIS-08 — Sin animaciones/transiciones (P3)
+Cambios de estado son abruptos (aparece/desaparece).
+
+**Acción**: Añadir `QPropertyAnimation` para transiciones suaves en operaciones clave.
+
+### VIS-09 — Sin responsive layout (P2)
+191 tamaños fijos. La app no se adapta a diferentes resoluciones.
+
+**Acción**: Reemplazar `setFixedSize`/`setGeometry` por `QSizePolicy` + layouts flexibles.
+
+### VIS-10 — Sin guía de estilo documentada (P3)
+No hay documento de referencia para nuevos desarrolladores.
+
+**Acción**: Crear `docs/DESIGN_SYSTEM.md` con paleta, tipografía, espaciado, componentes.
+
+---
+
+## 13. Casos de Uso y Flujos de Usuario (3/4)
+
+### Flujos principales implementados
+
+| Caso de Uso | Estado | Completitud |
+|---|---|---|
+| UC-01 Login/Logout | ✅ Completo | JWT + bcrypt + política contraseñas |
+| UC-02 Gestión de cursos | ✅ Completo | CRUD + estados (activo/cerrado) |
+| UC-03 Gestión de profesores | ✅ Completo | CRUD + import CSV/Excel |
+| UC-04 Gestión de zonas | ✅ Completo | CRUD + capacidad + activa |
+| UC-05 Configuración recreos | ✅ Completo | Por turno M/T |
+| UC-06 Gestión de ausencias | ✅ Completo | CRUD + tipos |
+| UC-07 Generación de guardias | ✅ Completo | OR-Tools CP-SAT |
+| UC-08 Visualización calendario | ✅ Completo | Vista mes + filtros |
+| UC-09 Export PDF/CSV/Excel | ✅ Completo | Múltiples formatos |
+| UC-10 Estadísticas | ✅ Completo | Panel + gráficos |
+
+### Flujos secundarios
+
+| Caso de Uso | Estado | Notas |
+|---|---|---|
+| UC-11 Sustituciones | ⚠️ Parcial | Campos ORM existen, UI incompleta |
+| UC-12 Sincronización SFTP | ✅ Funcional | Sin retry ni circuit breaker |
+| UC-13 Backup/Restore | ❌ No implementado | Solo export manual |
+| UC-14 Import config entre cursos | ❌ No implementado | Solicitado por usuarios |
+| UC-15 Import zonas CSV | ❌ No implementado | Solo manual |
+
+### UXF-01 — Sustituciones incompletas (P2)
+Los campos ORM (`es_sustitucion`, `profesor_sustituido_id`, `notas`) existen pero la UI para gestionarlas está incompleta.
+
+**Acción**: Completar UI de sustituciones con selector de profesor sustituido y notas.
+
+### UXF-02 — Sin confirmación en acciones destructivas (P2)
+Algunas acciones de borrado no piden confirmación.
+
+**Acción**: Añadir `QMessageBox.question()` antes de todo delete.
+
+### UXF-03 — Sin undo/redo (P3)
+No hay mecanismo para deshacer acciones.
+
+**Acción**: Evaluar `QUndoStack` para operaciones CRUD principales.
+
+### UXF-04 — Sin onboarding/wizard inicial (P3)
+Usuario nuevo ve interfaz vacía sin guía.
+
+**Acción**: Implementar wizard de primer uso (crear curso → añadir zonas → importar profesores → configurar recreos).
+
+### UXF-05 — Sin indicador de cambios sin guardar (P2)
+El usuario no sabe si hay cambios pendientes de guardar.
+
+**Acción**: Indicador visual (asterisco en título, botón guardar resaltado).
+
+---
+
+## 14. Control de Acceso (3/4)
+
+### ✅ Resueltos
+- ~~MT-01~~ Autenticación JWT en API ✅ v3.8.0
+- ~~MT-02~~ Login GUI con bcrypt ✅ v3.7.0
+- ~~MT-03~~ Política de contraseñas ✅ v3.7.0
+
+### MT-04 — Sin roles/permisos (P3)
+Todos los usuarios autenticados tienen acceso completo.
+
+**Acción**: Implementar RBAC (admin, editor, viewer) cuando sea necesario.
+
+---
+
+## 15. Organización de Código (2/4)
+
+### ORG-01 — Archivos mal ubicados (P2)
+Archivos en ubicaciones que no corresponden a su responsabilidad:
+- Servicios que deberían estar en `application/use_cases/`
+- Utils que son realmente domain services
+- Helpers de presentación mezclados con lógica de negocio
+
+**Acción**: Reubicar en la capa correcta según Clean Architecture.
+
+### ORG-02 — Duplicación de estilos (P2)
+`ui_styles.py` + 535 `setStyleSheet` inline = estilos duplicados y contradictorios.
+
+**Acción**: Unificar en sistema de temas (ver VIS-01/VIS-02).
+
+### ORG-03 — 29 archivos >500 líneas (P3)
+Archivos grandes dificultan navegación y mantenimiento.
+
+**Acción**: Split progresivo de los 8 archivos >800L (ver ARQ-05).
+
+---
+
+## 16. Sanitización de Código (2/4)
+
+### SAN-01 — 289 `except Exception` (P1)
+La mayoría capturan excepciones genéricas sin discriminar tipo.
+
+**Distribución**:
+- `services/`: ~120 bloques
+- `presentation/`: ~80 bloques
+- `sync/`: ~30 bloques
+- `infrastructure/`: ~25 bloques
+- Otros: ~34 bloques
+
+**4 bloques `except Exception: pass`** (los peores):
+1. `src/utils/ui_helpers.py`
+2. `src/sync/sync_manager.py`
+3. `src/services/importador_profesores.py`
+4. `src/services/calculador_guardias.py`
+5. `src/services/importador_zonas.py`
+
+**Acción**: Fase 1: Eliminar los 4-5 `pass` silenciosos. Fase 2: Migrar a excepciones específicas.
+
+### SAN-02 — 49 `print()` en producción (P2)
+Ya documentado en SEC-17 y OBS-02.
+
+### SAN-03 — 1 `TODO` pendiente (P3)
+Solo 1 TODO en el código. Revisarlo y resolver o eliminar.
+
+---
+
+## 17. Preparación para Migración Web (Puntuación: 5/10)
+
+### Estado actual de preparación
+
+| Aspecto | Listo | Bloqueado | Nota |
+|---|---|---|---|
+| API REST existe | ✅ | — | FastAPI funcional |
+| Autenticación JWT | ✅ | — | Completa |
+| CORS configurado | ✅ | — | — |
+| Rate limiting | ✅ | — | — |
+| CRUD completo API | — | 🔴 | Solo GET (salvo auth) |
+| Paginación | — | 🔴 | No implementada |
+| Error schema estándar | — | 🔴 | Inconsistente |
+| BD multi-tenant | — | 🔴 | SQLite per-user |
+| Async endpoints | — | ⚠️ | Síncrono, funcional para MVP |
+| WebSocket | — | ⚠️ | No necesario para MVP |
+| Frontend desacoplado | — | 🔴 | UI = PyQt6 monolítica |
+| Domain logic puro | — | ⚠️ | 28 servicios acoplados a ORM |
+
+### Ruta de migración recomendada
+
+```
+Fase 1 — API Completa (P1)
+├── CRUD completo (POST/PUT/DELETE) para todas las entidades
+├── Paginación en listados
+├── Schema de error estándar
+└── response_model en todos los endpoints
+
+Fase 2 — Desacoplamiento (P1-P2)
+├── Migrar servicios a repositorios inyectados
+├── Eliminar queries directas de presentation/
+└── Domain services puros (sin imports de infra)
+
+Fase 3 — Base de Datos (P1)
+├── Migrar de SQLite per-user a PostgreSQL
+├── Implementar multi-tenancy (tenant_id)
+└── Async con asyncpg
+
+Fase 4 — Frontend Web (P2)
+├── SPA con React/Vue consumiendo la API
+├── WebSocket para operaciones largas
+└── Auth flow con refresh tokens
+```
+
+---
+
+## 18. Reparabilidad y Diagnóstico
+
+### Fortalezas
+- Error boundary GUI captura excepciones no manejadas
+- Logger centralizado en `core/logging.py`
+- Benchmarks disponibles para perfilado
+- 1.342 tests como red de seguridad
+
+### Debilidades
+- 289 `except Exception` ocultan errores reales
+- 49 `print()` sin nivel de severidad
+- Sin correlation ID en requests API
+- Sin métricas de negocio
+- Logs sin rotación
+
+---
+
+## 19. Roadmap Priorizado
+
+### P1 — Resolver antes de v6.0.0 (18 ítems)
+
+| # | ID | Descripción | Esfuerzo |
+|---|---|---|---|
+| 1 | A11Y-01 | Accessible names en todos los widgets | L |
+| 2 | A11Y-02 | Tab order en formularios y diálogos | M |
+| 3 | A11Y-03 | QValidator en formularios | L |
+| 4 | VIS-01 | Sistema de design tokens | M |
+| 5 | VIS-02 | QSS global (eliminar setStyleSheet inline) | XL |
+| 6 | ARQ-01 | Migrar servicios core a repositorios | XL |
+| 7 | ARQ-03 | Descontaminar domain services | M |
+| 8 | API-08 | CRUD completo en API REST | XL |
+| 9 | API-09 | Paginación en listados | M |
+| 10 | SEC-09 | Account lockout | S |
+| 11 | SEC-15 | Verificar/limpiar users.json de git | S |
+| 12 | SEC-16 | Resolver except Exception: pass (5 peores) | S |
+| 13 | DB-12 | Diseñar migración SQLite → PostgreSQL | L |
+| 14 | TEST-03 | Coverage al 70% | XL |
+| 15 | SAN-01 | Except Exception → excepciones específicas (fase 1) | M |
+| 16 | DB-11 | Unificar init BD en Alembic | M |
+| 17 | A11Y-10 | DPI awareness | M |
+| 18 | ARQ-08 | Completar pyproject.toml | S |
+
+### P2 — Resolver antes de v7.0.0 (34 ítems)
+
+| # | ID | Descripción | Esfuerzo |
+|---|---|---|---|
+| 1 | ARQ-02 | Eliminar queries de presentation/ | M |
+| 2 | ARQ-04 | Framework DI | L |
+| 3 | ARQ-05 | Split archivos >800L | L |
+| 4 | ARQ-06 | Migrar ui_styles.py legacy | M |
+| 5 | SEC-10 | Escapar HTML en emails | S |
+| 6 | SEC-11 | Validar remote_path SFTP | S |
+| 7 | SEC-12 | chmod 600 en users.json | S |
+| 8 | SEC-13 | Eliminar defaults de infra en config | S |
+| 9 | SEC-14 | Validar username con regex | S |
+| 10 | SEC-17 | Reemplazar print() por logger | M |
+| 11 | DB-05 | CheckConstraints | S |
+| 12 | DB-06 | Índices faltantes | S |
+| 13 | DB-07 | datetime.utcnow deprecated | S |
+| 14 | DB-08 | Inconsistencia cerrado/archivado | S |
+| 15 | DB-09 | Locks en db_manager | S |
+| 16 | DB-11 | Triple init BD | M |
+| 17 | DB-13 | Backup/restore automático | L |
+| 18 | PERF-02 | Eager loading | M |
+| 19 | PERF-03 | Filtro disponibilidad a SQL | M |
+| 20 | PERF-05 | GUI no-blocking (QThread) | L |
+| 21 | CACHE-01 | Caché de queries frecuentes | M |
+| 22 | CACHE-02 | Caché de configuración | S |
+| 23 | ASYNC-01 | FastAPI async (con PostgreSQL) | XL |
+| 24 | ASYNC-02 | SFTP con timeout + retry | M |
+| 25 | RES-01 | Retry SFTP con tenacity | M |
+| 26 | RES-03 | Implementar retry BD | S |
+| 27 | API-10 | Versionado API | S |
+| 28 | API-11 | Schema error estándar | M |
+| 29 | API-12 | response_model en endpoints | M |
+| 30 | API-15 | Middleware logging estructurado | M |
+| 31 | TEST-04 | Tests SFTP/SMTP | L |
+| 32 | TEST-05 | Tests integración BD | L |
+| 33 | OBS-04 | Request tracing | M |
+| 34 | A11Y-04 | Auditar contraste colores | M |
+
+### P3 — Mejoras incrementales (22 ítems)
+
+| # | ID | Descripción | Esfuerzo |
+|---|---|---|---|
+| 1 | A11Y-05 | Soporte teclado completo | M |
+| 2 | A11Y-06 | Feedback screen readers | M |
+| 3 | A11Y-07 | Tamaños fuente relativos | M |
+| 4 | A11Y-08 | Tema alto contraste | L |
+| 5 | A11Y-09 | Internacionalización (tr()) | XL |
+| 6 | VIS-04 | Iconografía consistente | M |
+| 7 | VIS-05 | Escala tipográfica | S |
+| 8 | VIS-06 | Escala de espaciado | S |
+| 9 | VIS-07 | Tema oscuro | L |
+| 10 | VIS-08 | Animaciones/transiciones | M |
+| 11 | VIS-09 | Responsive layout | L |
+| 12 | VIS-10 | Guía de estilo documentada | M |
+| 13 | ARQ-07 | Capa anticorrupción sync | M |
+| 14 | ARQ-09 | Feature flags huérfanos | S |
+| 15 | DB-10 | Normalizar campos JSON | L |
+| 16 | PERF-04 | .exists() en vez de .count() | S |
+| 17 | PERF-06 | Reducir setStyleSheet inline | L |
+| 18 | CACHE-03 | QPixmapCache para assets | S |
+| 19 | RES-02 | Circuit breaker | M |
+| 20 | RES-04 | Health check dependencias | S |
+| 21 | RES-05 | Graceful shutdown | S |
+| 22 | UXF-03 | Undo/redo con QUndoStack | L |
+
+### Escala de esfuerzo
+- **S** (Small): < 2 horas
+- **M** (Medium): 2–6 horas
+- **L** (Large): 6–16 horas
+- **XL** (Extra Large): 16+ horas
+
+---
+
+## Apéndice A — Resumen de ítems resueltos (73)
+
+Incluye todos los ítems marcados con ✅ a lo largo del documento, resueltos entre v3.7.0 y v5.0.0.
+
+## Apéndice B — Herramientas de auditoría utilizadas
+
+- `grep_search` — búsqueda exacta de patrones en codebase
+- `semantic_search` — búsqueda semántica de conceptos
+- `run_in_terminal` — `wc -l`, `grep -r`, `find`, conteo de métricas
+- Skills: `audit`, `code-review-excellence`, `architecture-patterns`, `api-design-principles`
+- Revisión manual de archivos clave
+
+---
+
+*Última actualización: 19 de abril de 2026 — Auditoría completa v5.0.0*
 # Auditoría Integral — Guardias de Patio
 
 **Fecha**: 16 de abril de 2026  
