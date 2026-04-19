@@ -11,6 +11,7 @@ Características:
 
 import hashlib
 import os
+import threading
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -33,6 +34,9 @@ USER_DATA_DIR = get_user_data_directory()
 _current_user_id = None
 _current_engine = None
 _current_session_factory = None
+
+# Lock para proteger acceso concurrente a las variables globales del engine (DB-09)
+_db_lock = threading.Lock()
 
 
 def _hash_username(username: str) -> str:
@@ -346,10 +350,11 @@ def initialize_user_database(username: str):
         autocommit=False, autoflush=False, bind=engine, expire_on_commit=False
     )
 
-    # Guardar referencias globales
-    _current_user_id = username
-    _current_engine = engine
-    _current_session_factory = session_factory
+    # Guardar referencias globales de forma thread-safe (DB-09)
+    with _db_lock:
+        _current_user_id = username
+        _current_engine = engine
+        _current_session_factory = session_factory
 
     logger.info(f"Base de datos inicializada para usuario: {username}")
 
@@ -660,10 +665,9 @@ def get_session():
         for db in get_session():
             profesores = db.query(Profesor).all()
     """
-    # Usar session factory del usuario activo si existe
-    session_factory = (
-        _current_session_factory if _current_session_factory else _base_session_factory
-    )
+    # Leer factory de forma thread-safe (DB-09)
+    with _db_lock:
+        session_factory = _current_session_factory if _current_session_factory else _base_session_factory
 
     db = session_factory()
     try:
@@ -695,10 +699,9 @@ def get_db_session():
             db.add(profesor)
             db.commit()
     """
-    # Usar session factory del usuario activo si existe
-    session_factory = (
-        _current_session_factory if _current_session_factory else _base_session_factory
-    )
+    # Leer factory de forma thread-safe (DB-09)
+    with _db_lock:
+        session_factory = _current_session_factory if _current_session_factory else _base_session_factory
 
     session = session_factory()
     try:

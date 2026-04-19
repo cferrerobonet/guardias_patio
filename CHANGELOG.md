@@ -6,6 +6,19 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.1.2] - 2026-04-19
+
+### 🎯 Resumen
+Estabilización de concurrencia en db_manager (DB-09) y marcado de SEC-12 ya resuelto.
+
+### Fixed
+- **DB-09**: Añadido `threading.Lock` (`_db_lock`) en `db_manager.py` para proteger las variables globales `_current_engine`, `_current_session_factory` y `_current_user_id` frente a condiciones de carrera. Afecta a escritura en `initialize_user_database()` y lecturas en `get_session()` y `get_db_session()`.
+
+### 🧹 Housekeeping
+- **SEC-12**: Verificado que `_save_users()` en `sync_manager.py` ya aplica `os.chmod(0o600)` — marcado como resuelto en auditoría.
+- **SEC-17**: Verificado que `print_pool_status()` ya usa `logger.debug()` — marcado como resuelto en auditoría.
+
+---
 ## [5.1.1] - 2026-04-19
 
 ### 🎯 Resumen

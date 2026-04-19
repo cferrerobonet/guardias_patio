@@ -1514,11 +1514,11 @@ Mostrar asterisco en título: `self.setWindowTitle(f"{'*' if self._dirty else ''
 | 3 | ARQ-05 | Split 7 archivos >800L | L |
 | 4 | ARQ-06 | Migrar imports de ui_styles.py a nuevo sistema temas | M |
 | 5 | ARQ-08 | ~~Completar pyproject.toml ([project], [build-system]) ~~ ✅ RESUELTO v5.1.0| S |
-| 6 | SEC-12 | chmod 600 en users.json al crear/modificar | S |
+| 6 | SEC-12 | ~~chmod 600 en users.json al crear/modificar~~ ✅ RESUELTO v5.0.x | S |
 | 7 | SEC-14 | Validar username con regex en backend (UserAuth) | S |
 | 8 | SEC-17 | ~~Reemplazar ~30 print() por logger en db_manager.py y cache.py ~~ ✅ RESUELTO v5.1.0| S |
 | 9 | DB-05 | Añadir CheckConstraints + migración Alembic | S |
-| 10 | DB-09 | Añadir threading.Lock en db_manager.py | S |
+| 10 | DB-09 | ~~Añadir threading.Lock en db_manager.py~~ ✅ RESUELTO v5.1.2 | S |
 | 11 | DB-11 | Unificar init BD en Alembic (eliminar create_all + SQL directo) | M |
 | 12 | DB-13 | Implementar backup/restore automático | L |
 | 13 | PERF-02 | Eager loading (joinedload) en queries de listados | M |
@@ -2449,7 +2449,7 @@ Fase 4 — Frontend Web (P2)
 | 12 | DB-06 | Índices faltantes | S |
 | 13 | DB-07 | datetime.utcnow deprecated | S |
 | 14 | DB-08 | Inconsistencia cerrado/archivado | S |
-| 15 | DB-09 | Locks en db_manager | S |
+| 15 | DB-09 | ~~Locks en db_manager~~ ✅ RESUELTO v5.1.2 | S |
 | 16 | DB-11 | Triple init BD | M |
 | 17 | DB-13 | Backup/restore automático | L |
 | 18 | PERF-02 | Eager loading | M |
