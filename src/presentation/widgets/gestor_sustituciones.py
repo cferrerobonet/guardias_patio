@@ -26,6 +26,7 @@ from PyQt6.QtWidgets import (
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY, get_table_style
 from utils.icons import icon_for_button, icon_for_form
+from core.observability import business_metrics
 
 
 class GestorSustituciones(BaseForm):
@@ -450,6 +451,12 @@ class GestorSustituciones(BaseForm):
                         guardia_entity.notas = notas_texto
                     _svc_sust.guardias.save(guardia_entity)
                     self.session.commit()
+                    business_metrics.sustitucion_confirmada(
+                        guardia_id=guardia.id,
+                        profesor_original_id=guardia.profesor_id,
+                        profesor_sustituto_id=nuevo_profesor_id,
+                        fecha=guardia.fecha,
+                    )
 
                 self.mostrar_exito(
                     "Sustitución Completada",

@@ -9,6 +9,7 @@ from .decorators import count_calls, track_errors, track_time, with_metrics
 from .health import HealthChecker, HealthStatus
 from .metrics import MetricsCollector, get_metrics
 from .performance import PerformanceMonitor, get_performance_monitor
+from . import business_metrics
 
 __all__ = [
     # Metrics
@@ -25,4 +26,6 @@ __all__ = [
     "count_calls",
     "track_errors",
     "with_metrics",
+    # Business Metrics
+    "business_metrics",
 ]

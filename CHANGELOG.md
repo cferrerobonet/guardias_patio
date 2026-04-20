@@ -6,6 +6,24 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.18.0] - 2026-04-20
+
+### 🎯 Resumen
+P3 completados: OBS-LOGS, VIS-REFINEMENT, PERF-TUNING, UX-ADVANCED. SECURITY-ADVANCED aplazado (no solicitado por usuarios).
+
+### ✨ Added
+- `src/core/observability/business_metrics.py`: módulo de métricas de negocio con funciones tipadas (`profesor_creado`, `guardia_asignada`, `guardias_limpiadas`, `sustitucion_confirmada`, `ausencia_registrada`, `asignacion_cpsat_completada`, `login_exitoso`, `login_fallido`). Logs estructurados con `event_type="business"` para filtrado.
+
+### Changed
+- `src/application/use_cases/profesor/crear_profesor.py`: emite `business_metrics.profesor_creado` al éxito
+- `src/application/use_cases/guardia/asignar_guardia.py`: emite `business_metrics.guardia_asignada` al éxito
+- `src/application/use_cases/guardia/limpiar_guardias.py`: emite `business_metrics.guardias_limpiadas` al completar
+- `src/presentation/forms/login_dialog.py`: emite `business_metrics.login_exitoso` / `login_fallido`
+- `src/presentation/widgets/gestor_sustituciones.py`: emite `business_metrics.sustitucion_confirmada` al confirmar
+- `src/utils/icons.py`: añadidos aliases `account-plus`, `star`, `favourite`, `puzzle`, `module`, `hospital`, `absence` en `_ICON_MAP` (total 91 aliases)
+- `src/presentation/ccleaner_main_window.py`: lazy loading — los 12 widgets se instancian al acceder por primera vez (antes se creaban todos al arrancar). Añadidos `register_view()`, `_ensure_view()`, `_connect_widget_signals()`.
+
+---
 ## [5.17.0] - 2026-04-20
 
 ### 🎯 Resumen

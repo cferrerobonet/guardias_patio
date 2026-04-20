@@ -9,6 +9,7 @@ from typing import Optional, Union
 from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from core.logging import get_logger
 from core.observability import with_metrics
+from core.observability import business_metrics
 from domain.entities import GuardiaEntity, ProfesorEntity, ZonaEntity
 from domain.repositories import IGuardiaRepository, IProfesorRepository, IZonaRepository
 from sqlalchemy.orm import Session
@@ -156,6 +157,13 @@ class AsignarGuardiaUseCase:
                 profesor_id=dto.profesor_id,
                 zona_id=dto.zona_id,
                 fecha=dto.fecha,
+            )
+            business_metrics.guardia_asignada(
+                guardia_id=guardia_guardada.id or 0,
+                profesor_id=dto.profesor_id,
+                zona_id=dto.zona_id,
+                fecha=dto.fecha,
+                turno=str(dto.turno) if dto.turno else "",
             )
 
             # 7. Convertir a DTO de salida

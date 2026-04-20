@@ -7,6 +7,7 @@ Permite eliminar todas las guardias del sistema.
 
 from core.logging import get_logger
 from core.observability import with_metrics
+from core.observability import business_metrics
 from domain.repositories import IGuardiaRepository
 
 logger = get_logger(__name__)
@@ -48,5 +49,6 @@ class LimpiarGuardiasUseCase:
         count = self.guardia_repository.delete_all()
 
         logger.info(f"Limpieza completada: {count} guardias eliminadas")
+        business_metrics.guardias_limpiadas(total=count)
 
         return count

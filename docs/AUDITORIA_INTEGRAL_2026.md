@@ -1393,11 +1393,11 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
-| 1 | UX-ADVANCED | Sustituciones UI completa + Undo/redo (si usuarios piden) | L |
-| 2 | PERF-TUNING | Lazy loading optimization, batch inserts en CP-SAT | M |
-| 3 | SECURITY-ADVANCED | 2FA (si usuarios lo piden) | L |
-| 4 | VIS-REFINEMENT | Iconografía consistente + refinamientos visuales | M |
-| 5 | OBS-LOGS | Métricas de negocio en logs estructurados | M |
+| 1 | ~~UX-ADVANCED~~ | ~~Sustituciones UI completa + Undo/redo (si usuarios piden)~~ | L | ✅ RESUELTO v5.18.0 |
+| 2 | ~~PERF-TUNING~~ | ~~Lazy loading optimization, batch inserts en CP-SAT~~ | M | ✅ RESUELTO v5.18.0 |
+| 3 | ~~SECURITY-ADVANCED~~ | ~~2FA (si usuarios lo piden)~~ | L | ⏭️ APLAZADO — no solicitado por usuarios |
+| 4 | ~~VIS-REFINEMENT~~ | ~~Iconografía consistente + refinamientos visuales~~ | M | ✅ RESUELTO v5.18.0 |
+| 5 | ~~OBS-LOGS~~ | ~~Métricas de negocio en logs estructurados~~ | M | ✅ RESUELTO v5.18.0 |
 
 ### ~~DESCARTADOS~~ — 23 ítems (por low ROI / prematuros)
 

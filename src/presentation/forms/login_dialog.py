@@ -3,6 +3,7 @@ Diálogo de Login para Sistema Multi-Usuario
 """
 
 from core.paths import get_resources_directory
+from core.observability import business_metrics
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QRegularExpressionValidator
 from PyQt6.QtWidgets import (
@@ -650,10 +651,12 @@ class LoginDialog(QDialog):
                 f"Usuario: <span style='color: #007ACC; font-style: italic;'>{username}</span>"
             )
             msg.exec()
+            business_metrics.login_exitoso(username=username)
             self.accept()
         else:
             from utils.ui_helpers import MESSAGEBOX_STYLE
 
+            business_metrics.login_fallido(username=username, razon=auth_msg)
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Critical)
             msg.setWindowTitle("Error de autenticación")

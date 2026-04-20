@@ -5,6 +5,7 @@ Layout profesional con sidebar oscuro y contenido blanco.
 """
 
 from core.logging import get_logger
+from typing import Callable
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -80,7 +81,8 @@ class CCleanerMainWindow(QMainWindow):
         super().__init__()
         self.session = session
         self.sync_manager = sync_manager
-        self.widgets = {}
+        self.widgets: dict = {}
+        self._factories: dict[str, tuple[str, Callable[[], QWidget]]] = {}
         self.setup_ui()
 
     def setup_ui(self):
@@ -131,65 +133,81 @@ class CCleanerMainWindow(QMainWindow):
         self.sidebar.set_active_section("profesores")
 
     def create_views(self):
-        """Crear todas las vistas/páginas de la aplicación"""
+        """Registrar todas las vistas con lazy loading (se instancian al acceder)"""
+        session = self.session
+        sync_manager = self.sync_manager
 
-        # GESTIÓN (ahora es la primera sección)
-        self.add_view("profesores", "Gestión de Profesores", ProfesorForm(self.session))
-        self.add_view("zonas", "Gestión de Zonas", ZonaForm(self.session))
-        self.add_view(
-            "ajustes",
-            "Ajustes del Curso Escolar",
-            AjustesForm(self.session),
+        # GESTIÓN
+        self.register_view("profesores", "Gestión de Profesores", lambda: ProfesorForm(session))
+        self.register_view("zonas", "Gestión de Zonas", lambda: ZonaForm(session))
+        self.register_view("ajustes", "Ajustes del Curso Escolar", lambda: AjustesForm(session))
+        self.register_view(
+            "conectividad", "Configuración de Conectividad", lambda: ConectividadForm(session)
         )
-        self.add_view(
-            "conectividad",
-            "Configuración de Conectividad",
-            ConectividadForm(self.session),
-        )
-        self.add_view(
+        self.register_view(
             "perfiles",
             "Gestión de Perfiles de Usuario",
-            PerfilesUsuarioForm(self.session),
+            lambda: PerfilesUsuarioForm(session),
         )
 
         # GUARDIAS
-        self.add_view(
+        self.register_view(
             "asignacion_calculo",
             "Cálculo y Asignación",
-            AsignacionCalculoForm(self.session, sync_manager=self.sync_manager),
+            lambda: AsignacionCalculoForm(session, sync_manager=sync_manager),
         )
-        self.add_view("calendario", "Calendario de Guardias", VistaCalendario(self.session))
+        self.register_view(
+            "calendario", "Calendario de Guardias", lambda: VistaCalendario(session)
+        )
 
         # PERSONAL
-        self.add_view(
-            "ausencias",
-            "Gestión de Ausencias",
-            GestionarAusenciasForm(self.session),
+        self.register_view(
+            "ausencias", "Gestión de Ausencias", lambda: GestionarAusenciasForm(session)
         )
-        self.add_view(
-            "sustituciones",
-            "Gestión de Sustituciones",
-            GestorSustituciones(self.session),
+        self.register_view(
+            "sustituciones", "Gestión de Sustituciones", lambda: GestorSustituciones(session)
         )
 
         # HERRAMIENTAS
-        self.add_view(
-            "importar",
-            "Importar / Exportar Datos",
-            ImportExportForm(self.session),
+        self.register_view(
+            "importar", "Importar / Exportar Datos", lambda: ImportExportForm(session)
         )
-        self.add_view("reportes", "Generador de Reportes", ReportesForm(self.session))
-        self.add_view("estadisticas", "Estadísticas", PanelEstadisticas(self.session))
+        self.register_view("reportes", "Generador de Reportes", lambda: ReportesForm(session))
+        self.register_view(
+            "estadisticas", "Estadísticas", lambda: PanelEstadisticas(session)
+        )
+
+    def register_view(self, section: str, title: str, factory: Callable[[], QWidget]) -> None:
+        """Registra una vista con lazy loading. El widget se crea al acceder por primera vez."""
+        self._factories[section] = (title, factory)
 
     def add_view(self, section: str, title: str, content_widget: QWidget):
-        """Añadir una vista al stack"""
+        """Añadir una vista al stack (instancia ya creada)"""
         wrapped = ContentWrapper(title, content_widget)
         self.widgets[section] = wrapped
         self.content_stack.addWidget(wrapped)
 
-    def on_section_changed(self, section: str):
-        """Cambiar de sección"""
+    def _ensure_view(self, section: str) -> bool:
+        """Crea el widget de una sección si aún no existe (lazy loading)."""
         if section in self.widgets:
+            return True
+        if section not in self._factories:
+            return False
+        title, factory = self._factories[section]
+        logger.info(f"[lazy] Instanciando vista '{section}'")
+        widget = factory()
+        self.add_view(section, title, widget)
+        self._connect_widget_signals(section, widget)
+        return True
+
+    def _connect_widget_signals(self, section: str, widget: QWidget) -> None:
+        """Conecta las señales propias del widget recién creado (extensible por sección)."""
+        # El refresco por cambio de curso se gestiona en _on_curso_cambiado.
+        pass
+
+    def on_section_changed(self, section: str):
+        """Cambiar de sección con lazy loading"""
+        if self._ensure_view(section):
             self.content_stack.setCurrentWidget(self.widgets[section])
 
     def connect_signals(self):

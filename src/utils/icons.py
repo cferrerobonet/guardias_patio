@@ -117,6 +117,7 @@ class Icons:
         "group": "account-group.svg",
         "team": "account-group.svg",
         "add-user": "account-plus.svg",
+        "account-plus": "account-plus.svg",
 
         # Estadísticas y reportes
         "chart": "chart-bar.svg",
@@ -148,6 +149,12 @@ class Icons:
         "list": "clipboard-text.svg",
         "target": "target.svg",
         "assign": "target.svg",
+        "star": "star.svg",
+        "favourite": "star.svg",
+        "puzzle": "puzzle.svg",
+        "module": "puzzle.svg",
+        "hospital": "hospital-box.svg",
+        "absence": "hospital-box.svg",
 
         # Seguridad
         "key": "key.svg",

@@ -10,6 +10,7 @@ from typing import Optional, Union
 from core.exceptions import ValidationError
 from core.logging import get_logger
 from core.observability import with_metrics
+from core.observability import business_metrics
 from domain.entities import ProfesorEntity
 from domain.repositories import IProfesorRepository
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
@@ -124,6 +125,12 @@ class CrearProfesorUseCase:
                 "Profesor creado exitosamente",
                 profesor_id=entidad_guardada.id,
                 nombre=entidad_guardada.nombre_completo,
+            )
+            business_metrics.profesor_creado(
+                profesor_id=entidad_guardada.id or 0,
+                nombre=entidad_guardada.nombre_completo,
+                turno=entidad_guardada.turno.value.value,
+                horas_contrato=float(entidad_guardada.horas_contrato),
             )
 
             # 6. Convertir a DTO de salida
