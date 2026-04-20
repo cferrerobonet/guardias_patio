@@ -154,7 +154,7 @@ class ActualizarProfesorUseCase:
         except SQLAlchemyError as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al actualizar el profesor: {str(e)}") from e
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al actualizar el profesor: {str(e)}") from e
 

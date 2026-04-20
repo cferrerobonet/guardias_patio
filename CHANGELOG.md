@@ -6,6 +6,23 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.13.0] - 2026-04-20
+
+### 🎯 Resumen
+SEC-16: migración de `except Exception` genéricos a excepciones específicas — 59→49 (target <50 alcanzado).
+
+### 🧹 Housekeeping
+- `application/use_cases/zona/crear_zona.py` → `except (ValueError, TypeError)`
+- `application/use_cases/profesor/actualizar_profesor.py` → `except (ValueError, TypeError)`
+- `application/use_cases/configuracion/actualizar_configuracion.py` → `except SQLAlchemyError`
+- `services/gestor_ausencias.py` → `except (ValueError, LookupError, AttributeError)`
+- `services/orquestador_asignacion_guardias.py` → `except (TypeError, ValueError, RuntimeError)`
+- `services/exportador_pdf.py` → `except (TypeError, ValueError)`
+- `sync/session_lock.py` → `except OSError`
+- `sync/sync_manager.py` (×2) → `except (OSError, IOError)`
+
+---
+
 ## [5.12.0] - 2026-04-20
 
 ### 🎯 Resumen

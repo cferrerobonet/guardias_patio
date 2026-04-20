@@ -209,7 +209,7 @@ class OrquestadorAsignacionGuardias:
             logger.info("⏳ Esperando decisión del usuario...")
             decision = callback_decision_usuario(diagnostico)
             logger.info(f"✓ Decisión recibida del usuario: {decision}")
-        except Exception as e:
+        except (TypeError, ValueError, RuntimeError) as e:
             logger.error(f"❌ Error al obtener decisión del usuario: {str(e)}")
             import traceback
 

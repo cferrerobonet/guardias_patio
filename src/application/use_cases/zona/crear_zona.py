@@ -80,6 +80,6 @@ class CrearZonaUseCase:
         except SQLAlchemyError as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al crear la zona: {str(e)}") from e
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al crear la zona: {str(e)}") from e

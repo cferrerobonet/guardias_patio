@@ -8,6 +8,7 @@ Con invalidación de cache automática.
 from core.logging import get_logger
 from core.observability import with_metrics
 from infrastructure.database.models import Configuracion
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from utils.repository_cache import invalidate_configuracion_cache
 
@@ -139,7 +140,7 @@ class ActualizarConfiguracionUseCase:
                 algoritmo_asignacion=getattr(config, "algoritmo_asignacion", "v2.9"),
             )
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             self.session.rollback()
             logger.error(f"Error al actualizar configuración: {e}")
             raise

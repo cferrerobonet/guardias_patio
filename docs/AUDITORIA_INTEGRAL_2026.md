@@ -263,7 +263,7 @@ os.chmod(users_json_path, 0o600)
 
 ---
 
-### SEC-16 — 273 bloques `except Exception` (P1) — ✅ Fase 1 RESUELTA v5.6.0 (3 silenciosos corregidos; quedan ~36)
+### ~~SEC-16 — 273 bloques `except Exception` (P1)~~ ✅ RESUELTO v5.13.0 (59→49, target <50 alcanzado)
 
 **Problema**: 273 bloques capturan `Exception` genérica. Distribución:
 

@@ -60,7 +60,7 @@ class SessionLock:
             ip = s.getsockname()[0]
             s.close()
             return ip
-        except Exception:
+        except OSError:
             return "127.0.0.1"
 
     def _get_remote_lock_path(self) -> str:
