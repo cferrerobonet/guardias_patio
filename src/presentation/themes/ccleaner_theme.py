@@ -619,6 +619,17 @@ def get_complete_stylesheet() -> str:
             border-color: {PRIMARY_BLUE};
         }}
 
+        /* ========== ÁREAS TERMINAL RETRO (VINTAGE) ========== */
+        QTextEdit#terminalRetro {{
+            background-color: #0f172a;
+            color: #d1d5db;
+            border: 1px solid #1f2937;
+            border-radius: {RADIUS_MEDIUM}px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            selection-background-color: #14532d;
+            selection-color: #dcfce7;
+        }}
+
         /* ========== COMBOBOX ========== */
         QComboBox {{
             background-color: {CONTENT_BG};
