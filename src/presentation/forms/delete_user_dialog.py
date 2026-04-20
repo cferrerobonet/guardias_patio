@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
 from sync.backend_factory import get_default_backend
 from sync.sync_manager import UserAuth
@@ -83,6 +84,7 @@ class DeleteUserDialog(QDialog):
 
         self.username_combo = QComboBox()
         self.username_combo.setMinimumHeight(35)
+        self.username_combo.setAccessibleName("Selector de usuario a eliminar")
         users = list(self.user_auth.users.keys())
         if users:
             self.username_combo.addItems(sorted(users))
@@ -97,6 +99,7 @@ class DeleteUserDialog(QDialog):
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setMinimumHeight(35)
         self.password_input.returnPressed.connect(self.delete_user)
+        self.password_input.setAccessibleName("Campo contraseña para confirmar eliminación")
         form_layout.addRow("Contraseña:", self.password_input)
 
         layout.addLayout(form_layout)
@@ -115,6 +118,7 @@ class DeleteUserDialog(QDialog):
         cancel_btn = QPushButton("← Cancelar")
         cancel_btn.setMinimumHeight(40)
         cancel_btn.clicked.connect(self.reject)
+        cancel_btn.setAccessibleName("Botón cancelar eliminación de usuario")
         cancel_btn.setStyleSheet("""
             QPushButton {
                 background-color: #6B7280;
@@ -135,6 +139,7 @@ class DeleteUserDialog(QDialog):
         delete_btn.setMinimumHeight(40)
         delete_btn.clicked.connect(self.delete_user)
         delete_btn.setDefault(True)
+        delete_btn.setAccessibleName("Botón eliminar usuario permanentemente")
         delete_btn.setStyleSheet("""
             QPushButton {
                 background-color: #DC2626;
@@ -151,6 +156,11 @@ class DeleteUserDialog(QDialog):
         buttons_layout.addWidget(delete_btn)
 
         layout.addLayout(buttons_layout)
+
+        # A11Y: Tab order
+        QWidget.setTabOrder(self.username_combo, self.password_input)
+        QWidget.setTabOrder(self.password_input, delete_btn)
+        QWidget.setTabOrder(delete_btn, cancel_btn)
 
     def delete_user(self):
         """Elimina el usuario tras verificar la contraseña."""

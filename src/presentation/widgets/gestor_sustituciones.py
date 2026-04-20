@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 from utils.icons import icon_for_button, icon_for_form
 
@@ -101,6 +102,15 @@ class GestorSustituciones(BaseForm):
         # Cargar datos iniciales
         self.cargar_profesores()
 
+        # A11Y: Tab order
+        QWidget.setTabOrder(self.combo_profesor_original, self.fecha_buscar)
+        QWidget.setTabOrder(self.fecha_buscar, self.btn_buscar)
+        QWidget.setTabOrder(self.btn_buscar, self.combo_profesor_sustituto)
+        QWidget.setTabOrder(self.combo_profesor_sustituto, self.btn_buscar_disponibles)
+        QWidget.setTabOrder(self.btn_buscar_disponibles, self.text_observaciones)
+        QWidget.setTabOrder(self.text_observaciones, self.btn_confirmar_sustitucion)
+        QWidget.setTabOrder(self.btn_confirmar_sustitucion, self.btn_cancelar)
+
     def _crear_seccion_buscar(self) -> QGroupBox:
         """Crear sección de búsqueda de guardia."""
         grupo_buscar = QGroupBox("1. Buscar Guardia")
@@ -116,6 +126,7 @@ class GestorSustituciones(BaseForm):
         self.fecha_buscar = QDateEdit()
         self.fecha_buscar.setDate(date.today())
         self.fecha_buscar.setCalendarPopup(True)
+        self.fecha_buscar.setAccessibleName("Fecha de la guardia a sustituir")
         layout_buscar.addWidget(self.fecha_buscar)
 
         # Profesor
@@ -124,6 +135,7 @@ class GestorSustituciones(BaseForm):
         layout_buscar.addWidget(profesor_label)
 
         self.combo_profesor_original = QComboBox()
+        self.combo_profesor_original.setAccessibleName("Profesor original de la guardia")
         layout_buscar.addWidget(self.combo_profesor_original)
 
         # Botón buscar
@@ -131,6 +143,7 @@ class GestorSustituciones(BaseForm):
         self.btn_buscar.setIcon(icon_for_button("search"))
         self.btn_buscar.clicked.connect(self.buscar_guardias)
         self.btn_buscar.setMinimumHeight(40)
+        self.btn_buscar.setAccessibleName("Botón buscar guardias del profesor")
         layout_buscar.addWidget(self.btn_buscar)
 
         grupo_buscar.setLayout(layout_buscar)
@@ -171,6 +184,7 @@ class GestorSustituciones(BaseForm):
         layout_sustituir.addWidget(sustituto_label)
 
         self.combo_profesor_sustituto = QComboBox()
+        self.combo_profesor_sustituto.setAccessibleName("Profesor sustituto")
         layout_sustituir.addWidget(self.combo_profesor_sustituto)
 
         # Botón ver disponibles
@@ -179,6 +193,7 @@ class GestorSustituciones(BaseForm):
         self.btn_buscar_disponibles.clicked.connect(self.buscar_profesores_disponibles)
         self.btn_buscar_disponibles.setMinimumHeight(35)
         self.btn_buscar_disponibles.setObjectName("secondaryButton")
+        self.btn_buscar_disponibles.setAccessibleName("Botón ver profesores disponibles")
         layout_sustituir.addWidget(self.btn_buscar_disponibles)
 
         # Observaciones
@@ -189,6 +204,7 @@ class GestorSustituciones(BaseForm):
         self.text_observaciones = QTextEdit()
         self.text_observaciones.setMaximumHeight(70)
         self.text_observaciones.setPlaceholderText("Añade observaciones sobre la sustitución...")
+        self.text_observaciones.setAccessibleName("Observaciones sobre la sustitución")
         layout_sustituir.addWidget(self.text_observaciones)
 
         # Botones de acción
@@ -210,6 +226,7 @@ class GestorSustituciones(BaseForm):
         self.btn_confirmar_sustitucion.setMinimumHeight(45)
         self.btn_confirmar_sustitucion.setProperty("success", True)
         self.btn_confirmar_sustitucion.setEnabled(False)
+        self.btn_confirmar_sustitucion.setAccessibleName("Botón confirmar sustitución")
         botones_layout.addWidget(self.btn_confirmar_sustitucion, 2)
 
         self.btn_cancelar = QPushButton("Limpiar")
@@ -217,6 +234,7 @@ class GestorSustituciones(BaseForm):
         self.btn_cancelar.clicked.connect(self.limpiar_formulario)
         self.btn_cancelar.setMinimumHeight(45)
         self.btn_cancelar.setProperty("danger", True)
+        self.btn_cancelar.setAccessibleName("Botón limpiar formulario")
         botones_layout.addWidget(self.btn_cancelar, 1)
 
         return botones_layout

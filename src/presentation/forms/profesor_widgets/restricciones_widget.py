@@ -108,6 +108,9 @@ class RestriccionesWidget(QGroupBox):
             styles.STYLE_LABEL_FIELD + " font-weight: bold;"
         )
         self.usar_restricciones_checkbox.setChecked(False)  # Desactivado por defecto
+        self.usar_restricciones_checkbox.setAccessibleName(
+            "Activar personalización de disponibilidad del profesor"
+        )
         main_layout.addWidget(self.usar_restricciones_checkbox)
 
         self.setLayout(main_layout)
@@ -134,6 +137,7 @@ class RestriccionesWidget(QGroupBox):
         self.usar_fecha_inicio_checkbox = QCheckBox("Desde:")
         self.usar_fecha_inicio_checkbox.setObjectName("fieldLabel")
         self.usar_fecha_inicio_checkbox.setFixedWidth(80)
+        self.usar_fecha_inicio_checkbox.setAccessibleName("Activar fecha de inicio de guardias")
         layout_fecha_inicio.addWidget(self.usar_fecha_inicio_checkbox)
 
         self.fecha_inicio_guardias_input = QDateEdit()
@@ -142,6 +146,7 @@ class RestriccionesWidget(QGroupBox):
         self.fecha_inicio_guardias_input.setMaximumWidth(150)
         self.fecha_inicio_guardias_input.setDate(QDate.currentDate())
         self.fecha_inicio_guardias_input.setEnabled(False)
+        self.fecha_inicio_guardias_input.setAccessibleName("Fecha de inicio de disponibilidad para guardias")
         layout_fecha_inicio.addWidget(self.fecha_inicio_guardias_input)
         layout_fecha_inicio.addStretch()
         layout.addLayout(layout_fecha_inicio)
@@ -151,6 +156,7 @@ class RestriccionesWidget(QGroupBox):
         self.usar_fecha_fin_checkbox = QCheckBox("Hasta:")
         self.usar_fecha_fin_checkbox.setObjectName("fieldLabel")
         self.usar_fecha_fin_checkbox.setFixedWidth(80)
+        self.usar_fecha_fin_checkbox.setAccessibleName("Activar fecha de fin de guardias")
         layout_fecha_fin.addWidget(self.usar_fecha_fin_checkbox)
 
         self.fecha_fin_guardias_input = QDateEdit()
@@ -159,6 +165,7 @@ class RestriccionesWidget(QGroupBox):
         self.fecha_fin_guardias_input.setMaximumWidth(150)
         self.fecha_fin_guardias_input.setDate(QDate.currentDate())
         self.fecha_fin_guardias_input.setEnabled(False)
+        self.fecha_fin_guardias_input.setAccessibleName("Fecha de fin de disponibilidad para guardias")
         layout_fecha_fin.addWidget(self.fecha_fin_guardias_input)
         layout_fecha_fin.addStretch()
         layout.addLayout(layout_fecha_fin)
@@ -180,6 +187,7 @@ class RestriccionesWidget(QGroupBox):
         self.zona_preferida_combo.setToolTip(
             "Selecciona la zona preferida del profesor para asignar guardias"
         )
+        self.zona_preferida_combo.setAccessibleName("Zona preferida del profesor para guardias")
         layout.addWidget(self.zona_preferida_combo)
 
         return layout

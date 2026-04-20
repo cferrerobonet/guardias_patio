@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
 from sync.sync_manager import UserAuth
 from utils.icons import icon_for_button
@@ -50,20 +51,24 @@ class DialogoCrearPerfil(QDialog):
 
         self.input_usuario = QLineEdit()
         self.input_usuario.setPlaceholderText("Nombre de usuario único")
+        self.input_usuario.setAccessibleName("Campo nombre de usuario")
         form_layout.addRow("Usuario:", self.input_usuario)
 
         self.input_email = QLineEdit()
         self.input_email.setPlaceholderText("correo@ejemplo.com")
+        self.input_email.setAccessibleName("Campo correo electrónico")
         form_layout.addRow("Email:", self.input_email)
 
         self.input_password = QLineEdit()
         self.input_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_password.setPlaceholderText("Contraseña segura")
+        self.input_password.setAccessibleName("Campo contraseña del nuevo perfil")
         form_layout.addRow("Contraseña:", self.input_password)
 
         self.input_password_confirm = QLineEdit()
         self.input_password_confirm.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_password_confirm.setPlaceholderText("Repetir contraseña")
+        self.input_password_confirm.setAccessibleName("Campo confirmar contraseña del nuevo perfil")
         form_layout.addRow("Confirmar:", self.input_password_confirm)
 
         layout.addLayout(form_layout)
@@ -74,10 +79,12 @@ class DialogoCrearPerfil(QDialog):
 
         btn_cancelar = QPushButton("Cancelar")
         btn_cancelar.clicked.connect(self.reject)
+        btn_cancelar.setAccessibleName("Botón cancelar creación de perfil")
         botones_layout.addWidget(btn_cancelar)
 
         btn_crear = QPushButton("Crear Perfil")
         btn_crear.setIcon(icon_for_button("check"))
+        btn_crear.setAccessibleName("Botón crear nuevo perfil de usuario")
         btn_crear.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50;
@@ -96,6 +103,13 @@ class DialogoCrearPerfil(QDialog):
 
         layout.addLayout(botones_layout)
         self.setLayout(layout)
+
+        # A11Y: Tab order
+        QWidget.setTabOrder(self.input_usuario, self.input_email)
+        QWidget.setTabOrder(self.input_email, self.input_password)
+        QWidget.setTabOrder(self.input_password, self.input_password_confirm)
+        QWidget.setTabOrder(self.input_password_confirm, btn_crear)
+        QWidget.setTabOrder(btn_crear, btn_cancelar)
 
     def crear_perfil(self):
         """Crea el nuevo perfil con su base de datos."""

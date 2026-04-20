@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 from services.gestor_ausencias import GestorAusencias
 from presentation.widgets.dialogo_reasignacion import DialogoReasignacion
@@ -65,6 +66,15 @@ class GestionarAusenciasForm(BaseForm):
         # Cargar datos iniciales
         self.cargar_profesores()
         self.cargar_ausencias()
+
+        # A11Y: Orden de tabulación (de arriba abajo, izquierda a derecha)
+        QWidget.setTabOrder(self.profesor_combo, self.tipo_combo)
+        QWidget.setTabOrder(self.tipo_combo, self.fecha_inicio_input)
+        QWidget.setTabOrder(self.fecha_inicio_input, self.fecha_fin_input)
+        QWidget.setTabOrder(self.fecha_fin_input, self.motivo_input)
+        QWidget.setTabOrder(self.motivo_input, self.guardar_btn)
+        QWidget.setTabOrder(self.guardar_btn, self.ver_guardias_btn)
+        QWidget.setTabOrder(self.ver_guardias_btn, self.cancelar_btn)
 
     def cargar_datos(self):
         """
@@ -178,6 +188,7 @@ class GestionarAusenciasForm(BaseForm):
         self.profesor_combo = QComboBox()
         self.profesor_combo.setMaximumWidth(400)
         self.profesor_combo.currentIndexChanged.connect(self.actualizar_preview_guardias)
+        self.profesor_combo.setAccessibleName("Selector de profesor ausente")
         layout.addWidget(self.profesor_combo)
 
         # Tipo de ausencia
@@ -187,6 +198,7 @@ class GestionarAusenciasForm(BaseForm):
         self.tipo_combo = QComboBox()
         self.tipo_combo.addItems(["baja_medica", "permiso", "vacaciones", "otros"])
         self.tipo_combo.setMaximumWidth(200)
+        self.tipo_combo.setAccessibleName("Tipo de ausencia")
         layout.addWidget(self.tipo_combo)
 
         # Fechas
@@ -200,6 +212,7 @@ class GestionarAusenciasForm(BaseForm):
         self.motivo_input.setPlaceholderText("Descripción del motivo de la ausencia...")
         self.motivo_input.setMaximumHeight(80)
         self.motivo_input.setMaximumWidth(400)
+        self.motivo_input.setAccessibleName("Motivo de la ausencia")
         layout.addWidget(self.motivo_input)
 
         grupo.setLayout(layout)
@@ -220,6 +233,7 @@ class GestionarAusenciasForm(BaseForm):
         self.fecha_inicio_input.setDate(QDate.currentDate())
         self.fecha_inicio_input.setMaximumWidth(150)
         self.fecha_inicio_input.dateChanged.connect(self.actualizar_preview_guardias)
+        self.fecha_inicio_input.setAccessibleName("Fecha de inicio de la ausencia")
         layout_inicio.addWidget(self.fecha_inicio_input)
         layout_fechas.addLayout(layout_inicio)
 
@@ -234,6 +248,7 @@ class GestionarAusenciasForm(BaseForm):
         self.fecha_fin_input.setDate(QDate.currentDate())
         self.fecha_fin_input.setMaximumWidth(150)
         self.fecha_fin_input.dateChanged.connect(self.actualizar_preview_guardias)
+        self.fecha_fin_input.setAccessibleName("Fecha de fin de la ausencia")
         layout_fin.addWidget(self.fecha_fin_input)
         layout_fechas.addLayout(layout_fin)
 
@@ -265,6 +280,7 @@ class GestionarAusenciasForm(BaseForm):
         self.guardar_btn.setProperty("success", True)
         self.guardar_btn.clicked.connect(self.guardar_ausencia)
         self.guardar_btn.setToolTip("Guardar la ausencia (Ctrl+S)")
+        self.guardar_btn.setAccessibleName("Botón guardar ausencia")
         botones.addWidget(self.guardar_btn)
 
         self.ver_guardias_btn = QPushButton("Ver Guardias Afectadas")
@@ -272,6 +288,7 @@ class GestionarAusenciasForm(BaseForm):
         self.ver_guardias_btn.clicked.connect(self.mostrar_guardias_afectadas)
         self.ver_guardias_btn.setToolTip("Ver y reasignar guardias afectadas")
         self.ver_guardias_btn.setEnabled(False)
+        self.ver_guardias_btn.setAccessibleName("Botón ver guardias afectadas")
         botones.addWidget(self.ver_guardias_btn)
 
         self.cancelar_btn = QPushButton("Cancelar")
@@ -279,6 +296,7 @@ class GestionarAusenciasForm(BaseForm):
         self.cancelar_btn.setObjectName("secondaryButton")
         self.cancelar_btn.clicked.connect(self.limpiar_formulario)
         self.cancelar_btn.setToolTip("Cancelar y limpiar formulario (Esc)")
+        self.cancelar_btn.setAccessibleName("Botón cancelar y limpiar formulario")
         botones.addWidget(self.cancelar_btn)
 
         return botones

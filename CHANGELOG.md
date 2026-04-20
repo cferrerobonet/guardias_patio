@@ -6,6 +6,26 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.16.0] - 2026-04-20
+
+### 🎯 Resumen
+A11Y-BASIC (P2): setAccessibleName + setTabOrder en 10 formularios y widgets de la capa de presentación.
+
+### ✨ Added
+- Accesibilidad completa (setAccessibleName + setTabOrder) en:
+  - `gestionar_ausencias.py`: profesor, tipo, fechas, motivo, botones guardar/ver/cancelar
+  - `gestor_sustituciones.py`: fecha, profesor original/sustituto, observaciones, confirmar/limpiar
+  - `change_password_dialog.py`: contraseña actual, nueva, confirmar + tab order
+  - `reset_password_dialog.py`: código recuperación, nueva contraseña, confirmar + tab order
+  - `delete_user_dialog.py`: selector usuario, contraseña confirmación + tab order
+  - `dialogo_crear_perfil.py`: usuario, email, contraseña, confirmar + tab order
+  - `modales_perfil.py`: 3 diálogos (crear, editar, cambiar contraseña) con AccessibleName
+  - `restricciones_widget.py`: checkboxes fecha inicio/fin, combo zona preferida, checkbox principal
+  - `selector_curso_widget.py`: combo curso escolar activo
+  - `pdf_export_widget.py`: combo tipo, mes, año, curso, checkboxes selección/email, botón
+  - `calendarios_pdf_widget.py`: combo tipo, mes, año, checkboxes selección/email, botón
+
+---
 ## [5.15.1] - 2026-04-20
 
 ### 🎯 Resumen

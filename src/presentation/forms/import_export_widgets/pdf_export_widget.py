@@ -98,6 +98,7 @@ class PdfExportWidget(QGroupBox):
         self.exportar_pdf_btn = QPushButton("📄 Generar PDFs")
         self.exportar_pdf_btn.setMinimumHeight(40)
         self.exportar_pdf_btn.setProperty("danger", True)
+        self.exportar_pdf_btn.setAccessibleName("Botón generar PDFs")
         layout.addWidget(self.exportar_pdf_btn)
 
         self.setLayout(layout)
@@ -123,6 +124,7 @@ class PdfExportWidget(QGroupBox):
         self.pdf_tipo_combo.addItem(
             "🗓️ Calendario individual - Profesores seleccionados", "individual_seleccionados"
         )
+        self.pdf_tipo_combo.setAccessibleName("Tipo de exportación PDF")
         tipo_layout.addWidget(self.pdf_tipo_combo)
 
         return tipo_layout
@@ -158,6 +160,7 @@ class PdfExportWidget(QGroupBox):
         ]
         self.pdf_mes_combo.addItems(meses)
         self.pdf_mes_combo.setCurrentIndex(datetime.now().month - 1)
+        self.pdf_mes_combo.setAccessibleName("Mes para exportación PDF")
         mes_container.addWidget(self.pdf_mes_combo)
         fecha_layout.addLayout(mes_container, 2)
 
@@ -173,6 +176,7 @@ class PdfExportWidget(QGroupBox):
         for anio in range(anio_actual - 1, anio_actual + 3):
             self.pdf_anio_combo.addItem(str(anio))
         self.pdf_anio_combo.setCurrentIndex(1)  # Año actual
+        self.pdf_anio_combo.setAccessibleName("Año para exportación PDF")
         anio_container.addWidget(self.pdf_anio_combo)
         fecha_layout.addLayout(anio_container, 1)
 
@@ -194,6 +198,7 @@ class PdfExportWidget(QGroupBox):
         for anio in range(anio_actual - 1, anio_actual + 3):
             self.pdf_curso_combo.addItem(f"{anio}/{anio + 1}", anio)
         self.pdf_curso_combo.setCurrentIndex(1)
+        self.pdf_curso_combo.setAccessibleName("Curso escolar para exportación PDF")
         curso_layout.addWidget(self.pdf_curso_combo)
 
         curso_info = QLabel("Se generarán PDFs de Septiembre a Junio")
@@ -241,6 +246,7 @@ class PdfExportWidget(QGroupBox):
         # Checkbox "Seleccionar todos"
         self.seleccionar_todos_check = QCheckBox("✅ Seleccionar todos")
         self.seleccionar_todos_check.setCheckState(Qt.CheckState.Checked)
+        self.seleccionar_todos_check.setAccessibleName("Seleccionar todos los profesores")
         self.seleccionar_todos_check.setStyleSheet(
             """
             QCheckBox {
@@ -279,6 +285,7 @@ class PdfExportWidget(QGroupBox):
         # Checkbox de envío por email
         self.enviar_email_check = QCheckBox("📧 Enviar calendario por email a cada profesor")
         self.enviar_email_check.setChecked(False)
+        self.enviar_email_check.setAccessibleName("Activar envío de calendario por email")
         self.enviar_email_check.setStyleSheet(
             """
             QCheckBox {

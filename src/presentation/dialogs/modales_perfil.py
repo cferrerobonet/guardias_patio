@@ -49,23 +49,27 @@ class DialogoCrearPerfilProfesional(QDialog):
         self.input_usuario = QLineEdit()
         self.input_usuario.setPlaceholderText("Nombre de usuario único")
         self.input_usuario.setMinimumHeight(32)
+        self.input_usuario.setAccessibleName("Campo nombre de usuario")
         form_layout.addRow("Usuario:", self.input_usuario)
 
         self.input_email = QLineEdit()
         self.input_email.setPlaceholderText("correo@ejemplo.com")
         self.input_email.setMinimumHeight(32)
+        self.input_email.setAccessibleName("Campo correo electrónico")
         form_layout.addRow("Email:", self.input_email)
 
         self.input_password = QLineEdit()
         self.input_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_password.setPlaceholderText("8+ chars, mayúscula, número y símbolo")
         self.input_password.setMinimumHeight(32)
+        self.input_password.setAccessibleName("Campo contraseña del perfil")
         form_layout.addRow("Contraseña:", self.input_password)
 
         self.input_password_confirm = QLineEdit()
         self.input_password_confirm.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_password_confirm.setPlaceholderText("Repetir contraseña")
         self.input_password_confirm.setMinimumHeight(32)
+        self.input_password_confirm.setAccessibleName("Campo confirmar contraseña del perfil")
         form_layout.addRow("Confirmar:", self.input_password_confirm)
 
         layout.addLayout(form_layout)
@@ -165,6 +169,7 @@ class DialogoEditarPerfilProfesional(QDialog):
         self.input_email.setText(email_actual)
         self.input_email.setPlaceholderText("correo@ejemplo.com")
         self.input_email.setMinimumHeight(32)
+        self.input_email.setAccessibleName("Campo correo electrónico del perfil")
         form_layout.addRow("Email:", self.input_email)
 
         layout.addLayout(form_layout)
@@ -248,18 +253,21 @@ class DialogoCambiarPasswordProfesional(QDialog):
         self.input_actual.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_actual.setPlaceholderText("Contraseña actual")
         self.input_actual.setMinimumHeight(32)
+        self.input_actual.setAccessibleName("Campo contraseña actual")
         form_layout.addRow("Actual:", self.input_actual)
 
         self.input_nueva = QLineEdit()
         self.input_nueva.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_nueva.setPlaceholderText("8+ chars, mayúscula, número y símbolo")
         self.input_nueva.setMinimumHeight(32)
+        self.input_nueva.setAccessibleName("Campo nueva contraseña")
         form_layout.addRow("Nueva:", self.input_nueva)
 
         self.input_confirmar = QLineEdit()
         self.input_confirmar.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_confirmar.setPlaceholderText("Repetir nueva contraseña")
         self.input_confirmar.setMinimumHeight(32)
+        self.input_confirmar.setAccessibleName("Campo confirmar nueva contraseña")
         form_layout.addRow("Confirmar:", self.input_confirmar)
 
         layout.addLayout(form_layout)

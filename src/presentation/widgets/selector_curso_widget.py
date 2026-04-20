@@ -44,6 +44,7 @@ class SelectorCursoWidget(QWidget):
         self.combo_cursos = QComboBox()
         self.combo_cursos.setMinimumWidth(200)
         self.combo_cursos.currentIndexChanged.connect(self._on_curso_seleccionado)
+        self.combo_cursos.setAccessibleName("Selector de curso escolar activo")
         layout.addWidget(self.combo_cursos)
 
     def _cargar_cursos(self) -> None:
