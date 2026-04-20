@@ -180,6 +180,12 @@ def main():
     engine, SessionFactory = initialize_user_database(username)
     logger.info(f"Base de datos del usuario '{username}' inicializada")
 
+    # 🔧 ARQ-04: Wiring DI (Fase 2 — Opcional, sin romper compatibilidad legacy)
+    # Descomenta estas líneas para usar inyección de dependencias en servicios:
+    # from infrastructure.wiring import setup_container
+    # setup_container(SessionFactory)
+    # logger.debug("Contenedor DI configurado para servicios inyectados")
+
     # Crear sesión de base de datos (necesaria para sync)
     session = SessionFactory()
 

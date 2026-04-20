@@ -1372,12 +1372,12 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
-| 1 | ARQ-04 | ~~Implementar container DI~~ ✅ RESUELTO v5.15.0 + Wiring en main.py | M |
-| 2 | ARQ-05 | Split 7 archivos >800L | L |
+| 1 | ARQ-04 | ~~Implementar container DI~~ ✅ RESUELTO v5.15.0 + ~~Wiring en main.py~~ ✅ RESUELTO v5.15.1 (opt-in, sin romper legacy) | M |
+| 2 | ARQ-05 | ~~Split 7 archivos >800L~~ ✅ RESUELTO v5.11.0 | L |
 | 3 | ARQ-07 | Capa anticorrupción para sync (DTOs) | M |
 | 4 | PERF-CORE | QThread para operaciones pesadas (PDF, Excel, CP-SAT) | L |
 | 5 | DB-BACKUP | ~~Implementar backup/restore automático~~ ✅ RESUELTO v5.9.3 | L |
-| 6 | DB-INDICES | Índices faltantes (ausencias.profesor_id+fecha, zonas.nombre) | S |
+| 6 | DB-INDICES | ~~Índices faltantes~~ ✅ RESUELTO v5.15.1 (Ausencia compound indexes) | S |
 | 7 | A11Y-BASIC | setAccessibleName + setTabOrder en widgets interactivos | L |
 | 8 | VIS-TOKENS | Completar sistema de design tokens (FontSize, Spacing, Colors) | M |
 | 9 | VIS-CSS | Eliminar setStyleSheet inline restantes (con VIS-TOKENS) | L |
