@@ -1378,7 +1378,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | 4 | PERF-CORE | QThread para operaciones pesadas (PDF, Excel, CP-SAT) | L |
 | 5 | DB-BACKUP | ~~Implementar backup/restore automático~~ ✅ RESUELTO v5.9.3 | L |
 | 6 | DB-INDICES | ~~Índices faltantes~~ ✅ RESUELTO v5.15.1 (Ausencia compound indexes) | S |
-| 7 | A11Y-BASIC | setAccessibleName + setTabOrder en widgets interactivos | L |
+| 7 | A11Y-BASIC | ~~setAccessibleName + setTabOrder en widgets interactivos~~ ✅ RESUELTO v5.16.0 (11 formularios/widgets) | L |
 | 8 | VIS-TOKENS | Completar sistema de design tokens (FontSize, Spacing, Colors) | M |
 | 9 | VIS-CSS | Eliminar setStyleSheet inline restantes (con VIS-TOKENS) | L |
 | 10 | UX-VALIDATORS | QValidator en campos críticos (usuario, email, fechas) | M |
