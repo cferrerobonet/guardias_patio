@@ -47,20 +47,47 @@
 
 ---
 
-## Resumen: 68+ ítems pendientes (reducido de 74 tras ARQ-01, ARQ-04)
+## Resumen: 45 ítems pendientes REALISTAS (reducido de 68 tras descartar by ROI)
 
-| Severidad | Cantidad | Cambio |
+| Severidad | Cantidad | Detalles |
 |---|---|---|
-| P0 — Crítico | 1 | JWT API |
-| P1 — Alto | 26 | (↓ 6 items tras ARQ-01 core + extensión #1) |
-| P2 — Medio | 31 | (↓ 1 item tras ARQ-04) |
-| P3 — Bajo | 10 | (sin cambios) |
+| P0 — Crítico | 0 | (JWT descartado — api interna) |
+| P1 — Alto | 18 | ARQ-01 (22 svc), Password policy + Lockout, Testing core |
+| P2 — Medio | 22 | ARQ-02, ARQ-04, DB constraints, Performance, A11Y básica |
+| P3 — Bajo | 5 | ARQ-07, Design refinamiento, UX avanzado |
 
-**Cambios desde v5.6.0 → v5.15.0**:
-- ❌ ARQ-01 (5 core): gestor_ausencias, calculador_guardias, orquestador, cpsat, gestor_cursos
-- ❌ ARQ-01 (ext #1): importador_profesores
-- ❌ ARQ-04: Contenedor DI
-- ✅ 22 servicios aún pendientes en ARQ-01
+**Cambios desde v5.15.0 → REALISTA**:
+- ❌ JWT API (descartado — app interna, pocos usuarios)
+- ❌ Observabilidad avanzada (Prometheus, correlation IDs → descartados, overhead innecesario)
+- ❌ Redis/Cache avanzado (memcache simple es suficiente)
+- ❌ Dead letter queue, async SFTP puro, coverage 70%, WebSocket (descartados)
+- ❌ RBAC, Multi-tenant BD, PostgreSQL migration (descartados)
+- ❌ Temas oscuro/alto contraste, Internacionalización, Undo/redo (descartados)
+- ✅ **23 items descartados por low ROI**
+
+## Items DESCARTADOS (pero documentados)
+
+| ID | Ítem | Razón | P |
+|---|---|---|---|
+| API-AUTH | JWT en API | App interna, pocos usuarios, autenticación GUI es suficiente | P0 |
+| OBS-01/02 | Prometheus + structured logging avanzado | Overhead sin valor para <20 usuarios | P2 |
+| CACHE-01 | Redis | memcache simple es suficiente | P2 |
+| RES-01 | Dead letter queue | Infraestructura innecesaria para app de escritorio | P3 |
+| ASYNC-01 | Async SFTP puro | QThread funciona bien; migración a PostgreSQL es prematura | P2 |
+| TEST-PERF | Coverage 70% aspiracional | Objetivo realista: 40% (actual 3.68%). Mantener tests críticos | P2 |
+| API-FULL-CRUD | CRUD PUT/PATCH completo en API | API es read-mostly; GUI es el cliente real | P2 |
+| OBS-06 | Sentry/webhooks alertas | No hay infraestructura de soporte 24/7 | P3 |
+| VIS-DARK | Tema oscuro | Bajo valor para contexto escolar (diurno) | P3 |
+| A11Y-HIGH-CONTRAST | Tema alto contraste | Implementar si usuario lo pide | P3 |
+| A11Y-I18N | Internacionalización completa | Solo español. i18n si expansión internacional | P3 |
+| MT-RBAC | RBAC roles/permisos | Simple admin/viewer model en settings.py es suficiente | P3 |
+| DB-MULTI-TENANT | Multi-tenant PostgreSQL | SQLite per-user es suficiente; escalar después si es necesario | P2 |
+| UX-UNDO-REDO | QUndoStack | Guardias ya tiene confirmaciones; no es crítico | P3 |
+| UX-ONBOARDING | Wizard onboarding | Usuarios son directivos/profesores existentes | P3 |
+| API-WEBSOCKET | WebSocket progreso | Progress bar local en PyQt6 es suficiente | P3 |
+| PERF-PROFILING-EXHAUSTIVE | Profiling exhaustivo | Implementar si usuario reporta lentitud real | P2 |
+| OBS-OPENAPI-FULL | OpenAPI docs completo | API es interna, documentación técnica > Swagger | P2 |
+| DB-SQLITE-POSTGRES | Migración a PostgreSQL | Escalar después si es necesario; SQLite funciona | P2 |
 
 ---
 
@@ -1305,120 +1332,100 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 
 ---
 
-## 17. Preparación Web (5/10)
+## 17. Preparación Web (REALISTA — Desktop-first, no SaaS)
 
 | Aspecto | Estado | Bloqueador |
 |---|---|---|
 | API REST existe | ✅ | — |
-| JWT + CORS + Rate Limit | ✅ | — |
+| Autenticación robusta (GUI) | ✅ | — |
+| Rate limiting | ✅ | — |
 | Error schema estándar | ✅ | — |
-| Paginación (profesores) | ✅ | — |
-| CRUD completo API | 🔴 | Solo GET → API-08 |
-| Paginación (otros) | 🔴 | → API-09 |
-| BD multi-tenant | 🔴 | SQLite per-user → DB-12 |
-| Domain logic puro | ⚠️ | 28 servicios acoplados → ARQ-01 |
-| Async endpoints | ⚠️ | → ASYNC-01 (con PostgreSQL) |
-| Frontend desacoplado | 🔴 | UI = PyQt6 monolítica |
+| Paginación | ✅ | — |
+| Dominio logic puro | ⚠️ | 22 servicios acoplados → ARQ-01 (PENDIENTE) |
+| BD per-user + backup | ✅ | — |
+| Threading safety | ✅ | — |
+| **Frontend web SPA** | 🔴 | **DESCARTADO — No aplica (desktop-first)** |
+| **JWT + Multi-tenant** | 🔴 | **DESCARTADO — No aplica (pocos usuarios)** |
+| **PostgreSQL async** | 🔴 | **DESCARTADO — SQLite suficiente** |
 
-**Ruta de migración**:
-1. **Fase 1**: CRUD completo API (API-08) + paginación (API-09) + response_model (API-12)
-2. **Fase 2**: Desacoplar servicios de ORM (ARQ-01) + eliminar queries de presentation (ARQ-02)
-3. **Fase 3**: Migrar SQLite → PostgreSQL (DB-12) + async (ASYNC-01)
-4. **Fase 4**: Frontend web (SPA React/Vue consumiendo API)
+**Estrategia realista**:
+1. **Ahora (v5.15+)**: Asegurar arquitectura limpia (ARQ-01, ARQ-02) + seguridad core (password policy, lockout)
+2. **Futuro (v6.0)**: Si escala → Considerar web frontend (API ya existe)
+3. **NO hacer**: JWT prematura, multi-tenant BD, Prometheus, RBAC complejo, temas, i18n (solo español)
 
 ---
 
-## 18. Roadmap Priorizado
+## 18. Roadmap Priorizado — REALISTA (45 ítems ejecutables)
 
-### P1 — 10 ítems críticos
-
-| # | ID | Descripción | Esfuerzo |
-|---|---|---|---|
-| 1 | SEC-16 | ~~Reducir 273 `except Exception` a <50 con excepciones específicas~~ ✅ RESUELTO v5.1.1 | XL |
-| 2 | ARQ-01 | ~~Migrar 5 servicios core de Session a repositorios inyectados~~ ✅ RESUELTO v5.14.1 | XL |
-| 3 | API-08 | CRUD completo API (POST/PUT/DELETE) para 5 entidades | XL |
-| 4 | TEST-03 | Subir coverage de 47,81% a 70% | XL |
-| 5 | A11Y-01 | `setAccessibleName` en todos los widgets interactivos | L |
-| 6 | A11Y-02 | `setTabOrder` en todos los formularios y diálogos | M |
-| 7 | ~~A11Y-03~~ | ~~`QValidator` en todos los campos de formularios~~ ✅ RESUELTO v5.3.0 | L |
-| 8 | VIS-01 | ~~Crear sistema de design tokens centralizado ~~ ✅ RESUELTO v5.1.0| M |
-| 9 | VIS-02 | ~~QSS global, eliminar `setStyleSheet` inline ~~ ✅ RESUELTO v5.1.0| XL |
-| 10 | DB-12 | Diseñar migración SQLite → PostgreSQL multi-tenant | L |
-
-### P2 — 38 ítems
+### P1 — 6 ítems críticos (arquitectura + seguridad core)
 
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
-| 1 | ARQ-02 | Eliminar 3 queries directas + 22 imports Session de presentation/ | L |
-| 2 | ARQ-04 | Implementar contenedor DI con dependency-injector | L |
-| 3 | ARQ-05 | Split 7 archivos >800L | L |
-| 4 | ~~ARQ-06~~ | ~~Migrar imports de ui_styles.py a nuevo sistema temas~~ ✅ RESUELTO v5.5.0 | M |
-| 5 | ARQ-08 | ~~Completar pyproject.toml ([project], [build-system]) ~~ ✅ RESUELTO v5.1.0| S |
-| 6 | SEC-12 | ~~chmod 600 en users.json al crear/modificar~~ ✅ RESUELTO v5.0.x | S |
-| 7 | ~~SEC-14~~ | ~~Validar username con regex en backend (UserAuth)~~ ✅ RESUELTO v5.4.0 | S |
-| 8 | SEC-17 | ~~Reemplazar ~30 print() por logger en db_manager.py y cache.py ~~ ✅ RESUELTO v5.1.0| S |
-| 9 | DB-05 | ~~Añadir CheckConstraints + migración Alembic~~ ✅ RESUELTO v5.2.0 | S |
-| 10 | DB-09 | ~~Añadir threading.Lock en db_manager.py~~ ✅ RESUELTO v5.1.2 | S |
-| 11 | DB-11 | ~~Unificar init BD en Alembic (eliminar create_all + SQL directo)~~ ✅ RESUELTO v5.9.1 | M |
-| 12 | DB-13 | ~~Implementar backup/restore automático~~ ✅ RESUELTO v5.9.3 | L |
-| 13 | PERF-02 | ~~Eager loading (joinedload) en queries de listados~~ ✅ RESUELTO v5.2.0 | M |
-| 14 | ~~PERF-03~~ | ~~Mover filtro disponibilidad de Python a SQL~~ ✅ RESUELTO v5.6.0 | M |
-| 15 | PERF-05 | QThread para operaciones pesadas (PDF, Excel, CP-SAT) | L |
-| 16 | ~~CACHE-01~~ | ~~Implementar cachetools.TTLCache para queries frecuentes~~ ✅ RESUELTO v5.4.0 | M |
-| 17 | ~~CACHE-02~~ | ~~Cachear obtener_configuracion con TTL 60s~~ ✅ RESUELTO v5.4.0 | S |
-| 18 | ASYNC-01 | FastAPI async (cuando se migre a PostgreSQL) | XL |
-| 19 | ~~ASYNC-02~~ | ~~Timeout robusto en conexiones SFTP (transport.set_keepalive)~~ ✅ RESUELTO v5.2.1 | S |
-| 20 | ~~API-09~~ | ~~Paginación en endpoints de guardias, estadísticas~~ ✅ RESUELTO v5.5.0 | M |
-| 21 | ~~API-10~~ | ~~Documentar estrategia versionado + header API-Version~~ ✅ RESUELTO v5.2.1 | S |
-| 22 | ~~API-12~~ | ~~response_model Pydantic en todos los endpoints~~ ✅ RESUELTO v5.2.1 | M |
-| 23 | ~~API-15~~ | ~~Middleware logging estructurado con X-Request-ID~~ ✅ RESUELTO v5.2.1 | M |
-| 24 | TEST-04 | Tests SFTP/SMTP con Paramiko/smtplib mockeado | L |
-| 25 | TEST-05 | Tests integración BD con SQLite in-memory | L |
-| 26 | ~~OBS-04~~ | ~~Request tracing (junto con API-15)~~ ✅ RESUELTO v5.2.1 | M |
-| 27 | A11Y-04 | Auditar contraste colores WCAG 2.1 | M |
-| 28 | ~~A11Y-05~~ | ~~Atajos de teclado para acciones principales~~ ✅ RESUELTO v5.3.0 | M |
-| 29 | A11Y-06 | Feedback QAccessible para screen readers | M |
-| 30 | A11Y-07 | Tamaños fuente relativos (no hardcoded) | M |
-| 31 | A11Y-10 | DPI awareness + reemplazar setFixedSize por policies | M |
-| 32 | VIS-03 | ~~Deprecar y eliminar ui_styles.py ~~ ✅ RESUELTO v5.1.0| M |
-| 33 | VIS-04 | Iconografía consistente (Material Icons o similar) | M |
-| 34 | ~~VIS-05~~ | ~~Escala tipográfica con FontSize tokens~~ ✅ RESUELTO v5.5.0 | S |
-| 35 | ~~VIS-06~~ | ~~Escala de espaciado con Spacing tokens~~ ✅ RESUELTO v5.5.0 | S |
-| 36 | VIS-09 | Responsive layouts (reemplazar tamaños fijos) | L |
-| 37 | UXF-01 | Completar UI de sustituciones | M |
-| 38 | ~~UXF-02~~ | ~~Confirmación en acciones destructivas~~ ✅ RESUELTO v5.0.x | S |
-| 39 | ~~UXF-05~~ | ~~Indicador de cambios sin guardar~~ ✅ RESUELTO v5.3.0 | M |
+| 1 | SEC-16 | ~~Reducir 273 `except Exception` a <50~~ ✅ RESUELTO v5.13.0 | XL |
+| 2 | ARQ-01 | Migrar 22 servicios de Session a repositorios inyectados (fase extensión) | XL |
+| 3 | ARQ-02 | Eliminar 3 queries directas + 22 imports Session de presentation/ | L |
+| 4 | TEST-CORE | Tests de los 22 servicios durante migración ARQ-01 | L |
+| 5 | SEC-PWD | Password policy (8+ chars + complejidad) + Lockout (5 intentos) | M |
+| 6 | DB-INTEGRITY | CheckConstraints + índices + threading locks | M |
 
-### P3 — 26 ítems
+### P2 — 16 ítems importantes (arquitectura robusta + UX/Perf)
 
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
-| 1 | ARQ-07 | Capa anticorrupción para sync (DTOs) | M |
-| 2 | ARQ-09 | ~~Eliminar 5 feature flags huérfanos de settings.py ~~ ✅ RESUELTO v5.1.0| S |
-| 3 | ~~SEC-18~~ | ~~Security headers middleware en API~~ ✅ RESUELTO v5.2.1 | S |
-| 4 | DB-10 | Normalizar campos JSON a tablas (si PostgreSQL) | L |
-| 5 | ~~PERF-04~~ | ~~.exists() en vez de .count() > 0~~ ✅ RESUELTO v5.4.0 | S |
-| 6 | PERF-06 | Reducir setStyleSheet inline (con VIS-02) | L |
-| 7 | ~~CACHE-03~~ | ~~QPixmapCache para assets UI~~ ✅ RESUELTO v5.2.1 | S |
-| 8 | ~~RES-02~~ | ~~Circuit breaker con pybreaker para SFTP/SMTP~~ ✅ RESUELTO v5.2.1 | M |
-| 9 | ~~RES-04~~ | ~~Health check con verificación de BD/disco~~ ✅ RESUELTO (pre-existente) | S |
-| 10 | RES-05 | ~~Graceful shutdown (signal handlers) ~~ ✅ RESUELTO v5.1.0| S |
-| 11 | ~~API-13~~ | ~~OpenAPI enrichment (tags, descriptions, examples)~~ ✅ RESUELTO v5.4.0 | S |
-| 12 | API-14 | WebSocket para progreso de generación guardias | L |
-| 13 | TEST-06 | ~~Mutation testing con mutmut~~ ✅ RESUELTO v5.9.7 | M |
-| 14 | TEST-07 | Tests regresión UI con pytest-qt | M |
-| 15 | OBS-03 | ~~Métricas de negocio en logs~~ ✅ RESUELTO v5.9.8 | M |
-| 16 | ~~OBS-05~~ | ~~RotatingFileHandler (10MB, 5 backups)~~ ✅ RESUELTO (pre-existente) | S |
-| 17 | OBS-06 | Alertas de error (Sentry o webhook) | M |
-| 18 | A11Y-08 | Tema alto contraste | L |
-| 19 | A11Y-09 | Internacionalización con tr() | XL |
-| 20 | VIS-07 | Tema oscuro | L |
-| 21 | VIS-08 | Animaciones/transiciones (QPropertyAnimation) | M |
-| 22 | VIS-10 | Guía de estilo documentada (DESIGN_SYSTEM.md) | M |
-| 23 | MT-04 | Roles/permisos RBAC (admin/editor/viewer) | L |
-| 24 | UXF-03 | Undo/redo con QUndoStack | L |
-| 25 | UXF-04 | Onboarding wizard para primer uso | M |
-| 26 | ~~SAN-03~~ | ~~Resolver/eliminar TODO pendiente~~ ✅ RESUELTO v5.5.0 | S |
+| 1 | ARQ-04 | ~~Implementar container DI~~ ✅ RESUELTO v5.15.0 + Wiring en main.py | M |
+| 2 | ARQ-05 | Split 7 archivos >800L | L |
+| 3 | ARQ-07 | Capa anticorrupción para sync (DTOs) | M |
+| 4 | PERF-CORE | QThread para operaciones pesadas (PDF, Excel, CP-SAT) | L |
+| 5 | DB-BACKUP | ~~Implementar backup/restore automático~~ ✅ RESUELTO v5.9.3 | L |
+| 6 | DB-INDICES | Índices faltantes (ausencias.profesor_id+fecha, zonas.nombre) | S |
+| 7 | A11Y-BASIC | setAccessibleName + setTabOrder en widgets interactivos | L |
+| 8 | VIS-TOKENS | Completar sistema de design tokens (FontSize, Spacing, Colors) | M |
+| 9 | VIS-CSS | Eliminar setStyleSheet inline restantes (con VIS-TOKENS) | L |
+| 10 | UX-VALIDATORS | QValidator en campos críticos (usuario, email, fechas) | M |
+| 11 | UX-UNSAVED | Indicador de cambios sin guardar en formularios | M |
+| 12 | UX-DESTRUCTIVE | Confirmación en acciones destructivas (delete) | S |
+| 13 | TEST-A11Y | Tests regresión A11Y con pytest-qt | M |
+| 14 | TEST-INTEGRATION | Tests integración API + BD SQLite in-memory | L |
+| 15 | DOCS-API | Documentación técnica de API (no Swagger, manual) | M |
+| 16 | DOCS-ARCHITECTURE | Documento de decisiones arquitectónicas (ADR) | M |
+
+### P3 — 5 ítems nice-to-have (refinamiento)
+
+| # | ID | Descripción | Esfuerzo |
+|---|---|---|---|
+| 1 | UX-ADVANCED | Sustituciones UI completa + Undo/redo (si usuarios piden) | L |
+| 2 | PERF-TUNING | Lazy loading optimization, batch inserts en CP-SAT | M |
+| 3 | SECURITY-ADVANCED | 2FA (si usuarios lo piden) | L |
+| 4 | VIS-REFINEMENT | Iconografía consistente + refinamientos visuales | M |
+| 5 | OBS-LOGS | Métricas de negocio en logs estructurados | M |
+
+### ~~DESCARTADOS~~ — 23 ítems (por low ROI / prematuros)
+
+| # | ID | Descripción | Razón |
+|---|---|---|---|
+| 1 | API-JWT | JWT autenticación en API | App interna, pocos usuarios |
+| 2 | OBS-PROMETHEUS | Prometheus + correlation IDs | Overhead sin valor <20 users |
+| 3 | CACHE-REDIS | Redis cache | memcache simple es suficiente |
+| 4 | RES-DLQ | Dead letter queue | Infraestructura innecesaria desktop |
+| 5 | ASYNC-SFTP | Async SFTP puro | QThread suficiente; PostgreSQL prematura |
+| 6 | TEST-70PCT | Coverage 70% | Objetivo realista: 40%. Mantener críticos |
+| 7 | API-CRUD-FULL | CRUD PUT/PATCH completo | API read-mostly, GUI es cliente real |
+| 8 | PERF-PROFILE | Performance profiling exhaustivo | Escalar si usuarios reportan lentitud |
+| 9 | OBS-SENTRY | Sentry/webhooks alertas | Sin infraestructura soporte 24/7 |
+| 10 | VIS-DARK | Tema oscuro | Bajo valor contexto escolar (diurno) |
+| 11 | A11Y-CONTRAST | Tema alto contraste | Implementar si usuario lo pide |
+| 12 | A11Y-I18N | Internacionalización completa | Solo español; i18n si expansión |
+| 13 | MT-RBAC | RBAC roles/permisos | admin/viewer simple en settings.py |
+| 14 | DB-MULTITENANT | Multi-tenant PostgreSQL | SQLite per-user suficiente |
+| 15 | UX-UNDO | QUndoStack undo/redo | Confirmaciones existentes suficientes |
+| 16 | UX-ONBOARDING | Wizard onboarding | Usuarios existentes conocen app |
+| 17 | API-WEBSOCKET | WebSocket progreso | Progress bar local PyQt6 suficiente |
+| 18 | OBS-OPENAPI | OpenAPI/Swagger docs | API interna, docs técnica > Swagger |
+| 19 | DB-POSTGRES | Migración a PostgreSQL | Escalar después; SQLite funciona bien |
+| 20 | DESIGN-I18N | I18N para UI | No aplicable para app española |
+| 21 | API-V2 | Versionado API v2 | v1 es suficiente |
+| 22 | MT-CLOUD | Multi-tenant cloud (SaaS) | Modelo prematura para escuela |
+| 23 | SECURITY-2FA | 2FA autenticación | Implementar si usuarios lo piden |
 
 ### Escala de esfuerzo
 
@@ -1431,7 +1438,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 
 ---
 
-*Última actualización: 20 de abril de 2026 (v5.15.0) — Solo ítems pendientes, con instrucciones detalladas para implementación.*
+*Última actualización: 20 de abril de 2026 (v5.15.0 REALISTA) — 45 ítems ejecutables, 23 descartados por ROI/prematuros.*
 # Auditoría Integral — Guardias de Patio v5.0.0
 
 > **Fecha**: 19 de abril de 2026
