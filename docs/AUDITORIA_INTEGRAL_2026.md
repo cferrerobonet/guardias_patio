@@ -1381,11 +1381,11 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | 7 | A11Y-BASIC | ~~setAccessibleName + setTabOrder en widgets interactivos~~ ✅ RESUELTO v5.16.0 (11 formularios/widgets) | L |
 | 8 | VIS-TOKENS | Completar sistema de design tokens (FontSize, Spacing, Colors) | M |
 | 9 | VIS-CSS | Eliminar setStyleSheet inline restantes (con VIS-TOKENS) | L |
-| 10 | UX-VALIDATORS | QValidator en campos críticos (usuario, email, fechas) | M |
+| 10 | UX-VALIDATORS | ~~QValidator en campos críticos (usuario, email, fechas)~~ ✅ RESUELTO v5.16.0 | M |
 | 11 | UX-UNSAVED | Indicador de cambios sin guardar en formularios | M |
 | 12 | UX-DESTRUCTIVE | Confirmación en acciones destructivas (delete) | S |
 | 13 | TEST-A11Y | Tests regresión A11Y con pytest-qt | M |
-| 14 | TEST-INTEGRATION | Tests integración API + BD SQLite in-memory | L |
+| 14 | ~~TEST-INTEGRATION~~ | ~~Tests integración API + BD SQLite in-memory~~ | L | ✅ RESUELTO v5.17.0 |
 | 15 | DOCS-API | Documentación técnica de API (no Swagger, manual) | M |
 | 16 | DOCS-ARCHITECTURE | Documento de decisiones arquitectónicas (ADR) | M |
 

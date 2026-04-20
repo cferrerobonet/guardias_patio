@@ -24,6 +24,7 @@ class ProfesorDTO(BaseModel):
     horas_contrato: float
     porcentaje_jornada: float
     turno: str  # "mañana", "tarde", "mixto"
+    activo: bool = True
     horas_manana: Optional[float] = None
     horas_tarde: Optional[float] = None
     tutor: bool  # Nombre del campo en el modelo

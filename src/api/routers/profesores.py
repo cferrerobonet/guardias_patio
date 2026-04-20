@@ -17,7 +17,7 @@ from application.use_cases.profesor.crear_profesor import CrearProfesorUseCase
 from application.use_cases.profesor.eliminar_profesor import EliminarProfesorUseCase
 from application.use_cases.profesor.listar_profesores import ListarProfesoresUseCase
 from application.use_cases.profesor.obtener_profesor import ObtenerProfesorUseCase
-from core.exceptions import BusinessLogicError, ValidationError
+from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 
 router = APIRouter(prefix="/profesores", tags=["profesores"])
 
@@ -131,6 +131,8 @@ def obtener_profesor(profesor_id: int, db: Session = Depends(get_db)):
         )
     except HTTPException:
         raise
+    except NotFoundError:
+        raise _build_error("not_found", f"Profesor {profesor_id} no encontrado", 404)
     except (ValueError, TypeError, OSError) as e:
         raise _build_error("internal_error", str(e), 500)
 

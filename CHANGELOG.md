@@ -6,7 +6,22 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
-## [5.16.0] - 2026-04-20
+## [5.17.0] - 2026-04-20
+
+### 🎯 Resumen
+TEST-INTEGRATION (P2): 11 tests de integración API REST con SQLite in-memory real. Corrección de bug en router de profesores (`ProfesorDTO.activo` faltante + `NotFoundError` no capturada).
+
+### ✨ Added
+- `tests/test_api_integration.py`: suite de 11 tests de integración con SQLite in-memory (StaticPool)
+  - `TestProfesoresIntegracion`: listar vacío, crear, listar con datos, obtener por ID, obtener inexistente, turno inválido, filtrar por turno (7 tests)
+  - `TestZonasIntegracion`: listar vacío, crear, duplicado (3 tests)
+  - `TestGuardiasIntegracion`: listar con configuracion_id (1 test)
+
+### Fixed
+- `src/application/dtos/profesor_dto.py`: añadido campo `activo: bool = True` a `ProfesorDTO` (faltaba, causaba AttributeError en el router)
+- `src/api/routers/profesores.py`: captura `NotFoundError` en `obtener_profesor` para devolver 404 en vez de 500
+
+
 
 ### 🎯 Resumen
 A11Y-BASIC (P2): setAccessibleName + setTabOrder en 10 formularios y widgets de la capa de presentación.
