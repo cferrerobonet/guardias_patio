@@ -89,7 +89,6 @@ class CuotasPanel(QGroupBox):
         button_layout = QHBoxLayout()
 
         self.calcular_button = QPushButton("🔢 Calcular Cuotas")
-        self.calcular_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.calcular_button.setMinimumHeight(35)
         self.calcular_button.clicked.connect(self.calcular_cuotas)
         button_layout.addWidget(self.calcular_button)
@@ -116,7 +115,7 @@ class CuotasPanel(QGroupBox):
         self.cuotas_text = QTextEdit()
         self.cuotas_text.setReadOnly(True)
         self.cuotas_text.setMinimumHeight(380)  # Altura similar al panel izquierdo
-        self.cuotas_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.cuotas_text.setObjectName("terminalRetro")
         self.cuotas_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
 
         layout.addWidget(self.cuotas_text)
@@ -164,7 +163,6 @@ class CuotasPanel(QGroupBox):
                     "No hay una configuración para el sistema.\n\n"
                     "Debe configurar los parámetros en Ajustes del Curso Escolar."
                 )
-                msg.setStyleSheet(MESSAGEBOX_STYLE)
                 msg.exec()
                 return
 
@@ -179,7 +177,6 @@ class CuotasPanel(QGroupBox):
                 msg = QMessageBox(self)
                 msg.setWindowTitle("Sin Curso Activo")
                 msg.setText("No hay un curso escolar activo.\n\nDebe activar un curso en Ajustes.")
-                msg.setStyleSheet(MESSAGEBOX_STYLE)
                 msg.exec()
                 return
 

@@ -41,7 +41,6 @@ class FechasRecreosWidget(QGroupBox):
         """
         super().__init__("📅 Fechas y Recreos", parent)
         self.logger = get_logger(self.__class__.__name__)
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -68,14 +67,13 @@ class FechasRecreosWidget(QGroupBox):
     def _crear_grupo_fechas(self) -> QGroupBox:
         """Crea el grupo de fechas del curso."""
         grupo = QGroupBox("Fechas del Curso")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         layout = QVBoxLayout()
         layout.setSpacing(1)
         layout.setContentsMargins(6, 6, 6, 6)
 
         # Fecha inicio
         label_inicio = QLabel("Inicio:")
-        label_inicio.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px;")
+        label_inicio.setObjectName("smallFieldLabel")
         layout.addWidget(label_inicio)
 
         self.fecha_inicio_input = QDateEdit()
@@ -87,7 +85,7 @@ class FechasRecreosWidget(QGroupBox):
 
         # Fecha fin
         label_fin = QLabel("Fin:")
-        label_fin.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px;")
+        label_fin.setObjectName("smallFieldLabel")
         layout.addWidget(label_fin)
 
         self.fecha_fin_input = QDateEdit()
@@ -103,7 +101,6 @@ class FechasRecreosWidget(QGroupBox):
     def _crear_grupo_recreos_manana(self) -> QGroupBox:
         """Crea el grupo de recreos de mañana."""
         grupo = QGroupBox("Recreos de Mañana")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         layout = QHBoxLayout()
         layout.setSpacing(6)
         layout.setContentsMargins(6, 6, 6, 6)
@@ -112,7 +109,7 @@ class FechasRecreosWidget(QGroupBox):
         col1 = QVBoxLayout()
         col1.setSpacing(2)
         label_r1 = QLabel("Recreo 1:")
-        label_r1.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px;")
+        label_r1.setObjectName("smallFieldLabel")
         col1.addWidget(label_r1)
 
         self.recreo1_manana_input = QTimeEdit()
@@ -126,7 +123,7 @@ class FechasRecreosWidget(QGroupBox):
         col2 = QVBoxLayout()
         col2.setSpacing(2)
         label_r2 = QLabel("Recreo 2:")
-        label_r2.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px;")
+        label_r2.setObjectName("smallFieldLabel")
         col2.addWidget(label_r2)
 
         self.recreo2_manana_input = QTimeEdit()
@@ -142,7 +139,6 @@ class FechasRecreosWidget(QGroupBox):
     def _crear_grupo_recreos_tarde(self) -> QGroupBox:
         """Crea el grupo de recreos de tarde."""
         grupo = QGroupBox("🌙 Recreos de Tarde (opcional)")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         layout = QHBoxLayout()
         layout.setSpacing(6)
         layout.setContentsMargins(6, 6, 6, 6)
@@ -151,7 +147,7 @@ class FechasRecreosWidget(QGroupBox):
         col1 = QVBoxLayout()
         col1.setSpacing(2)
         label_r1 = QLabel("Recreo 1:")
-        label_r1.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px;")
+        label_r1.setObjectName("smallFieldLabel")
         col1.addWidget(label_r1)
 
         self.recreo1_tarde_input = QTimeEdit()
@@ -165,7 +161,7 @@ class FechasRecreosWidget(QGroupBox):
         col2 = QVBoxLayout()
         col2.setSpacing(2)
         label_r2 = QLabel("Recreo 2:")
-        label_r2.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px;")
+        label_r2.setObjectName("smallFieldLabel")
         col2.addWidget(label_r2)
 
         self.recreo2_tarde_input = QTimeEdit()

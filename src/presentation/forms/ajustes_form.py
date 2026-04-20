@@ -152,7 +152,7 @@ class AjustesForm(BaseForm):
 
         # Título principal
         titulo = QLabel("AJUSTES DEL CURSO ESCOLAR")
-        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        titulo.setObjectName("titleMain")
         content_layout.addWidget(titulo)
 
         # Indicador de cambios sin guardar
@@ -208,14 +208,13 @@ class AjustesForm(BaseForm):
 
         self.save_btn = QPushButton("Guardar Configuración")
         self.save_btn.setIcon(icon_for_button("save"))
-        self.save_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
+        self.save_btn.setProperty("success", True)
         self.save_btn.clicked.connect(self.guardar_configuracion)
         self.save_btn.setShortcut(QKeySequence("Ctrl+S"))
         self.save_btn.setToolTip("Guardar configuración (Ctrl+S)")
 
         self.load_btn = QPushButton("Cargar Actual")
         self.load_btn.setIcon(icon_for_button("refresh"))
-        self.load_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.load_btn.clicked.connect(self.cargar_configuracion)
 
         layout.addWidget(self.save_btn)

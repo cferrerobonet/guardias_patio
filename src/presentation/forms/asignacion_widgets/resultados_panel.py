@@ -79,7 +79,7 @@ class ResultadosPanel(QGroupBox):
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
         self.resultado_text.setMinimumHeight(350)
-        self.resultado_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.resultado_text.setObjectName("terminalRetro")
         self.resultado_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
 
         layout.addWidget(self.resultado_text)

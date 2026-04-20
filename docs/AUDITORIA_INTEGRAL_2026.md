@@ -1060,7 +1060,7 @@ Se resuelve junto con VIS-05 (escala tipográfica).
 
 ---
 
-### VIS-02 — Migrar 535 `setStyleSheet` a QSS global (P1)
+### ~~VIS-02 — Migrar 535 `setStyleSheet` a QSS global (P1)~~ ✅ RESUELTO v5.12.0
 
 **Cómo resolver**:
 1. Crear `src/presentation/theme/light.qss`:
@@ -1250,10 +1250,10 @@ Mostrar solo si no hay cursos en la BD.
 
 ---
 
-### ORG-02 — Duplicación de estilos (P2) — ⏸ Bloqueado por VIS-02
+### ~~ORG-02 — Duplicación de estilos (P2)~~ ✅ RESUELTO v5.12.0
 
 **Ya cubierto por VIS-01, VIS-02 y VIS-03.** Se resuelve con el sistema de temas.
-Estado actual: VIS-01 y VIS-03 resueltos; pendiente VIS-02 para cierre completo de ORG-02.
+Estado actual: VIS-01, VIS-02 y VIS-03 resueltos.
 
 ---
 

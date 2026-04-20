@@ -69,7 +69,6 @@ class DialogoDiagnosticoGuardias(QDialog):
         # Área de scroll para los problemas
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea { border: none; }")
 
         contenedor_problemas = QWidget()
         layout_problemas = QVBoxLayout(contenedor_problemas)

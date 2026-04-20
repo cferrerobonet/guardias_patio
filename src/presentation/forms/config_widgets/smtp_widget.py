@@ -56,7 +56,6 @@ class SMTPConfigWidget(QGroupBox):
         """
         super().__init__("📧 Configuración SMTP", parent)
         self.logger = get_logger(self.__class__.__name__)
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
 
         # Almacenar contraseña real internamente
         self._actual_password = ""
@@ -70,24 +69,22 @@ class SMTPConfigWidget(QGroupBox):
 
         # Servidor SMTP (campo completo con label arriba)
         label_server = QLabel("Servidor SMTP:")
-        label_server.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_server.setObjectName("fieldLabel")
         layout.addWidget(label_server)
 
         # Fila con input de servidor y puerto
         server_row = QHBoxLayout()
         self.smtp_server_input = QLineEdit()
         self.smtp_server_input.setPlaceholderText("smtp.ionos.es")
-        self.smtp_server_input.setStyleSheet(styles.STYLE_INPUT)
         self.smtp_server_input.setReadOnly(True)
         self.smtp_server_input.textChanged.connect(self.config_changed.emit)
         server_row.addWidget(self.smtp_server_input)
 
         # Puerto (campo corto en la misma fila)
         label_port = QLabel("Puerto:")
-        label_port.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_port.setObjectName("fieldLabel")
         self.smtp_port_input = QLineEdit()
         self.smtp_port_input.setPlaceholderText("587")
-        self.smtp_port_input.setStyleSheet(styles.STYLE_INPUT)
         self.smtp_port_input.setMaximumWidth(80)
         self.smtp_port_input.setReadOnly(True)
         self.smtp_port_input.textChanged.connect(self.config_changed.emit)
@@ -98,24 +95,22 @@ class SMTPConfigWidget(QGroupBox):
 
         # Usuario (campo completo con label arriba)
         label_user = QLabel("Usuario:")
-        label_user.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_user.setObjectName("fieldLabel")
         layout.addWidget(label_user)
 
         # Fila con usuario y contraseña
         user_row = QHBoxLayout()
         self.smtp_user_input = QLineEdit()
         self.smtp_user_input.setPlaceholderText("no_contestar@aplicaciones.epla.es")
-        self.smtp_user_input.setStyleSheet(styles.STYLE_INPUT)
         self.smtp_user_input.setReadOnly(True)
         self.smtp_user_input.textChanged.connect(self.config_changed.emit)
         user_row.addWidget(self.smtp_user_input)
 
         # Contraseña (en la misma fila)
         label_password = QLabel("Contraseña:")
-        label_password.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_password.setObjectName("fieldLabel")
         self.smtp_password_input = QLineEdit()
         self.smtp_password_input.setPlaceholderText("Contraseña del servidor SMTP")
-        self.smtp_password_input.setStyleSheet(styles.STYLE_INPUT)
         self.smtp_password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.smtp_password_input.setReadOnly(True)
         self.smtp_password_input.textChanged.connect(self.config_changed.emit)
@@ -126,12 +121,11 @@ class SMTPConfigWidget(QGroupBox):
 
         # Nombre del Remitente (campo completo con label arriba)
         label_nombre = QLabel("Nombre del Remitente:")
-        label_nombre.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_nombre.setObjectName("fieldLabel")
         layout.addWidget(label_nombre)
 
         self.smtp_from_name_input = QLineEdit()
         self.smtp_from_name_input.setPlaceholderText("Generador de Guardias de Patio")
-        self.smtp_from_name_input.setStyleSheet(styles.STYLE_INPUT)
         self.smtp_from_name_input.textChanged.connect(self.config_changed.emit)
         layout.addWidget(self.smtp_from_name_input)
 
@@ -141,13 +135,12 @@ class SMTPConfigWidget(QGroupBox):
 
         self.modify_smtp_btn = QPushButton("Modificar Configuración SMTP")
         self.modify_smtp_btn.setIcon(icon_for_button("key"))
-        self.modify_smtp_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        self.modify_smtp_btn.setProperty("warning", True)
         self.modify_smtp_btn.clicked.connect(self._toggle_editable)
         smtp_btn_layout.addWidget(self.modify_smtp_btn, 1)
 
         self.test_smtp_btn = QPushButton("Probar Conexión SMTP")
         self.test_smtp_btn.setIcon(icon_for_button("test"))
-        self.test_smtp_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.test_smtp_btn.clicked.connect(self._test_connection)
         smtp_btn_layout.addWidget(self.test_smtp_btn, 1)
 
@@ -174,32 +167,7 @@ class SMTPConfigWidget(QGroupBox):
         self._apply_readonly_style(True)
 
     def _apply_readonly_style(self, readonly: bool) -> None:
-        """
-        Aplica el estilo apropiado según el estado readonly.
-
-        Args:
-            readonly: True para modo solo lectura, False para editable
-
-        Nota: smtp_from_name_input siempre es editable y no se modifica aquí
-        """
-        if readonly:
-            readonly_style = """
-                QLineEdit[readOnly="true"] {
-                    background-color: #e5e7eb;
-                    color: #4b5563;
-                    border: 1px solid #d1d5db;
-                    padding: 5px;
-                }
-            """
-            self.smtp_server_input.setStyleSheet(readonly_style)
-            self.smtp_port_input.setStyleSheet(readonly_style)
-            self.smtp_user_input.setStyleSheet(readonly_style)
-            self.smtp_password_input.setStyleSheet(readonly_style)
-        else:
-            self.smtp_server_input.setStyleSheet(styles.STYLE_INPUT)
-            self.smtp_port_input.setStyleSheet(styles.STYLE_INPUT)
-            self.smtp_user_input.setStyleSheet(styles.STYLE_INPUT)
-            self.smtp_password_input.setStyleSheet(styles.STYLE_INPUT)
+        pass
 
     def _toggle_editable(self) -> None:
         """

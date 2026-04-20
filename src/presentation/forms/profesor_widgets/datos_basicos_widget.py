@@ -35,7 +35,6 @@ class DatosBasicosWidget(QGroupBox):
             parent: Widget padre (opcional)
         """
         super().__init__("📋 Datos Básicos", parent)
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._setup_ui()
         self._conectar_senales()
 
@@ -46,12 +45,11 @@ class DatosBasicosWidget(QGroupBox):
 
         # Nombre completo
         label_nombre = QLabel("Nombre completo (formato: APELLIDOS, NOMBRE):")
-        label_nombre.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_nombre.setObjectName("fieldLabel")
         layout.addWidget(label_nombre)
 
         self.nombre_completo_input = QLineEdit()
         self.nombre_completo_input.setPlaceholderText("GARCÍA LÓPEZ, JUAN")
-        self.nombre_completo_input.setStyleSheet(styles.STYLE_INPUT)
         self.nombre_completo_input.setMaximumWidth(350)
         self.nombre_completo_input.setValidator(
             QRegularExpressionValidator(QRegularExpression(r".{2,100}"))
@@ -65,12 +63,11 @@ class DatosBasicosWidget(QGroupBox):
 
         # Email
         label_email = QLabel("Email corporativo:")
-        label_email.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_email.setObjectName("fieldLabel")
         layout.addWidget(label_email)
 
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("profesor@colegio.edu")
-        self.email_input.setStyleSheet(styles.STYLE_INPUT)
         self.email_input.setMaximumWidth(350)
         self.email_input.setValidator(
             QRegularExpressionValidator(

@@ -68,7 +68,7 @@ class EstadisticasPanel(QGroupBox):
         self.stats_text = QTextEdit()
         self.stats_text.setReadOnly(True)
         self.stats_text.setMinimumHeight(280)
-        self.stats_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.stats_text.setObjectName("terminalRetro")
         self.stats_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
 
         layout.addWidget(self.stats_text)

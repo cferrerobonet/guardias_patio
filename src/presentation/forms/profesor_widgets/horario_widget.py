@@ -44,7 +44,6 @@ class HorarioWidget(QGroupBox):
             parent: Widget padre (opcional)
         """
         super().__init__("🕐 Configuración de Horario", parent)
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._setup_ui()
         self._conectar_senales()
 
@@ -58,12 +57,11 @@ class HorarioWidget(QGroupBox):
         layout_fila1.setSpacing(15)
 
         label_horas = QLabel("Horas de contrato:")
-        label_horas.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_horas.setObjectName("fieldLabel")
         layout_fila1.addWidget(label_horas)
 
         self.horas_input = QLineEdit()
         self.horas_input.setPlaceholderText("Ej: 30.0")
-        self.horas_input.setStyleSheet(styles.STYLE_INPUT)
         self.horas_input.setMaximumWidth(100)
         self.horas_input.setToolTip(
             "Horas totales de contrato del profesor\nDebe ser un número positivo (ej: 30.0)"
@@ -73,12 +71,11 @@ class HorarioWidget(QGroupBox):
         layout_fila1.addSpacing(20)
 
         label_turno = QLabel("Turno:")
-        label_turno.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_turno.setObjectName("fieldLabel")
         layout_fila1.addWidget(label_turno)
 
         self.turno_input = QComboBox()
         self.turno_input.addItems(["Mañana", "Tarde", "Mixto"])
-        self.turno_input.setStyleSheet(styles.STYLE_INPUT)
         self.turno_input.setMaximumWidth(120)
         layout_fila1.addWidget(self.turno_input)
 
@@ -92,24 +89,22 @@ class HorarioWidget(QGroupBox):
         layout_mixto.setSpacing(10)
 
         self.label_horas_manana = QLabel("  🌅 Horas mañana:")
-        self.label_horas_manana.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.label_horas_manana.setObjectName("fieldLabel")
         layout_mixto.addWidget(self.label_horas_manana)
 
         self.horas_manana_input = QLineEdit()
         self.horas_manana_input.setPlaceholderText("Ej: 15.0")
-        self.horas_manana_input.setStyleSheet(styles.STYLE_INPUT)
         self.horas_manana_input.setMaximumWidth(100)
         layout_mixto.addWidget(self.horas_manana_input)
 
         layout_mixto.addSpacing(20)
 
         self.label_horas_tarde = QLabel("🌆 Horas tarde:")
-        self.label_horas_tarde.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.label_horas_tarde.setObjectName("fieldLabel")
         layout_mixto.addWidget(self.label_horas_tarde)
 
         self.horas_tarde_input = QLineEdit()
         self.horas_tarde_input.setPlaceholderText("Ej: 15.0")
-        self.horas_tarde_input.setStyleSheet(styles.STYLE_INPUT)
         self.horas_tarde_input.setMaximumWidth(100)
         layout_mixto.addWidget(self.horas_tarde_input)
 

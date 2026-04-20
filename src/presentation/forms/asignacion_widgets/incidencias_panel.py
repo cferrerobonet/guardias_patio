@@ -73,7 +73,7 @@ class IncidenciasPanel(QGroupBox):
         self.incidencias_text = QTextEdit()
         self.incidencias_text.setReadOnly(True)
         self.incidencias_text.setMinimumHeight(320)
-        self.incidencias_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.incidencias_text.setObjectName("terminalRetro")
         self.incidencias_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         self.incidencias_text.setPlaceholderText(
             "Las incidencias y recomendaciones se mostrarán aquí después de generar guardias..."

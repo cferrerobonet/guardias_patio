@@ -149,7 +149,6 @@ class GeneracionPanel(QGroupBox):
         # Botón Generar (deshabilitado hasta que se calculen cuotas)
         self.generar_button = QPushButton("Generar Asignación")
         self.generar_button.setIcon(icon_for_button("target"))
-        self.generar_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.generar_button.setMinimumHeight(36)
         self.generar_button.clicked.connect(self._generar_guardias)
         self.generar_button.setEnabled(False)  # Deshabilitado hasta calcular cuotas
@@ -159,7 +158,7 @@ class GeneracionPanel(QGroupBox):
         # Botón Limpiar
         self.limpiar_button = QPushButton("Limpiar Guardias")
         self.limpiar_button.setIcon(icon_for_button("delete"))
-        self.limpiar_button.setStyleSheet(styles.STYLE_BUTTON_DANGER)
+        self.limpiar_button.setProperty("danger", True)
         self.limpiar_button.setMinimumHeight(36)
         self.limpiar_button.clicked.connect(self._limpiar_guardias)
         button_container.addWidget(self.limpiar_button, 1)
@@ -170,7 +169,7 @@ class GeneracionPanel(QGroupBox):
         self.content_text = QTextEdit()
         self.content_text.setReadOnly(True)
         self.content_text.setMinimumHeight(350)
-        self.content_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.content_text.setObjectName("terminalRetro")
         self.content_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         layout.addWidget(self.content_text)
 
@@ -281,7 +280,6 @@ class GeneracionPanel(QGroupBox):
             msg = QMessageBox(self)
             msg.setWindowTitle("Sin Guardias")
             msg.setText("No hay guardias para eliminar.")
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             return
 
@@ -293,7 +291,6 @@ class GeneracionPanel(QGroupBox):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         msg.setDefaultButton(QMessageBox.StandardButton.No)
-        msg.setStyleSheet(MESSAGEBOX_STYLE)
 
         if msg.exec() == QMessageBox.StandardButton.Yes:
             try:

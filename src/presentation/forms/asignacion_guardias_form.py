@@ -115,7 +115,7 @@ class AsignacionGuardiasForm(BaseForm):
 
         # Título principal
         titulo = QLabel("ASIGNACIÓN DE GUARDIAS")
-        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        titulo.setObjectName("titleMain")
         main_layout.addWidget(titulo)
 
         # Crear el contenedor con scroll
@@ -166,7 +166,6 @@ class AsignacionGuardiasForm(BaseForm):
         # Botón generar
         self.generar_button = QPushButton("Generar Asignación")
         self.generar_button.setIcon(icon_for_button("target"))
-        self.generar_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.generar_button.setMinimumWidth(220)
         self.generar_button.setMinimumHeight(40)
         self.generar_button.setMaximumHeight(40)
@@ -176,7 +175,7 @@ class AsignacionGuardiasForm(BaseForm):
         # Botón limpiar
         self.limpiar_button = QPushButton("Limpiar Guardias")
         self.limpiar_button.setIcon(icon_for_button("delete"))
-        self.limpiar_button.setStyleSheet(styles.STYLE_BUTTON_DANGER)
+        self.limpiar_button.setProperty("danger", True)
         self.limpiar_button.setMinimumWidth(220)
         self.limpiar_button.setMinimumHeight(40)
         self.limpiar_button.setMaximumHeight(40)

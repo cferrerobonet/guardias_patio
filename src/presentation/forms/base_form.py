@@ -62,7 +62,6 @@ class BaseForm(QWidget):
         apply_corporate_icon_to_messagebox(msg_box)
 
         # Aplicar estilos directamente
-        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
         msg_box.exec()
 
@@ -87,7 +86,6 @@ class BaseForm(QWidget):
         apply_corporate_icon_to_messagebox(msg_box)
 
         # Aplicar estilos directamente
-        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
         msg_box.exec()
 
@@ -112,7 +110,6 @@ class BaseForm(QWidget):
         apply_corporate_icon_to_messagebox(msg_box)
 
         # Aplicar estilos directamente
-        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
         msg_box.exec()
 
@@ -137,7 +134,6 @@ class BaseForm(QWidget):
         apply_corporate_icon_to_messagebox(msg_box)
 
         # Aplicar estilos directamente
-        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
         msg_box.exec()
 
@@ -167,7 +163,6 @@ class BaseForm(QWidget):
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
 
         # Aplicar estilos directamente a los botones
-        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
         respuesta = msg_box.exec()
         confirmado = respuesta == QMessageBox.StandardButton.Yes.value
         self.logger.info(f"Confirmación solicitada: {titulo} - Confirmado: {confirmado}")
@@ -208,7 +203,6 @@ class BaseForm(QWidget):
         msg_box.setStandardButtons(botones)
 
         # Aplicar estilo corporativo a los botones
-        msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
         return msg_box.exec()
 

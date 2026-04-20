@@ -44,7 +44,6 @@ class InformesEstadisticosWidget(QGroupBox):
         super().__init__("INFORMES ESTADÍSTICOS", parent)
         self.session = session
 
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -79,7 +78,6 @@ class InformesEstadisticosWidget(QGroupBox):
         self.tipo_combo.addItem("Ausencias del Periodo", "ausencias")
         self.tipo_combo.addItem("Cobertura Mensual", "cobertura")
         self.tipo_combo.addItem("Resumen Completo", "resumen_completo")
-        self.tipo_combo.setStyleSheet(styles.STYLE_INPUT)
         config_layout.addRow("Tipo de Reporte:", self.tipo_combo)
 
         # Periodo: Desde
@@ -87,7 +85,6 @@ class InformesEstadisticosWidget(QGroupBox):
         self.fecha_desde.setCalendarPopup(True)
         self.fecha_desde.setDate(datetime.now().date().replace(day=1))
         self.fecha_desde.setDisplayFormat("dd/MM/yyyy")
-        self.fecha_desde.setStyleSheet(styles.STYLE_INPUT)
         config_layout.addRow("Desde:", self.fecha_desde)
 
         # Periodo: Hasta
@@ -95,7 +92,6 @@ class InformesEstadisticosWidget(QGroupBox):
         self.fecha_hasta.setCalendarPopup(True)
         self.fecha_hasta.setDate(datetime.now().date())
         self.fecha_hasta.setDisplayFormat("dd/MM/yyyy")
-        self.fecha_hasta.setStyleSheet(styles.STYLE_INPUT)
         config_layout.addRow("Hasta:", self.fecha_hasta)
 
         # Formato de salida
@@ -103,7 +99,6 @@ class InformesEstadisticosWidget(QGroupBox):
         self.formato_combo.addItem("PDF", "pdf")
         self.formato_combo.addItem("Excel (próximamente)", "excel")
         self.formato_combo.setCurrentIndex(0)
-        self.formato_combo.setStyleSheet(styles.STYLE_INPUT)
         # Deshabilitar Excel temporalmente
         self.formato_combo.model().item(1).setEnabled(False)
         config_layout.addRow("Formato:", self.formato_combo)
@@ -116,14 +111,14 @@ class InformesEstadisticosWidget(QGroupBox):
 
         btn_vista_previa = QPushButton("Vista Previa")
         btn_vista_previa.setIcon(icon_for_button("view"))
-        btn_vista_previa.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
+        btn_vista_previa.setObjectName("secondaryButton")
         btn_vista_previa.clicked.connect(self._vista_previa)
         botones_layout.addWidget(btn_vista_previa)
 
         btn_generar = QPushButton("Generar Reporte")
         btn_generar.setIcon(icon_for_button("chart"))
         btn_generar.setMinimumHeight(40)
-        btn_generar.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
+        btn_generar.setProperty("success", True)
         btn_generar.clicked.connect(self._generar_reporte)
         botones_layout.addWidget(btn_generar)
 

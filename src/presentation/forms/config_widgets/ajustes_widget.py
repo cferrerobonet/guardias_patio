@@ -36,7 +36,6 @@ class AjustesWidget(QGroupBox):
             parent: Widget padre opcional
         """
         super().__init__("🔧 Ajustes Adicionales", parent)
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._setup_ui()
 
     def _setup_ui(self) -> None:

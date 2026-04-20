@@ -66,7 +66,6 @@ class GestionCursosWidget(QWidget):
 
         # GroupBox con estilo - Se expandirá verticalmente
         grupo = QGroupBox("Gestión de Cursos Escolares")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         grupo_layout = QVBoxLayout()
         grupo_layout.setSpacing(12)
         grupo_layout.setContentsMargins(20, 20, 20, 20)

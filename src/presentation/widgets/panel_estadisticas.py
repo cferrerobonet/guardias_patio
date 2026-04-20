@@ -59,7 +59,7 @@ class PanelEstadisticas(BaseForm):
 
         # Título
         titulo = QLabel("ESTADÍSTICAS DE GUARDIAS")
-        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        titulo.setObjectName("titleMain")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_principal.addWidget(titulo)
 
@@ -67,7 +67,7 @@ class PanelEstadisticas(BaseForm):
         btn_refrescar = QPushButton("Actualizar Estadísticas")
         btn_refrescar.setIcon(icon_for_button("refresh"))
         btn_refrescar.clicked.connect(self.actualizar_estadisticas)
-        btn_refrescar.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
+        btn_refrescar.setProperty("success", True)
         layout_principal.addWidget(btn_refrescar)
 
         # Pestañas

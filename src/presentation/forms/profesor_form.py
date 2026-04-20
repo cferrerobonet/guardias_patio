@@ -148,7 +148,7 @@ class ProfesorForm(BaseForm):
 
         # Título con contador
         self.titulo_lista_profesores = QLabel("PROFESORES REGISTRADOS (0)")
-        self.titulo_lista_profesores.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        self.titulo_lista_profesores.setObjectName("titleMain")
         layout.addWidget(self.titulo_lista_profesores)
 
         # Campo de búsqueda
@@ -156,12 +156,11 @@ class ProfesorForm(BaseForm):
         busqueda_layout.setSpacing(8)
 
         busqueda_label = QLabel("Buscar:")
-        busqueda_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        busqueda_label.setObjectName("fieldLabel")
         busqueda_layout.addWidget(busqueda_label)
 
         self.busqueda_input = QLineEdit()
         self.busqueda_input.setPlaceholderText("Buscar por nombre o email...")
-        self.busqueda_input.setStyleSheet(styles.STYLE_INPUT)
         self.busqueda_input.textChanged.connect(self.filtrar_profesores)
         busqueda_layout.addWidget(self.busqueda_input)
 
@@ -251,13 +250,13 @@ class ProfesorForm(BaseForm):
 
         self.editar_btn = QPushButton("Editar")
         self.editar_btn.setIcon(icon_for_button("edit"))
-        self.editar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        self.editar_btn.setProperty("warning", True)
         self.editar_btn.clicked.connect(self.editar_profesor)
         self.editar_btn.setToolTip("Editar el profesor seleccionado")
 
         self.delete_btn = QPushButton("Eliminar")
         self.delete_btn.setIcon(icon_for_button("delete"))
-        self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
+        self.delete_btn.setProperty("danger", True)
         self.delete_btn.clicked.connect(self.eliminar_profesor)
         self.delete_btn.setToolTip(
             "Eliminar profesor(es) seleccionado(s)\n"
@@ -285,7 +284,7 @@ class ProfesorForm(BaseForm):
 
         # Título más compacto
         self.titulo_seccion = QLabel("ALTA DE PROFESOR")
-        self.titulo_seccion.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        self.titulo_seccion.setObjectName("titleMain")
         layout.addWidget(self.titulo_seccion)
 
         # Widgets del formulario (layout vertical simple para no comprimir tabla)
@@ -307,13 +306,13 @@ class ProfesorForm(BaseForm):
 
         self.submit_btn = QPushButton("Guardar")
         self.submit_btn.setIcon(icon_for_button("save"))
-        self.submit_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
+        self.submit_btn.setProperty("success", True)
         self.submit_btn.clicked.connect(self.guardar_profesor)
         self.submit_btn.setMaximumHeight(32)  # Altura reducida
 
         self.cancelar_btn = QPushButton("Cancelar")
         self.cancelar_btn.setIcon(icon_for_button("close"))
-        self.cancelar_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
+        self.cancelar_btn.setProperty("danger", True)
         self.cancelar_btn.clicked.connect(self.cancelar_edicion)
         self.cancelar_btn.setVisible(False)
         self.cancelar_btn.setMaximumHeight(32)  # Altura reducida

@@ -54,7 +54,6 @@ class JsonOperationsWidget(QWidget):
     def _crear_grupo_exportar(self) -> QGroupBox:
         """Crear grupo de exportación a JSON."""
         grupo = QGroupBox("EXPORTAR DATOS A JSON")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
 
         layout = QVBoxLayout()
         layout.setSpacing(10)
@@ -80,7 +79,6 @@ class JsonOperationsWidget(QWidget):
         self.exportar_btn.setIcon(icon_for_button("export"))
         self.exportar_btn.clicked.connect(self.exportar_solicitado.emit)
         self.exportar_btn.setMinimumHeight(40)
-        self.exportar_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         layout.addWidget(self.exportar_btn)
 
         grupo.setLayout(layout)
@@ -89,7 +87,6 @@ class JsonOperationsWidget(QWidget):
     def _crear_grupo_importar(self) -> QGroupBox:
         """Crear grupo de importación desde JSON."""
         grupo = QGroupBox("IMPORTAR DATOS DESDE JSON")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
 
         layout = QVBoxLayout()
         layout.setSpacing(10)
@@ -131,7 +128,7 @@ class JsonOperationsWidget(QWidget):
         self.importar_btn.setIcon(icon_for_button("import"))
         self.importar_btn.clicked.connect(self.importar_solicitado.emit)
         self.importar_btn.setMinimumHeight(40)
-        self.importar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        self.importar_btn.setProperty("warning", True)
         layout.addWidget(self.importar_btn)
 
         grupo.setLayout(layout)

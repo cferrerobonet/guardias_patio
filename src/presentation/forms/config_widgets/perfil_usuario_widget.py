@@ -40,7 +40,6 @@ class PerfilUsuarioWidget(QGroupBox):
             current_username: Nombre del usuario actual
         """
         super().__init__("👤 Mi Perfil de Usuario", parent)
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
         self.user_auth = user_auth
         self.current_username = current_username
         self._setup_ui()
@@ -78,7 +77,7 @@ class PerfilUsuarioWidget(QGroupBox):
 
         # ===== Email (editable) =====
         label_email = QLabel("Email:")
-        label_email.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
+        label_email.setObjectName("smallFieldLabel")
         layout.addWidget(label_email)
 
         # Obtener email actual del usuario

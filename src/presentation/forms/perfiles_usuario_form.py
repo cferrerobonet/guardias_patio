@@ -100,7 +100,7 @@ class PerfilesUsuarioForm(BaseForm):
 
         # ===== TÍTULO =====
         titulo = QLabel("GESTIÓN DE PERFILES DE USUARIO")
-        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        titulo.setObjectName("titleMain")
         layout.addWidget(titulo)
 
         # ===== DESCRIPCIÓN =====

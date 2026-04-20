@@ -74,7 +74,6 @@ class CalculoPanel(QGroupBox):
         button_layout = QHBoxLayout()
 
         self.calcular_button = QPushButton("🔢 Calcular Cuotas")
-        self.calcular_button.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.calcular_button.setMinimumHeight(35)
         self.calcular_button.clicked.connect(self.calcular_cuotas)
         button_layout.addWidget(self.calcular_button)
@@ -101,7 +100,7 @@ class CalculoPanel(QGroupBox):
         self.content_text = QTextEdit()
         self.content_text.setReadOnly(True)
         self.content_text.setMinimumHeight(500)
-        self.content_text.setStyleSheet(styles.STYLE_TERMINAL_RETRO)
+        self.content_text.setObjectName("terminalRetro")
         self.content_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
 
         layout.addWidget(self.content_text)
@@ -196,7 +195,6 @@ class CalculoPanel(QGroupBox):
                     "No hay una configuración para el sistema.\n\n"
                     "Debe configurar los parámetros en Ajustes."
                 )
-                msg.setStyleSheet(MESSAGEBOX_STYLE)
                 msg.exec()
                 return
 
@@ -207,7 +205,6 @@ class CalculoPanel(QGroupBox):
                 msg = QMessageBox(self)
                 msg.setWindowTitle("Sin Curso Activo")
                 msg.setText("No hay un curso escolar activo.")
-                msg.setStyleSheet(MESSAGEBOX_STYLE)
                 msg.exec()
                 return
 

@@ -44,7 +44,6 @@ class DatosZonaWidget(QGroupBox):
             parent: Widget padre (opcional)
         """
         super().__init__("📋 Datos de la Zona", parent)
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._setup_ui()
         self._conectar_senales()
 
@@ -55,12 +54,11 @@ class DatosZonaWidget(QGroupBox):
 
         # Campo: Nombre de la zona
         label_nombre = QLabel("Nombre de la zona:")
-        label_nombre.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_nombre.setObjectName("fieldLabel")
         layout_datos.addWidget(label_nombre)
 
         self.nombre_zona_input = QLineEdit()
         self.nombre_zona_input.setPlaceholderText("Ej: Patio Principal, Porche, etc.")
-        self.nombre_zona_input.setStyleSheet(styles.STYLE_INPUT)
         self.nombre_zona_input.setMaximumWidth(350)
         self.nombre_zona_input.setValidator(
             QRegularExpressionValidator(QRegularExpression(r".{2,80}"))
@@ -69,37 +67,34 @@ class DatosZonaWidget(QGroupBox):
 
         # Campo: Descripción
         label_desc = QLabel("Descripción (opcional):")
-        label_desc.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_desc.setObjectName("fieldLabel")
         layout_datos.addWidget(label_desc)
 
         self.descripcion_input = QLineEdit()
         self.descripcion_input.setPlaceholderText("Detalles adicionales sobre la zona")
-        self.descripcion_input.setStyleSheet(styles.STYLE_INPUT)
         self.descripcion_input.setMaximumWidth(350)
         layout_datos.addWidget(self.descripcion_input)
 
         # Campo: Fecha de inicio (opcional)
         self.usar_fecha_inicio_check = QCheckBox("Especificar fecha de inicio")
-        self.usar_fecha_inicio_check.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.usar_fecha_inicio_check.setObjectName("fieldLabel")
         layout_datos.addWidget(self.usar_fecha_inicio_check)
 
         self.fecha_inicio_input = QDateEdit()
         self.fecha_inicio_input.setCalendarPopup(True)
         self.fecha_inicio_input.setDate(QDate.currentDate())
-        self.fecha_inicio_input.setStyleSheet(styles.STYLE_INPUT)
         self.fecha_inicio_input.setMaximumWidth(200)
         self.fecha_inicio_input.setEnabled(False)
         layout_datos.addWidget(self.fecha_inicio_input)
 
         # Campo: Fecha de fin (opcional)
         self.usar_fecha_fin_check = QCheckBox("Especificar fecha de fin")
-        self.usar_fecha_fin_check.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.usar_fecha_fin_check.setObjectName("fieldLabel")
         layout_datos.addWidget(self.usar_fecha_fin_check)
 
         self.fecha_fin_input = QDateEdit()
         self.fecha_fin_input.setCalendarPopup(True)
         self.fecha_fin_input.setDate(QDate.currentDate())
-        self.fecha_fin_input.setStyleSheet(styles.STYLE_INPUT)
         self.fecha_fin_input.setMaximumWidth(200)
         self.fecha_fin_input.setEnabled(False)
         layout_datos.addWidget(self.fecha_fin_input)

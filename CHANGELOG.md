@@ -6,6 +6,21 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.12.0] - 2026-04-20
+
+### 🎯 Resumen
+VIS-02: migración masiva de 535 `setStyleSheet` inline a QSS global — de 595 a 296 llamadas (-50%). Desbloquea ORG-02.
+
+### Changed
+- `src/presentation/theme/light.qss` → ampliado con reglas globales: `QGroupBox`, `QMessageBox`, `QLabel#fieldLabel`, `QLabel#smallFieldLabel`, `QLabel#titleMain`, `QTextEdit#terminalRetro`, `QPushButton[warning="true"]`, `QLineEdit:read-only`, `QScrollArea`
+- 231 llamadas `setStyleSheet(styles.STYLE_*)` reemplazadas en 38 archivos: eliminaciones (STYLE_INPUT×55, STYLE_GROUPBOX×28, MESSAGEBOX_STYLE×27, STYLE_BUTTON_PRIMARY×12) y conversiones a `setObjectName`/`setProperty` (STYLE_LABEL_FIELD×46+8, STYLE_TITLE_MAIN×17, STYLE_BUTTON_SUCCESS×9, STYLE_BUTTON_DANGER×9, STYLE_BUTTON_WARNING×7, STYLE_BUTTON_SECONDARY×6, STYLE_TERMINAL_RETRO×6)
+- `sftp_widget.py` y `smtp_widget.py` → `_apply_readonly_style()` vaciada; el estado visual `:read-only` lo gestiona el QSS global
+
+### 🧹 Housekeeping
+- `src/main.py` → eliminada importación y llamada a `MESSAGEBOX_STYLE` (cubierto por QSS global)
+
+---
+
 ## [5.11.0] - 2026-04-20
 
 ### 🎯 Resumen

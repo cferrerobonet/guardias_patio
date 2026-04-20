@@ -56,7 +56,7 @@ class DialogoReasignacion(QDialog):
 
         # Título
         titulo = QLabel(f"Guardias Afectadas ({len(self.guardias)} guardias)")
-        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        titulo.setObjectName("titleMain")
         layout.addWidget(titulo)
 
         # Tabla de guardias
@@ -100,19 +100,18 @@ class DialogoReasignacion(QDialog):
 
         btn_auto = QPushButton("Reasignar Automáticamente")
         btn_auto.setIcon(icon_for_button("refresh"))
-        btn_auto.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
+        btn_auto.setProperty("success", True)
         btn_auto.clicked.connect(self.reasignar_automaticamente)
         botones.addWidget(btn_auto)
 
         btn_manual = QPushButton("Reasignar Seleccionada")
         btn_manual.setIcon(icon_for_button("user"))
-        btn_manual.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         btn_manual.clicked.connect(self.reasignar_manual)
         botones.addWidget(btn_manual)
 
         btn_cerrar = QPushButton("Cerrar")
         btn_cerrar.setIcon(icon_for_button("close"))
-        btn_cerrar.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
+        btn_cerrar.setObjectName("secondaryButton")
         btn_cerrar.clicked.connect(self.close)
         botones.addWidget(btn_cerrar)
 

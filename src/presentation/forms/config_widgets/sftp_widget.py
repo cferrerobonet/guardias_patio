@@ -45,7 +45,6 @@ class SFTPConfigWidget(QGroupBox):
         """
         super().__init__("Configuración SFTP", parent)
         self.logger = get_logger(self.__class__.__name__)
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._actual_password = ""
         self._setup_ui()
         self.load_config()
@@ -56,23 +55,21 @@ class SFTPConfigWidget(QGroupBox):
 
         # Servidor SFTP (campo completo con label arriba)
         host_label = QLabel("Servidor SFTP:")
-        host_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        host_label.setObjectName("fieldLabel")
         layout.addWidget(host_label)
 
         # Fila con input de host y puerto
         host_row = QHBoxLayout()
         self.sftp_host_input = QLineEdit()
         self.sftp_host_input.setPlaceholderText("ejemplo: home491590459.1and1-data.host")
-        self.sftp_host_input.setStyleSheet(styles.STYLE_INPUT)
         self.sftp_host_input.setReadOnly(True)
         host_row.addWidget(self.sftp_host_input)
 
         # Puerto (campo corto en la misma fila)
         port_label = QLabel("Puerto:")
-        port_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        port_label.setObjectName("fieldLabel")
         self.sftp_port_input = QLineEdit()
         self.sftp_port_input.setPlaceholderText("22")
-        self.sftp_port_input.setStyleSheet(styles.STYLE_INPUT)
         self.sftp_port_input.setMaximumWidth(80)
         self.sftp_port_input.setReadOnly(True)
         host_row.addWidget(port_label)
@@ -82,23 +79,21 @@ class SFTPConfigWidget(QGroupBox):
 
         # Usuario (campo completo con label arriba)
         user_label = QLabel("Usuario:")
-        user_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        user_label.setObjectName("fieldLabel")
         layout.addWidget(user_label)
 
         # Fila con usuario y contraseña
         user_row = QHBoxLayout()
         self.sftp_user_input = QLineEdit()
         self.sftp_user_input.setPlaceholderText("ejemplo: u123456789")
-        self.sftp_user_input.setStyleSheet(styles.STYLE_INPUT)
         self.sftp_user_input.setReadOnly(True)
         user_row.addWidget(self.sftp_user_input)
 
         # Contraseña (en la misma fila)
         password_label = QLabel("Contraseña:")
-        password_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        password_label.setObjectName("fieldLabel")
         self.sftp_password_input = QLineEdit()
         self.sftp_password_input.setPlaceholderText("Contraseña del servidor SFTP")
-        self.sftp_password_input.setStyleSheet(styles.STYLE_INPUT)
         self.sftp_password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.sftp_password_input.setReadOnly(True)
         user_row.addWidget(password_label)
@@ -108,12 +103,11 @@ class SFTPConfigWidget(QGroupBox):
 
         # Directorio Base (campo completo con label arriba)
         basedir_label = QLabel("Directorio Base:")
-        basedir_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        basedir_label.setObjectName("fieldLabel")
         layout.addWidget(basedir_label)
 
         self.sftp_basedir_input = QLineEdit()
         self.sftp_basedir_input.setPlaceholderText("ejemplo: /aplicaciones/guardias_patio")
-        self.sftp_basedir_input.setStyleSheet(styles.STYLE_INPUT)
         self.sftp_basedir_input.setReadOnly(True)
         layout.addWidget(self.sftp_basedir_input)
 
@@ -122,12 +116,11 @@ class SFTPConfigWidget(QGroupBox):
 
         self.modify_sftp_btn = QPushButton("Modificar Configuración SFTP")
         self.modify_sftp_btn.setIcon(icon_for_button("key"))
-        self.modify_sftp_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        self.modify_sftp_btn.setProperty("warning", True)
         self.modify_sftp_btn.clicked.connect(self._toggle_editable)
 
         self.test_sftp_btn = QPushButton("Probar Conexión SFTP")
         self.test_sftp_btn.setIcon(icon_for_button("test"))
-        self.test_sftp_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.test_sftp_btn.clicked.connect(self._test_connection)
 
         botones_layout.addWidget(self.modify_sftp_btn)
@@ -161,32 +154,7 @@ class SFTPConfigWidget(QGroupBox):
         self.setLayout(layout)
 
     def _apply_readonly_style(self, readonly: bool) -> None:
-        """
-        Aplica estilos según el estado readonly.
-
-        Args:
-            readonly: True para readonly, False para editable
-        """
-        if readonly:
-            readonly_style = """
-                QLineEdit {
-                    background-color: #e5e7eb;
-                    color: #4b5563;
-                    border: 1px solid #d1d5db;
-                    padding: 5px;
-                }
-            """
-            self.sftp_host_input.setStyleSheet(readonly_style)
-            self.sftp_port_input.setStyleSheet(readonly_style)
-            self.sftp_basedir_input.setStyleSheet(readonly_style)
-            self.sftp_user_input.setStyleSheet(readonly_style)
-            self.sftp_password_input.setStyleSheet(readonly_style)
-        else:
-            self.sftp_host_input.setStyleSheet(styles.STYLE_INPUT)
-            self.sftp_port_input.setStyleSheet(styles.STYLE_INPUT)
-            self.sftp_basedir_input.setStyleSheet(styles.STYLE_INPUT)
-            self.sftp_user_input.setStyleSheet(styles.STYLE_INPUT)
-            self.sftp_password_input.setStyleSheet(styles.STYLE_INPUT)
+        pass
 
     def _toggle_editable(self) -> None:
         """Alterna entre modo solo lectura y editable para los campos SFTP."""

@@ -63,7 +63,7 @@ class ConectividadForm(BaseForm):
 
         # Título principal
         titulo = QLabel("🌐 CONECTIVIDAD")
-        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        titulo.setObjectName("titleMain")
         content_layout.addWidget(titulo)
 
         # Descripción

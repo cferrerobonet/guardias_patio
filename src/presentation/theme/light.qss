@@ -179,3 +179,132 @@ QLabel#secondary {
     color: #6B7280;
     font-size: 12px;
 }
+
+/* ========== LABELS DE FORMULARIO ========== */
+QLabel#fieldLabel {
+    font-size: 13px;
+    font-weight: bold;
+    color: #212121;
+    margin-bottom: 4px;
+    margin-top: 8px;
+}
+
+QLabel#smallFieldLabel {
+    font-size: 10px;
+    font-weight: bold;
+    color: #212121;
+    margin-bottom: 1px;
+    margin-top: 8px;
+}
+
+QLabel#titleMain {
+    font-size: 15px;
+    font-weight: bold;
+    color: #007ACC;
+    background-color: #f5f5f5;
+    padding: 6px 10px;
+    border-left: 4px solid #007ACC;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+/* ========== GROUPBOX ========== */
+QGroupBox {
+    font-weight: bold;
+    font-size: 13px;
+    color: #007ACC;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    margin-top: 12px;
+    padding-top: 10px;
+    background-color: white;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 4px 10px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+}
+
+/* ========== MESSAGEBOX ========== */
+QMessageBox {
+    background-color: white;
+    min-width: 400px;
+}
+
+QMessageBox QLabel {
+    color: #1f2937;
+    font-size: 14px;
+    padding: 10px;
+}
+
+QMessageBox QPushButton {
+    background-color: #059669;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 24px;
+    border: 2px solid #047857;
+    border-radius: 6px;
+    min-width: 100px;
+    min-height: 35px;
+}
+
+QMessageBox QPushButton:hover {
+    background-color: #047857;
+}
+
+QMessageBox QPushButton:pressed {
+    background-color: #065f46;
+}
+
+QMessageBox QPushButton:default {
+    background-color: #0284c7;
+    border: 2px solid #0369a1;
+}
+
+QMessageBox QPushButton:default:hover {
+    background-color: #0369a1;
+}
+
+/* ========== BOTÓN WARNING ========== */
+QPushButton[warning="true"] {
+    background-color: #FF9800;
+    color: white;
+    font-weight: bold;
+}
+
+QPushButton[warning="true"]:hover {
+    background-color: #e68900;
+}
+
+QPushButton[warning="true"]:pressed {
+    background-color: #cc7a00;
+}
+
+/* ========== TERMINAL RETRO ========== */
+QTextEdit#terminalRetro {
+    background-color: #3C3C3C;
+    color: #00FF00;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    padding: 12px;
+    border: 2px solid #555555;
+    border-radius: 4px;
+    selection-background-color: #2A4A2A;
+    selection-color: #00FF00;
+}
+
+/* ========== INPUTS READ-ONLY ========== */
+QLineEdit:read-only, QDateEdit:read-only, QTimeEdit:read-only {
+    background-color: #f5f5f5;
+    color: #757575;
+    border-color: #e0e0e0;
+}
+
+/* ========== SCROLL AREA ========== */
+QScrollArea {
+    border: none;
+}

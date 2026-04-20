@@ -59,7 +59,7 @@ class GestionarAusenciasForm(BaseForm):
 
         # Título
         titulo = QLabel("🏥 GESTIÓN DE AUSENCIAS")
-        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        titulo.setObjectName("titleMain")
         layout_principal.addWidget(titulo)
 
         # Layout horizontal: Lista + Formulario
@@ -90,7 +90,7 @@ class GestionarAusenciasForm(BaseForm):
         panel = QVBoxLayout()
 
         titulo_lista = QLabel("AUSENCIAS REGISTRADAS")
-        titulo_lista.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        titulo_lista.setObjectName("titleMain")
         panel.addWidget(titulo_lista)
 
         # Tabla de ausencias
@@ -130,21 +130,21 @@ class GestionarAusenciasForm(BaseForm):
 
         self.editar_btn = QPushButton("Editar")
         self.editar_btn.setIcon(icon_for_button("edit"))
-        self.editar_btn.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        self.editar_btn.setProperty("warning", True)
         self.editar_btn.clicked.connect(self.cargar_ausencia_seleccionada)
         self.editar_btn.setToolTip("Editar la ausencia seleccionada")
         botones.addWidget(self.editar_btn)
 
         self.delete_btn = QPushButton("Eliminar")
         self.delete_btn.setIcon(icon_for_button("delete"))
-        self.delete_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
+        self.delete_btn.setProperty("danger", True)
         self.delete_btn.clicked.connect(self.eliminar_ausencia_seleccionada)
         self.delete_btn.setToolTip("Eliminar la ausencia seleccionada (Del)")
         botones.addWidget(self.delete_btn)
 
         self.desactivar_btn = QPushButton("Desactivar")
         self.desactivar_btn.setIcon(icon_for_button("pause"))
-        self.desactivar_btn.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
+        self.desactivar_btn.setObjectName("secondaryButton")
         self.desactivar_btn.clicked.connect(self.desactivar_ausencia_seleccionada)
         self.desactivar_btn.setToolTip("Desactivar la ausencia sin eliminarla")
         botones.addWidget(self.desactivar_btn)
@@ -156,7 +156,7 @@ class GestionarAusenciasForm(BaseForm):
         panel = QVBoxLayout()
 
         self.titulo_form = QLabel("NUEVA AUSENCIA")
-        self.titulo_form.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        self.titulo_form.setObjectName("titleMain")
         panel.addWidget(self.titulo_form)
 
         # Grupo de datos
@@ -175,27 +175,24 @@ class GestionarAusenciasForm(BaseForm):
     def _crear_grupo_datos(self) -> QGroupBox:
         """Crear grupo de datos de la ausencia."""
         grupo = QGroupBox("Datos de la Ausencia")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         layout = QVBoxLayout()
         layout.setSpacing(8)
 
         # Profesor
         label_profesor = QLabel("Profesor:")
-        label_profesor.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_profesor.setObjectName("fieldLabel")
         layout.addWidget(label_profesor)
         self.profesor_combo = QComboBox()
-        self.profesor_combo.setStyleSheet(styles.STYLE_INPUT)
         self.profesor_combo.setMaximumWidth(400)
         self.profesor_combo.currentIndexChanged.connect(self.actualizar_preview_guardias)
         layout.addWidget(self.profesor_combo)
 
         # Tipo de ausencia
         label_tipo = QLabel("Tipo de ausencia:")
-        label_tipo.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_tipo.setObjectName("fieldLabel")
         layout.addWidget(label_tipo)
         self.tipo_combo = QComboBox()
         self.tipo_combo.addItems(["baja_medica", "permiso", "vacaciones", "otros"])
-        self.tipo_combo.setStyleSheet(styles.STYLE_INPUT)
         self.tipo_combo.setMaximumWidth(200)
         layout.addWidget(self.tipo_combo)
 
@@ -204,11 +201,10 @@ class GestionarAusenciasForm(BaseForm):
 
         # Motivo
         label_motivo = QLabel("Motivo (opcional):")
-        label_motivo.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_motivo.setObjectName("fieldLabel")
         layout.addWidget(label_motivo)
         self.motivo_input = QTextEdit()
         self.motivo_input.setPlaceholderText("Descripción del motivo de la ausencia...")
-        self.motivo_input.setStyleSheet(styles.STYLE_INPUT)
         self.motivo_input.setMaximumHeight(80)
         self.motivo_input.setMaximumWidth(400)
         layout.addWidget(self.motivo_input)
@@ -223,13 +219,12 @@ class GestionarAusenciasForm(BaseForm):
         # Fecha inicio
         layout_inicio = QVBoxLayout()
         label_inicio = QLabel("Fecha de inicio:")
-        label_inicio.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_inicio.setObjectName("fieldLabel")
         layout_inicio.addWidget(label_inicio)
         self.fecha_inicio_input = QDateEdit()
         self.fecha_inicio_input.setCalendarPopup(True)
         self.fecha_inicio_input.setDisplayFormat("dd/MM/yyyy")
         self.fecha_inicio_input.setDate(QDate.currentDate())
-        self.fecha_inicio_input.setStyleSheet(styles.STYLE_INPUT)
         self.fecha_inicio_input.setMaximumWidth(150)
         self.fecha_inicio_input.dateChanged.connect(self.actualizar_preview_guardias)
         layout_inicio.addWidget(self.fecha_inicio_input)
@@ -238,13 +233,12 @@ class GestionarAusenciasForm(BaseForm):
         # Fecha fin
         layout_fin = QVBoxLayout()
         label_fin = QLabel("Fecha de fin:")
-        label_fin.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_fin.setObjectName("fieldLabel")
         layout_fin.addWidget(label_fin)
         self.fecha_fin_input = QDateEdit()
         self.fecha_fin_input.setCalendarPopup(True)
         self.fecha_fin_input.setDisplayFormat("dd/MM/yyyy")
         self.fecha_fin_input.setDate(QDate.currentDate())
-        self.fecha_fin_input.setStyleSheet(styles.STYLE_INPUT)
         self.fecha_fin_input.setMaximumWidth(150)
         self.fecha_fin_input.dateChanged.connect(self.actualizar_preview_guardias)
         layout_fin.addWidget(self.fecha_fin_input)
@@ -256,7 +250,6 @@ class GestionarAusenciasForm(BaseForm):
     def _crear_grupo_preview(self) -> QGroupBox:
         """Crear grupo de preview de guardias afectadas."""
         grupo = QGroupBox("Guardias Afectadas (Preview)")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
         layout = QVBoxLayout()
 
         self.preview_text = QTextEdit()
@@ -276,14 +269,13 @@ class GestionarAusenciasForm(BaseForm):
 
         self.guardar_btn = QPushButton("Guardar Ausencia")
         self.guardar_btn.setIcon(icon_for_button("save"))
-        self.guardar_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
+        self.guardar_btn.setProperty("success", True)
         self.guardar_btn.clicked.connect(self.guardar_ausencia)
         self.guardar_btn.setToolTip("Guardar la ausencia (Ctrl+S)")
         botones.addWidget(self.guardar_btn)
 
         self.ver_guardias_btn = QPushButton("Ver Guardias Afectadas")
         self.ver_guardias_btn.setIcon(icon_for_button("view"))
-        self.ver_guardias_btn.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         self.ver_guardias_btn.clicked.connect(self.mostrar_guardias_afectadas)
         self.ver_guardias_btn.setToolTip("Ver y reasignar guardias afectadas")
         self.ver_guardias_btn.setEnabled(False)
@@ -291,7 +283,7 @@ class GestionarAusenciasForm(BaseForm):
 
         self.cancelar_btn = QPushButton("Cancelar")
         self.cancelar_btn.setIcon(icon_for_button("close"))
-        self.cancelar_btn.setStyleSheet(styles.STYLE_BUTTON_SECONDARY)
+        self.cancelar_btn.setObjectName("secondaryButton")
         self.cancelar_btn.clicked.connect(self.limpiar_formulario)
         self.cancelar_btn.setToolTip("Cancelar y limpiar formulario (Esc)")
         botones.addWidget(self.cancelar_btn)

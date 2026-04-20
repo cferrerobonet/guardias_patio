@@ -174,7 +174,6 @@ class RegisterDialog(QDialog):
             msg.setWindowTitle("Campo vacío")
             msg.setWindowIcon(get_corporate_icon())
             msg.setText("Por favor introduce un nombre de usuario")
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.username_input.setFocus()
             return
@@ -189,7 +188,6 @@ class RegisterDialog(QDialog):
             msg.setText(
                 "El email es obligatorio para poder recuperar la contraseña en caso de olvido"
             )
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.email_input.setFocus()
             return
@@ -203,7 +201,6 @@ class RegisterDialog(QDialog):
             msg.setWindowTitle("Email inválido")
             msg.setWindowIcon(get_corporate_icon())
             msg.setText("Por favor introduce un email válido (ej: usuario@ejemplo.com)")
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.email_input.setFocus()
             return
@@ -216,7 +213,6 @@ class RegisterDialog(QDialog):
             msg.setWindowTitle("Campo vacío")
             msg.setWindowIcon(get_corporate_icon())
             msg.setText("Por favor introduce una contraseña")
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.password_input.setFocus()
             return
@@ -229,7 +225,6 @@ class RegisterDialog(QDialog):
             msg.setWindowTitle("Campo vacío")
             msg.setWindowIcon(get_corporate_icon())
             msg.setText("Por favor introduce una contraseña")
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.password_input.setFocus()
             return
@@ -244,7 +239,6 @@ class RegisterDialog(QDialog):
             msg.setWindowTitle("Contraseña débil")
             msg.setWindowIcon(get_corporate_icon())
             msg.setText(policy_msg)
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.password_input.setFocus()
             return
@@ -260,7 +254,6 @@ class RegisterDialog(QDialog):
                 "Las contraseñas introducidas no son iguales.\n"
                 "Por favor, verifica que sean idénticas."
             )
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.password_confirm_input.clear()
             self.password_confirm_input.setFocus()
@@ -286,7 +279,6 @@ class RegisterDialog(QDialog):
                 f"registrado correctamente.<br><br>"
                 f"Ahora puedes iniciar sesión con tus credenciales."
             )
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.accept()
         else:
@@ -307,7 +299,6 @@ class RegisterDialog(QDialog):
                 f"ya está registrado.<br>"
                 f"Por favor, elige otro nombre de usuario."
             )
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.username_input.selectAll()
             self.username_input.setFocus()
@@ -621,7 +612,6 @@ class LoginDialog(QDialog):
                 "Por favor, introduce tu <span style='color: #007ACC; "
                 "font-style: italic;'>nueva contraseña</span> para iniciar sesión."
             )
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
 
     def login(self):
@@ -637,7 +627,6 @@ class LoginDialog(QDialog):
             msg.setWindowTitle("Campos vacíos")
             msg.setWindowIcon(get_corporate_icon())
             msg.setText("Por favor introduce usuario y contraseña")
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             return
 
@@ -660,7 +649,6 @@ class LoginDialog(QDialog):
                 f"Sesión iniciada correctamente.<br><br>"
                 f"Usuario: <span style='color: #007ACC; font-style: italic;'>{username}</span>"
             )
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.accept()
         else:
@@ -671,7 +659,6 @@ class LoginDialog(QDialog):
             msg.setWindowTitle("Error de autenticación")
             msg.setWindowIcon(get_corporate_icon())
             msg.setText(auth_msg)
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
             msg.exec()
             self.password_input.clear()
             self.password_input.setFocus()

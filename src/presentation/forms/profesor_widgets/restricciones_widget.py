@@ -57,7 +57,6 @@ class RestriccionesWidget(QGroupBox):
     def __init__(self, parent=None):
         """Inicializar widget de restricciones."""
         super().__init__("⚙️ Restricciones y Preferencias", parent)
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
 
         # Estado interno: {día_index: [recreos_permitidos]}
         self.restricciones_dias: Dict[int, List[int]] = {}
@@ -127,20 +126,19 @@ class RestriccionesWidget(QGroupBox):
 
         # Label de sección
         label_seccion = QLabel("📅 <b>Periodo de Guardias:</b>")
-        label_seccion.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_seccion.setObjectName("fieldLabel")
         layout.addWidget(label_seccion)
 
         # Fecha de inicio
         layout_fecha_inicio = QHBoxLayout()
         self.usar_fecha_inicio_checkbox = QCheckBox("Desde:")
-        self.usar_fecha_inicio_checkbox.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.usar_fecha_inicio_checkbox.setObjectName("fieldLabel")
         self.usar_fecha_inicio_checkbox.setFixedWidth(80)
         layout_fecha_inicio.addWidget(self.usar_fecha_inicio_checkbox)
 
         self.fecha_inicio_guardias_input = QDateEdit()
         self.fecha_inicio_guardias_input.setCalendarPopup(True)
         self.fecha_inicio_guardias_input.setDisplayFormat("dd/MM/yyyy")
-        self.fecha_inicio_guardias_input.setStyleSheet(styles.STYLE_INPUT)
         self.fecha_inicio_guardias_input.setMaximumWidth(150)
         self.fecha_inicio_guardias_input.setDate(QDate.currentDate())
         self.fecha_inicio_guardias_input.setEnabled(False)
@@ -151,14 +149,13 @@ class RestriccionesWidget(QGroupBox):
         # Fecha de fin
         layout_fecha_fin = QHBoxLayout()
         self.usar_fecha_fin_checkbox = QCheckBox("Hasta:")
-        self.usar_fecha_fin_checkbox.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        self.usar_fecha_fin_checkbox.setObjectName("fieldLabel")
         self.usar_fecha_fin_checkbox.setFixedWidth(80)
         layout_fecha_fin.addWidget(self.usar_fecha_fin_checkbox)
 
         self.fecha_fin_guardias_input = QDateEdit()
         self.fecha_fin_guardias_input.setCalendarPopup(True)
         self.fecha_fin_guardias_input.setDisplayFormat("dd/MM/yyyy")
-        self.fecha_fin_guardias_input.setStyleSheet(styles.STYLE_INPUT)
         self.fecha_fin_guardias_input.setMaximumWidth(150)
         self.fecha_fin_guardias_input.setDate(QDate.currentDate())
         self.fecha_fin_guardias_input.setEnabled(False)
@@ -175,12 +172,11 @@ class RestriccionesWidget(QGroupBox):
 
         # Label de sección
         label_seccion = QLabel("🏫 <b>Zona Preferida:</b>")
-        label_seccion.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        label_seccion.setObjectName("fieldLabel")
         layout.addWidget(label_seccion)
 
         # Combo de zonas
         self.zona_preferida_combo = QComboBox()
-        self.zona_preferida_combo.setStyleSheet(styles.STYLE_INPUT)
         self.zona_preferida_combo.setToolTip(
             "Selecciona la zona preferida del profesor para asignar guardias"
         )
@@ -197,7 +193,7 @@ class RestriccionesWidget(QGroupBox):
 
         # Título
         titulo = QLabel("<b>Disponibilidad por Día</b>")
-        titulo.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        titulo.setObjectName("fieldLabel")
         layout.addWidget(titulo)
 
         # Tabla
@@ -257,7 +253,7 @@ class RestriccionesWidget(QGroupBox):
 
         for recreo in self.RECREOS:
             check = QCheckBox(f"Recreo {recreo} (R{recreo})")
-            check.setStyleSheet(styles.STYLE_LABEL_FIELD)
+            check.setObjectName("fieldLabel")
             check.setEnabled(False)
             recreos_layout.addWidget(check)
             self.recreos_checks[recreo] = check
@@ -270,7 +266,6 @@ class RestriccionesWidget(QGroupBox):
 
         # Solo 2 botones: aplicar a todos y restaurar defecto
         btn_aplicar_todos = QPushButton("Aplicar a todos")
-        btn_aplicar_todos.setStyleSheet(styles.STYLE_BUTTON_PRIMARY)
         btn_aplicar_todos.clicked.connect(self._aplicar_recreos_a_todos)
         btn_aplicar_todos.setToolTip(
             "Copia la configuración de recreos actual a todos los días de la semana"
@@ -278,7 +273,7 @@ class RestriccionesWidget(QGroupBox):
         layout.addWidget(btn_aplicar_todos)
 
         btn_limpiar_todo = QPushButton("Restaurar defecto")
-        btn_limpiar_todo.setStyleSheet(styles.STYLE_BUTTON_WARNING)
+        btn_limpiar_todo.setProperty("warning", True)
         btn_limpiar_todo.clicked.connect(self._restaurar_por_turno)
         btn_limpiar_todo.setToolTip("Restaura los recreos por defecto según el turno del profesor")
         layout.addWidget(btn_limpiar_todo)

@@ -54,7 +54,7 @@ class ReportesForm(BaseForm):
 
         # Título
         titulo = QLabel("REPORTES E INFORMES")
-        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        titulo.setObjectName("titleMain")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(titulo)
 
@@ -119,12 +119,10 @@ class ReportesForm(BaseForm):
 
         # Resultado (ancho completo)
         resultado_group = QGroupBox("Resultados")
-        resultado_group.setStyleSheet(styles.STYLE_GROUPBOX)
         resultado_layout = QVBoxLayout()
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
         self.resultado_text.setMaximumHeight(180)
-        self.resultado_text.setStyleSheet(styles.STYLE_INPUT)
         self.resultado_text.setPlaceholderText(
             "Los resultados de las operaciones aparecerán aquí..."
         )

@@ -34,7 +34,6 @@ class FestivosWidget(QGroupBox):
             parent: Widget padre opcional
         """
         super().__init__("🎉 Festivos y Días No Lectivos", parent)
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -45,7 +44,7 @@ class FestivosWidget(QGroupBox):
 
         # ===== Festivos automáticos =====
         label_auto = QLabel("Aplicar festivos automáticos:")
-        label_auto.setStyleSheet(styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;")
+        label_auto.setObjectName("smallFieldLabel")
         layout.addWidget(label_auto)
 
         self.festivos_auto_input = QLineEdit()

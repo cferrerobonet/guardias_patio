@@ -48,7 +48,6 @@ class PdfExportWidget(QGroupBox):
         self.session = session
         self.profesor_checkboxes: List[QCheckBox] = []
 
-        self.setStyleSheet(styles.STYLE_GROUPBOX)
         self._setup_ui()
         self._conectar_senales()
 
@@ -98,7 +97,7 @@ class PdfExportWidget(QGroupBox):
         # Botón de exportación
         self.exportar_pdf_btn = QPushButton("📄 Generar PDFs")
         self.exportar_pdf_btn.setMinimumHeight(40)
-        self.exportar_pdf_btn.setStyleSheet(styles.STYLE_BUTTON_DANGER)
+        self.exportar_pdf_btn.setProperty("danger", True)
         layout.addWidget(self.exportar_pdf_btn)
 
         self.setLayout(layout)
@@ -109,7 +108,7 @@ class PdfExportWidget(QGroupBox):
         tipo_layout.setSpacing(5)
 
         tipo_label = QLabel("Tipo de exportación:")
-        tipo_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        tipo_label.setObjectName("fieldLabel")
         tipo_layout.addWidget(tipo_label)
 
         self.pdf_tipo_combo = QComboBox()
@@ -124,7 +123,6 @@ class PdfExportWidget(QGroupBox):
         self.pdf_tipo_combo.addItem(
             "🗓️ Calendario individual - Profesores seleccionados", "individual_seleccionados"
         )
-        self.pdf_tipo_combo.setStyleSheet(styles.STYLE_INPUT)
         tipo_layout.addWidget(self.pdf_tipo_combo)
 
         return tipo_layout
@@ -140,7 +138,7 @@ class PdfExportWidget(QGroupBox):
         mes_container = QVBoxLayout()
         mes_container.setSpacing(5)
         mes_label = QLabel("📅 Mes:")
-        mes_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        mes_label.setObjectName("fieldLabel")
         mes_container.addWidget(mes_label)
 
         self.pdf_mes_combo = QComboBox()
@@ -160,7 +158,6 @@ class PdfExportWidget(QGroupBox):
         ]
         self.pdf_mes_combo.addItems(meses)
         self.pdf_mes_combo.setCurrentIndex(datetime.now().month - 1)
-        self.pdf_mes_combo.setStyleSheet(styles.STYLE_INPUT)
         mes_container.addWidget(self.pdf_mes_combo)
         fecha_layout.addLayout(mes_container, 2)
 
@@ -168,7 +165,7 @@ class PdfExportWidget(QGroupBox):
         anio_container = QVBoxLayout()
         anio_container.setSpacing(5)
         anio_label = QLabel("📆 Año:")
-        anio_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        anio_label.setObjectName("fieldLabel")
         anio_container.addWidget(anio_label)
 
         self.pdf_anio_combo = QComboBox()
@@ -176,7 +173,6 @@ class PdfExportWidget(QGroupBox):
         for anio in range(anio_actual - 1, anio_actual + 3):
             self.pdf_anio_combo.addItem(str(anio))
         self.pdf_anio_combo.setCurrentIndex(1)  # Año actual
-        self.pdf_anio_combo.setStyleSheet(styles.STYLE_INPUT)
         anio_container.addWidget(self.pdf_anio_combo)
         fecha_layout.addLayout(anio_container, 1)
 
@@ -190,7 +186,7 @@ class PdfExportWidget(QGroupBox):
         curso_layout.setSpacing(5)
 
         curso_label = QLabel("📚 Año de inicio del curso:")
-        curso_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        curso_label.setObjectName("fieldLabel")
         curso_layout.addWidget(curso_label)
 
         self.pdf_curso_combo = QComboBox()
@@ -198,7 +194,6 @@ class PdfExportWidget(QGroupBox):
         for anio in range(anio_actual - 1, anio_actual + 3):
             self.pdf_curso_combo.addItem(f"{anio}/{anio + 1}", anio)
         self.pdf_curso_combo.setCurrentIndex(1)
-        self.pdf_curso_combo.setStyleSheet(styles.STYLE_INPUT)
         curso_layout.addWidget(self.pdf_curso_combo)
 
         curso_info = QLabel("Se generarán PDFs de Septiembre a Junio")
@@ -221,7 +216,7 @@ class PdfExportWidget(QGroupBox):
         profesores_layout.setSpacing(5)
 
         prof_label = QLabel("👥 Seleccionar profesores:")
-        prof_label.setStyleSheet(styles.STYLE_LABEL_FIELD)
+        prof_label.setObjectName("fieldLabel")
         profesores_layout.addWidget(prof_label)
 
         # Scroll area para checkboxes

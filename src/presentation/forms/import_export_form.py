@@ -81,7 +81,7 @@ class ImportExportForm(BaseForm):
 
         # Título
         titulo = QLabel("IMPORTAR / EXPORTAR DATOS")
-        titulo.setStyleSheet(styles.STYLE_TITLE_MAIN)
+        titulo.setObjectName("titleMain")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(titulo)
 
@@ -125,12 +125,10 @@ class ImportExportForm(BaseForm):
 
         # Resultado (ancho completo)
         resultado_group = QGroupBox("Resultados")
-        resultado_group.setStyleSheet(styles.STYLE_GROUPBOX)
         resultado_layout = QVBoxLayout()
         self.resultado_text = QTextEdit()
         self.resultado_text.setReadOnly(True)
         self.resultado_text.setMaximumHeight(180)
-        self.resultado_text.setStyleSheet(styles.STYLE_INPUT)
         self.resultado_text.setPlaceholderText(
             "Los resultados de las operaciones aparecerán aquí..."
         )
@@ -143,7 +141,6 @@ class ImportExportForm(BaseForm):
     def _crear_seccion_importar_profesores(self) -> QGroupBox:
         """Crear sección de importación de profesores desde Excel."""
         grupo = QGroupBox("IMPORTAR PROFESORES DESDE EXCEL")
-        grupo.setStyleSheet(styles.STYLE_GROUPBOX)
 
         layout = QVBoxLayout()
         layout.setSpacing(10)
@@ -167,7 +164,7 @@ class ImportExportForm(BaseForm):
         self.importar_profesores_btn.setIcon(icon_for_button("import"))
         self.importar_profesores_btn.clicked.connect(self.importar_profesores)
         self.importar_profesores_btn.setMinimumHeight(40)
-        self.importar_profesores_btn.setStyleSheet(styles.STYLE_BUTTON_SUCCESS)
+        self.importar_profesores_btn.setProperty("success", True)
         layout.addWidget(self.importar_profesores_btn)
 
         grupo.setLayout(layout)
@@ -249,7 +246,6 @@ class ImportExportForm(BaseForm):
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
                 )
                 msg.setDefaultButton(QMessageBox.StandardButton.No)
-                msg.setStyleSheet(MESSAGEBOX_STYLE)
 
                 if msg.exec() != QMessageBox.StandardButton.Yes:
                     return

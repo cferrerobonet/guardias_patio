@@ -255,7 +255,7 @@ def main():
 
     except Exception as e:
         logger.error(f"Error al inicializar sincronización: {e}")
-        from utils.ui_helpers import MESSAGEBOX_STYLE, get_corporate_icon
+        from utils.ui_helpers import get_corporate_icon
 
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Icon.Warning)
@@ -268,7 +268,6 @@ def main():
         msg.setInformativeText(
             "La aplicación funcionará en modo local.\n\nLos datos se guardarán solo en este equipo."
         )
-        msg.setStyleSheet(MESSAGEBOX_STYLE)
         msg.exec()
 
     # ==========================================

@@ -117,7 +117,6 @@ class DashboardForm(QWidget):
         # Scroll area para contenido
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea { border: none; }")
 
         contenedor = QWidget()
         contenedor_layout = QVBoxLayout()
