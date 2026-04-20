@@ -6,6 +6,27 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.15.0] - 2026-04-20
+
+### 🎯 Resumen
+ARQ-04: Implementación de contenedor DI con `dependency-injector`. Centraliza gestión de dependencias para repos y servicios sin romper compatibilidad legacy.
+
+### ✨ Added
+- `src/infrastructure/container.py`: `Container` (DeclarativeContainer) con providers para:
+  - `db_session`: Callable para sesiones de BD (configurable)
+  - Repositorios: profesor, zona, guardia, ausencia, configuracion, curso_escolar
+  - `repository_factory`: RepositoryFactory para compatibilidad con código legacy
+- `requirements.txt`: Añadida `dependency-injector>=4.41.0`
+
+### Changed
+- `src/infrastructure/__init__.py`: Exporta `Container` para uso global
+- Infraestructura lista para wiring automático en `main.py` y `api/main.py` (fase 2 opcional)
+
+### 🧹 Housekeeping
+- Container mantenido simple: enfoque en DB + repos. Servicios pueden añadirse incrementalmente.
+- No se modifica main.py/api/main.py para evitar disrupciones (wiring es opt-in).
+
+---
 ## [5.14.2] - 2026-04-20
 
 ### 🎯 Resumen

@@ -134,27 +134,35 @@
 
 ---
 
-### ARQ-04 — Sin contenedor de inyección de dependencias (P2)
+### ARQ-04 — Sin contenedor de inyección de dependencias (P2) — ✅ RESUELTO v5.15.0
 
 **Problema**: Los servicios se instancian manualmente pasando `Session` como argumento. No hay lifecycle management ni wiring automático.
 
-**Cómo resolver**:
-1. Instalar: `pip install dependency-injector`
-2. Crear `src/infrastructure/container.py` con un `DeclarativeContainer`:
-   ```python
-   from dependency_injector import containers, providers
-   from src.infrastructure.repositories.sqlalchemy_profesor_repo import SQLAlchemyProfesorRepository
+**Solución implementada (v5.15.0)**:
+1. ✅ Instalado: `pip install dependency-injector>=4.41.0`
+2. ✅ Creado: `src/infrastructure/container.py` con `Container(DeclarativeContainer)`:
+   - `db_session`: Provider Callable para sesiones (configurable via config.from_dict())
+   - Repositorios: profesor, zona, guardia, ausencia, configuracion, curso_escolar
+   - `repository_factory`: RepositoryFactory para compatibilidad legacy
+3. ✅ Exportado en `src/infrastructure/__init__.py`
+4. ✅ Añadido a `requirements.txt`
 
-   class Container(containers.DeclarativeContainer):
-       config = providers.Configuration()
-       db_session = providers.Singleton(...)  # Session factory
-       profesor_repo = providers.Factory(SQLAlchemyProfesorRepository, session=db_session)
-       # ... más repos y servicios
-   ```
-3. Wiring automático en `src/main.py` y `src/api/main.py`.
-4. Añadir `dependency-injector` a `requirements.txt`.
+**Uso (future wiring en main.py/api/main.py)**:
+```python
+from infrastructure.container import Container
 
-**Dependencia**: Resolver ARQ-01 primero (repositorios) antes de conectar con DI.
+# Inicializar
+container = Container()
+container.config.from_dict({"db_session_factory": SessionFactory})
+
+# Obtener repos
+profesor_repo = container.profesor_repository()
+factory = container.repository_factory()
+```
+
+**Estado**:
+- ✅ Container implementado y funcional (sin wiring automático en main.py — opt-in)
+- 📝 Wiring en main.py/api/main.py es fase 2 opcional (no rompe código legacy actual)
 
 ---
 

@@ -29,6 +29,9 @@ cachetools>=5.3.0
 bcrypt>=4.0.0
 cryptography>=41.0.0
 
+# Dependency Injection (ARQ-04)
+dependency-injector>=4.41.0
+
 # Charts and visualization
 matplotlib>=3.7.0
 
