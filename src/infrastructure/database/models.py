@@ -234,6 +234,9 @@ class Ausencia(Base):
     profesor = relationship("Profesor", backref="ausencias")
 
     __table_args__ = (
+        Index("ix_ausencias_profesor_id", "profesor_id"),
+        Index("ix_ausencias_profesor_fecha", "profesor_id", "fecha_inicio", "fecha_fin"),
+        Index("ix_ausencias_activa", "activa"),
         CheckConstraint(
             "tipo IN ('baja_medica','permiso','vacaciones','otros')",
             name="ck_ausencia_tipo"

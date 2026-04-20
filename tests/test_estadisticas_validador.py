@@ -113,7 +113,7 @@ def session_stats():
 class TestEstadisticasService:
     @pytest.fixture(autouse=True)
     def setup(self, session_stats):
-        self.svc = EstadisticasService(session_stats)
+        self.svc = EstadisticasService()
 
     def test_calcular_guardias_por_profesor(self):
         guardias = [

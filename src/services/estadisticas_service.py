@@ -3,6 +3,8 @@ EstadisticasService - Cálculos estadísticos centralizados
 
 Responsabilidad: Calcular todas las métricas y estadísticas
 relacionadas con la asignación de guardias de forma consistente.
+
+Nota: Servicio sin estado (lógica pura). No requiere sesión SQLAlchemy.
 """
 
 from collections import defaultdict
@@ -10,7 +12,6 @@ from datetime import date
 from typing import Dict, List, Optional, Tuple
 
 from infrastructure.database.models import Guardia, Profesor
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -21,10 +22,16 @@ class EstadisticasService:
     Servicio centralizado para cálculos estadísticos.
 
     Elimina duplicación de lógica de estadísticas en múltiples archivos.
+    Lógica pura: no accede a BD, trabaja con listas inyectadas.
     """
 
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self):
+        pass
+
+    @classmethod
+    def from_session(cls, session) -> "EstadisticasService":
+        """Factory method para compatibilidad con código legacy."""
+        return cls()
 
     def calcular_guardias_por_profesor(self, guardias: List[Guardia]) -> Dict[int, int]:
         """

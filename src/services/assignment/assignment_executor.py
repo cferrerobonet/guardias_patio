@@ -37,7 +37,7 @@ class AssignmentExecutor:
         self.slot_builder = SlotBuilder(session)
         self.profesor_filter = ProfesorFilter(session)
         self.score_calculator = ScoreCalculator()
-        self.stats_service = EstadisticasService(session)
+        self.stats_service = EstadisticasService()
 
         # Domain Services (DDD)
         self.disponibilidad_service = DisponibilidadProfesorService(session)

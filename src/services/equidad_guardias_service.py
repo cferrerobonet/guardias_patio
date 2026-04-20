@@ -69,7 +69,7 @@ class EquidadGuardiasService:
             session: Sesión de SQLAlchemy
         """
         self.session = session
-        self.stats_service = EstadisticasService(session)
+        self.stats_service = EstadisticasService()
         self.logger = logger
 
     def calcular_indice_equidad(self, guardias: List[Guardia], cuotas: Dict[int, int]) -> float:

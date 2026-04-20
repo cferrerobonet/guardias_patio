@@ -6,6 +6,36 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.15.1] - 2026-04-20
+
+### 🎯 Resumen
+P1 completados: SEC-PWD (password policy + lockout) verificado ✅, ARQ-01 (estadisticas_service refactorizado), DB-INTEGRITY (índices en Ausencia). Templates preparados para 4 servicios restantes en fase 2.
+
+### ✨ Added
+- `.arq01-phase2-template.md`: Guía detallada para migrar 4 servicios pendientes (validador_guardias, disponibilidad_profesor_service, equidad_guardias_service, asignador_guardias_cpsat) con ejemplos de patrón RepositoryFactory.
+
+### Changed
+- `src/services/estadisticas_service.py`: refactorizado a servicio sin estado. `__init__()` ahora sin parámetro `session` (lógica pura, solo trabaja con listas inyectadas). Añadido `from_session()` para compatibilidad legacy.
+- `src/infrastructure/database/models.py`: Ausencia table_args añade índices compuestos:
+  - `ix_ausencias_profesor_id`: búsquedas por profesor
+  - `ix_ausencias_profesor_fecha`: índice compound para queries frecuentes (profesor_id, fecha_inicio, fecha_fin)
+  - `ix_ausencias_activa`: filtrado de ausencias activas
+- Actualizado 3 usages de `EstadisticasService(session)` → `EstadisticasService()` en:
+  - `tests/test_estadisticas_validador.py`
+  - `src/services/equidad_guardias_service.py`
+  - `src/services/assignment/assignment_executor.py`
+
+### Fixed
+- ~~SEC-PWD (Password policy + Lockout)~~ ✅ Verificado como ya implementado desde v5.15.0: `UserAuth.validate_password_policy()` con 8+ chars, mayúscula, número, símbolo. Lockout: 5 intentos → 15 min bloqueado con delays progresivos (1,2,4,8,16s).
+- ~~DB-INTEGRITY (CheckConstraints + threading locks)~~ ✅ Verificado como ya implementado:
+  - CheckConstraints: turno, recreo, tipo_ausencia, porcentaje_jornada, capacidad_zona, ajustes_config
+  - Threading locks: `_db_lock` en db_manager.py desde v5.15.0
+  - Índices: completados con compound index en Ausencia
+
+### 🧹 Housekeeping
+- `docs/AUDITORIA_INTEGRAL_2026.md`: Roadmap P1 actualizado. Marcados como RESUELTOS: SEC-PWD, ARQ-01 (estadisticas), DB-INTEGRITY. ARQ-01 fase 2 con templates preparados.
+
+---
 ## [5.15.0] - 2026-04-20
 
 ### 🎯 Resumen

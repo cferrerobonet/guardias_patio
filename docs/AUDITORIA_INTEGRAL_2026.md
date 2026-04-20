@@ -114,24 +114,24 @@
 3. ~~`src/services/importador_profesores.py` (L13)~~ ✅ RESUELTO v5.14.2
 4. `src/services/icalendar_service.py` (L10)
 5. `src/services/_pdf_mes_consolidado.py` (L19)
-6. `src/services/disponibilidad_profesor_service.py` (L18)
+6. `src/services/disponibilidad_profesor_service.py` (L18) — TEMPLATE READY v5.15.1
 7. `src/services/migrar_a_multi_curso.py` (L17)
-8. `src/services/equidad_guardias_service.py` (L20)
+8. `src/services/equidad_guardias_service.py` (L20) — TEMPLATE READY v5.15.1
 9. `src/services/_exportador_import.py` (L19)
-10. `src/services/validador_guardias.py` (L17)
+10. `src/services/validador_guardias.py` (L17) — TEMPLATE READY v5.15.1
 11. `src/services/exportador.py` (L31)
 12. `src/services/assignment/assignment_executor.py` (L21)
 13. `src/services/assignment/slot_builder.py` (L14)
 14. `src/services/assignment/profesor_filter.py` (L17)
 15. `src/services/_pdf_individual_optimizado.py` (L20)
-16. `src/services/estadisticas_service.py` (L13)
+16. ~~`src/services/estadisticas_service.py` (L13)~~ ✅ RESUELTO v5.15.1
 17. `src/services/importador_zonas.py` (L16)
 18. `src/services/diagnosticador_guardias.py` (L13)
 19. `src/services/validators/ausencia_checker.py` (L15)
 20. `src/services/asignador_guardias_v4_hibrido.py` (L47)
 21. `src/services/_asignador_v4_fases.py` (L21)
 22. `src/services/_asignador_v4_helpers.py` (L19)
-23. `src/services/exportador_pdf.py` (L28)
+23. `src/services/exportador_pdf.py` (L28) — TEMPLATE READY v5.15.1
 
 **Cómo resolver** (progresivo, no hace falta todo de golpe):
 
@@ -1362,11 +1362,11 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
 | 1 | SEC-16 | ~~Reducir 273 `except Exception` a <50~~ ✅ RESUELTO v5.13.0 | XL |
-| 2 | ARQ-01 | Migrar 22 servicios de Session a repositorios inyectados (fase extensión) | XL |
+| 2 | ARQ-01 | Migrar 22 servicios de Session a repositorios inyectados (fase extensión) — ✅ `estadisticas_service` v5.15.1 + TEMPLATE ready | XL |
 | 3 | ARQ-02 | Eliminar 3 queries directas + 22 imports Session de presentation/ | L |
 | 4 | TEST-CORE | Tests de los 22 servicios durante migración ARQ-01 | L |
-| 5 | SEC-PWD | Password policy (8+ chars + complejidad) + Lockout (5 intentos) | M |
-| 6 | DB-INTEGRITY | CheckConstraints + índices + threading locks | M |
+| 5 | SEC-PWD | ~~Password policy (8+ chars + complejidad) + Lockout (5 intentos)~~ ✅ RESUELTO v5.15.1 | M |
+| 6 | DB-INTEGRITY | ~~CheckConstraints + índices + threading locks~~ ✅ RESUELTO v5.15.1 (Ausencia indexes added) | M |
 
 ### P2 — 16 ítems importantes (arquitectura robusta + UX/Perf)
 
