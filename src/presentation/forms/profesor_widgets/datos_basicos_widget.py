@@ -49,6 +49,7 @@ class DatosBasicosWidget(QGroupBox):
         layout.addWidget(label_nombre)
 
         self.nombre_completo_input = QLineEdit()
+        self.nombre_completo_input.setAccessibleName("Campo nombre completo del profesor")
         self.nombre_completo_input.setPlaceholderText("GARCÍA LÓPEZ, JUAN")
         self.nombre_completo_input.setMaximumWidth(350)
         self.nombre_completo_input.setValidator(
@@ -67,6 +68,7 @@ class DatosBasicosWidget(QGroupBox):
         layout.addWidget(label_email)
 
         self.email_input = QLineEdit()
+        self.email_input.setAccessibleName("Campo email del profesor")
         self.email_input.setPlaceholderText("profesor@colegio.edu")
         self.email_input.setMaximumWidth(350)
         self.email_input.setValidator(
@@ -82,6 +84,7 @@ class DatosBasicosWidget(QGroupBox):
 
         # Tutor
         self.tutor_checkbox = QCheckBox("✓ Es tutor/a")
+        self.tutor_checkbox.setAccessibleName("Marcar si el profesor es tutor")
         self.tutor_checkbox.setStyleSheet(
             "font-size: 13px; margin-top: 2px;"
         )  # Reducido de 5px a 2px
@@ -92,6 +95,8 @@ class DatosBasicosWidget(QGroupBox):
         layout.addWidget(self.tutor_checkbox)
 
         self.setLayout(layout)
+        self.setTabOrder(self.nombre_completo_input, self.email_input)
+        self.setTabOrder(self.email_input, self.tutor_checkbox)
 
     def _conectar_senales(self):
         """Conectar señales de los campos al signal de cambios."""

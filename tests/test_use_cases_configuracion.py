@@ -6,6 +6,7 @@ Tests completos: ActualizarConfiguracionUseCase, ObtenerConfiguracionUseCase.
 from datetime import date, time
 
 import pytest
+from sqlalchemy.exc import SQLAlchemyError
 from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
 from application.use_cases.configuracion.actualizar_configuracion import (
     ActualizarConfiguracionUseCase,
@@ -241,7 +242,7 @@ class TestActualizarConfiguracionUseCase:
         )
 
         # Mock session.commit() para simular error
-        mocker.patch.object(session, "commit", side_effect=Exception("Error BD"))
+        mocker.patch.object(session, "commit", side_effect=SQLAlchemyError("Error BD"))
 
         with pytest.raises(Exception, match="Error BD"):
             use_case.execute(dto)

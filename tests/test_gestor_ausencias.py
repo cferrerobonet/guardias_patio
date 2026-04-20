@@ -681,7 +681,7 @@ def test_reasignar_guardias_automaticamente_error_en_reasignacion(mock_session, 
         # Simular error al asignar
         guardia_fixture.profesor = Mock()
         type(guardia_fixture).profesor_id = property(
-            lambda self: (_ for _ in ()).throw(Exception("Error de prueba"))
+            lambda self: (_ for _ in ()).throw(AttributeError("Error de prueba"))
         )
 
         # Act

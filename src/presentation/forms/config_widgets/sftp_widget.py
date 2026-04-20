@@ -61,6 +61,7 @@ class SFTPConfigWidget(QGroupBox):
         # Fila con input de host y puerto
         host_row = QHBoxLayout()
         self.sftp_host_input = QLineEdit()
+        self.sftp_host_input.setAccessibleName("Campo servidor SFTP")
         self.sftp_host_input.setPlaceholderText("ejemplo: home491590459.1and1-data.host")
         self.sftp_host_input.setReadOnly(True)
         host_row.addWidget(self.sftp_host_input)
@@ -69,6 +70,7 @@ class SFTPConfigWidget(QGroupBox):
         port_label = QLabel("Puerto:")
         port_label.setObjectName("fieldLabel")
         self.sftp_port_input = QLineEdit()
+        self.sftp_port_input.setAccessibleName("Campo puerto SFTP")
         self.sftp_port_input.setPlaceholderText("22")
         self.sftp_port_input.setMaximumWidth(80)
         self.sftp_port_input.setReadOnly(True)
@@ -85,6 +87,7 @@ class SFTPConfigWidget(QGroupBox):
         # Fila con usuario y contraseña
         user_row = QHBoxLayout()
         self.sftp_user_input = QLineEdit()
+        self.sftp_user_input.setAccessibleName("Campo usuario SFTP")
         self.sftp_user_input.setPlaceholderText("ejemplo: u123456789")
         self.sftp_user_input.setReadOnly(True)
         user_row.addWidget(self.sftp_user_input)
@@ -93,6 +96,7 @@ class SFTPConfigWidget(QGroupBox):
         password_label = QLabel("Contraseña:")
         password_label.setObjectName("fieldLabel")
         self.sftp_password_input = QLineEdit()
+        self.sftp_password_input.setAccessibleName("Campo contraseña SFTP")
         self.sftp_password_input.setPlaceholderText("Contraseña del servidor SFTP")
         self.sftp_password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.sftp_password_input.setReadOnly(True)
@@ -107,6 +111,7 @@ class SFTPConfigWidget(QGroupBox):
         layout.addWidget(basedir_label)
 
         self.sftp_basedir_input = QLineEdit()
+        self.sftp_basedir_input.setAccessibleName("Campo directorio base SFTP")
         self.sftp_basedir_input.setPlaceholderText("ejemplo: /aplicaciones/guardias_patio")
         self.sftp_basedir_input.setReadOnly(True)
         layout.addWidget(self.sftp_basedir_input)
@@ -115,11 +120,13 @@ class SFTPConfigWidget(QGroupBox):
         botones_layout = QHBoxLayout()
 
         self.modify_sftp_btn = QPushButton("Modificar Configuración SFTP")
+        self.modify_sftp_btn.setAccessibleName("Botón modificar configuración SFTP")
         self.modify_sftp_btn.setIcon(icon_for_button("key"))
         self.modify_sftp_btn.setProperty("warning", True)
         self.modify_sftp_btn.clicked.connect(self._toggle_editable)
 
         self.test_sftp_btn = QPushButton("Probar Conexión SFTP")
+        self.test_sftp_btn.setAccessibleName("Botón probar conexión SFTP")
         self.test_sftp_btn.setIcon(icon_for_button("test"))
         self.test_sftp_btn.clicked.connect(self._test_connection)
 
@@ -152,6 +159,12 @@ class SFTPConfigWidget(QGroupBox):
         self._apply_readonly_style(True)
 
         self.setLayout(layout)
+        self.setTabOrder(self.sftp_host_input, self.sftp_port_input)
+        self.setTabOrder(self.sftp_port_input, self.sftp_user_input)
+        self.setTabOrder(self.sftp_user_input, self.sftp_password_input)
+        self.setTabOrder(self.sftp_password_input, self.sftp_basedir_input)
+        self.setTabOrder(self.sftp_basedir_input, self.modify_sftp_btn)
+        self.setTabOrder(self.modify_sftp_btn, self.test_sftp_btn)
 
     def _apply_readonly_style(self, readonly: bool) -> None:
         pass

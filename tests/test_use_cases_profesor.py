@@ -11,6 +11,7 @@ Target Coverage: >90% para cada Use Case
 from datetime import date
 
 import pytest
+from sqlalchemy.exc import SQLAlchemyError
 from application.dtos import ActualizarProfesorDTO, CrearProfesorDTO, ProfesorDTO
 from application.use_cases.profesor.actualizar_profesor import ActualizarProfesorUseCase
 from application.use_cases.profesor.buscar_profesores import BuscarProfesoresUseCase
@@ -115,7 +116,7 @@ class TestCrearProfesorUseCase:
         use_case = CrearProfesorUseCase(session)
 
         # Simular error en flush (el repositorio usa flush, no commit)
-        mocker.patch.object(session, "flush", side_effect=Exception("DB Error"))
+        mocker.patch.object(session, "flush", side_effect=SQLAlchemyError("DB Error"))
 
         dto = CrearProfesorDTO(
             nombre_completo="Test Error",
@@ -333,7 +334,7 @@ class TestActualizarProfesorUseCase:
         use_case = ActualizarProfesorUseCase(session)
 
         # Simular error en commit
-        mocker.patch.object(session, "commit", side_effect=Exception("DB Error"))
+        mocker.patch.object(session, "commit", side_effect=SQLAlchemyError("DB Error"))
 
         dto = ActualizarProfesorDTO(nombre_completo="Nombre Actualizado")
 

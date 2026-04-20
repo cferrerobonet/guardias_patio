@@ -865,7 +865,7 @@ logger.info("guardias_generadas", extra={"curso_id": curso.id, "cantidad": len(g
 | `setToolTip` | 49 | ~100+ |
 | `setFocusPolicy` | 1 | ~20+ |
 
-### A11Y-01 — Accessible names (P1)
+### ~~A11Y-01 — Accessible names (P1)~~ ✅ RESUELTO v5.14.0
 
 **Estado actual**: Solo en `src/presentation/forms/login_dialog.py`:
 - L73: `username_input.setAccessibleName("Campo nombre de usuario")`
@@ -893,7 +893,7 @@ logger.info("guardias_generadas", extra={"curso_id": curso.id, "cantidad": len(g
 
 ---
 
-### A11Y-02 — Tab order (P1)
+### ~~A11Y-02 — Tab order (P1)~~ ✅ RESUELTO v5.14.0
 
 **Estado actual**: Solo en `login_dialog.py` L495-498.
 
@@ -1863,19 +1863,11 @@ Errores críticos no generan notificación.
 | `setWhatsThis` | 0 | ~10+ | 🔴 |
 | `setPlaceholderText` | 69 | ~80+ | ✅ Aceptable |
 
-### A11Y-01 — Accessible names casi inexistentes (P1)
-**Solo 6 `setAccessibleName`**, todos en `login_dialog.py`. Los 58 widgets restantes son invisibles para lectores de pantalla.
+### ~~A11Y-01 — Accessible names casi inexistentes (P1)~~ ✅ RESUELTO v5.14.0
+54 `setAccessibleName` añadidos en 8 formularios: `datos_basicos_widget`, `datos_zona_widget`, `sftp_widget`, `smtp_widget`, `ajustes_widget`, `fechas_recreos_widget`, `perfiles_usuario_form`, `_initial_config_tabs`.
 
-**Impacto**: La app es **inutilizable** con tecnología asistiva (VoiceOver, NVDA, JAWS).
-
-**Acción**: Añadir `setAccessibleName` a TODOS los widgets interactivos:
-- Botones, inputs, comboboxes, tablas, checkboxes
-- Mínimo: todos los formularios (36) + todos los diálogos (10)
-
-### A11Y-02 — Tab order no definido (P1)
-Solo `login_dialog.py` tiene `setTabOrder`. Los 58 widgets restantes usan orden de creación (impredecible).
-
-**Acción**: Definir `setTabOrder` explícito en todos los formularios y diálogos.
+### ~~A11Y-02 — Tab order no definido (P1)~~ ✅ RESUELTO v5.14.0
+`setTabOrder` definido en 6 widgets: `datos_basicos_widget`, `datos_zona_widget`, `sftp_widget`, `smtp_widget`, `fechas_recreos_widget`, `perfiles_usuario_form`.
 
 ### ~~A11Y-03 — Sin validación de formularios (P1)~~ ✅ RESUELTO v5.3.0
 Solo 2 `QValidator` (en login). Los 36 formularios restantes aceptan cualquier input.

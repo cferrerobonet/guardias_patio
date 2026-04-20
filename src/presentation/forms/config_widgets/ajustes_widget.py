@@ -52,6 +52,7 @@ class AjustesWidget(QGroupBox):
         layout.addWidget(label_tutores)
 
         self.ajuste_tutores_input = QLineEdit()
+        self.ajuste_tutores_input.setAccessibleName("Campo multiplicador de tutores")
         self.ajuste_tutores_input.setPlaceholderText("0.90")
         self.ajuste_tutores_input.setStyleSheet(
             styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;"
@@ -74,6 +75,7 @@ class AjustesWidget(QGroupBox):
         layout.addWidget(label_no_tutores)
 
         self.ajuste_no_tutores_input = QLineEdit()
+        self.ajuste_no_tutores_input.setAccessibleName("Campo multiplicador de no tutores")
         self.ajuste_no_tutores_input.setPlaceholderText("1.00")
         self.ajuste_no_tutores_input.setStyleSheet(
             styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;"

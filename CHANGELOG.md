@@ -6,6 +6,19 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.14.0] - 2026-04-20
+
+### 🎯 Resumen
+A11Y-01 + A11Y-02: 54 `setAccessibleName()` en 8 formularios y `setTabOrder()` en 6 widgets (WCAG AA).
+
+### ✨ Added
+- `setAccessibleName()` en todos los campos interactivos principales: `datos_basicos_widget`, `datos_zona_widget`, `sftp_widget`, `smtp_widget`, `ajustes_widget`, `fechas_recreos_widget`, `perfiles_usuario_form`, `_initial_config_tabs`
+- `setTabOrder()` en `datos_basicos_widget`, `datos_zona_widget`, `sftp_widget`, `smtp_widget`, `fechas_recreos_widget`, `perfiles_usuario_form`
+
+### Fixed
+- Tests `test_reasignar_guardias_automaticamente_error_en_reasignacion` y `test_get_local_ip_fallback` actualizados para usar tipos de excepción correctos (`AttributeError`, `OSError`)
+
+---
 ## [5.13.0] - 2026-04-20
 
 ### 🎯 Resumen

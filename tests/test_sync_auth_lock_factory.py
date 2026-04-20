@@ -154,7 +154,7 @@ class TestSessionLock:
         backend = MagicMock()
         with (
             patch("sync.session_lock.get_user_data_directory", return_value=tmp_path),
-            patch("socket.socket", side_effect=Exception("no net")),
+            patch("socket.socket", side_effect=OSError("no net")),
         ):
             lock = SessionLock(backend=backend, username="u", user_hash="h")
         assert lock.session_info["ip_address"] == "127.0.0.1"

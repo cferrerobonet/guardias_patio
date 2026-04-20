@@ -63,6 +63,11 @@ class FechasRecreosWidget(QGroupBox):
         main_layout.addWidget(recreos_tarde_grupo)
 
         self.setLayout(main_layout)
+        self.setTabOrder(self.fecha_inicio_input, self.fecha_fin_input)
+        self.setTabOrder(self.fecha_fin_input, self.recreo1_manana_input)
+        self.setTabOrder(self.recreo1_manana_input, self.recreo2_manana_input)
+        self.setTabOrder(self.recreo2_manana_input, self.recreo1_tarde_input)
+        self.setTabOrder(self.recreo1_tarde_input, self.recreo2_tarde_input)
 
     def _crear_grupo_fechas(self) -> QGroupBox:
         """Crea el grupo de fechas del curso."""
@@ -77,6 +82,7 @@ class FechasRecreosWidget(QGroupBox):
         layout.addWidget(label_inicio)
 
         self.fecha_inicio_input = QDateEdit()
+        self.fecha_inicio_input.setAccessibleName("Campo fecha de inicio del curso")
         self.fecha_inicio_input.setCalendarPopup(True)
         self.fecha_inicio_input.setDate(QDate.currentDate())
         self.fecha_inicio_input.setStyleSheet(styles.STYLE_INPUT + "padding: 4px;")
@@ -89,6 +95,7 @@ class FechasRecreosWidget(QGroupBox):
         layout.addWidget(label_fin)
 
         self.fecha_fin_input = QDateEdit()
+        self.fecha_fin_input.setAccessibleName("Campo fecha de fin del curso")
         self.fecha_fin_input.setCalendarPopup(True)
         self.fecha_fin_input.setDate(QDate.currentDate().addMonths(9))
         self.fecha_fin_input.setStyleSheet(styles.STYLE_INPUT + "padding: 4px;")
@@ -113,6 +120,7 @@ class FechasRecreosWidget(QGroupBox):
         col1.addWidget(label_r1)
 
         self.recreo1_manana_input = QTimeEdit()
+        self.recreo1_manana_input.setAccessibleName("Campo hora recreo 1 de mañana")
         self.recreo1_manana_input.setTime(QTime(10, 30))
         self.recreo1_manana_input.setStyleSheet(styles.STYLE_INPUT + "padding: 4px;")
         self.recreo1_manana_input.timeChanged.connect(self.config_changed.emit)
@@ -127,6 +135,7 @@ class FechasRecreosWidget(QGroupBox):
         col2.addWidget(label_r2)
 
         self.recreo2_manana_input = QTimeEdit()
+        self.recreo2_manana_input.setAccessibleName("Campo hora recreo 2 de mañana")
         self.recreo2_manana_input.setTime(QTime(12, 0))
         self.recreo2_manana_input.setStyleSheet(styles.STYLE_INPUT + "padding: 4px;")
         self.recreo2_manana_input.timeChanged.connect(self.config_changed.emit)
@@ -151,6 +160,7 @@ class FechasRecreosWidget(QGroupBox):
         col1.addWidget(label_r1)
 
         self.recreo1_tarde_input = QTimeEdit()
+        self.recreo1_tarde_input.setAccessibleName("Campo hora recreo 1 de tarde")
         self.recreo1_tarde_input.setTime(QTime(15, 30))
         self.recreo1_tarde_input.setStyleSheet(styles.STYLE_INPUT + "padding: 4px;")
         self.recreo1_tarde_input.timeChanged.connect(self.config_changed.emit)
@@ -165,6 +175,7 @@ class FechasRecreosWidget(QGroupBox):
         col2.addWidget(label_r2)
 
         self.recreo2_tarde_input = QTimeEdit()
+        self.recreo2_tarde_input.setAccessibleName("Campo hora recreo 2 de tarde")
         self.recreo2_tarde_input.setTime(QTime(17, 0))
         self.recreo2_tarde_input.setStyleSheet(styles.STYLE_INPUT + "padding: 4px;")
         self.recreo2_tarde_input.timeChanged.connect(self.config_changed.emit)

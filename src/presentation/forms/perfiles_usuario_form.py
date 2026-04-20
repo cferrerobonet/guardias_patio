@@ -122,6 +122,7 @@ class PerfilesUsuarioForm(BaseForm):
 
         # Botón Crear (verde)
         self.btn_crear = QPushButton("Crear")
+        self.btn_crear.setAccessibleName("Botón crear nuevo perfil")
         self.btn_crear.setIcon(icon_for_button("add"))
         self.btn_crear.setStyleSheet(
             styles.STYLE_BUTTON_SUCCESS + "font-size: 12px; padding: 8px 16px; font-weight: bold;"
@@ -132,6 +133,7 @@ class PerfilesUsuarioForm(BaseForm):
 
         # Botón Editar (azul)
         self.btn_editar = QPushButton("Editar")
+        self.btn_editar.setAccessibleName("Botón editar perfil seleccionado")
         self.btn_editar.setIcon(icon_for_button("edit"))
         self.btn_editar.setStyleSheet(
             styles.STYLE_BUTTON_PRIMARY + "font-size: 12px; padding: 8px 16px;"
@@ -143,6 +145,7 @@ class PerfilesUsuarioForm(BaseForm):
 
         # Botón Eliminar (rojo)
         self.btn_eliminar = QPushButton("Eliminar")
+        self.btn_eliminar.setAccessibleName("Botón eliminar perfil")
         self.btn_eliminar.setIcon(icon_for_button("delete"))
         self.btn_eliminar.setStyleSheet(
             styles.STYLE_BUTTON_DANGER + "font-size: 12px; padding: 8px 16px;"
@@ -157,6 +160,7 @@ class PerfilesUsuarioForm(BaseForm):
 
         # Botón Logo (azul)
         self.btn_logo = QPushButton("Logo")
+        self.btn_logo.setAccessibleName("Botón cambiar logo corporativo")
         self.btn_logo.setIcon(icon_for_button("open"))
         self.btn_logo.setStyleSheet(
             styles.STYLE_BUTTON_PRIMARY + "font-size: 12px; padding: 8px 16px;"
@@ -168,6 +172,7 @@ class PerfilesUsuarioForm(BaseForm):
 
         # Botón Contraseña (naranja)
         self.btn_password = QPushButton("Contraseña")
+        self.btn_password.setAccessibleName("Botón cambiar contraseña")
         self.btn_password.setIcon(icon_for_button("key"))
         self.btn_password.setStyleSheet(
             styles.STYLE_BUTTON_WARNING + "font-size: 12px; padding: 8px 16px;"
@@ -205,6 +210,7 @@ class PerfilesUsuarioForm(BaseForm):
 
         # ===== TABLA =====
         self.tabla = QTableWidget()
+        self.tabla.setAccessibleName("Tabla de perfiles de usuario")
         self.tabla.setColumnCount(6)
         self.tabla.setHorizontalHeaderLabels(
             ["Usuario", "Email", "BD", "Logo", "Actual", "Acciones"]
@@ -233,6 +239,11 @@ class PerfilesUsuarioForm(BaseForm):
         self.tabla.itemSelectionChanged.connect(self._on_seleccion_cambiada)
 
         layout.addWidget(self.tabla)
+        self.setTabOrder(self.btn_crear, self.btn_editar)
+        self.setTabOrder(self.btn_editar, self.btn_eliminar)
+        self.setTabOrder(self.btn_eliminar, self.btn_logo)
+        self.setTabOrder(self.btn_logo, self.btn_password)
+        self.setTabOrder(self.btn_password, self.tabla)
 
     def refrescar(self):
         """Refresca la tabla de perfiles."""

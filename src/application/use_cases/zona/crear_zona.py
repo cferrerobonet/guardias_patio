@@ -77,9 +77,6 @@ class CrearZonaUseCase:
 
             return ZonaDTO.model_validate(nueva_zona)
 
-        except SQLAlchemyError as e:
-            self.session.rollback()
-            raise BusinessLogicError(f"Error al crear la zona: {str(e)}") from e
-        except (ValueError, TypeError) as e:
+        except (SQLAlchemyError, ValueError, TypeError) as e:
             self.session.rollback()
             raise BusinessLogicError(f"Error al crear la zona: {str(e)}") from e

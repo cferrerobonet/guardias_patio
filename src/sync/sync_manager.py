@@ -581,7 +581,7 @@ class SyncManager:
                     success = False
                     if progress_callback:
                         progress_callback("error", {"message": "Error al subir datos a la nube"})
-            except (OSError, IOError) as e:
+            except (OSError, IOError, RuntimeError) as e:
                 logger.error(f"❌ Excepción al subir datos a la nube: {e}")
                 success = False
                 if progress_callback:
@@ -616,7 +616,7 @@ class SyncManager:
         try:
             remote_path = self.get_remote_path("last_sync.json")
             self.backend.upload_file(metadata_path, remote_path)
-        except (OSError, IOError) as e:
+        except (OSError, IOError, RuntimeError) as e:
             logger.warning(f"No se pudo subir metadata a la nube: {e}")
 
     def manual_sync(self) -> bool:

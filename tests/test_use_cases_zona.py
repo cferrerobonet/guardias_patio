@@ -5,6 +5,7 @@ EliminarZonaUseCase, ObtenerZonaUseCase, ListarZonasUseCase.
 """
 
 import pytest
+from sqlalchemy.exc import SQLAlchemyError
 from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
 from application.use_cases.zona.actualizar_zona import ActualizarZonaUseCase
 from application.use_cases.zona.crear_zona import CrearZonaUseCase
@@ -66,7 +67,7 @@ class TestCrearZonaUseCase:
         data = CrearZonaDTO(nombre_zona="Zona Test")
 
         # Mock session.commit() para simular error
-        mocker.patch.object(session, "commit", side_effect=Exception("Error BD"))
+        mocker.patch.object(session, "commit", side_effect=SQLAlchemyError("Error BD"))
 
         with pytest.raises(BusinessLogicError, match="Error al crear la zona"):
             use_case.execute(data)
