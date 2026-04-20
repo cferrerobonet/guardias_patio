@@ -6,7 +6,8 @@ Proporciona funcionalidad común y establece el patrón MVP.
 """
 
 from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
-from PyQt6.QtWidgets import QMessageBox, QWidget
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtWidgets import QLabel, QMessageBox, QWidget
 from sqlalchemy.orm import Session
 from utils.logger import get_logger
 from utils.ui_helpers import (
@@ -26,7 +27,11 @@ class BaseForm(QWidget):
     - Métodos comunes para mostrar mensajes
     - Manejo de excepciones estandarizado
     - Logging estructurado
+    - Indicador de cambios sin guardar (UX-UNSAVED)
     """
+
+    # Señal emitida cuando el formulario tiene cambios sin guardar
+    cambios_sin_guardar = pyqtSignal(bool)
 
     def __init__(self, session: Session, parent=None):
         """
@@ -40,6 +45,46 @@ class BaseForm(QWidget):
         self.session = session
         # Cada formulario tiene su propio logger estructurado
         self.logger = get_logger(self.__class__.__name__)
+        self._tiene_cambios = False
+        self._label_cambios: QLabel | None = None
+
+    def _mark_dirty(self) -> None:
+        """Marca el formulario como modificado sin guardar."""
+        if not self._tiene_cambios:
+            self._tiene_cambios = True
+            self._actualizar_indicador_cambios()
+            self.cambios_sin_guardar.emit(True)
+
+    def _mark_clean(self) -> None:
+        """Marca el formulario como guardado (sin cambios pendientes)."""
+        if self._tiene_cambios:
+            self._tiene_cambios = False
+            self._actualizar_indicador_cambios()
+            self.cambios_sin_guardar.emit(False)
+
+    def tiene_cambios(self) -> bool:
+        """Devuelve True si hay cambios sin guardar."""
+        return self._tiene_cambios
+
+    def registrar_label_cambios(self, label: QLabel) -> None:
+        """
+        Registra un QLabel externo para mostrar el indicador de cambios sin guardar.
+
+        El label se actualizará automáticamente al llamar a _mark_dirty() / _mark_clean().
+        """
+        self._label_cambios = label
+        self._actualizar_indicador_cambios()
+
+    def _actualizar_indicador_cambios(self) -> None:
+        """Actualiza el label de indicador si está registrado."""
+        if self._label_cambios is not None:
+            if self._tiene_cambios:
+                self._label_cambios.setText("● Cambios sin guardar")
+                self._label_cambios.setStyleSheet("color: #e67e22; font-weight: bold;")
+                self._label_cambios.setVisible(True)
+            else:
+                self._label_cambios.setText("")
+                self._label_cambios.setVisible(False)
 
     def mostrar_exito(self, titulo: str, mensaje: str) -> None:
         """

@@ -1382,12 +1382,12 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | 8 | VIS-TOKENS | Completar sistema de design tokens (FontSize, Spacing, Colors) | M |
 | 9 | VIS-CSS | Eliminar setStyleSheet inline restantes (con VIS-TOKENS) | L |
 | 10 | UX-VALIDATORS | ~~QValidator en campos críticos (usuario, email, fechas)~~ ✅ RESUELTO v5.16.0 | M |
-| 11 | UX-UNSAVED | Indicador de cambios sin guardar en formularios | M |
-| 12 | UX-DESTRUCTIVE | Confirmación en acciones destructivas (delete) | S |
-| 13 | TEST-A11Y | Tests regresión A11Y con pytest-qt | M |
+| 11 | ~~UX-UNSAVED~~ | ~~Indicador de cambios sin guardar en formularios~~ | M | ✅ RESUELTO v5.17.0 |
+| 12 | ~~UX-DESTRUCTIVE~~ | ~~Confirmación en acciones destructivas (delete)~~ | S | ✅ RESUELTO v5.17.0 (ya implementado) |
+| 13 | ~~TEST-A11Y~~ | ~~Tests regresión A11Y con pytest-qt~~ | M | ✅ RESUELTO v5.17.0 |
 | 14 | ~~TEST-INTEGRATION~~ | ~~Tests integración API + BD SQLite in-memory~~ | L | ✅ RESUELTO v5.17.0 |
-| 15 | DOCS-API | Documentación técnica de API (no Swagger, manual) | M |
-| 16 | DOCS-ARCHITECTURE | Documento de decisiones arquitectónicas (ADR) | M |
+| 15 | ~~DOCS-API~~ | ~~Documentación técnica de API (no Swagger, manual)~~ | M | ✅ RESUELTO v5.17.0 |
+| 16 | ~~DOCS-ARCHITECTURE~~ | ~~Documento de decisiones arquitectónicas (ADR)~~ | M | ✅ RESUELTO v5.17.0 |
 
 ### P3 — 5 ítems nice-to-have (refinamiento)
 

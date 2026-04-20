@@ -9,17 +9,18 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [5.17.0] - 2026-04-20
 
 ### 🎯 Resumen
-TEST-INTEGRATION (P2): 11 tests de integración API REST con SQLite in-memory real. Corrección de bug en router de profesores (`ProfesorDTO.activo` faltante + `NotFoundError` no capturada).
+TEST-INTEGRATION, DOCS-API, DOCS-ARCHITECTURE, UX-UNSAVED, UX-DESTRUCTIVE, TEST-A11Y (todos P2). Corrección de bugs reales descubiertos por los tests.
 
 ### ✨ Added
-- `tests/test_api_integration.py`: suite de 11 tests de integración con SQLite in-memory (StaticPool)
-  - `TestProfesoresIntegracion`: listar vacío, crear, listar con datos, obtener por ID, obtener inexistente, turno inválido, filtrar por turno (7 tests)
-  - `TestZonasIntegracion`: listar vacío, crear, duplicado (3 tests)
-  - `TestGuardiasIntegracion`: listar con configuracion_id (1 test)
+- `tests/test_api_integration.py`: 11 tests de integración API REST con SQLite in-memory (StaticPool)
+- `tests/test_a11y_regression.py`: 7 tests de regresión A11Y con pytest-qt (ChangePasswordDialog, ResetPasswordDialog, DeleteUserDialog, GestionarAusenciasForm, GestorSustituciones)
+- `docs/API_TECHNICAL.md`: documentación técnica manual de los 22 endpoints REST
+- `docs/ADR.md`: 8 Architecture Decision Records (Clean Architecture, SQLite per-user, OR-Tools, dependency-injector, PyQt6, FastAPI, Ruff, SFTP)
+- `BaseForm`: señal `cambios_sin_guardar`, métodos `_mark_dirty()`, `_mark_clean()`, `tiene_cambios()`, `registrar_label_cambios()` para indicador UX-UNSAVED
 
 ### Fixed
-- `src/application/dtos/profesor_dto.py`: añadido campo `activo: bool = True` a `ProfesorDTO` (faltaba, causaba AttributeError en el router)
-- `src/api/routers/profesores.py`: captura `NotFoundError` en `obtener_profesor` para devolver 404 en vez de 500
+- `src/application/dtos/profesor_dto.py`: campo `activo: bool = True` faltaba en `ProfesorDTO` (AttributeError en el router)
+- `src/api/routers/profesores.py`: captura `NotFoundError` en `obtener_profesor` → devuelve 404 en vez de 500
 
 
 
