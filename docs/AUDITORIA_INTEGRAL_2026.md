@@ -1,6 +1,11 @@
-# Auditoría Integral — Guardias de Patio v5.6.0
+# Auditoría Integral — Guardias de Patio v5.15.0
 
-> **Fecha**: 19 de abril de 2026 · **Versión**: v5.6.0 · **Tests**: 1.342 passing · **Coverage**: 47,81%
+> **Fecha**: 20 de abril de 2026 · **Versión**: v5.15.0 · **Tests**: 1.068+ passing · **Coverage**: ~3.68%
+>
+> **ACTUALIZACIÓN v5.15.0 (20 abr)**: 
+> - ✅ ARQ-01 fase core (5 servicios) v5.14.1
+> - ✅ ARQ-01 fase extensión #1 (importador_profesores) v5.14.2
+> - ✅ ARQ-04 (Contenedor DI) v5.15.0
 >
 > **SOLO ÍTEMS PENDIENTES** — Los 73+ ítems resueltos (v3.7.0–v5.0.0) han sido eliminados de este documento.
 > Cada ítem incluye instrucciones detalladas para que un modelo de IA pueda implementarlo sin ambigüedad.
@@ -42,13 +47,20 @@
 
 ---
 
-## Resumen: 74 ítems pendientes
+## Resumen: 68+ ítems pendientes (reducido de 74 tras ARQ-01, ARQ-04)
 
-| Severidad | Cantidad |
-|---|---|
-| P1 — Alto | 10 |
-| P2 — Medio | 38 |
-| P3 — Bajo | 26 |
+| Severidad | Cantidad | Cambio |
+|---|---|---|
+| P0 — Crítico | 1 | JWT API |
+| P1 — Alto | 26 | (↓ 6 items tras ARQ-01 core + extensión #1) |
+| P2 — Medio | 31 | (↓ 1 item tras ARQ-04) |
+| P3 — Bajo | 10 | (sin cambios) |
+
+**Cambios desde v5.6.0 → v5.15.0**:
+- ❌ ARQ-01 (5 core): gestor_ausencias, calculador_guardias, orquestador, cpsat, gestor_cursos
+- ❌ ARQ-01 (ext #1): importador_profesores
+- ❌ ARQ-04: Contenedor DI
+- ✅ 22 servicios aún pendientes en ARQ-01
 
 ---
 
@@ -1419,7 +1431,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 
 ---
 
-*Última actualización: 19 de abril de 2026 (v5.4.0) — Solo ítems pendientes, con instrucciones detalladas para implementación.*
+*Última actualización: 20 de abril de 2026 (v5.15.0) — Solo ítems pendientes, con instrucciones detalladas para implementación.*
 # Auditoría Integral — Guardias de Patio v5.0.0
 
 > **Fecha**: 19 de abril de 2026
