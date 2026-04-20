@@ -69,7 +69,8 @@ class SidebarMenu(QWidget):
         # Label para el logo (centrado)
         self.logo_label = QLabel()
         self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.logo_label.setFixedSize(100, 100)
+        self.logo_label.setMinimumSize(80, 80)
+        self.logo_label.setMaximumSize(120, 120)
         self.logo_label.setScaledContents(True)
 
         # Intentar cargar logo corporativo del usuario actual

@@ -277,7 +277,6 @@ class GestionCursosWidget(QWidget):
             msg_box.setWindowTitle("Error")
             msg_box.setText(f"No se pudieron cargar los cursos:\n{e}")
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msg_box.setFixedSize(450, 200)
             msg_box.exec()
 
     def _calcular_estadisticas_curso(self, curso_id: int) -> dict:
@@ -442,8 +441,6 @@ class GestionCursosWidget(QWidget):
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
             msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
-            msg_box.setFixedSize(500, 250)
-
             respuesta = msg_box.exec()
 
             if respuesta == QMessageBox.StandardButton.Yes:
@@ -460,7 +457,6 @@ class GestionCursosWidget(QWidget):
                 msg_success.setWindowTitle("Curso Activado")
                 msg_success.setText(f"El curso {curso.nombre} está ahora activo.")
                 msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
-                msg_success.setFixedSize(450, 200)
                 msg_success.exec()
 
                 self._cargar_cursos()
@@ -474,7 +470,6 @@ class GestionCursosWidget(QWidget):
             msg_error.setWindowTitle("Error")
             msg_error.setText(f"No se pudo activar el curso:\n{e}")
             msg_error.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msg_error.setFixedSize(450, 200)
             msg_error.exec()
 
     def _cerrar_curso_seleccionado(self) -> None:
@@ -500,8 +495,6 @@ class GestionCursosWidget(QWidget):
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
             msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-            msg_box.setFixedSize(500, 300)
-
             respuesta = msg_box.exec()
 
             if respuesta == QMessageBox.StandardButton.Yes:
@@ -513,7 +506,6 @@ class GestionCursosWidget(QWidget):
                 msg_success.setWindowTitle("Curso Cerrado")
                 msg_success.setText(f"El curso {curso.nombre} ha sido cerrado.")
                 msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
-                msg_success.setFixedSize(450, 200)
                 msg_success.exec()
 
                 self._cargar_cursos()
@@ -527,7 +519,6 @@ class GestionCursosWidget(QWidget):
             msg_error.setWindowTitle("Error")
             msg_error.setText(f"No se pudo cerrar el curso:\n{e}")
             msg_error.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msg_error.setFixedSize(450, 200)
             msg_error.exec()
 
     def _eliminar_curso_seleccionado(self) -> None:
@@ -561,8 +552,6 @@ class GestionCursosWidget(QWidget):
             msg_box.setDefaultButton(QMessageBox.StandardButton.No)
 
             # FORZAR tamaño fijo para que se vean los botones en macOS
-            msg_box.setFixedSize(550, 350)
-
             respuesta1 = msg_box.exec()
 
             if respuesta1 != QMessageBox.StandardButton.Yes:
@@ -580,8 +569,6 @@ class GestionCursosWidget(QWidget):
             msg_box2.setDefaultButton(QMessageBox.StandardButton.Cancel)
 
             # FORZAR tamaño fijo para que se vean los botones en macOS
-            msg_box2.setFixedSize(500, 300)
-
             respuesta2 = msg_box2.exec()
 
             if respuesta2 == QMessageBox.StandardButton.Yes:
@@ -595,7 +582,6 @@ class GestionCursosWidget(QWidget):
                 msg_success.setWindowTitle("Curso Eliminado")
                 msg_success.setText(f"El curso {curso.nombre} ha sido eliminado.")
                 msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
-                msg_success.setFixedSize(450, 200)
                 msg_success.exec()
 
                 self._cargar_cursos()
@@ -610,7 +596,6 @@ class GestionCursosWidget(QWidget):
             msg_error.setWindowTitle("Error")
             msg_error.setText(f"No se pudo eliminar el curso:\n{e}")
             msg_error.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msg_error.setFixedSize(450, 200)
             msg_error.exec()
 
     def _obtener_curso_seleccionado_id(self) -> Optional[int]:

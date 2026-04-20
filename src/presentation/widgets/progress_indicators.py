@@ -15,14 +15,8 @@ from typing import Callable, Optional
 from core.logging import get_logger
 
 from PyQt6.QtCore import (
-    QMutex,
-    QObject,
     Qt,
-    QThread,
     QTimer,
-    QWaitCondition,
-    pyqtSignal,
-    pyqtSlot,
 )
 from PyQt6.QtWidgets import (
     QDialog,
@@ -34,86 +28,11 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from presentation.widgets.progress_handlers import DecisionDialogHandler, ProgressLogHandler
+from presentation.widgets.progress_worker import WorkerThread
 from utils.ui_helpers import get_corporate_icon
 
 _logger = get_logger(__name__)
-
-
-class ProgressLogHandler(logging.Handler):
-    """Handler de logging que redirige mensajes al diálogo de progreso."""
-
-    def __init__(self, progress_dialog):
-        super().__init__()
-        self.progress_dialog = progress_dialog
-        self.setLevel(logging.INFO)
-
-        # Filtrar solo mensajes relevantes para el usuario
-        self.keywords = [
-            "ITERACIÓN",
-            "Cobertura",
-            "guardias asignadas",
-            "Solución",
-            "Ejecutando",
-            "Calculando",
-            "Preparando",
-            "Validando",
-            "Generando",
-            "Procesando",
-            "Analizando",
-            "Optimizando",
-            "ILP",
-            "algoritmo",
-            "cores",
-            "slots",
-            "profesores",
-        ]
-
-    def emit(self, record):
-        try:
-            msg = self.format(record)
-
-            # Filtrar mensajes técnicos no relevantes
-            if any(keyword in msg for keyword in self.keywords):
-                # Limpiar formato para mejor visualización
-                msg_clean = msg.replace("=" * 70, "").strip()
-                if msg_clean and self.progress_dialog.text_log:
-                    self.progress_dialog.agregar_al_log(msg_clean)
-        except (ValueError, TypeError, OSError) as e:
-            self.handleError(record)
-    """Maneja la visualización del diálogo de diagnóstico en el hilo principal."""
-
-    def __init__(self, parent_dialog: QDialog, worker: "WorkerThread"):
-        super().__init__(parent_dialog)
-        self.parent_dialog = parent_dialog
-        self.worker = worker
-
-    @pyqtSlot(object)
-    def handle_decision(self, diagnostico):
-        from utils.logger import get_logger
-
-        logger = get_logger(__name__)
-        logger.info("🔔 Mostrando diálogo de diagnóstico al usuario")
-
-        try:
-            from src.presentation.dialogs.dialogo_diagnostico_guardias import (
-                DialogoDiagnosticoGuardias,
-            )
-
-            dialogo = DialogoDiagnosticoGuardias(diagnostico, self.parent_dialog)
-            if dialogo.exec():
-                resultado_decision = dialogo.get_accion_elegida()
-            else:
-                resultado_decision = "cancelar"
-
-            logger.info(f"✅ Usuario eligió: {resultado_decision}")
-            self.worker.set_decision_resultado(resultado_decision)
-
-        except (ValueError, TypeError, OSError) as e:
-            logger.error(f"❌ Error mostrando diálogo de decisión: {str(e)}")
-            import traceback
-
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            self.worker.set_decision_resultado("error")
 
 
 class ProgressDialog(QDialog):
@@ -630,159 +549,6 @@ class ProgressDialog(QDialog):
             # Operación en curso - prevenir cierre accidental
             logger.warning("Intento de cerrar diálogo durante operación en curso")
             event.ignore()
-
-
-class WorkerThread(QThread):
-    """
-    Thread worker para ejecutar operaciones largas en background.
-
-    Emite señales de progreso y resultado para actualizar UI.
-
-    Ejemplo:
-        def mi_operacion(actualizar_progreso):
-            for i in range(100):
-                # ... trabajo ...
-                actualizar_progreso(i + 1, 100, f"Procesando item {i+1}")
-            return resultado
-
-        worker = WorkerThread(mi_operacion)
-        worker.progreso.connect(dialog.actualizar_progreso)
-        worker.finalizado.connect(self.on_operacion_completada)
-        worker.error.connect(self.on_operacion_error)
-        worker.start()
-    """
-
-    # Señales
-    progreso = pyqtSignal(int, int, str)  # (actual, total, detalle)
-    finalizado = pyqtSignal(object)  # resultado
-    error = pyqtSignal(Exception)  # excepción
-    # Señal para solicitar decisión al usuario (pasa diagnóstico)
-    solicitar_decision = pyqtSignal(object)
-
-    def __init__(self, funcion: Callable, *args, **kwargs):
-        """
-        Inicializar worker thread.
-
-        Args:
-            funcion: Función a ejecutar en background
-            *args: Argumentos posicionales para la función
-            **kwargs: Argumentos nombrados para la función
-        """
-        super().__init__()
-        self.funcion = funcion
-        self.args = args
-        self.kwargs = kwargs
-        self._debe_cancelar = False
-
-        # Para manejo de decisiones del usuario desde worker thread
-        self._decision_mutex = QMutex()
-        self._decision_condition = QWaitCondition()
-        self._decision_result = None
-
-    def run(self):
-        """Ejecutar función en thread separado."""
-        try:
-            # Pasar callback de progreso a la función
-            def callback_progreso(actual: int, total: int, detalle: str = ""):
-                if self._debe_cancelar:
-                    raise InterruptedError("Operación cancelada por el usuario")
-                self.progreso.emit(actual, total, detalle)
-
-            # Ejecutar función
-            resultado = self.funcion(callback_progreso, *self.args, **self.kwargs)
-
-            # Emitir resultado
-            self.finalizado.emit(resultado)
-
-        except InterruptedError as e:
-            # Cancelación del usuario
-            self.error.emit(e)
-        except Exception as e:
-            # Log del error con traceback completo
-            import traceback
-
-            from utils.logger import get_logger
-
-            logger = get_logger(__name__)
-            logger.error(f"Error en WorkerThread: {str(e)}")
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            # Emitir error
-            self.error.emit(e)
-
-    def cancelar(self):
-        """Solicitar cancelación de la operación."""
-        self._debe_cancelar = True
-
-    def solicitar_decision_usuario(self, diagnostico):
-        """
-        Solicitar decisión del usuario desde el worker thread de forma segura.
-        Emite señal y espera respuesta en el thread principal.
-
-        Args:
-            diagnostico: DiagnosticoCompleto a mostrar al usuario
-
-        Returns:
-            str: 'ajustar', 'continuar_ilp' o 'cancelar'
-        """
-        from utils.logger import get_logger
-
-        logger = get_logger(__name__)
-
-        try:
-            logger.info("🔔 WorkerThread solicitando decisión del usuario...")
-
-            # Resetear resultado
-            self._decision_result = None
-
-            # Emitir señal al thread principal
-            self.solicitar_decision.emit(diagnostico)
-
-            # Esperar respuesta con timeout
-            self._decision_mutex.lock()
-            timeout_ms = 300000  # 5 minutos de timeout
-            logger.info(f"⏳ Esperando decisión del usuario (timeout: {timeout_ms / 1000}s)...")
-
-            if not self._decision_condition.wait(self._decision_mutex, timeout_ms):
-                logger.error("⏱️ TIMEOUT esperando decisión del usuario (5 minutos)")
-                logger.error("   El diálogo probablemente no se mostró o el usuario no respondió")
-                self._decision_mutex.unlock()
-                return "cancelar"
-
-            result = self._decision_result
-            self._decision_mutex.unlock()
-
-            logger.info(f"✅ Decisión del usuario recibida: {result}")
-            return result
-
-        except (ValueError, TypeError, OSError) as e:
-            logger.error(f"❌ Error en solicitar_decision_usuario: {str(e)}")
-            import traceback
-
-            logger.error(f"Traceback: {traceback.format_exc()}")
-
-            # Intentar desbloquear mutex si quedó bloqueado
-            try:
-                self._decision_mutex.unlock()
-            except (ValueError, TypeError, OSError) as e:
-                _logger.debug(f"No se pudo desbloquear mutex: {e}")
-
-            return "error"
-
-    def set_decision_resultado(self, resultado: str):
-        """
-        Establecer resultado de la decisión del usuario (llamado desde thread principal).
-
-        Args:
-            resultado: 'ajustar', 'continuar_ilp' o 'cancelar'
-        """
-        self._decision_mutex.lock()
-        self._decision_result = resultado
-        self._decision_condition.wakeOne()
-        self._decision_mutex.unlock()
-
-
-# ========== HELPER FUNCTIONS ==========
-
 
 def ejecutar_con_progreso(
     parent: QWidget,

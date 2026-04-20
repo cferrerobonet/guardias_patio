@@ -38,6 +38,12 @@ from utils.icons import icon_for_button
 
 from presentation.dialogs.dia_detalle_dialog import DiaDetalleDialog
 from presentation.forms.base_form import BaseForm
+from presentation.widgets.vista_calendario_helpers import (
+    cargar_datos_periodo,
+    estilo_dia_miniatura,
+    obtener_zonas_esperadas_por_recreo,
+    parse_recreos_config,
+)
 from presentation.widgets._celda_dia import CeldaDia  # noqa: F401 (re-exportado)
 
 class VistaCalendario(BaseForm):
@@ -359,114 +365,6 @@ class VistaCalendario(BaseForm):
 
         self.actualizar_calendario()
 
-    def _obtener_zonas_esperadas_por_recreo(self, fecha: date) -> Dict[Tuple[str, int], List[Zona]]:
-        """
-        Determina qué zonas deberían tener guardia para cada recreo/turno en una fecha.
-
-        Args:
-            fecha: Fecha para la cual calcular las zonas esperadas
-
-        Returns:
-            Diccionario con clave (turno, recreo) y valor lista de zonas esperadas
-        """
-        zonas_por_recreo = {}
-
-        # Obtener configuración
-        from application.app_services import AppServices
-        _svc = AppServices(self.session)
-        config = _svc.configuracion_repo.get_first()
-        if not config:
-            return zonas_por_recreo
-
-        # Obtener todas las zonas activas en esta fecha
-        zonas = _svc.zonas.get_all()
-        zonas_activas = []
-        for zona in zonas:
-            # Verificar si la zona está activa en esta fecha
-            zona_activa = True
-            if zona.fecha_inicio and fecha < zona.fecha_inicio:
-                zona_activa = False
-            if zona.fecha_fin and fecha > zona.fecha_fin:
-                zona_activa = False
-            if zona_activa:
-                zonas_activas.append(zona)
-
-        # Ordenar zonas por nombre (Z1, Z2, Z3, Z4)
-        zonas_activas = sorted(
-            zonas_activas,
-            key=lambda z: (
-                int(z.nombre_zona[1]) if z.nombre_zona and z.nombre_zona.startswith("Z") else 999
-            ),
-        )
-
-        # Parse recreos_config
-        recreos_list = self._parse_recreos_config(config)
-
-        # Para cada recreo, agregar las zonas que deberían tener guardia
-        for recreo_data in recreos_list:
-            recreo_id = recreo_data["id"]
-            turno = recreo_data.get("turno", "mañana")
-            num_zonas = recreo_data.get("zonas", len(zonas_activas))
-
-            # Limitar al número de zonas activas disponibles
-            zonas_para_recreo = zonas_activas[: min(num_zonas, len(zonas_activas))]
-            zonas_por_recreo[(turno, recreo_id)] = zonas_para_recreo
-
-        return zonas_por_recreo
-
-    def _parse_recreos_config(self, config: Configuracion) -> List[Dict]:
-        """Parse la configuración de recreos desde JSON."""
-        if config.recreos_config:
-            try:
-                return json.loads(config.recreos_config)
-            except (json.JSONDecodeError, TypeError):
-                pass
-
-        # Fallback: deducir de campos individuales
-        recreos = []
-        recreo_id = 0
-
-        if config.hora_recreo1_manana:
-            recreo_id += 1
-            recreos.append(
-                {
-                    "id": recreo_id,
-                    "turno": "mañana",
-                    "etiqueta": f"Recreo {recreo_id}",
-                }
-            )
-
-        if config.hora_recreo2_manana:
-            recreo_id += 1
-            recreos.append(
-                {
-                    "id": recreo_id,
-                    "turno": "mañana",
-                    "etiqueta": f"Recreo {recreo_id}",
-                }
-            )
-
-        if config.hora_recreo1_tarde:
-            recreo_id += 1
-            recreos.append(
-                {
-                    "id": recreo_id,
-                    "turno": "tarde",
-                    "etiqueta": f"Recreo {recreo_id}",
-                }
-            )
-
-        if config.hora_recreo2_tarde:
-            recreo_id += 1
-            recreos.append(
-                {
-                    "id": recreo_id,
-                    "turno": "tarde",
-                    "etiqueta": f"Recreo {recreo_id}",
-                }
-            )
-
-        return recreos
 
     def actualizar_calendario(self):
         """Actualizar el calendario según la vista actual."""
@@ -541,7 +439,7 @@ class VistaCalendario(BaseForm):
             guardias_por_fecha,
             ausencias_por_fecha,
             sustituciones_por_fecha,
-        ) = self._cargar_datos_periodo(primer_dia, ultimo_dia)
+        ) = cargar_datos_periodo(self.session, primer_dia, ultimo_dia)
 
         # Renderizar días del mes
         dia_semana_inicio = primer_dia.weekday()  # 0=Lunes, 6=Domingo
@@ -556,7 +454,7 @@ class VistaCalendario(BaseForm):
                 guardias=guardias_por_fecha.get(fecha_dia, []),
                 ausencias=ausencias_por_fecha.get(fecha_dia, []),
                 sustituciones=sustituciones_por_fecha.get(fecha_dia, []),
-                zonas_esperadas_por_recreo=self._obtener_zonas_esperadas_por_recreo(fecha_dia),
+                zonas_esperadas_por_recreo=obtener_zonas_esperadas_por_recreo(self.session, fecha_dia),
                 es_dia_lectivo=self._es_dia_lectivo(fecha_dia),
                 es_hoy=(fecha_dia == self.fecha_actual),
             )
@@ -624,7 +522,7 @@ class VistaCalendario(BaseForm):
             guardias_por_fecha,
             ausencias_por_fecha,
             sustituciones_por_fecha,
-        ) = self._cargar_datos_periodo(primer_dia_semana, ultimo_dia_semana)
+        ) = cargar_datos_periodo(self.session, primer_dia_semana, ultimo_dia_semana)
 
         # Renderizar días de la semana
         for i in range(7):
@@ -635,7 +533,7 @@ class VistaCalendario(BaseForm):
                 guardias=guardias_por_fecha.get(fecha_dia, []),
                 ausencias=ausencias_por_fecha.get(fecha_dia, []),
                 sustituciones=sustituciones_por_fecha.get(fecha_dia, []),
-                zonas_esperadas_por_recreo=self._obtener_zonas_esperadas_por_recreo(fecha_dia),
+                zonas_esperadas_por_recreo=obtener_zonas_esperadas_por_recreo(self.session, fecha_dia),
                 es_dia_lectivo=self._es_dia_lectivo(fecha_dia),
                 es_hoy=(fecha_dia == self.fecha_actual),
             )
@@ -741,7 +639,7 @@ class VistaCalendario(BaseForm):
 
             label = QLabel(str(dia_num))
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setStyleSheet(self._estilo_dia_miniatura(fecha_dia, num_guardias))
+            label.setStyleSheet(estilo_dia_miniatura(fecha_dia, num_guardias, self.fecha_actual))
             label.setMinimumSize(25, 25)
             label.setMaximumSize(25, 25)
 
@@ -764,88 +662,12 @@ class VistaCalendario(BaseForm):
 
         return grupo
 
-    def _estilo_dia_miniatura(self, fecha: date, num_guardias: int) -> str:
-        """Obtener estilo para día en vista anual miniatura."""
-        es_hoy = fecha == self.fecha_actual
-
-        if es_hoy:
-            return """
-                QLabel {
-                    background-color: #FBC02D;
-                    color: white;
-                    border-radius: 3px;
-                    font-size: 9px;
-                    font-weight: bold;
-                }
-            """
-        elif num_guardias > 0:
-            intensidad = min(num_guardias * 20, 200)  # Más oscuro = más guardias
-            return f"""
-                QLabel {{
-                    background-color: rgb({255 - intensidad}, {242 - intensidad // 2}, 253);
-                    border: 1px solid #90CAF9;
-                    border-radius: 3px;
-                    font-size: 8px;
-                }}
-            """
-        else:
-            return """
-                QLabel {
-                    background-color: #FAFAFA;
-                    border: 1px solid #E0E0E0;
-                    border-radius: 3px;
-                    font-size: 8px;
-                }
-            """
-
-    def _cargar_datos_periodo(self, fecha_inicio: date, fecha_fin: date) -> tuple:
-        """
-        Cargar guardias, ausencias y sustituciones de un periodo.
-
-        Returns:
-            Tupla de (guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha)
-        """
-        # Obtener configuración activa para filtrar por curso
-        from application.app_services import AppServices
-        _svc = AppServices(self.session)
-        curso_activo = _svc.cursos.find_active()
-
-        if not curso_activo:
-            # Si no hay curso activo, retornar datos vacíos
-            return defaultdict(list), defaultdict(list), defaultdict(list)
-
-        # Guardias del curso activo
-        guardias = _svc.guardias.find_by_curso_y_rango_fechas(curso_activo.id, fecha_inicio, fecha_fin)
-
-        guardias_por_fecha = defaultdict(list)
-        sustituciones_por_fecha = defaultdict(list)
-
-        for g in guardias:
-            guardias_por_fecha[g.fecha].append(g)
-            # Detectar sustituciones (tiene profesor_sustituido_id)
-            if hasattr(g, "profesor_sustituido_id") and g.profesor_sustituido_id:
-                sustituciones_por_fecha[g.fecha].append(g)
-
-        # Ausencias
-        from application.app_services import AppServices
-        ausencias = AppServices(self.session).ausencias.find_active_in_rango(fecha_inicio, fecha_fin)
-
-        ausencias_por_fecha = defaultdict(list)
-        for ausencia in ausencias:
-            fecha_actual = max(ausencia.fecha_inicio, fecha_inicio)
-            fecha_fin_ausencia = min(ausencia.fecha_fin, fecha_fin)
-
-            while fecha_actual <= fecha_fin_ausencia:
-                ausencias_por_fecha[fecha_actual].append(ausencia)
-                fecha_actual += timedelta(days=1)
-
-        return guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha
 
     def _dia_seleccionado(self, fecha: date):
         """Abrir ventana de detalle del día seleccionado."""
         # Obtener datos del día
         guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha = (
-            self._cargar_datos_periodo(fecha, fecha)
+            cargar_datos_periodo(self.session, fecha, fecha)
         )
 
         guardias = guardias_por_fecha.get(fecha, [])
@@ -858,7 +680,7 @@ class VistaCalendario(BaseForm):
             guardias=guardias,
             ausencias=ausencias,
             sustituciones=sustituciones,
-            zonas_esperadas_por_recreo=self._obtener_zonas_esperadas_por_recreo(fecha),
+            zonas_esperadas_por_recreo=obtener_zonas_esperadas_por_recreo(self.session, fecha),
             es_dia_lectivo=self._es_dia_lectivo(fecha),
             parent=self,
         )

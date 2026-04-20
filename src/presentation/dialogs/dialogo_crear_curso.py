@@ -153,8 +153,6 @@ class DialogoCrearCurso(QDialog):
             msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
 
             # FORZAR tamaño fijo para que se vean los botones en macOS
-            msg_box.setFixedSize(450, 220)
-
             respuesta = msg_box.exec()
 
             if respuesta != QMessageBox.StandardButton.Yes:
@@ -194,8 +192,6 @@ class DialogoCrearCurso(QDialog):
             msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
 
             # FORZAR tamaño fijo para que se vean los botones en macOS
-            msg_success.setFixedSize(450, 200)
-
             msg_success.exec()
 
             self.accept()
@@ -208,7 +204,6 @@ class DialogoCrearCurso(QDialog):
             msg_warning.setWindowTitle("Error de Validación")
             msg_warning.setText(str(e))
             msg_warning.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msg_warning.setFixedSize(450, 200)
             msg_warning.exec()
         except (ValueError, TypeError) as e:
             # Error inesperado
@@ -218,7 +213,6 @@ class DialogoCrearCurso(QDialog):
             msg_error.setWindowTitle("Error")
             msg_error.setText(f"No se pudo crear el curso:\n{type(e).__name__}: {e}")
             msg_error.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msg_error.setFixedSize(450, 220)
             msg_error.exec()
 
     def obtener_curso_creado_id(self) -> Optional[int]:

@@ -255,7 +255,6 @@ def main():
 
     except Exception as e:
         logger.error(f"Error al inicializar sincronización: {e}")
-        from PyQt6.QtCore import Qt
         from utils.ui_helpers import MESSAGEBOX_STYLE, get_corporate_icon
 
         msg = QMessageBox()

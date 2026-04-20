@@ -26,285 +26,21 @@ from infrastructure.database.models import (
 )
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from sync.data_exporter_helpers import (
+    serialize_date,
+    parse_date,
+    parse_time,
+    export_smtp_config,
+    import_smtp_config,
+    export_sftp_config,
+    import_sftp_config,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class DataExporter:
     """Exporta e importa datos de la base de datos a/desde JSON."""
-
-    _fernet_key_env = "GUARDIAS_FERNET_KEY"
-
-    @classmethod
-    def _get_fernet(cls) -> Fernet:
-        key = os.environ.get(cls._fernet_key_env)
-        if not key:
-            key_path = Path.home() / ".guardias_patio_key"
-            if key_path.exists():
-                key = key_path.read_text().strip()
-            else:
-                key = Fernet.generate_key().decode()
-                key_path.write_text(key)
-                key_path.chmod(0o600)
-        return Fernet(key.encode() if isinstance(key, str) else key)
-
-    @classmethod
-    def _encriptar_password(cls, password: str) -> str:
-        if not password:
-            return ""
-        return cls._get_fernet().encrypt(password.encode("utf-8")).decode("utf-8")
-
-    @classmethod
-    def _desencriptar_password(cls, encrypted_password: str) -> str:
-        if not encrypted_password:
-            return ""
-        try:
-            return cls._get_fernet().decrypt(encrypted_password.encode("utf-8")).decode("utf-8")
-        except InvalidToken:
-            try:
-                return base64.b64decode(encrypted_password.encode("utf-8")).decode("utf-8")
-            except (ValueError, TypeError, OSError) as e:
-                logger.warning("No se pudo desencriptar credencial, usando valor original.")
-                return encrypted_password
-
-    @staticmethod
-    def _serialize_date(obj: Any) -> str:
-        """Serializa objetos date/datetime a string ISO."""
-        if isinstance(obj, (date, datetime)):
-            return obj.isoformat()
-        return str(obj)
-
-    @staticmethod
-    def _parse_date(date_str: Optional[str]) -> Optional[date]:
-        """Convierte string ISO a objeto date."""
-        if not date_str:
-            return None
-        try:
-            if isinstance(date_str, date):
-                return date_str
-            return datetime.fromisoformat(date_str).date()
-        except (ValueError, AttributeError):
-            logger.warning(f"No se pudo parsear fecha: {date_str}")
-            return None
-
-    @staticmethod
-    def _parse_time(time_str: Optional[str]) -> Optional[time]:
-        """Convierte string ISO a objeto time."""
-        if not time_str:
-            return None
-        try:
-            if isinstance(time_str, time):
-                return time_str
-            return datetime.fromisoformat(f"2000-01-01T{time_str}").time()
-        except (ValueError, AttributeError):
-            logger.warning(f"No se pudo parsear hora: {time_str}")
-            return None
-
-    @staticmethod
-    def _export_smtp_config() -> Optional[Dict[str, str]]:
-        """
-        Exporta la configuración SMTP desde el archivo .env.
-
-        Esta configuración es GLOBAL y compartida entre todos los usuarios.
-
-        Returns:
-            Dict con configuración SMTP o None si no existe
-        """
-        import os
-
-        from dotenv import load_dotenv
-
-        load_dotenv()
-
-        smtp_server = os.getenv("SMTP_SERVER", "")
-        smtp_port = os.getenv("SMTP_PORT", "")
-        smtp_user = os.getenv("SMTP_USER", "")
-        smtp_password = os.getenv("SMTP_PASSWORD", "")
-        smtp_from_name = os.getenv("SMTP_FROM_NAME", "")
-
-        # Solo exportar si hay configuración completa
-        if smtp_server and smtp_port and smtp_user and smtp_password:
-            return {
-                "smtp_server": smtp_server,
-                "smtp_port": smtp_port,
-                "smtp_user": smtp_user,
-                "smtp_password": DataExporter._encriptar_password(smtp_password),  # Encriptada
-                "smtp_from_name": smtp_from_name,  # Nombre del remitente
-            }
-        return None
-
-    @staticmethod
-    def _import_smtp_config(smtp_data: Dict[str, str]) -> bool:
-        """
-        Importa la configuración SMTP GLOBAL al archivo .env.
-
-        Esta configuración es compartida entre todos los usuarios.
-        Si se modifica, afectará a todos los usuarios del sistema.
-
-        Args:
-            smtp_data: Dict con configuración SMTP
-
-        Returns:
-            True si se importó correctamente
-        """
-        import os
-
-        try:
-            smtp_server = smtp_data.get("smtp_server", "")
-            smtp_port = smtp_data.get("smtp_port", "")
-            smtp_user = smtp_data.get("smtp_user", "")
-            smtp_password_encrypted = smtp_data.get("smtp_password", "")
-            smtp_from_name = smtp_data.get("smtp_from_name", "Guardias de Patio")
-
-            if not smtp_server or not smtp_port or not smtp_user or not smtp_password_encrypted:
-                logger.warning("Configuración SMTP incompleta en JSON")
-                return False
-
-            # Desencriptar contraseña
-            smtp_password = DataExporter._desencriptar_password(smtp_password_encrypted)
-
-            # Leer el archivo .env actual
-            env_path = ".env"
-            env_lines = []
-
-            if os.path.exists(env_path):
-                with open(env_path, "r") as f:
-                    env_lines = f.readlines()
-
-            # Actualizar o agregar variables SMTP
-            smtp_vars = {
-                "SMTP_SERVER": smtp_server,
-                "SMTP_PORT": smtp_port,
-                "SMTP_USER": smtp_user,
-                "SMTP_PASSWORD": smtp_password,  # Guardamos desencriptada
-                "SMTP_FROM_NAME": smtp_from_name,  # Nombre del remitente
-            }
-
-            updated_vars = set()
-            for i, line in enumerate(env_lines):
-                for var_name, var_value in smtp_vars.items():
-                    if line.startswith(f"{var_name}="):
-                        env_lines[i] = f"{var_name}={var_value}\n"
-                        updated_vars.add(var_name)
-
-            # Agregar variables que no existían
-            for var_name, var_value in smtp_vars.items():
-                if var_name not in updated_vars:
-                    env_lines.append(f"{var_name}={var_value}\n")
-
-            # Guardar archivo .env
-            with open(env_path, "w") as f:
-                f.writelines(env_lines)
-
-            logger.info("Configuración SMTP GLOBAL actualizada desde JSON")
-            return True
-
-        except (OSError, ValueError) as e:
-            logger.error(f"Error al importar configuración SMTP: {e}")
-            return False
-
-    @staticmethod
-    def _export_sftp_config() -> Optional[Dict[str, str]]:
-        """
-        Exporta la configuración SFTP desde el archivo .env.
-
-        Esta configuración es GLOBAL y compartida entre todos los usuarios.
-
-        Returns:
-            Dict con configuración SFTP o None si no existe
-        """
-        import os
-
-        from dotenv import load_dotenv
-
-        load_dotenv()
-
-        sftp_host = os.getenv("SFTP_HOST", "")
-        sftp_port = os.getenv("SFTP_PORT", "")
-        sftp_basedir = os.getenv("SFTP_BASE_DIR", "")
-        sftp_user = os.getenv("SFTP_USERNAME", "")
-        sftp_password = os.getenv("SFTP_PASSWORD", "")
-
-        # Solo exportar si hay configuración completa
-        if sftp_host and sftp_port and sftp_user and sftp_password:
-            return {
-                "sftp_host": sftp_host,
-                "sftp_port": sftp_port,
-                "sftp_base_dir": sftp_basedir,
-                "sftp_username": sftp_user,
-                "sftp_password": DataExporter._encriptar_password(sftp_password),  # Encriptada
-            }
-        return None
-
-    @staticmethod
-    def _import_sftp_config(sftp_data: Dict[str, str]) -> bool:
-        """
-        Importa la configuración SFTP GLOBAL al archivo .env.
-
-        Esta configuración es compartida entre todos los usuarios.
-        Si se modifica, afectará a todos los usuarios del sistema.
-
-        Args:
-            sftp_data: Dict con configuración SFTP
-
-        Returns:
-            True si se importó correctamente
-        """
-        import os
-
-        try:
-            sftp_host = sftp_data.get("sftp_host", "")
-            sftp_port = sftp_data.get("sftp_port", "")
-            sftp_basedir = sftp_data.get("sftp_base_dir", "")
-            sftp_user = sftp_data.get("sftp_username", "")
-            sftp_password_encrypted = sftp_data.get("sftp_password", "")
-
-            if not sftp_host or not sftp_port or not sftp_user or not sftp_password_encrypted:
-                logger.warning("Configuración SFTP incompleta en JSON")
-                return False
-
-            # Desencriptar contraseña
-            sftp_password = DataExporter._desencriptar_password(sftp_password_encrypted)
-
-            # Leer el archivo .env actual
-            env_path = ".env"
-            env_lines = []
-
-            if os.path.exists(env_path):
-                with open(env_path, "r") as f:
-                    env_lines = f.readlines()
-
-            # Actualizar o agregar variables SFTP
-            sftp_vars = {
-                "SFTP_HOST": sftp_host,
-                "SFTP_PORT": sftp_port,
-                "SFTP_BASE_DIR": sftp_basedir,
-                "SFTP_USERNAME": sftp_user,
-                "SFTP_PASSWORD": sftp_password,  # Guardamos desencriptada
-            }
-
-            updated_vars = set()
-            for i, line in enumerate(env_lines):
-                for var_name, var_value in sftp_vars.items():
-                    if line.startswith(f"{var_name}="):
-                        env_lines[i] = f"{var_name}={var_value}\n"
-                        updated_vars.add(var_name)
-
-            # Agregar variables que no existían
-            for var_name, var_value in sftp_vars.items():
-                if var_name not in updated_vars:
-                    env_lines.append(f"{var_name}={var_value}\n")
-
-            # Guardar archivo .env
-            with open(env_path, "w") as f:
-                f.writelines(env_lines)
-
-            logger.info("Configuración SFTP GLOBAL actualizada desde JSON")
-            return True
-
-        except (OSError, ValueError) as e:
-            logger.error(f"Error al importar configuración SFTP: {e}")
-            return False
 
     @staticmethod
     def export_to_json(session: Session, output_path: Path) -> bool:
@@ -322,8 +58,8 @@ class DataExporter:
             data = {
                 "export_date": datetime.now().isoformat(),
                 "version": "1.0",
-                "smtp_config": DataExporter._export_smtp_config(),  # Config global SMTP
-                "sftp_config": DataExporter._export_sftp_config(),  # Config global SFTP
+                "smtp_config": export_smtp_config(),  # Config global SMTP
+                "sftp_config": export_sftp_config(),  # Config global SFTP
                 "cursos_escolares": [],  # NUEVO: Cursos escolares
                 "profesores": [],
                 "zonas": [],
@@ -340,12 +76,12 @@ class DataExporter:
                         "id": c.id,
                         "anio_inicio": c.anio_inicio,
                         "anio_fin": c.anio_fin,
-                        "fecha_inicio": DataExporter._serialize_date(c.fecha_inicio),
-                        "fecha_fin": DataExporter._serialize_date(c.fecha_fin),
+                        "fecha_inicio": serialize_date(c.fecha_inicio),
+                        "fecha_fin": serialize_date(c.fecha_fin),
                         "nombre": c.nombre,
                         "activo": c.activo,
                         "cerrado": c.cerrado,
-                        "created_at": DataExporter._serialize_date(c.created_at),
+                        "created_at": serialize_date(c.created_at),
                     }
                 )
             logger.info(f"✓ {len(cursos)} cursos escolares exportados")
@@ -365,12 +101,12 @@ class DataExporter:
                         "horas_tarde": float(p.horas_tarde) if p.horas_tarde else None,
                         "tutor": p.tutor,
                         "activo": p.activo,  # Campo añadido
-                        "fecha_inicio_guardias": DataExporter._serialize_date(
+                        "fecha_inicio_guardias": serialize_date(
                             p.fecha_inicio_guardias
                         )
                         if p.fecha_inicio_guardias
                         else None,
-                        "fecha_fin_guardias": DataExporter._serialize_date(p.fecha_fin_guardias)
+                        "fecha_fin_guardias": serialize_date(p.fecha_fin_guardias)
                         if p.fecha_fin_guardias
                         else None,
                         "dias_semana_permitidos": p.dias_semana_permitidos,  # Campo añadido
@@ -387,10 +123,10 @@ class DataExporter:
                         "id": z.id,
                         "nombre_zona": z.nombre_zona,
                         "descripcion": z.descripcion,
-                        "fecha_inicio": DataExporter._serialize_date(z.fecha_inicio)
+                        "fecha_inicio": serialize_date(z.fecha_inicio)
                         if z.fecha_inicio
                         else None,
-                        "fecha_fin": DataExporter._serialize_date(z.fecha_fin)
+                        "fecha_fin": serialize_date(z.fecha_fin)
                         if z.fecha_fin
                         else None,
                     }
@@ -404,8 +140,8 @@ class DataExporter:
                     {
                         "id": c.id,
                         "anio_inicio_curso": c.anio_inicio_curso,
-                        "fecha_inicio_curso": DataExporter._serialize_date(c.fecha_inicio_curso),
-                        "fecha_fin_curso": DataExporter._serialize_date(c.fecha_fin_curso),
+                        "fecha_inicio_curso": serialize_date(c.fecha_inicio_curso),
+                        "fecha_fin_curso": serialize_date(c.fecha_fin_curso),
                         "hora_recreo1_manana": c.hora_recreo1_manana.isoformat()
                         if c.hora_recreo1_manana
                         else None,
@@ -438,7 +174,7 @@ class DataExporter:
                         "id": g.id,
                         "curso_id": g.curso_id,  # NUEVO: FK a cursos_escolares
                         "profesor_id": g.profesor_id,
-                        "fecha": DataExporter._serialize_date(g.fecha),
+                        "fecha": serialize_date(g.fecha),
                         "turno": g.turno,
                         "recreo": g.recreo,
                         "zona_id": g.zona_id,
@@ -453,16 +189,16 @@ class DataExporter:
                     {
                         "id": a.id,
                         "profesor_id": a.profesor_id,
-                        "fecha_inicio": DataExporter._serialize_date(a.fecha_inicio),
-                        "fecha_fin": DataExporter._serialize_date(a.fecha_fin),
+                        "fecha_inicio": serialize_date(a.fecha_inicio),
+                        "fecha_fin": serialize_date(a.fecha_fin),
                         "tipo": a.tipo,
                         "motivo": a.motivo,
                         "documento_path": a.documento_path,
                         "activa": a.activa,
-                        "created_at": DataExporter._serialize_date(a.created_at)
+                        "created_at": serialize_date(a.created_at)
                         if a.created_at
                         else None,
-                        "updated_at": DataExporter._serialize_date(a.updated_at)
+                        "updated_at": serialize_date(a.updated_at)
                         if a.updated_at
                         else None,
                     }
@@ -552,12 +288,12 @@ class DataExporter:
 
             # Importar configuración SMTP GLOBAL si existe en el JSON
             if "smtp_config" in data and data["smtp_config"]:
-                DataExporter._import_smtp_config(data["smtp_config"])
+                import_smtp_config(data["smtp_config"])
                 logger.info("✓ Configuración SMTP global importada")
 
             # Importar configuración SFTP GLOBAL si existe en el JSON
             if "sftp_config" in data and data["sftp_config"]:
-                DataExporter._import_sftp_config(data["sftp_config"])
+                import_sftp_config(data["sftp_config"])
                 logger.info("✓ Configuración SFTP global importada")
 
             # Limpiar datos existentes si se solicita
@@ -580,24 +316,24 @@ class DataExporter:
                     # Actualizar
                     existing.anio_inicio = c_data["anio_inicio"]
                     existing.anio_fin = c_data["anio_fin"]
-                    existing.fecha_inicio = DataExporter._parse_date(c_data["fecha_inicio"])
-                    existing.fecha_fin = DataExporter._parse_date(c_data["fecha_fin"])
+                    existing.fecha_inicio = parse_date(c_data["fecha_inicio"])
+                    existing.fecha_fin = parse_date(c_data["fecha_fin"])
                     existing.nombre = c_data["nombre"]
                     existing.activo = c_data["activo"]
                     existing.cerrado = c_data["cerrado"]
-                    existing.created_at = DataExporter._parse_date(c_data["created_at"])
+                    existing.created_at = parse_date(c_data["created_at"])
                 else:
                     # Crear nuevo
                     curso = CursoEscolar(
                         id=c_data["id"],
                         anio_inicio=c_data["anio_inicio"],
                         anio_fin=c_data["anio_fin"],
-                        fecha_inicio=DataExporter._parse_date(c_data["fecha_inicio"]),
-                        fecha_fin=DataExporter._parse_date(c_data["fecha_fin"]),
+                        fecha_inicio=parse_date(c_data["fecha_inicio"]),
+                        fecha_fin=parse_date(c_data["fecha_fin"]),
                         nombre=c_data["nombre"],
                         activo=c_data["activo"],
                         cerrado=c_data["cerrado"],
-                        created_at=DataExporter._parse_date(c_data["created_at"]),
+                        created_at=parse_date(c_data["created_at"]),
                     )
                     session.add(curso)
                 cursos_importados += 1
@@ -614,16 +350,16 @@ class DataExporter:
                     # Actualizar
                     existing.nombre_zona = z_data["nombre_zona"]
                     existing.descripcion = z_data.get("descripcion")
-                    existing.fecha_inicio = DataExporter._parse_date(z_data.get("fecha_inicio"))
-                    existing.fecha_fin = DataExporter._parse_date(z_data.get("fecha_fin"))
+                    existing.fecha_inicio = parse_date(z_data.get("fecha_inicio"))
+                    existing.fecha_fin = parse_date(z_data.get("fecha_fin"))
                 else:
                     # Crear nueva
                     zona = Zona(
                         id=z_data["id"],
                         nombre_zona=z_data["nombre_zona"],
                         descripcion=z_data.get("descripcion"),
-                        fecha_inicio=DataExporter._parse_date(z_data.get("fecha_inicio")),
-                        fecha_fin=DataExporter._parse_date(z_data.get("fecha_fin")),
+                        fecha_inicio=parse_date(z_data.get("fecha_inicio")),
+                        fecha_fin=parse_date(z_data.get("fecha_fin")),
                     )
                     session.add(zona)
                 zonas_importadas += 1
@@ -645,10 +381,10 @@ class DataExporter:
                     existing.horas_tarde = p_data.get("horas_tarde")
                     existing.tutor = p_data.get("tutor", False)
                     existing.activo = p_data.get("activo", True)  # Campo añadido
-                    existing.fecha_inicio_guardias = DataExporter._parse_date(
+                    existing.fecha_inicio_guardias = parse_date(
                         p_data.get("fecha_inicio_guardias")
                     )
-                    existing.fecha_fin_guardias = DataExporter._parse_date(
+                    existing.fecha_fin_guardias = parse_date(
                         p_data.get("fecha_fin_guardias")
                     )
                     existing.dias_semana_permitidos = p_data.get(
@@ -668,10 +404,10 @@ class DataExporter:
                         horas_tarde=p_data.get("horas_tarde"),
                         tutor=p_data.get("tutor", False),
                         activo=p_data.get("activo", True),  # Campo añadido
-                        fecha_inicio_guardias=DataExporter._parse_date(
+                        fecha_inicio_guardias=parse_date(
                             p_data.get("fecha_inicio_guardias")
                         ),
-                        fecha_fin_guardias=DataExporter._parse_date(
+                        fecha_fin_guardias=parse_date(
                             p_data.get("fecha_fin_guardias")
                         ),
                         dias_semana_permitidos=p_data.get(
@@ -690,20 +426,20 @@ class DataExporter:
                 existing = session.query(Configuracion).filter_by(id=c_data["id"]).first()
                 if existing:
                     # Actualizar
-                    existing.fecha_inicio_curso = DataExporter._parse_date(
+                    existing.fecha_inicio_curso = parse_date(
                         c_data["fecha_inicio_curso"]
                     )
-                    existing.fecha_fin_curso = DataExporter._parse_date(c_data["fecha_fin_curso"])
-                    existing.hora_recreo1_manana = DataExporter._parse_time(
+                    existing.fecha_fin_curso = parse_date(c_data["fecha_fin_curso"])
+                    existing.hora_recreo1_manana = parse_time(
                         c_data.get("hora_recreo1_manana")
                     )
-                    existing.hora_recreo2_manana = DataExporter._parse_time(
+                    existing.hora_recreo2_manana = parse_time(
                         c_data.get("hora_recreo2_manana")
                     )
-                    existing.hora_recreo1_tarde = DataExporter._parse_time(
+                    existing.hora_recreo1_tarde = parse_time(
                         c_data.get("hora_recreo1_tarde")
                     )
-                    existing.hora_recreo2_tarde = DataExporter._parse_time(
+                    existing.hora_recreo2_tarde = parse_time(
                         c_data.get("hora_recreo2_tarde")
                     )
                     existing.activar_festivos_automaticos = c_data.get(
@@ -723,18 +459,18 @@ class DataExporter:
                     config = Configuracion(
                         id=c_data["id"],
                         anio_inicio_curso=c_data.get("anio_inicio_curso"),
-                        fecha_inicio_curso=DataExporter._parse_date(c_data["fecha_inicio_curso"]),
-                        fecha_fin_curso=DataExporter._parse_date(c_data["fecha_fin_curso"]),
-                        hora_recreo1_manana=DataExporter._parse_time(
+                        fecha_inicio_curso=parse_date(c_data["fecha_inicio_curso"]),
+                        fecha_fin_curso=parse_date(c_data["fecha_fin_curso"]),
+                        hora_recreo1_manana=parse_time(
                             c_data.get("hora_recreo1_manana")
                         ),
-                        hora_recreo2_manana=DataExporter._parse_time(
+                        hora_recreo2_manana=parse_time(
                             c_data.get("hora_recreo2_manana")
                         ),
-                        hora_recreo1_tarde=DataExporter._parse_time(
+                        hora_recreo1_tarde=parse_time(
                             c_data.get("hora_recreo1_tarde")
                         ),
-                        hora_recreo2_tarde=DataExporter._parse_time(
+                        hora_recreo2_tarde=parse_time(
                             c_data.get("hora_recreo2_tarde")
                         ),
                         activar_festivos_automaticos=c_data.get(
@@ -764,7 +500,7 @@ class DataExporter:
                         id=g_data["id"],
                         curso_id=g_data.get("curso_id"),  # NUEVO: puede ser None
                         profesor_id=g_data["profesor_id"],
-                        fecha=DataExporter._parse_date(g_data["fecha"]),
+                        fecha=parse_date(g_data["fecha"]),
                         turno=g_data["turno"],
                         recreo=g_data["recreo"],
                         zona_id=g_data["zona_id"],
@@ -781,8 +517,8 @@ class DataExporter:
                 if existing:
                     # Actualizar
                     existing.profesor_id = a_data["profesor_id"]
-                    existing.fecha_inicio = DataExporter._parse_date(a_data["fecha_inicio"])
-                    existing.fecha_fin = DataExporter._parse_date(a_data["fecha_fin"])
+                    existing.fecha_inicio = parse_date(a_data["fecha_inicio"])
+                    existing.fecha_fin = parse_date(a_data["fecha_fin"])
                     existing.tipo = a_data["tipo"]
                     existing.motivo = a_data.get("motivo")
                     existing.documento_path = a_data.get("documento_path")
@@ -797,8 +533,8 @@ class DataExporter:
                     ausencia = Ausencia(
                         id=a_data["id"],
                         profesor_id=a_data["profesor_id"],
-                        fecha_inicio=DataExporter._parse_date(a_data["fecha_inicio"]),
-                        fecha_fin=DataExporter._parse_date(a_data["fecha_fin"]),
+                        fecha_inicio=parse_date(a_data["fecha_inicio"]),
+                        fecha_fin=parse_date(a_data["fecha_fin"]),
                         tipo=a_data["tipo"],
                         motivo=a_data.get("motivo"),
                         documento_path=a_data.get("documento_path"),

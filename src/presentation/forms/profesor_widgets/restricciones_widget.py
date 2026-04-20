@@ -629,9 +629,15 @@ class RestriccionesWidget(QGroupBox):
             # Si ya es un diccionario, usarlo directamente (incluso si está vacío {})
             if isinstance(json_str, dict):
                 datos = json_str
+            # Si ya es una lista plana [1,2,3], convertir a dict aplicando a todos los días
+            elif isinstance(json_str, list):
+                datos = {str(d): json_str for d in range(5)}
             # Si es string, parsearlo
             elif isinstance(json_str, str):
                 datos = json.loads(json_str)
+                # El JSON puede haberse decodificado como lista plana
+                if isinstance(datos, list):
+                    datos = {str(d): datos for d in range(5)}
             else:
                 self._actualizar_tabla()
                 return

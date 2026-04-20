@@ -30,13 +30,16 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSplitter,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 from utils.icons import icon_for_button
 
 from presentation.forms.base_form import BaseForm
+from presentation.forms.profesor_table_helpers import (
+    cargar_tabla_profesores,
+    filtrar_tabla_profesores,
+)
 from presentation.forms.profesor_widgets import (
     DatosBasicosWidget,
     HorarioWidget,
@@ -492,72 +495,12 @@ class ProfesorForm(BaseForm):
     def cargar_profesores(self):
         """Cargar tabla de profesores desde la base de datos."""
         try:
-            from infrastructure.database.models import Profesor
-
-            self.tabla_profesores.setSortingEnabled(False)
-            self.tabla_profesores.setRowCount(0)
-
-            # Ordenar por nombre completo (alfabéticamente)
-            from application.app_services import AppServices
-            profesores = sorted(AppServices(self.session).profesores.get_all(), key=lambda p: p.nombre_completo)
-            total_profesores = len(profesores)
-            self.tabla_profesores.setRowCount(total_profesores)
-
-            self.titulo_lista_profesores.setText(f"PROFESORES REGISTRADOS ({total_profesores})")
-
-            for i, prof in enumerate(profesores):
-                # Nombre (con ID oculto)
-                nombre_item = QTableWidgetItem(prof.nombre_completo or "")
-                nombre_item.setData(Qt.ItemDataRole.UserRole, prof.id)
-                self.tabla_profesores.setItem(i, 0, nombre_item)
-
-                # Email
-                email_item = QTableWidgetItem(prof.email_corporativo or "-")
-                self.tabla_profesores.setItem(i, 1, email_item)
-
-                # Horas (centrado)
-                horas_item = QTableWidgetItem(f"{prof.horas_contrato:.1f}h")
-                horas_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.tabla_profesores.setItem(i, 2, horas_item)
-
-                # Turno (centrado)
-                turno_item = QTableWidgetItem(str(prof.turno).capitalize())
-                turno_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.tabla_profesores.setItem(i, 3, turno_item)
-
-                # Tutor (centrado)
-                tutor_text = "Sí" if prof.tutor else "No"
-                tutor_item = QTableWidgetItem(tutor_text)
-                tutor_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.tabla_profesores.setItem(i, 4, tutor_item)
-
-                # Fecha Inicio Guardias (centrado)
-                fecha_inicio_text = (
-                    prof.fecha_inicio_guardias.strftime("%d/%m/%Y")
-                    if prof.fecha_inicio_guardias
-                    else "-"
-                )
-                fecha_inicio_item = QTableWidgetItem(fecha_inicio_text)
-                fecha_inicio_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.tabla_profesores.setItem(i, 5, fecha_inicio_item)
-
-                # Fecha Fin Guardias (centrado)
-                fecha_fin_text = (
-                    prof.fecha_fin_guardias.strftime("%d/%m/%Y") if prof.fecha_fin_guardias else "-"
-                )
-                fecha_fin_item = QTableWidgetItem(fecha_fin_text)
-                fecha_fin_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.tabla_profesores.setItem(i, 6, fecha_fin_item)
-
-            # Habilitar ordenación manual (el usuario puede hacer clic en las columnas)
-            self.tabla_profesores.setSortingEnabled(True)
-
-            # Ordenar por columna de nombre (columna 0) ascendentemente
-            self.tabla_profesores.sortItems(0, Qt.SortOrder.AscendingOrder)
-
-            # Restaurar selección si existe
-            if self.table_manager:
-                self.table_manager.restore_selection()
+            cargar_tabla_profesores(
+                session=self.session,
+                table=self.tabla_profesores,
+                titulo_label=self.titulo_lista_profesores,
+                table_manager=self.table_manager,
+            )
 
         except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar profesores")
@@ -576,22 +519,10 @@ class ProfesorForm(BaseForm):
 
     def filtrar_profesores(self):
         """Filtrar profesores en la tabla según búsqueda."""
-        texto_busqueda = self.busqueda_input.text().lower().strip()
-
-        if not texto_busqueda:
-            for i in range(self.tabla_profesores.rowCount()):
-                self.tabla_profesores.setRowHidden(i, False)
-            return
-
-        for i in range(self.tabla_profesores.rowCount()):
-            nombre_item = self.tabla_profesores.item(i, 0)
-            email_item = self.tabla_profesores.item(i, 1)
-
-            nombre = nombre_item.text().lower() if nombre_item else ""
-            email = email_item.text().lower() if email_item else ""
-
-            coincide = texto_busqueda in nombre or texto_busqueda in email
-            self.tabla_profesores.setRowHidden(i, not coincide)
+        filtrar_tabla_profesores(
+            table=self.tabla_profesores,
+            texto_busqueda=self.busqueda_input.text(),
+        )
 
     def limpiar_busqueda(self):
         """Limpiar campo de búsqueda."""

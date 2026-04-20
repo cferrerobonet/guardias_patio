@@ -6,6 +6,41 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.11.0] - 2026-04-20
+
+### 🎯 Resumen
+Implementación completa de todos los ítems P2 de la auditoría integral 2026: accesibilidad WCAG AA, iconografía centralizada, responsive, caché en capa de aplicación y split de los 7 archivos >800 líneas.
+
+### ✨ Added
+- `src/utils/ui_helpers.py` → `announce()` para feedback a lectores de pantalla (A11Y-06); `get_icon()` centralizado desde `imagenes/icons/` con `QPixmapCache` (VIS-04)
+- `src/presentation/widgets/dialogo_reasignacion.py` — `DialogoReasignacion` extraída de `gestionar_ausencias.py` (ARQ-05)
+- `src/presentation/forms/profesor_table_helpers.py` — helpers de tabla de profesores (ARQ-05)
+- `src/presentation/widgets/progress_worker.py` — `WorkerThread` extraído de `progress_indicators.py` (ARQ-05)
+- `src/presentation/widgets/progress_handlers.py` — `ProgressLogHandler`, `DecisionDialogHandler` (ARQ-05)
+- `src/presentation/widgets/vista_calendario_helpers.py` — `cargar_datos_periodo`, `obtener_zonas_esperadas_por_recreo`, `parse_recreos_config`, `estilo_dia_miniatura` (ARQ-05)
+- `src/sync/data_exporter_helpers.py` — helpers de cifrado, serialización de fechas y config SMTP/SFTP (ARQ-05)
+- `src/services/_asignador_cpsat_helpers.py` — `Slot`, `ResultadoCPSAT`, `SolverCallback`, `_es_elegible_basico`, `_generar_slots` (ARQ-05)
+- `src/services/_pdf_mini_calendario.py` — `crear_mini_calendario`, `obtener_hora_recreo` (ARQ-05)
+- `src/application/use_cases/configuracion/cache_service.py` — implementación real del caché TTL (`cachetools.TTLCache`, TTL=300s) (ORG-01)
+- `src/presentation/theme/tokens.py` → colores semánticos corregidos para WCAG AA: `SUCCESS #1E7E34` (5.14:1), `WARNING #856404` (5.49:1), `INFO #0C6674` (6.63:1), `WARNING_BG #FFF3CD` (A11Y-04)
+
+### Changed
+- `src/services/cache_service.py` → shim de compatibilidad que re-exporta desde `application.use_cases.configuracion.cache_service` (ORG-01)
+- `src/presentation/components/ccleaner_sidebar.py` → `logo_label` cambia de `setFixedSize(100,100)` a `setMinimumSize(80,80)` + `setMaximumSize(120,120)` (VIS-09)
+- 24 llamadas `setFixedSize()` en `QMessageBox` eliminadas de diálogos y widgets de presentación (VIS-09)
+- `src/presentation/widgets/gestionar_ausencias.py` reducido de 814 → 615 líneas (ARQ-05)
+- `src/presentation/forms/profesor_form.py` reducido de 848 → 778 líneas (ARQ-05)
+- `src/presentation/widgets/progress_indicators.py` reducido de 1006 → 714 líneas (ARQ-05)
+- `src/presentation/widgets/vista_calendario.py` reducido de 969 → 780 líneas (ARQ-05)
+- `src/sync/data_exporter.py` reducido de 828 → 564 líneas (ARQ-05)
+- `src/services/asignador_guardias_cpsat.py` reducido de 846 → 637 líneas (ARQ-05)
+- `src/services/_pdf_individual_optimizado.py` reducido de 827 → 589 líneas (ARQ-05)
+
+### 🧹 Housekeeping
+- `docs/AUDITORIA_INTEGRAL_2026.md` — ARQ-05 marcado como completamente resuelto v5.11.0
+- Ítems P2 resueltos en esta versión: A11Y-04, A11Y-06, A11Y-07 (verificado), VIS-04, VIS-09, ORG-01, ARQ-05
+
+---
 ## [5.10.0] - 2026-04-19
 
 ### 🎯 Resumen

@@ -4,7 +4,8 @@ Domain Entity: Zona
 Representa una zona de recreo en el dominio de negocio.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import date
 from typing import Optional
 
 
@@ -37,6 +38,10 @@ class ZonaEntity:
 
     # Capacidad
     capacidad_profesores: Optional[int] = None
+
+    # Vigencia temporal
+    fecha_inicio: Optional[date] = None
+    fecha_fin: Optional[date] = None
 
     # Estado
     activa: bool = True

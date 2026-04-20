@@ -97,7 +97,6 @@ class SelectorCursoWidget(QWidget):
                     background-color: #c0392b;
                 }
             """)
-            msg_box.setFixedSize(480, 220)
             msg_box.exec()
 
     def _on_curso_seleccionado(self, index: int) -> None:
@@ -146,7 +145,6 @@ class SelectorCursoWidget(QWidget):
                     background-color: #c0392b;
                 }
             """)
-            msg_confirmar.setFixedSize(550, 320)
             respuesta = msg_confirmar.exec()
 
             if respuesta == QMessageBox.StandardButton.Yes:
@@ -184,7 +182,6 @@ class SelectorCursoWidget(QWidget):
                         background-color: #229954;
                     }
                 """)
-                msg_success.setFixedSize(480, 220)
                 msg_success.exec()
             else:
                 # Restaurar selección anterior
@@ -212,7 +209,6 @@ class SelectorCursoWidget(QWidget):
                     background-color: #c0392b;
                 }
             """)
-            msg_error.setFixedSize(480, 220)
             msg_error.exec()
             self._cargar_cursos()
 

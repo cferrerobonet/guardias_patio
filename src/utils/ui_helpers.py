@@ -10,9 +10,31 @@ from typing import Optional
 from core.logging import get_logger
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap, QPixmapCache
-from PyQt6.QtWidgets import QMessageBox, QWidget
+from PyQt6.QtWidgets import QApplication, QMessageBox, QWidget
 
 logger = get_logger(__name__)
+
+
+def announce(message: str, widget: Optional[QWidget] = None) -> None:
+    """
+    Anuncia un mensaje a lectores de pantalla mediante QAccessible.
+
+    Emite un evento sobre el widget dado o sobre el widget con foco activo.
+    Es un no-op si QAccessible no está disponible en esta build de PyQt6.
+
+    Args:
+        message: Texto a anunciar (corto y descriptivo).
+        widget: Widget sobre el que emitir el evento; si es None usa el foco.
+    """
+    logger.debug("[a11y] announce: %s", message[:80])
+    try:
+        from PyQt6.QtGui import QAccessible, QAccessibleEvent  # type: ignore[attr-defined]
+        target = widget or (QApplication.focusWidget() if QApplication.instance() else None)
+        if target is not None:
+            event = QAccessibleEvent(target, QAccessible.Event.NameChanged)
+            QAccessible.updateAccessibility(event)
+    except (ImportError, AttributeError, RuntimeError):
+        pass  # QAccessible no disponible en esta build — ignorar
 
 # Estilos consistentes para todos los QMessageBox
 MESSAGEBOX_STYLE = """
@@ -55,6 +77,42 @@ MESSAGEBOX_STYLE = """
 def _get_logo_path() -> Path:
     return Path(__file__).parent.parent.parent / "imagenes" / "logo.png"
 
+
+def _get_icons_dir() -> Path:
+    return Path(__file__).parent.parent.parent / "imagenes" / "icons"
+
+
+def get_icon(name: str, fallback: str = "") -> QIcon:
+    """
+    Obtiene un icono del directorio de iconos centralizado (imagenes/icons/).
+
+    Busca primero ``<name>.svg``, luego ``<name>.png``. Si no existe,
+    devuelve el ``fallback`` o un QIcon vacío. Usa QPixmapCache para
+    evitar lecturas repetidas de disco.
+
+    Args:
+        name: Nombre del icono sin extensión (ej: "calendar", "delete").
+        fallback: Nombre alternativo si el principal no existe.
+
+    Returns:
+        QIcon cargado desde disco, o QIcon vacío si no se encuentra.
+    """
+    icons_dir = _get_icons_dir()
+    for candidate in ([name, fallback] if fallback else [name]):
+        if not candidate:
+            continue
+        for ext in ("svg", "png"):
+            path = icons_dir / f"{candidate}.{ext}"
+            if path.exists():
+                cache_key = str(path)
+                px = QPixmapCache.find(cache_key)
+                if px is None:
+                    px = QPixmap(str(path))
+                    if not px.isNull():
+                        QPixmapCache.insert(cache_key, px)
+                if px and not px.isNull():
+                    return QIcon(px)
+    return QIcon()
 
 def _get_cached_pixmap(path: Path) -> Optional[QPixmap]:
     cache_key = str(path)

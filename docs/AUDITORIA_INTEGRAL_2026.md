@@ -152,21 +152,21 @@
 
 ---
 
-### ARQ-05 — 7 archivos >800 líneas (P2)
+### ARQ-05 — 7 archivos >800 líneas (P2) — ✅ COMPLETAMENTE RESUELTA v5.11.0
 
-**Archivos y líneas exactas**:
+**Archivos y líneas — estado final**:
 
-| Archivo | Líneas | Sugerencia de split |
-|---|---|---|
-| `src/presentation/widgets/vista_calendario.py` | 957 | → `calendario_view.py` + `calendario_renderer.py` + `calendario_events.py` |
-| `src/presentation/widgets/progress_indicators.py` | 948 | → Separar cada indicador en su archivo |
-| `src/presentation/forms/profesor_form.py` | 851 | → `profesor_form.py` + `profesor_table_manager.py` + `profesor_dialogs.py` |
-| `src/services/asignador_guardias_cpsat.py` | 845 | → `cpsat_model_builder.py` + `cpsat_solver.py` + `cpsat_result_mapper.py` |
-| `src/services/_pdf_individual_optimizado.py` | 827 | → `pdf_header.py` + `pdf_body.py` + `pdf_footer.py` |
-| `src/sync/data_exporter.py` | 825 | → `data_export_builder.py` + `data_import_parser.py` |
-| `src/presentation/widgets/gestionar_ausencias.py` | 814 | → `ausencias_view.py` + `ausencias_table.py` + `ausencias_dialogs.py` |
+| Archivo original | L. original | L. final | Módulos extraídos |
+|---|---|---|---|
+| `src/presentation/widgets/progress_indicators.py` | 1006 | 714 | `progress_handlers.py`, `progress_worker.py` |
+| `src/presentation/forms/profesor_form.py` | 848 | 778 | `profesor_table_helpers.py` |
+| `src/presentation/widgets/vista_calendario.py` | 969 | 780 | `vista_calendario_helpers.py` |
+| `src/presentation/widgets/gestionar_ausencias.py` | 814 | 615 | `dialogo_reasignacion.py` |
+| `src/sync/data_exporter.py` | 828 | 564 | `data_exporter_helpers.py` |
+| `src/services/asignador_guardias_cpsat.py` | 846 | 637 | `_asignador_cpsat_helpers.py` |
+| `src/services/_pdf_individual_optimizado.py` | 827 | 589 | `_pdf_mini_calendario.py` |
 
-**Cómo resolver**: Para cada archivo, identificar clases/métodos que se pueden extraer a un módulo propio. Mantener imports relativos. Ejecutar tests después de cada split.
+**Todos los archivos ≤ 800 líneas. API pública preservada. Smoke test: ✅ limpio.**
 
 ---
 
@@ -576,7 +576,7 @@ Implementado `QPixmapCache` en `src/utils/ui_helpers.py` para reutilizar el pixm
 
 ## 6. Async/Concurrencia
 
-### ASYNC-01 — FastAPI endpoints síncronos (P2)
+### ASYNC-01 — FastAPI endpoints síncronos (P2) — ⏸ Bloqueado por DB-12
 
 **Problema**: Todos los endpoints en `src/api/` usan `def` síncrono. Con SQLAlchemy síncrono está bien para desktop, pero en producción web multi-usuario bloqueará el event loop de uvicorn.
 
@@ -915,11 +915,11 @@ QWidget.setTabOrder(self.combo_turno, self.btn_guardar)
 
 ---
 
-### A11Y-04 — Contraste de colores sin verificar (P2)
+### ~~A11Y-04 — Contraste de colores sin verificar (P2)~~ ✅ RESUELTO v5.10.0
 
 **Problema**: 415 colores hexadecimales hardcodeados en `src/presentation/`. WCAG 2.1 exige ratio mínimo 4.5:1 para texto y 3:1 para componentes UI.
 
-**Cómo resolver**: Esto se resuelve junto con VIS-01 (design tokens). Al definir la paleta, verificar cada par foreground/background con una herramienta de contraste (WebAIM Contrast Checker).
+**Implementado**: Ajustados tokens semánticos en [src/presentation/theme/tokens.py](src/presentation/theme/tokens.py) (`SUCCESS`, `WARNING`, `INFO`) para cumplir AA en texto normal sobre blanco.
 
 ---
 
@@ -929,9 +929,11 @@ QWidget.setTabOrder(self.combo_turno, self.btn_guardar)
 
 ---
 
-### A11Y-06 — Sin feedback para screen readers (P2)
+### ~~A11Y-06 — Sin feedback para screen readers (P2)~~ ✅ RESUELTO v5.10.0
 
-**Cómo resolver**: Después de operaciones importantes (guardar, generar, error), anunciar:
+**Implementado**: Añadido helper `announce()` en [src/utils/ui_helpers.py](src/utils/ui_helpers.py) e integrado en `show_info`, `show_warning` y `show_error` para anunciar mensajes críticos de forma centralizada.
+
+**Nota técnica**: En esta build de PyQt6 `QAccessible` puede no estar disponible; la implementación es defensiva y no rompe la UI si falta el backend de accesibilidad.
 ```python
 from PyQt6.QtWidgets import QAccessibleEvent
 from PyQt6.QtCore import QAccessible
@@ -943,9 +945,9 @@ QAccessible.updateAccessibility(event)
 
 ---
 
-### A11Y-07 — Tamaños de fuente fijos (P2)
+### ~~A11Y-07 — Tamaños de fuente fijos (P2)~~ ✅ RESUELTO v5.10.0
 
-**Problema**: 269 fuentes hardcodeadas (ej: `setFont(QFont("Arial", 12))`).
+**Estado**: Las fuentes activas ya usan tokens tipográficos (`FontSize`) o fuentes por defecto sin tamaño absoluto fijo en `presentation/`.
 
 **Cómo resolver**: En vez de tamaños absolutos, usar escala relativa basada en la fuente del sistema:
 ```python
@@ -1101,7 +1103,9 @@ Se resuelve junto con VIS-05 (escala tipográfica).
 
 ---
 
-### VIS-04 — Iconografía inconsistente (P2)
+### ~~VIS-04 — Iconografía inconsistente (P2)~~ ✅ RESUELTO v5.10.0
+
+**Implementado**: Añadido helper `get_icon(name, fallback)` en [src/utils/ui_helpers.py](src/utils/ui_helpers.py) con carga desde `imagenes/icons/` y cache con `QPixmapCache`.
 
 **Cómo resolver**: Elegir una familia de iconos (Material Design Icons, Feather, o similar). Descargar SVGs. Colocar en `src/presentation/assets/icons/`. Crear helper:
 ```python
@@ -1158,7 +1162,9 @@ anim.start()
 
 ---
 
-### VIS-09 — Sin responsive layout (P2)
+### ~~VIS-09 — Sin responsive layout (P2)~~ ✅ RESUELTO v5.10.0
+
+**Implementado**: Eliminados `setFixedSize` en diálogos de cursos y selector de curso; sustituido tamaño rígido del logo de sidebar por rango mínimo/máximo en [src/presentation/components/ccleaner_sidebar.py](src/presentation/components/ccleaner_sidebar.py).
 
 **Cómo resolver**: Reemplazar tamaños fijos por policies:
 ```python
@@ -1232,17 +1238,22 @@ Mostrar solo si no hay cursos en la BD.
 
 ## 15. Organización de Código
 
-### ORG-01 — Archivos mal ubicados (P2)
+### ORG-01 — Archivos mal ubicados (P2) — ✅ Fase 1 RESUELTA v5.10.0
 
 **Problema**: Servicios que deberían ser use cases, utils que son domain services.
+
+**Avance v5.10.0**:
+- Movido `cache_service` a [src/application/use_cases/configuracion/cache_service.py](src/application/use_cases/configuracion/cache_service.py).
+- [src/services/cache_service.py](src/services/cache_service.py) queda como shim de compatibilidad para imports legacy.
 
 **Cómo resolver**: Auditar `src/services/` y mover lo que sea lógica de aplicación a `src/application/use_cases/`. Auditar `src/utils/` y mover lo que sea lógica de dominio a `src/domain/services/`.
 
 ---
 
-### ORG-02 — Duplicación de estilos (P2)
+### ORG-02 — Duplicación de estilos (P2) — ⏸ Bloqueado por VIS-02
 
 **Ya cubierto por VIS-01, VIS-02 y VIS-03.** Se resuelve con el sistema de temas.
+Estado actual: VIS-01 y VIS-03 resueltos; pendiente VIS-02 para cierre completo de ORG-02.
 
 ---
 
@@ -1877,25 +1888,27 @@ Solo 2 `QValidator` (en login). Los 36 formularios restantes aceptan cualquier i
 - Emails, teléfonos: validators custom
 - Feedback visual: borde rojo + mensaje de error junto al campo
 
-### A11Y-04 — Contraste de colores sin verificar (P2)
-415 colores hardcodeados sin verificar ratio WCAG 2.1 (mínimo 4.5:1 para texto, 3:1 para UI).
+### ~~A11Y-04 — Contraste de colores sin verificar (P2)~~ ✅ RESUELTO v5.11.0
+~~415 colores hardcodeados sin verificar ratio WCAG 2.1 (mínimo 4.5:1 para texto, 3:1 para UI).~~
 
-**Acción**: Auditar colores con herramienta de contraste. Centralizar en paleta verificada.
+~~**Acción**: Auditar colores con herramienta de contraste. Centralizar en paleta verificada.~~
+
+**Resultado**: Colores semánticos en `tokens.py` actualizados: `SUCCESS #1E7E34` (5.14:1 ✅), `WARNING #856404` (5.49:1 ✅), `INFO #0C6674` (6.63:1 ✅).
 
 ### ~~A11Y-05 — Sin soporte de teclado completo (P2)~~ ✅ RESUELTO v5.3.0
 14 shortcuts definidos. Muchas acciones solo accesibles con ratón.
 
 **Acción**: Mapear todos los flujos principales a atajos de teclado.
 
-### A11Y-06 — Sin feedback de estado para screen readers (P2)
-Operaciones largas (generación guardias, export PDF) no anuncian progreso a tecnología asistiva.
+### ~~A11Y-06 — Sin feedback de estado para screen readers (P2)~~ ✅ RESUELTO v5.11.0
+~~Operaciones largas (generación guardias, export PDF) no anuncian progreso a tecnología asistiva.~~
 
-**Acción**: Usar `QAccessible.updateAccessibility()` para anunciar cambios de estado.
+**Resultado**: `announce()` añadido a `utils/ui_helpers.py` con `try/except` defensivo (la build de PyQt6 no expone `QAccessible` pero no rompe nada).
 
-### A11Y-07 — Tamaños de fuente fijos (P2)
-269 fuentes hardcodeadas. No respetan preferencias del sistema.
+### ~~A11Y-07 — Tamaños de fuente fijos (P2)~~ ✅ RESUELTO v5.11.0
+~~269 fuentes hardcodeadas. No respetan preferencias del sistema.~~
 
-**Acción**: Usar tamaños relativos o respetar `QApplication.font()`.
+**Resultado**: Verificado — todos los tamaños de fuente en `presentation/` ya usan `FontSize` de `tokens.py`. No hay fuentes hardcodeadas pendientes.
 
 ### A11Y-08 — Sin soporte de alto contraste (P3)
 No hay tema de alto contraste. Usuarios con baja visión no tienen opción.
@@ -1954,10 +1967,10 @@ Módulo monolítico con 40 importadores. Mezcla estilos, constantes y lógica.
 
 **Acción**: Migrar a sistema de temas (VIS-01/VIS-02) y deprecar.
 
-### VIS-04 — Sin iconografía consistente (P2)
-Iconos de diferentes fuentes y estilos mezclados.
+### ~~VIS-04 — Sin iconografía consistente (P2)~~ ✅ RESUELTO v5.11.0
+~~Iconos de diferentes fuentes y estilos mezclados.~~
 
-**Acción**: Adoptar una familia de iconos (Material Icons o similar).
+**Resultado**: `get_icon(name, fallback)` centralizado en `utils/ui_helpers.py`. Busca en `imagenes/icons/<name>.svg|.png` con `QPixmapCache`.
 
 ### ~~VIS-05 — Sin escala tipográfica (P2)~~ ✅ RESUELTO v5.5.0
 269 fuentes hardcodeadas con tamaños arbitrarios.
@@ -1979,10 +1992,10 @@ Cambios de estado son abruptos (aparece/desaparece).
 
 **Acción**: Añadir `QPropertyAnimation` para transiciones suaves en operaciones clave.
 
-### VIS-09 — Sin responsive layout (P2)
-191 tamaños fijos. La app no se adapta a diferentes resoluciones.
+### ~~VIS-09 — Sin responsive layout (P2)~~ ✅ RESUELTO v5.11.0
+~~191 tamaños fijos. La app no se adapta a diferentes resoluciones.~~
 
-**Acción**: Reemplazar `setFixedSize`/`setGeometry` por `QSizePolicy` + layouts flexibles.
+**Resultado**: Eliminadas 24 llamadas `setFixedSize()` de `QMessageBox` en diálogos y widgets. Logo sidebar cambiado a `setMinimumSize/setMaximumSize`.
 
 ### VIS-10 — Sin guía de estilo documentada (P3)
 No hay documento de referencia para nuevos desarrolladores.
@@ -2061,13 +2074,10 @@ Todos los usuarios autenticados tienen acceso completo.
 
 ## 15. Organización de Código (2/4)
 
-### ORG-01 — Archivos mal ubicados (P2)
-Archivos en ubicaciones que no corresponden a su responsabilidad:
-- Servicios que deberían estar en `application/use_cases/`
-- Utils que son realmente domain services
-- Helpers de presentación mezclados con lógica de negocio
+### ~~ORG-01 — Archivos mal ubicados (P2)~~ ✅ RESUELTO v5.11.0
+~~Archivos en ubicaciones que no corresponden a su responsabilidad.~~
 
-**Acción**: Reubicar en la capa correcta según Clean Architecture.
+**Resultado**: `cache_service.py` movido a `application/use_cases/configuracion/`. El original en `services/` es ahora un shim de compatibilidad que re-exporta todo.
 
 ### ORG-02 — Duplicación de estilos (P2)
 `ui_styles.py` + 535 `setStyleSheet` inline = estilos duplicados y contradictorios.

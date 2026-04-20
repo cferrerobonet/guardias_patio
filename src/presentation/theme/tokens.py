@@ -10,10 +10,11 @@ class Colors:
     PRIMARY_DARK = "#005A9E"
     
     # Semánticos
-    SUCCESS = "#28A745"
-    WARNING = "#FFC107"
-    ERROR = "#DC3545"
-    INFO = "#17A2B8"
+    SUCCESS = "#1E7E34"   # era #28A745 (3.1:1) → 5.2:1
+    WARNING = "#856404"   # era #FFC107 (1.6:1) → 5.5:1
+    WARNING_BG = "#FFF3CD"  # fondo amarillo claro para badges/alertas
+    ERROR = "#DC3545"     # 4.5:1 AA
+    INFO = "#0C6674"      # era #17A2B8 (3.0:1) → 6.6:1
     
     # Superficies
     BACKGROUND = "#FFFFFF"

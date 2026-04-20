@@ -32,6 +32,8 @@ class ZonaMapper:
             nombre_zona=model.nombre_zona,
             descripcion=model.descripcion,
             capacidad_profesores=model.capacidad_profesores,
+            fecha_inicio=getattr(model, 'fecha_inicio', None),
+            fecha_fin=getattr(model, 'fecha_fin', None),
             activa=model.activa,
         )
 
@@ -53,6 +55,10 @@ class ZonaMapper:
         model.nombre_zona = entity.nombre_zona
         model.descripcion = entity.descripcion
         model.activa = entity.activa
+        if hasattr(model, 'fecha_inicio'):
+            model.fecha_inicio = entity.fecha_inicio
+        if hasattr(model, 'fecha_fin'):
+            model.fecha_fin = entity.fecha_fin
         model.capacidad_profesores = entity.capacidad_profesores
 
         return model
