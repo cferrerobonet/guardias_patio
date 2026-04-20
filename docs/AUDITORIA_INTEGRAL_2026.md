@@ -54,14 +54,25 @@
 
 ## 1. Arquitectura
 
-### ARQ-01 — 28 servicios acoplados a ORM (P1)
+### ARQ-01 — 28 servicios acoplados a ORM (P1) — ✅ Fase core (5 servicios) RESUELTA v5.14.1; Fase extensión iniciada v5.14.2
 
 **Problema**: 28 archivos en `src/services/` hacen `from sqlalchemy.orm import Session` e invocan `session.query()`, `session.add()`, `session.commit()` directamente. Viola Clean Architecture: la capa de aplicación/servicios no debería conocer SQLAlchemy.
 
-**Archivos afectados** (lista completa):
+**Progreso**:
+- ✅ **Fase core (v5.14.1)**: 5 servicios core completados:
+  1. `gestor_ausencias.py` → Clase facade `GestorAusencias`
+  2. `calculador_guardias.py` → Session untyped, joinedload eliminado
+  3. `orquestador_asignacion_guardias.py` → Session import eliminado
+  4. `asignador_guardias_cpsat.py` → Type hints Session eliminados
+  5. `gestor_cursos.py` → Ya usa RepositoryFactory (pre-existente)
+
+- ✅ **Fase extensión #1 (v5.14.2)**: 1 servicio:
+  1. `importador_profesores.py` → Polimórfico (Session legacy | ProfesorRepository)
+
+**Archivos restantes pendientes (22)**:
 1. `src/services/asignacion_guardia_service.py` (L24)
 2. `src/services/distribucion_cuotas_service.py` (L31)
-3. `src/services/importador_profesores.py` (L13)
+3. ~~`src/services/importador_profesores.py` (L13)~~ ✅ RESUELTO v5.14.2
 4. `src/services/icalendar_service.py` (L10)
 5. `src/services/_pdf_mes_consolidado.py` (L19)
 6. `src/services/disponibilidad_profesor_service.py` (L18)
@@ -73,20 +84,15 @@
 12. `src/services/assignment/assignment_executor.py` (L21)
 13. `src/services/assignment/slot_builder.py` (L14)
 14. `src/services/assignment/profesor_filter.py` (L17)
-15. `src/services/gestor_ausencias.py` (L11)
-16. `src/services/asignador_guardias_cpsat.py` (L45)
-17. `src/services/_pdf_individual_optimizado.py` (L20)
-18. `src/services/estadisticas_service.py` (L13)
-19. `src/services/orquestador_asignacion_guardias.py` (L14)
-20. `src/services/calculador_guardias.py` (L20)
-21. `src/services/importador_zonas.py` (L16)
-22. `src/services/diagnosticador_guardias.py` (L13)
-23. `src/services/validators/ausencia_checker.py` (L15)
-24. `src/services/asignador_guardias_v4_hibrido.py` (L47)
-25. `src/services/gestor_cursos.py` (L18)
-26. `src/services/_asignador_v4_fases.py` (L21)
-27. `src/services/_asignador_v4_helpers.py` (L19)
-28. `src/services/exportador_pdf.py` (L28)
+15. `src/services/_pdf_individual_optimizado.py` (L20)
+16. `src/services/estadisticas_service.py` (L13)
+17. `src/services/importador_zonas.py` (L16)
+18. `src/services/diagnosticador_guardias.py` (L13)
+19. `src/services/validators/ausencia_checker.py` (L15)
+20. `src/services/asignador_guardias_v4_hibrido.py` (L47)
+21. `src/services/_asignador_v4_fases.py` (L21)
+22. `src/services/_asignador_v4_helpers.py` (L19)
+23. `src/services/exportador_pdf.py` (L28)
 
 **Cómo resolver** (progresivo, no hace falta todo de golpe):
 

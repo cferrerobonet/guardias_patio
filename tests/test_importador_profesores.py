@@ -41,7 +41,7 @@ def profesores_existentes(session):
             nombre_completo="GARCÍA LÓPEZ, JUAN",
             horas_contrato=30.0,
             porcentaje_jornada=100.0,
-            turno="completo",
+            turno="mixto",
             email_corporativo="juan.garcia@colegio.edu",
         ),
         Profesor(
@@ -275,7 +275,7 @@ class TestImportarProfesoresExistentes:
             nombre_completo="GARCÍA LÓPEZ, JUAN",
             horas_contrato=30,
             porcentaje_jornada=100.0,
-            turno="completo",
+            turno="mixto",
         )
         session.add(profesor_existente)
         session.commit()
@@ -531,7 +531,7 @@ class TestDatosGenerados:
         profesor = session.query(Profesor).first()
         assert profesor.horas_contrato == 30  # Default
         assert profesor.porcentaje_jornada == 100.0  # Default
-        assert profesor.turno == "completo"  # Default
+        assert profesor.turno == "mixto"  # Default
 
     def test_resultado_detallado_correcto(self, session, profesores_existentes, tmp_path):
         """Verifica que el resultado detallado contiene información correcta."""

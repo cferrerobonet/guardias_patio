@@ -6,6 +6,21 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.14.2] - 2026-04-20
+
+### 🎯 Resumen
+ARQ-01 (fase extensión #1): `importador_profesores` refactorizado para eliminar acoplamiento a `Session`. Compatible backward con tests legacy.
+
+### Changed
+- `src/services/importador_profesores.py` elimina imports `Session` y `SQLAlchemyError`. Acepta polimórficamente `Session` (legacy) o `profesor_repo`.
+- Funciones `importar_profesores_desde_excel()`, `importar_profesores_desde_csv()` e `importar_profesores()` adaptadas con detección automática Session/Repo.
+- `src/presentation/forms/import_export_form.py` cambios de caller: crea `profesor_repo` via `RepositoryFactory` antes de llamar importador.
+- Tests `test_importador_profesores.py` actualizados: `turno="completo"` → `turno="mixto"` (valor válido en Turno VO). ✅ 26 tests passing.
+
+### 🧹 Housekeeping
+- Mantiene `normalizar_nombre()` como función pública para compatibilidad de tests.
+
+---
 ## [5.14.1] - 2026-04-20
 
 ### 🎯 Resumen

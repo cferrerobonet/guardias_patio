@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from services.exportador import ExportadorDatos
 from services.importador_profesores import importar_profesores
 from utils import get_logger
@@ -322,8 +323,10 @@ class ImportExportForm(BaseForm):
 
             # Importar con indicador de progreso
             def tarea_importacion(progress_callback):
+                factory = RepositoryFactory(self.session)
+                profesor_repo = factory.create_profesor_repository()
                 return importar_profesores(
-                    self.session,
+                    profesor_repo,
                     archivo,
                     skip_rows=9,
                     progress_callback=progress_callback,

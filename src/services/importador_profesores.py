@@ -9,10 +9,9 @@ import csv as csv_module
 from pathlib import Path
 from typing import Callable, Optional
 
-from infrastructure.database.models import Profesor
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from utils import get_logger
+from core.logging import get_logger
+from domain.entities.profesor_entity import ProfesorEntity
+from infrastructure.repositories.repository_factory import RepositoryFactory
 
 try:
     import pandas as pd
@@ -41,7 +40,7 @@ def normalizar_nombre(nombre: str) -> str:
 
 
 def importar_profesores_desde_excel(
-    session: Session,
+    profesor_repo_or_session,
     archivo_path: str,
     skip_rows: int = 9,
     progress_callback: Optional[Callable[[int, str], None]] = None,
@@ -50,7 +49,7 @@ def importar_profesores_desde_excel(
     Importa profesores desde un archivo Excel.
 
     Args:
-        session: Sesión de base de datos
+        profesor_repo_or_session: Repositorio de profesores o sesión (legacy)
         archivo_path: Ruta al archivo Excel
         skip_rows: Número de filas a saltar antes del encabezado (default: 9)
         progress_callback: Callback para reportar progreso (porcentaje, mensaje)
@@ -64,6 +63,17 @@ def importar_profesores_desde_excel(
         - errores: Número de errores encontrados
         - detalles: Lista con detalles de cada operación
     """
+    # Detectar si es session o repo y adaptar
+    if hasattr(profesor_repo_or_session, "create_profesor_repository"):
+        # Es RepositoryFactory
+        profesor_repo = profesor_repo_or_session.create_profesor_repository()
+    elif hasattr(profesor_repo_or_session, "find_by_nombre"):
+        # Es ya un repo
+        profesor_repo = profesor_repo_or_session
+    else:
+        # Es una session (legacy) - crear repo factory
+        factory = RepositoryFactory(profesor_repo_or_session)
+        profesor_repo = factory.create_profesor_repository()
 
     def reportar_progreso(porcentaje: int, mensaje: str):
         """Helper para reportar progreso de forma segura."""
@@ -144,11 +154,8 @@ def importar_profesores_desde_excel(
                 )
 
                 # Verificar si el profesor ya existe (por nombre)
-                profesor_existente = (
-                    session.query(Profesor)
-                    .filter(Profesor.nombre_completo.ilike(f"%{nombre_completo}%"))
-                    .first()
-                )
+                profesores_existentes = profesor_repo.find_by_nombre(nombre_completo)
+                profesor_existente = profesores_existentes[0] if profesores_existentes else None
 
                 if profesor_existente:
                     logger.debug(f"Profesor ya existe: {nombre_completo}")
@@ -162,15 +169,15 @@ def importar_profesores_desde_excel(
                 # Validar email
                 email_valido = email if email and email.lower() not in ["nan", "none", ""] else None
 
-                nuevo_profesor = Profesor(
+                nuevo_profesor = ProfesorEntity(
                     nombre_completo=nombre_completo,
                     horas_contrato=30,  # Por defecto 30h
                     email_corporativo=email_valido,
                     porcentaje_jornada=100.0,  # Por defecto jornada completa
-                    turno="completo",  # Por defecto turno completo
+                    turno="mixto",  # Por defecto turno mixto
                 )
 
-                session.add(nuevo_profesor)
+                profesor_repo.save(nuevo_profesor)
                 resultados["importados"] += 1
                 resultados["detalles"].append(
                     {
@@ -181,7 +188,7 @@ def importar_profesores_desde_excel(
                 )
                 logger.info(f"✅ Importado: {nombre_completo} ({email})")
 
-            except SQLAlchemyError as e:
+            except (ValueError, TypeError, OSError) as e:
                 logger.error(f"Error al procesar fila {idx}: {str(e)}")
                 resultados["errores"] += 1
                 resultados["detalles"].append(
@@ -192,10 +199,9 @@ def importar_profesores_desde_excel(
                     }
                 )
 
-        # Commit de todos los cambios
-        reportar_progreso(95, "Guardando cambios en la base de datos...")
-        session.commit()
-        logger.info(f"Commit completado para {resultados['importados']} profesores")
+        # Commit de todos los cambios (delegado al repositorio)
+        reportar_progreso(95, "Cambios procesados en la base de datos...")
+        logger.info(f"Procesados {resultados['importados']} profesores")
 
         # Resumen final
         reportar_progreso(
@@ -215,7 +221,7 @@ def importar_profesores_desde_excel(
 
 
 def importar_profesores_desde_csv(
-    session: Session,
+    profesor_repo_or_session,
     archivo_path: str,
     delimiter: str = ";",
     progress_callback: Optional[Callable[[int, str], None]] = None,
@@ -227,7 +233,7 @@ def importar_profesores_desde_csv(
     Si solo hay una columna, se trata como nombre_completo.
 
     Args:
-        session: Sesión de base de datos
+        profesor_repo_or_session: Repositorio de profesores o sesión (legacy)
         archivo_path: Ruta al archivo CSV
         delimiter: Separador de campos (default: ";")
         progress_callback: Callback para reportar progreso
@@ -235,6 +241,17 @@ def importar_profesores_desde_csv(
     Returns:
         Diccionario con estadísticas igual que importar_profesores_desde_excel
     """
+    # Detectar si es session o repo y adaptar
+    if hasattr(profesor_repo_or_session, "create_profesor_repository"):
+        # Es RepositoryFactory
+        profesor_repo = profesor_repo_or_session.create_profesor_repository()
+    elif hasattr(profesor_repo_or_session, "find_by_nombre"):
+        # Es ya un repo
+        profesor_repo = profesor_repo_or_session
+    else:
+        # Es una session (legacy) - crear repo factory
+        factory = RepositoryFactory(profesor_repo_or_session)
+        profesor_repo = factory.create_profesor_repository()
 
     def reportar(pct: int, msg: str):
         if progress_callback:
@@ -289,11 +306,8 @@ def importar_profesores_desde_csv(
 
             reportar(progreso, f"Procesando: {nombre_completo[:40]}")
 
-            existente = (
-                session.query(Profesor)
-                .filter(Profesor.nombre_completo.ilike(f"%{nombre_completo}%"))
-                .first()
-            )
+            profesores_existentes = profesor_repo.find_by_nombre(nombre_completo)
+            existente = profesores_existentes[0] if profesores_existentes else None
 
             if existente:
                 resultados["existentes"] += 1
@@ -301,19 +315,18 @@ def importar_profesores_desde_csv(
                 continue
 
             email_valido = email if email and email.lower() not in ("nan", "none", "") else None
-            nuevo = Profesor(
+            nuevo = ProfesorEntity(
                 nombre_completo=nombre_completo,
                 horas_contrato=30,
                 email_corporativo=email_valido,
                 porcentaje_jornada=100.0,
-                turno="completo",
+                turno="mixto",
             )
-            session.add(nuevo)
+            profesor_repo.save(nuevo)
             resultados["importados"] += 1
             resultados["detalles"].append({"nombre": nombre_completo, "email": email_valido, "estado": "importado"})
 
         reportar(95, "Guardando cambios...")
-        session.commit()
         reportar(100, f"✅ {resultados['importados']} nuevos, {resultados['existentes']} ya existentes, {resultados['errores']} errores")
 
     except Exception as e:
@@ -327,7 +340,7 @@ def importar_profesores_desde_csv(
 
 
 def importar_profesores(
-    session: Session,
+    profesor_repo_or_session,
     archivo_path: str,
     skip_rows: int = 9,
     progress_callback: Optional[Callable[[int, str], None]] = None,
@@ -338,5 +351,9 @@ def importar_profesores(
     """
     ext = Path(archivo_path).suffix.lower()
     if ext == ".csv":
-        return importar_profesores_desde_csv(session, archivo_path, progress_callback=progress_callback)
-    return importar_profesores_desde_excel(session, archivo_path, skip_rows=skip_rows, progress_callback=progress_callback)
+        return importar_profesores_desde_csv(
+            profesor_repo_or_session, archivo_path, progress_callback=progress_callback
+        )
+    return importar_profesores_desde_excel(
+        profesor_repo_or_session, archivo_path, skip_rows=skip_rows, progress_callback=progress_callback
+    )
