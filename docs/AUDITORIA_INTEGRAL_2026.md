@@ -1309,7 +1309,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
 | 1 | SEC-16 | ~~Reducir 273 `except Exception` a <50 con excepciones específicas~~ ✅ RESUELTO v5.1.1 | XL |
-| 2 | ARQ-01 | Migrar 5 servicios core de Session a repositorios inyectados | XL |
+| 2 | ARQ-01 | ~~Migrar 5 servicios core de Session a repositorios inyectados~~ ✅ RESUELTO v5.14.1 | XL |
 | 3 | API-08 | CRUD completo API (POST/PUT/DELETE) para 5 entidades | XL |
 | 4 | TEST-03 | Subir coverage de 47,81% a 70% | XL |
 | 5 | A11Y-01 | `setAccessibleName` en todos los widgets interactivos | L |
@@ -1469,7 +1469,9 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 - `src/services/gestor_sustituciones_service.py`
 - Y 19+ más
 
-**Acción**: Migrar progresivamente a repositorios inyectados. Priorizar servicios core (asignador, calculador).
+**Acción**: ~~Migrar 5 servicios core a repositorios/facades y eliminar imports `Session/joinedload` innecesarios~~ ✅ RESUELTO v5.14.1
+
+**Pendiente**: Continuar la migración progresiva del resto de servicios legacy en `src/services/`.
 
 ### ARQ-02 — Widgets con queries SQLAlchemy (P2) — ✅ Fase 1 RESUELTA v5.6.0
 **4 widgets** en `presentation/` ejecutan queries directas:

@@ -184,7 +184,7 @@ class GestionCursosWidget(QWidget):
             # Forzar refresco de la sesión para obtener datos actualizados
             self.session.expire_all()
 
-            cursos = GestorCursos.listar_todos_cursos(self.session, incluir_cerrados=True)
+            cursos = GestorCursos.from_session(self.session).listar_todos_cursos(incluir_cerrados=True)
 
             self.tabla_cursos.setRowCount(len(cursos))
 
@@ -445,10 +445,10 @@ class GestionCursosWidget(QWidget):
             if respuesta == QMessageBox.StandardButton.Yes:
                 # Si está cerrado, reabrirlo primero
                 if curso.cerrado:
-                    GestorCursos.reabrir_curso(self.session, curso_id)
+                    GestorCursos.from_session(self.session).reabrir_curso(curso_id)
 
                 # Luego activarlo
-                GestorCursos.activar_curso(self.session, curso_id)
+                GestorCursos.from_session(self.session).activar_curso(curso_id)
 
                 # Mensaje de éxito
                 msg_success = QMessageBox(self)
@@ -497,7 +497,7 @@ class GestionCursosWidget(QWidget):
             respuesta = msg_box.exec()
 
             if respuesta == QMessageBox.StandardButton.Yes:
-                GestorCursos.cerrar_curso(self.session, curso_id)
+                GestorCursos.from_session(self.session).cerrar_curso(curso_id)
 
                 # Mensaje de éxito
                 msg_success = QMessageBox(self)

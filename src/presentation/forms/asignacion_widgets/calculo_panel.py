@@ -200,7 +200,7 @@ class CalculoPanel(QGroupBox):
 
             from services.gestor_cursos import GestorCursos
 
-            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            curso_activo = GestorCursos.from_session(self.session).obtener_curso_activo()
             if not curso_activo:
                 msg = QMessageBox(self)
                 msg.setWindowTitle("Sin Curso Activo")

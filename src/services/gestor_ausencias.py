@@ -482,3 +482,17 @@ def reasignar_guardias_automaticamente(
             session.commit()
 
     return resultados
+
+
+class GestorAusencias:
+    """Facade estática para mantener un punto de entrada único del servicio."""
+
+    registrar_ausencia = staticmethod(registrar_ausencia)
+    editar_ausencia = staticmethod(editar_ausencia)
+    eliminar_ausencia = staticmethod(eliminar_ausencia)
+    desactivar_ausencia = staticmethod(desactivar_ausencia)
+    obtener_guardias_afectadas = staticmethod(obtener_guardias_afectadas)
+    obtener_guardias_afectadas_por_periodo = staticmethod(obtener_guardias_afectadas_por_periodo)
+    obtener_profesores_disponibles = staticmethod(obtener_profesores_disponibles)
+    reasignar_guardia = staticmethod(reasignar_guardia)
+    reasignar_guardias_automaticamente = staticmethod(reasignar_guardias_automaticamente)

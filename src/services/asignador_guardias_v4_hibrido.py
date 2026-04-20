@@ -105,7 +105,7 @@ def generar_guardias_v4_hibrido(
     # Obtener curso activo
     from services.gestor_cursos import GestorCursos
 
-    curso_activo = GestorCursos.obtener_curso_activo(session)
+    curso_activo = GestorCursos.from_session(session).obtener_curso_activo()
     curso_id = curso_activo.id if curso_activo else None
 
     if curso_id:

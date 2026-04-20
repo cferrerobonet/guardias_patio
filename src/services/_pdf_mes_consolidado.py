@@ -56,7 +56,7 @@ def exportar_mes_consolidado(
         reportar_progreso(0, "Preparando exportación consolidada del mes...")
 
         # Obtener curso activo
-        curso_activo = GestorCursos.obtener_curso_activo(session)
+        curso_activo = GestorCursos.from_session(session).obtener_curso_activo()
         if not curso_activo:
             logger.warning("No hay curso activo para exportar PDF consolidado")
             return False
@@ -422,7 +422,7 @@ def exportar_curso_completo(
             elements.append(mes_titulo)
 
             # Obtener curso activo
-            curso_activo = GestorCursos.obtener_curso_activo(session)
+            curso_activo = GestorCursos.from_session(session).obtener_curso_activo()
             if not curso_activo:
                 logger.warning("No hay curso activo para exportar PDFs múltiples")
                 return False

@@ -22,14 +22,7 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
-from services.gestor_ausencias import (
-    desactivar_ausencia,
-    editar_ausencia,
-    eliminar_ausencia,
-    obtener_guardias_afectadas,
-    obtener_guardias_afectadas_por_periodo,
-    registrar_ausencia,
-)
+from services.gestor_ausencias import GestorAusencias
 from presentation.widgets.dialogo_reasignacion import DialogoReasignacion
 from services.gestor_cursos import GestorCursos
 from utils.icons import icon_for_button
@@ -296,7 +289,7 @@ class GestionarAusenciasForm(BaseForm):
             self.profesor_combo.clear()
 
             # Obtener curso activo
-            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            curso_activo = GestorCursos.from_session(self.session).obtener_curso_activo()
             if not curso_activo:
                 self.logger.warning("No hay curso activo, no se cargan profesores")
                 return
@@ -320,7 +313,7 @@ class GestionarAusenciasForm(BaseForm):
             self.tabla_ausencias.setRowCount(0)
 
             # Obtener curso activo
-            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            curso_activo = GestorCursos.from_session(self.session).obtener_curso_activo()
             if not curso_activo:
                 self.logger.warning("No hay curso activo, no se cargan ausencias")
                 return
@@ -454,7 +447,7 @@ class GestionarAusenciasForm(BaseForm):
 
         try:
             if self.ausencia_actual:
-                editar_ausencia(
+                GestorAusencias.editar_ausencia(
                     self.session,
                     self.ausencia_actual,
                     fecha_inicio=fecha_inicio,
@@ -464,7 +457,7 @@ class GestionarAusenciasForm(BaseForm):
                 )
                 self.mostrar_exito("Éxito", "Ausencia actualizada correctamente")
             else:
-                registrar_ausencia(
+                GestorAusencias.registrar_ausencia(
                     self.session,
                     profesor_id,
                     fecha_inicio,
@@ -504,7 +497,7 @@ class GestionarAusenciasForm(BaseForm):
 
         if confirmado:
             try:
-                eliminar_ausencia(self.session, ausencia_id)
+                GestorAusencias.eliminar_ausencia(self.session, ausencia_id)
                 self.mostrar_exito("Éxito", "Ausencia eliminada correctamente")
                 self.cargar_ausencias()
                 self.limpiar_formulario()
@@ -524,7 +517,7 @@ class GestionarAusenciasForm(BaseForm):
             row = selected_rows[0].row()
             ausencia_id = int(self.tabla_ausencias.item(row, 0).text())
 
-            desactivar_ausencia(self.session, ausencia_id)
+            GestorAusencias.desactivar_ausencia(self.session, ausencia_id)
             self.mostrar_exito("Éxito", "Ausencia desactivada correctamente")
             self.cargar_ausencias()
 
@@ -546,7 +539,7 @@ class GestionarAusenciasForm(BaseForm):
                 self.preview_text.setPlainText("Fecha de fin anterior a fecha de inicio")
                 return
 
-            guardias = obtener_guardias_afectadas_por_periodo(
+            guardias = GestorAusencias.obtener_guardias_afectadas_por_periodo(
                 self.session, profesor_id, fecha_inicio, fecha_fin
             )
 
@@ -574,7 +567,7 @@ class GestionarAusenciasForm(BaseForm):
             return
 
         try:
-            guardias = obtener_guardias_afectadas(self.session, self.ausencia_actual)
+            guardias = GestorAusencias.obtener_guardias_afectadas(self.session, self.ausencia_actual)
 
             if not guardias:
                 self.mostrar_informacion(

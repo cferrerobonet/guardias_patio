@@ -42,7 +42,6 @@ from services.calculador_guardias import (
     _parse_recreos_config,
     listar_dias_lectivos,
 )
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
@@ -63,7 +62,7 @@ from services._asignador_cpsat_helpers import (
 
 
 def generar_guardias_cpsat(
-    session: Session,
+    session,
     progress_callback: Optional[Callable[[int, str], None]] = None,
     timeout_seconds: float = 120.0,
     use_hints: bool = True,
@@ -112,7 +111,7 @@ def generar_guardias_cpsat(
     # Curso activo
     from services.gestor_cursos import GestorCursos
 
-    curso_activo = GestorCursos.obtener_curso_activo(session)
+    curso_activo = GestorCursos.from_session(session).obtener_curso_activo()
     curso_id = curso_activo.id if curso_activo else None
 
     # Profesores activos
@@ -617,7 +616,7 @@ def generar_guardias_cpsat(
     return (guardias, asignaciones)
 
 
-def guardar_guardias_cpsat_en_bd(session: Session, guardias: List[Guardia]) -> None:
+def guardar_guardias_cpsat_en_bd(session, guardias: List[Guardia]) -> None:
     """
     Guarda las guardias generadas por CP-SAT en la base de datos.
 

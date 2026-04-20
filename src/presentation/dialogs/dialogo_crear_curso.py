@@ -163,8 +163,7 @@ class DialogoCrearCurso(QDialog):
 
             # Crear curso SIN activar para evitar problemas de transacción
             # Lo activaremos después si es necesario
-            curso = GestorCursos.crear_nuevo_curso(
-                session=self.session,
+            curso = GestorCursos.from_session(self.session).crear_nuevo_curso(
                 anio_inicio=anio_inicio,
                 activar=False,  # SIEMPRE False primero
                 copiar_profesores=False,  # Deshabilitado
@@ -176,7 +175,7 @@ class DialogoCrearCurso(QDialog):
             # Si se solicitó activar, hacerlo en un paso separado
             if activar:
                 logger.info(f"Activando curso {curso.id}...")
-                GestorCursos.activar_curso(self.session, curso.id)
+                GestorCursos.from_session(self.session).activar_curso(curso.id)
                 logger.info("Curso activado correctamente")
 
             # Mensaje de éxito

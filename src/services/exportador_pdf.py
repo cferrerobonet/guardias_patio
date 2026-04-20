@@ -62,7 +62,7 @@ class ExportadorPDF:
             ultimo_dia = date(anio, mes, dias_en_mes)
 
             # Obtener curso activo
-            curso_activo = GestorCursos.obtener_curso_activo(session)
+            curso_activo = GestorCursos.from_session(session).obtener_curso_activo()
             if not curso_activo:
                 logger.warning("No hay curso activo para exportar PDF")
                 return False

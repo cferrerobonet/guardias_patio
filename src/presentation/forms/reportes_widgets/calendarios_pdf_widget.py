@@ -419,7 +419,7 @@ class CalendariosPdfWidget(QGroupBox):
         try:
             from services.gestor_cursos import GestorCursos
 
-            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            curso_activo = GestorCursos.from_session(self.session).obtener_curso_activo()
             if curso_activo:
                 self.curso_activo_label.setText(
                     f"⭐ {curso_activo.nombre}\n"
@@ -510,7 +510,7 @@ class CalendariosPdfWidget(QGroupBox):
             # Obtener año de inicio del curso activo
             from services.gestor_cursos import GestorCursos
 
-            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            curso_activo = GestorCursos.from_session(self.session).obtener_curso_activo()
             if curso_activo:
                 config["anio_inicio_curso"] = curso_activo.anio_inicio
                 config["curso_id"] = curso_activo.id

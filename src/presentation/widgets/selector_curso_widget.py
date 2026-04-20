@@ -50,7 +50,7 @@ class SelectorCursoWidget(QWidget):
         """Carga los cursos disponibles en el combo."""
         try:
             # Obtener todos los cursos (excluir cerrados)
-            cursos = GestorCursos.listar_todos_cursos(self.session, incluir_cerrados=False)
+            cursos = GestorCursos.from_session(self.session).listar_todos_cursos(incluir_cerrados=False)
 
             # Limpiar combo
             self.combo_cursos.blockSignals(True)
@@ -149,7 +149,7 @@ class SelectorCursoWidget(QWidget):
 
             if respuesta == QMessageBox.StandardButton.Yes:
                 # Activar curso
-                GestorCursos.activar_curso(self.session, curso_id)
+                GestorCursos.from_session(self.session).activar_curso(curso_id)
                 logger.info(f"Curso cambiado a: {curso.nombre}")
 
                 # Actualizar UI - IMPORTANTE: bloquear señales durante recarga

@@ -6,6 +6,22 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.14.1] - 2026-04-20
+
+### 🎯 Resumen
+ARQ-01 (fase core) completada en 5 servicios: eliminación de acoplamientos `Session/joinedload` y migración de `gestor_ausencias` a facade de clase.
+
+### Changed
+- `src/services/gestor_ausencias.py` añade clase `GestorAusencias` como punto de entrada estático para operaciones de ausencias.
+- `src/presentation/widgets/gestionar_ausencias.py` y `src/presentation/widgets/dialogo_reasignacion.py` migrados a llamadas `GestorAusencias.*`.
+- `src/services/calculador_guardias.py` elimina `joinedload` no necesario en carga de profesores y elimina type hints `Session`.
+- `src/services/orquestador_asignacion_guardias.py` elimina import `Session` y su uso en constructor.
+- `src/services/asignador_guardias_cpsat.py` elimina type hints/import `Session` en función principal y persistencia.
+
+### 🧹 Housekeeping
+- `docs/AUDITORIA_INTEGRAL_2026.md` actualizado marcando ARQ-01 (migración de 5 servicios core) como resuelto en roadmap.
+
+---
 ## [5.14.0] - 2026-04-20
 
 ### 🎯 Resumen

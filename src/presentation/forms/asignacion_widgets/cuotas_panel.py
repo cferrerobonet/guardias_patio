@@ -169,7 +169,7 @@ class CuotasPanel(QGroupBox):
             # Verificar curso activo
             from services.gestor_cursos import GestorCursos
 
-            curso_activo = GestorCursos.obtener_curso_activo(self.session)
+            curso_activo = GestorCursos.from_session(self.session).obtener_curso_activo()
             if not curso_activo:
                 from PyQt6.QtWidgets import QMessageBox
                 from utils.ui_helpers import MESSAGEBOX_STYLE

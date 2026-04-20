@@ -18,11 +18,7 @@ from PyQt6.QtWidgets import (
 )
 
 from presentation.theme import legacy_styles as styles
-from services.gestor_ausencias import (
-    obtener_profesores_disponibles,
-    reasignar_guardia,
-    reasignar_guardias_automaticamente,
-)
+from services.gestor_ausencias import GestorAusencias
 from utils.icons import icon_for_button
 from utils.ui_helpers import get_corporate_icon
 
@@ -129,7 +125,9 @@ class DialogoReasignacion(QDialog):
 
         if respuesta == QMessageBox.StandardButton.Yes:
             try:
-                resultados = reasignar_guardias_automaticamente(self.session, self.guardias)
+                resultados = GestorAusencias.reasignar_guardias_automaticamente(
+                    self.session, self.guardias
+                )
 
                 mensaje = (
                     f"Reasignación completada:\n\n"
@@ -172,7 +170,7 @@ class DialogoReasignacion(QDialog):
             if not guardia:
                 return
 
-            disponibles = obtener_profesores_disponibles(
+            disponibles = GestorAusencias.obtener_profesores_disponibles(
                 self.session,
                 guardia.fecha,
                 guardia.turno,
@@ -198,7 +196,7 @@ class DialogoReasignacion(QDialog):
                 index = nombres.index(nombre_seleccionado)
                 nuevo_profesor, _ = disponibles[index]
 
-                reasignar_guardia(self.session, guardia_id, nuevo_profesor.id)
+                GestorAusencias.reasignar_guardia(self.session, guardia_id, nuevo_profesor.id)
 
                 msg = QMessageBox(self)
                 msg.setIcon(QMessageBox.Icon.Information)

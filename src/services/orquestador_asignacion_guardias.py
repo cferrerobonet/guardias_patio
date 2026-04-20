@@ -11,7 +11,6 @@ from enum import Enum
 from typing import Dict, List, Optional
 
 from infrastructure.database.models import Configuracion, Guardia, Zona
-from sqlalchemy.orm import Session
 
 from src.services.asignador_iterativo import AsignadorIterativo
 from src.services.calculador_guardias import _parse_recreos_config
@@ -52,7 +51,7 @@ class OrquestadorAsignacionGuardias:
     5. Si elige ILP, ejecuta y retorna resultado óptimo
     """
 
-    def __init__(self, db: Session, config: Configuracion, dias_lectivos: List[date]):
+    def __init__(self, db, config: Configuracion, dias_lectivos: List[date]):
         self.db = db
         self.config = config
         self.dias_lectivos = dias_lectivos

@@ -143,18 +143,17 @@ class MigradorMultiCurso:
                 )
 
         # Verificar si ya existe
-        curso_existente = GestorCursos.obtener_curso_por_anio(session, anio_inicio)
+        curso_existente = GestorCursos.from_session(session).obtener_curso_por_anio(anio_inicio)
         if curso_existente:
             logger.info(f"Ya existe el curso {anio_inicio}/{anio_inicio + 1}. Usando el existente.")
             return curso_existente
 
         # Crear nuevo curso
         logger.info(f"Creando curso {anio_inicio}/{anio_inicio + 1}...")
-        curso = GestorCursos.crear_nuevo_curso(
-            session=session,
+        curso = GestorCursos.from_session(session).crear_nuevo_curso(
             anio_inicio=anio_inicio,
-            activar=True,  # Activar automáticamente
-            copiar_profesores=False,  # No copiar (es el primero)
+            activar=True,
+            copiar_profesores=False,
         )
 
         logger.info(f"Curso creado y activado: {curso.nombre} (ID: {curso.id})")
@@ -243,7 +242,7 @@ class MigradorMultiCurso:
                 return resultado
 
             # Crear o obtener curso
-            curso_existente = GestorCursos.obtener_curso_por_anio(session, anio_inicio)
+            curso_existente = GestorCursos.from_session(session).obtener_curso_por_anio(anio_inicio)
             if curso_existente:
                 curso = curso_existente
                 resultado["curso_creado"] = False
@@ -299,11 +298,10 @@ class MigradorMultiCurso:
         }
 
         # Obtener o crear curso
-        curso = GestorCursos.obtener_curso_por_anio(session, anio_inicio)
+        curso = GestorCursos.from_session(session).obtener_curso_por_anio(anio_inicio)
 
         if not curso and crear_si_no_existe:
-            curso = GestorCursos.crear_nuevo_curso(
-                session=session,
+            curso = GestorCursos.from_session(session).crear_nuevo_curso(
                 anio_inicio=anio_inicio,
                 activar=True,
                 copiar_profesores=False,

@@ -17,7 +17,6 @@ from typing import Dict, List, Optional, Tuple
 from infrastructure.database.models import Configuracion, Profesor, Zona
 from services.gestor_cursos import GestorCursos
 from services.validators import TurnoValidator
-from sqlalchemy.orm import Session, joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -192,7 +191,7 @@ def _parse_recreos_config(config: Configuracion) -> List[dict]:
         return []
 
 
-def calcular_recreos_activos(session: Session) -> Tuple[int, int]:
+def calcular_recreos_activos(session) -> Tuple[int, int]:
     """
     Determina cuántos recreos están activos en mañana y tarde.
 
@@ -255,7 +254,7 @@ def calcular_factor_participacion(
     )
 
 
-def calcular_slots_reales(session: Session, config: Configuracion) -> int:
+def calcular_slots_reales(session, config: Configuracion) -> int:
     """
     Calcula el número real de slots considerando las fechas de disponibilidad de las zonas.
 
@@ -280,7 +279,7 @@ def calcular_slots_reales(session: Session, config: Configuracion) -> int:
         return 0
 
 
-def calcular_distribucion_cruda(session: Session) -> Dict[int, float]:
+def calcular_distribucion_cruda(session) -> Dict[int, float]:
     """
     Calcula la distribución cruda de guardias por profesor del curso activo.
 
@@ -293,7 +292,7 @@ def calcular_distribucion_cruda(session: Session) -> Dict[int, float]:
     logger.info("Iniciando cálculo de distribución cruda de guardias")
 
     # Obtener curso activo
-    curso_activo = GestorCursos.obtener_curso_activo(session)
+    curso_activo = GestorCursos.from_session(session).obtener_curso_activo()
     if not curso_activo:
         logger.error("No hay curso activo")
         raise ValueError("No hay curso activo")
@@ -308,7 +307,6 @@ def calcular_distribucion_cruda(session: Session) -> Dict[int, float]:
     # Esto permite calcular distribución desde cero
     profesores = (
         session.query(Profesor)
-        .options(joinedload(Profesor.zona_preferida))
         .filter(Profesor.activo == True)  # noqa: E712
         .all()
     )
@@ -470,7 +468,7 @@ def ajustar_redondeo(distribucion_cruda: Dict[int, float]) -> Dict[int, int]:
     return distribucion_floor
 
 
-def calcular_guardias_por_profesor(session: Session) -> Dict[int, int]:
+def calcular_guardias_por_profesor(session) -> Dict[int, int]:
     """
     Función principal: calcula cuántas guardias corresponden a cada profesor.
 
@@ -489,7 +487,7 @@ def calcular_guardias_por_profesor(session: Session) -> Dict[int, int]:
     return distribucion_final
 
 
-def obtener_estadisticas(session: Session) -> Dict:
+def obtener_estadisticas(session) -> Dict:
     """
     Obtiene estadísticas del cálculo para verificación filtradas por curso activo.
 
@@ -500,7 +498,7 @@ def obtener_estadisticas(session: Session) -> Dict:
         Diccionario con estadísticas del cálculo del curso activo
     """
     # Obtener curso activo
-    curso_activo = GestorCursos.obtener_curso_activo(session)
+    curso_activo = GestorCursos.from_session(session).obtener_curso_activo()
     if not curso_activo:
         logger.warning("No hay curso activo para obtener estadísticas")
         return {}

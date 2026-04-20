@@ -59,7 +59,7 @@ def exportar_profesor_individual_optimizado(
         reportar_progreso(0, "Preparando exportación individual...")
 
         # Obtener curso activo
-        curso_activo = GestorCursos.obtener_curso_activo(session)
+        curso_activo = GestorCursos.from_session(session).obtener_curso_activo()
         if not curso_activo:
             logger.warning("No hay curso activo para exportar PDF individual")
             return False
