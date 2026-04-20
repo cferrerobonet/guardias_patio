@@ -67,7 +67,7 @@ class ContentWrapper(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setStyleSheet(f"background-color: {CONTENT_BG}; border: none;")
+        scroll.setStyleSheet(f"QScrollArea {{ background-color: {CONTENT_BG}; border: none; }} QScrollArea > QWidget > QWidget {{ background-color: {CONTENT_BG}; }}")
         scroll.setWidget(container)
 
         layout.addWidget(scroll)
@@ -115,7 +115,7 @@ class CCleanerMainWindow(QMainWindow):
 
         # Stacked widget para el contenido
         self.content_stack = QStackedWidget()
-        self.content_stack.setStyleSheet(f"background-color: {CONTENT_BG};")
+        self.content_stack.setStyleSheet(f"QStackedWidget {{ background-color: {CONTENT_BG}; }}")
         content_layout.addWidget(self.content_stack)
 
         main_layout.addLayout(content_layout)

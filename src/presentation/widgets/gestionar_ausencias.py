@@ -129,14 +129,14 @@ class GestionarAusenciasForm(BaseForm):
 
         self.editar_btn = QPushButton("Editar")
         self.editar_btn.setIcon(icon_for_button("edit"))
-        self.editar_btn.setProperty("warning", True)
+        self.editar_btn.setProperty("warning", "true")
         self.editar_btn.clicked.connect(self.cargar_ausencia_seleccionada)
         self.editar_btn.setToolTip("Editar la ausencia seleccionada")
         botones.addWidget(self.editar_btn)
 
         self.delete_btn = QPushButton("Eliminar")
         self.delete_btn.setIcon(icon_for_button("delete"))
-        self.delete_btn.setProperty("danger", True)
+        self.delete_btn.setProperty("danger", "true")
         self.delete_btn.clicked.connect(self.eliminar_ausencia_seleccionada)
         self.delete_btn.setToolTip("Eliminar la ausencia seleccionada (Del)")
         botones.addWidget(self.delete_btn)
@@ -273,7 +273,7 @@ class GestionarAusenciasForm(BaseForm):
 
         self.guardar_btn = QPushButton("Guardar Ausencia")
         self.guardar_btn.setIcon(icon_for_button("save"))
-        self.guardar_btn.setProperty("success", True)
+        self.guardar_btn.setProperty("success", "true")
         self.guardar_btn.clicked.connect(self.guardar_ausencia)
         self.guardar_btn.setToolTip("Guardar la ausencia (Ctrl+S)")
         self.guardar_btn.setAccessibleName("Botón guardar ausencia")

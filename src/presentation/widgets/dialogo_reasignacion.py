@@ -96,7 +96,7 @@ class DialogoReasignacion(QDialog):
 
         btn_auto = QPushButton("Reasignar Automáticamente")
         btn_auto.setIcon(icon_for_button("refresh"))
-        btn_auto.setProperty("success", True)
+        btn_auto.setProperty("success", "true")
         btn_auto.clicked.connect(self.reasignar_automaticamente)
         botones.addWidget(btn_auto)
 

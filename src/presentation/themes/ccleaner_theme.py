@@ -595,6 +595,16 @@ def get_complete_stylesheet() -> str:
             background-color: #C82333;
         }}
 
+            /* ========== BOTONES DE ADVERTENCIA (NARANJA) ========== */
+            QPushButton[warning="true"] {{
+                background-color: {WARNING_ORANGE};
+                color: white;
+            }}
+
+            QPushButton[warning="true"]:hover {{
+                background-color: #E0A800;
+            }}
+
         /* ========== INPUTS ========== */
         QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {{
             background-color: {CONTENT_BG};

@@ -77,6 +77,7 @@ class GeneracionPanel(QGroupBox):
 
         self.setStyleSheet("""
             QGroupBox {
+                background-color: #ffffff;
                 font-weight: bold;
                 font-size: 13px;
                 border: 2px solid #10b981;
@@ -158,7 +159,7 @@ class GeneracionPanel(QGroupBox):
         # Botón Limpiar
         self.limpiar_button = QPushButton("Limpiar Guardias")
         self.limpiar_button.setIcon(icon_for_button("delete"))
-        self.limpiar_button.setProperty("danger", True)
+        self.limpiar_button.setProperty("danger", "true")
         self.limpiar_button.setMinimumHeight(36)
         self.limpiar_button.clicked.connect(self._limpiar_guardias)
         button_container.addWidget(self.limpiar_button, 1)

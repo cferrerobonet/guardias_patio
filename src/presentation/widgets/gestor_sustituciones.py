@@ -223,7 +223,7 @@ class GestorSustituciones(BaseForm):
         self.btn_confirmar_sustitucion.setIcon(icon_for_button("check"))
         self.btn_confirmar_sustitucion.clicked.connect(self.confirmar_sustitucion)
         self.btn_confirmar_sustitucion.setMinimumHeight(45)
-        self.btn_confirmar_sustitucion.setProperty("success", True)
+        self.btn_confirmar_sustitucion.setProperty("success", "true")
         self.btn_confirmar_sustitucion.setEnabled(False)
         self.btn_confirmar_sustitucion.setAccessibleName("Botón confirmar sustitución")
         botones_layout.addWidget(self.btn_confirmar_sustitucion, 2)
@@ -232,7 +232,7 @@ class GestorSustituciones(BaseForm):
         self.btn_cancelar.setIcon(icon_for_button("close"))
         self.btn_cancelar.clicked.connect(self.limpiar_formulario)
         self.btn_cancelar.setMinimumHeight(45)
-        self.btn_cancelar.setProperty("danger", True)
+        self.btn_cancelar.setProperty("danger", "true")
         self.btn_cancelar.setAccessibleName("Botón limpiar formulario")
         botones_layout.addWidget(self.btn_cancelar, 1)
 

@@ -250,13 +250,13 @@ class ProfesorForm(BaseForm):
 
         self.editar_btn = QPushButton("Editar")
         self.editar_btn.setIcon(icon_for_button("edit"))
-        self.editar_btn.setProperty("warning", True)
+        self.editar_btn.setProperty("warning", "true")
         self.editar_btn.clicked.connect(self.editar_profesor)
         self.editar_btn.setToolTip("Editar el profesor seleccionado")
 
         self.delete_btn = QPushButton("Eliminar")
         self.delete_btn.setIcon(icon_for_button("delete"))
-        self.delete_btn.setProperty("danger", True)
+        self.delete_btn.setProperty("danger", "true")
         self.delete_btn.clicked.connect(self.eliminar_profesor)
         self.delete_btn.setToolTip(
             "Eliminar profesor(es) seleccionado(s)\n"
@@ -306,13 +306,13 @@ class ProfesorForm(BaseForm):
 
         self.submit_btn = QPushButton("Guardar")
         self.submit_btn.setIcon(icon_for_button("save"))
-        self.submit_btn.setProperty("success", True)
+        self.submit_btn.setProperty("success", "true")
         self.submit_btn.clicked.connect(self.guardar_profesor)
         self.submit_btn.setMaximumHeight(32)  # Altura reducida
 
         self.cancelar_btn = QPushButton("Cancelar")
         self.cancelar_btn.setIcon(icon_for_button("close"))
-        self.cancelar_btn.setProperty("danger", True)
+        self.cancelar_btn.setProperty("danger", "true")
         self.cancelar_btn.clicked.connect(self.cancelar_edicion)
         self.cancelar_btn.setVisible(False)
         self.cancelar_btn.setMaximumHeight(32)  # Altura reducida

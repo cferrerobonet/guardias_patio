@@ -128,7 +128,7 @@ class JsonOperationsWidget(QWidget):
         self.importar_btn.setIcon(icon_for_button("import"))
         self.importar_btn.clicked.connect(self.importar_solicitado.emit)
         self.importar_btn.setMinimumHeight(40)
-        self.importar_btn.setProperty("warning", True)
+        self.importar_btn.setProperty("warning", "true")
         layout.addWidget(self.importar_btn)
 
         grupo.setLayout(layout)

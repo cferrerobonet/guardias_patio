@@ -45,6 +45,7 @@ class CalculoPanel(QGroupBox):
 
         self.setStyleSheet("""
             QGroupBox {
+                background-color: #ffffff;
                 font-weight: bold;
                 font-size: 13px;
                 border: 2px solid #3b82f6;
@@ -82,8 +83,8 @@ class CalculoPanel(QGroupBox):
         self.total_badge = QLabel("Total: -- guardias")
         self.total_badge.setStyleSheet("""
             QLabel {
-                background-color: #0f172a;
-                color: #22c55e;
+                background-color: #ecfdf5;
+                color: #166534;
                 font-weight: bold;
                 font-size: 14px;
                 padding: 8px 20px;

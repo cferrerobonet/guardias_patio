@@ -208,7 +208,7 @@ class AjustesForm(BaseForm):
 
         self.save_btn = QPushButton("Guardar Configuración")
         self.save_btn.setIcon(icon_for_button("save"))
-        self.save_btn.setProperty("success", True)
+        self.save_btn.setProperty("success", "true")
         self.save_btn.clicked.connect(self.guardar_configuracion)
         self.save_btn.setShortcut(QKeySequence("Ctrl+S"))
         self.save_btn.setToolTip("Guardar configuración (Ctrl+S)")

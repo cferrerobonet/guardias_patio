@@ -263,12 +263,12 @@ class ZonaForm(BaseForm):
 
         self.editar_btn = QPushButton("Editar")
         self.editar_btn.setIcon(icon_for_button("edit"))
-        self.editar_btn.setProperty("warning", True)
+        self.editar_btn.setProperty("warning", "true")
         self.editar_btn.clicked.connect(self.editar_zona)
 
         self.delete_btn = QPushButton("Eliminar")
         self.delete_btn.setIcon(icon_for_button("delete"))
-        self.delete_btn.setProperty("danger", True)
+        self.delete_btn.setProperty("danger", "true")
         self.delete_btn.clicked.connect(self.eliminar_zona)
         self.delete_btn.setToolTip(
             "Eliminar las zonas seleccionadas (Supr)\n\n"
@@ -315,7 +315,7 @@ class ZonaForm(BaseForm):
 
         self.submit_btn = QPushButton("Guardar Zona")
         self.submit_btn.setIcon(icon_for_button("save"))
-        self.submit_btn.setProperty("success", True)
+        self.submit_btn.setProperty("success", "true")
         self.submit_btn.clicked.connect(self.guardar_zona)
         btn_action_layout.addWidget(self.submit_btn)
 

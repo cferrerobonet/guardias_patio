@@ -281,7 +281,7 @@ class RestriccionesWidget(QGroupBox):
         layout.addWidget(btn_aplicar_todos)
 
         btn_limpiar_todo = QPushButton("Restaurar defecto")
-        btn_limpiar_todo.setProperty("warning", True)
+        btn_limpiar_todo.setProperty("warning", "true")
         btn_limpiar_todo.clicked.connect(self._restaurar_por_turno)
         btn_limpiar_todo.setToolTip("Restaura los recreos por defecto según el turno del profesor")
         layout.addWidget(btn_limpiar_todo)

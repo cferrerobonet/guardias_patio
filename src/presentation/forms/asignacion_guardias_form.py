@@ -175,7 +175,7 @@ class AsignacionGuardiasForm(BaseForm):
         # Botón limpiar
         self.limpiar_button = QPushButton("Limpiar Guardias")
         self.limpiar_button.setIcon(icon_for_button("delete"))
-        self.limpiar_button.setProperty("danger", True)
+        self.limpiar_button.setProperty("danger", "true")
         self.limpiar_button.setMinimumWidth(220)
         self.limpiar_button.setMinimumHeight(40)
         self.limpiar_button.setMaximumHeight(40)

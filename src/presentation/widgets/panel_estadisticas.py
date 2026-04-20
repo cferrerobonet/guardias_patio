@@ -67,7 +67,7 @@ class PanelEstadisticas(BaseForm):
         btn_refrescar = QPushButton("Actualizar Estadísticas")
         btn_refrescar.setIcon(icon_for_button("refresh"))
         btn_refrescar.clicked.connect(self.actualizar_estadisticas)
-        btn_refrescar.setProperty("success", True)
+        btn_refrescar.setProperty("success", "true")
         layout_principal.addWidget(btn_refrescar)
 
         # Pestañas

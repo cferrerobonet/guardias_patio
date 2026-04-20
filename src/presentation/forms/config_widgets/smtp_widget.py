@@ -141,7 +141,7 @@ class SMTPConfigWidget(QGroupBox):
         self.modify_smtp_btn = QPushButton("Modificar Configuración SMTP")
         self.modify_smtp_btn.setAccessibleName("Botón modificar configuración SMTP")
         self.modify_smtp_btn.setIcon(icon_for_button("key"))
-        self.modify_smtp_btn.setProperty("warning", True)
+        self.modify_smtp_btn.setProperty("warning", "true")
         self.modify_smtp_btn.clicked.connect(self._toggle_editable)
         smtp_btn_layout.addWidget(self.modify_smtp_btn, 1)
 

@@ -118,7 +118,7 @@ class InformesEstadisticosWidget(QGroupBox):
         btn_generar = QPushButton("Generar Reporte")
         btn_generar.setIcon(icon_for_button("chart"))
         btn_generar.setMinimumHeight(40)
-        btn_generar.setProperty("success", True)
+        btn_generar.setProperty("success", "true")
         btn_generar.clicked.connect(self._generar_reporte)
         botones_layout.addWidget(btn_generar)
 

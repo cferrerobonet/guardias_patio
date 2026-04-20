@@ -122,7 +122,7 @@ class SFTPConfigWidget(QGroupBox):
         self.modify_sftp_btn = QPushButton("Modificar Configuración SFTP")
         self.modify_sftp_btn.setAccessibleName("Botón modificar configuración SFTP")
         self.modify_sftp_btn.setIcon(icon_for_button("key"))
-        self.modify_sftp_btn.setProperty("warning", True)
+        self.modify_sftp_btn.setProperty("warning", "true")
         self.modify_sftp_btn.clicked.connect(self._toggle_editable)
 
         self.test_sftp_btn = QPushButton("Probar Conexión SFTP")
