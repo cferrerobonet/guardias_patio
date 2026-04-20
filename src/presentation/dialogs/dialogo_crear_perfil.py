@@ -2,7 +2,8 @@
 Diálogo para crear un nuevo perfil de usuario con su base de datos.
 """
 
-from database.db_manager import create_user_database
+from PyQt6.QtCore import QRegularExpression
+from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtWidgets import (
     QDialog,
     QFormLayout,
@@ -14,6 +15,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from database.db_manager import create_user_database
 from sync.sync_manager import UserAuth
 from utils.icons import icon_for_button
 
@@ -52,11 +55,19 @@ class DialogoCrearPerfil(QDialog):
         self.input_usuario = QLineEdit()
         self.input_usuario.setPlaceholderText("Nombre de usuario único")
         self.input_usuario.setAccessibleName("Campo nombre de usuario")
+        self.input_usuario.setValidator(
+            QRegularExpressionValidator(QRegularExpression(r"[a-zA-Z0-9_\-\.]{3,50}"))
+        )
         form_layout.addRow("Usuario:", self.input_usuario)
 
         self.input_email = QLineEdit()
         self.input_email.setPlaceholderText("correo@ejemplo.com")
         self.input_email.setAccessibleName("Campo correo electrónico")
+        self.input_email.setValidator(
+            QRegularExpressionValidator(
+                QRegularExpression(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
+            )
+        )
         form_layout.addRow("Email:", self.input_email)
 
         self.input_password = QLineEdit()

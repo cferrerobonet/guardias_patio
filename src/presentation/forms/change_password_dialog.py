@@ -5,7 +5,6 @@ Requiere la contraseña actual para verificar la identidad del usuario.
 """
 
 import bcrypt
-
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -18,6 +17,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
 from sync.sync_manager import UserAuth
 from utils.ui_helpers import get_corporate_icon
 

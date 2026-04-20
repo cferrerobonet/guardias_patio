@@ -6,8 +6,6 @@ Permite registrar ausencias y reasignar guardias automáticamente.
 
 from datetime import date
 
-from presentation.theme import legacy_styles as styles
-from infrastructure.database.models import Guardia, Profesor, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -24,10 +22,10 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from utils.icons import icon_for_button, icon_for_form
 
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY, get_table_style
+from utils.icons import icon_for_button, icon_for_form
 
 
 class GestorSustituciones(BaseForm):

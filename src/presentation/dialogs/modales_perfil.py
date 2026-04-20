@@ -1,9 +1,7 @@
 """Diálogos modales profesionales para gestión de perfiles."""
 
-from presentation.theme import legacy_styles as styles
-from application.dtos.perfil_dto import ActualizarPerfilDTO, CambiarPasswordDTO, CrearPerfilDTO
-from sync.sync_manager import UserAuth
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QRegularExpression, Qt
+from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -12,6 +10,10 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QVBoxLayout,
 )
+
+from application.dtos.perfil_dto import ActualizarPerfilDTO, CambiarPasswordDTO, CrearPerfilDTO
+from presentation.theme import legacy_styles as styles
+from sync.sync_manager import UserAuth
 
 
 class DialogoCrearPerfilProfesional(QDialog):
@@ -50,12 +52,20 @@ class DialogoCrearPerfilProfesional(QDialog):
         self.input_usuario.setPlaceholderText("Nombre de usuario único")
         self.input_usuario.setMinimumHeight(32)
         self.input_usuario.setAccessibleName("Campo nombre de usuario")
+        self.input_usuario.setValidator(
+            QRegularExpressionValidator(QRegularExpression(r"[a-zA-Z0-9_\-\.]{3,50}"))
+        )
         form_layout.addRow("Usuario:", self.input_usuario)
 
         self.input_email = QLineEdit()
         self.input_email.setPlaceholderText("correo@ejemplo.com")
         self.input_email.setMinimumHeight(32)
         self.input_email.setAccessibleName("Campo correo electrónico")
+        self.input_email.setValidator(
+            QRegularExpressionValidator(
+                QRegularExpression(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
+            )
+        )
         form_layout.addRow("Email:", self.input_email)
 
         self.input_password = QLineEdit()
@@ -170,6 +180,11 @@ class DialogoEditarPerfilProfesional(QDialog):
         self.input_email.setPlaceholderText("correo@ejemplo.com")
         self.input_email.setMinimumHeight(32)
         self.input_email.setAccessibleName("Campo correo electrónico del perfil")
+        self.input_email.setValidator(
+            QRegularExpressionValidator(
+                QRegularExpression(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
+            )
+        )
         form_layout.addRow("Email:", self.input_email)
 
         layout.addLayout(form_layout)
