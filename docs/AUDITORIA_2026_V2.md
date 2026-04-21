@@ -391,6 +391,18 @@ Usar exclusivamente `setObjectName("separator")` para todos los separadores hori
 
 ---
 
+### ~~INCONS-14 — El bloque "Algoritmos disponibles" en Ajustes muestra opciones legacy~~ ✅ RESUELTO v5.26.3
+**Archivos afectados:** `ajustes_widget.py`, `ajustes_form.py`, `generar_guardias.py`
+
+El bloque informativo en Ajustes mostraba `v3.0`, `v2.9` y "Híbrido + ILP", aunque la generación real ya usa `v4.0` y `CP-SAT`.
+
+**Corrección aplicada:**
+1. El bloque visual muestra únicamente `Rápido (v4 Híbrido)` y `Óptimo (CP-SAT)` con mejor legibilidad.
+2. Se normalizan valores legacy (`v2.9`, `v3.0`) a `v4.0` en ejecución.
+3. El guardado en Ajustes ya no fuerza valores legacy.
+
+---
+
 ### Resumen de inconsistencias por impacto
 
 | ID | Inconsistencia | Archivos afectados | Impacto visual | Esfuerzo corrección |
@@ -408,6 +420,7 @@ Usar exclusivamente `setObjectName("separator")` para todos los separadores hori
 | INCONS-11 | Dos botones "Calcular Cuotas" idénticos | 2 archivos | Alto | XS |
 | INCONS-12 | `titleMain` solo en un formulario | Todos los forms | Bajo | S |
 | INCONS-13 | 3 formas de hacer separadores | 4+ archivos | Bajo | S |
+| INCONS-14 | Algoritmos legacy en bloque de Ajustes | 3 archivos | Medio | XS |
 
 ---
 

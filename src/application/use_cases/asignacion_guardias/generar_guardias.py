@@ -8,6 +8,9 @@ import json
 from datetime import datetime
 from typing import Callable, Optional
 
+from sqlalchemy.orm import Session
+
+from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
 from infrastructure.database.models import Configuracion, Guardia, Profesor
@@ -20,12 +23,18 @@ from services.asignador_guardias_v4_hibrido import (
     guardar_guardias_en_bd,
 )
 from services.calculador_guardias import obtener_estadisticas
-from sqlalchemy.orm import Session
 from utils.logger import get_logger
 
-from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
-
 logger = get_logger(__name__)
+
+
+def _normalizar_algoritmo(algoritmo: str | None) -> str:
+    algoritmo_normalizado = (algoritmo or "").strip().lower()
+    if algoritmo_normalizado in ("cpsat", "optimo", "cp-sat"):
+        return "cpsat"
+    if algoritmo_normalizado in ("v4.0", "rapido", "v2.9", "v3.0"):
+        return "v4.0"
+    return "v4.0"
 
 
 class GenerarGuardiasUseCase:
@@ -89,7 +98,16 @@ class GenerarGuardiasUseCase:
             if not config:
                 raise BusinessLogicError("No existe configuración del curso")
 
-            algoritmo = getattr(config, "algoritmo_asignacion", "v4.0")  # Default v4.0
+            algoritmo_raw = getattr(config, "algoritmo_asignacion", "v4.0")
+            algoritmo = _normalizar_algoritmo(algoritmo_raw)
+
+            if algoritmo_raw != algoritmo:
+                logger.warning(
+                    "Algoritmo legacy/no reconocido '%s' normalizado a '%s'",
+                    algoritmo_raw,
+                    algoritmo,
+                )
+
             logger.info(f"🔧 Algoritmo seleccionado: {algoritmo}")
 
             # Generar calendario
@@ -108,18 +126,14 @@ class GenerarGuardiasUseCase:
             # - "cpsat" u "optimo": Algoritmo CP-SAT (más lento, garantiza óptimo)
             if algoritmo in ("cpsat", "optimo", "cp-sat"):
                 logger.info("✨ Usando algoritmo CP-SAT (optimización garantizada)")
-                calendario, resumen = generar_guardias_cpsat(
-                    self.session, adapter_callback
-                )
+                calendario, resumen = generar_guardias_cpsat(self.session, adapter_callback)
                 # Guardar en base de datos
                 if progress_callback:
                     progress_callback("Guardando guardias en base de datos...", 80)
                 guardar_guardias_cpsat_en_bd(self.session, calendario)
             else:
                 logger.info("✨ Usando algoritmo v4.0 Híbrido (5 fases)")
-                calendario, resumen = generar_guardias_v4_hibrido(
-                    self.session, adapter_callback
-                )
+                calendario, resumen = generar_guardias_v4_hibrido(self.session, adapter_callback)
                 # Guardar en base de datos
                 if progress_callback:
                     progress_callback("Guardando guardias en base de datos...", 80)
@@ -189,9 +203,7 @@ class GenerarGuardiasUseCase:
 
             # Calcular cuotas ideales
             cuotas_service = DistribucionCuotasService(self.session)
-            profesores = (
-                self.session.query(Profesor).filter(Profesor.activo.is_(True)).all()
-            )
+            profesores = self.session.query(Profesor).filter(Profesor.activo.is_(True)).all()
             cuotas_ideales = cuotas_service.calcular_cuotas(profesores)
 
             # Construir comparación
@@ -200,8 +212,7 @@ class GenerarGuardiasUseCase:
                 "resumen": {
                     "total_cuotas_ideales": sum(cuotas_ideales.values()),
                     "total_asignadas": sum(asignaciones.values()),
-                    "diferencia_global": sum(asignaciones.values())
-                    - sum(cuotas_ideales.values()),
+                    "diferencia_global": sum(asignaciones.values()) - sum(cuotas_ideales.values()),
                 },
                 "profesores": [],
             }
@@ -226,14 +237,10 @@ class GenerarGuardiasUseCase:
                 )
 
             # Ordenar por diferencia (mayor discrepancia primero)
-            comparacion["profesores"].sort(
-                key=lambda x: abs(x["diferencia"]), reverse=True
-            )
+            comparacion["profesores"].sort(key=lambda x: abs(x["diferencia"]), reverse=True)
 
             # Añadir estadísticas de discrepancias
-            discrepancias = [
-                p for p in comparacion["profesores"] if abs(p["diferencia"]) > 1
-            ]
+            discrepancias = [p for p in comparacion["profesores"] if abs(p["diferencia"]) > 1]
             comparacion["resumen"]["profesores_con_discrepancia"] = len(discrepancias)
             comparacion["resumen"]["max_discrepancia"] = (
                 max(abs(p["diferencia"]) for p in comparacion["profesores"])

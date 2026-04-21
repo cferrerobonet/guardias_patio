@@ -198,6 +198,37 @@ class TestAjustesWidget:
         qtbot.addWidget(w)
         assert w is not None
 
+    def test_algoritmo_por_defecto_valido(self, qtbot):
+        from presentation.forms.config_widgets.ajustes_widget import AjustesWidget
+
+        w = AjustesWidget()
+        qtbot.addWidget(w)
+
+        ajustes = w.get_ajustes()
+        assert ajustes["algoritmo"] == "v4.0"
+
+    def test_set_ajustes_normaliza_algoritmo_legacy(self, qtbot):
+        from presentation.forms.config_widgets.ajustes_widget import AjustesWidget
+
+        w = AjustesWidget()
+        qtbot.addWidget(w)
+
+        w.set_ajustes(tutores=0.9, no_tutores=1.1, algoritmo="v3.0")
+        ajustes = w.get_ajustes()
+        assert ajustes["algoritmo"] == "v4.0"
+
+    def test_info_algoritmos_muestra_solo_opciones_reales(self, qtbot):
+        from presentation.forms.config_widgets.ajustes_widget import AjustesWidget
+
+        w = AjustesWidget()
+        qtbot.addWidget(w)
+
+        texto = w.algoritmo_info.text()
+        assert "Rápido (v4 Híbrido)" in texto
+        assert "Óptimo (CP-SAT)" in texto
+        assert "v3.0" not in texto
+        assert "v2.9" not in texto
+
 
 @pytest.mark.ui
 class TestFechasRecreosWidget:

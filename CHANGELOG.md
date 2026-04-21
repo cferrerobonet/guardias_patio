@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.26.3] - 2026-04-21
+
+### 🎯 Resumen
+Consistencia final del flujo de algoritmos (UI + lógica + tests) y trazabilidad en auditoría.
+
+### Changed
+- `ajustes_form.py`: fallback de `algoritmo_asignacion` actualizado a `v4.0`
+- `generar_guardias.py`: normalización explícita de valores legacy/no reconocidos a `v4.0` o `cpsat`
+- `test_widgets_ui.py`: nuevos tests para validar algoritmo por defecto, normalización de legacy y texto del bloque de algoritmos
+
+### Fixed
+- Evita discrepancias entre la configuración mostrada en Ajustes y el selector real de generación
+
+### 🧹 Housekeeping
+- `AUDITORIA_2026_V2.md`: añadido `INCONS-14` como resuelto en `v5.26.3`
+
 ## [5.26.2] - 2026-04-21
 
 ### 🎯 Resumen

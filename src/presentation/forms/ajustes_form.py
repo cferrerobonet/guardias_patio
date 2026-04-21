@@ -5,16 +5,8 @@ Form para gestionar los ajustes del curso escolar.
 Sigue el patrón MVP usando Use Cases.
 """
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
-from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
-from application.use_cases.configuracion import (
-    ActualizarConfiguracionUseCase,
-    ObtenerConfiguracionUseCase,
-)
-from core.exceptions import NotFoundError
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QKeySequence, QShortcut
+from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -24,14 +16,21 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from utils.icons import icon_for_button
 
+from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
+from application.use_cases.configuracion import (
+    ActualizarConfiguracionUseCase,
+    ObtenerConfiguracionUseCase,
+)
+from core.exceptions import NotFoundError
 from presentation.forms.base_form import BaseForm
 from presentation.forms.config_widgets import (
     AjustesWidget,
     FechasRecreosWidget,
     FestivosWidget,
 )
+from presentation.theme.tokens import Spacing
+from utils.icons import icon_for_button
 
 
 class AjustesForm(BaseForm):
@@ -306,7 +305,7 @@ class AjustesForm(BaseForm):
                 )
 
             # Cargar ajustes
-            algoritmo = getattr(config, "algoritmo_asignacion", "v2.9")
+            algoritmo = getattr(config, "algoritmo_asignacion", "v4.0")
             self.ajustes_widget.set_ajustes(
                 tutores=config.ajuste_tutores,
                 no_tutores=config.ajuste_no_tutores,
@@ -349,7 +348,6 @@ class AjustesForm(BaseForm):
         self._dirty = False
         if hasattr(self, "_dirty_label"):
             self._dirty_label.setVisible(False)
-
 
         """
         Genera el JSON de configuración de recreos basado en los valores del formulario.
