@@ -14,7 +14,6 @@ from core.logging import get_logger
 from infrastructure.database.models import CursoEscolar, Guardia
 from services.gestor_cursos import GestorCursos
 from sqlalchemy import func
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 logger = get_logger(__name__)
@@ -24,7 +23,7 @@ class MigradorMultiCurso:
     """Gestor de migración de datos al sistema Multi-Curso."""
 
     @staticmethod
-    def necesita_migracion(session: Session) -> bool:
+    def necesita_migracion(session) -> bool:
         """
         Verifica si hay guardias sin curso_id asignado.
 
@@ -44,7 +43,7 @@ class MigradorMultiCurso:
         return False
 
     @staticmethod
-    def detectar_anio_curso_desde_guardias(session: Session) -> Optional[int]:
+    def detectar_anio_curso_desde_guardias(session) -> Optional[int]:
         """
         Detecta el año de inicio del curso escolar basándose en las fechas
         de las guardias existentes.
@@ -117,7 +116,7 @@ class MigradorMultiCurso:
 
     @staticmethod
     def crear_curso_desde_guardias(
-        session: Session,
+        session,
         anio_inicio: Optional[int] = None,
     ) -> CursoEscolar:
         """
@@ -161,7 +160,7 @@ class MigradorMultiCurso:
 
     @staticmethod
     def asignar_guardias_a_curso(
-        session: Session,
+        session,
         curso_id: int,
         anio_inicio: Optional[int] = None,
     ) -> int:
@@ -199,7 +198,7 @@ class MigradorMultiCurso:
         return total
 
     @staticmethod
-    def migrar_automaticamente(session: Session) -> dict:
+    def migrar_automaticamente(session) -> dict:
         """
         Ejecuta la migración completa automáticamente.
 
@@ -275,7 +274,7 @@ class MigradorMultiCurso:
 
     @staticmethod
     def migrar_interactivo(
-        session: Session,
+        session,
         anio_inicio: int,
         crear_si_no_existe: bool = True,
     ) -> dict:
@@ -329,7 +328,7 @@ class MigradorMultiCurso:
         return resultado
 
 
-def ejecutar_migracion_si_necesario(session: Session) -> bool:
+def ejecutar_migracion_si_necesario(session) -> bool:
     """
     Función helper para ejecutar desde app_initializer.
 

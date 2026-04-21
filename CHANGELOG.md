@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.20.1] - 2026-04-21
+
+### 🎯 Resumen
+ARQ-01 fase extensión #3: 6 servicios adicionales desacoplados de Session. Total acumulado: 9 servicios migrados en fases 2+3 (de 32 → 11 imports Session restantes).
+
+### 🧹 Housekeeping
+- `src/services/equidad_guardias_service.py`: constructor `session_or_factory` + `from_session()` classmethod
+- `src/services/validador_guardias.py`: constructor y función helper `validar_guardias_completo` polimórficos
+- `src/services/diagnosticador_guardias.py`: constructor `db` polimórfico (mantiene nombre `db` para backward compat kwarg)
+- `src/services/migrar_a_multi_curso.py`: eliminado import `Session`, anotaciones de tipo removidas de parámetros
+- `src/services/_exportador_import.py`: eliminado import `Session`, anotaciones de tipo removidas de parámetros
+- `src/services/asignacion_guardia_service.py`: constructor `session_or_factory` polimórfico
+
+---
 ## [5.20.0] - 2026-04-21
 
 ### 🎯 Resumen

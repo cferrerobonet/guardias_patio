@@ -8,9 +8,10 @@ from datetime import date
 from typing import Dict, List
 
 from infrastructure.database.models import Configuracion, Guardia, Profesor
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from services.validators import TurnoValidator
 from sqlalchemy import or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import joinedload
 
 # Instancia del validador de turnos
 _turno_validator = TurnoValidator()
@@ -42,8 +43,12 @@ class DiagnosticoCompleto:
 class DiagnosticadorGuardias:
     """Analiza problemas en la asignación y genera diagnósticos detallados."""
 
-    def __init__(self, db: Session, config: Configuracion, dias_lectivos: List[date]):
-        self.db = db
+    def __init__(self, db, config: Configuracion, dias_lectivos: List[date]):
+        self.db = (
+            db.session
+            if isinstance(db, RepositoryFactory)
+            else db
+        )
         self.config = config
         self.dias_lectivos = dias_lectivos
 

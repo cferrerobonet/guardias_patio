@@ -16,7 +16,6 @@ from core.logging import get_logger
 from cryptography.fernet import Fernet, InvalidToken
 
 from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 logger = get_logger(__name__)
@@ -71,7 +70,7 @@ def _deserializar_hora(hora_str: Optional[str]) -> Optional[time]:
 
 
 def importar_profesores(
-    session: Session, profesores_data: list[dict[str, Any]], limpiar: bool = False
+    session, profesores_data: list[dict[str, Any]], limpiar: bool = False
 ) -> int:
     if limpiar:
         session.query(Guardia).delete()
@@ -155,7 +154,7 @@ def importar_profesores(
 
 
 def importar_zonas(
-    session: Session, zonas_data: list[dict[str, Any]], limpiar: bool = False
+    session, zonas_data: list[dict[str, Any]], limpiar: bool = False
 ) -> int:
     if limpiar:
         session.query(Zona).delete()
@@ -195,7 +194,7 @@ def importar_zonas(
 
 
 def importar_configuracion(
-    session: Session, config_data: dict[str, Any], limpiar: bool = False
+    session, config_data: dict[str, Any], limpiar: bool = False
 ) -> bool:
     if not config_data:
         return False
@@ -274,7 +273,7 @@ def importar_configuracion(
 
 
 def importar_guardias(
-    session: Session, guardias_data: list[dict[str, Any]], limpiar: bool = False
+    session, guardias_data: list[dict[str, Any]], limpiar: bool = False
 ) -> int:
     if limpiar:
         session.query(Guardia).delete()
@@ -343,7 +342,7 @@ def importar_guardias(
 
 
 def importar_ausencias(
-    session: Session, ausencias_data: list[dict[str, Any]], limpiar: bool = False
+    session, ausencias_data: list[dict[str, Any]], limpiar: bool = False
 ) -> int:
     if limpiar:
         session.query(Ausencia).delete()
@@ -558,7 +557,7 @@ def importar_usuarios(
 
 
 def importar_cursos_escolares(
-    session: Session, cursos_data: Optional[dict[str, Any]], limpiar: bool = False
+    session, cursos_data: Optional[dict[str, Any]], limpiar: bool = False
 ) -> int:
     if not cursos_data or "cursos" not in cursos_data:
         return 0
@@ -618,7 +617,7 @@ def importar_cursos_escolares(
 
 
 def importar_todo(
-    session: Session, ruta_archivo: Union[str, Path], limpiar: bool = False
+    session, ruta_archivo: Union[str, Path], limpiar: bool = False
 ) -> dict[str, int]:
     ruta = Path(ruta_archivo)
     with ruta.open("r", encoding="utf-8") as f:

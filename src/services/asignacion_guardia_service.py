@@ -21,7 +21,7 @@ from core.exceptions import (
     BusinessLogicError,
 )
 from infrastructure.database.models import Guardia, Profesor, Zona
-from sqlalchemy.orm import Session
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
@@ -43,13 +43,12 @@ class AsignacionGuardiaService:
     - Mantener integridad de datos
     """
 
-    def __init__(self, session: Session):
-        """
-        Inicializa el servicio.
-
-        Args:
-            session: Sesión de SQLAlchemy
-        """
+    def __init__(self, session_or_factory):
+        session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
         self.session = session
         self.disponibilidad_service = DisponibilidadProfesorService(session)
         self.logger = logger

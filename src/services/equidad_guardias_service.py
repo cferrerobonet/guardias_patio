@@ -16,8 +16,8 @@ from datetime import date
 from typing import Dict, List
 
 from infrastructure.database.models import Guardia, Profesor
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from services.estadisticas_service import EstadisticasService
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -61,16 +61,19 @@ class EquidadGuardiasService:
     - Generar reportes de equidad
     """
 
-    def __init__(self, session: Session):
-        """
-        Inicializa el servicio.
-
-        Args:
-            session: Sesión de SQLAlchemy
-        """
+    def __init__(self, session_or_factory):
+        session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
         self.session = session
         self.stats_service = EstadisticasService()
         self.logger = logger
+
+    @classmethod
+    def from_session(cls, session) -> "EquidadGuardiasService":
+        return cls(session)
 
     def calcular_indice_equidad(self, guardias: List[Guardia], cuotas: Dict[int, int]) -> float:
         """

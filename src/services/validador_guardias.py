@@ -14,7 +14,7 @@ from collections import defaultdict
 from typing import Dict, List
 
 from infrastructure.database.models import Ausencia, Guardia, Profesor
-from sqlalchemy.orm import Session
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -101,8 +101,12 @@ class ResultadoValidacion:
 class ValidadorGuardias:
     """Validador completo de guardias asignadas."""
 
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, session_or_factory):
+        self.session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
 
     def validar_todo(
         self, profesores: List[Profesor], cuotas_esperadas: Dict[int, int]
@@ -381,7 +385,7 @@ class ValidadorGuardias:
 
 
 def validar_guardias_completo(
-    session: Session, profesores: List[Profesor], cuotas_esperadas: Dict[int, int]
+    session_or_factory, profesores: List[Profesor], cuotas_esperadas: Dict[int, int]
 ) -> ResultadoValidacion:
     """
     Función helper para validar guardias.
@@ -394,5 +398,5 @@ def validar_guardias_completo(
     Returns:
         ResultadoValidacion con estado, errores y métricas
     """
-    validador = ValidadorGuardias(session)
+    validador = ValidadorGuardias(session_or_factory)
     return validador.validar_todo(profesores, cuotas_esperadas)
