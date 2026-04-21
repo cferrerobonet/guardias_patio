@@ -5,6 +5,27 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.26.0] - 2026-04-21
+
+### 🎯 Resumen
+Nivel 2 auditoría: consistencia de botones, emojis, fuentes pt→px, conectividad como pestaña, matplotlib lazy, diagnóstico de duplicados.
+
+### Changed
+- INCONS-01: `delete_user_dialog`, `perfiles_usuario_form`, `gestion_cursos_widget` — botones eliminar usan `setProperty("danger","true")` en lugar de `setStyleSheet` inline
+- INCONS-02: `setObjectName("secondaryButton")` en botones Cancelar de `delete_user_dialog`, `change_password_dialog`, `reset_password_dialog`, `forgot_password_dialog`, `perfiles_usuario_form`, `dialogo_diagnostico_guardias`, `dialogo_crear_perfil`, `dialogo_editar_perfil`
+- INCONS-05: eliminados emojis ←, ✓, 🔒, 🔢, 📄 de textos de botones en 9 archivos
+- INCONS-06: eliminado 🏫 de `zona_form` y 🏥 de `gestionar_ausencias`
+- INCONS-07: `dialogo_diagnostico_guardias` — fuentes pt reemplazadas por px (16pt→20px, 11pt→14px, 10pt→11px, 9pt→11px)
+- INCONS-09: `ProgressDialog.completar()` — oculta `btn_cancelar` y muestra `btn_cerrar` separado
+- FUNC-06: Conectividad movida a pestaña de Ajustes; eliminado ítem del sidebar y `add_view` del main window
+- PERF-03: imports de matplotlib diferidos al primer uso en `dashboard_form` y `panel_estadisticas`
+
+### Fixed
+- `tests/test_progress_indicators.py`: aserciones actualizadas para nuevo comportamiento de btn_cerrar
+
+### 🔍 Investigado
+- INCONS-11: `cuotas_panel.py` y `calculo_panel.py` son distintos — `CuotasPanel` (domain services preview en asignacion_guardias_form) vs `CalculoPanel` (panel combinado en asignacion_calculo_form). Ambos se mantienen.
+
 ## [5.25.0] - 2026-04-21
 
 ### 🎯 Resumen

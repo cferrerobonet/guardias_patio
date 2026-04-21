@@ -93,7 +93,7 @@ class CalendariosPdfWidget(QGroupBox):
         self.email_container.hide()
 
         # Botón de exportación
-        self.exportar_pdf_btn = QPushButton("📄 Generar PDFs")
+        self.exportar_pdf_btn = QPushButton("Generar PDFs")
         self.exportar_pdf_btn.setMinimumHeight(40)
         self.exportar_pdf_btn.setProperty("success", "true")
         self.exportar_pdf_btn.setAccessibleName("Botón generar calendarios PDF")

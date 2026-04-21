@@ -143,7 +143,6 @@ class SidebarMenu(QWidget):
         self.add_menu_item(menu_layout, "profesores", "Profesores", "profesores", "account-group")
         self.add_menu_item(menu_layout, "zonas", "Zonas", "zonas", "map-marker")
         self.add_menu_item(menu_layout, "ajustes", "Ajustes", "ajustes", "cog")
-        self.add_menu_item(menu_layout, "conectividad", "Conectividad", "conectividad", "email")
         self.add_menu_item(menu_layout, "perfiles", "Perfiles de Usuario", "perfiles", "account")
 
         menu_layout.addSpacing(4)

@@ -13,7 +13,6 @@ Funcionalidades:
 
 from datetime import datetime
 
-import matplotlib.pyplot as plt
 from application.dtos.domain_services_dtos import AnalisisEquidadRequest
 from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
 from application.use_cases.calcular_cuotas_use_case import (
@@ -30,8 +29,6 @@ from core.qt_imports import (
     QWidget,
 )
 from infrastructure.database.models import Configuracion, Guardia, Profesor
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 from utils import get_logger
 from utils.icons import icon_for_button
 from presentation.theme.tokens import Spacing
@@ -84,17 +81,6 @@ class MetricaCard(QWidget):
         self.valor_label.setText(valor)
 
 
-class GraficoCanvas(FigureCanvas):
-    """Canvas para gráficos matplotlib."""
-
-    def __init__(self, parent=None, width=8, height=4, dpi=100):
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = self.fig.add_subplot(111)
-        super().__init__(self.fig)
-        self.setParent(parent)
-        self.fig.tight_layout(pad=2.0)
-
-
 class DashboardForm(QWidget):
     """Dashboard principal con métricas y gráficos."""
 
@@ -109,6 +95,20 @@ class DashboardForm(QWidget):
 
     def _init_ui(self):
         """Inicializa la interfaz de usuario."""
+        import matplotlib.pyplot as plt  # noqa: F401
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+        from matplotlib.figure import Figure
+
+        class GraficoCanvas(FigureCanvas):
+            def __init__(self, parent=None, width=8, height=4, dpi=100):
+                self.fig = Figure(figsize=(width, height), dpi=dpi)
+                self.axes = self.fig.add_subplot(111)
+                super().__init__(self.fig)
+                self.setParent(parent)
+                self.fig.tight_layout(pad=2.0)
+
+        self._GraficoCanvas = GraficoCanvas
+
         layout = QVBoxLayout()
         layout.setContentsMargins(Spacing.XL, Spacing.XL, Spacing.XL, Spacing.XL)
         layout.setSpacing(Spacing.XL)
@@ -187,7 +187,7 @@ class DashboardForm(QWidget):
             }
         """)
         histograma_layout = QVBoxLayout()
-        self.canvas_histograma = GraficoCanvas(self, width=6, height=4)
+        self.canvas_histograma = self._GraficoCanvas(self, width=6, height=4)
         histograma_layout.addWidget(self.canvas_histograma)
         grupo_histograma.setLayout(histograma_layout)
         graficos_layout.addWidget(grupo_histograma)
@@ -196,7 +196,7 @@ class DashboardForm(QWidget):
         grupo_turnos = QGroupBox("Distribución por Turno")
         grupo_turnos.setStyleSheet(grupo_histograma.styleSheet())
         turnos_layout = QVBoxLayout()
-        self.canvas_turnos = GraficoCanvas(self, width=4, height=4)
+        self.canvas_turnos = self._GraficoCanvas(self, width=4, height=4)
         turnos_layout.addWidget(self.canvas_turnos)
         grupo_turnos.setLayout(turnos_layout)
         graficos_layout.addWidget(grupo_turnos)
@@ -211,7 +211,7 @@ class DashboardForm(QWidget):
         grupo_top = QGroupBox("Top 10 Profesores con Más Guardias")
         grupo_top.setStyleSheet(grupo_histograma.styleSheet())
         top_layout = QVBoxLayout()
-        self.canvas_top = GraficoCanvas(self, width=6, height=4)
+        self.canvas_top = self._GraficoCanvas(self, width=6, height=4)
         top_layout.addWidget(self.canvas_top)
         grupo_top.setLayout(top_layout)
         graficos2_layout.addWidget(grupo_top)
@@ -220,7 +220,7 @@ class DashboardForm(QWidget):
         grupo_zonas = QGroupBox("Distribución por Zona")
         grupo_zonas.setStyleSheet(grupo_histograma.styleSheet())
         zonas_layout = QVBoxLayout()
-        self.canvas_zonas = GraficoCanvas(self, width=4, height=4)
+        self.canvas_zonas = self._GraficoCanvas(self, width=4, height=4)
         zonas_layout.addWidget(self.canvas_zonas)
         grupo_zonas.setLayout(zonas_layout)
         graficos2_layout.addWidget(grupo_zonas)
@@ -424,6 +424,7 @@ class DashboardForm(QWidget):
         cantidades = [item[1] for item in items]
 
         # Gráfico de barras vertical con gradiente
+        import matplotlib.pyplot as plt
         colores = plt.cm.Blues(range(100, 255, int(155 / len(nombres))))
         bars = self.canvas_top.axes.bar(range(len(nombres)), cantidades, color=colores)
         self.canvas_top.axes.set_xticks(range(len(nombres)))
@@ -471,6 +472,7 @@ class DashboardForm(QWidget):
         # Gráfico de dona
         labels = [f"{k}\n({v})" for k, v in zonas_count.items()]
         sizes = list(zonas_count.values())
+        import matplotlib.pyplot as plt
         colores = plt.cm.Set3(range(len(sizes)))
 
         wedges, texts, autotexts = self.canvas_zonas.axes.pie(

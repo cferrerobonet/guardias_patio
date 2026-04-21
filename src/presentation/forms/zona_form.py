@@ -182,7 +182,7 @@ class ZonaForm(BaseForm):
         left_section.setSpacing(10)
 
         # Título con contador
-        self.titulo_lista_zonas = QLabel("🏫 ZONAS REGISTRADAS (0)")
+        self.titulo_lista_zonas = QLabel("ZONAS REGISTRADAS (0)")
         self.titulo_lista_zonas.setObjectName("titleMain")
         left_section.addWidget(self.titulo_lista_zonas)
 
@@ -541,7 +541,7 @@ class ZonaForm(BaseForm):
 
             # Actualizar contador en el título
             total_zonas = len(zonas)
-            self.titulo_lista_zonas.setText(f"🏫 ZONAS REGISTRADAS ({total_zonas})")
+            self.titulo_lista_zonas.setText(f"ZONAS REGISTRADAS ({total_zonas})")
 
             # Agregar zonas a la tabla
             for row, zona in enumerate(zonas):

@@ -100,7 +100,7 @@ class PerfilUsuarioWidget(QGroupBox):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(2)
 
-        self.change_password_btn = QPushButton("🔒 Cambiar Contraseña")
+        self.change_password_btn = QPushButton("Cambiar Contraseña")
         self.change_password_btn.setStyleSheet(
             styles.STYLE_BUTTON_WARNING + "padding: 4px 6px; font-size: 10px;"
         )

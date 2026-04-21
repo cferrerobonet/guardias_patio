@@ -258,6 +258,12 @@ class ProgressDialog(QDialog):
             self.btn_cancelar.setProperty("danger", "true")
             layout.addWidget(self.btn_cancelar)
 
+            self.btn_cerrar = QPushButton("Cerrar")
+            self.btn_cerrar.setProperty("success", "true")
+            self.btn_cerrar.clicked.connect(self.accept)
+            self.btn_cerrar.setVisible(False)
+            layout.addWidget(self.btn_cerrar)
+
         self.setLayout(layout)
 
         # Iniciar timer para actualizar contador de tiempo
@@ -497,12 +503,10 @@ class ProgressDialog(QDialog):
         self.label_mensaje.setText(mensaje_final)
 
         if hasattr(self, "btn_cancelar"):
-            self.btn_cancelar.setText("Cerrar")
-            self.btn_cancelar.setProperty("danger", False)
-            self.btn_cancelar.setProperty("success", "true")
-            self.btn_cancelar.style().polish(self.btn_cancelar)
-            self.btn_cancelar.clicked.disconnect()
-            self.btn_cancelar.clicked.connect(self.accept)
+            self.btn_cancelar.setVisible(False)
+        if hasattr(self, "btn_cerrar"):
+            self.btn_cerrar.setVisible(True)
+            self.btn_cerrar.setFocus()
 
     def closeEvent(self, event):
         """
@@ -620,17 +624,14 @@ def ejecutar_con_progreso(
                 # Marcar como completado (con error) para permitir cierre
                 dialog._cancelado = True
 
-                # Cambiar botón a "Cerrar" y reconectarlo
-                if hasattr(dialog, "btn_cancelar"):
-                    dialog.btn_cancelar.setText("Cerrar")
-                    dialog.btn_cancelar.setEnabled(True)
-                    # Desconectar la función anterior y conectar a close
-                    try:
-                        dialog.btn_cancelar.clicked.disconnect()
-                    except TypeError:
-                        pass  # No había conexión previa
-                    dialog.btn_cancelar.clicked.connect(dialog.close)
-                    logger.info("🔘 Botón cambiado a 'Cerrar'")
+                # Mostrar botón cerrar
+                if hasattr(dialog, "btn_cerrar"):
+                    if hasattr(dialog, "btn_cancelar"):
+                        dialog.btn_cancelar.setVisible(False)
+                    dialog.btn_cerrar.setVisible(True)
+                    dialog.btn_cerrar.clicked.disconnect()
+                    dialog.btn_cerrar.clicked.connect(dialog.close)
+                    logger.info("🔘 Botón cerrar visible")
             else:
                 # Si fue cancelación del usuario, simplemente cerrar
                 dialog.close()

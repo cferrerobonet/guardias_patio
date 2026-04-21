@@ -48,7 +48,7 @@ class GestionarAusenciasForm(BaseForm):
         layout_principal = QVBoxLayout(self)
 
         # Título
-        titulo = QLabel("🏥 GESTIÓN DE AUSENCIAS")
+        titulo = QLabel("GESTIÓN DE AUSENCIAS")
         titulo.setObjectName("titleMain")
         layout_principal.addWidget(titulo)
 

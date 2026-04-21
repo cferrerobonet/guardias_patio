@@ -73,7 +73,7 @@ class CalculoPanel(QGroupBox):
         # Botones en la parte superior
         button_layout = QHBoxLayout()
 
-        self.calcular_button = QPushButton("🔢 Calcular Cuotas")
+        self.calcular_button = QPushButton("Calcular Cuotas")
         self.calcular_button.setMinimumHeight(35)
         self.calcular_button.clicked.connect(self.calcular_cuotas)
         button_layout.addWidget(self.calcular_button)
@@ -231,7 +231,7 @@ class CalculoPanel(QGroupBox):
 
         finally:
             self.calcular_button.setEnabled(True)
-            self.calcular_button.setText("🔢 Calcular Cuotas")
+            self.calcular_button.setText("Calcular Cuotas")
 
     def _mostrar_contenido_completo(self, response):
         """Muestra estadísticas y cuotas combinadas."""

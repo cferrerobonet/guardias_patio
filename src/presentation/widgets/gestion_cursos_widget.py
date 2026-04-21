@@ -117,9 +117,7 @@ class GestionCursosWidget(QWidget):
 
         self.btn_eliminar = QPushButton("Eliminar")
         self.btn_eliminar.setIcon(icon_for_button("delete"))
-        self.btn_eliminar.setStyleSheet(
-            styles.STYLE_BUTTON_DANGER + "font-size: 12px; padding: 8px 16px;"
-        )
+        self.btn_eliminar.setProperty("danger", "true")
         self.btn_eliminar.setToolTip("Eliminar el curso seleccionado y todas sus guardias")
         self.btn_eliminar.clicked.connect(self._eliminar_curso_seleccionado)
         self.btn_eliminar.setEnabled(False)

@@ -5,14 +5,8 @@ Muestra métricas, gráficos y análisis de cobertura.
 Utiliza ObtenerEstadisticasPanelUseCase para separar lógica de presentación.
 """
 
-import matplotlib
-
-matplotlib.use("QtAgg")
-
 from presentation.theme import legacy_styles as styles
 from application.use_cases.asignacion_guardias import ObtenerEstadisticasPanelUseCase
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # noqa: E402
-from matplotlib.figure import Figure  # noqa: E402
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHeaderView,
@@ -343,19 +337,21 @@ class PanelEstadisticas(BaseForm):
         self.actualizar_estadisticas()
 
 
-class MplCanvas(FigureCanvasQTAgg):
-    """Canvas de Matplotlib para integrar en PyQt."""
+def __getattr__(name: str):
+    if name == "MplCanvas":
+        import matplotlib
+        matplotlib.use("QtAgg")
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+        from matplotlib.figure import Figure
 
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        """
-        Inicializar canvas de matplotlib.
+        class MplCanvas(FigureCanvasQTAgg):
+            def __init__(self, parent=None, width=5, height=4, dpi=100):
+                fig = Figure(figsize=(width, height), dpi=dpi)
+                self.axes = fig.add_subplot(111)
+                super().__init__(fig)
 
-        Args:
-            parent: Widget padre
-            width: Ancho de la figura
-            height: Alto de la figura
-            dpi: Resolución de la figura
-        """
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super().__init__(fig)
+        globals()["MplCanvas"] = MplCanvas
+        return MplCanvas
+    raise AttributeError(f"module 'panel_estadisticas' has no attribute {name!r}")
+
+

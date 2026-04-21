@@ -119,7 +119,7 @@ class RegisterDialog(QDialog):
         cancel_btn.setProperty("secondary", "true")
         buttons_layout.addWidget(cancel_btn)
 
-        register_btn = QPushButton("✓ Registrarse")
+        register_btn = QPushButton("Registrarse")
         register_btn.setMinimumHeight(40)
         register_btn.clicked.connect(self.register)
         register_btn.setDefault(True)

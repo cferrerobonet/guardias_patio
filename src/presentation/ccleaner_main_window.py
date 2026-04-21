@@ -18,7 +18,6 @@ from PyQt6.QtWidgets import (
 from presentation.components.ccleaner_sidebar import SidebarMenu
 from presentation.forms.ajustes_form import AjustesForm
 from presentation.forms.asignacion_calculo_form import AsignacionCalculoForm
-from presentation.forms.conectividad_form import ConectividadForm
 from presentation.forms.import_export_form import ImportExportForm
 from presentation.forms.perfiles_usuario_form import PerfilesUsuarioForm
 
@@ -139,11 +138,6 @@ class CCleanerMainWindow(QMainWindow):
             "ajustes",
             "Ajustes del Curso Escolar",
             AjustesForm(self.session),
-        )
-        self.add_view(
-            "conectividad",
-            "Configuración de Conectividad",
-            ConectividadForm(self.session),
         )
         self.add_view(
             "perfiles",

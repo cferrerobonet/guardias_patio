@@ -89,6 +89,7 @@ class DialogoCrearPerfil(QDialog):
         botones_layout.addStretch()
 
         btn_cancelar = QPushButton("Cancelar")
+        btn_cancelar.setObjectName("secondaryButton")
         btn_cancelar.clicked.connect(self.reject)
         btn_cancelar.setAccessibleName("Botón cancelar creación de perfil")
         botones_layout.addWidget(btn_cancelar)

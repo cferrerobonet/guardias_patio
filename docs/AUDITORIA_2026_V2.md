@@ -36,7 +36,7 @@ Esta sección documenta inconsistencias **verificadas en el código fuente** (no
 
 ---
 
-### INCONS-01 — Botones de eliminar: tres formas de hacer lo mismo
+### ~~INCONS-01 — Botones de eliminar: tres formas de hacer lo mismo~~ ✅ RESUELTO v5.26.0
 **Archivos afectados:** `delete_user_dialog.py`, `perfiles_usuario_form.py`, `gestion_cursos_widget.py`, `zona_form.py`, `profesor_form.py`, `gestionar_ausencias.py`
 
 Hay tres mecanismos distintos para estilizar un botón de "Eliminar" rojo:
@@ -69,7 +69,7 @@ delete_btn.setStyleSheet("""
 
 ---
 
-### INCONS-02 — El botón "Cancelar" tiene color verde, gris o sin color según el formulario
+### ~~INCONS-02 — El botón "Cancelar" tiene color verde, gris o sin color según el formulario~~ ✅ RESUELTO v5.26.0
 **Archivos afectados:** `profesor_form.py`, `zona_form.py`, `perfiles_usuario_form.py`, `dialogo_editar_perfil.py`, `dialogo_crear_perfil.py`
 
 El botón "Cancelar" debería comunicar siempre la misma semántica: "acción neutra, volver atrás sin guardar". Pero:
@@ -136,7 +136,7 @@ Unificar ambas en `warning` (ámbar) si la importación puede sobreescribir dato
 
 ---
 
-### INCONS-05 — Iconos en el texto del botón (emoji) vs. iconos en `setIcon()` — dos patrones mezclados
+### ~~INCONS-05 — Iconos en el texto del botón (emoji) vs. iconos en `setIcon()` — dos patrones mezclados~~ ✅ RESUELTO v5.26.0
 **Archivos afectados:** múltiples
 
 Hay dos formas de añadir un icono a un botón en la app, y se usan indistintamente sin ningún criterio:
@@ -174,7 +174,7 @@ Eliminar todos los emojis y símbolos del texto de los botones. Usar siempre `se
 
 ---
 
-### INCONS-06 — Títulos de sección: algunos con emoji, otros sin él
+### ~~INCONS-06 — Títulos de sección: algunos con emoji, otros sin él~~ ✅ RESUELTO v5.26.0
 **Archivos afectados:** `zona_form.py`, `gestionar_ausencias.py`, `profesor_form.py`, `gestor_sustituciones.py`, `panel_estadisticas.py`
 
 Los títulos en mayúsculas que encabezan cada formulario o panel de lista son inconsistentes:
@@ -195,7 +195,7 @@ No hay ningún criterio visible para que algunos tengan emoji y otros no. El res
 
 ---
 
-### INCONS-07 — Tamaños de fuente inline en tres escalas distintas (px, pt, y valores arbitrarios)
+### ~~INCONS-07 — Tamaños de fuente inline en tres escalas distintas (px, pt, y valores arbitrarios)~~ ✅ RESUELTO v5.26.0
 **Archivos afectados:** `dialogo_diagnostico_guardias.py`, `dia_detalle_dialog.py`, `_celda_dia.py`, `vista_calendario.py`, `login_dialog.py`
 
 El módulo `tokens.py` define `FontSize` con valores en píxeles (`CAPTION=11`, `BODY=14`, `SUBTITLE=16`, etc.). Pero en los `setStyleSheet()` inline se usan valores completamente distintos que no corresponden a ningún token:
@@ -270,7 +270,7 @@ class ConfirmDeleteDialog(QDialog):
 
 ---
 
-### INCONS-09 — El botón de progreso "Cancelar" se convierte en "Cerrar" pero `sync_progress_dialog` tiene botones separados
+### ~~INCONS-09 — El botón de progreso "Cancelar" se convierte en "Cerrar" pero `sync_progress_dialog` tiene botones separados~~ ✅ RESUELTO v5.26.0
 **Archivos afectados:** `progress_indicators.py`, `sync_progress_dialog.py`
 
 En `ProgressDialog` (para generación de guardias):
@@ -331,7 +331,7 @@ Definir un único componente `SectionCard` o `SectionGroup` que se use consisten
 
 ---
 
-### INCONS-11 — Dos botones "Calcular Cuotas" idénticos en dos widgets que coexisten en el mismo formulario
+### ~~INCONS-11 — Dos botones "Calcular Cuotas" idénticos en dos widgets que coexisten en el mismo formulario~~ ✅ INVESTIGADO v5.26.0 — No son duplicados: CuotasPanel (domain preview en asignacion_guardias_form) ≠ CalculoPanel (combinado en asignacion_calculo_form)
 **Archivos afectados:** `calculo_panel.py`, `cuotas_panel.py`
 
 ```python
@@ -988,7 +988,7 @@ class BarChartWidget(QWidget):
 
 ---
 
-### FUNC-06 — QUITAR o SIMPLIFICAR: "Conectividad" como sección separada del menú
+### ~~FUNC-06 — QUITAR o SIMPLIFICAR: "Conectividad" como sección separada del menú~~ ✅ RESUELTO v5.26.0
 **Severidad: Baja — UX medium**
 
 La sección "Conectividad" del sidebar lleva a un formulario con configuración SMTP y SFTP. Es una sección de administración técnica que el usuario final rara vez toca. Ocupa un slot del menú que podría ser mejor usado.
@@ -1093,7 +1093,7 @@ def on_section_changed(self, section: str):
 
 ---
 
-### PERF-03 — Matplotlib se importa en el hilo principal al arrancar
+### ~~PERF-03 — Matplotlib se importa en el hilo principal al arrancar~~ ✅ RESUELTO v5.26.0
 **Severidad: Baja**
 
 `import matplotlib` en `dashboard_form.py` y `panel_estadisticas.py` tarda ~300-500ms. Al estar en el hilo principal, congela brevemente la UI.

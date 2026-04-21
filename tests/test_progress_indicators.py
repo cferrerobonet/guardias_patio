@@ -111,7 +111,8 @@ class TestProgressDialog:
 
         assert dialog.progress_bar.value() == 100
         assert "✓ Todo listo" in dialog.label_mensaje.text()
-        assert dialog.btn_cancelar.text() == "Cerrar"
+        assert dialog.btn_cancelar.isHidden()
+        assert not dialog.btn_cerrar.isHidden()
 
     def test_progreso_con_rango_personalizado(self, parent_widget, qtbot):
         """Usar rango de progreso personalizado."""
@@ -278,7 +279,8 @@ class TestEjecutarConProgreso:
 
         assert dialog.progress_bar.value() == 100
         assert "Finalizado" in dialog.label_mensaje.text()
-        assert dialog.btn_cancelar.text() == "Cerrar"
+        assert dialog.btn_cancelar.isHidden()
+        assert not dialog.btn_cerrar.isHidden()
 
     def test_progress_dialog_con_cancelacion(self, parent_widget, qapp, qtbot):
         """Probar cancelación del ProgressDialog."""

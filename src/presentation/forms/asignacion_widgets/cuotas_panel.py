@@ -87,7 +87,7 @@ class CuotasPanel(QGroupBox):
         # Botones en la parte superior
         button_layout = QHBoxLayout()
 
-        self.calcular_button = QPushButton("🔢 Calcular Cuotas")
+        self.calcular_button = QPushButton("Calcular Cuotas")
         self.calcular_button.setMinimumHeight(35)
         self.calcular_button.clicked.connect(self.calcular_cuotas)
         button_layout.addWidget(self.calcular_button)
@@ -206,7 +206,7 @@ class CuotasPanel(QGroupBox):
         finally:
             # Rehabilitar botón
             self.calcular_button.setEnabled(True)
-            self.calcular_button.setText("🔢 Calcular Cuotas")
+            self.calcular_button.setText("Calcular Cuotas")
 
     def _mostrar_cuotas(self, response):
         """Muestra las cuotas en formato terminal.

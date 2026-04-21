@@ -41,7 +41,7 @@ class PdfExportWidget(QGroupBox):
             session: Sesión de base de datos para cargar profesores
             parent: Widget padre
         """
-        super().__init__("📄 GENERAR CALENDARIOS PDF", parent)
+        super().__init__("GENERAR CALENDARIOS PDF", parent)
         self.session = session
         self.profesor_checkboxes: List[QCheckBox] = []
 
@@ -92,7 +92,7 @@ class PdfExportWidget(QGroupBox):
         self.email_container.hide()
 
         # Botón de exportación
-        self.exportar_pdf_btn = QPushButton("📄 Generar PDFs")
+        self.exportar_pdf_btn = QPushButton("Generar PDFs")
         self.exportar_pdf_btn.setMinimumHeight(40)
         self.exportar_pdf_btn.setProperty("success", "true")
         self.exportar_pdf_btn.setAccessibleName("Botón generar PDFs")

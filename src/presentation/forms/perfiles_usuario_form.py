@@ -421,38 +421,15 @@ class PerfilesUsuarioForm(BaseForm):
             button_box = QDialogButtonBox()
 
             btn_cancelar = QPushButton("Cancelar")
+            btn_cancelar.setObjectName("secondaryButton")
             btn_cancelar.setMinimumWidth(100)
             btn_cancelar.setMinimumHeight(35)
-            btn_cancelar.setStyleSheet("""
-                QPushButton {
-                    background-color: #e0e0e0;
-                    border: 1px solid #bdbdbd;
-                    border-radius: 4px;
-                    padding: 8px 16px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #d0d0d0;
-                }
-            """)
 
             btn_eliminar = QPushButton("Eliminar Perfil")
             btn_eliminar.setIcon(icon_for_button("delete"))
             btn_eliminar.setMinimumWidth(140)
             btn_eliminar.setMinimumHeight(35)
-            btn_eliminar.setStyleSheet("""
-                QPushButton {
-                    background-color: #d32f2f;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    padding: 8px 16px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #b71c1c;
-                }
-            """)
+            btn_eliminar.setProperty("danger", "true")
 
             button_box.addButton(btn_cancelar, QDialogButtonBox.ButtonRole.RejectRole)
             button_box.addButton(btn_eliminar, QDialogButtonBox.ButtonRole.AcceptRole)

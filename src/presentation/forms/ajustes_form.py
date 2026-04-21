@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -195,8 +196,13 @@ class AjustesForm(BaseForm):
         # Agregar el widget al scroll area
         scroll_area.setWidget(content_widget)
 
-        # Agregar el scroll area al layout principal
-        main_layout.addWidget(scroll_area)
+        # Agregar contenido en pestañas
+        from presentation.forms.conectividad_form import ConectividadForm
+
+        tab_widget = QTabWidget()
+        tab_widget.addTab(scroll_area, "Ajustes")
+        tab_widget.addTab(ConectividadForm(self.session), "Conectividad")
+        main_layout.addWidget(tab_widget)
 
         self.setLayout(main_layout)
 

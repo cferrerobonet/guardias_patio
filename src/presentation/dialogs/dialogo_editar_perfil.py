@@ -63,6 +63,7 @@ class DialogoEditarPerfil(QDialog):
         botones_layout.addStretch()
 
         btn_cancelar = QPushButton("Cancelar")
+        btn_cancelar.setObjectName("secondaryButton")
         btn_cancelar.clicked.connect(self.reject)
         botones_layout.addWidget(btn_cancelar)
 

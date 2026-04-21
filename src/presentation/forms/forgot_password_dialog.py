@@ -86,22 +86,10 @@ class ForgotPasswordDialog(QDialog):
         buttons_layout.setSpacing(10)
         buttons_layout.setContentsMargins(40, 20, 40, 20)
 
-        cancel_btn = QPushButton("← Cancelar")
+        cancel_btn = QPushButton("Cancelar")
+        cancel_btn.setObjectName("secondaryButton")
         cancel_btn.setMinimumHeight(40)
         cancel_btn.clicked.connect(self.reject)
-        cancel_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-            }
-        """)
         buttons_layout.addWidget(cancel_btn)
 
         send_btn = QPushButton("Enviar Código")

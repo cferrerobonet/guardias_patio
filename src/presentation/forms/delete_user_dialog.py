@@ -116,23 +116,11 @@ class DeleteUserDialog(QDialog):
         buttons_layout.setSpacing(10)
         buttons_layout.setContentsMargins(40, 20, 40, 20)
 
-        cancel_btn = QPushButton("← Cancelar")
+        cancel_btn = QPushButton("Cancelar")
+        cancel_btn.setObjectName("secondaryButton")
         cancel_btn.setMinimumHeight(40)
         cancel_btn.clicked.connect(self.reject)
         cancel_btn.setAccessibleName("Botón cancelar eliminación de usuario")
-        cancel_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-            }
-        """)
         buttons_layout.addWidget(cancel_btn)
 
         delete_btn = QPushButton("ELIMINAR PERMANENTEMENTE")
@@ -141,19 +129,7 @@ class DeleteUserDialog(QDialog):
         delete_btn.clicked.connect(self.delete_user)
         delete_btn.setDefault(True)
         delete_btn.setAccessibleName("Botón eliminar usuario permanentemente")
-        delete_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #DC2626;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 700;
-            }
-            QPushButton:hover {
-                background-color: #991B1B;
-            }
-        """)
+        delete_btn.setProperty("danger", "true")
         buttons_layout.addWidget(delete_btn)
 
         layout.addLayout(buttons_layout)

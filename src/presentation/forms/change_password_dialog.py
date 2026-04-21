@@ -98,7 +98,7 @@ class ChangePasswordDialog(QDialog):
         self.new_password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.new_password_input.setMinimumHeight(35)
         self.new_password_input.setAccessibleName("Campo nueva contraseña")
-        form_layout.addRow("🔒 Nueva Contraseña:", self.new_password_input)
+        form_layout.addRow("Nueva Contraseña:", self.new_password_input)
 
         self.confirm_password_input = QLineEdit()
         self.confirm_password_input.setPlaceholderText("Confirmar nueva contraseña")
@@ -106,7 +106,7 @@ class ChangePasswordDialog(QDialog):
         self.confirm_password_input.setMinimumHeight(35)
         self.confirm_password_input.returnPressed.connect(self.change_password)
         self.confirm_password_input.setAccessibleName("Campo confirmar nueva contraseña")
-        form_layout.addRow("🔒 Confirmar:", self.confirm_password_input)
+        form_layout.addRow("Confirmar:", self.confirm_password_input)
 
         layout.addLayout(form_layout)
 
@@ -115,43 +115,19 @@ class ChangePasswordDialog(QDialog):
         buttons_layout.setSpacing(10)
         buttons_layout.setContentsMargins(40, 20, 40, 20)
 
-        cancel_btn = QPushButton("← Cancelar")
+        cancel_btn = QPushButton("Cancelar")
+        cancel_btn.setObjectName("secondaryButton")
         cancel_btn.setMinimumHeight(40)
         cancel_btn.clicked.connect(self.reject)
         cancel_btn.setAccessibleName("Botón cancelar cambio de contraseña")
-        cancel_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-            }
-        """)
         buttons_layout.addWidget(cancel_btn)
 
-        change_btn = QPushButton("✓ Cambiar Contraseña")
+        change_btn = QPushButton("Cambiar Contraseña")
         change_btn.setMinimumHeight(40)
         change_btn.clicked.connect(self.change_password)
         change_btn.setDefault(True)
         change_btn.setAccessibleName("Botón confirmar cambio de contraseña")
-        change_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #10B981;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-        """)
+        change_btn.setProperty("success", "true")
         buttons_layout.addWidget(change_btn)
 
         layout.addLayout(buttons_layout)

@@ -49,7 +49,7 @@ class DialogoDiagnosticoGuardias(QDialog):
 
         # Título
         titulo = QLabel("Se detectaron problemas en la asignación")
-        titulo.setStyleSheet("font-size: 16pt; font-weight: bold; color: #e67e22;")
+        titulo.setStyleSheet("font-size: 20px; font-weight: bold; color: #e67e22;")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(titulo)
 
@@ -62,7 +62,7 @@ class DialogoDiagnosticoGuardias(QDialog):
             f"Guardias: {stats['total_guardias_asignadas']}/"
             f"{stats['total_slots_esperados']}"
         )
-        subtitulo.setStyleSheet("font-size: 11pt; color: #7f8c8d; margin: 5px;")
+        subtitulo.setStyleSheet("font-size: 14px; color: #7f8c8d; margin: 5px;")
         subtitulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(subtitulo)
 
@@ -105,7 +105,7 @@ class DialogoDiagnosticoGuardias(QDialog):
             recomendacion.setWordWrap(True)
             recomendacion.setStyleSheet(
                 "background-color: #ecf0f1; padding: 10px; border-radius: 5px; "
-                "color: #2c3e50; font-size: 10pt;"
+                "color: #2c3e50; font-size: 11px;"
             )
             layout.addWidget(recomendacion)
 
@@ -120,7 +120,7 @@ class DialogoDiagnosticoGuardias(QDialog):
         btn_ajustar.clicked.connect(self._on_ajustar_manual)
         btn_ajustar.setStyleSheet(
             "QPushButton { background-color: #3498db; color: white; "
-            "padding: 10px 20px; font-size: 11pt; border-radius: 5px; }"
+            "padding: 10px 20px; font-size: 14px; border-radius: 5px; }"
             "QPushButton:hover { background-color: #2980b9; }"
         )
 
@@ -133,7 +133,7 @@ class DialogoDiagnosticoGuardias(QDialog):
         btn_continuar_ilp.clicked.connect(self._on_continuar_ilp)
         btn_continuar_ilp.setStyleSheet(
             "QPushButton { background-color: #27ae60; color: white; "
-            "padding: 10px 20px; font-size: 11pt; border-radius: 5px; }"
+            "padding: 10px 20px; font-size: 14px; border-radius: 5px; }"
             "QPushButton:hover { background-color: #229954; }"
         )
 
@@ -145,13 +145,9 @@ class DialogoDiagnosticoGuardias(QDialog):
             )
 
         btn_cancelar = QPushButton("Cancelar")
+        btn_cancelar.setObjectName("secondaryButton")
         btn_cancelar.setIcon(icon_for_button("close"))
         btn_cancelar.clicked.connect(self.reject)
-        btn_cancelar.setStyleSheet(
-            "QPushButton { background-color: #95a5a6; color: white; "
-            "padding: 10px 20px; font-size: 11pt; border-radius: 5px; }"
-            "QPushButton:hover { background-color: #7f8c8d; }"
-        )
 
         layout_botones.addWidget(btn_ajustar)
         layout_botones.addWidget(btn_continuar_ilp)
@@ -172,7 +168,7 @@ class DialogoDiagnosticoGuardias(QDialog):
         # Grupo para esta categoría
         grupo = QGroupBox(titulo)
         grupo.setStyleSheet(
-            f"QGroupBox {{ font-weight: bold; font-size: 11pt; "
+            f"QGroupBox {{ font-weight: bold; font-size: 14px; "
             f"color: {color}; border: 2px solid {color}; "
             f"border-radius: 5px; margin-top: 10px; padding-top: 10px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; left: 10px; }}"
@@ -184,7 +180,7 @@ class DialogoDiagnosticoGuardias(QDialog):
             # Descripción del problema
             lbl_descripcion = QLabel(f"• {problema.descripcion}")
             lbl_descripcion.setWordWrap(True)
-            lbl_descripcion.setStyleSheet("font-size: 10pt; margin-left: 10px;")
+            lbl_descripcion.setStyleSheet("font-size: 11px; margin-left: 10px;")
             layout_grupo.addWidget(lbl_descripcion)
 
             # Sugerencias (si las hay)
@@ -193,7 +189,7 @@ class DialogoDiagnosticoGuardias(QDialog):
                     lbl_sugerencia = QLabel(f"   → {sugerencia}")
                     lbl_sugerencia.setWordWrap(True)
                     lbl_sugerencia.setStyleSheet(
-                        "font-size: 9pt; color: #7f8c8d; margin-left: 30px; "
+                        "font-size: 11px; color: #7f8c8d; margin-left: 30px; "
                         "margin-top: 3px; font-style: italic;"
                     )
                     layout_grupo.addWidget(lbl_sugerencia)
@@ -205,7 +201,7 @@ class DialogoDiagnosticoGuardias(QDialog):
                     # Mostrar nombres si son pocos
                     nombres = [p["nombre"] for p in profesores]
                     lbl_detalle = QLabel(f"   Afectados: {', '.join(nombres)}")
-                    lbl_detalle.setStyleSheet("font-size: 9pt; color: #95a5a6; margin-left: 30px;")
+                    lbl_detalle.setStyleSheet("font-size: 11px; color: #95a5a6; margin-left: 30px;")
                     layout_grupo.addWidget(lbl_detalle)
 
             # Espaciado entre problemas
