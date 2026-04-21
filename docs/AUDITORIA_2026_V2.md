@@ -514,7 +514,7 @@ self.setFixedSize(700, 480)
 
 ---
 
-### UX-03 — La sidebar tiene 260px fijos y ocupa demasiado a 1366px
+### ~~UX-03 — La sidebar tiene 260px fijos y ocupa demasiado a 1366px~~ ✅ RESUELTO v5.26.9
 **Severidad: Media**
 
 En portátiles de 13-14" (1366x768), la sidebar de 260px fijos se lleva el 19% del ancho. En pantalla completa es tolerable pero en ventana normal machaca el contenido.

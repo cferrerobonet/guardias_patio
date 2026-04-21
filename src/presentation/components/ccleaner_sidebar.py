@@ -7,7 +7,7 @@ Menú lateral oscuro con diseño profesional.
 from pathlib import Path
 
 from core.logging import get_logger
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QSettings, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
     QLabel,
@@ -25,6 +25,10 @@ from presentation.themes.ccleaner_theme import (
 
 logger = get_logger(__name__)
 
+_SIDEBAR_EXPANDED = 260
+_SIDEBAR_COLLAPSED = 56
+
+
 class SidebarMenu(QWidget):
     """Menú lateral estilo CCleaner con categorías"""
 
@@ -34,23 +38,49 @@ class SidebarMenu(QWidget):
         super().__init__(parent)
         self.setObjectName("sidebar")
         self.active_button = None
-        self.logo_label = None  # Para actualizar el logo dinámicamente
-        self.session = session  # Guardar sesión para el selector de curso
+        self.logo_label = None
+        self.session = session
+        self._collapsed = False
+        self._menu_items: list[tuple[QPushButton, str]] = []
+        self._category_labels: list[QLabel] = []
+        self._category_separators: list[QFrame] = []
+        settings = QSettings("GuardiasPatio", "Sidebar")
+        self._collapsed = settings.value("collapsed", False, type=bool)
         self.setup_ui()
 
     def setup_ui(self):
         """Configurar la interfaz del sidebar"""
-        # Ancho fijo más grande para evitar cortes
-        self.setMinimumWidth(260)
-        self.setMaximumWidth(260)
+        self.setMinimumWidth(_SIDEBAR_COLLAPSED)
+        self.setMaximumWidth(_SIDEBAR_EXPANDED)
+        self._apply_width()
 
-        # Aplicar estilo
         self.setStyleSheet(get_sidebar_style())
 
-        # Layout principal
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
+
+        # Botón toggle colapso (Ctrl+B)
+        from PyQt6.QtGui import QKeySequence, QShortcut
+        self._toggle_btn = QPushButton("◀")
+        self._toggle_btn.setFixedHeight(28)
+        self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._toggle_btn.setToolTip("Colapsar/expandir sidebar (Ctrl+B)")
+        self._toggle_btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(255,255,255,0.08);
+                color: rgba(255,255,255,0.7);
+                border: none;
+                font-size: 12px;
+                padding: 4px;
+            }
+            QPushButton:hover { background-color: rgba(255,255,255,0.15); }
+        """)
+        self._toggle_btn.clicked.connect(self.toggle_collapse)
+        layout.addWidget(self._toggle_btn)
+
+        shortcut = QShortcut(QKeySequence("Ctrl+B"), self)
+        shortcut.activated.connect(self.toggle_collapse)
 
         # ========== SECCIÓN SUPERIOR: LOGO ==========
         # Área superior con fondo claro para el logo
@@ -186,6 +216,11 @@ class SidebarMenu(QWidget):
         scroll.setWidget(menu_widget)
         layout.addWidget(scroll)
 
+        # Aplicar estado inicial si estaba colapsado
+        if self._collapsed:
+            self._collapsed = False
+            self.toggle_collapse()
+
     def update_logo(self):
         """Actualiza el logo mostrado (corporativo o por defecto)"""
         if self.logo_label is None:
@@ -243,8 +278,8 @@ class SidebarMenu(QWidget):
             }
         """)
         layout.addWidget(label)
+        self._category_labels.append(label)
 
-        # Línea separadora debajo de categoría
         separator = QFrame()
         separator.setObjectName("separator")
         separator.setStyleSheet("""
@@ -255,6 +290,7 @@ class SidebarMenu(QWidget):
             }
         """)
         layout.addWidget(separator)
+        self._category_separators.append(separator)
 
     def add_menu_item(
         self, layout: QVBoxLayout, object_name: str, text: str, section: str, icon_name: str = None
@@ -301,6 +337,7 @@ class SidebarMenu(QWidget):
         """)
         btn.clicked.connect(lambda: self.on_menu_clicked(btn, section))
         layout.addWidget(btn)
+        self._menu_items.append((btn, f" {text}"))
 
     def on_menu_clicked(self, button: QPushButton, section: str):
         """Manejar clic en un elemento del menú"""
@@ -421,6 +458,33 @@ class SidebarMenu(QWidget):
 
         dialogo = DialogoAcercaDe(self, session=self.session)
         dialogo.exec()
+
+    def _apply_width(self):
+        w = _SIDEBAR_COLLAPSED if self._collapsed else _SIDEBAR_EXPANDED
+        self.setFixedWidth(w)
+
+    def toggle_collapse(self):
+        self._collapsed = not self._collapsed
+        self._apply_width()
+
+        visible = not self._collapsed
+        for label in self._category_labels:
+            label.setVisible(visible)
+        for sep in self._category_separators:
+            sep.setVisible(visible)
+
+        for btn, original_text in self._menu_items:
+            btn.setText(original_text if visible else "")
+            btn.setToolTip("" if visible else original_text.strip())
+
+        self._toggle_btn.setText("◀" if visible else "▶")
+
+        QSettings("GuardiasPatio", "Sidebar").setValue("collapsed", self._collapsed)
+
+        if hasattr(self, "logo_label") and self.logo_label:
+            self.logo_label.setVisible(visible)
+        if hasattr(self, "selector_curso"):
+            self.selector_curso.setVisible(visible)
 
     def set_active_section(self, section: str):
         """Establecer sección activa programáticamente"""

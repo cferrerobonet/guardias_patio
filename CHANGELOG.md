@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.26.9] - 2026-04-21
+
+### 🎯 Resumen
+UX-03: sidebar colapsable con Ctrl+B — toggle entre 260px (expandido) y 56px (solo iconos).
+
+### ✨ Added
+- Sidebar: botón ◀/▶ y atajo Ctrl+B para colapsar/expandir; estado persiste en QSettings; en modo colapsado se ocultan textos, categorías y selector de curso, y aparecen tooltips en cada ítem
+
 ## [5.26.8] - 2026-04-21
 
 ### 🎯 Resumen
