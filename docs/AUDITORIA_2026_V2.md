@@ -1179,7 +1179,7 @@ for log in logs_antiguos:
 
 ---
 
-### BUG-04 — No hay validación de integridad al importar JSON
+### ~~BUG-04 — No hay validación de integridad al importar JSON~~ ✅ RESUELTO v5.27.2
 **Severidad: Media**
 
 Al importar un backup JSON, si el archivo está corrupto o es de una versión anterior con campos diferentes, la app puede fallar silenciosamente o con un traceback genérico.

@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.27.2] - 2026-04-21
+
+### 🎯 Resumen
+BUG-04: validación de estructura JSON antes de importar — detecta JSON inválido, tipo incorrecto o claves no reconocidas con mensaje preciso.
+
+### Fixed
+- `import_export_form.py`: pre-validación del backup JSON antes de llamar a `importar_todo` — informa exactamente qué falla (JSON malformado, tipo incorrecto, secciones no reconocidas)
+
 ## [5.27.1] - 2026-04-21
 
 ### 🎯 Resumen

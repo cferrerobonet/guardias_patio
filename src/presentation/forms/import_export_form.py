@@ -259,6 +259,40 @@ class ImportExportForm(BaseForm):
             if not archivo:
                 return  # Usuario canceló
 
+            # Validar estructura del JSON antes de importar
+            import json as _json
+            try:
+                with open(archivo, encoding="utf-8") as _f:
+                    datos_preview = _json.load(_f)
+            except _json.JSONDecodeError as je:
+                self.mostrar_error(
+                    "JSON inválido",
+                    f"El archivo no es un JSON válido:\n{je.msg} (línea {je.lineno}, col {je.colno})",
+                )
+                return
+            except OSError as oe:
+                self.mostrar_error("Error al leer archivo", str(oe))
+                return
+
+            if not isinstance(datos_preview, dict):
+                self.mostrar_error(
+                    "Formato incorrecto",
+                    f"El archivo debe contener un objeto JSON, no {type(datos_preview).__name__}.",
+                )
+                return
+
+            _CLAVES_ESPERADAS = {"profesores", "zonas", "configuracion", "guardias",
+                                  "ausencias", "cursos_escolares", "usuarios"}
+            if not (set(datos_preview.keys()) & _CLAVES_ESPERADAS):
+                claves = ", ".join(sorted(datos_preview.keys())) or "(ninguna)"
+                self.mostrar_error(
+                    "Backup incompatible",
+                    f"El archivo no contiene secciones reconocidas.\n\n"
+                    f"Claves encontradas: {claves}\n"
+                    f"Se esperaba al menos una de: {', '.join(sorted(_CLAVES_ESPERADAS))}",
+                )
+                return
+
             # Importar datos
             resultado = ExportadorDatos.importar_todo(self.session, archivo, limpiar)
 
