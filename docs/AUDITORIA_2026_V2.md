@@ -624,7 +624,7 @@ def guardar_profesor(self):
 
 ---
 
-### UX-06 — Los diálogos de detalle del día (DiaDetalleDialog) son solo texto
+### ~~UX-06 — Los diálogos de detalle del día (DiaDetalleDialog) son solo texto~~ ✅ RESUELTO v5.27.0
 **Severidad: Media**
 
 Al hacer clic en un día del calendario, el diálogo muestra la información correcta pero en formato de texto plano agrupado en QGroupBox. No hay diferenciación visual entre guardias cubiertas, ausencias, y sustituciones más allá del agrupado.

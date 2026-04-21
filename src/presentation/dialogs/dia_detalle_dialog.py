@@ -334,12 +334,33 @@ class DiaDetalleDialog(QDialog):
 
         return widget
 
+    @staticmethod
+    def _iniciales(nombre_completo: str) -> str:
+        partes = nombre_completo.strip().split()
+        return "".join(p[0].upper() for p in partes[:2] if p)
+
     def _crear_widget_guardia(self, guardia: Guardia) -> QWidget:
         """Crear widget para una guardia individual con mejor diseño."""
         widget = QWidget()
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(15)
+        layout.setSpacing(10)
+
+        # Avatar con iniciales del profesor
+        iniciales = self._iniciales(guardia.profesor.nombre_completo)
+        avatar = QLabel(iniciales)
+        avatar.setFixedSize(34, 34)
+        avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        avatar.setStyleSheet("""
+            QLabel {
+                background-color: #007ACC;
+                color: white;
+                border-radius: 17px;
+                font-size: 12px;
+                font-weight: bold;
+            }
+        """)
+        layout.addWidget(avatar)
 
         # Zona con badge distintivo
         if guardia.zona:
@@ -440,7 +461,7 @@ class DiaDetalleDialog(QDialog):
             layout.addWidget(label_motivo)
 
         widget.setStyleSheet(
-            "background-color: #fff3e0; border-left: 3px solid #FF9800; border-radius: 3px;"
+            "background-color: #FEE2E2; border-left: 3px solid #DC2626; border-radius: 3px;"
         )
 
         return widget
@@ -463,31 +484,56 @@ class DiaDetalleDialog(QDialog):
         """Crear widget para una sustitución individual."""
         widget = QWidget()
         layout = QHBoxLayout(widget)
-        layout.setContentsMargins(10, 5, 10, 5)
+        layout.setContentsMargins(10, 6, 10, 6)
         layout.setSpacing(10)
 
+        # Avatar con iniciales
+        iniciales = self._iniciales(guardia.profesor.nombre_completo)
+        avatar = QLabel(iniciales)
+        avatar.setFixedSize(30, 30)
+        avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        avatar.setStyleSheet("""
+            QLabel {
+                background-color: #E67E22;
+                color: white;
+                border-radius: 15px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+        """)
+        layout.addWidget(avatar)
+
+        # Badge SUST
+        badge = QLabel("SUST")
+        badge.setStyleSheet("""
+            QLabel {
+                background-color: #E67E22;
+                color: white;
+                border-radius: 3px;
+                padding: 2px 6px;
+                font-size: 10px;
+                font-weight: bold;
+            }
+        """)
+        layout.addWidget(badge)
+
         # Sustituto
-        label_sustituto = QLabel(f"🔄 {guardia.profesor.nombre_completo} (Sustituto)")
+        label_sustituto = QLabel(guardia.profesor.nombre_completo)
         font_sust = QFont()
         font_sust.setBold(True)
         label_sustituto.setFont(font_sust)
-        layout.addWidget(label_sustituto)
+        layout.addWidget(label_sustituto, 2)
 
         # Zona
         if guardia.zona:
-            label_zona = QLabel(f"📍 {guardia.zona.nombre_zona}")
-            label_zona.setStyleSheet("color: #1976D2; font-size: 9px;")
+            label_zona = QLabel(guardia.zona.nombre_zona)
+            label_zona.setStyleSheet("color: #1976D2; font-size: 11px;")
             layout.addWidget(label_zona)
-
-        # Recreo
-        label_recreo = QLabel(f"⏰ Recreo {guardia.recreo}")
-        label_recreo.setObjectName("labelCaption")
-        layout.addWidget(label_recreo)
 
         layout.addStretch()
 
         widget.setStyleSheet(
-            "background-color: #e8f5e9; border-left: 3px solid #4CAF50; "
+            "background-color: #FFF3E0; border-left: 3px solid #E67E22; "
             "border-radius: 3px; padding: 2px;"
         )
 
