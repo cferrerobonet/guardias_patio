@@ -296,9 +296,8 @@ class LoginDialog(QDialog):
         self.setWindowTitle("Iniciar Sesión - Guardias de Patio")
         self.setWindowIcon(get_icon("login", "#007ACC", 32))
         self.setModal(True)
-        self.setMinimumWidth(450)
+        self.setFixedSize(720, 480)
 
-        # Eliminar botón de maximizar - solo mostrar cerrar
         self.setWindowFlags(
             Qt.WindowType.Dialog
             | Qt.WindowType.CustomizeWindowHint
@@ -306,156 +305,175 @@ class LoginDialog(QDialog):
             | Qt.WindowType.WindowCloseButtonHint
         )
 
-        layout = QVBoxLayout(self)
-        layout.setSpacing(0)
+        root_layout = QHBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
 
-        # Logo corporativo
-        logo_label = QLabel()
+        # ── Panel izquierdo: marca ──────────────────────────────────────────
+        brand_panel = QLabel()
+        brand_panel.setFixedWidth(280)
+        brand_panel.setStyleSheet(
+            "QLabel { background-color: #007ACC; }"
+        )
+        brand_layout = QVBoxLayout(brand_panel)
+        brand_layout.setContentsMargins(24, 40, 24, 32)
+        brand_layout.setSpacing(0)
+
         logo_path = get_resources_directory() / "logo.png"
-
+        logo_label = QLabel()
         if logo_path.exists():
             pixmap = QPixmap(str(logo_path))
-            # Escalar el logo manteniendo la proporción
-            scaled_pixmap = pixmap.scaled(
-                180,
-                180,
+            scaled = pixmap.scaled(
+                120, 120,
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
             )
-            logo_label.setPixmap(scaled_pixmap)
+            logo_label.setPixmap(scaled)
         else:
-            # Logo alternativo con texto si no existe la imagen
             logo_label.setText("🏫")
-            logo_label.setStyleSheet("font-size: 64px;")
-
+            logo_label.setStyleSheet("font-size: 52px; background: transparent;")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        logo_label.setStyleSheet("padding: 10px; background-color: #f8f9fa;")
-        layout.addWidget(logo_label)
+        logo_label.setStyleSheet("background: transparent;")
+        brand_layout.addWidget(logo_label)
 
-        # Título
-        title = QLabel("Generador de\nGuardias de Patio")
-        title.setStyleSheet("""
-            QLabel {
-                font-size: 34px;
-                font-weight: bold;
-                color: #007ACC;
-                padding: 10px 10px 5px 10px;
-                background-color: #f8f9fa;
-            }
-        """)
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
+        brand_layout.addSpacing(20)
 
-        # Créditos
-        credits = QLabel("(Created & Powered by CFB - Enero 2026)")
-        credits.setStyleSheet("""
-            QLabel {
-                font-size: 12px;
-                color: #6c757d;
-                padding: 0px 20px 20px 20px;
-                background-color: #f8f9fa;
-            }
-        """)
+        app_title = QLabel("Guardias\nde Patio")
+        app_title.setStyleSheet(
+            "QLabel { font-size: 26px; font-weight: 700; color: white;"
+            " background: transparent; line-height: 1.2; }"
+        )
+        app_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        brand_layout.addWidget(app_title)
+
+        brand_layout.addSpacing(10)
+
+        app_sub = QLabel("Gestión y asignación\nde guardias escolares")
+        app_sub.setStyleSheet(
+            "QLabel { font-size: 12px; color: rgba(255,255,255,0.75);"
+            " background: transparent; }"
+        )
+        app_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        app_sub.setWordWrap(True)
+        brand_layout.addWidget(app_sub)
+
+        brand_layout.addStretch()
+
+        credits = QLabel("© 2026 · Carlos Ferrero Bonet")
+        credits.setStyleSheet(
+            "QLabel { font-size: 10px; color: rgba(255,255,255,0.55);"
+            " background: transparent; }"
+        )
         credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(credits)
+        brand_layout.addWidget(credits)
 
-        # Formulario
+        root_layout.addWidget(brand_panel)
+
+        # ── Panel derecho: formulario ───────────────────────────────────────
+        form_panel = QLabel()
+        form_panel.setStyleSheet("QLabel { background-color: #FFFFFF; }")
+        form_layout_outer = QVBoxLayout(form_panel)
+        form_layout_outer.setContentsMargins(40, 40, 40, 32)
+        form_layout_outer.setSpacing(0)
+
+        welcome = QLabel("Bienvenido")
+        welcome.setStyleSheet(
+            "QLabel { font-size: 22px; font-weight: 700; color: #111827;"
+            " background: transparent; }"
+        )
+        form_layout_outer.addWidget(welcome)
+
+        hint = QLabel("Inicia sesión para continuar")
+        hint.setStyleSheet(
+            "QLabel { font-size: 12px; color: #6B7280; background: transparent; }"
+        )
+        form_layout_outer.addWidget(hint)
+        form_layout_outer.addSpacing(28)
+
         form_layout = QFormLayout()
-        form_layout.setContentsMargins(40, 20, 40, 20)
-        form_layout.setSpacing(15)
+        form_layout.setSpacing(14)
+        form_layout.setContentsMargins(0, 0, 0, 0)
 
-        # ComboBox para usuarios existentes
         self.username_combo = QComboBox()
         self.username_combo.setEditable(True)
         self.username_combo.setPlaceholderText("Selecciona o escribe tu usuario")
-        self.username_combo.setMinimumHeight(35)
-        self.username_combo.setMinimumWidth(240)
+        self.username_combo.setMinimumHeight(36)
         self.username_combo.setAccessibleName("Campo selector de usuario")
         self.username_combo.currentTextChanged.connect(self.on_user_selected)
-
-        # Label con icono para usuario
-        user_label = QLabel("Usuario:")
-        user_label.setObjectName("labelSecondary")
+        user_label = QLabel("Usuario")
+        user_label.setStyleSheet("QLabel { font-size: 12px; font-weight: 600; color: #374151; background: transparent; }")
         form_layout.addRow(user_label, self.username_combo)
 
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Introduce tu contraseña")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_input.setMinimumHeight(35)
-        self.password_input.setMinimumWidth(240)
+        self.password_input.setMinimumHeight(36)
         self.password_input.setAccessibleName("Campo contraseña de acceso")
         self.password_input.returnPressed.connect(self.login)
+        pwd_label = QLabel("Contraseña")
+        pwd_label.setStyleSheet("QLabel { font-size: 12px; font-weight: 600; color: #374151; background: transparent; }")
+        form_layout.addRow(pwd_label, self.password_input)
 
-        # Label con icono para contraseña
-        password_label = QLabel("Contraseña:")
-        password_label.setObjectName("labelSecondary")
-        form_layout.addRow(password_label, self.password_input)
+        form_layout_outer.addLayout(form_layout)
+        form_layout_outer.addSpacing(8)
 
-        layout.addLayout(form_layout)
+        forgot_password_label = QLabel(
+            '<a href="#" style="color: #007ACC; text-decoration: none;">¿Olvidaste tu contraseña?</a>'
+        )
+        forgot_password_label.setStyleSheet("font-size: 11px; background: transparent;")
+        forgot_password_label.setTextFormat(Qt.TextFormat.RichText)
+        forgot_password_label.linkActivated.connect(self.open_forgot_password_dialog)
+        forgot_password_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        form_layout_outer.addWidget(forgot_password_label)
 
-        # Botones
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(10)
-        buttons_layout.setContentsMargins(40, 10, 40, 20)
-
-        self.delete_user_btn = QPushButton(" Eliminar")
-        self.delete_user_btn.setIcon(get_icon("close", "white", 18))
-        self.delete_user_btn.setMinimumHeight(40)
-        self.delete_user_btn.clicked.connect(self.open_delete_user_dialog)
-        self.delete_user_btn.setProperty("danger", "true")
-        buttons_layout.addWidget(self.delete_user_btn)
-
-        self.register_btn = QPushButton(" Nuevo Usuario")
-        self.register_btn.setIcon(get_icon("account-plus", "white", 18))
-        self.register_btn.setMinimumHeight(40)
-        self.register_btn.clicked.connect(self.open_register_dialog)
-        self.register_btn.setProperty("success", "true")
-        buttons_layout.addWidget(self.register_btn)
+        form_layout_outer.addSpacing(20)
 
         self.login_btn = QPushButton(" Iniciar Sesión")
         self.login_btn.setIcon(get_icon("login", "white", 18))
-        self.login_btn.setMinimumHeight(40)
+        self.login_btn.setMinimumHeight(42)
         self.login_btn.clicked.connect(self.login)
         self.login_btn.setDefault(True)
-        self.login_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #007ACC;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #005A9E;
-            }
-        """)
-        buttons_layout.addWidget(self.login_btn)
+        self.login_btn.setStyleSheet(
+            "QPushButton { background-color: #007ACC; color: white; border: none;"
+            " border-radius: 6px; font-size: 14px; font-weight: 600; }"
+            "QPushButton:hover { background-color: #005A9E; }"
+        )
+        form_layout_outer.addWidget(self.login_btn)
 
-        layout.addLayout(buttons_layout)
+        form_layout_outer.addSpacing(12)
 
-        # UX-03: TabOrder explícito en LoginDialog
+        secondary_layout = QHBoxLayout()
+        secondary_layout.setSpacing(8)
+
+        self.register_btn = QPushButton(" Nuevo Usuario")
+        self.register_btn.setIcon(get_icon("account-plus", "white", 18))
+        self.register_btn.setMinimumHeight(36)
+        self.register_btn.clicked.connect(self.open_register_dialog)
+        self.register_btn.setProperty("success", "true")
+        secondary_layout.addWidget(self.register_btn)
+
+        self.delete_user_btn = QPushButton(" Eliminar")
+        self.delete_user_btn.setIcon(get_icon("close", "white", 18))
+        self.delete_user_btn.setMinimumHeight(36)
+        self.delete_user_btn.clicked.connect(self.open_delete_user_dialog)
+        self.delete_user_btn.setProperty("danger", "true")
+        secondary_layout.addWidget(self.delete_user_btn)
+
+        form_layout_outer.addLayout(secondary_layout)
+        form_layout_outer.addStretch()
+
+        info_label = QLabel("¿Primera vez? Haz clic en Nuevo Usuario")
+        info_label.setStyleSheet("QLabel { color: #9CA3AF; font-size: 11px; background: transparent; }")
+        info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        form_layout_outer.addWidget(info_label)
+
+        root_layout.addWidget(form_panel)
+
+        # TabOrder
         self.setTabOrder(self.username_combo, self.password_input)
         self.setTabOrder(self.password_input, self.login_btn)
         self.setTabOrder(self.login_btn, self.register_btn)
         self.setTabOrder(self.register_btn, self.delete_user_btn)
-
-        # Link de recuperación de contraseña
-        forgot_password_label = QLabel(
-            '<a href="#" style="color: #007ACC;">¿Olvidaste tu contraseña?</a>'
-        )
-        forgot_password_label.setStyleSheet("padding: 10px; font-size: 12px;")
-        forgot_password_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        forgot_password_label.setTextFormat(Qt.TextFormat.RichText)
-        forgot_password_label.linkActivated.connect(self.open_forgot_password_dialog)
-        forgot_password_label.setCursor(Qt.CursorShape.PointingHandCursor)
-        layout.addWidget(forgot_password_label)
-
-        # Información
-        info_label = QLabel("Primera vez? Haz clic en Nuevo Usuario")
-        info_label.setStyleSheet("color: #6B7280; font-size: 12px; padding: 10px;")
-        info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(info_label)
 
     def load_existing_users(self):
         """Carga la lista de usuarios existentes en el ComboBox."""

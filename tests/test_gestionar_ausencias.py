@@ -9,9 +9,10 @@ from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
+from PyQt6.QtCore import QDate
+
 from infrastructure.database.models import Ausencia, CursoEscolar, Guardia
 from presentation.widgets.gestionar_ausencias import DialogoReasignacion, GestionarAusenciasForm
-from PyQt6.QtCore import QDate
 
 # ============================================================================
 # FIXTURES
@@ -275,6 +276,19 @@ class TestGestionarAusenciasFormEliminar:
             form.eliminar_ausencia_seleccionada()
             mock_warning.assert_called_once()
 
+    def test_eliminar_usa_confirmacion_estandar(self, form, datos_completos):
+        """Eliminar ausencia usa confirmar_accion y respeta cancelación."""
+        form.tabla_ausencias.selectRow(0)
+
+        with patch.object(form, "confirmar_accion", return_value=False) as mock_confirmar:
+            with patch(
+                "services.gestor_ausencias.GestorAusencias.eliminar_ausencia"
+            ) as mock_delete:
+                form.eliminar_ausencia_seleccionada()
+
+        mock_confirmar.assert_called_once()
+        mock_delete.assert_not_called()
+
 
 # ============================================================================
 # TEST: DESACTIVAR AUSENCIA
@@ -454,7 +468,9 @@ class TestGestionarAusenciasFormIntegracion:
 class TestGestionarAusenciasFormRendimiento:
     """Tests de rendimiento con datos grandes."""
 
-    def test_carga_inicial_rapida(self, qtbot, session, profesor_factory, zona_factory, curso_activo):
+    def test_carga_inicial_rapida(
+        self, qtbot, session, profesor_factory, zona_factory, curso_activo
+    ):
         """La carga inicial del formulario debe ser rápida."""
         zona = zona_factory(nombre_zona="Zona Test")
         # Crear 30 profesores con guardias

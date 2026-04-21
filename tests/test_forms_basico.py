@@ -9,7 +9,10 @@ Este archivo contiene tests simples pero efectivos que verifican:
 Para tests más detallados, ver archivos test_*_form_detallado.py
 """
 
+from unittest.mock import patch
+
 import pytest
+
 from presentation.forms.profesor_form import ProfesorForm
 from presentation.forms.zona_form import ZonaForm
 
@@ -52,6 +55,20 @@ class TestProfesorFormBasico:
         assert form.eliminar_use_case is not None
         assert form.listar_use_case is not None
 
+    def test_eliminar_profesor_usa_confirmacion_estandar(self, qtbot, db_with_data):
+        """Eliminar profesor usa confirmar_accion y respeta cancelación."""
+        form = ProfesorForm(db_with_data)
+        qtbot.addWidget(form)
+
+        form.tabla_profesores.selectRow(0)
+
+        with patch.object(form, "confirmar_accion", return_value=False) as mock_confirmar:
+            with patch.object(form.eliminar_use_case, "execute") as mock_execute:
+                form.eliminar_profesor()
+
+        mock_confirmar.assert_called_once()
+        mock_execute.assert_not_called()
+
 
 @pytest.mark.ui
 class TestZonaFormBasico:
@@ -89,6 +106,20 @@ class TestZonaFormBasico:
         assert form.crear_zona_uc is not None
         assert form.eliminar_zona_uc is not None
         assert form.listar_zonas_uc is not None
+
+    def test_eliminar_zona_usa_confirmacion_estandar(self, qtbot, db_with_data):
+        """Eliminar zona usa confirmar_accion y respeta cancelación."""
+        form = ZonaForm(db_with_data)
+        qtbot.addWidget(form)
+
+        form.tabla_zonas.selectRow(0)
+
+        with patch.object(form, "confirmar_accion", return_value=False) as mock_confirmar:
+            with patch.object(form.eliminar_zona_uc, "execute") as mock_execute:
+                form.eliminar_zona()
+
+        mock_confirmar.assert_called_once()
+        mock_execute.assert_not_called()
 
 
 @pytest.mark.ui

@@ -8,7 +8,20 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 import json
 from typing import Optional
 
-from presentation.theme import legacy_styles as styles
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QKeySequence, QShortcut
+from PyQt6.QtWidgets import (
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSplitter,
+    QTableWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
 from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
 from application.use_cases.profesor import (
     ActualizarProfesorUseCase,
@@ -19,22 +32,6 @@ from application.use_cases.profesor import (
     ObtenerProfesorUseCase,
 )
 from core.logging import get_logger
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QKeySequence, QShortcut
-from PyQt6.QtWidgets import (
-    QHBoxLayout,
-    QHeaderView,
-    QLabel,
-    QLineEdit,
-    QMessageBox,
-    QPushButton,
-    QSplitter,
-    QTableWidget,
-    QVBoxLayout,
-    QWidget,
-)
-from utils.icons import icon_for_button
-
 from presentation.forms.base_form import BaseForm
 from presentation.forms.profesor_table_helpers import (
     cargar_tabla_profesores,
@@ -55,6 +52,7 @@ from presentation.themes.ccleaner_theme import (
     TEXT_SECONDARY,
 )
 from presentation.widgets.table_manager import TableManager
+from utils.icons import icon_for_button
 
 logger = get_logger(__name__)
 
@@ -484,9 +482,7 @@ class ProfesorForm(BaseForm):
                 )
             else:
                 self._limpiar_formulario()
-                self.mostrar_exito(
-                    "Profesor creado", "El profesor ha sido creado correctamente."
-                )
+                self.mostrar_exito("Profesor creado", "El profesor ha sido creado correctamente.")
 
         except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "guardar profesor")
@@ -509,7 +505,9 @@ class ProfesorForm(BaseForm):
         try:
             from application.app_services import AppServices
 
-            zonas_all = sorted(AppServices(self.session).zonas.get_all(), key=lambda z: z.nombre_zona)
+            zonas_all = sorted(
+                AppServices(self.session).zonas.get_all(), key=lambda z: z.nombre_zona
+            )
             zonas_list = [(z.id, z.nombre_zona) for z in zonas_all]
             self.restricciones_widget.cargar_zonas(zonas_list)
 
@@ -719,9 +717,7 @@ class ProfesorForm(BaseForm):
                 f"¿Eliminar <b>{len(profesores_a_eliminar)}</b> profesores?<br><br>• {nombres_html}"
             )
 
-        respuesta = self.mostrar_pregunta("Confirmar eliminación", mensaje)
-
-        if respuesta == QMessageBox.StandardButton.Yes:
+        if self.confirmar_accion("Confirmar eliminación", mensaje):
             try:
                 eliminados = 0
                 errores = []

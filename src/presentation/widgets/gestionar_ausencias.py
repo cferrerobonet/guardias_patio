@@ -310,6 +310,7 @@ class GestionarAusenciasForm(BaseForm):
 
             # Solo profesores con guardias en el curso activo
             from application.app_services import AppServices
+
             profesores = AppServices(self.session).profesores_con_guardias_en_curso(curso_activo.id)
 
             for p in profesores:
@@ -334,6 +335,7 @@ class GestionarAusenciasForm(BaseForm):
 
             # Ausencias de profesores con guardias en el curso activo
             from application.app_services import AppServices
+
             ausencias = AppServices(self.session).ausencias_de_profesores_en_curso(curso_activo.id)
 
             for ausencia in ausencias:
@@ -344,7 +346,12 @@ class GestionarAusenciasForm(BaseForm):
                 self.tabla_ausencias.setItem(row, 0, QTableWidgetItem(str(ausencia.id)))
 
                 from application.app_services import AppServices
-                _prof = AppServices(self.session).profesores.get_by_id(ausencia.profesor_id) if ausencia.profesor_id else None
+
+                _prof = (
+                    AppServices(self.session).profesores.get_by_id(ausencia.profesor_id)
+                    if ausencia.profesor_id
+                    else None
+                )
                 profesor_nombre = _prof.nombre_completo if _prof else "N/A"
                 self.tabla_ausencias.setItem(row, 1, QTableWidgetItem(profesor_nombre))
 
@@ -397,6 +404,7 @@ class GestionarAusenciasForm(BaseForm):
             ausencia_id = int(self.tabla_ausencias.item(row, 0).text())
 
             from application.app_services import AppServices
+
             ausencia = AppServices(self.session).ausencias.get_by_id(ausencia_id)
             if not ausencia:
                 self.mostrar_error("Error", "No se encontró la ausencia")
@@ -499,14 +507,10 @@ class GestionarAusenciasForm(BaseForm):
         row = selected_rows[0].row()
         ausencia_id = int(self.tabla_ausencias.item(row, 0).text())
 
-        from utils.ui_helpers import show_confirmation
-
-        confirmado = show_confirmation(
-            self,
+        confirmado = self.confirmar_accion(
             "Confirmar eliminación",
-            "¿Estás seguro de que quieres eliminar esta ausencia?\n"
+            "¿Estás seguro de que quieres eliminar esta ausencia?<br>"
             "Esta acción no se puede deshacer.",
-            default_button="No",
         )
 
         if confirmado:
@@ -581,7 +585,9 @@ class GestionarAusenciasForm(BaseForm):
             return
 
         try:
-            guardias = GestorAusencias.obtener_guardias_afectadas(self.session, self.ausencia_actual)
+            guardias = GestorAusencias.obtener_guardias_afectadas(
+                self.session, self.ausencia_actual
+            )
 
             if not guardias:
                 self.mostrar_informacion(
@@ -611,4 +617,3 @@ class GestionarAusenciasForm(BaseForm):
         self.preview_text.clear()
         self.ver_guardias_btn.setEnabled(False)
         self.logger.info("Formulario limpiado")
-

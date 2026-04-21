@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.27.4] - 2026-04-21
+
+### 🎯 Resumen
+UX-02: rediseño pantalla de login — panel de marca izquierdo (#007ACC) + panel de formulario derecho blanco, aspecto profesional split-layout.
+
+### Changed
+- `login_dialog.py`: nuevo diseño 720×480 con panel izquierdo de marca (logo, título, subtítulo, créditos sobre fondo #007ACC) y panel derecho blanco con formulario de login limpio; todos los controles y lógica de autenticación se mantienen intactos
+
 ## [5.27.3] - 2026-04-21
 
 ### 🎯 Resumen

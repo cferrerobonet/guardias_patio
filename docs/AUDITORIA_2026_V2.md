@@ -469,7 +469,7 @@ class HomeForm(BaseForm):
 
 ---
 
-### UX-02 — Login con fondo blanco plano. Aspecto amateur.
+### ~~UX-02 — Login con fondo blanco plano. Aspecto amateur.~~ ✅ RESUELTO v5.27.4
 **Severidad: Alta**
 
 El diálogo de login tiene el logo y el título sobre un fondo `#f8f9fa` (gris casi blanco), sin gradiente, sin estructura visual real. Comparado con cualquier app moderna, parece una demo.
