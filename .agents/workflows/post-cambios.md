@@ -1,24 +1,22 @@
 ---
-description: ## Workflow post-modificaciones (OBLIGATORIO)
+description: Workflow post-modificaciones (OBLIGATORIO)
 ---
 
 Después de CADA conjunto de modificaciones, ejecutar en este orden:
 
-1. **Bump versión** — Editar `app_version` en `src/config/settings.py` según SemVer:
+1. **Tests** — `pytest tests/ --tb=no -q`. Si hay fallos nuevos, corregirlos antes de continuar.
+2. **Bump versión** — Editar `app_version` en `src/config/settings.py` según SemVer:
    - fix → patch (+0.0.1)
    - feat → minor (+0.1.0)
    - breaking change → major (+1.0.0)
-2. **CHANGELOG.md** — Añadir entrada con fecha actual bajo la nueva versión
-3. **Commit + Push**:
+3. **CHANGELOG.md** — Añadir entrada con fecha actual bajo la nueva versión.
+4. **Commit + tag + push** (sin pedir confirmación al usuario):
    ```bash
    git add -A
    git commit -m "tipo(scope): descripción"
    git tag v{nueva_versión}
    git push && git push --tags
    ```
-4. **Verificar** — Abrir CHANGELOG.md para revisión
-
-> Ejecutar SIEMPRE el `git push` y `git push --tags` de forma automática al finalizar los pasos anteriores, no pedir confirmación.
 
 ## Seguimiento de auditorías/guiones (OBLIGATORIO)
 
