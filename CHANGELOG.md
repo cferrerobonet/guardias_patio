@@ -5,6 +5,16 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.27.5] - 2026-04-21
+
+### 🎯 Resumen
+UX-01: dashboard de inicio con estado del día, métricas de hoy y alertas del sistema.
+
+### ✨ Added
+- `home_form.py` (nuevo): `HomeForm` con 4 cards de métricas (guardias hoy, ausencias activas, sustituciones, total), resumen del sistema y panel de alertas automáticas; datos reales desde BD con botón Actualizar
+- `ccleaner_sidebar.py`: ítem "Inicio" con icono home como primera opción del sidebar
+- `ccleaner_main_window.py`: registra `HomeForm` como sección "inicio", arranca en "inicio" en lugar de "profesores"
+
 ## [5.27.4] - 2026-04-21
 
 ### 🎯 Resumen

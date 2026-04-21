@@ -420,7 +420,7 @@ El bloque informativo en Ajustes mostraba `v3.0`, `v2.9` y "Híbrido + ILP", aun
 
 ## 3. UX/UI — Lo que duele y lo que hay que hacer
 
-### UX-01 — La app arranca directa al formulario de profesores (sin dashboard útil)
+### ~~UX-01 — La app arranca directa al formulario de profesores (sin dashboard útil)~~ ✅ RESUELTO v5.27.5
 **Severidad: Alta**
 
 La ventana principal activa la sección "profesores" al arrancar (`self.sidebar.set_active_section("profesores")`). Esto es un error de diseño. El usuario llega a una tabla vacía o con datos que no le interesan nada más entrar.
