@@ -240,7 +240,7 @@ label.setStyleSheet(f"font-size: {FontSize.CAPTION}px; color: {Colors.TEXT_SECON
 
 ---
 
-### INCONS-08 — Diálogos de confirmación de borrado: cuatro patrones distintos
+### ~~INCONS-08 — Diálogos de confirmación de borrado: cuatro patrones distintos~~ ✅ RESUELTO v5.26.4
 **Archivos afectados:** `profesor_form.py`, `zona_form.py`, `gestionar_ausencias.py`, `delete_user_dialog.py`, `perfiles_usuario_form.py`
 
 Cuando el usuario quiere eliminar algo, la app responde de cuatro maneras diferentes:
@@ -253,20 +253,14 @@ Cuando el usuario quiere eliminar algo, la app responde de cuatro maneras difere
 | Eliminar usuario del sistema | `DeleteUserDialog` — diálogo completo personalizado con campo de confirmación por texto |
 | Eliminar perfil | `QMessageBox.warning()` — diferente tipo que los anteriores |
 
-No hay ningún estándar. La eliminación de un usuario (que tiene su propio diálogo de confirmación con escritura de texto) recibe más atención que la eliminación de un profesor con sus guardias asociadas, que solo pide `Sí/No` en un diálogo genérico.
+No había ningún estándar. Ahora se aplica este criterio único:
+- Borrado normal de entidades de trabajo (profesor, zona, ausencia): confirmación estándar reutilizable.
+- Borrado crítico de cuenta/perfil: confirmación reforzada con diálogo dedicado.
 
-**Corrección:**
-Crear un único `ConfirmDeleteDialog` reutilizable que reciba `(titulo, mensaje, nombre_entidad)` y que use siempre el mismo aspecto. Para acciones muy destructivas (borrar usuario, borrar curso), añadir campo de confirmación por texto.
-
-```python
-# src/presentation/dialogs/confirm_delete_dialog.py
-class ConfirmDeleteDialog(QDialog):
-    """Diálogo unificado de confirmación de borrado."""
-    def __init__(self, titulo: str, mensaje: str, nombre_a_confirmar: str = None, parent=None):
-        # Si nombre_a_confirmar no es None → mostrar campo de texto para confirmación
-        # Si es None → solo botones Sí/No
-        ...
-```
+**Corrección aplicada:**
+1. `ProfesorForm` y `GestionarAusenciasForm` usan el mismo patrón de confirmación que `ZonaForm` (`confirmar_accion`).
+2. Se mantienen diálogos reforzados para borrado crítico (`DeleteUserDialog`, eliminación de perfil).
+3. Añadidos tests para garantizar que las acciones de borrado normales respetan la confirmación y no ejecutan eliminación si se cancela.
 
 ---
 
@@ -302,7 +296,7 @@ self.layout().addWidget(self.btn_cerrar)
 
 ---
 
-### INCONS-10 — `QGroupBox` vs. `QFrame` vs. sin contenedor: tres formas de agrupar contenido relacionado
+### ~~INCONS-10 — `QGroupBox` vs. `QFrame` vs. sin contenedor: tres formas de agrupar contenido relacionado~~ ✅ RESUELTO v5.26.4
 **Archivos afectados:** `dashboard_form.py`, `asignacion_widgets`, `dia_detalle_dialog.py`, `gestionar_ausencias.py`
 
 El contenido relacionado se agrupa de tres maneras distintas a lo largo de la app:

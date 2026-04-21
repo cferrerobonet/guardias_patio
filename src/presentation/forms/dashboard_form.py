@@ -171,21 +171,6 @@ class DashboardForm(QWidget):
 
         # Histograma guardias por profesor
         grupo_histograma = QGroupBox("Distribución de Guardias por Profesor")
-        grupo_histograma.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                border: 2px solid #E0E0E0;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
-                background-color: white;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """)
         histograma_layout = QVBoxLayout()
         self.canvas_histograma = self._GraficoCanvas(self, width=6, height=4)
         histograma_layout.addWidget(self.canvas_histograma)
@@ -194,7 +179,6 @@ class DashboardForm(QWidget):
 
         # Gráfico de distribución por turno
         grupo_turnos = QGroupBox("Distribución por Turno")
-        grupo_turnos.setStyleSheet(grupo_histograma.styleSheet())
         turnos_layout = QVBoxLayout()
         self.canvas_turnos = self._GraficoCanvas(self, width=4, height=4)
         turnos_layout.addWidget(self.canvas_turnos)
@@ -209,7 +193,6 @@ class DashboardForm(QWidget):
 
         # Top profesores con más guardias
         grupo_top = QGroupBox("Top 10 Profesores con Más Guardias")
-        grupo_top.setStyleSheet(grupo_histograma.styleSheet())
         top_layout = QVBoxLayout()
         self.canvas_top = self._GraficoCanvas(self, width=6, height=4)
         top_layout.addWidget(self.canvas_top)
@@ -218,7 +201,6 @@ class DashboardForm(QWidget):
 
         # Distribución por zona
         grupo_zonas = QGroupBox("Distribución por Zona")
-        grupo_zonas.setStyleSheet(grupo_histograma.styleSheet())
         zonas_layout = QVBoxLayout()
         self.canvas_zonas = self._GraficoCanvas(self, width=4, height=4)
         zonas_layout.addWidget(self.canvas_zonas)

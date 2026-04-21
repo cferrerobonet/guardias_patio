@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.26.4] - 2026-04-21
+
+### 🎯 Resumen
+INCONS-10: unificar estilo QGroupBox eliminando overrides inline en dashboard_form.
+
+### Fixed
+- `dashboard_form.py`: eliminar `setStyleSheet` inline en los 4 QGroupBox de gráficos — ahora heredan de `light.qss`
+
 ## [5.26.3] - 2026-04-21
 
 ### 🎯 Resumen
