@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.19.1] - 2026-04-21
+
+### 🎯 Resumen
+VIS-CSS continuación: dashboard_form.py migrado parcialmente; calendario y celda revisados (estilos ad-hoc legítimos, no migrados).
+
+### 🧹 Housekeeping
+- `src/presentation/forms/dashboard_form.py`: título header e info_label migrados a `setObjectName("labelTitle"/"labelCaption")`. QGroupBox de gráficos y MetricaCard mantienen estilos inline (colores dinámicos y tamaños específicos)
+- `src/presentation/widgets/vista_calendario.py` y `_celda_dia.py`: revisados — todos los setStyleSheet son dinámicos o específicos de cuadrícula (fuentes 8-10px, badges), no candidatos a migrar
+
 ---
 ## [5.19.0] - 2026-04-21
 

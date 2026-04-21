@@ -125,11 +125,7 @@ class DashboardForm(QWidget):
         # Encabezado
         header_layout = QHBoxLayout()
         titulo = QLabel("Dashboard de Equidad")
-        titulo.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            color: #1976D2;
-        """)
+        titulo.setObjectName("labelTitle")
         header_layout.addWidget(titulo)
         header_layout.addStretch()
 
@@ -234,11 +230,7 @@ class DashboardForm(QWidget):
 
         # Información adicional
         self.info_label = QLabel("")
-        self.info_label.setStyleSheet("""
-            font-size: 11px;
-            color: #666;
-            padding: 10px;
-        """)
+        self.info_label.setObjectName("labelCaption")
         contenedor_layout.addWidget(self.info_label)
 
         contenedor_layout.addStretch()
