@@ -335,6 +335,50 @@ class SidebarMenu(QWidget):
         info_layout.setContentsMargins(16, 12, 16, 12)
         info_layout.setSpacing(8)
 
+        # Avatar con iniciales del usuario
+        try:
+            from database.db_manager import get_current_user_id
+            username = get_current_user_id() or ""
+            initials = (username[:2].upper() if username else "??")
+        except Exception:
+            initials = "??"
+
+        from PyQt6.QtCore import QSize
+        from PyQt6.QtWidgets import QHBoxLayout as _QHBoxLayout
+        avatar_row = QWidget()
+        avatar_row.setStyleSheet("QWidget { background: transparent; border: none; }")
+        avatar_row_layout = _QHBoxLayout(avatar_row)
+        avatar_row_layout.setContentsMargins(0, 0, 0, 0)
+        avatar_row_layout.setSpacing(8)
+
+        avatar = QLabel(initials)
+        avatar.setFixedSize(QSize(34, 34))
+        avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        avatar.setStyleSheet("""
+            QLabel {
+                background-color: #007ACC;
+                color: white;
+                border-radius: 17px;
+                font-size: 13px;
+                font-weight: bold;
+                border: none;
+            }
+        """)
+
+        user_label = QLabel(username or "Usuario")
+        user_label.setStyleSheet("""
+            QLabel {
+                color: rgba(255, 255, 255, 0.8);
+                font-size: 12px;
+                background: transparent;
+                border: none;
+            }
+        """)
+        avatar_row_layout.addWidget(avatar)
+        avatar_row_layout.addWidget(user_label)
+        avatar_row_layout.addStretch()
+        info_layout.addWidget(avatar_row)
+
         # Versión (más destacada) - centrada
         version_label = QLabel(f"📦 v{APP_VERSION}")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)

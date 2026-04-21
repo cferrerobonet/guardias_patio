@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.26.6] - 2026-04-21
+
+### 🎯 Resumen
+UX-11: avatar de iniciales del usuario en sidebar + bump de titleMain a 18px.
+
+### ✨ Added
+- Sidebar: badge circular con las iniciales y nombre del usuario logueado en la sección inferior
+
+### Changed
+- `light.qss`: `QLabel#titleMain` pasa de 16px a 18px para mayor jerarquía visual
+
 ## [5.26.5] - 2026-04-21
 
 ### 🎯 Resumen

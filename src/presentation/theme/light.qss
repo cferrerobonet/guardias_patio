@@ -198,7 +198,7 @@ QLabel#smallFieldLabel {
 }
 
 QLabel#titleMain {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     color: #007ACC;
     background-color: #f5f5f5;

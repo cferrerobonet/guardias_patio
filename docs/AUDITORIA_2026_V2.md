@@ -793,7 +793,7 @@ Implementar en `ContentWrapper.setup_ui()`: añadir un `QLabel` con el título d
 
 ---
 
-### UX-11 — El tema visual no tiene personalidad. Parece genérico.
+### ~~UX-11 — El tema visual no tiene personalidad. Parece genérico.~~ ✅ RESUELTO v5.26.6
 **Severidad: Media — Impacto alto en percepción**
 
 El esquema de colores azul `#007ACC` + gris + blanco es el mismo que usa VS Code, Windows 10 y la mitad de las apps Python. No hay ningún elemento visual que haga única a la app.
