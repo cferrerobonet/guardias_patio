@@ -163,14 +163,14 @@ class TestProfesorCursoId:
 class TestCopiarProfesoresCursoAnterior:
     def test_copia_todos_los_profesores(self, session, cursos, profesores_curso_anterior):
         _, c2 = cursos
-        copiados = GestorCursos.copiar_profesores_curso_anterior(session, c2.id)
+        copiados = GestorCursos(session).copiar_profesores_curso_anterior(c2.id)
         assert copiados == 2
         profs_c2 = session.query(Profesor).filter(Profesor.curso_id == c2.id).all()
         assert len(profs_c2) == 2
 
     def test_copiados_tienen_curso_id_nuevo(self, session, cursos, profesores_curso_anterior):
         _, c2 = cursos
-        GestorCursos.copiar_profesores_curso_anterior(session, c2.id)
+        GestorCursos(session).copiar_profesores_curso_anterior(c2.id)
         profs = session.query(Profesor).filter(Profesor.curso_id == c2.id).all()
         for p in profs:
             assert p.curso_id == c2.id
@@ -190,12 +190,12 @@ class TestCopiarProfesoresCursoAnterior:
         session.add(prof_dup)
         session.commit()
 
-        copiados = GestorCursos.copiar_profesores_curso_anterior(session, c2.id)
+        copiados = GestorCursos(session).copiar_profesores_curso_anterior(c2.id)
         assert copiados == 1  # Solo copia el segundo
 
     def test_copia_datos_basicos_correctamente(self, session, cursos, profesores_curso_anterior):
         _, c2 = cursos
-        GestorCursos.copiar_profesores_curso_anterior(session, c2.id)
+        GestorCursos(session).copiar_profesores_curso_anterior(c2.id)
         prof = (
             session.query(Profesor)
             .filter(
@@ -212,9 +212,9 @@ class TestCopiarProfesoresCursoAnterior:
     def test_curso_sin_profesores_anteriores_devuelve_cero(self, session, cursos):
         _, c2 = cursos
         # c2 no tiene curso anterior con profesores
-        copiados = GestorCursos.copiar_profesores_curso_anterior(session, c2.id)
+        copiados = GestorCursos(session).copiar_profesores_curso_anterior(c2.id)
         assert copiados == 0
 
     def test_error_si_curso_nuevo_no_existe(self, session):
         with pytest.raises(ValueError, match="No existe el curso"):
-            GestorCursos.copiar_profesores_curso_anterior(session, 9999)
+            GestorCursos(session).copiar_profesores_curso_anterior(9999)

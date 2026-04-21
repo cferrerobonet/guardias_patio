@@ -30,6 +30,8 @@ from sync.data_exporter_helpers import (
     serialize_date,
     parse_date,
     parse_time,
+    encriptar_password,
+    desencriptar_password,
     export_smtp_config,
     import_smtp_config,
     export_sftp_config,
@@ -562,3 +564,16 @@ class DataExporter:
             logger.error(f"❌ Error importando datos desde JSON: {e}", exc_info=True)
             session.rollback()
             return False
+
+    # ------------------------------------------------------------------
+    # Alias de helpers — expuestos como métodos estáticos para compatibilidad
+    # ------------------------------------------------------------------
+    _serialize_date = staticmethod(serialize_date)
+    _parse_date = staticmethod(parse_date)
+    _parse_time = staticmethod(parse_time)
+    _encriptar_password = staticmethod(encriptar_password)
+    _desencriptar_password = staticmethod(desencriptar_password)
+    _export_smtp_config = staticmethod(export_smtp_config)
+    _import_smtp_config = staticmethod(import_smtp_config)
+    _export_sftp_config = staticmethod(export_sftp_config)
+    _import_sftp_config = staticmethod(import_sftp_config)

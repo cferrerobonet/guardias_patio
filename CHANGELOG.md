@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.21.1] - 2026-04-21
+
+### 🎯 Resumen
+Corrección de 74 fallos preexistentes en tests — 0 fallos restantes (2085 passed).
+
+### Fixed
+- `src/services/gestor_cursos.py`: `__init__` ahora acepta `Session` o `RepositoryFactory` (polimórfico). Corrige 40+ tests que llamaban `GestorCursos.metodo(session, ...)` como API estática
+- `tests/test_multicurso.py`: fixtures e instanciación actualizados a `GestorCursos(session).metodo()`; `session.delete/refresh` sobre ORM models obtenidos por `session.get()`; `curso.guardias` sustituido por query directa
+- `tests/test_gestor_cursos_curso_id.py`, `test_migrar_multi_curso.py`, `test_asignacion_guardias_form.py`: misma corrección de API
+- `src/sync/data_exporter.py`: añadidos alias estáticos `_serialize_date`, `_parse_date`, `_parse_time`, `_encriptar_password`, `_desencriptar_password`, `_export_smtp_config`, `_import_smtp_config`, `_export_sftp_config`, `_import_sftp_config` que delegaban en `data_exporter_helpers`
+- `src/services/exportador_pdf.py`: callback de progreso captura `Exception` en lugar de `(TypeError, ValueError)`
+- `tests/test_use_cases_zona_profesor.py`: `CrearZonaDTO` corregido a nombre ≥2 chars; mock de duplicado de profesor configurado correctamente
+
+---
 ## [5.21.0] - 2026-04-21
 
 ### 🎯 Resumen

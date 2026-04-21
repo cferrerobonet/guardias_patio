@@ -28,8 +28,8 @@ def curso_activo(session):
     """Crear curso escolar activo para tests"""
     from services.gestor_cursos import GestorCursos
 
-    curso = GestorCursos.crear_nuevo_curso(
-        session,
+    from infrastructure.database.models import CursoEscolar
+    entity = GestorCursos(session).crear_nuevo_curso(
         anio_inicio=2024,
         anio_fin=2025,
         fecha_inicio=date(2024, 9, 1),
@@ -37,7 +37,7 @@ def curso_activo(session):
         nombre="2024/2025",
         activar=True,
     )
-    return curso
+    return session.get(CursoEscolar, entity.id)
 
 
 @pytest.fixture

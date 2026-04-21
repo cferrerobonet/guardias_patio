@@ -25,8 +25,7 @@ from sqlalchemy.orm import Session
 @pytest.fixture
 def curso_2024_2025(session: Session) -> CursoEscolar:
     """Fixture: Curso escolar 2024/2025 (inactivo)."""
-    curso = GestorCursos.crear_nuevo_curso(
-        session,
+    entity = GestorCursos(session).crear_nuevo_curso(
         anio_inicio=2024,
         anio_fin=2025,
         fecha_inicio=date(2024, 9, 8),
@@ -34,14 +33,13 @@ def curso_2024_2025(session: Session) -> CursoEscolar:
         nombre="2024/2025",
         activar=False,
     )
-    return curso
+    return session.get(CursoEscolar, entity.id)
 
 
 @pytest.fixture
 def curso_2025_2026(session: Session) -> CursoEscolar:
     """Fixture: Curso escolar 2025/2026 (activo)."""
-    curso = GestorCursos.crear_nuevo_curso(
-        session,
+    entity = GestorCursos(session).crear_nuevo_curso(
         anio_inicio=2025,
         anio_fin=2026,
         fecha_inicio=date(2025, 9, 8),
@@ -49,14 +47,13 @@ def curso_2025_2026(session: Session) -> CursoEscolar:
         nombre="2025/2026",
         activar=True,
     )
-    return curso
+    return session.get(CursoEscolar, entity.id)
 
 
 @pytest.fixture
 def curso_2026_2027(session: Session) -> CursoEscolar:
     """Fixture: Curso escolar 2026/2027 (inactivo)."""
-    curso = GestorCursos.crear_nuevo_curso(
-        session,
+    entity = GestorCursos(session).crear_nuevo_curso(
         anio_inicio=2026,
         anio_fin=2027,
         fecha_inicio=date(2026, 9, 8),
@@ -64,7 +61,7 @@ def curso_2026_2027(session: Session) -> CursoEscolar:
         nombre="2026/2027",
         activar=False,
     )
-    return curso
+    return session.get(CursoEscolar, entity.id)
 
 
 @pytest.fixture
@@ -157,9 +154,8 @@ class TestCRUDCursos:
         fecha_fin = date(2028, 6, 20)
 
         # Act
-        curso = GestorCursos.crear_nuevo_curso(
-            session, anio_inicio, anio_fin, fecha_inicio, fecha_fin
-        )
+        entity = GestorCursos(session).crear_nuevo_curso(anio_inicio, anio_fin, fecha_inicio, fecha_fin)
+        curso = session.get(CursoEscolar, entity.id)
 
         # Assert
         assert curso is not None
@@ -175,8 +171,7 @@ class TestCRUDCursos:
         """Test: No se puede crear curso con nombre duplicado."""
         # Act & Assert
         with pytest.raises(ValueError, match="Ya existe un curso"):
-            GestorCursos.crear_nuevo_curso(
-                session,
+            GestorCursos(session).crear_nuevo_curso(
                 anio_inicio=2025,
                 anio_fin=2026,
                 fecha_inicio=date(2025, 9, 1),
@@ -191,7 +186,7 @@ class TestCRUDCursos:
     ):
         """Test: Listar todos los cursos."""
         # Act
-        cursos = GestorCursos.listar_todos_cursos(session, incluir_cerrados=False)
+        cursos = GestorCursos(session).listar_todos_cursos(incluir_cerrados=False)
 
         # Assert
         assert len(cursos) == 2
@@ -202,16 +197,14 @@ class TestCRUDCursos:
     def test_listar_cursos_incluir_cerrados(self, session: Session):
         """Test: Listar cursos incluyendo cerrados."""
         # Arrange
-        curso1 = GestorCursos.crear_nuevo_curso(
-            session, 2023, 2024, date(2023, 9, 1), date(2024, 6, 30)
-        )
-        GestorCursos.cerrar_curso(session, curso1.id)
-
-        GestorCursos.crear_nuevo_curso(session, 2024, 2025, date(2024, 9, 1), date(2025, 6, 30))
+        gestor = GestorCursos(session)
+        curso1 = gestor.crear_nuevo_curso(2023, 2024, date(2023, 9, 1), date(2024, 6, 30))
+        gestor.cerrar_curso(curso1.id)
+        gestor.crear_nuevo_curso(2024, 2025, date(2024, 9, 1), date(2025, 6, 30))
 
         # Act
-        cursos_todos = GestorCursos.listar_todos_cursos(session, incluir_cerrados=True)
-        cursos_activos = GestorCursos.listar_todos_cursos(session, incluir_cerrados=False)
+        cursos_todos = gestor.listar_todos_cursos(incluir_cerrados=True)
+        cursos_activos = gestor.listar_todos_cursos(incluir_cerrados=False)
 
         # Assert
         assert len(cursos_todos) == 2
@@ -239,9 +232,8 @@ class TestCRUDCursos:
     def test_eliminar_curso_sin_guardias(self, session: Session):
         """Test: Eliminar curso que no tiene guardias."""
         # Arrange
-        curso = GestorCursos.crear_nuevo_curso(
-            session, 2030, 2031, date(2030, 9, 1), date(2031, 6, 30)
-        )
+        entity = GestorCursos(session).crear_nuevo_curso(2030, 2031, date(2030, 9, 1), date(2031, 6, 30))
+        curso = session.get(CursoEscolar, entity.id)
 
         # Act
         session.delete(curso)
@@ -296,7 +288,7 @@ class TestActivacionCursos:
         assert curso_2024_2025.activo is False
 
         # Act
-        GestorCursos.activar_curso(session, curso_2024_2025.id)
+        GestorCursos(session).activar_curso(curso_2024_2025.id)
 
         # Assert
         session.refresh(curso_2024_2025)
@@ -307,7 +299,7 @@ class TestActivacionCursos:
     def test_obtener_curso_activo(self, session: Session, curso_2025_2026: CursoEscolar):
         """Test: Obtener el curso activo."""
         # Act
-        curso_activo = GestorCursos.obtener_curso_activo(session)
+        curso_activo = GestorCursos(session).obtener_curso_activo()
 
         # Assert
         assert curso_activo is not None
@@ -317,7 +309,7 @@ class TestActivacionCursos:
     def test_obtener_curso_activo_sin_cursos(self, session: Session):
         """Test: Si no hay cursos activos, retorna None."""
         # Act
-        curso_activo = GestorCursos.obtener_curso_activo(session)
+        curso_activo = GestorCursos(session).obtener_curso_activo()
 
         # Assert
         assert curso_activo is None
@@ -328,11 +320,10 @@ class TestActivacionCursos:
         assert curso_2024_2025.activo is False
 
         # Act
-        resultado = GestorCursos.cerrar_curso(session, curso_2024_2025.id)
+        resultado = GestorCursos(session).cerrar_curso(curso_2024_2025.id)
 
         # Assert
         assert resultado is not None
-        assert isinstance(resultado, CursoEscolar)
         session.refresh(curso_2024_2025)
         assert curso_2024_2025.cerrado is True
 
@@ -346,7 +337,7 @@ class TestActivacionCursos:
         assert curso_2025_2026.activo is True
 
         # Act
-        GestorCursos.cerrar_curso(session, curso_2025_2026.id)
+        GestorCursos(session).cerrar_curso(curso_2025_2026.id)
 
         # Assert
         session.refresh(curso_2025_2026)
@@ -371,7 +362,7 @@ class TestFiltradoGuardias:
     ):
         """Test: Solo se obtienen guardias del curso activo."""
         # Arrange
-        curso_activo = GestorCursos.obtener_curso_activo(session)
+        curso_activo = GestorCursos(session).obtener_curso_activo()
         assert curso_activo.id == curso_2025_2026.id
 
         # Act
@@ -479,7 +470,7 @@ class TestAislamientoDatos:
         )
 
         # Act: Cambiar curso activo
-        GestorCursos.activar_curso(session, curso_2024_2025.id)
+        GestorCursos(session).activar_curso(curso_2024_2025.id)
 
         # Assert: Las guardias siguen igual
         guardias_2025_despues = (
@@ -606,7 +597,7 @@ class TestIntegridadReferencial:
     ):
         """Test: Relación bidireccional entre Curso y Guardias."""
         # Act
-        guardias_del_curso = curso_2025_2026.guardias
+        guardias_del_curso = session.query(Guardia).filter(Guardia.curso_id == curso_2025_2026.id).all()
 
         # Assert
         assert len(guardias_del_curso) == 2
@@ -626,17 +617,18 @@ class TestIntegracionMulticurso:
     def test_flujo_completo_nuevo_curso(self, session: Session):
         """Test: Flujo completo de crear y usar un nuevo curso."""
         # 1. Crear curso
-        curso = GestorCursos.crear_nuevo_curso(
-            session,
+        gestor = GestorCursos(session)
+        entity = gestor.crear_nuevo_curso(
             anio_inicio=2028,
             anio_fin=2029,
             fecha_inicio=date(2028, 9, 8),
             fecha_fin=date(2029, 6, 20),
         )
+        curso = session.get(CursoEscolar, entity.id)
         assert curso.activo is False
 
         # 2. Activar curso
-        GestorCursos.activar_curso(session, curso.id)
+        gestor.activar_curso(curso.id)
         session.refresh(curso)
         assert curso.activo is True
 
@@ -670,7 +662,7 @@ class TestIntegracionMulticurso:
         assert guardias[0].profesor_id == profesor.id
 
         # 6. Cerrar curso (se desactiva automáticamente si estaba activo)
-        GestorCursos.cerrar_curso(session, curso.id)
+        gestor.cerrar_curso(curso.id)
         session.refresh(curso)
         assert curso.cerrado is True
         assert curso.activo is False

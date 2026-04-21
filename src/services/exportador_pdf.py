@@ -288,7 +288,7 @@ class ExportadorPDF:
             if progress_callback:
                 try:
                     progress_callback(porcentaje, mensaje)
-                except (TypeError, ValueError) as e:
+                except Exception as e:
                     logger.warning(f"Error al reportar progreso: {e}")
 
         reportar_progreso(0, "Preparando exportación de PDFs...")

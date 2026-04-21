@@ -65,7 +65,7 @@ class TestCrearZonaUseCase:
         uc, session = self._make_uc()
         session.query.return_value.filter.return_value.first.return_value = None
         session.commit.side_effect = SQLAlchemyError("DB error")
-        dto = CrearZonaDTO(nombre_zona="Z", descripcion=None, fecha_inicio=None, fecha_fin=None)
+        dto = CrearZonaDTO(nombre_zona="Z1", descripcion=None, fecha_inicio=None, fecha_fin=None)
         with pytest.raises(BusinessLogicError):
             uc.execute(dto)
 
@@ -184,6 +184,8 @@ class TestActualizarProfesorUseCase:
         profesor.recreos_permitidos = None
         profesor.id = 1
 
+        # Primera llamada: obtener el profesor por id. Segunda: buscar duplicado → None
+        session.query.return_value.filter.return_value.filter.return_value.first.return_value = None
         session.query.return_value.filter.return_value.first.return_value = profesor
         dto = ActualizarProfesorDTO(nombre_completo="Juan García Actualizado", turno="mañana")
 

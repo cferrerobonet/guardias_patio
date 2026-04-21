@@ -132,8 +132,8 @@ class TestCrearCursoDesdeGuardias:
         # Crear curso previamente
         from services.gestor_cursos import GestorCursos
 
-        curso_existente = GestorCursos.crear_nuevo_curso(
-            session, anio_inicio=2025, activar=False, copiar_profesores=False
+        curso_existente = GestorCursos(session).crear_nuevo_curso(
+            anio_inicio=2025, activar=False, copiar_profesores=False
         )
         session.flush()
         # crear_curso_desde_guardias debe devolver el existente
@@ -156,8 +156,8 @@ class TestAsignarGuardiasACurso:
         z = _make_zona(session)
         from services.gestor_cursos import GestorCursos
 
-        curso = GestorCursos.crear_nuevo_curso(
-            session, anio_inicio=2025, activar=False, copiar_profesores=False
+        curso = GestorCursos(session).crear_nuevo_curso(
+            anio_inicio=2025, activar=False, copiar_profesores=False
         )
         session.flush()
         _make_guardia_huerfana(session, p.id, z.id, date(2025, 10, 1))
@@ -170,8 +170,8 @@ class TestAsignarGuardiasACurso:
         z = _make_zona(session)
         from services.gestor_cursos import GestorCursos
 
-        curso = GestorCursos.crear_nuevo_curso(
-            session, anio_inicio=2025, activar=False, copiar_profesores=False
+        curso = GestorCursos(session).crear_nuevo_curso(
+            anio_inicio=2025, activar=False, copiar_profesores=False
         )
         session.flush()
         _make_guardia_huerfana(session, p.id, z.id, date(2025, 10, 1))  # 2025/26
@@ -206,8 +206,8 @@ class TestMigrarAutomaticamente:
         z = _make_zona(session)
         from services.gestor_cursos import GestorCursos
 
-        curso = GestorCursos.crear_nuevo_curso(
-            session, anio_inicio=2025, activar=False, copiar_profesores=False
+        curso = GestorCursos(session).crear_nuevo_curso(
+            anio_inicio=2025, activar=False, copiar_profesores=False
         )
         session.flush()
         _make_guardia_huerfana(session, p.id, z.id, date(2025, 9, 10))
@@ -236,8 +236,8 @@ class TestMigrarInteractivo:
         z = _make_zona(session)
         from services.gestor_cursos import GestorCursos
 
-        curso = GestorCursos.crear_nuevo_curso(
-            session, anio_inicio=2022, activar=False, copiar_profesores=False
+        curso = GestorCursos(session).crear_nuevo_curso(
+            anio_inicio=2022, activar=False, copiar_profesores=False
         )
         session.flush()
         _make_guardia_huerfana(session, p.id, z.id, date(2022, 10, 1))

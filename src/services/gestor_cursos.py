@@ -23,14 +23,18 @@ logger = get_logger(__name__)
 class GestorCursos:
     """Gestor para operaciones con cursos escolares."""
 
-    def __init__(self, factory: RepositoryFactory):
+    def __init__(self, session_or_factory):
+        if isinstance(session_or_factory, RepositoryFactory):
+            factory = session_or_factory
+        else:
+            factory = RepositoryFactory(session_or_factory)
         self.session = factory.session
         self.curso_repo = factory.create_curso_escolar_repository()
         self.profesor_repo = factory.create_profesor_repository()
 
     @classmethod
     def from_session(cls, session) -> "GestorCursos":
-        return cls(RepositoryFactory(session))
+        return cls(session)
 
     def obtener_curso_activo(self) -> Optional[CursoEscolarEntity]:
         curso = self.curso_repo.find_active()
@@ -206,3 +210,5 @@ class GestorCursos:
 
     def obtener_curso_por_anio(self, anio_inicio: int) -> Optional[CursoEscolarEntity]:
         return self.curso_repo.find_by_year(anio_inicio)
+
+
