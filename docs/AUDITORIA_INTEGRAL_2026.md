@@ -1352,7 +1352,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
 | 1 | ~~SEC-16~~ | ~~Reducir 273 `except Exception` a <50~~ ✅ RESUELTO — 48 bloques (target <50 alcanzado). 2 interceptores de métricas en `decorators.py` convertidos a `except BaseException` (patrón re-raise, correcto semánticamente) | XL |
-| 2 | ARQ-01 | Migrar 22 servicios de Session a repositorios inyectados (fase extensión) — ✅ `estadisticas_service` v5.15.1 + TEMPLATE ready | XL |
+| 2 | ~~ARQ-01~~ | ~~Migrar 22 servicios de Session a repositorios inyectados~~ ✅ RESUELTO v5.21.0 — 0 imports `Session` en `src/services/`. Quedan `joinedload`/`SQLAlchemyError` que son accesorios legítimos (eager loading y manejo de errores, no acoplamiento de session) | XL |
 | 3 | ~~ARQ-02~~ | ~~Eliminar 3 queries directas + 22 imports Session de presentation/~~ ✅ RESUELTO — 1 query ORM migrada a repo (`gestion_cursos_widget`); 1 `session.commit()` tras repo.save() es patrón UoW correcto; 1 `joinedload` en helper justificado (anti N+1, bajo ROI refactorizar) | L |
 | 4 | ~~TEST-CORE~~ | ~~Tests de los 22 servicios durante migración ARQ-01~~ ✅ RESUELTO — `tests/test_services_arq01_repos.py` (21 tests) + `tests/test_sync_dtos.py` (21 tests, 100% cobertura `sync/dtos.py`) | L |
 | 5 | SEC-PWD | ~~Password policy (8+ chars + complejidad) + Lockout (5 intentos)~~ ✅ RESUELTO v5.15.1 | M |
@@ -1370,7 +1370,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | 6 | DB-INDICES | ~~Índices faltantes~~ ✅ RESUELTO v5.15.1 (Ausencia compound indexes) | S |
 | 7 | A11Y-BASIC | ~~setAccessibleName + setTabOrder en widgets interactivos~~ ✅ RESUELTO v5.16.0 (11 formularios/widgets) | L |
 | 8 | ~~VIS-TOKENS~~ | ~~Completar sistema de design tokens (FontSize, Spacing, Colors)~~ ✅ RESUELTO v5.19.0 | M |
-| 9 | VIS-CSS | Eliminar setStyleSheet inline restantes — parcial: verificado **336** (conteo real 21-abr-2026) → **~326** (10 eliminados sesión 22-abr-2026, usando `setObjectName` + selectores QSS `#formDescription`, `#dialogTitle`, `#unsavedChanges` en `light.qss`). Calendarios y MetricaCard conservan inline (estilos ad-hoc legítimos) | L |
+| 9 | VIS-CSS | Eliminar setStyleSheet inline restantes — **262** (21-abr-2026, 7 más eliminados: 3 separadores `#separator`, 2 títulos `#modalSectionTitle` en modales_perfil, 2 botones cancelar → `danger`/`success` property en progress_indicators). Análisis: 113 son `setStyleSheet("")` limpiezas dinámicas necesarias, ~90 son estilos de estado (calendario/guardias), ~59 candidatos de baja ROI (únicos por componente). Nuevos selectores: `QFrame#separator`, `QLabel#modalSectionTitle` en `light.qss` | L |
 | 10 | UX-VALIDATORS | ~~QValidator en campos críticos (usuario, email, fechas)~~ ✅ RESUELTO v5.16.0 | M |
 | 11 | ~~UX-UNSAVED~~ | ~~Indicador de cambios sin guardar en formularios~~ | M | ✅ RESUELTO v5.17.0 |
 | 12 | ~~UX-DESTRUCTIVE~~ | ~~Confirmación en acciones destructivas (delete)~~ | S | ✅ RESUELTO v5.17.0 (ya implementado) |

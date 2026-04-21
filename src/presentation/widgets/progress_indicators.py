@@ -12,8 +12,6 @@ import logging
 import time
 from typing import Callable, Optional
 
-from core.logging import get_logger
-
 from PyQt6.QtCore import (
     Qt,
     QTimer,
@@ -28,6 +26,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from core.logging import get_logger
 from presentation.widgets.progress_handlers import DecisionDialogHandler, ProgressLogHandler
 from presentation.widgets.progress_worker import WorkerThread
 from utils.ui_helpers import get_corporate_icon
@@ -255,22 +255,7 @@ class ProgressDialog(QDialog):
         if cancelable:
             self.btn_cancelar = QPushButton("Cancelar")
             self.btn_cancelar.clicked.connect(self._cancelar)
-            self.btn_cancelar.setStyleSheet("""
-                QPushButton {
-                    background-color: #F44336;
-                    color: white;
-                    border: none;
-                    padding: 8px 20px;
-                    border-radius: 4px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #D32F2F;
-                }
-                QPushButton:pressed {
-                    background-color: #B71C1C;
-                }
-            """)
+            self.btn_cancelar.setProperty("danger", "true")
             layout.addWidget(self.btn_cancelar)
 
         self.setLayout(layout)
@@ -513,19 +498,9 @@ class ProgressDialog(QDialog):
 
         if hasattr(self, "btn_cancelar"):
             self.btn_cancelar.setText("Cerrar")
-            self.btn_cancelar.setStyleSheet("""
-                QPushButton {
-                    background-color: #4CAF50;
-                    color: white;
-                    border: none;
-                    padding: 8px 20px;
-                    border-radius: 4px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #388E3C;
-                }
-            """)
+            self.btn_cancelar.setProperty("danger", False)
+            self.btn_cancelar.setProperty("success", "true")
+            self.btn_cancelar.style().polish(self.btn_cancelar)
             self.btn_cancelar.clicked.disconnect()
             self.btn_cancelar.clicked.connect(self.accept)
 
@@ -549,6 +524,7 @@ class ProgressDialog(QDialog):
             # Operación en curso - prevenir cierre accidental
             logger.warning("Intento de cerrar diálogo durante operación en curso")
             event.ignore()
+
 
 def ejecutar_con_progreso(
     parent: QWidget,

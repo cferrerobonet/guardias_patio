@@ -9,10 +9,8 @@ from collections import defaultdict
 from datetime import date
 from typing import Dict, List, Tuple
 
-from infrastructure.database.models import Ausencia, Guardia, Zona
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
-from presentation.theme.tokens import FontSize
 from PyQt6.QtWidgets import (
     QFrame,
     QGroupBox,
@@ -22,6 +20,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from infrastructure.database.models import Ausencia, Guardia, Zona
+from presentation.theme.tokens import FontSize
 
 
 class CeldaDia(QGroupBox):
@@ -86,7 +87,7 @@ class CeldaDia(QGroupBox):
         # Separador
         separador = QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
-        separador.setStyleSheet("background-color: #ccc; max-height: 1px;")
+        separador.setObjectName("separator")
         layout_principal.addWidget(separador)
 
         # Área de scroll para guardias

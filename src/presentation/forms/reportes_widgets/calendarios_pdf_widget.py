@@ -9,9 +9,6 @@ Permite configurar opciones de generación de PDFs con diferentes modos:
 from datetime import datetime
 from typing import List
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
-from infrastructure.database.models import Profesor
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -26,6 +23,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from presentation.theme.tokens import Spacing
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
 
@@ -264,7 +262,9 @@ class CalendariosPdfWidget(QGroupBox):
         # Checkbox "Seleccionar todos"
         self.seleccionar_todos_check = QCheckBox("✅ Seleccionar todos")
         self.seleccionar_todos_check.setCheckState(Qt.CheckState.Checked)
-        self.seleccionar_todos_check.setAccessibleName("Seleccionar todos los profesores para exportación")
+        self.seleccionar_todos_check.setAccessibleName(
+            "Seleccionar todos los profesores para exportación"
+        )
         self.seleccionar_todos_check.setStyleSheet(
             """
             QCheckBox {
@@ -282,7 +282,7 @@ class CalendariosPdfWidget(QGroupBox):
         # Separator
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background-color: #ccc; max-height: 1px;")
+        separator.setObjectName("separator")
         self.profesores_checks_layout.addWidget(separator)
 
         # Lista dinámica de checkboxes (se carga después)
@@ -303,7 +303,9 @@ class CalendariosPdfWidget(QGroupBox):
         # Checkbox de envío por email
         self.enviar_email_check = QCheckBox("📧 Enviar calendario por email a cada profesor")
         self.enviar_email_check.setChecked(False)
-        self.enviar_email_check.setAccessibleName("Activar envío de calendario por email a profesores")
+        self.enviar_email_check.setAccessibleName(
+            "Activar envío de calendario por email a profesores"
+        )
         self.enviar_email_check.setStyleSheet(
             """
             QCheckBox {
@@ -488,7 +490,7 @@ class CalendariosPdfWidget(QGroupBox):
                 self.profesores_checks_layout.addWidget(checkbox)
                 self.profesor_checkboxes.append(checkbox)
 
-        except (ValueError, TypeError, OSError) as e:
+        except (ValueError, TypeError, OSError):
             # No lanzar excepción, solo no cargar profesores
             pass
 

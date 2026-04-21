@@ -5,7 +5,21 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
-## [5.23.0] - 2026-04-21
+## [5.24.0] - 2026-04-21
+
+### 🎯 Resumen
+VIS-CSS: 269 → 262 setStyleSheet (7 eliminados). ARQ-01 confirmado resuelto en roadmap.
+
+### Changed
+- `light.qss`: nuevos selectores `QFrame#separator` y `QLabel#modalSectionTitle`
+- `_celda_dia.py`, `pdf_export_widget.py`, `calendarios_pdf_widget.py`: separadores grises → `setObjectName("separator")`
+- `modales_perfil.py`: 2 títulos de modal → `setObjectName("modalSectionTitle")`
+- `progress_indicators.py`: btn_cancelar usa `setProperty("danger"/"success")` en lugar de `setStyleSheet` inline
+
+### 🧹 Housekeeping
+- Auditoría: ARQ-01 actualizado a ✅ RESUELTO v5.21.0 en roadmap P1; VIS-CSS actualizado con conteo 262 y análisis de stock restante
+
+
 
 ### 🎯 Resumen
 Ronda de auditoría: RES-05 verificado, SEC-16 finalizado (<50 bloques), ARQ-02 saneado, ARQ-07/TEST-03 completados.

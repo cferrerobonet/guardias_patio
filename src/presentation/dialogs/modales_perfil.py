@@ -32,7 +32,7 @@ class DialogoCrearPerfilProfesional(QDialog):
 
         # Título
         titulo = QLabel("➕ Crear Nuevo Perfil de Usuario")
-        titulo.setStyleSheet("font-size: 16px; font-weight: bold; color: #2196F3;")
+        titulo.setObjectName("modalSectionTitle")
         layout.addWidget(titulo)
 
         # Descripción
@@ -157,7 +157,7 @@ class DialogoEditarPerfilProfesional(QDialog):
 
         # Título
         titulo = QLabel(f"Editar Perfil: {self.username}")
-        titulo.setStyleSheet("font-size: 16px; font-weight: bold; color: #2196F3;")
+        titulo.setObjectName("modalSectionTitle")
         layout.addWidget(titulo)
 
         # Descripción
