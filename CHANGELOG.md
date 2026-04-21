@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.26.2] - 2026-04-21
+
+### 🎯 Resumen
+Limpieza del bloque de algoritmos en Ajustes para mostrar solo opciones reales y con mejor legibilidad.
+
+### Changed
+- `ajustes_widget.py`: el panel de "Algoritmos disponibles" muestra solo `Rápido (v4 Híbrido)` y `Óptimo (CP-SAT)` con texto más legible
+
+### Fixed
+- `ajustes_widget.py`: guardar Ajustes ya no fuerza `v3.0`; ahora conserva un valor válido (`v4.0` o `cpsat`) y normaliza referencias antiguas
+
 ## [5.26.1] - 2026-04-21
 
 ### 🎯 Resumen
