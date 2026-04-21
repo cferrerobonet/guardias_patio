@@ -108,30 +108,35 @@
 - ✅ **Fase extensión #1 (v5.14.2)**: 1 servicio:
   1. `importador_profesores.py` → Polimórfico (Session legacy | ProfesorRepository)
 
-**Archivos restantes pendientes (22)**:
-1. `src/services/asignacion_guardia_service.py` (L24)
-2. `src/services/distribucion_cuotas_service.py` (L31)
-3. ~~`src/services/importador_profesores.py` (L13)~~ ✅ RESUELTO v5.14.2
-4. `src/services/icalendar_service.py` (L10)
-5. `src/services/_pdf_mes_consolidado.py` (L19)
-6. `src/services/disponibilidad_profesor_service.py` (L18) — TEMPLATE READY v5.15.1
-7. `src/services/migrar_a_multi_curso.py` (L17)
-8. `src/services/equidad_guardias_service.py` (L20) — TEMPLATE READY v5.15.1
-9. `src/services/_exportador_import.py` (L19)
-10. `src/services/validador_guardias.py` (L17) — TEMPLATE READY v5.15.1
-11. `src/services/exportador.py` (L31)
-12. `src/services/assignment/assignment_executor.py` (L21)
-13. `src/services/assignment/slot_builder.py` (L14)
-14. `src/services/assignment/profesor_filter.py` (L17)
-15. `src/services/_pdf_individual_optimizado.py` (L20)
-16. ~~`src/services/estadisticas_service.py` (L13)~~ ✅ RESUELTO v5.15.1
-17. `src/services/importador_zonas.py` (L16)
-18. `src/services/diagnosticador_guardias.py` (L13)
-19. `src/services/validators/ausencia_checker.py` (L15)
-20. `src/services/asignador_guardias_v4_hibrido.py` (L47)
-21. `src/services/_asignador_v4_fases.py` (L21)
-22. `src/services/_asignador_v4_helpers.py` (L19)
-23. `src/services/exportador_pdf.py` (L28) — TEMPLATE READY v5.15.1
+- ✅ **Fase extensión #2 (v5.20.0)**: 3 servicios:
+  1. `importador_zonas.py` → Polimórfico (Session legacy | ZonaRepository via RepositoryFactory)
+  2. `icalendar_service.py` → Parámetro `session_or_factory`, normaliza internamente
+  3. `disponibilidad_profesor_service.py` → Constructor `session_or_factory` + `from_session()` classmethod
+
+**Archivos restantes pendientes (19)**:
+1. `src/services/asignacion_guardia_service.py`
+2. `src/services/distribucion_cuotas_service.py`
+3. ~~`src/services/importador_profesores.py`~~ ✅ RESUELTO v5.14.2
+4. ~~`src/services/icalendar_service.py`~~ ✅ RESUELTO v5.20.0
+5. `src/services/_pdf_mes_consolidado.py`
+6. ~~`src/services/disponibilidad_profesor_service.py`~~ ✅ RESUELTO v5.20.0
+7. `src/services/migrar_a_multi_curso.py`
+8. `src/services/equidad_guardias_service.py`
+9. `src/services/_exportador_import.py`
+10. `src/services/validador_guardias.py`
+11. `src/services/exportador.py`
+12. `src/services/assignment/assignment_executor.py`
+13. `src/services/assignment/slot_builder.py`
+14. `src/services/assignment/profesor_filter.py`
+15. `src/services/_pdf_individual_optimizado.py`
+16. ~~`src/services/estadisticas_service.py`~~ ✅ RESUELTO v5.15.1
+17. ~~`src/services/importador_zonas.py`~~ ✅ RESUELTO v5.20.0
+18. `src/services/diagnosticador_guardias.py`
+19. `src/services/validators/ausencia_checker.py`
+20. `src/services/asignador_guardias_v4_hibrido.py`
+21. `src/services/_asignador_v4_fases.py`
+22. `src/services/_asignador_v4_helpers.py`
+23. `src/services/exportador_pdf.py`
 
 **Cómo resolver** (progresivo, no hace falta todo de golpe):
 
@@ -316,7 +321,7 @@ os.chmod(users_json_path, 0o600)
 
 ---
 
-### ~~SEC-16 — 273 bloques `except Exception` (P1)~~ ✅ RESUELTO v5.13.0 (59→49, target <50 alcanzado)
+### SEC-16 — `except Exception` genéricos (P1) — ⚠️ REABIERTO: 52 bloques (target <50 no alcanzado)
 
 **Problema**: 273 bloques capturan `Exception` genérica. Distribución:
 
@@ -1361,7 +1366,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
-| 1 | SEC-16 | ~~Reducir 273 `except Exception` a <50~~ ✅ RESUELTO v5.13.0 | XL |
+| 1 | SEC-16 | ~~Reducir 273 `except Exception` a <50~~ ⚠️ REABIERTO: 52 (target <50) — 2 bloques por eliminar | XL |
 | 2 | ARQ-01 | Migrar 22 servicios de Session a repositorios inyectados (fase extensión) — ✅ `estadisticas_service` v5.15.1 + TEMPLATE ready | XL |
 | 3 | ARQ-02 | Eliminar 3 queries directas + 22 imports Session de presentation/ | L |
 | 4 | TEST-CORE | Tests de los 22 servicios durante migración ARQ-01 | L |
@@ -1380,7 +1385,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | 6 | DB-INDICES | ~~Índices faltantes~~ ✅ RESUELTO v5.15.1 (Ausencia compound indexes) | S |
 | 7 | A11Y-BASIC | ~~setAccessibleName + setTabOrder en widgets interactivos~~ ✅ RESUELTO v5.16.0 (11 formularios/widgets) | L |
 | 8 | ~~VIS-TOKENS~~ | ~~Completar sistema de design tokens (FontSize, Spacing, Colors)~~ ✅ RESUELTO v5.19.0 | M |
-| 9 | VIS-CSS | Eliminar setStyleSheet inline restantes — parcial: 284→268. Calendarios y MetricaCard conservan inline (estilos ad-hoc legítimos) | L |
+| 9 | VIS-CSS | Eliminar setStyleSheet inline restantes — parcial: verificado **336** (conteo real 21-abr-2026). Calendarios y MetricaCard conservan inline (estilos ad-hoc legítimos) | L |
 | 10 | UX-VALIDATORS | ~~QValidator en campos críticos (usuario, email, fechas)~~ ✅ RESUELTO v5.16.0 | M |
 | 11 | ~~UX-UNSAVED~~ | ~~Indicador de cambios sin guardar en formularios~~ | M | ✅ RESUELTO v5.17.0 |
 | 12 | ~~UX-DESTRUCTIVE~~ | ~~Confirmación en acciones destructivas (delete)~~ | S | ✅ RESUELTO v5.17.0 (ya implementado) |
@@ -1438,7 +1443,7 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 
 ---
 
-*Última actualización: 20 de abril de 2026 (v5.15.0 REALISTA) — 45 ítems ejecutables, 23 descartados por ROI/prematuros.*
+*Última actualización: 21 de abril de 2026 — verificación real de conteos: 32 imports sqlalchemy en services (ARQ-01), 20 Session en presentation (ARQ-02), 336 setStyleSheet inline (VIS-CSS), 52 except Exception (SEC-16 reabierto).*
 # Auditoría Integral — Guardias de Patio v5.0.0
 
 > **Fecha**: 19 de abril de 2026

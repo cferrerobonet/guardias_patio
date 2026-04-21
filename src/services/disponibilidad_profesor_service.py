@@ -14,8 +14,8 @@ from datetime import date
 from typing import List, Optional, Tuple
 
 from infrastructure.database.models import Ausencia, Guardia, Profesor
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from services.validators import AusenciaChecker, TurnoValidator
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 from domain.value_objects import Turno
@@ -35,17 +35,24 @@ class DisponibilidadProfesorService:
     - Filtrar profesores disponibles para un slot
     """
 
-    def __init__(self, session: Session):
+    def __init__(self, session_or_factory):
         """
-        Inicializa el servicio.
-
         Args:
-            session: Sesión de SQLAlchemy para consultas a BD
+            session_or_factory: Sesión de SQLAlchemy o RepositoryFactory
         """
+        session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
         self.session = session
         self.turno_validator = TurnoValidator()
         self.ausencia_checker = AusenciaChecker(session)
         self.logger = logger
+
+    @classmethod
+    def from_session(cls, session) -> "DisponibilidadProfesorService":
+        return cls(session)
 
     def esta_disponible(
         self,

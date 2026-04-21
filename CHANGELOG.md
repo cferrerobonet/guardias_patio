@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.20.0] - 2026-04-21
+
+### 🎯 Resumen
+ARQ-01 fase extensión #2: 3 servicios migrados de Session directa a patrón polimórfico (Session legacy | RepositoryFactory). Auditoría actualizada con conteos verificados.
+
+### 🧹 Housekeeping
+- `src/services/importador_zonas.py`: migrado a polimórfico — acepta `zona_repo_or_session`, usa `RepositoryFactory` y `ZonaEntity` internamente, backward-compatible con Session legacy
+- `src/services/icalendar_service.py`: `generar_icalendar_profesor` acepta `session_or_factory` en lugar de `Session` tipado; elimina `from sqlalchemy.orm import Session`
+- `src/services/disponibilidad_profesor_service.py`: constructor `session_or_factory` + `from_session()` classmethod; elimina `from sqlalchemy.orm import Session`
+- `docs/AUDITORIA_INTEGRAL_2026.md`: conteos verificados — 20 imports `Session` en services (era 32), 336 `setStyleSheet` (era 268), 52 `except Exception` (SEC-16 reabierto, target era <50)
+
+---
 ## [5.19.1] - 2026-04-21
 
 ### 🎯 Resumen

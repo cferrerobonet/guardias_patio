@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 from infrastructure.database.models import Configuracion, Guardia, Profesor
-from sqlalchemy.orm import Session, joinedload
+from infrastructure.repositories.repository_factory import RepositoryFactory
+from sqlalchemy.orm import joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -79,7 +80,7 @@ class ICalendarService:
 
     @staticmethod
     def generar_icalendar_profesor(
-        session: Session,
+        session_or_factory,
         profesor_id: int,
         ruta_salida: str,
         nombre_centro: str = "Centro Educativo",
@@ -88,7 +89,7 @@ class ICalendarService:
         Genera un archivo iCalendar (.ics) con todas las guardias de un profesor.
 
         Args:
-            session: Sesión de base de datos
+            session_or_factory: Sesión de BD o RepositoryFactory
             profesor_id: ID del profesor
             ruta_salida: Ruta donde guardar el archivo .ics
             nombre_centro: Nombre del centro educativo
@@ -96,6 +97,11 @@ class ICalendarService:
         Returns:
             True si se generó exitosamente, False en caso contrario
         """
+        session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
         try:
             # Obtener profesor
             profesor = session.query(Profesor).filter_by(id=profesor_id).first()

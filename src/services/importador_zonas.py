@@ -12,9 +12,8 @@ import csv as csv_module
 from pathlib import Path
 from typing import Callable, Optional
 
-from infrastructure.database.models import Zona
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
+from domain.entities.zona_entity import ZonaEntity
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from utils import get_logger
 
 try:
@@ -44,8 +43,21 @@ def _parse_int_or_none(value: str) -> Optional[int]:
         return None
 
 
+def _get_zona_repo(zona_repo_or_session):
+    """Devuelve (zona_repo, session) a partir de un repo o session legacy."""
+    if hasattr(zona_repo_or_session, "create_zona_repository"):
+        repo = zona_repo_or_session.create_zona_repository()
+        return repo, repo.session
+    elif hasattr(zona_repo_or_session, "find_by_nombre"):
+        return zona_repo_or_session, zona_repo_or_session.session
+    else:
+        factory = RepositoryFactory(zona_repo_or_session)
+        repo = factory.create_zona_repository()
+        return repo, zona_repo_or_session
+
+
 def importar_zonas_desde_csv(
-    session: Session,
+    zona_repo_or_session,
     archivo_path: str,
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> dict:
@@ -57,6 +69,7 @@ def importar_zonas_desde_csv(
     Returns:
         dict con leidos, importadas, existentes, errores, detalles
     """
+    zona_repo, session = _get_zona_repo(zona_repo_or_session)
     resultados = {
         "archivo": Path(archivo_path).name,
         "leidos": 0,
@@ -94,18 +107,16 @@ def importar_zonas_desde_csv(
             resultados["detalles"].append(f"Fila {i + 1}: nombre_zona vacío, omitida")
             continue
 
-        existente = session.query(Zona).filter(Zona.nombre_zona == nombre).first()
-        if existente:
+        if zona_repo.find_by_nombre(nombre):
             resultados["existentes"] += 1
             resultados["detalles"].append(f"'{nombre}': ya existe, omitida")
         else:
-            zona = Zona(
+            zona_repo.save(ZonaEntity(
                 nombre_zona=nombre,
                 descripcion=fila.get("descripcion", "").strip() or None,
                 activa=_parse_bool(fila.get("activa", "1")),
                 capacidad_profesores=_parse_int_or_none(fila.get("capacidad_profesores", "")),
-            )
-            session.add(zona)
+            ))
             resultados["importadas"] += 1
             resultados["detalles"].append(f"'{nombre}': importada")
 
@@ -113,7 +124,7 @@ def importar_zonas_desde_csv(
 
     try:
         session.commit()
-    except SQLAlchemyError as e:
+    except Exception as e:
         session.rollback()
         logger.exception(f"Error de base de datos al guardar zonas importadas: {e}")
         resultados["errores"] += resultados["importadas"]
@@ -129,7 +140,7 @@ def importar_zonas_desde_csv(
 
 
 def importar_zonas_desde_excel(
-    session: Session,
+    zona_repo_or_session,
     archivo_path: str,
     sheet_name: int | str = 0,
     progress_callback: Optional[Callable[[int, str], None]] = None,
@@ -142,6 +153,7 @@ def importar_zonas_desde_excel(
     Returns:
         dict con leidos, importadas, existentes, errores, detalles
     """
+    zona_repo, session = _get_zona_repo(zona_repo_or_session)
     resultados = {
         "archivo": Path(archivo_path).name,
         "leidos": 0,
@@ -184,18 +196,16 @@ def importar_zonas_desde_excel(
             resultados["detalles"].append(f"Fila {i + 1}: nombre_zona vacío, omitida")
             continue
 
-        existente = session.query(Zona).filter(Zona.nombre_zona == nombre).first()
-        if existente:
+        if zona_repo.find_by_nombre(nombre):
             resultados["existentes"] += 1
             resultados["detalles"].append(f"'{nombre}': ya existe, omitida")
         else:
-            zona = Zona(
+            zona_repo.save(ZonaEntity(
                 nombre_zona=nombre,
                 descripcion=str(fila.get("descripcion", "")).strip() or None,
                 activa=_parse_bool(str(fila.get("activa", "1"))),
                 capacidad_profesores=_parse_int_or_none(str(fila.get("capacidad_profesores", ""))),
-            )
-            session.add(zona)
+            ))
             resultados["importadas"] += 1
             resultados["detalles"].append(f"'{nombre}': importada")
 
@@ -203,7 +213,7 @@ def importar_zonas_desde_excel(
 
     try:
         session.commit()
-    except SQLAlchemyError as e:
+    except Exception as e:
         session.rollback()
         logger.exception(f"Error de base de datos al guardar zonas importadas: {e}")
         resultados["errores"] += resultados["importadas"]
@@ -219,7 +229,7 @@ def importar_zonas_desde_excel(
 
 
 def importar_zonas(
-    session: Session,
+    zona_repo_or_session,
     archivo_path: str,
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> dict:
@@ -228,9 +238,9 @@ def importar_zonas(
     """
     ext = Path(archivo_path).suffix.lower()
     if ext == ".csv":
-        return importar_zonas_desde_csv(session, archivo_path, progress_callback)
+        return importar_zonas_desde_csv(zona_repo_or_session, archivo_path, progress_callback)
     elif ext in (".xlsx", ".xls"):
-        return importar_zonas_desde_excel(session, archivo_path, progress_callback=progress_callback)
+        return importar_zonas_desde_excel(zona_repo_or_session, archivo_path, progress_callback=progress_callback)
     else:
         return {
             "archivo": Path(archivo_path).name,
