@@ -1079,7 +1079,7 @@ Cada vez que el usuario cambia de mes, `VistaCalendario.cargar_mes()` destruye y
 
 ---
 
-### PERF-02 — La app carga todos los formularios al arrancar
+### ~~PERF-02 — La app carga todos los formularios al arrancar~~ ✅ RESUELTO v5.27.3
 **Severidad: Media**
 
 En `CCleanerMainWindow.create_views()`, se instancian todos los formularios (`ProfesorForm`, `ZonaForm`, `AjustesForm`, etc.) al arrancar, aunque el usuario solo verá uno. Esto ralentiza el arranque innecesariamente.

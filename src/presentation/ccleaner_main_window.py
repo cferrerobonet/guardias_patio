@@ -95,7 +95,8 @@ class CCleanerMainWindow(QMainWindow):
         super().__init__()
         self.session = session
         self.sync_manager = sync_manager
-        self.widgets = {}
+        self.widgets: dict = {}
+        self._view_factories: dict = {}
         self.setup_ui()
 
     def setup_ui(self):
@@ -146,59 +147,56 @@ class CCleanerMainWindow(QMainWindow):
         self.sidebar.set_active_section("profesores")
 
     def create_views(self):
-        """Crear todas las vistas/páginas de la aplicación"""
+        """Registrar factories de vistas — lazy loading: solo se instancian al navegar."""
+        session = self.session
+        sync_manager = self.sync_manager
 
-        # GESTIÓN (primera sección)
-        self.add_view("profesores", "Gestión de Profesores", ProfesorForm(self.session))
-        self.add_view("zonas", "Gestión de Zonas", ZonaForm(self.session))
-        self.add_view(
-            "ajustes",
-            "Ajustes del Curso Escolar",
-            AjustesForm(self.session),
-        )
-        self.add_view(
-            "perfiles",
-            "Gestión de Perfiles de Usuario",
-            PerfilesUsuarioForm(self.session),
-        )
+        self._register("profesores", "Gestión de Profesores",
+                        lambda: ProfesorForm(session))
+        self._register("zonas", "Gestión de Zonas",
+                        lambda: ZonaForm(session))
+        self._register("ajustes", "Ajustes del Curso Escolar",
+                        lambda: AjustesForm(session))
+        self._register("perfiles", "Gestión de Perfiles de Usuario",
+                        lambda: PerfilesUsuarioForm(session))
+        self._register("asignacion_calculo", "Cálculo y Asignación",
+                        lambda: AsignacionCalculoForm(session, sync_manager=sync_manager))
+        self._register("calendario", "Calendario de Guardias",
+                        lambda: VistaCalendario(session))
+        self._register("ausencias", "Gestión de Ausencias",
+                        lambda: GestionarAusenciasForm(session))
+        self._register("sustituciones", "Gestión de Sustituciones",
+                        lambda: GestorSustituciones(session))
+        self._register("importar", "Importar / Exportar Datos",
+                        lambda: ImportExportForm(session))
+        self._register("reportes", "Generador de Reportes",
+                        lambda: ReportesForm(session))
+        self._register("estadisticas", "Estadísticas",
+                        lambda: PanelEstadisticas(session))
 
-        # GUARDIAS
-        self.add_view(
-            "asignacion_calculo",
-            "Cálculo y Asignación",
-            AsignacionCalculoForm(self.session, sync_manager=self.sync_manager),
-        )
-        self.add_view("calendario", "Calendario de Guardias", VistaCalendario(self.session))
+        # Pre-instanciar solo la sección inicial para que el stack no quede vacío
+        self._ensure_view("profesores")
 
-        # PERSONAL
-        self.add_view(
-            "ausencias",
-            "Gestión de Ausencias",
-            GestionarAusenciasForm(self.session),
-        )
-        self.add_view(
-            "sustituciones",
-            "Gestión de Sustituciones",
-            GestorSustituciones(self.session),
-        )
+    def _register(self, section: str, title: str, factory):
+        self._view_factories[section] = (title, factory)
 
-        # HERRAMIENTAS
-        self.add_view(
-            "importar",
-            "Importar / Exportar Datos",
-            ImportExportForm(self.session),
-        )
-        self.add_view("reportes", "Generador de Reportes", ReportesForm(self.session))
-        self.add_view("estadisticas", "Estadísticas", PanelEstadisticas(self.session))
+    def _ensure_view(self, section: str):
+        """Instancia el widget de una sección si aún no existe."""
+        if section not in self.widgets and section in self._view_factories:
+            title, factory = self._view_factories[section]
+            wrapped = ContentWrapper(title, factory())
+            self.widgets[section] = wrapped
+            self.content_stack.addWidget(wrapped)
 
     def add_view(self, section: str, title: str, content_widget: QWidget):
-        """Añadir una vista al stack"""
+        """API de compatibilidad — instancia inmediata."""
         wrapped = ContentWrapper(title, content_widget)
         self.widgets[section] = wrapped
         self.content_stack.addWidget(wrapped)
 
     def on_section_changed(self, section: str):
-        """Cambiar de sección"""
+        """Cambiar de sección — instancia el widget si es la primera vez."""
+        self._ensure_view(section)
         if section in self.widgets:
             self.content_stack.setCurrentWidget(self.widgets[section])
 

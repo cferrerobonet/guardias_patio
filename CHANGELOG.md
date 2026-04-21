@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.27.3] - 2026-04-21
+
+### 🎯 Resumen
+PERF-02: lazy loading de formularios — solo se instancia el formulario inicial al arrancar, el resto se crea al navegar por primera vez.
+
+### Changed
+- `ccleaner_main_window.py`: `create_views()` registra factories en lugar de instanciar; `_ensure_view()` crea on-demand; solo "profesores" se instancia al arrancar
+
 ## [5.27.2] - 2026-04-21
 
 ### 🎯 Resumen
