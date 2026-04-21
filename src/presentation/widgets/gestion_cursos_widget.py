@@ -6,9 +6,6 @@ Permite visualizar todos los cursos y realizar operaciones de gestión.
 
 from typing import Optional
 
-from presentation.theme import legacy_styles as styles
-from core.logging import get_logger
-from infrastructure.database.models import CursoEscolar, Guardia
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
@@ -22,10 +19,12 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from core.logging import get_logger
+from presentation.dialogs.dialogo_crear_curso import DialogoCrearCurso
+from presentation.theme import legacy_styles as styles
 from services.gestor_cursos import GestorCursos
 from utils.icons import icon_for_button
-
-from presentation.dialogs.dialogo_crear_curso import DialogoCrearCurso
 
 logger = get_logger(__name__)
 
@@ -75,7 +74,7 @@ class GestionCursosWidget(QWidget):
             "y tiene sus propias guardias y datos."
         )
         descripcion.setWordWrap(True)
-        descripcion.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 5px;")
+        descripcion.setObjectName("formDescription")
         grupo_layout.addWidget(descripcion)
 
         # Botones de acción con estilos consistentes - ALINEADOS A LA DERECHA
@@ -183,7 +182,9 @@ class GestionCursosWidget(QWidget):
             # Forzar refresco de la sesión para obtener datos actualizados
             self.session.expire_all()
 
-            cursos = GestorCursos.from_session(self.session).listar_todos_cursos(incluir_cerrados=True)
+            cursos = GestorCursos.from_session(self.session).listar_todos_cursos(
+                incluir_cerrados=True
+            )
 
             self.tabla_cursos.setRowCount(len(cursos))
 
@@ -288,6 +289,7 @@ class GestionCursosWidget(QWidget):
         try:
             # Obtener el curso
             from application.app_services import AppServices
+
             _svc = AppServices(self.session)
             curso = _svc.cursos.get_by_id(curso_id)
             if not curso:
@@ -372,6 +374,7 @@ class GestionCursosWidget(QWidget):
         # Obtener curso seleccionado
         curso_id = items[0].data(Qt.ItemDataRole.UserRole)
         from application.app_services import AppServices
+
         curso = AppServices(self.session).cursos.get_by_id(curso_id)
 
         if curso:
@@ -416,6 +419,7 @@ class GestionCursosWidget(QWidget):
 
         try:
             from application.app_services import AppServices
+
             curso = AppServices(self.session).cursos.get_by_id(curso_id)
 
             # Mensaje diferente si el curso está cerrado
@@ -478,6 +482,7 @@ class GestionCursosWidget(QWidget):
 
         try:
             from application.app_services import AppServices
+
             curso = AppServices(self.session).cursos.get_by_id(curso_id)
 
             # Usar QMessageBox explícito
@@ -527,6 +532,7 @@ class GestionCursosWidget(QWidget):
 
         try:
             from application.app_services import AppServices
+
             _svc = AppServices(self.session)
             curso = _svc.cursos.get_by_id(curso_id)
 
@@ -570,8 +576,8 @@ class GestionCursosWidget(QWidget):
             respuesta2 = msg_box2.exec()
 
             if respuesta2 == QMessageBox.StandardButton.Yes:
-                # Eliminar curso (cascade eliminará guardias)
-                self.session.delete(curso)
+                # Eliminar curso a través del repositorio (sin acceso directo a ORM)
+                _svc.cursos.delete(curso_id)
                 self.session.commit()
 
                 # Mensaje de éxito

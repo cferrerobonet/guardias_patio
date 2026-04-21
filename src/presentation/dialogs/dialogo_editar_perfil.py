@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
 from sync.sync_manager import UserAuth
 from utils.icons import icon_for_button
 
@@ -34,13 +35,13 @@ class DialogoEditarPerfil(QDialog):
 
         # Título
         titulo = QLabel(f"Editar Perfil: {self.username}")
-        titulo.setStyleSheet("font-size: 14px; font-weight: bold; margin-bottom: 10px;")
+        titulo.setObjectName("dialogTitle")
         layout.addWidget(titulo)
 
         # Descripción
         desc = QLabel("Modifica el email del perfil. El nombre de usuario no se puede cambiar.")
         desc.setWordWrap(True)
-        desc.setStyleSheet("color: #666; margin-bottom: 15px;")
+        desc.setObjectName("formDescription")
         layout.addWidget(desc)
 
         # Formulario

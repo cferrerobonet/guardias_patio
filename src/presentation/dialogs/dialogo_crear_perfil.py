@@ -37,7 +37,7 @@ class DialogoCrearPerfil(QDialog):
 
         # Título
         titulo = QLabel("Crear Nuevo Perfil de Usuario")
-        titulo.setStyleSheet("font-size: 14px; font-weight: bold; margin-bottom: 10px;")
+        titulo.setObjectName("dialogTitle")
         layout.addWidget(titulo)
 
         # Descripción
@@ -45,7 +45,7 @@ class DialogoCrearPerfil(QDialog):
             "Se creará un nuevo perfil con su propia base de datos y configuración independiente."
         )
         desc.setWordWrap(True)
-        desc.setStyleSheet("color: #666; margin-bottom: 15px;")
+        desc.setObjectName("formDescription")
         layout.addWidget(desc)
 
         # Formulario

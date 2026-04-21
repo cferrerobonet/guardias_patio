@@ -6,15 +6,13 @@ Convierte toda la base de datos SQLite a formato JSON para sincronización.
 Incluye: Profesores, Zonas, Configuración, Guardias y Ausencias.
 """
 
-import base64
 import json
 import logging
-import os
-from datetime import date, datetime, time, timezone
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
 
-from cryptography.fernet import Fernet, InvalidToken
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from infrastructure.database.models import (
     Ausencia,
@@ -24,18 +22,24 @@ from infrastructure.database.models import (
     Profesor,
     Zona,
 )
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
 from sync.data_exporter_helpers import (
-    serialize_date,
+    desencriptar_password,
+    encriptar_password,
+    export_sftp_config,
+    export_smtp_config,
+    import_sftp_config,
+    import_smtp_config,
     parse_date,
     parse_time,
-    encriptar_password,
-    desencriptar_password,
-    export_smtp_config,
-    import_smtp_config,
-    export_sftp_config,
-    import_sftp_config,
+    serialize_date,
+)
+from sync.dtos import (
+    AusenciaSyncDTO,
+    ConfiguracionSyncDTO,
+    CursoEscolarSyncDTO,
+    GuardiaSyncDTO,
+    ProfesorSyncDTO,
+    ZonaSyncDTO,
 )
 
 logger = logging.getLogger(__name__)
@@ -73,138 +77,37 @@ class DataExporter:
             # Exportar Cursos Escolares (NUEVO)
             cursos = session.query(CursoEscolar).all()
             for c in cursos:
-                data["cursos_escolares"].append(
-                    {
-                        "id": c.id,
-                        "anio_inicio": c.anio_inicio,
-                        "anio_fin": c.anio_fin,
-                        "fecha_inicio": serialize_date(c.fecha_inicio),
-                        "fecha_fin": serialize_date(c.fecha_fin),
-                        "nombre": c.nombre,
-                        "activo": c.activo,
-                        "cerrado": c.cerrado,
-                        "created_at": serialize_date(c.created_at),
-                    }
-                )
+                data["cursos_escolares"].append(CursoEscolarSyncDTO.from_orm(c).to_dict())
             logger.info(f"✓ {len(cursos)} cursos escolares exportados")
 
             # Exportar Profesores
             profesores = session.query(Profesor).all()
             for p in profesores:
-                data["profesores"].append(
-                    {
-                        "id": p.id,
-                        "nombre_completo": p.nombre_completo,
-                        "email_corporativo": p.email_corporativo,
-                        "horas_contrato": float(p.horas_contrato),
-                        "porcentaje_jornada": float(p.porcentaje_jornada),
-                        "turno": p.turno,
-                        "horas_manana": float(p.horas_manana) if p.horas_manana else None,
-                        "horas_tarde": float(p.horas_tarde) if p.horas_tarde else None,
-                        "tutor": p.tutor,
-                        "activo": p.activo,  # Campo añadido
-                        "fecha_inicio_guardias": serialize_date(
-                            p.fecha_inicio_guardias
-                        )
-                        if p.fecha_inicio_guardias
-                        else None,
-                        "fecha_fin_guardias": serialize_date(p.fecha_fin_guardias)
-                        if p.fecha_fin_guardias
-                        else None,
-                        "dias_semana_permitidos": p.dias_semana_permitidos,  # Campo añadido
-                        "recreos_permitidos": p.recreos_permitidos,  # Campo añadido
-                    }
-                )
+                data["profesores"].append(ProfesorSyncDTO.from_orm(p).to_dict())
             logger.info(f"✓ {len(profesores)} profesores exportados")
 
             # Exportar Zonas
             zonas = session.query(Zona).all()
             for z in zonas:
-                data["zonas"].append(
-                    {
-                        "id": z.id,
-                        "nombre_zona": z.nombre_zona,
-                        "descripcion": z.descripcion,
-                        "fecha_inicio": serialize_date(z.fecha_inicio)
-                        if z.fecha_inicio
-                        else None,
-                        "fecha_fin": serialize_date(z.fecha_fin)
-                        if z.fecha_fin
-                        else None,
-                    }
-                )
+                data["zonas"].append(ZonaSyncDTO.from_orm(z).to_dict())
             logger.info(f"✓ {len(zonas)} zonas exportadas")
 
             # Exportar Configuración
             configs = session.query(Configuracion).all()
             for c in configs:
-                data["configuracion"].append(
-                    {
-                        "id": c.id,
-                        "anio_inicio_curso": c.anio_inicio_curso,
-                        "fecha_inicio_curso": serialize_date(c.fecha_inicio_curso),
-                        "fecha_fin_curso": serialize_date(c.fecha_fin_curso),
-                        "hora_recreo1_manana": c.hora_recreo1_manana.isoformat()
-                        if c.hora_recreo1_manana
-                        else None,
-                        "hora_recreo2_manana": c.hora_recreo2_manana.isoformat()
-                        if c.hora_recreo2_manana
-                        else None,
-                        "hora_recreo1_tarde": c.hora_recreo1_tarde.isoformat()
-                        if c.hora_recreo1_tarde
-                        else None,
-                        "hora_recreo2_tarde": c.hora_recreo2_tarde.isoformat()
-                        if c.hora_recreo2_tarde
-                        else None,
-                        "activar_festivos_automaticos": c.activar_festivos_automaticos,
-                        "dias_no_lectivos_personalizados": c.dias_no_lectivos_personalizados,
-                        "recreos_config": c.recreos_config,
-                        "ajuste_tutores": float(c.ajuste_tutores) if c.ajuste_tutores else 1.0,
-                        "ajuste_no_tutores": float(c.ajuste_no_tutores)
-                        if c.ajuste_no_tutores
-                        else 1.0,
-                        "algoritmo_asignacion": c.algoritmo_asignacion,  # Campo añadido
-                    }
-                )
+                data["configuracion"].append(ConfiguracionSyncDTO.from_orm(c).to_dict())
             logger.info(f"✓ {len(configs)} configuraciones exportadas")
 
             # Exportar Guardias
             guardias = session.query(Guardia).all()
             for g in guardias:
-                data["guardias"].append(
-                    {
-                        "id": g.id,
-                        "curso_id": g.curso_id,  # NUEVO: FK a cursos_escolares
-                        "profesor_id": g.profesor_id,
-                        "fecha": serialize_date(g.fecha),
-                        "turno": g.turno,
-                        "recreo": g.recreo,
-                        "zona_id": g.zona_id,
-                    }
-                )
+                data["guardias"].append(GuardiaSyncDTO.from_orm(g).to_dict())
             logger.info(f"✓ {len(guardias)} guardias exportadas")
 
             # Exportar Ausencias
             ausencias = session.query(Ausencia).all()
             for a in ausencias:
-                data["ausencias"].append(
-                    {
-                        "id": a.id,
-                        "profesor_id": a.profesor_id,
-                        "fecha_inicio": serialize_date(a.fecha_inicio),
-                        "fecha_fin": serialize_date(a.fecha_fin),
-                        "tipo": a.tipo,
-                        "motivo": a.motivo,
-                        "documento_path": a.documento_path,
-                        "activa": a.activa,
-                        "created_at": serialize_date(a.created_at)
-                        if a.created_at
-                        else None,
-                        "updated_at": serialize_date(a.updated_at)
-                        if a.updated_at
-                        else None,
-                    }
-                )
+                data["ausencias"].append(AusenciaSyncDTO.from_orm(a).to_dict())
             logger.info(f"✓ {len(ausencias)} ausencias exportadas")
 
             # Guardar JSON
@@ -383,12 +286,8 @@ class DataExporter:
                     existing.horas_tarde = p_data.get("horas_tarde")
                     existing.tutor = p_data.get("tutor", False)
                     existing.activo = p_data.get("activo", True)  # Campo añadido
-                    existing.fecha_inicio_guardias = parse_date(
-                        p_data.get("fecha_inicio_guardias")
-                    )
-                    existing.fecha_fin_guardias = parse_date(
-                        p_data.get("fecha_fin_guardias")
-                    )
+                    existing.fecha_inicio_guardias = parse_date(p_data.get("fecha_inicio_guardias"))
+                    existing.fecha_fin_guardias = parse_date(p_data.get("fecha_fin_guardias"))
                     existing.dias_semana_permitidos = p_data.get(
                         "dias_semana_permitidos"
                     )  # Campo añadido
@@ -406,12 +305,8 @@ class DataExporter:
                         horas_tarde=p_data.get("horas_tarde"),
                         tutor=p_data.get("tutor", False),
                         activo=p_data.get("activo", True),  # Campo añadido
-                        fecha_inicio_guardias=parse_date(
-                            p_data.get("fecha_inicio_guardias")
-                        ),
-                        fecha_fin_guardias=parse_date(
-                            p_data.get("fecha_fin_guardias")
-                        ),
+                        fecha_inicio_guardias=parse_date(p_data.get("fecha_inicio_guardias")),
+                        fecha_fin_guardias=parse_date(p_data.get("fecha_fin_guardias")),
                         dias_semana_permitidos=p_data.get(
                             "dias_semana_permitidos"
                         ),  # Campo añadido
@@ -428,22 +323,12 @@ class DataExporter:
                 existing = session.query(Configuracion).filter_by(id=c_data["id"]).first()
                 if existing:
                     # Actualizar
-                    existing.fecha_inicio_curso = parse_date(
-                        c_data["fecha_inicio_curso"]
-                    )
+                    existing.fecha_inicio_curso = parse_date(c_data["fecha_inicio_curso"])
                     existing.fecha_fin_curso = parse_date(c_data["fecha_fin_curso"])
-                    existing.hora_recreo1_manana = parse_time(
-                        c_data.get("hora_recreo1_manana")
-                    )
-                    existing.hora_recreo2_manana = parse_time(
-                        c_data.get("hora_recreo2_manana")
-                    )
-                    existing.hora_recreo1_tarde = parse_time(
-                        c_data.get("hora_recreo1_tarde")
-                    )
-                    existing.hora_recreo2_tarde = parse_time(
-                        c_data.get("hora_recreo2_tarde")
-                    )
+                    existing.hora_recreo1_manana = parse_time(c_data.get("hora_recreo1_manana"))
+                    existing.hora_recreo2_manana = parse_time(c_data.get("hora_recreo2_manana"))
+                    existing.hora_recreo1_tarde = parse_time(c_data.get("hora_recreo1_tarde"))
+                    existing.hora_recreo2_tarde = parse_time(c_data.get("hora_recreo2_tarde"))
                     existing.activar_festivos_automaticos = c_data.get(
                         "activar_festivos_automaticos", True
                     )
@@ -463,18 +348,10 @@ class DataExporter:
                         anio_inicio_curso=c_data.get("anio_inicio_curso"),
                         fecha_inicio_curso=parse_date(c_data["fecha_inicio_curso"]),
                         fecha_fin_curso=parse_date(c_data["fecha_fin_curso"]),
-                        hora_recreo1_manana=parse_time(
-                            c_data.get("hora_recreo1_manana")
-                        ),
-                        hora_recreo2_manana=parse_time(
-                            c_data.get("hora_recreo2_manana")
-                        ),
-                        hora_recreo1_tarde=parse_time(
-                            c_data.get("hora_recreo1_tarde")
-                        ),
-                        hora_recreo2_tarde=parse_time(
-                            c_data.get("hora_recreo2_tarde")
-                        ),
+                        hora_recreo1_manana=parse_time(c_data.get("hora_recreo1_manana")),
+                        hora_recreo2_manana=parse_time(c_data.get("hora_recreo2_manana")),
+                        hora_recreo1_tarde=parse_time(c_data.get("hora_recreo1_tarde")),
+                        hora_recreo2_tarde=parse_time(c_data.get("hora_recreo2_tarde")),
                         activar_festivos_automaticos=c_data.get(
                             "activar_festivos_automaticos", True
                         ),

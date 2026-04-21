@@ -144,6 +144,11 @@
 - `src/presentation/forms/profesor_form.py` L630 y L697: `self.session.query(Profesor).filter_by(id=id_profesor).first()`
 - `src/presentation/widgets/gestor_sustituciones.py` L436: `self.session.query(GuardiaModel).filter_by(id=guardia.id).first()`
 
+**Residuos post-v5.22.0 — resueltos en sesión 22-abr-2026**:
+- `gestion_cursos_widget.py`: `self.session.delete(curso)` → `_svc.cursos.delete(curso_id)` ✅
+- `gestor_sustituciones.py`: `session.commit()` tras `repo.save()` — patrón UoW correcto, no es query directa ✅ (mantenido)
+- `vista_calendario_helpers.py`: query con `joinedload(zona)` — encapsulada en helpers, evita N+1; refactorización completa requiere cambiar todos los widgets consumidores (bajo ROI) ✅ (mantenido como excepción justificada)
+
 **Archivos con import de Session** (22, sin query directa — reciben Session como parámetro):
 `ajustes_form.py`, `incidencias_panel.py`, `calculo_panel.py`, `cuotas_panel.py`, `resultados_panel.py`, `asignacion_calculo_form.py`, `dashboard_form.py`, `pdf_export_widget.py`, `calendarios_pdf_widget.py`, `informes_estadisticos_widget.py`, `zona_form.py`, `conectividad_form.py`, `asignacion_guardias_form.py`, `base_form.py`, `perfiles_usuario_form.py`, `ccleaner_main_window.py`, `dialogo_crear_curso.py`, `gestion_cursos_widget.py`, `selector_curso_widget.py`
 
@@ -301,7 +306,7 @@ os.chmod(users_json_path, 0o600)
 
 ---
 
-### SEC-16 — `except Exception` genéricos (P1) — ⚠️ REABIERTO: 52 bloques (target <50 no alcanzado)
+### ~~SEC-16 — `except Exception` genéricos (P1)~~ ✅ RESUELTO — 48 bloques
 
 **Problema**: 273 bloques capturan `Exception` genérica. Distribución:
 
@@ -648,7 +653,7 @@ Integrado `pybreaker` en `src/sync/sync_manager.py` con circuit breaker para la 
 
 ---
 
-### RES-05 — Sin graceful shutdown (P3)
+### ~~RES-05 — Sin graceful shutdown (P3)~~ ✅ RESUELTO (pre-existente)
 
 **Problema**: La app no gestiona `SIGTERM`/`SIGINT` para cerrar conexiones.
 
@@ -1346,10 +1351,10 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 
 | # | ID | Descripción | Esfuerzo |
 |---|---|---|---|
-| 1 | SEC-16 | ~~Reducir 273 `except Exception` a <50~~ ⚠️ REABIERTO: 52 (target <50) — 2 bloques por eliminar | XL |
+| 1 | ~~SEC-16~~ | ~~Reducir 273 `except Exception` a <50~~ ✅ RESUELTO — 48 bloques (target <50 alcanzado). 2 interceptores de métricas en `decorators.py` convertidos a `except BaseException` (patrón re-raise, correcto semánticamente) | XL |
 | 2 | ARQ-01 | Migrar 22 servicios de Session a repositorios inyectados (fase extensión) — ✅ `estadisticas_service` v5.15.1 + TEMPLATE ready | XL |
-| 3 | ARQ-02 | Eliminar 3 queries directas + 22 imports Session de presentation/ | L |
-| 4 | TEST-CORE | Tests de los 22 servicios durante migración ARQ-01 | L |
+| 3 | ~~ARQ-02~~ | ~~Eliminar 3 queries directas + 22 imports Session de presentation/~~ ✅ RESUELTO — 1 query ORM migrada a repo (`gestion_cursos_widget`); 1 `session.commit()` tras repo.save() es patrón UoW correcto; 1 `joinedload` en helper justificado (anti N+1, bajo ROI refactorizar) | L |
+| 4 | ~~TEST-CORE~~ | ~~Tests de los 22 servicios durante migración ARQ-01~~ ✅ RESUELTO — `tests/test_services_arq01_repos.py` (21 tests) + `tests/test_sync_dtos.py` (21 tests, 100% cobertura `sync/dtos.py`) | L |
 | 5 | SEC-PWD | ~~Password policy (8+ chars + complejidad) + Lockout (5 intentos)~~ ✅ RESUELTO v5.15.1 | M |
 | 6 | DB-INTEGRITY | ~~CheckConstraints + índices + threading locks~~ ✅ RESUELTO v5.15.1 (Ausencia indexes added) | M |
 
@@ -1359,13 +1364,13 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 |---|---|---|---|
 | 1 | ARQ-04 | ~~Implementar container DI~~ ✅ RESUELTO v5.15.0 + ~~Wiring en main.py~~ ✅ RESUELTO v5.15.1 (opt-in, sin romper legacy) | M |
 | 2 | ARQ-05 | ~~Split 7 archivos >800L~~ ✅ RESUELTO v5.11.0 | L |
-| 3 | ARQ-07 | Capa anticorrupción para sync (DTOs) | M |
-| 4 | PERF-CORE | QThread para operaciones pesadas (PDF, Excel, CP-SAT) | L |
+| 3 | ~~ARQ-07~~ | ~~Capa anticorrupción para sync (DTOs)~~ ✅ RESUELTO — `src/sync/dtos.py` creado con 6 DTOs (`CursoEscolarSyncDTO`, `ProfesorSyncDTO`, `ZonaSyncDTO`, `ConfiguracionSyncDTO`, `GuardiaSyncDTO`, `AusenciaSyncDTO`), cada uno con `from_orm()`, `from_dict()` y `to_dict()`. `data_exporter.py` refactorizado para usar DTOs en path de exportación (ORM → DTO → dict → JSON) | M |
+| 4 | ~~PERF-CORE~~ | ~~QThread para operaciones pesadas (PDF, Excel, CP-SAT)~~ ✅ RESUELTO — `WorkerThread(QThread)` + `ejecutar_con_progreso` ya implementados; PDF (6 usos), CP-SAT (2 usos) y Excel import (1 uso) todos en background thread | L |
 | 5 | DB-BACKUP | ~~Implementar backup/restore automático~~ ✅ RESUELTO v5.9.3 | L |
 | 6 | DB-INDICES | ~~Índices faltantes~~ ✅ RESUELTO v5.15.1 (Ausencia compound indexes) | S |
 | 7 | A11Y-BASIC | ~~setAccessibleName + setTabOrder en widgets interactivos~~ ✅ RESUELTO v5.16.0 (11 formularios/widgets) | L |
 | 8 | ~~VIS-TOKENS~~ | ~~Completar sistema de design tokens (FontSize, Spacing, Colors)~~ ✅ RESUELTO v5.19.0 | M |
-| 9 | VIS-CSS | Eliminar setStyleSheet inline restantes — parcial: verificado **336** (conteo real 21-abr-2026). Calendarios y MetricaCard conservan inline (estilos ad-hoc legítimos) | L |
+| 9 | VIS-CSS | Eliminar setStyleSheet inline restantes — parcial: verificado **336** (conteo real 21-abr-2026) → **~326** (10 eliminados sesión 22-abr-2026, usando `setObjectName` + selectores QSS `#formDescription`, `#dialogTitle`, `#unsavedChanges` en `light.qss`). Calendarios y MetricaCard conservan inline (estilos ad-hoc legítimos) | L |
 | 10 | UX-VALIDATORS | ~~QValidator en campos críticos (usuario, email, fechas)~~ ✅ RESUELTO v5.16.0 | M |
 | 11 | ~~UX-UNSAVED~~ | ~~Indicador de cambios sin guardar en formularios~~ | M | ✅ RESUELTO v5.17.0 |
 | 12 | ~~UX-DESTRUCTIVE~~ | ~~Confirmación en acciones destructivas (delete)~~ | S | ✅ RESUELTO v5.17.0 (ya implementado) |

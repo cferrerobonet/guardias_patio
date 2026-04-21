@@ -5,9 +5,27 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
-## [5.22.0] - 2026-04-21
+## [5.23.0] - 2026-04-21
 
 ### 🎯 Resumen
+Ronda de auditoría: RES-05 verificado, SEC-16 finalizado (<50 bloques), ARQ-02 saneado, ARQ-07/TEST-03 completados.
+
+### ✨ Added
+- `tests/test_sync_dtos.py` — 21 tests para la capa anticorrupción de sync (100% cobertura `sync/dtos.py`)
+
+### Changed
+- `src/core/observability/decorators.py`: 2 interceptores de métricas cambiados de `except Exception` a `except BaseException` (patrón re-raise; semánticamente correcto)
+- `src/presentation/widgets/gestion_cursos_widget.py`: eliminación de curso vía `repo.delete()` en lugar de `session.delete()` directo
+- `docs/AUDITORIA_INTEGRAL_2026.md`: tachados RES-05, SEC-16, ARQ-02 (residual), ARQ-07, PERF-CORE, TEST-CORE
+
+### Fixed
+- SEC-16: 48 `except Exception` (target <50 alcanzado ✅)
+- ARQ-02: última query ORM directa en `presentation/` migrada a repositorio
+
+### 🧹 Housekeeping
+- Auditoría actualizada con estado real verificado con grep
+
+
 ARQ-02 completado: 0 imports `from sqlalchemy.orm import Session` en `src/presentation/`.
 
 ### 🧹 Housekeeping

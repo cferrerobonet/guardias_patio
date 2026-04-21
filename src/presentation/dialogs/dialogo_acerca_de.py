@@ -9,7 +9,6 @@ from datetime import datetime
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
-from presentation.theme.tokens import FontSize
 from PyQt6.QtWidgets import (
     QDialog,
     QFrame,
@@ -21,6 +20,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from presentation.theme.tokens import FontSize
 from utils.constants import APP_AUTHOR, APP_LAST_UPDATE, APP_NAME, APP_VERSION
 
 
@@ -205,20 +206,20 @@ class DialogoAcercaDe(QDialog):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("border: none;")
+        scroll.setObjectName("transparentScroll")
 
         license_text = QLabel(
             "MIT License\n\n"
             f"Copyright (c) {datetime.now().year} {APP_AUTHOR}\n\n"
             "Permission is hereby granted, free of charge, to any person obtaining a copy "
-            "of this software and associated documentation files (the \"Software\"), to deal "
+            'of this software and associated documentation files (the "Software"), to deal '
             "in the Software without restriction, including without limitation the rights "
             "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell "
             "copies of the Software, and to permit persons to whom the Software is "
             "furnished to do so, subject to the following conditions:\n\n"
             "The above copyright notice and this permission notice shall be included in all "
             "copies or substantial portions of the Software.\n\n"
-            "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR "
+            'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR '
             "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, "
             "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE "
             "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER "
@@ -266,7 +267,7 @@ class DialogoAcercaDe(QDialog):
             from PyQt6.QtCore import PYQT_VERSION_STR
 
             return PYQT_VERSION_STR
-        except (ValueError, TypeError, OSError) as e:
+        except (ValueError, TypeError, OSError):
             return "No disponible"
 
     def _get_sqlalchemy_version(self) -> str:
@@ -275,7 +276,7 @@ class DialogoAcercaDe(QDialog):
             import sqlalchemy
 
             return sqlalchemy.__version__
-        except (ValueError, TypeError, OSError) as e:
+        except (ValueError, TypeError, OSError):
             return "No disponible"
 
     def _get_ortools_version(self) -> str:
@@ -284,7 +285,7 @@ class DialogoAcercaDe(QDialog):
             from ortools import __version__
 
             return __version__
-        except (ValueError, TypeError, OSError) as e:
+        except (ValueError, TypeError, OSError):
             return "No disponible"
 
     def _get_db_info(self) -> list:

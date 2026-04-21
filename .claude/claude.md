@@ -15,7 +15,7 @@
 - **Arquitectura**: Clean Architecture híbrida + DDD táctico (entities, VOs, repo pattern)
 - **Linter/Formatter**: Ruff (line-length=100, quote-style=double)
 - **Types**: mypy strict progresivo — obligatorio en `domain/`, relajado en `presentation/`
-- **Tests**: pytest + pytest-qt (~990 tests). Ejecutar con `make test` o `pytest tests/ -v`
+- **Tests**: pytest + pytest-qt (~2100 tests). Ejecutar con `make test` o `pytest tests/ -v`
 - **DB**: SQLite por usuario (`data/users/{hash}/guardias_patio.db`), migraciones con Alembic
 - **Entry points**: GUI (`src/main.py`), API REST (`src/api/main.py`)
 
@@ -32,15 +32,35 @@ src/
 ├── infrastructure/   # Repos concretos, mappers, DB
 ├── models/           # ORM SQLAlchemy (models.py)
 ├── presentation/     # PyQt6 UI (ventanas, diálogos, componentes)
-├── services/         # Servicios aplicación (legacy, importa ORM directo)
+├── services/         # Servicios de aplicación — polimórficos (Session | RepositoryFactory)
 ├── sync/             # SFTP sync (Paramiko) a 1&1 IONOS
 ├── utils/            # Helpers, constantes, validadores
 ```
 
+## Patrón polimórfico (Session | RepositoryFactory)
+
+Todos los servicios en `src/services/` y clases en `src/presentation/` aceptan indistintamente una `Session` de SQLAlchemy o un `RepositoryFactory`. Normalizar siempre en `__init__`:
+
+```python
+from infrastructure.repositories.repository_factory import RepositoryFactory
+
+def __init__(self, session_or_factory):
+    self.session = (
+        session_or_factory.session
+        if isinstance(session_or_factory, RepositoryFactory)
+        else session_or_factory
+    )
+```
+
+Para funciones standalone (sin clase), eliminar la anotación de tipo `: Session` del parámetro.
+
 ## Versionado
 
-- Versión en `src/config/settings.py` → campo `app_version` (actualmente `"3.0.0"`, tag git `v3.2.1`)
+- Versión en `src/config/settings.py` → campo `app_version`
 - Semantic Versioning: MAJOR.MINOR.PATCH
+  - fix → patch (+0.0.1)
+  - feat → minor (+0.1.0)
+  - breaking change → major (+1.0.0)
 - Bump manual: editar `app_version` en settings.py
 
 ## Commits
@@ -68,21 +88,16 @@ Formato Keep a Changelog (español) + SemVer. Secciones:
 
 Después de CADA conjunto de modificaciones, ejecutar en este orden:
 
-1. **Bump versión** — Editar `app_version` en `src/config/settings.py` según SemVer:
-   - fix → patch (+0.0.1)
-   - feat → minor (+0.1.0)
-   - breaking change → major (+1.0.0)
-2. **CHANGELOG.md** — Añadir entrada con fecha actual bajo la nueva versión
-3. **Commit + Push**:
+1. **Tests** — `pytest tests/ --tb=no -q`. Si hay fallos nuevos, corregirlos antes de continuar.
+2. **Bump versión** — Editar `app_version` en `src/config/settings.py`
+3. **CHANGELOG.md** — Añadir entrada con fecha actual bajo la nueva versión
+4. **Commit + tag + push** (sin pedir confirmación):
    ```bash
    git add -A
    git commit -m "tipo(scope): descripción"
    git tag v{nueva_versión}
    git push && git push --tags
    ```
-4. **Verificar** — Abrir CHANGELOG.md para revisión
-
-> Preguntar al usuario antes de ejecutar `git push` y `git push --tags`.
 
 ## Seguimiento de auditorías/guiones (OBLIGATORIO)
 
@@ -101,8 +116,8 @@ Cuando se implementen cambios a partir de un documento de auditoría, guion téc
 
 - Leer archivos en bloques grandes, no línea a línea.
 - No releer archivos ya leídos en la misma conversación.
-- Usar `grep_search` para búsquedas exactas, `semantic_search` solo cuando sea necesario.
+- Usar Grep para búsquedas exactas, Agent/Explore solo para búsquedas abiertas.
 - No explorar directorios ya conocidos de esta sesión.
 - Antes de editar, confirmar que se tiene contexto suficiente; no buscar de más.
-- Agrupar ediciones múltiples con `multi_replace_string_in_file`.
+- Agrupar ediciones múltiples en paralelo cuando no haya dependencias entre ellas.
 - No repetir información que el usuario ya sabe.

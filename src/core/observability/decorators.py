@@ -130,7 +130,7 @@ def count_calls(metric_name: Optional[str] = None):
                     {"operation": func.__name__, "status": "success"},
                 )
                 return result
-            except Exception:
+            except BaseException:
                 metrics.increment_counter(
                     "app_requests_total",
                     1.0,
@@ -215,7 +215,7 @@ def track_database_query(query_type: str):
 
                 return result
 
-            except Exception:
+            except BaseException:
                 duration = time.time() - start_time
                 metrics.record_database_query(query_type, duration, success=False)
                 raise

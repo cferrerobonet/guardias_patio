@@ -6,7 +6,6 @@ import logging
 
 from config import get_sftp_config, validate_sftp_config
 from core.paths import get_data_directory
-
 from sync.sync_manager import LocalSyncBackend, SFTPSyncBackend, SyncBackend
 
 logger = logging.getLogger(__name__)
@@ -76,7 +75,7 @@ def get_default_backend() -> SyncBackend:
             return create_sync_backend("sftp")
         else:
             logger.warning("⚠ Configuración SFTP no válida")
-    except Exception as e:
+    except (ConnectionError, OSError, ValueError) as e:
         logger.error(f"❌ Error al crear backend SFTP: {e}", exc_info=True)
 
     # Fallback a local

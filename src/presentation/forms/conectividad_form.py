@@ -15,7 +15,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from presentation.theme import legacy_styles as styles
 from presentation.forms.base_form import BaseForm
 from presentation.forms.config_widgets import SFTPConfigWidget, SMTPConfigWidget
 
@@ -71,7 +70,7 @@ class ConectividadForm(BaseForm):
             "y la sincronización de datos en la nube."
         )
         descripcion.setWordWrap(True)
-        descripcion.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 10px;")
+        descripcion.setObjectName("formDescription")
         content_layout.addWidget(descripcion)
 
         # Layout de 2 columnas para SMTP y SFTP

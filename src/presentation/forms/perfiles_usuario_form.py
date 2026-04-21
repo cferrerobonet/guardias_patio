@@ -10,17 +10,6 @@ CRUD Profesional con:
 - Cambio de contraseña seguro (solo perfil actual)
 """
 
-from presentation.theme import legacy_styles as styles
-from application.use_cases.perfil import (
-    ActualizarLogoUseCase,
-    ActualizarPerfilUseCase,
-    CambiarPasswordUseCase,
-    CrearPerfilUseCase,
-    EliminarPerfilUseCase,
-    ListarPerfilesUseCase,
-)
-from core.exceptions import NotFoundError, ValidationError
-from database.db_manager import get_current_user_id
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -35,15 +24,26 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
 )
-from sync.sync_manager import UserAuth
-from utils.icons import icon_for_button
 
+from application.use_cases.perfil import (
+    ActualizarLogoUseCase,
+    ActualizarPerfilUseCase,
+    CambiarPasswordUseCase,
+    CrearPerfilUseCase,
+    EliminarPerfilUseCase,
+    ListarPerfilesUseCase,
+)
+from core.exceptions import NotFoundError, ValidationError
+from database.db_manager import get_current_user_id
 from presentation.dialogs.modales_perfil import (
     DialogoCambiarPasswordProfesional,
     DialogoCrearPerfilProfesional,
     DialogoEditarPerfilProfesional,
 )
 from presentation.forms.base_form import BaseForm
+from presentation.theme import legacy_styles as styles
+from sync.sync_manager import UserAuth
+from utils.icons import icon_for_button
 
 
 class PerfilesUsuarioForm(BaseForm):
@@ -109,7 +109,7 @@ class PerfilesUsuarioForm(BaseForm):
             "de tu propio perfil."
         )
         descripcion.setWordWrap(True)
-        descripcion.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 10px;")
+        descripcion.setObjectName("formDescription")
         layout.addWidget(descripcion)
 
         # ===== BARRA DE ACCIONES =====

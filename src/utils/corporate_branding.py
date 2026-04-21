@@ -7,9 +7,10 @@ de la aplicación sin necesidad de modificar cada archivo.
 
 from pathlib import Path
 
-from core.logging import get_logger
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMessageBox
+
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -29,7 +30,7 @@ def _apply_corporate_icon(msg_box: QMessageBox) -> None:
         logo_path = _get_corporate_logo_path()
         if logo_path.exists():
             msg_box.setWindowIcon(QIcon(str(logo_path)))
-    except Exception as e:
+    except (OSError, RuntimeError) as e:
         logger.debug(f"No se pudo aplicar icono corporativo: {e}")
 
 

@@ -40,7 +40,7 @@ class DialogoCrearPerfilProfesional(QDialog):
             "Se creará un nuevo perfil con su propia base de datos y configuración independiente."
         )
         desc.setWordWrap(True)
-        desc.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 10px;")
+        desc.setObjectName("formDescription")
         layout.addWidget(desc)
 
         # Formulario
@@ -163,7 +163,7 @@ class DialogoEditarPerfilProfesional(QDialog):
         # Descripción
         desc = QLabel("Modifica el email del perfil. El nombre de usuario no se puede cambiar.")
         desc.setWordWrap(True)
-        desc.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 10px;")
+        desc.setObjectName("formDescription")
         layout.addWidget(desc)
 
         # Formulario
@@ -256,7 +256,7 @@ class DialogoCambiarPasswordProfesional(QDialog):
         # Descripción
         desc = QLabel("Por seguridad, debes ingresar tu contraseña actual.")
         desc.setWordWrap(True)
-        desc.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 10px;")
+        desc.setObjectName("formDescription")
         layout.addWidget(desc)
 
         # Formulario

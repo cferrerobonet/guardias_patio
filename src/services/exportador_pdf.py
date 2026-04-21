@@ -9,23 +9,21 @@ from datetime import date
 from pathlib import Path
 from typing import Callable, Optional
 
-from infrastructure.database.models import Configuracion, Guardia, Profesor
-from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import (
-    PageBreak,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
 )
-from services.gestor_cursos import GestorCursos
-from services.pdf_styles import PDFStyles
 from sqlalchemy.orm import joinedload
+
+from infrastructure.database.models import Guardia, Profesor
+from services.gestor_cursos import GestorCursos
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -288,7 +286,7 @@ class ExportadorPDF:
             if progress_callback:
                 try:
                     progress_callback(porcentaje, mensaje)
-                except Exception as e:
+                except (TypeError, RuntimeError) as e:
                     logger.warning(f"Error al reportar progreso: {e}")
 
         reportar_progreso(0, "Preparando exportación de PDFs...")

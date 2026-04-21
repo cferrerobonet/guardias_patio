@@ -5,12 +5,12 @@ Clase base para todos los formularios de la aplicación.
 Proporciona funcionalidad común y establece el patrón MVP.
 """
 
-from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QLabel, QMessageBox, QWidget
+
+from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
 from utils.ui_helpers import (
-    MESSAGEBOX_STYLE,
     apply_corporate_icon_to_messagebox,
     get_corporate_icon,
     get_corporate_pixmap,
@@ -79,7 +79,7 @@ class BaseForm(QWidget):
         if self._label_cambios is not None:
             if self._tiene_cambios:
                 self._label_cambios.setText("● Cambios sin guardar")
-                self._label_cambios.setStyleSheet("color: #e67e22; font-weight: bold;")
+                self._label_cambios.setObjectName("unsavedChanges")
                 self._label_cambios.setVisible(True)
             else:
                 self._label_cambios.setText("")
