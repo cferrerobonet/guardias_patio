@@ -1241,29 +1241,6 @@ Migración Alembic correspondiente. La UI del detalle del día ya debería mostr
 
 ---
 
-### SCALA-02 — El sistema de perfiles de usuario no tiene roles
-**Severidad: Media**
-
-Todos los usuarios del sistema tienen acceso completo. En un centro real puede haber un usuario "director" (acceso total) y un usuario "jefatura" (solo puede ver, no generar ni modificar). No hay granularidad.
-
-**Lo que hay que hacer:**
-1. Añadir campo `rol` al fichero `users.json` de `UserAuth`: `"admin"`, `"viewer"`.
-2. En la UI, si el rol es `viewer`, deshabilitar botones de "Guardar", "Eliminar", "Generar".
-3. Implementar `RolGuard` como decorador o mixin:
-   ```python
-   def requiere_rol(rol_minimo: str):
-       def decorator(metodo):
-           def wrapper(self, *args, **kwargs):
-               if not tiene_permiso(current_user_rol(), rol_minimo):
-                   ToastNotification(self.window(), "Sin permiso para esta acción", "error")
-                   return
-               return metodo(self, *args, **kwargs)
-           return wrapper
-       return decorator
-   ```
-
----
-
 ### SCALA-03 — La sincronización SFTP es manual y puede fallar silenciosamente
 **Severidad: Media**
 
@@ -1427,9 +1404,8 @@ Añadir 5-10 tests de flujo completo con `pytest-qt` usando fixtures de BD in-me
 | 5 | FUNC-08 | Heat map de carga por profesor | M | Alto — visibilidad equidad |
 | 6 | UX-04 | Modo compacto en el calendario mensual | M | Alto — escalabilidad UI |
 | 7 | PERF-01 | Pool de CeldaDia para el calendario (no destruir/recrear) | L | Medio — rendimiento |
-| 8 | SCALA-02 | Roles de usuario (admin/viewer) | M | Medio — multi-usuario |
-| 9 | TECH-03 | Tests de flujo completo con pytest-qt | XL | Medio — confianza deploy |
-| 10 | BUG-04 | Validación de esquema JSON en importación | M | Medio — robustez |
+| 8 | TECH-03 | Tests de flujo completo con pytest-qt | XL | Medio — confianza deploy |
+| 9 | BUG-04 | Validación de esquema JSON en importación | M | Medio — robustez |
 
 ### P3 — Nice-to-have
 

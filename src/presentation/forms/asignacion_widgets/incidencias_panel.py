@@ -3,10 +3,8 @@
 Analiza problemas en la generación y sugiere soluciones.
 """
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
-from infrastructure.database.models import Profesor, Zona
 from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
+
 from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
@@ -47,15 +45,15 @@ class IncidenciasPanel(QGroupBox):
                 font-size: 13px;
                 border: 2px solid #f59e0b;
                 border-radius: 6px;
-                margin-top: 12px;
-                padding-top: 10px;
+                margin-top: 16px;
+                padding-top: 14px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 2px 8px;
-                left: 10px;
-                top: -7px;
+                padding: 6px 12px;
+                left: 12px;
+                top: -2px;
                 background-color: white;
                 color: #d97706;
             }
@@ -185,6 +183,7 @@ class IncidenciasPanel(QGroupBox):
         """Analiza ratio de recursos profesor/zona."""
         lineas = []
         from application.app_services import AppServices
+
         _svc = AppServices(self.session)
         num_zonas = _svc.contar_zonas()
         num_profesores = _svc.contar_profesores()
@@ -246,6 +245,7 @@ class IncidenciasPanel(QGroupBox):
         """Genera recomendaciones para solucionar incidencias."""
         lineas = []
         from application.app_services import AppServices
+
         _svc = AppServices(self.session)
         num_zonas = _svc.contar_zonas()
         num_profesores = _svc.contar_profesores()

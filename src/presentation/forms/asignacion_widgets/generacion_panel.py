@@ -6,15 +6,6 @@ Combina:
 - Análisis de incidencias y recomendaciones
 """
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
-from application.dtos.domain_services_dtos import AnalisisEquidadRequest
-from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
-from application.use_cases.asignacion_guardias import GenerarGuardiasUseCase
-from application.use_cases.configuracion.actualizar_configuracion import ActualizarConfiguracionUseCase
-from application.use_cases.guardia import LimpiarGuardiasUseCase
-from infrastructure.database.models import Guardia, Profesor, Zona
-from infrastructure.repositories import SQLAlchemyGuardiaRepository
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -25,6 +16,15 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+
+from application.dtos.domain_services_dtos import AnalisisEquidadRequest
+from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
+from application.use_cases.asignacion_guardias import GenerarGuardiasUseCase
+from application.use_cases.configuracion.actualizar_configuracion import (
+    ActualizarConfiguracionUseCase,
+)
+from application.use_cases.guardia import LimpiarGuardiasUseCase
+from infrastructure.repositories import SQLAlchemyGuardiaRepository
 from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
@@ -35,6 +35,7 @@ from presentation.theme.legacy_styles import (
     format_terminal_warning,
     wrap_terminal_html,
 )
+from presentation.theme.tokens import Spacing
 from utils.icons import icon_for_button
 
 
@@ -81,15 +82,15 @@ class GeneracionPanel(QGroupBox):
                 font-size: 13px;
                 border: 2px solid #10b981;
                 border-radius: 6px;
-                margin-top: 12px;
-                padding-top: 10px;
+                margin-top: 16px;
+                padding-top: 14px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 2px 8px;
-                left: 10px;
-                top: -7px;
+                padding: 6px 12px;
+                left: 12px;
+                top: -2px;
                 background-color: white;
                 color: #059669;
             }
@@ -117,8 +118,7 @@ class GeneracionPanel(QGroupBox):
         self.algoritmo_combo.addItem("Óptimo (CP-SAT)", "cpsat")
         self.algoritmo_combo.setCurrentIndex(1)  # Default: óptimo (CP-SAT)
         self.algoritmo_combo.setToolTip(
-            "Rápido: ~1 segundo, heurístico\n"
-            "Óptimo: ~10 segundos, garantiza la mejor solución"
+            "Rápido: ~1 segundo, heurístico\nÓptimo: ~10 segundos, garantiza la mejor solución"
         )
         self.algoritmo_combo.setStyleSheet("""
             QComboBox {
@@ -207,19 +207,21 @@ class GeneracionPanel(QGroupBox):
     def _generar_guardias(self):
         """Genera el calendario de guardias."""
         from PyQt6.QtWidgets import QMessageBox
-        from utils.ui_helpers import show_question_with_cancel
 
         from presentation.widgets.progress_indicators import ejecutar_con_progreso
+        from utils.ui_helpers import show_question_with_cancel
 
         try:
             # Obtener algoritmo seleccionado y actualizar configuración
             algoritmo_seleccionado = self.algoritmo_combo.currentData()
             from application.dtos import ActualizarConfiguracionDTO
+
             ActualizarConfiguracionUseCase(self.session).execute(
                 ActualizarConfiguracionDTO(algoritmo_asignacion=algoritmo_seleccionado)
             )
 
             from application.app_services import AppServices
+
             count_guardias = AppServices(self.session).contar_guardias()
             eliminar_existentes = True
 
@@ -272,9 +274,9 @@ class GeneracionPanel(QGroupBox):
     def _limpiar_guardias(self):
         """Limpia todas las guardias."""
         from PyQt6.QtWidgets import QMessageBox
-        from utils.ui_helpers import MESSAGEBOX_STYLE
 
         from application.app_services import AppServices
+
         count = AppServices(self.session).contar_guardias()
         if count == 0:
             msg = QMessageBox(self)
@@ -287,9 +289,7 @@ class GeneracionPanel(QGroupBox):
         msg.setWindowTitle("Confirmar Eliminación")
         msg.setText(f"¿Eliminar las {count} guardias existentes?")
         msg.setInformativeText("Esta acción no se puede deshacer.")
-        msg.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg.setDefaultButton(QMessageBox.StandardButton.No)
 
         if msg.exec() == QMessageBox.StandardButton.Yes:
@@ -309,12 +309,14 @@ class GeneracionPanel(QGroupBox):
         """Sincroniza con la nube."""
         try:
             from utils.logger import get_logger
+
             logger = get_logger(__name__)
             logger.info("Sincronizando con la nube...")
             if self.sync_manager.sync_on_shutdown(session=self.session):
                 logger.info("✓ Sincronizado correctamente")
         except (ValueError, TypeError, OSError) as e:
             from utils.logger import get_logger
+
             logger = get_logger(__name__)
             logger.warning(f"⚠ Error al sincronizar: {e}")
 
@@ -345,14 +347,11 @@ class GeneracionPanel(QGroupBox):
             else 0
         )
         if resumen.cobertura_completa:
-            lineas.append(
-                format_terminal_success(f"✅ Cobertura: {cobertura_pct:.1f}% (completa)")
-            )
+            lineas.append(format_terminal_success(f"✅ Cobertura: {cobertura_pct:.1f}% (completa)"))
         elif resumen.slots_sin_cubrir > 0:
             lineas.append(
                 format_terminal_warning(
-                    f"⚠️ Cobertura: {cobertura_pct:.1f}% "
-                    f"({resumen.slots_sin_cubrir} sin cubrir)"
+                    f"⚠️ Cobertura: {cobertura_pct:.1f}% ({resumen.slots_sin_cubrir} sin cubrir)"
                 )
             )
         lineas.append("")
@@ -399,15 +398,13 @@ class GeneracionPanel(QGroupBox):
 
                 if metricas.desbalances_detectados > 0:
                     lineas.append(
-                        format_terminal_warning(
-                            f"⚠️ {metricas.desbalances_detectados} desbalances"
-                        )
+                        format_terminal_warning(f"⚠️ {metricas.desbalances_detectados} desbalances")
                     )
                 else:
                     lineas.append(format_terminal_success("✅ Sin desbalances"))
             else:
                 lineas.append(format_terminal_info("(equidad no disponible)"))
-        except (ValueError, TypeError, OSError) as e:
+        except (ValueError, TypeError, OSError):
             lineas.append(format_terminal_info("(equidad no disponible)"))
 
         lineas.append("")
@@ -437,6 +434,7 @@ class GeneracionPanel(QGroupBox):
 
             for pid, cnt in resumen.resumen_por_profesor.items():
                 from application.app_services import AppServices
+
                 prof = AppServices(self.session).profesores.get_by_id(pid)
                 if prof:
                     turno = normalizar_turno(str(prof.turno))
@@ -518,11 +516,7 @@ class GeneracionPanel(QGroupBox):
         """Formatea análisis de incidencias."""
         lineas = []
         slots_sin = resumen.slots_sin_cubrir
-        pct_sin = (
-            (slots_sin / resumen.slots_esperados * 100)
-            if resumen.slots_esperados > 0
-            else 0
-        )
+        pct_sin = (slots_sin / resumen.slots_esperados * 100) if resumen.slots_esperados > 0 else 0
 
         lineas.append(format_terminal_error("⚠️ INCIDENCIAS DETECTADAS"))
         lineas.append("")
@@ -541,23 +535,19 @@ class GeneracionPanel(QGroupBox):
 
         # Recursos
         from application.app_services import AppServices
+
         _svc = AppServices(self.session)
         num_zonas = _svc.contar_zonas()
         num_prof = _svc.contar_profesores()
         lineas.append(format_terminal_label("📊 RECURSOS:"))
         lineas.append(
-            f"  • {format_terminal_label('Profesores:')} "
-            f"{format_terminal_number(num_prof)}"
+            f"  • {format_terminal_label('Profesores:')} {format_terminal_number(num_prof)}"
         )
-        lineas.append(
-            f"  • {format_terminal_label('Zonas:')} "
-            f"{format_terminal_number(num_zonas)}"
-        )
+        lineas.append(f"  • {format_terminal_label('Zonas:')} {format_terminal_number(num_zonas)}")
         if num_zonas > 0:
             ratio = num_prof / num_zonas
             lineas.append(
-                f"  • {format_terminal_label('Ratio:')} "
-                f"{format_terminal_number(f'{ratio:.1f}')}"
+                f"  • {format_terminal_label('Ratio:')} {format_terminal_number(f'{ratio:.1f}')}"
             )
             if ratio < 3:
                 lineas.append(format_terminal_warning("  ⚠️ Ratio bajo (mínimo 3:1)"))
@@ -581,6 +571,7 @@ class GeneracionPanel(QGroupBox):
 
         # Obtener profesores con fechas especiales
         from application.app_services import AppServices
+
         profesores_fechas = AppServices(self.session).profesores_activos_con_fechas_especiales()
 
         if not profesores_fechas:
@@ -598,6 +589,7 @@ class GeneracionPanel(QGroupBox):
 
             # Obtener guardias del profesor para analizar fechas
             from application.app_services import AppServices
+
             guardias_prof = AppServices(self.session).guardias.find_by_profesor(prof.id)
 
             fechas_guardias = [g.fecha for g in guardias_prof]
@@ -636,21 +628,15 @@ class GeneracionPanel(QGroupBox):
             # Construir info de fechas
             fechas_info = []
             if prof.fecha_inicio_guardias:
-                fechas_info.append(
-                    f"Inicio: {prof.fecha_inicio_guardias.strftime('%d/%m/%Y')}"
-                )
+                fechas_info.append(f"Inicio: {prof.fecha_inicio_guardias.strftime('%d/%m/%Y')}")
             if prof.fecha_fin_guardias:
-                fechas_info.append(
-                    f"Fin: {prof.fecha_fin_guardias.strftime('%d/%m/%Y')}"
-                )
+                fechas_info.append(f"Fin: {prof.fecha_fin_guardias.strftime('%d/%m/%Y')}")
 
             if cumple:
                 cumplidos += 1
                 estado = format_terminal_success("✅")
                 lineas.append(f"  {estado} {prof_name}")
-                lineas.append(
-                    f"      {format_terminal_info(' | '.join(fechas_info))}"
-                )
+                lineas.append(f"      {format_terminal_info(' | '.join(fechas_info))}")
                 lineas.append(
                     f"      {format_terminal_number(str(guardias_asignadas))} "
                     f"guardias asignadas correctamente"
@@ -659,9 +645,7 @@ class GeneracionPanel(QGroupBox):
                 no_cumplidos += 1
                 estado = format_terminal_warning("⚠️")
                 lineas.append(f"  {estado} {prof_name}")
-                lineas.append(
-                    f"      {format_terminal_info(' | '.join(fechas_info))}"
-                )
+                lineas.append(f"      {format_terminal_info(' | '.join(fechas_info))}")
                 for problema in problemas:
                     lineas.append(f"      {format_terminal_warning(problema)}")
 
@@ -672,8 +656,7 @@ class GeneracionPanel(QGroupBox):
         if no_cumplidos > 0:
             lineas.append(
                 format_terminal_warning(
-                    f"📊 Resumen: {cumplidos}/{total} cumplidos, "
-                    f"{no_cumplidos} con problemas"
+                    f"📊 Resumen: {cumplidos}/{total} cumplidos, {no_cumplidos} con problemas"
                 )
             )
         else:
@@ -699,6 +682,7 @@ class GeneracionPanel(QGroupBox):
     def cargar_datos(self):
         """Recarga datos cuando cambia el curso."""
         from application.app_services import AppServices
+
         count = AppServices(self.session).contar_guardias()
         if count == 0:
             self._mostrar_mensaje_inicial()

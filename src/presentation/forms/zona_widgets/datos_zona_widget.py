@@ -22,8 +22,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from presentation.theme import legacy_styles as styles
-
 
 class DatosZonaWidget(QGroupBox):
     """
@@ -104,12 +102,6 @@ class DatosZonaWidget(QGroupBox):
         self.fecha_fin_input.setMaximumWidth(200)
         self.fecha_fin_input.setEnabled(False)
         layout_datos.addWidget(self.fecha_fin_input)
-
-        self.setTabOrder(self.nombre_zona_input, self.descripcion_input)
-        self.setTabOrder(self.descripcion_input, self.usar_fecha_inicio_check)
-        self.setTabOrder(self.usar_fecha_inicio_check, self.fecha_inicio_input)
-        self.setTabOrder(self.fecha_inicio_input, self.usar_fecha_fin_check)
-        self.setTabOrder(self.usar_fecha_fin_check, self.fecha_fin_input)
         self.setLayout(layout_datos)
 
     def _conectar_senales(self):

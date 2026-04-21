@@ -30,12 +30,12 @@ logging.basicConfig(
     handlers=[logging.FileHandler(log_file, encoding="utf-8"), logging.StreamHandler(sys.stdout)],
 )
 
-from presentation.ccleaner_main_window import CCleanerMainWindow
-from presentation.forms.login_dialog import LoginDialog
-from PyQt6.QtCore import QLibraryInfo, QLocale, QTranslator
+from PyQt6.QtCore import QLibraryInfo, QLocale, Qt, QTranslator
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
-from PyQt6.QtCore import Qt
+
+from presentation.ccleaner_main_window import CCleanerMainWindow
+from presentation.forms.login_dialog import LoginDialog
 from sync import SyncManager, get_default_backend
 from utils.corporate_branding import apply_corporate_branding
 
@@ -82,8 +82,7 @@ def main():
                     "El incidente ha sido registrado en el log."
                 )
                 msg.setDetailedText(
-                    f"{exctype.__name__}: {value}\n\n"
-                    + "".join(traceback.format_tb(tb))
+                    f"{exctype.__name__}: {value}\n\n" + "".join(traceback.format_tb(tb))
                 )
                 msg.exec()
         except (RuntimeError, AttributeError):
@@ -105,6 +104,7 @@ def main():
 
     # Manejar señales de terminación para graceful shutdown
     import signal
+
     signal.signal(signal.SIGTERM, lambda s, f: app.quit())
     signal.signal(signal.SIGINT, lambda s, f: app.quit())
 
@@ -131,7 +131,7 @@ def main():
                 "El servidor SFTP es necesario para garantizar copias de seguridad "
                 "y sincronización de datos.",
             )
-            sys.exit(0)
+            return 0
 
         logger.info("✓ Configuración inicial completada")
 
@@ -176,7 +176,7 @@ def main():
     login_dialog = LoginDialog()
     if login_dialog.exec() != LoginDialog.DialogCode.Accepted:
         logger.info("Usuario canceló el login. Saliendo de la aplicación.")
-        sys.exit(0)
+        return 0
 
     username = login_dialog.authenticated_user
     logger.info(f"Usuario autenticado: {username}")
@@ -184,8 +184,17 @@ def main():
     # Inicializar base de datos específica del usuario
     from database.db_manager import initialize_user_database
 
-    engine, SessionFactory = initialize_user_database(username)
-    logger.info(f"Base de datos del usuario '{username}' inicializada")
+    try:
+        engine, SessionFactory = initialize_user_database(username)
+        logger.info(f"Base de datos del usuario '{username}' inicializada")
+    except Exception as e:
+        logger.exception(f"Error inicializando base de datos para '{username}': {e}")
+        QMessageBox.critical(
+            None,
+            "Error de inicialización",
+            f"No se pudo inicializar la base de datos del usuario.\n\nDetalle: {e}",
+        )
+        return 1
 
     # 🔧 ARQ-04: Wiring DI (Fase 2 — Opcional, sin romper compatibilidad legacy)
     # Descomenta estas líneas para usar inyección de dependencias en servicios:
@@ -194,7 +203,16 @@ def main():
     # logger.debug("Contenedor DI configurado para servicios inyectados")
 
     # Crear sesión de base de datos (necesaria para sync)
-    session = SessionFactory()
+    try:
+        session = SessionFactory()
+    except Exception as e:
+        logger.exception(f"Error creando sesión de base de datos: {e}")
+        QMessageBox.critical(
+            None,
+            "Error de base de datos",
+            f"No se pudo abrir la sesión de base de datos.\n\nDetalle: {e}",
+        )
+        return 1
 
     # 🔄 Ejecutar migración automática al sistema Multi-Curso si es necesario
     logger.error("🔧 INICIANDO: Migración Multi-Curso")
@@ -213,6 +231,7 @@ def main():
     # Inicializar sistema de sincronización
     sync_manager = None
     session_lock_manager = None
+    disable_session_lock = os.getenv("DISABLE_SESSION_LOCK", "0") == "1"
     try:
         backend = get_default_backend()
         sync_manager = SyncManager(backend, username)
@@ -221,43 +240,46 @@ def main():
         from presentation.dialogs.session_locked_dialog import SessionLockedDialog
         from sync.session_lock import SessionLock, SessionLockManager
 
-        session_lock = SessionLock(backend, username, sync_manager.user_hash)
-
-        # Intentar adquirir el bloqueo de sesión
-        max_retries = 3
-        for attempt in range(max_retries):
-            if session_lock.acquire_lock():
-                logger.info(f"✅ Bloqueo de sesión adquirido (intento {attempt + 1})")
-                break
-            else:
-                # Mostrar diálogo informativo
-                lock_info = session_lock.get_lock_info()
-                if lock_info:
-                    locked_dialog = SessionLockedDialog(lock_info)
-                    result = locked_dialog.exec()
-
-                    if result == SessionLockedDialog.DialogCode.Rejected:
-                        # Usuario canceló
-                        logger.info("Usuario canceló debido a sesión bloqueada")
-                        session.close()
-                        sys.exit(0)
-                    # Si aceptó (Reintentar), continúa el loop
-                else:
-                    logger.error("No se pudo obtener información del bloqueo")
-                    break
+        if disable_session_lock:
+            logger.warning("⚠ Bloqueo de sesión desactivado por entorno (DISABLE_SESSION_LOCK=1)")
         else:
-            # Se agotaron los reintentos
-            QMessageBox.critical(
-                None,
-                "Sesión Bloqueada",
-                "No se pudo iniciar sesión después de varios intentos.\n"
-                "El usuario está activo en otro dispositivo.",
-            )
-            session.close()
-            sys.exit(1)
+            session_lock = SessionLock(backend, username, sync_manager.user_hash)
 
-        # Crear gestor de heartbeat
-        session_lock_manager = SessionLockManager(session_lock)
+            # Intentar adquirir el bloqueo de sesión
+            max_retries = 3
+            for attempt in range(max_retries):
+                if session_lock.acquire_lock():
+                    logger.info(f"✅ Bloqueo de sesión adquirido (intento {attempt + 1})")
+                    break
+                else:
+                    # Mostrar diálogo informativo
+                    lock_info = session_lock.get_lock_info()
+                    if lock_info:
+                        locked_dialog = SessionLockedDialog(lock_info)
+                        result = locked_dialog.exec()
+
+                        if result == SessionLockedDialog.DialogCode.Rejected:
+                            # Usuario canceló
+                            logger.info("Usuario canceló debido a sesión bloqueada")
+                            session.close()
+                            return 0
+                        # Si aceptó (Reintentar), continúa el loop
+                    else:
+                        logger.error("No se pudo obtener información del bloqueo")
+                        break
+            else:
+                # Se agotaron los reintentos
+                QMessageBox.critical(
+                    None,
+                    "Sesión Bloqueada",
+                    "No se pudo iniciar sesión después de varios intentos.\n"
+                    "El usuario está activo en otro dispositivo.",
+                )
+                session.close()
+                return 1
+
+            # Crear gestor de heartbeat
+            session_lock_manager = SessionLockManager(session_lock)
 
         # Sincronizar datos al iniciar (descargar desde la nube e importar a DB)
         logger.info("Iniciando sincronización al arranque...")
@@ -340,6 +362,7 @@ def main():
                 def on_progress(step: str, details: dict):
                     if step == "exporting":
                         from application.app_services import AppServices
+
                         try:
                             svc = AppServices(session)
                             total = (
@@ -391,7 +414,7 @@ def main():
             except Exception as e:
                 logger.error(f"Error al cerrar backend de sincronización: {e}")
 
-        sys.exit(exit_code)
+        return exit_code
 
 
 if __name__ == "__main__":

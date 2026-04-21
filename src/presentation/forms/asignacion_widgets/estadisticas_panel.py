@@ -5,8 +5,6 @@ Muestra información sobre días lectivos, recreos, zonas y slots totales.
 
 from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
 from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
@@ -43,15 +41,15 @@ class EstadisticasPanel(QGroupBox):
                 font-size: 13px;
                 border: 2px solid #3b82f6;
                 border-radius: 6px;
-                margin-top: 12px;
-                padding-top: 10px;
+                margin-top: 16px;
+                padding-top: 14px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 2px 8px;
-                left: 10px;
-                top: -7px;
+                padding: 6px 12px;
+                left: 12px;
+                top: -2px;
                 background-color: white;
                 color: #1e40af;
             }

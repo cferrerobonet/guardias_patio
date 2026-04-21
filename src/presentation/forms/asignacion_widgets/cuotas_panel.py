@@ -4,9 +4,6 @@ Integra CalcularCuotasUseCase para preview de distribución esperada.
 Usa estilo terminal negro consistente con otros widgets.
 """
 
-from presentation.theme import legacy_styles as styles
-from application.dtos.domain_services_dtos import CalcularCuotasRequest
-from application.use_cases.calcular_cuotas_use_case import CalcularCuotasUseCase
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
@@ -16,6 +13,9 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+
+from application.dtos.domain_services_dtos import CalcularCuotasRequest
+from application.use_cases.calcular_cuotas_use_case import CalcularCuotasUseCase
 from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
@@ -63,15 +63,15 @@ class CuotasPanel(QGroupBox):
                 font-size: 13px;
                 border: 2px solid #f59e0b;
                 border-radius: 6px;
-                margin-top: 12px;
-                padding-top: 10px;
+                margin-top: 16px;
+                padding-top: 14px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 2px 8px;
-                left: 10px;
-                top: -7px;
+                padding: 6px 12px;
+                left: 12px;
+                top: -2px;
                 background-color: white;
                 color: #d97706;
             }
@@ -154,7 +154,6 @@ class CuotasPanel(QGroupBox):
 
             if not configuracion:
                 from PyQt6.QtWidgets import QMessageBox
-                from utils.ui_helpers import MESSAGEBOX_STYLE
 
                 msg = QMessageBox(self)
                 msg.setWindowTitle("Sin Configuración")
@@ -171,7 +170,6 @@ class CuotasPanel(QGroupBox):
             curso_activo = GestorCursos.from_session(self.session).obtener_curso_activo()
             if not curso_activo:
                 from PyQt6.QtWidgets import QMessageBox
-                from utils.ui_helpers import MESSAGEBOX_STYLE
 
                 msg = QMessageBox(self)
                 msg.setWindowTitle("Sin Curso Activo")
@@ -225,9 +223,7 @@ class CuotasPanel(QGroupBox):
         lineas.append("")
 
         # Información contextual
-        lineas.append(
-            format_terminal_info("ℹ️  Esta distribución es el objetivo ideal basado en:")
-        )
+        lineas.append(format_terminal_info("ℹ️  Esta distribución es el objetivo ideal basado en:"))
         lineas.append(format_terminal_info("   • Porcentaje de jornada de cada profesor"))
         lineas.append(format_terminal_info("   • Turno (mañana/tarde/ambos)"))
         lineas.append(format_terminal_info("   • Slots totales disponibles"))

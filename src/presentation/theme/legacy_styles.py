@@ -2,6 +2,7 @@
 Estilos UI para la aplicación Guardias de Patio.
 Módulo centralizado en presentation/theme/ (migrado desde src/ui_styles.py).
 """
+
 # ========== COLORES ==========
 COLOR_PRIMARY = "#2196F3"  # Azul principal
 COLOR_SUCCESS = "#4CAF50"  # Verde para acciones positivas
@@ -18,14 +19,15 @@ COLOR_TEXT_MEDIUM = "#757575"  # Texto medio
 
 STYLE_TITLE_MAIN = f"""
     QLabel {{
-        font-size: 15px;
+        font-size: 16px;
         font-weight: bold;
         color: {COLOR_PRIMARY};
         background-color: {COLOR_BG_LIGHT};
-        padding: 6px 10px;
+        padding: 9px 14px;
         border-left: 4px solid {COLOR_PRIMARY};
         border-radius: 4px;
-        margin-bottom: 4px;
+        margin-bottom: 8px;
+        min-height: 24px;
     }}
 """
 
@@ -59,14 +61,16 @@ STYLE_GROUPBOX = f"""
         color: {COLOR_PRIMARY};
         border: 2px solid {COLOR_BG_MEDIUM};
         border-radius: 6px;
-        margin-top: 12px;
-        padding-top: 10px;
+        margin-top: 16px;
+        padding-top: 14px;
         background-color: white;
     }}
     QGroupBox::title {{
         subcontrol-origin: margin;
         subcontrol-position: top left;
-        padding: 4px 10px;
+        padding: 6px 12px;
+        left: 12px;
+        top: -2px;
         background-color: {COLOR_BG_LIGHT};
         border-radius: 4px;
     }}

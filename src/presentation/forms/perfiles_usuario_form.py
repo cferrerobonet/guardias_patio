@@ -238,11 +238,6 @@ class PerfilesUsuarioForm(BaseForm):
         self.tabla.itemSelectionChanged.connect(self._on_seleccion_cambiada)
 
         layout.addWidget(self.tabla)
-        self.setTabOrder(self.btn_crear, self.btn_editar)
-        self.setTabOrder(self.btn_editar, self.btn_eliminar)
-        self.setTabOrder(self.btn_eliminar, self.btn_logo)
-        self.setTabOrder(self.btn_logo, self.btn_password)
-        self.setTabOrder(self.btn_password, self.tabla)
 
     def refrescar(self):
         """Refresca la tabla de perfiles."""

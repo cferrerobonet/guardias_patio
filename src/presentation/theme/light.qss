@@ -198,14 +198,15 @@ QLabel#smallFieldLabel {
 }
 
 QLabel#titleMain {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: bold;
     color: #007ACC;
     background-color: #f5f5f5;
-    padding: 6px 10px;
+    padding: 9px 14px;
     border-left: 4px solid #007ACC;
     border-radius: 4px;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    min-height: 24px;
 }
 
 /* ========== GROUPBOX ========== */
@@ -215,17 +216,20 @@ QGroupBox {
     color: #007ACC;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
-    margin-top: 12px;
-    padding-top: 10px;
+    margin-top: 16px;
+    padding-top: 14px;
     background-color: white;
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    padding: 4px 10px;
+    padding: 6px 12px;
+    left: 12px;
+    top: -2px;
     background-color: #f5f5f5;
     border-radius: 4px;
+    color: #1F2937;
 }
 
 /* ========== MESSAGEBOX ========== */

@@ -5,8 +5,6 @@ Muestra métricas, gráficos y análisis de cobertura.
 Utiliza ObtenerEstadisticasPanelUseCase para separar lógica de presentación.
 """
 
-from presentation.theme import legacy_styles as styles
-from application.use_cases.asignacion_guardias import ObtenerEstadisticasPanelUseCase
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHeaderView,
@@ -19,8 +17,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from utils.icons import icon_for_button
 
+from application.use_cases.asignacion_guardias import ObtenerEstadisticasPanelUseCase
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import (
     CONTENT_BG_ALT,
@@ -29,6 +27,30 @@ from presentation.themes.ccleaner_theme import (
     TEXT_PRIMARY,
     get_table_style,
 )
+from utils.icons import icon_for_button
+
+_MPL_CANVAS_CLASS = None
+
+
+def _get_mpl_canvas_class():
+    global _MPL_CANVAS_CLASS
+    if _MPL_CANVAS_CLASS is not None:
+        return _MPL_CANVAS_CLASS
+
+    import matplotlib
+
+    matplotlib.use("QtAgg")
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+    from matplotlib.figure import Figure
+
+    class MplCanvas(FigureCanvasQTAgg):
+        def __init__(self, parent=None, width=5, height=4, dpi=100):
+            fig = Figure(figsize=(width, height), dpi=dpi)
+            self.axes = fig.add_subplot(111)
+            super().__init__(fig)
+
+    _MPL_CANVAS_CLASS = MplCanvas
+    return _MPL_CANVAS_CLASS
 
 
 class PanelEstadisticas(BaseForm):
@@ -172,6 +194,8 @@ class PanelEstadisticas(BaseForm):
         """Crear la pestaña de gráficos."""
         widget = QWidget()
         layout = QVBoxLayout()
+
+        MplCanvas = _get_mpl_canvas_class()
 
         # Área con scroll para múltiples gráficos
         scroll = QScrollArea()
@@ -339,19 +363,8 @@ class PanelEstadisticas(BaseForm):
 
 def __getattr__(name: str):
     if name == "MplCanvas":
-        import matplotlib
-        matplotlib.use("QtAgg")
-        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-        from matplotlib.figure import Figure
-
-        class MplCanvas(FigureCanvasQTAgg):
-            def __init__(self, parent=None, width=5, height=4, dpi=100):
-                fig = Figure(figsize=(width, height), dpi=dpi)
-                self.axes = fig.add_subplot(111)
-                super().__init__(fig)
+        MplCanvas = _get_mpl_canvas_class()
 
         globals()["MplCanvas"] = MplCanvas
         return MplCanvas
     raise AttributeError(f"module 'panel_estadisticas' has no attribute {name!r}")
-
-

@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.26.1] - 2026-04-21
+
+### 🎯 Resumen
+Ajuste visual definitivo de títulos y paddings en paneles de asignación, más estabilización de MplCanvas en estadísticas.
+
+### Changed
+- `light.qss`, `ccleaner_theme.py`, `legacy_styles.py`: más espacio vertical y padding en `titleMain` y `QGroupBox::title`
+- `calculo_panel.py`, `generacion_panel.py`, `estadisticas_panel.py`, `resultados_panel.py`, `incidencias_panel.py`, `cuotas_panel.py`: alineados con el nuevo espaciado para evitar títulos recortados en Cálculo y Asignación
+
+### Fixed
+- `panel_estadisticas.py`: `MplCanvas` cacheado para mantener estable `isinstance(...)` en tests y uso lazy de matplotlib
+
 ## [5.26.0] - 2026-04-21
 
 ### 🎯 Resumen

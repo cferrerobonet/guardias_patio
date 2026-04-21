@@ -3,9 +3,6 @@
 Integra estadísticas del curso y cuotas calculadas en un solo panel.
 """
 
-from presentation.theme import legacy_styles as styles
-from application.dtos.domain_services_dtos import CalcularCuotasRequest
-from application.use_cases.calcular_cuotas_use_case import CalcularCuotasUseCase
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
@@ -15,6 +12,9 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+
+from application.dtos.domain_services_dtos import CalcularCuotasRequest
+from application.use_cases.calcular_cuotas_use_case import CalcularCuotasUseCase
 from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
@@ -49,15 +49,15 @@ class CalculoPanel(QGroupBox):
                 font-size: 13px;
                 border: 2px solid #3b82f6;
                 border-radius: 6px;
-                margin-top: 12px;
-                padding-top: 10px;
+                margin-top: 16px;
+                padding-top: 14px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 2px 8px;
-                left: 10px;
-                top: -7px;
+                padding: 6px 12px;
+                left: 12px;
+                top: -2px;
                 background-color: white;
                 color: #1e40af;
             }
@@ -130,16 +130,12 @@ class CalculoPanel(QGroupBox):
 
         stats = self._stats
         slots_teoricos = (
-            stats.dias_lectivos
-            * (stats.recreos_manana + stats.recreos_tarde)
-            * stats.num_zonas
+            stats.dias_lectivos * (stats.recreos_manana + stats.recreos_tarde) * stats.num_zonas
         )
         total_recreos = stats.recreos_manana + stats.recreos_tarde
         dias_info = f"{stats.dias_lectivos} días (L-V)"
         slots_info = f"{stats.slots_totales} guardias"
-        calc_info = (
-            f"{stats.dias_lectivos} × {total_recreos} × {stats.num_zonas}"
-        )
+        calc_info = f"{stats.dias_lectivos} × {total_recreos} × {stats.num_zonas}"
 
         texto = f"""
 {format_terminal_label("═" * 50)}
@@ -181,9 +177,9 @@ class CalculoPanel(QGroupBox):
     def calcular_cuotas(self):
         """Calcula y muestra las cuotas usando el Use Case."""
         if not self.configuracion_id:
-            from application.app_services import AppServices
             from PyQt6.QtWidgets import QMessageBox
-            from utils.ui_helpers import MESSAGEBOX_STYLE
+
+            from application.app_services import AppServices
 
             config_entity = AppServices(self.session).configuracion_repo.get_first()
             configuracion = config_entity
@@ -243,16 +239,12 @@ class CalculoPanel(QGroupBox):
         if self._stats:
             stats = self._stats
             slots_teoricos = (
-                stats.dias_lectivos
-                * (stats.recreos_manana + stats.recreos_tarde)
-                * stats.num_zonas
+                stats.dias_lectivos * (stats.recreos_manana + stats.recreos_tarde) * stats.num_zonas
             )
             total_recreos = stats.recreos_manana + stats.recreos_tarde
             dias_info = f"{stats.dias_lectivos} días (L-V)"
             slots_info = f"{stats.slots_totales} guardias"
-            calc_info = (
-                f"{stats.dias_lectivos} × {total_recreos} × {stats.num_zonas}"
-            )
+            calc_info = f"{stats.dias_lectivos} × {total_recreos} × {stats.num_zonas}"
 
             texto += f"""
 {format_terminal_label("═" * 50)}

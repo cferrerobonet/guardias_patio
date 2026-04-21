@@ -4,12 +4,10 @@ Muestra el resumen de guardias generadas, cobertura y métricas de equidad.
 Estilo terminal negro consistente con otros widgets.
 """
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
+from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
+
 from application.dtos.domain_services_dtos import AnalisisEquidadRequest
 from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
-from infrastructure.database.models import Profesor
-from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
 from presentation.theme.legacy_styles import (
     format_terminal_info,
     format_terminal_label,
@@ -53,15 +51,15 @@ class ResultadosPanel(QGroupBox):
                 font-size: 13px;
                 border: 2px solid #8b5cf6;
                 border-radius: 6px;
-                margin-top: 12px;
-                padding-top: 10px;
+                margin-top: 16px;
+                padding-top: 14px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 2px 8px;
-                left: 10px;
-                top: -7px;
+                padding: 6px 12px;
+                left: 12px;
+                top: -2px;
                 background-color: white;
                 color: #6d28d9;
             }
@@ -135,8 +133,7 @@ class ResultadosPanel(QGroupBox):
             lineas.append(format_terminal_success(cobertura_msg))
         elif resumen.slots_sin_cubrir > 0:
             warning_msg = (
-                f"⚠️ Cobertura: {cobertura_pct:.1f}% "
-                f"({resumen.slots_sin_cubrir} sin cubrir)"
+                f"⚠️ Cobertura: {cobertura_pct:.1f}% ({resumen.slots_sin_cubrir} sin cubrir)"
             )
             lineas.append(format_terminal_warning(warning_msg))
         lineas.append("")
@@ -194,7 +191,7 @@ class ResultadosPanel(QGroupBox):
                     lineas.append(format_terminal_success("✅ Sin desbalances significativos"))
             else:
                 lineas.append(format_terminal_info("(análisis de equidad no disponible)"))
-        except (ValueError, TypeError, OSError) as e:
+        except (ValueError, TypeError, OSError):
             lineas.append(format_terminal_info("(análisis de equidad no disponible)"))
 
         lineas.append("")
@@ -209,6 +206,7 @@ class ResultadosPanel(QGroupBox):
             profesores_info = []
             for pid, cnt in resumen.resumen_por_profesor.items():
                 from application.app_services import AppServices
+
                 prof = AppServices(self.session).profesores.get_by_id(pid)
                 if prof:
                     turno = str(prof.turno).lower().strip()

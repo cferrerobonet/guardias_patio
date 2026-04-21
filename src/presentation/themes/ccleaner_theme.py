@@ -687,16 +687,16 @@ def get_complete_stylesheet() -> str:
             font-weight: bold;
             border: 1px solid {BORDER_MEDIUM};
             border-radius: 5px;
-            margin-top: 12px;
-            padding-top: 10px;
+            margin-top: 16px;
+            padding-top: 14px;
         }}
 
         QGroupBox::title {{
             subcontrol-origin: margin;
             subcontrol-position: top left;
-            padding: 2px 5px;
-            left: 10px;
-            top: -7px;
+            padding: 6px 12px;
+            left: 12px;
+            top: -2px;
             background-color: {CONTENT_BG};
             color: {TEXT_PRIMARY};
         }}
