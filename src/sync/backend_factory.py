@@ -75,7 +75,7 @@ def get_default_backend() -> SyncBackend:
             return create_sync_backend("sftp")
         else:
             logger.warning("⚠ Configuración SFTP no válida")
-    except (ConnectionError, OSError, ValueError) as e:
+    except (ConnectionError, OSError, ValueError, RuntimeError) as e:
         logger.error(f"❌ Error al crear backend SFTP: {e}", exc_info=True)
 
     # Fallback a local
