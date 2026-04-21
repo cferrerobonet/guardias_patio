@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.26.5] - 2026-04-21
+
+### 🎯 Resumen
+UX-10: barra de título contextual fija sobre el área de contenido principal.
+
+### ✨ Added
+- `ContentWrapper`: barra de 40px con el nombre de la sección activa, fija encima del scroll — orienta al usuario cuando el texto del sidebar está cortado
+
 ## [5.26.4] - 2026-04-21
 
 ### 🎯 Resumen

@@ -8,6 +8,7 @@ from core.logging import get_logger
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
+    QLabel,
     QMainWindow,
     QScrollArea,
     QStackedWidget,
@@ -51,6 +52,22 @@ class ContentWrapper(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
+
+        # Barra de título contextual fija
+        title_bar = QWidget()
+        title_bar.setFixedHeight(40)
+        title_bar.setStyleSheet(
+            "QWidget { background-color: #F8FAFC; border-bottom: 1px solid #E5E7EB; }"
+        )
+        title_bar_layout = QHBoxLayout(title_bar)
+        title_bar_layout.setContentsMargins(20, 0, 20, 0)
+        title_label = QLabel(title)
+        title_label.setStyleSheet(
+            "QLabel { font-size: 13px; font-weight: 600; color: #374151; border: none; background: transparent; }"
+        )
+        title_bar_layout.addWidget(title_label)
+        title_bar_layout.addStretch()
+        layout.addWidget(title_bar)
 
         # Widget contenedor para añadir padding compensatorio
         container = QWidget()

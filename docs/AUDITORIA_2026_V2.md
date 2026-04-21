@@ -780,7 +780,7 @@ def _validar_nombre(self):
 
 ---
 
-### UX-10 — El sidebar no indica en qué sección estás si el texto está cortado
+### ~~UX-10 — El sidebar no indica en qué sección estás si el texto está cortado~~ ✅ RESUELTO v5.26.5
 **Severidad: Baja**
 
 En resoluciones pequeñas, los textos del sidebar pueden quedar cortados. Y no hay breadcrumb ni título de sección en el área de contenido para orientar al usuario.
