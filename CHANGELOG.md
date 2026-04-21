@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.26.7] - 2026-04-21
+
+### 🎯 Resumen
+FUNC-09: resumen previo a la generación con profesores activos, algoritmo y tiempo estimado.
+
+### ✨ Added
+- `generacion_panel.py`: antes de lanzar CP-SAT, muestra profesores activos, algoritmo y estimación de tiempo (~2s + 0.5s/profesor); integrado en la confirmación si hay guardias previas
+
 ## [5.26.6] - 2026-04-21
 
 ### 🎯 Resumen

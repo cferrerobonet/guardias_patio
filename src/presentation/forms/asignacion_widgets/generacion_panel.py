@@ -222,8 +222,23 @@ class GeneracionPanel(QGroupBox):
 
             from application.app_services import AppServices
 
-            count_guardias = AppServices(self.session).contar_guardias()
+            app_svc = AppServices(self.session)
+            count_guardias = app_svc.contar_guardias()
+            n_profesores = app_svc.contar_profesores_activos()
             eliminar_existentes = True
+
+            # Estimación de tiempo: ~2s base + 0.5s por profesor (heurística empírica CP-SAT)
+            segundos_est = max(5, 2 + int(n_profesores * 0.5))
+            if segundos_est < 60:
+                tiempo_est = f"~{segundos_est} segundos"
+            else:
+                tiempo_est = f"~{segundos_est // 60} min {segundos_est % 60}s"
+
+            resumen_previo = (
+                f"Profesores activos: {n_profesores}\n"
+                f"Algoritmo: {algoritmo_seleccionado.upper()}\n"
+                f"Tiempo estimado: {tiempo_est}"
+            )
 
             if count_guardias > 0:
                 respuesta = show_question_with_cancel(
@@ -232,7 +247,8 @@ class GeneracionPanel(QGroupBox):
                     f"Ya existen {count_guardias} guardias.\n\n"
                     f"¿Deseas ELIMINAR todas antes de generar nuevas?\n\n"
                     f"• SÍ: Eliminará todas y generará desde cero\n"
-                    f"• NO: Agregará nuevas a las existentes",
+                    f"• NO: Agregará nuevas a las existentes\n\n"
+                    f"─────────────────────────\n{resumen_previo}",
                     default_button="Yes",
                 )
 
@@ -240,6 +256,12 @@ class GeneracionPanel(QGroupBox):
                     return
 
                 eliminar_existentes = respuesta == QMessageBox.StandardButton.Yes
+            else:
+                QMessageBox.information(
+                    self,
+                    "Resumen de Generación",
+                    f"Se va a generar el calendario de guardias.\n\n{resumen_previo}",
+                )
 
             # Función para ejecutar con progreso
             def tarea_generacion(progress_callback):
@@ -256,7 +278,7 @@ class GeneracionPanel(QGroupBox):
                 self,
                 tarea_generacion,
                 titulo="Generando Guardias",
-                mensaje="Preparando generación de calendario...",
+                mensaje=f"Preparando generación ({n_profesores} profesores, {tiempo_est})...",
             )
 
             if resumen:

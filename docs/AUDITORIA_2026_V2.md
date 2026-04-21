@@ -1037,7 +1037,7 @@ Esto permite al director ver de un vistazo la equidad real sin interpretar gráf
 
 ---
 
-### FUNC-09 — CAMBIAR: La generación de guardias no tiene estimación de tiempo
+### ~~FUNC-09 — CAMBIAR: La generación de guardias no tiene estimación de tiempo~~ ✅ RESUELTO v5.26.7
 **Severidad: Baja**
 
 El CP-SAT puede tardar entre 5 y 60 segundos dependiendo del número de profesores, zonas y días. La barra de progreso muestra porcentaje pero no da una estimación de tiempo restante útil.
