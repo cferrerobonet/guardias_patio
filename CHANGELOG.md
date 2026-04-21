@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.27.1] - 2026-04-21
+
+### 🎯 Resumen
+FUNC-07: pestaña "Exportar iCal" en Reportes expone el ICalendarService existente en la UI.
+
+### ✨ Added
+- `reportes_form.py`: nueva pestaña "📅 Exportar iCal" con selector de profesor y botón de exportación a `.ics` (Google Calendar, Outlook, Apple Calendar)
+
 ## [5.27.0] - 2026-04-21
 
 ### 🎯 Resumen

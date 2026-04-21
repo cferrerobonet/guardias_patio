@@ -1010,7 +1010,7 @@ Mover la configuración de conectividad a dentro de "Ajustes" como una pestaña 
 
 ---
 
-### FUNC-07 — AÑADIR: Exportación a Google Calendar / iCal para profesores
+### ~~FUNC-07 — AÑADIR: Exportación a Google Calendar / iCal para profesores~~ ✅ RESUELTO v5.27.1
 **Severidad: Media — Alto valor percibido**
 
 Ya existe `icalendar_service.py`. Hay que exponerlo en la UI de forma accesible. Cada profesor debería poder descargar su calendario de guardias como `.ics` para importarlo en Google Calendar, Outlook o Apple Calendar.

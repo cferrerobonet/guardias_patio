@@ -10,13 +10,17 @@ from presentation.theme import legacy_styles as styles
 from infrastructure.database.models import Configuracion, Guardia, Profesor
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
+    QComboBox,
     QFileDialog,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QMessageBox,
+    QPushButton,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 from services.exportador_pdf import ExportadorPDF
 from utils import get_logger
@@ -114,6 +118,10 @@ class ReportesForm(BaseForm):
         # Tab 2: Informes Estadísticos
         self.informes_widget = InformesEstadisticosWidget(self.session, self)
         self.tabs.addTab(self.informes_widget, "Informes Estadísticos")
+
+        # Tab 3: Exportar iCal
+        ical_tab = self._crear_tab_ical()
+        self.tabs.addTab(ical_tab, "📅 Exportar iCal")
 
         main_layout.addWidget(self.tabs)
 
@@ -636,3 +644,92 @@ class ReportesForm(BaseForm):
                     f"Se generaron {exitos} calendarios individuales correctamente."
                     + (f"\n\n{emails_enviados} emails enviados." if enviar_email else ""),
                 )
+
+    # ========== TAB ICAL ==========
+
+    def _crear_tab_ical(self) -> QWidget:
+        """Crear la pestaña de exportación iCal."""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(16)
+
+        desc = QLabel(
+            "Exporta las guardias de un profesor como archivo .ics compatible con "
+            "Google Calendar, Outlook y Apple Calendar."
+        )
+        desc.setWordWrap(True)
+        desc.setStyleSheet("color: #555; font-size: 12px;")
+        layout.addWidget(desc)
+
+        # Selector de profesor
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Profesor:"))
+        self._ical_combo = QComboBox()
+        self._ical_combo.setMinimumWidth(300)
+        self._cargar_profesores_ical()
+        row.addWidget(self._ical_combo)
+        row.addStretch()
+        layout.addLayout(row)
+
+        # Botón exportar
+        btn = QPushButton("📅 Exportar archivo .ics")
+        btn.setMinimumHeight(36)
+        btn.clicked.connect(self._exportar_ical)
+        layout.addWidget(btn)
+        layout.addStretch()
+
+        return tab
+
+    def _cargar_profesores_ical(self):
+        self._ical_combo.clear()
+        try:
+            profesores = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
+            for p in profesores:
+                self._ical_combo.addItem(p.nombre_completo, p.id)
+        except Exception:
+            pass
+
+    def _exportar_ical(self):
+        profesor_id = self._ical_combo.currentData()
+        if profesor_id is None:
+            self.mostrar_advertencia("Sin selección", "Selecciona un profesor.")
+            return
+
+        profesor_nombre = self._ical_combo.currentText()
+        from services.icalendar_service import ICalendarService
+
+        nombre_archivo = ICalendarService.obtener_nombre_archivo_ics(profesor_nombre)
+        ruta, _ = QFileDialog.getSaveFileName(
+            self,
+            "Guardar archivo iCal",
+            nombre_archivo,
+            "iCalendar (*.ics)",
+        )
+        if not ruta:
+            return
+
+        try:
+            config = self.session.query(Configuracion).first()
+            nombre_centro = "Centro Educativo"
+            if config and hasattr(config, "nombre_centro") and config.nombre_centro:
+                nombre_centro = config.nombre_centro
+
+            ok = ICalendarService.generar_icalendar_profesor(
+                session_or_factory=self.session,
+                profesor_id=profesor_id,
+                ruta_salida=ruta,
+                nombre_centro=nombre_centro,
+            )
+            if ok:
+                self.resultado_text.setText(
+                    f"✅ Archivo iCal exportado\n\nProfesor: {profesor_nombre}\nArchivo: {ruta}"
+                )
+                self.mostrar_exito("iCal exportado", f"Guardado en {ruta}")
+            else:
+                self.mostrar_advertencia(
+                    "Sin guardias", f"{profesor_nombre} no tiene guardias asignadas."
+                )
+        except (OSError, ValueError) as e:
+            self.mostrar_error("Error al exportar", str(e))
+
