@@ -28,7 +28,7 @@ from services._exportador_import import (
     _importar_smtp_config as _importar_smtp_config_impl,
     _importar_sftp_config as _importar_sftp_config_impl,
 )
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import joinedload
 
 logger = get_logger(__name__)
 
@@ -93,7 +93,7 @@ class ExportadorDatos:
         return time(int(h), int(m))
 
     @staticmethod
-    def exportar_profesores(session: Session) -> list[dict[str, Any]]:
+    def exportar_profesores(session) -> list[dict[str, Any]]:
         """Exporta todos los profesores a diccionario."""
         profesores = session.query(Profesor).all()
         return [
@@ -120,7 +120,7 @@ class ExportadorDatos:
         ]
 
     @staticmethod
-    def exportar_zonas(session: Session) -> list[dict[str, Any]]:
+    def exportar_zonas(session) -> list[dict[str, Any]]:
         """Exporta todas las zonas a diccionario."""
         zonas = session.query(Zona).all()
         return [
@@ -135,7 +135,7 @@ class ExportadorDatos:
         ]
 
     @staticmethod
-    def exportar_configuracion(session: Session) -> Optional[dict[str, Any]]:
+    def exportar_configuracion(session) -> Optional[dict[str, Any]]:
         """Exporta la configuración a diccionario."""
         config = session.query(Configuracion).first()
         if not config:
@@ -158,7 +158,7 @@ class ExportadorDatos:
         }
 
     @staticmethod
-    def exportar_guardias(session: Session) -> list[dict[str, Any]]:
+    def exportar_guardias(session) -> list[dict[str, Any]]:
         """Exporta todas las guardias a diccionario."""
         guardias = (
             session.query(Guardia)
@@ -181,7 +181,7 @@ class ExportadorDatos:
         ]
 
     @staticmethod
-    def exportar_ausencias(session: Session) -> list[dict[str, Any]]:
+    def exportar_ausencias(session) -> list[dict[str, Any]]:
         """Exporta todas las ausencias a diccionario."""
         ausencias = session.query(Ausencia).options(joinedload(Ausencia.profesor)).all()
         return [
@@ -231,7 +231,7 @@ class ExportadorDatos:
             return None
 
     @staticmethod
-    def exportar_cursos_escolares(session: Session) -> Optional[dict[str, Any]]:
+    def exportar_cursos_escolares(session) -> Optional[dict[str, Any]]:
         """
         Exporta todos los cursos escolares del sistema.
 
@@ -275,7 +275,7 @@ class ExportadorDatos:
             return None
 
     @staticmethod
-    def exportar_todo(session: Session, ruta_archivo: Union[str, Path]) -> None:
+    def exportar_todo(session, ruta_archivo: Union[str, Path]) -> None:
         """
         Exporta todos los datos de la aplicación a un archivo JSON.
 
@@ -343,31 +343,31 @@ class ExportadorDatos:
 
     @staticmethod
     def importar_profesores(
-        session: Session, profesores_data: list[dict[str, Any]], limpiar: bool = False
+        session, profesores_data: list[dict[str, Any]], limpiar: bool = False
     ) -> int:
         return _importar_profesores_impl(session, profesores_data, limpiar)
 
     @staticmethod
     def importar_zonas(
-        session: Session, zonas_data: list[dict[str, Any]], limpiar: bool = False
+        session, zonas_data: list[dict[str, Any]], limpiar: bool = False
     ) -> int:
         return _importar_zonas_impl(session, zonas_data, limpiar)
 
     @staticmethod
     def importar_configuracion(
-        session: Session, config_data: dict[str, Any], limpiar: bool = False
+        session, config_data: dict[str, Any], limpiar: bool = False
     ) -> bool:
         return _importar_configuracion_impl(session, config_data, limpiar)
 
     @staticmethod
     def importar_guardias(
-        session: Session, guardias_data: list[dict[str, Any]], limpiar: bool = False
+        session, guardias_data: list[dict[str, Any]], limpiar: bool = False
     ) -> int:
         return _importar_guardias_impl(session, guardias_data, limpiar)
 
     @staticmethod
     def importar_ausencias(
-        session: Session, ausencias_data: list[dict[str, Any]], limpiar: bool = False
+        session, ausencias_data: list[dict[str, Any]], limpiar: bool = False
     ) -> int:
         return _importar_ausencias_impl(session, ausencias_data, limpiar)
 
@@ -387,12 +387,12 @@ class ExportadorDatos:
 
     @staticmethod
     def importar_cursos_escolares(
-        session: Session, cursos_data: Optional[dict[str, Any]], limpiar: bool = False
+        session, cursos_data: Optional[dict[str, Any]], limpiar: bool = False
     ) -> int:
         return _importar_cursos_escolares_impl(session, cursos_data, limpiar)
 
     @staticmethod
     def importar_todo(
-        session: Session, ruta_archivo: Union[str, Path], limpiar: bool = False
+        session, ruta_archivo: Union[str, Path], limpiar: bool = False
     ) -> dict[str, int]:
         return _importar_todo_impl(session, ruta_archivo, limpiar)

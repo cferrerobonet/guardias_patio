@@ -5,6 +5,28 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.21.0] - 2026-04-21
+
+### 🎯 Resumen
+ARQ-01 completado en `src/services/`: 0 imports `from sqlalchemy.orm import Session` restantes. 14 archivos adicionales migrados en esta fase (total 23 archivos en todas las fases).
+
+### 🧹 Housekeeping
+- `src/services/distribucion_cuotas_service.py`: constructor `session_or_factory` polimórfico
+- `src/services/exportador.py`: eliminado import `Session`, anotaciones removidas de todos los métodos estáticos
+- `src/services/exportador_pdf.py`: eliminado import `Session`, anotaciones removidas
+- `src/services/assignment/assignment_executor.py`: constructor `session_or_factory` polimórfico
+- `src/services/assignment/slot_builder.py`: constructor `session_or_factory` polimórfico
+- `src/services/assignment/profesor_filter.py`: constructor `session_or_factory` polimórfico
+- `src/services/validators/ausencia_checker.py`: constructor `session_or_factory` polimórfico
+- `src/services/gestor_ausencias.py`: eliminado import `Session`, anotaciones removidas de funciones standalone
+- `src/services/asignador_guardias_v4_hibrido.py`: eliminado import `Session`, anotaciones removidas
+- `src/services/_asignador_v4_fases.py`: eliminado import `Session`, anotaciones removidas
+- `src/services/_asignador_v4_helpers.py`: eliminado import `Session`, anotaciones removidas
+- `src/services/_asignador_cpsat_helpers.py`: eliminado import `Session`, anotaciones removidas
+- `src/services/_pdf_mes_consolidado.py`: eliminado import `Session`, anotaciones removidas
+- `src/services/_pdf_individual_optimizado.py`: eliminado import `Session`, anotaciones removidas
+
+---
 ## [5.20.1] - 2026-04-21
 
 ### 🎯 Resumen

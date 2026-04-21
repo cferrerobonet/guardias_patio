@@ -18,7 +18,7 @@ from services.assignment.profesor_filter import ProfesorFilter, _limpiar_cache_e
 from services.assignment.score_calculator import ScoreCalculator
 from services.assignment.slot_builder import SlotBuilder
 from services.estadisticas_service import EstadisticasService
-from sqlalchemy.orm import Session
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -32,8 +32,13 @@ class AssignmentExecutor:
     completo de guardias.
     """
 
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, session_or_factory):
+        self.session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
+        session = self.session
         self.slot_builder = SlotBuilder(session)
         self.profesor_filter = ProfesorFilter(session)
         self.score_calculator = ScoreCalculator()

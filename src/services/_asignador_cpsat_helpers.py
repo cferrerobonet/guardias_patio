@@ -24,7 +24,6 @@ from services.calculador_guardias import (
     _parse_recreos_config,
     listar_dias_lectivos,
 )
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -98,7 +97,7 @@ def _generar_recreos_fallback(config: Configuracion) -> List[dict]:
     return recreos
 
 
-def _generar_slots(config: Configuracion, session: Session) -> List[Slot]:
+def _generar_slots(config: Configuracion, session) -> List[Slot]:
     """Genera todos los slots a cubrir."""
     dias_lectivos = listar_dias_lectivos(config)
     zonas = session.query(Zona).all()
@@ -145,7 +144,7 @@ def _generar_slots(config: Configuracion, session: Session) -> List[Slot]:
     return slots
 
 
-def _profesor_ausente(session: Session, profesor_id: int, fecha: date) -> bool:
+def _profesor_ausente(session, profesor_id: int, fecha: date) -> bool:
     """Verifica si un profesor tiene ausencia activa en una fecha."""
     return (
         session.query(Ausencia)
@@ -171,7 +170,7 @@ def _parse_json_field(value: Optional[str], default: list) -> list:
         return default
 
 
-def _es_elegible_basico(profesor: Profesor, slot: Slot, session: Session) -> bool:
+def _es_elegible_basico(profesor: Profesor, slot: Slot, session) -> bool:
     """
     Verifica si un profesor puede cubrir un slot (restricciones HARD).
 

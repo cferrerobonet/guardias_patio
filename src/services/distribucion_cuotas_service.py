@@ -28,7 +28,8 @@ from services.calculador_guardias import (
     _parse_recreos_config,
     listar_dias_lectivos,
 )
-from sqlalchemy.orm import Session, joinedload
+from infrastructure.repositories.repository_factory import RepositoryFactory
+from sqlalchemy.orm import joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -71,14 +72,18 @@ class DistribucionCuotasService:
     - Equivalencia: Produce resultados idénticos a calculador_guardias.py
     """
 
-    def __init__(self, session: Session):
+    def __init__(self, session_or_factory):
         """
         Inicializa el servicio.
 
         Args:
             session: Sesión de SQLAlchemy
         """
-        self.session = session
+        self.session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
         self.logger = logger
 
     def calcular_cuotas(self, profesores: Optional[List[Profesor]] = None) -> Dict[int, int]:

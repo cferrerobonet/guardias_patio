@@ -93,7 +93,7 @@
 
 ## 1. Arquitectura
 
-### ARQ-01 — 28 servicios acoplados a ORM (P1) — ✅ Fase core (5 servicios) RESUELTA v5.14.1; Fase extensión iniciada v5.14.2
+### ~~ARQ-01 — 28 servicios acoplados a ORM (P1)~~ ✅ RESUELTO v5.21.0
 
 **Problema**: 28 archivos en `src/services/` hacen `from sqlalchemy.orm import Session` e invocan `session.query()`, `session.add()`, `session.commit()` directamente. Viola Clean Architecture: la capa de aplicación/servicios no debería conocer SQLAlchemy.
 
@@ -113,30 +113,10 @@
   2. `icalendar_service.py` → Parámetro `session_or_factory`, normaliza internamente
   3. `disponibilidad_profesor_service.py` → Constructor `session_or_factory` + `from_session()` classmethod
 
-**Archivos restantes pendientes (19)**:
-1. `src/services/asignacion_guardia_service.py`
-2. `src/services/distribucion_cuotas_service.py`
-3. ~~`src/services/importador_profesores.py`~~ ✅ RESUELTO v5.14.2
-4. ~~`src/services/icalendar_service.py`~~ ✅ RESUELTO v5.20.0
-5. `src/services/_pdf_mes_consolidado.py`
-6. ~~`src/services/disponibilidad_profesor_service.py`~~ ✅ RESUELTO v5.20.0
-7. `src/services/migrar_a_multi_curso.py`
-8. `src/services/equidad_guardias_service.py`
-9. `src/services/_exportador_import.py`
-10. `src/services/validador_guardias.py`
-11. `src/services/exportador.py`
-12. `src/services/assignment/assignment_executor.py`
-13. `src/services/assignment/slot_builder.py`
-14. `src/services/assignment/profesor_filter.py`
-15. `src/services/_pdf_individual_optimizado.py`
-16. ~~`src/services/estadisticas_service.py`~~ ✅ RESUELTO v5.15.1
-17. ~~`src/services/importador_zonas.py`~~ ✅ RESUELTO v5.20.0
-18. `src/services/diagnosticador_guardias.py`
-19. `src/services/validators/ausencia_checker.py`
-20. `src/services/asignador_guardias_v4_hibrido.py`
-21. `src/services/_asignador_v4_fases.py`
-22. `src/services/_asignador_v4_helpers.py`
-23. `src/services/exportador_pdf.py`
+- ✅ **Fase extensión #3 (v5.20.1)**: 6 servicios
+- ✅ **Fase extensión #4 (v5.21.0)**: 14 servicios restantes — **0 imports `Session` en `src/services/`**
+
+**Todos los archivos migrados** ✅ RESUELTO v5.21.0
 
 **Cómo resolver** (progresivo, no hace falta todo de golpe):
 

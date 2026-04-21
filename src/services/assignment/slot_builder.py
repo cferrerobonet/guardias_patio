@@ -11,7 +11,7 @@ from typing import List
 
 from infrastructure.database.models import Configuracion, Zona
 from services.calculador_guardias import _parse_recreos_config, listar_dias_lectivos
-from sqlalchemy.orm import Session
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -37,8 +37,12 @@ class SlotBuilder:
     - Zonas disponibles
     """
 
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, session_or_factory):
+        self.session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
 
     def build_slots(self, config: Configuracion) -> List[Slot]:
         """

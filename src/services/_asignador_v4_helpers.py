@@ -16,7 +16,6 @@ from typing import Dict, List, Optional, Tuple
 from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services._asignador_tipos import ContextoAsignacion, Slot
 from services.calculador_guardias import _parse_recreos_config, listar_dias_lectivos
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -48,7 +47,7 @@ def _generar_recreos_fallback(config: Configuracion) -> List[dict]:
     return recreos
 
 
-def _generar_slots(config: Configuracion, session: Session) -> List[Slot]:
+def _generar_slots(config: Configuracion, session) -> List[Slot]:
     """
     Genera todos los slots a cubrir considerando:
     - Días lectivos (excluyendo festivos)
@@ -104,7 +103,7 @@ def _generar_slots(config: Configuracion, session: Session) -> List[Slot]:
     return slots
 
 
-def _profesor_ausente(session: Session, profesor_id: int, fecha: date) -> bool:
+def _profesor_ausente(session, profesor_id: int, fecha: date) -> bool:
     """Verifica si un profesor tiene ausencia activa en una fecha."""
     return (
         session.query(Ausencia)
@@ -134,7 +133,7 @@ def _es_elegible(
     profesor: Profesor,
     slot: Slot,
     ctx: ContextoAsignacion,
-    session: Session,
+    session,
     ignorar_cuota: bool = False,
     permitir_multiples_dia: bool = False,
 ) -> bool:
@@ -209,7 +208,7 @@ def _es_elegible(
 
 def _calcular_matriz_elegibilidad(
     ctx: ContextoAsignacion,
-    session: Session,
+    session,
 ) -> Dict[int, int]:
     """Pre-calcula cuántos slots puede cubrir cada profesor."""
     matriz = defaultdict(int)
@@ -341,7 +340,7 @@ def _score_slot(
 def _seleccionar_mejor_slot(
     profesor: Profesor,
     ctx: ContextoAsignacion,
-    session: Session,
+    session,
     ignorar_cuota: bool = False,
 ) -> Optional[Slot]:
     """Selecciona el mejor slot disponible para un profesor."""

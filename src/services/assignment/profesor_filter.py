@@ -14,7 +14,7 @@ from typing import Dict, List, Set, Tuple
 from infrastructure.database.models import Profesor
 from services.assignment.slot_builder import Slot
 from services.validators import AusenciaChecker, TurnoValidator
-from sqlalchemy.orm import Session
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -41,9 +41,13 @@ class ProfesorFilter:
     qué profesores son elegibles para un slot específico.
     """
 
-    def __init__(self, session: Session):
-        self.session = session
-        self.ausencia_checker = AusenciaChecker(session)
+    def __init__(self, session_or_factory):
+        self.session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
+        self.ausencia_checker = AusenciaChecker(self.session)
         self.turno_validator = TurnoValidator()
         self.rechazos: Dict[str, int] = defaultdict(int)
         self.total_evaluaciones = 0

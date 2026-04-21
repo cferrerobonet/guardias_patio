@@ -16,14 +16,14 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from services.gestor_cursos import GestorCursos
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)
 
 
 def exportar_mes_consolidado(
-    session: Session,
+    session,
     mes: int,
     anio: int,
     ruta_salida: str,
@@ -271,7 +271,7 @@ def exportar_mes_consolidado(
 
 
 def exportar_curso_completo(
-    session: Session,
+    session,
     anio_inicio: int,
     carpeta_salida: str,
     profesor_ids: Optional[list[int]] = None,

@@ -44,7 +44,6 @@ from services.calculador_guardias import (
     calcular_guardias_por_profesor,
     listar_dias_lectivos,
 )
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
@@ -56,7 +55,7 @@ logger = get_logger(__name__)
 # =============================================================================
 
 def generar_guardias_v4_hibrido(
-    session: Session,
+    session,
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> Tuple[List[Guardia], Dict[int, int]]:
     """
@@ -258,7 +257,7 @@ def generar_guardias_v4_hibrido(
     return (ctx.calendario, dict(ctx.asignadas))
 
 
-def guardar_guardias_en_bd(session: Session, guardias: List[Guardia]) -> None:
+def guardar_guardias_en_bd(session, guardias: List[Guardia]) -> None:
     """
     Guarda las guardias en la base de datos.
 

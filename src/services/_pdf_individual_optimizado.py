@@ -17,7 +17,7 @@ from reportlab.lib.units import cm
 from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from services.gestor_cursos import GestorCursos
 from services.pdf_styles import PDFStyles
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import joinedload
 from utils import get_logger
 from services._pdf_mini_calendario import crear_mini_calendario, obtener_hora_recreo
 
@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 
 
 def exportar_profesor_individual_optimizado(
-    session: Session,
+    session,
     profesor_id: int,
     fecha_inicio: date,
     fecha_fin: date,

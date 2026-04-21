@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Tuple
 
 from infrastructure.database.models import Ausencia, Guardia, Profesor
 from services.validators import AusenciaChecker, TurnoValidator
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
@@ -19,7 +19,7 @@ _turno_validator = TurnoValidator()
 
 
 def registrar_ausencia(
-    session: Session,
+    session,
     profesor_id: int,
     fecha_inicio: date,
     fecha_fin: date,
@@ -79,7 +79,7 @@ def registrar_ausencia(
 
 
 def editar_ausencia(
-    session: Session,
+    session,
     ausencia_id: int,
     fecha_inicio: Optional[date] = None,
     fecha_fin: Optional[date] = None,
@@ -135,7 +135,7 @@ def editar_ausencia(
     return ausencia
 
 
-def eliminar_ausencia(session: Session, ausencia_id: int) -> None:
+def eliminar_ausencia(session, ausencia_id: int) -> None:
     """
     Elimina una ausencia de la base de datos.
 
@@ -157,7 +157,7 @@ def eliminar_ausencia(session: Session, ausencia_id: int) -> None:
     logger.info(f"Ausencia {ausencia_id} eliminada (Profesor: {profesor_nombre})")
 
 
-def desactivar_ausencia(session: Session, ausencia_id: int) -> Ausencia:
+def desactivar_ausencia(session, ausencia_id: int) -> Ausencia:
     """
     Desactiva una ausencia sin eliminarla (para mantener historial).
 
@@ -183,7 +183,7 @@ def desactivar_ausencia(session: Session, ausencia_id: int) -> Ausencia:
 
 
 def obtener_guardias_afectadas(
-    session: Session,
+    session,
     ausencia_id: int,
 ) -> List[Guardia]:
     """
@@ -223,7 +223,7 @@ def obtener_guardias_afectadas(
 
 
 def obtener_guardias_afectadas_por_periodo(
-    session: Session,
+    session,
     profesor_id: int,
     fecha_inicio: date,
     fecha_fin: date,
@@ -256,7 +256,7 @@ def obtener_guardias_afectadas_por_periodo(
 
 
 def obtener_profesores_disponibles(
-    session: Session,
+    session,
     fecha: date,
     turno: str,
     recreo_id: int,
@@ -312,7 +312,7 @@ def obtener_profesores_disponibles(
 
 
 def reasignar_guardia(
-    session: Session,
+    session,
     guardia_id: int,
     nuevo_profesor_id: int,
 ) -> Guardia:
@@ -376,7 +376,7 @@ def reasignar_guardia(
 
 
 def reasignar_guardias_automaticamente(
-    session: Session,
+    session,
     guardias: List[Guardia],
 ) -> Dict[str, any]:
     """

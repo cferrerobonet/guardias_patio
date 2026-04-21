@@ -25,7 +25,7 @@ from reportlab.platypus import (
 )
 from services.gestor_cursos import GestorCursos
 from services.pdf_styles import PDFStyles
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -36,7 +36,7 @@ class ExportadorPDF:
 
     @staticmethod
     def exportar_calendario_profesor(
-        session: Session, profesor_id: int, mes: int, anio: int, ruta_salida: str
+        session, profesor_id: int, mes: int, anio: int, ruta_salida: str
     ) -> bool:
         """
         Exporta el calendario de un profesor para un mes específico.
@@ -262,7 +262,7 @@ class ExportadorPDF:
 
     @staticmethod
     def exportar_todos_los_profesores(
-        session: Session,
+        session,
         mes: int,
         anio: int,
         carpeta_salida: str,
@@ -359,7 +359,7 @@ class ExportadorPDF:
 
     @staticmethod
     def exportar_mes_consolidado(
-        session: Session,
+        session,
         mes: int,
         anio: int,
         ruta_salida: str,
@@ -371,7 +371,7 @@ class ExportadorPDF:
 
     @staticmethod
     def exportar_curso_completo(
-        session: Session,
+        session,
         anio_inicio: int,
         carpeta_salida: str,
         profesor_ids: Optional[list[int]] = None,
@@ -385,7 +385,7 @@ class ExportadorPDF:
 
     @staticmethod
     def exportar_profesor_individual_optimizado(
-        session: Session,
+        session,
         profesor_id: int,
         fecha_inicio: date,
         fecha_fin: date,
@@ -407,7 +407,7 @@ class ExportadorPDF:
 
     @staticmethod
     def exportar_profesores_seleccionados(
-        session: Session,
+        session,
         profesor_ids: list[int],
         mes: int,
         anio: int,

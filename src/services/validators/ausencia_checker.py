@@ -12,7 +12,7 @@ from datetime import date
 from typing import Dict, List, Optional, Set, Tuple
 
 from infrastructure.database.models import Ausencia, Profesor
-from sqlalchemy.orm import Session
+from infrastructure.repositories.repository_factory import RepositoryFactory
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +31,18 @@ class AusenciaChecker:
         ...     # Asignar guardia al profesor
     """
 
-    def __init__(self, session: Session):
+    def __init__(self, session_or_factory):
         """
         Inicializar checker de ausencias.
 
         Args:
             session: Sesión de SQLAlchemy para consultas a BD
         """
-        self.session = session
+        self.session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
         # Cache de instancia: (profesor_id, fecha) -> bool
         self._cache: Dict[Tuple[int, date], bool] = {}
         # Fechas ya precargadas en bulk

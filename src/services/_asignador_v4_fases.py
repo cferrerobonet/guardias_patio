@@ -18,7 +18,6 @@ from services._asignador_v4_helpers import (
     _registrar_asignacion,
     _seleccionar_mejor_slot,
 )
-from sqlalchemy.orm import Session
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -32,7 +31,7 @@ logger = get_logger(__name__)
 def _asignar_por_rondas(
     ctx: ContextoAsignacion,
     profesores_ordenados: List[Profesor],
-    session: Session,
+    session,
     reportar_progreso: Callable[[int, str], None],
     matriz_elegibilidad: Optional[Dict[int, int]] = None,
 ) -> int:
@@ -126,7 +125,7 @@ def _asignar_por_rondas(
 
 def _completitud_forzada(
     ctx: ContextoAsignacion,
-    session: Session,
+    session,
     reportar_progreso: Callable[[int, str], None],
 ) -> Tuple[int, List[Slot]]:
     """
