@@ -4,7 +4,9 @@ Punto de entrada para la aplicación con diseño CCleaner
 Ejecutar: python src/main_ccleaner.py
 """
 
+import glob
 import logging
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -15,6 +17,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Configurar logging ANTES de cualquier import
 log_dir = Path(__file__).parent.parent / "logs"
 log_dir.mkdir(exist_ok=True)
+
+for _old_log in glob.glob(str(log_dir / "app_*.log")):
+    if (datetime.now() - datetime.fromtimestamp(os.path.getmtime(_old_log))).days > 30:
+        os.remove(_old_log)
+
 log_file = log_dir / f"app_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
 logging.basicConfig(

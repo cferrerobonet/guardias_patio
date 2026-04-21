@@ -165,7 +165,7 @@ class ImportExportForm(BaseForm):
         self.importar_profesores_btn.setIcon(icon_for_button("import"))
         self.importar_profesores_btn.clicked.connect(self.importar_profesores)
         self.importar_profesores_btn.setMinimumHeight(40)
-        self.importar_profesores_btn.setProperty("success", "true")
+        self.importar_profesores_btn.setProperty("warning", "true")
         layout.addWidget(self.importar_profesores_btn)
 
         grupo.setLayout(layout)

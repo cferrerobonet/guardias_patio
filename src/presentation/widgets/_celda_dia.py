@@ -86,7 +86,6 @@ class CeldaDia(QGroupBox):
 
         # Separador
         separador = QFrame()
-        separador.setFrameShape(QFrame.Shape.HLine)
         separador.setObjectName("separator")
         layout_principal.addWidget(separador)
 
@@ -330,8 +329,8 @@ class CeldaDia(QGroupBox):
         elif self.es_hoy:
             estilo = """
                 QGroupBox {
-                    background-color: #FFF9C4;
-                    border: 3px solid #FBC02D;
+                    background-color: #E3F2FD;
+                    border: 2px solid #007ACC;
                     border-radius: 6px;
                 }
             """

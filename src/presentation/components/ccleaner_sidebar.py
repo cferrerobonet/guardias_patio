@@ -247,7 +247,7 @@ class SidebarMenu(QWidget):
 
         # Línea separadora debajo de categoría
         separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setObjectName("separator")
         separator.setStyleSheet("""
             QFrame {
                 background-color: rgba(255, 255, 255, 0.2);

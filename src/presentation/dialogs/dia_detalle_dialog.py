@@ -98,8 +98,7 @@ class DiaDetalleDialog(QDialog):
 
         # Separador
         separador = QFrame()
-        separador.setFrameShape(QFrame.Shape.HLine)
-        separador.setFrameShadow(QFrame.Shadow.Sunken)
+        separador.setObjectName("separator")
         layout.addWidget(separador)
 
         # Área de scroll con contenido

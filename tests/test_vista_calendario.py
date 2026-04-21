@@ -486,7 +486,7 @@ class TestVistaCalendarioEstilos:
     """Tests de estilos de celdas usando la clase CeldaDia."""
 
     def test_estilo_dia_hoy(self, qapp):
-        """Test que el día de hoy tiene estilo especial (amarillo)"""
+        """Test que el día de hoy tiene estilo especial (azul)"""
         hoy = date.today()
         celda = CeldaDia(
             fecha=hoy,
@@ -500,8 +500,8 @@ class TestVistaCalendarioEstilos:
         # Obtener estilo del widget
         estilo = celda.styleSheet()
 
-        # Debe tener color amarillo para "hoy"
-        assert "#fff9c4" in estilo.lower() or "#fffde7" in estilo.lower()
+        # Debe tener borde azul para "hoy"
+        assert "#007acc" in estilo.lower() or "#e3f2fd" in estilo.lower()
 
     def test_estilo_dia_con_guardias(self, qapp, session, profesor_factory, zona_factory):
         """Test que día con guardias tiene estilo especial (azul claro)"""
@@ -576,8 +576,8 @@ class TestVistaCalendarioEstilos:
 
         estilo = celda.styleSheet()
 
-        # Debe ser amarillo (hoy) no verde (guardias)
-        assert "#fff9c4" in estilo.lower() or "#fffde7" in estilo.lower()
+        # Debe ser azul (hoy) no azul claro de guardias
+        assert "#007acc" in estilo.lower() or "#e3f2fd" in estilo.lower()
 
 
 # ========================================

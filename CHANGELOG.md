@@ -5,6 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.25.0] - 2026-04-21
+
+### 🎯 Resumen
+Nivel 1 auditoría: correcciones de color de botones, titleMain, separadores, limpieza de logs, borde de hoy en calendario y caché por mes de días lectivos.
+
+### ✨ Added
+- `main.py`: limpieza automática de logs >30 días al arrancar (BUG-03)
+
+### Changed
+- `pdf_export_widget.py`, `calendarios_pdf_widget.py`: "Generar PDFs" `danger` → `success` (INCONS-03)
+- `import_export_form.py`: "Importar Profesores" `success` → `warning` para unificar con JSON (INCONS-04)
+- `dashboard_form.py`: título `labelTitle` → `titleMain` (INCONS-12)
+- `_celda_dia.py`, `dia_detalle_dialog.py`, `vista_calendario.py`, `dialogo_acerca_de.py`, `ccleaner_sidebar.py`, `pdf_export_widget.py`, `calendarios_pdf_widget.py`: separadores `QFrame.HLine` → `setObjectName("separator")` (INCONS-13)
+- `_celda_dia.py`: borde día actual amarillo → azul `#007ACC` (UX-12)
+- `vista_calendario.py`: cache de días lectivos por `(anio, mes)` en lugar de global — evita recálculo al navegar entre meses (PERF-04)
+
+### Fixed
+- `tests/test_vista_calendario.py`: actualizar aserciones de color `es_hoy` al nuevo azul
+
 ## [5.24.0] - 2026-04-21
 
 ### 🎯 Resumen

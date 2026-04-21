@@ -94,7 +94,7 @@ class PdfExportWidget(QGroupBox):
         # Botón de exportación
         self.exportar_pdf_btn = QPushButton("📄 Generar PDFs")
         self.exportar_pdf_btn.setMinimumHeight(40)
-        self.exportar_pdf_btn.setProperty("danger", "true")
+        self.exportar_pdf_btn.setProperty("success", "true")
         self.exportar_pdf_btn.setAccessibleName("Botón generar PDFs")
         layout.addWidget(self.exportar_pdf_btn)
 
@@ -260,7 +260,6 @@ class PdfExportWidget(QGroupBox):
 
         # Separator
         separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
         separator.setObjectName("separator")
         self.profesores_checks_layout.addWidget(separator)
 

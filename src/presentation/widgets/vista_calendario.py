@@ -68,8 +68,8 @@ class VistaCalendario(BaseForm):
         self.semana_mostrada = self.fecha_actual.isocalendar()[1]
         self.vista_actual = self.VISTA_MENSUAL
 
-        # Cache de días lectivos
-        self._dias_lectivos_cache = None
+        # Cache de días lectivos por mes (PERF-04)
+        self._dias_lectivos_cache: dict = {}
 
         self.setWindowTitle("Calendario de Guardias")
         self.resize(1400, 900)
@@ -85,7 +85,7 @@ class VistaCalendario(BaseForm):
         """
         super().showEvent(event)
         # Limpiar caché de días lectivos para forzar recarga
-        self._dias_lectivos_cache = None
+        self._dias_lectivos_cache = {}
         # Refrescar calendario con datos del curso activo
         self.actualizar_calendario()
 
@@ -101,15 +101,15 @@ class VistaCalendario(BaseForm):
         Returns:
             Set de fechas que son días lectivos
         """
-        if self._dias_lectivos_cache is None:
+        key = (self.anio_mostrado, self.mes_mostrado)
+        if key not in self._dias_lectivos_cache:
             from application.app_services import AppServices
             config = AppServices(self.session).configuracion_repo.get_first()
             if config:
-                dias_list = listar_dias_lectivos(config)
-                self._dias_lectivos_cache = set(dias_list)
+                self._dias_lectivos_cache[key] = set(listar_dias_lectivos(config))
             else:
-                self._dias_lectivos_cache = set()
-        return self._dias_lectivos_cache
+                self._dias_lectivos_cache[key] = set()
+        return self._dias_lectivos_cache[key]
 
     def _es_dia_lectivo(self, fecha: date) -> bool:
         """
@@ -133,8 +133,7 @@ class VistaCalendario(BaseForm):
 
         # Separador
         separador = QFrame()
-        separador.setFrameShape(QFrame.Shape.HLine)
-        separador.setStyleSheet("background-color: #2196F3; max-height: 2px;")
+        separador.setObjectName("separator")
         layout_principal.addWidget(separador)
 
         # Área de calendario (scroll)
@@ -776,5 +775,5 @@ class VistaCalendario(BaseForm):
         """Refrescar el calendario."""
         self.logger.info("🔄 VistaCalendario.refrescar() llamado - limpiando caché y actualizando")
         self.session.expire_all()  # Limpiar caché de SQLAlchemy
-        self._dias_lectivos_cache = None  # Limpiar caché de días lectivos
+        self._dias_lectivos_cache = {}  # Limpiar caché de días lectivos
         self.actualizar_calendario()

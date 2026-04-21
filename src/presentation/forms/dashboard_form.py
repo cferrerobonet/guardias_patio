@@ -124,7 +124,7 @@ class DashboardForm(QWidget):
         # Encabezado
         header_layout = QHBoxLayout()
         titulo = QLabel("Dashboard de Equidad")
-        titulo.setObjectName("labelTitle")
+        titulo.setObjectName("titleMain")
         header_layout.addWidget(titulo)
         header_layout.addStretch()
 

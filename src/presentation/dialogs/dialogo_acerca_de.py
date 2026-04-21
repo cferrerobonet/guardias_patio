@@ -171,8 +171,7 @@ class DialogoAcercaDe(QDialog):
         # Separador
         layout.addSpacing(10)
         separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background-color: #ddd;")
+        separator.setObjectName("separator")
         layout.addWidget(separator)
         layout.addSpacing(5)
 
