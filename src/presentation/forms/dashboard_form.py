@@ -29,9 +29,10 @@ from core.qt_imports import (
     QWidget,
 )
 from infrastructure.database.models import Configuracion, Guardia, Profesor
+from presentation.theme.tokens import Spacing
+from presentation.widgets.bar_chart_widget import BarChartWidget, PieChartWidget
 from utils import get_logger
 from utils.icons import icon_for_button
-from presentation.theme.tokens import Spacing
 
 logger = get_logger(__name__)
 
@@ -95,20 +96,6 @@ class DashboardForm(QWidget):
 
     def _init_ui(self):
         """Inicializa la interfaz de usuario."""
-        import matplotlib.pyplot as plt  # noqa: F401
-        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-        from matplotlib.figure import Figure
-
-        class GraficoCanvas(FigureCanvas):
-            def __init__(self, parent=None, width=8, height=4, dpi=100):
-                self.fig = Figure(figsize=(width, height), dpi=dpi)
-                self.axes = self.fig.add_subplot(111)
-                super().__init__(self.fig)
-                self.setParent(parent)
-                self.fig.tight_layout(pad=2.0)
-
-        self._GraficoCanvas = GraficoCanvas
-
         layout = QVBoxLayout()
         layout.setContentsMargins(Spacing.XL, Spacing.XL, Spacing.XL, Spacing.XL)
         layout.setSpacing(Spacing.XL)
@@ -172,7 +159,8 @@ class DashboardForm(QWidget):
         # Histograma guardias por profesor
         grupo_histograma = QGroupBox("Distribución de Guardias por Profesor")
         histograma_layout = QVBoxLayout()
-        self.canvas_histograma = self._GraficoCanvas(self, width=6, height=4)
+        self.canvas_histograma = BarChartWidget(horizontal=True)
+        self.canvas_histograma.setMinimumHeight(220)
         histograma_layout.addWidget(self.canvas_histograma)
         grupo_histograma.setLayout(histograma_layout)
         graficos_layout.addWidget(grupo_histograma)
@@ -180,7 +168,8 @@ class DashboardForm(QWidget):
         # Gráfico de distribución por turno
         grupo_turnos = QGroupBox("Distribución por Turno")
         turnos_layout = QVBoxLayout()
-        self.canvas_turnos = self._GraficoCanvas(self, width=4, height=4)
+        self.canvas_turnos = PieChartWidget(donut=True)
+        self.canvas_turnos.setMinimumHeight(220)
         turnos_layout.addWidget(self.canvas_turnos)
         grupo_turnos.setLayout(turnos_layout)
         graficos_layout.addWidget(grupo_turnos)
@@ -194,7 +183,8 @@ class DashboardForm(QWidget):
         # Top profesores con más guardias
         grupo_top = QGroupBox("Top 10 Profesores con Más Guardias")
         top_layout = QVBoxLayout()
-        self.canvas_top = self._GraficoCanvas(self, width=6, height=4)
+        self.canvas_top = BarChartWidget(horizontal=False)
+        self.canvas_top.setMinimumHeight(220)
         top_layout.addWidget(self.canvas_top)
         grupo_top.setLayout(top_layout)
         graficos2_layout.addWidget(grupo_top)
@@ -202,7 +192,8 @@ class DashboardForm(QWidget):
         # Distribución por zona
         grupo_zonas = QGroupBox("Distribución por Zona")
         zonas_layout = QVBoxLayout()
-        self.canvas_zonas = self._GraficoCanvas(self, width=4, height=4)
+        self.canvas_zonas = PieChartWidget(donut=True)
+        self.canvas_zonas.setMinimumHeight(220)
         zonas_layout.addWidget(self.canvas_zonas)
         grupo_zonas.setLayout(zonas_layout)
         graficos2_layout.addWidget(grupo_zonas)
@@ -302,9 +293,6 @@ class DashboardForm(QWidget):
 
     def _actualizar_histograma(self, guardias):
         """Actualiza el histograma de guardias por profesor."""
-        self.canvas_histograma.axes.clear()
-
-        # Contar guardias por profesor
         guardias_por_profesor = {}
         for guardia in guardias:
             if guardia.profesor_id:
@@ -315,75 +303,27 @@ class DashboardForm(QWidget):
                     guardias_por_profesor[nombre] = guardias_por_profesor.get(nombre, 0) + 1
 
         if not guardias_por_profesor:
-            self.canvas_histograma.axes.text(
-                0.5, 0.5, "No hay datos disponibles", ha="center", va="center", fontsize=12
-            )
-            self.canvas_histograma.draw()
+            self.canvas_histograma.set_datos([])
             return
 
-        # Ordenar por cantidad
-        items = sorted(guardias_por_profesor.items(), key=lambda x: x[1], reverse=True)
-        nombres = [item[0].split(",")[0] for item in items]  # Solo apellido
-        cantidades = [item[1] for item in items]
-
-        # Limitar a 15 profesores
-        if len(nombres) > 15:
-            nombres = nombres[:15]
-            cantidades = cantidades[:15]
-
-        # Crear gráfico de barras horizontal
-        colores = ["#2196F3" if i % 2 == 0 else "#1976D2" for i in range(len(nombres))]
-        self.canvas_histograma.axes.barh(nombres, cantidades, color=colores)
-        self.canvas_histograma.axes.set_xlabel("Número de Guardias", fontsize=10)
-        self.canvas_histograma.axes.set_title(
-            "Guardias por Profesor", fontsize=12, fontweight="bold"
-        )
-        self.canvas_histograma.axes.tick_params(labelsize=8)
-        self.canvas_histograma.axes.invert_yaxis()  # Orden descendente
-
-        # Agregar valores en las barras
-        for i, v in enumerate(cantidades):
-            self.canvas_histograma.axes.text(v + 0.5, i, str(v), va="center", fontsize=8)
-
-        self.canvas_histograma.fig.tight_layout()
-        self.canvas_histograma.draw()
+        items = sorted(guardias_por_profesor.items(), key=lambda x: x[1], reverse=True)[:15]
+        colores = ["#2196F3" if i % 2 == 0 else "#1976D2" for i in range(len(items))]
+        datos = [(n.split(",")[0], v, c) for (n, v), c in zip(items, colores)]
+        self.canvas_histograma.set_datos(datos)
 
     def _actualizar_grafico_turnos(self, guardias):
         """Actualiza el gráfico de distribución por turno."""
-        self.canvas_turnos.axes.clear()
-
-        # Contar por turno
-        turnos_count = {"mañana": 0, "tarde": 0}
+        turnos_count = {"Mañana": 0, "Tarde": 0}
         for guardia in guardias:
-            turno = guardia.turno or "mañana"
+            turno = (guardia.turno or "mañana").capitalize()
             if turno in turnos_count:
                 turnos_count[turno] += 1
 
-        if sum(turnos_count.values()) == 0:
-            self.canvas_turnos.axes.text(
-                0.5, 0.5, "No hay datos", ha="center", va="center", fontsize=12
-            )
-            self.canvas_turnos.draw()
-            return
-
-        # Gráfico de pastel
-        labels = [f"{k.capitalize()}\n({v})" for k, v in turnos_count.items()]
-        sizes = list(turnos_count.values())
-        colores = ["#FFA726", "#42A5F5"]
-        explode = (0.05, 0.05)
-
-        self.canvas_turnos.axes.pie(
-            sizes, labels=labels, autopct="%1.1f%%", colors=colores, explode=explode, startangle=90
-        )
-        self.canvas_turnos.axes.set_title("Distribución por Turno", fontsize=12, fontweight="bold")
-        self.canvas_turnos.fig.tight_layout()
-        self.canvas_turnos.draw()
+        datos = [(k, v) for k, v in turnos_count.items() if v > 0]
+        self.canvas_turnos.set_datos(datos)
 
     def _actualizar_top_profesores(self, guardias):
         """Actualiza el gráfico de top profesores."""
-        self.canvas_top.axes.clear()
-
-        # Contar guardias por profesor
         guardias_por_profesor = {}
         for guardia in guardias:
             if guardia.profesor_id:
@@ -394,48 +334,17 @@ class DashboardForm(QWidget):
                     guardias_por_profesor[nombre] = guardias_por_profesor.get(nombre, 0) + 1
 
         if not guardias_por_profesor:
-            self.canvas_top.axes.text(
-                0.5, 0.5, "No hay datos", ha="center", va="center", fontsize=12
-            )
-            self.canvas_top.draw()
+            self.canvas_top.set_datos([])
             return
 
-        # Top 10
         items = sorted(guardias_por_profesor.items(), key=lambda x: x[1], reverse=True)[:10]
-        nombres = [item[0].split(",")[0] for item in items]
-        cantidades = [item[1] for item in items]
-
-        # Gráfico de barras vertical con gradiente
-        import matplotlib.pyplot as plt
-        colores = plt.cm.Blues(range(100, 255, int(155 / len(nombres))))
-        bars = self.canvas_top.axes.bar(range(len(nombres)), cantidades, color=colores)
-        self.canvas_top.axes.set_xticks(range(len(nombres)))
-        self.canvas_top.axes.set_xticklabels(nombres, rotation=45, ha="right", fontsize=8)
-        self.canvas_top.axes.set_ylabel("Guardias", fontsize=10)
-        self.canvas_top.axes.set_title("Top 10 Profesores", fontsize=12, fontweight="bold")
-
-        # Valores en barras
-        for bar in bars:
-            height = bar.get_height()
-            self.canvas_top.axes.text(
-                bar.get_x() + bar.get_width() / 2.0,
-                height,
-                f"{int(height)}",
-                ha="center",
-                va="bottom",
-                fontsize=8,
-            )
-
-        self.canvas_top.fig.tight_layout()
-        self.canvas_top.draw()
+        blues = ["#1565C0", "#1976D2", "#1E88E5", "#2196F3", "#42A5F5",
+                 "#64B5F6", "#90CAF9", "#BBDEFB", "#E3F2FD", "#EEF4FF"]
+        datos = [(n.split(",")[0], v, blues[i % len(blues)]) for i, (n, v) in enumerate(items)]
+        self.canvas_top.set_datos(datos)
 
     def _actualizar_grafico_zonas(self, guardias):
         """Actualiza el gráfico de distribución por zona."""
-        self.canvas_zonas.axes.clear()
-
-        # Contar por zona
-        from infrastructure.database.models import Zona
-
         zonas_count = {}
         for guardia in guardias:
             if guardia.zona_id:
@@ -444,38 +353,8 @@ class DashboardForm(QWidget):
                 if zona:
                     zonas_count[zona.nombre_zona] = zonas_count.get(zona.nombre_zona, 0) + 1
 
-        if not zonas_count:
-            self.canvas_zonas.axes.text(
-                0.5, 0.5, "No hay datos", ha="center", va="center", fontsize=12
-            )
-            self.canvas_zonas.draw()
-            return
-
-        # Gráfico de dona
-        labels = [f"{k}\n({v})" for k, v in zonas_count.items()]
-        sizes = list(zonas_count.values())
-        import matplotlib.pyplot as plt
-        colores = plt.cm.Set3(range(len(sizes)))
-
-        wedges, texts, autotexts = self.canvas_zonas.axes.pie(
-            sizes, labels=labels, autopct="%1.1f%%", colors=colores, startangle=90, pctdistance=0.85
-        )
-
-        # Hacer dona
-        centre_circle = plt.Circle((0, 0), 0.70, fc="white")
-        self.canvas_zonas.axes.add_artist(centre_circle)
-
-        # Ajustar tamaño de texto
-        for text in texts:
-            text.set_fontsize(8)
-        for autotext in autotexts:
-            autotext.set_color("white")
-            autotext.set_fontweight("bold")
-            autotext.set_fontsize(8)
-
-        self.canvas_zonas.axes.set_title("Distribución por Zona", fontsize=12, fontweight="bold")
-        self.canvas_zonas.fig.tight_layout()
-        self.canvas_zonas.draw()
+        datos = [(k, v) for k, v in zonas_count.items()]
+        self.canvas_zonas.set_datos(datos)
 
     def _mostrar_sin_datos(self):
         """Muestra mensaje cuando no hay datos."""
@@ -483,25 +362,8 @@ class DashboardForm(QWidget):
         self.card_cobertura.actualizar_valor("0%")
         self.card_indice_equidad.actualizar_valor("N/A")
         self.card_desbalances.actualizar_valor("0")
-
-        for canvas in [
-            self.canvas_histograma,
-            self.canvas_turnos,
-            self.canvas_top,
-            self.canvas_zonas,
-        ]:
-            canvas.axes.clear()
-            canvas.axes.text(
-                0.5,
-                0.5,
-                "No hay guardias asignadas",
-                ha="center",
-                va="center",
-                fontsize=14,
-                color="#999",
-            )
-            canvas.draw()
-
+        for canvas in [self.canvas_histograma, self.canvas_turnos, self.canvas_top, self.canvas_zonas]:
+            canvas.set_datos([])
         self.info_label.setText("No hay guardias asignadas en el curso actual")
 
     def _mostrar_error(self, mensaje: str):

@@ -29,28 +29,9 @@ from presentation.themes.ccleaner_theme import (
 )
 from utils.icons import icon_for_button
 
-_MPL_CANVAS_CLASS = None
+from presentation.widgets.bar_chart_widget import BarChartWidget, PieChartWidget
 
-
-def _get_mpl_canvas_class():
-    global _MPL_CANVAS_CLASS
-    if _MPL_CANVAS_CLASS is not None:
-        return _MPL_CANVAS_CLASS
-
-    import matplotlib
-
-    matplotlib.use("QtAgg")
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-    from matplotlib.figure import Figure
-
-    class MplCanvas(FigureCanvasQTAgg):
-        def __init__(self, parent=None, width=5, height=4, dpi=100):
-            fig = Figure(figsize=(width, height), dpi=dpi)
-            self.axes = fig.add_subplot(111)
-            super().__init__(fig)
-
-    _MPL_CANVAS_CLASS = MplCanvas
-    return _MPL_CANVAS_CLASS
+MplCanvas = BarChartWidget
 
 
 class PanelEstadisticas(BaseForm):
@@ -195,20 +176,17 @@ class PanelEstadisticas(BaseForm):
         widget = QWidget()
         layout = QVBoxLayout()
 
-        MplCanvas = _get_mpl_canvas_class()
-
-        # Área con scroll para múltiples gráficos
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll_widget = QWidget()
         scroll_layout = QVBoxLayout()
 
-        # Gráfico 1: Distribución por profesor
-        self.canvas_profesores = MplCanvas(self, width=8, height=4)
+        self.canvas_profesores = BarChartWidget(titulo="Distribución de Guardias por Profesor", horizontal=True)
+        self.canvas_profesores.setMinimumHeight(250)
         scroll_layout.addWidget(self.canvas_profesores)
 
-        # Gráfico 2: Distribución por zona
-        self.canvas_zonas = MplCanvas(self, width=8, height=4)
+        self.canvas_zonas = PieChartWidget(titulo="Distribución de Guardias por Zona")
+        self.canvas_zonas.setMinimumHeight(300)
         scroll_layout.addWidget(self.canvas_zonas)
 
         scroll_widget.setLayout(scroll_layout)
@@ -326,45 +304,19 @@ class PanelEstadisticas(BaseForm):
 
     def _actualizar_graficos_ui(self):
         """Actualizar los gráficos con datos del DTO."""
-        # Gráfico de distribución por profesor
         grafico_prof = self._datos.grafico_profesores
-
         if grafico_prof.cantidades:
-            self.canvas_profesores.axes.clear()
-            self.canvas_profesores.axes.bar(
-                grafico_prof.nombres, grafico_prof.cantidades, color=SUCCESS_GREEN
-            )
-            self.canvas_profesores.axes.set_xlabel("Profesor")
-            self.canvas_profesores.axes.set_ylabel("Guardias")
-            self.canvas_profesores.axes.set_title("Distribución de Guardias por Profesor")
-            self.canvas_profesores.axes.tick_params(axis="x", rotation=45)
-            self.canvas_profesores.figure.tight_layout()
-            self.canvas_profesores.draw()
+            colores = ["#007ACC"] * len(grafico_prof.nombres)
+            datos_prof = list(zip(grafico_prof.nombres, grafico_prof.cantidades, colores))
+            self.canvas_profesores.set_datos(datos_prof)
 
-        # Gráfico de distribución por zona
         grafico_zonas = self._datos.grafico_zonas
-
         if grafico_zonas.cantidades:
-            self.canvas_zonas.axes.clear()
-            self.canvas_zonas.axes.pie(
-                grafico_zonas.cantidades,
-                labels=grafico_zonas.nombres,
-                autopct="%1.1f%%",
-                startangle=90,
-            )
-            self.canvas_zonas.axes.set_title("Distribución de Guardias por Zona")
-            self.canvas_zonas.figure.tight_layout()
-            self.canvas_zonas.draw()
+            datos_zonas = list(zip(grafico_zonas.nombres, grafico_zonas.cantidades))
+            self.canvas_zonas.set_datos(datos_zonas)
 
     def refrescar(self):
         """Refrescar las estadísticas (útil después de generar guardias)."""
         self.actualizar_estadisticas()
 
 
-def __getattr__(name: str):
-    if name == "MplCanvas":
-        MplCanvas = _get_mpl_canvas_class()
-
-        globals()["MplCanvas"] = MplCanvas
-        return MplCanvas
-    raise AttributeError(f"module 'panel_estadisticas' has no attribute {name!r}")

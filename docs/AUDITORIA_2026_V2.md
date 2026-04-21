@@ -948,7 +948,7 @@ class SemanaRestriccionesWidget(QWidget):
 
 ---
 
-### FUNC-05 — CAMBIAR: El dashboard de métricas usa Matplotlib embebido — es lento y feo
+### ~~FUNC-05 — CAMBIAR: El dashboard de métricas usa Matplotlib embebido — es lento y feo~~ ✅ RESUELTO v5.28.1
 **Severidad: Media**
 
 `DashboardForm` y `PanelEstadisticas` usan `matplotlib` con `FigureCanvasQTAgg`. Los gráficos tardan 1-3 segundos en renderizarse y tienen el aspecto genérico de matplotlib (fuente Computer Modern, bordes grises, etc.).

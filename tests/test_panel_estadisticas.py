@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import pytest
 from infrastructure.database.models import Guardia
+from presentation.widgets.bar_chart_widget import BarChartWidget, PieChartWidget
 from presentation.widgets.panel_estadisticas import MplCanvas, PanelEstadisticas
 
 # ============================================================================
@@ -127,11 +128,11 @@ class TestPanelEstadisticasBasico:
         assert panel.tabla_zonas.columnCount() == 4
 
     def test_tiene_canvas_graficos(self, panel):
-        """Test que tiene los canvas de matplotlib."""
+        """Test que tiene los canvas de gráficos nativos."""
         assert panel.canvas_profesores is not None
         assert panel.canvas_zonas is not None
-        assert isinstance(panel.canvas_profesores, MplCanvas)
-        assert isinstance(panel.canvas_zonas, MplCanvas)
+        assert isinstance(panel.canvas_profesores, BarChartWidget)
+        assert isinstance(panel.canvas_zonas, PieChartWidget)
 
 
 # ============================================================================
@@ -356,35 +357,33 @@ class TestPanelEstadisticasGraficos:
         """Test que genera gráficos con datos."""
         panel.actualizar_estadisticas()
 
-        # Verificar que los canvas tienen datos
-        assert panel.canvas_profesores.axes is not None
-        assert panel.canvas_zonas.axes is not None
+        assert panel.canvas_profesores is not None
+        assert panel.canvas_zonas is not None
+        assert len(panel.canvas_profesores._datos) > 0
+        assert len(panel.canvas_zonas._datos) > 0
 
     def test_grafico_profesores_tipo_barras(self, panel, datos_completos):
-        """Test que el gráfico de profesores es de barras."""
+        """Test que el gráfico de profesores es BarChartWidget."""
         panel.actualizar_estadisticas()
 
-        # Verificar que hay barras (containers)
-        assert len(panel.canvas_profesores.axes.containers) > 0
+        assert isinstance(panel.canvas_profesores, BarChartWidget)
+        assert len(panel.canvas_profesores._datos) > 0
 
     def test_grafico_zonas_tipo_pastel(self, panel, datos_completos):
-        """Test que el gráfico de zonas es de pastel."""
+        """Test que el gráfico de zonas es PieChartWidget."""
         panel.actualizar_estadisticas()
 
-        # Verificar que hay un gráfico de pastel (patches)
-        assert len(panel.canvas_zonas.axes.patches) > 0
+        assert isinstance(panel.canvas_zonas, PieChartWidget)
+        assert len(panel.canvas_zonas._datos) > 0
 
     def test_grafico_profesores_solo_con_guardias(self, panel, datos_completos):
         """Test que solo muestra profesores con guardias."""
         panel.actualizar_estadisticas()
 
-        # Debería mostrar solo 3 profesores (los que tienen guardias)
-        bars = panel.canvas_profesores.axes.containers[0]
-        assert len(bars) == 3
+        assert len(panel.canvas_profesores._datos) == 3
 
     def test_grafico_nombres_truncados(self, panel, session, profesor_factory, zona_factory):
         """Test que trunca nombres largos."""
-        # Crear profesor con nombre muy largo
         prof = profesor_factory(
             nombre_completo="Apellido Muy Largo Larguísimo, Nombre", horas_contrato=25.0
         )
@@ -404,10 +403,9 @@ class TestPanelEstadisticasGraficos:
 
         panel.actualizar_estadisticas()
 
-        # Nombres deben estar truncados a 15 caracteres
-        labels = [tick.get_text() for tick in panel.canvas_profesores.axes.get_xticklabels()]
-        for label in labels:
-            assert len(label) <= 15
+        # Nombres en _datos deben estar truncados (split por coma, max 18 chars en horizontal)
+        for label, _, _ in panel.canvas_profesores._datos:
+            assert len(label) <= 18
 
 
 # ============================================================================
@@ -451,23 +449,19 @@ class TestPanelEstadisticasActualizar:
 
 
 class TestMplCanvas:
-    """Tests de MplCanvas."""
+    """Tests de BarChartWidget (alias MplCanvas para compatibilidad)."""
 
     def test_crear_canvas(self, qapp):
-        """Test que se crea un canvas de matplotlib."""
-        canvas = MplCanvas(width=5, height=4, dpi=100)
+        """Test que se crea un BarChartWidget."""
+        canvas = MplCanvas()
 
         assert canvas is not None
-        assert canvas.axes is not None
-        assert canvas.figure is not None
 
     def test_canvas_dimensiones(self, qapp):
-        """Test que respeta las dimensiones especificadas."""
-        canvas = MplCanvas(width=8, height=6, dpi=120)
+        """Test que se puede instanciar BarChartWidget sin args."""
+        canvas = MplCanvas()
 
-        fig_width, fig_height = canvas.figure.get_size_inches()
-        assert fig_width == 8
-        assert fig_height == 6
+        assert canvas.minimumHeight() == 200
 
 
 # ============================================================================

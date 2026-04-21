@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.28.1] - 2026-04-21
+
+### 🎯 Resumen
+FUNC-05: eliminación de matplotlib — gráficos nativos con QPainter (BarChartWidget, PieChartWidget) en dashboard y estadísticas.
+
+### Changed
+- `bar_chart_widget.py` (nuevo): `BarChartWidget` (barras verticales u horizontales, QPainter) y `PieChartWidget` (tarta/donut, QPainter) — sin dependencias externas
+- `dashboard_form.py`: 4 canvas matplotlib reemplazados por `BarChartWidget` / `PieChartWidget`; métodos de actualización de gráficos adaptados a la nueva API (`set_datos()`)
+- `panel_estadisticas.py`: `_get_mpl_canvas_class()` eliminado; `_crear_tab_graficos()` y `_actualizar_graficos_ui()` usan `BarChartWidget` / `PieChartWidget`; alias `MplCanvas = BarChartWidget` para compatibilidad con tests
+- `tests/test_panel_estadisticas.py`: tests de gráficos adaptados a API nativa (`_datos`, `isinstance` con nuevas clases)
+
 ## [5.28.0] - 2026-04-21
 
 ### 🎯 Resumen
