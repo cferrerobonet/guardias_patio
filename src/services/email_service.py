@@ -438,6 +438,85 @@ Sistema de Gestión de Guardias
             return False, error_msg
 
 
+    def send_guardias_notification(
+        self,
+        to_email: str,
+        profesor_nombre: str,
+        guardias: list,
+        mes_anio: str,
+    ) -> tuple[bool, str]:
+        """Envía email HTML con el listado de guardias del mes al profesor."""
+        if not self.smtp_user or not self.smtp_password:
+            return False, "Email no configurado. Configura SMTP en Ajustes."
+
+        filas_html = ""
+        for g in guardias:
+            fecha_str = g.fecha.strftime("%d/%m/%Y") if hasattr(g.fecha, "strftime") else str(g.fecha)
+            zona_nombre = g.zona.nombre if g.zona else "—"
+            filas_html += (
+                f"<tr><td style='padding:6px 10px;border-bottom:1px solid #e5e7eb'>{fecha_str}</td>"
+                f"<td style='padding:6px 10px;border-bottom:1px solid #e5e7eb'>{g.turno}</td>"
+                f"<td style='padding:6px 10px;border-bottom:1px solid #e5e7eb'>{g.recreo}</td>"
+                f"<td style='padding:6px 10px;border-bottom:1px solid #e5e7eb'>{zona_nombre}</td></tr>"
+            )
+
+        tabla_html = (
+            "<table style='border-collapse:collapse;width:100%;font-size:13px'>"
+            "<thead><tr style='background:#007ACC;color:white'>"
+            "<th style='padding:8px 10px;text-align:left'>Día</th>"
+            "<th style='padding:8px 10px;text-align:left'>Turno</th>"
+            "<th style='padding:8px 10px;text-align:left'>Recreo</th>"
+            "<th style='padding:8px 10px;text-align:left'>Zona</th>"
+            "</tr></thead><tbody>"
+            + filas_html
+            + "</tbody></table>"
+        )
+
+        safe_nombre = html.escape(profesor_nombre)
+        contenido = (
+            f"<p>Estimado/a <strong>{safe_nombre}</strong>,</p>"
+            f"<p>A continuación encontrarás tus guardias de patio asignadas para <strong>{mes_anio}</strong>:</p>"
+            f"{tabla_html}"
+            f"<p style='margin-top:20px'>Si tienes alguna duda, contacta con la dirección del centro.</p>"
+        )
+        html_content = generar_plantilla_email_html(
+            titulo=f"Guardias de patio — {mes_anio}",
+            contenido_principal=contenido,
+        )
+
+        texto_plano = (
+            f"Hola {profesor_nombre},\n\n"
+            f"Tus guardias de patio para {mes_anio}:\n\n"
+            + "\n".join(
+                f"- {g.fecha} | {g.turno} | Recreo {g.recreo} | {g.zona.nombre if g.zona else '—'}"
+                for g in guardias
+            )
+            + "\n\nGuardias de Patio"
+        )
+
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = f"Guardias de patio — {mes_anio}"
+            msg["From"] = f"{self.from_name} <{self.from_email}>"
+            msg["To"] = to_email
+            msg.attach(MIMEText(texto_plano, "plain", "utf-8"))
+            msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.smtp_user, self.smtp_password)
+                server.send_message(msg)
+
+            logger.info(f"Notificación de guardias enviada a {to_email}")
+            return True, f"Email enviado a {to_email}"
+        except smtplib.SMTPAuthenticationError:
+            return False, "Error de autenticación SMTP. Verifica usuario y contraseña."
+        except smtplib.SMTPException as e:
+            return False, f"Error SMTP: {e}"
+        except (ValueError, TypeError, OSError) as e:
+            return False, f"Error al enviar email: {e}"
+
+
 def get_email_service() -> Optional[EmailService]:
     """
     Obtiene una instancia configurada del servicio de email.

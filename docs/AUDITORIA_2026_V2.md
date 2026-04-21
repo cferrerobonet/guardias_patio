@@ -830,7 +830,7 @@ if es_hoy:
 
 ## 4. Funcionalidades — Qué cambiar, qué quitar, qué añadir
 
-### FUNC-01 — AÑADIR: Notificación automática por email al profesor de guardia
+### ~~FUNC-01 — AÑADIR: Notificación automática por email al profesor de guardia~~ ✅ RESUELTO v5.28.0
 **Severidad: Alta — Valor real para el usuario**
 
 El modelo `Profesor` tiene `email_corporativo`. Existe `email_service.py`. Pero nunca se usa para notificar a los profesores que tienen guardia. El director tiene que avisar manualmente.

@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.28.0] - 2026-04-21
+
+### 🎯 Resumen
+FUNC-01: notificación automática por email a profesores con sus guardias asignadas.
+
+### ✨ Added
+- `email_service.py`: nuevo método `EmailService.send_guardias_notification()` — envía email HTML con tabla de guardias (día, turno, recreo, zona) al profesor
+- `generacion_panel.py`: botón "✉ Enviar emails a profesores" visible post-generación; `_enviar_notificaciones()` itera los profesores activos con email, envía notificación y muestra resumen de enviados/errores
+
 ## [5.27.5] - 2026-04-21
 
 ### 🎯 Resumen

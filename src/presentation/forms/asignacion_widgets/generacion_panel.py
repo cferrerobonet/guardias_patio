@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
 from application.dtos.domain_services_dtos import AnalisisEquidadRequest
@@ -173,6 +174,17 @@ class GeneracionPanel(QGroupBox):
         self.content_text.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         layout.addWidget(self.content_text)
 
+        # Botón de notificación por email (solo visible post-generación)
+        self.btn_notificar = QPushButton("✉ Enviar emails a profesores")
+        self.btn_notificar.setMinimumHeight(36)
+        self.btn_notificar.setProperty("success", "true")
+        self.btn_notificar.setToolTip(
+            "Envía un email a cada profesor con sus guardias asignadas"
+        )
+        self.btn_notificar.clicked.connect(self._enviar_notificaciones)
+        self.btn_notificar.setVisible(False)
+        layout.addWidget(self.btn_notificar)
+
         self.setLayout(layout)
 
     def _mostrar_mensaje_inicial(self):
@@ -284,6 +296,7 @@ class GeneracionPanel(QGroupBox):
             if resumen:
                 self._ultimo_resumen = resumen
                 self._mostrar_resultados(resumen)
+                self.btn_notificar.setVisible(True)
                 self.guardias_generadas.emit()
 
                 # Sincronizar si está disponible
@@ -292,6 +305,79 @@ class GeneracionPanel(QGroupBox):
 
         except (ValueError, TypeError, OSError) as e:
             self._mostrar_error(f"Error al generar: {e}")
+
+    def _enviar_notificaciones(self):
+        """Envía email con guardias a cada profesor con email corporativo."""
+        from datetime import date
+
+        from PyQt6.QtWidgets import QMessageBox
+
+        from infrastructure.database.models import Guardia, Profesor
+        from services.email_service import get_email_service
+
+        email_service = get_email_service()
+        if not email_service:
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("SMTP no configurado")
+            msg.setText(
+                "No hay configuración SMTP activa.\n\n"
+                "Configura el servidor de correo en Ajustes → Configuración SMTP."
+            )
+            msg.exec()
+            return
+
+        hoy = date.today()
+        mes_anio = hoy.strftime("%B %Y").capitalize()
+
+        profesores = (
+            self.session.query(Profesor)
+            .filter(Profesor.activo == True, Profesor.email_corporativo.isnot(None))  # noqa: E712
+            .all()
+        )
+
+        sin_email = []
+        enviados = 0
+        errores = []
+
+        for prof in profesores:
+            if not prof.email_corporativo or "@" not in prof.email_corporativo:
+                sin_email.append(prof.nombre_completo)
+                continue
+
+            guardias = (
+                self.session.query(Guardia)
+                .filter(Guardia.profesor_id == prof.id)
+                .order_by(Guardia.fecha)
+                .all()
+            )
+            if not guardias:
+                continue
+
+            ok, msg_txt = email_service.send_guardias_notification(
+                to_email=prof.email_corporativo,
+                profesor_nombre=prof.nombre_completo,
+                guardias=guardias,
+                mes_anio=mes_anio,
+            )
+            if ok:
+                enviados += 1
+            else:
+                errores.append(f"{prof.nombre_completo}: {msg_txt}")
+
+        resumen = f"Emails enviados: {enviados}"
+        if sin_email:
+            resumen += f"\nSin email configurado: {len(sin_email)}"
+        if errores:
+            resumen += f"\nErrores: {len(errores)}\n" + "\n".join(errores[:5])
+
+        msg = QMessageBox(self)
+        msg.setIcon(
+            QMessageBox.Icon.Information if not errores else QMessageBox.Icon.Warning
+        )
+        msg.setWindowTitle("Notificaciones enviadas")
+        msg.setText(resumen)
+        msg.exec()
 
     def _limpiar_guardias(self):
         """Limpia todas las guardias."""
