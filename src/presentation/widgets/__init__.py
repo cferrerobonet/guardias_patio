@@ -3,6 +3,7 @@ Widgets refactorizados de la capa de presentación.
 """
 
 from .gestionar_ausencias import GestionarAusenciasForm
+from .toast_notification import ToastNotification
 from .gestor_sustituciones import GestorSustituciones
 from .panel_estadisticas import PanelEstadisticas
 from .selector_curso_widget import SelectorCursoWidget
@@ -15,5 +16,6 @@ __all__ = [
     "PanelEstadisticas",
     "SelectorCursoWidget",
     "TableManager",
+    "ToastNotification",
     "VistaCalendario",
 ]

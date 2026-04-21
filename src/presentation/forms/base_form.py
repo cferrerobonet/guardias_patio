@@ -86,28 +86,27 @@ class BaseForm(QWidget):
                 self._label_cambios.setVisible(False)
 
     def mostrar_exito(self, titulo: str, mensaje: str) -> None:
-        """
-        Muestra un mensaje de éxito al usuario.
+        from html.parser import HTMLParser
 
-        Args:
-            titulo: Título del mensaje
-            mensaje: Contenido del mensaje (puede contener HTML)
-        """
-        from PyQt6.QtCore import Qt
+        class _StripHTML(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self._parts = []
 
-        self.logger.info(f"Mensaje de éxito mostrado: {titulo} - {mensaje}")
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle(titulo)
-        msg_box.setTextFormat(Qt.TextFormat.RichText)
-        msg_box.setText(mensaje)
-        msg_box.setWindowIcon(get_corporate_icon())
+            def handle_data(self, data):
+                self._parts.append(data)
 
-        # Aplicar icono corporativo
-        apply_corporate_icon_to_messagebox(msg_box)
+            def get_text(self):
+                return "".join(self._parts)
 
-        # Aplicar estilos directamente
+        parser = _StripHTML()
+        parser.feed(mensaje)
+        texto_plano = parser.get_text().strip() or titulo
 
-        msg_box.exec()
+        self.logger.info(f"Mensaje de éxito: {titulo} - {texto_plano}")
+
+        from presentation.widgets.toast_notification import ToastNotification
+        ToastNotification(self.window(), f"✓ {texto_plano}", "success")
 
     def mostrar_error(self, titulo: str, mensaje: str) -> None:
         """

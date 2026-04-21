@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.26.8] - 2026-04-21
+
+### 🎯 Resumen
+UX-05: toast notifications no intrusivos reemplazan los QMessageBox de éxito en los formularios.
+
+### ✨ Added
+- `ToastNotification`: widget flotante en esquina inferior derecha con auto-cierre a 2.5s, cuatro tipos (success/error/info/warning)
+- `base_form.py`: `mostrar_exito()` ahora muestra un toast en lugar de un QMessageBox bloqueante
+
 ## [5.26.7] - 2026-04-21
 
 ### 🎯 Resumen

@@ -555,7 +555,7 @@ celda = CeldaDia(fecha, guardias_dia, ausencias_dia, modo_compacto=self.modo_com
 
 ---
 
-### UX-05 — No hay feedback visual de "guardando..." / "cargando..."
+### ~~UX-05 — No hay feedback visual de "guardando..." / "cargando..."~~ ✅ RESUELTO v5.26.8
 **Severidad: Media**
 
 Cuando el usuario pulsa "Guardar" en el formulario de profesor o ajustes, no pasa nada visible durante el guardado (que normalmente es <100ms pero puede tardar si hay muchas entidades). No hay spinner, no hay mensaje "Guardado ✓".
