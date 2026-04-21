@@ -116,38 +116,14 @@ class RegisterDialog(QDialog):
         cancel_btn.setIcon(icon_for_button("close"))
         cancel_btn.setMinimumHeight(40)
         cancel_btn.clicked.connect(self.reject)
-        cancel_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-            }
-        """)
+        cancel_btn.setProperty("secondary", "true")
         buttons_layout.addWidget(cancel_btn)
 
         register_btn = QPushButton("✓ Registrarse")
         register_btn.setMinimumHeight(40)
         register_btn.clicked.connect(self.register)
         register_btn.setDefault(True)
-        register_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #10B981;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-        """)
+        register_btn.setProperty("success", "true")
         buttons_layout.addWidget(register_btn)
 
         layout.addLayout(buttons_layout)
@@ -399,7 +375,7 @@ class LoginDialog(QDialog):
 
         # Label con icono para usuario
         user_label = QLabel("Usuario:")
-        user_label.setStyleSheet("color: #333; font-weight: 400;")
+        user_label.setObjectName("labelSecondary")
         form_layout.addRow(user_label, self.username_combo)
 
         self.password_input = QLineEdit()
@@ -412,7 +388,7 @@ class LoginDialog(QDialog):
 
         # Label con icono para contraseña
         password_label = QLabel("Contraseña:")
-        password_label.setStyleSheet("color: #333; font-weight: 400;")
+        password_label.setObjectName("labelSecondary")
         form_layout.addRow(password_label, self.password_input)
 
         layout.addLayout(form_layout)
@@ -426,38 +402,14 @@ class LoginDialog(QDialog):
         self.delete_user_btn.setIcon(get_icon("close", "white", 18))
         self.delete_user_btn.setMinimumHeight(40)
         self.delete_user_btn.clicked.connect(self.open_delete_user_dialog)
-        self.delete_user_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #DC2626;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 13px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #991B1B;
-            }
-        """)
+        self.delete_user_btn.setProperty("danger", "true")
         buttons_layout.addWidget(self.delete_user_btn)
 
         self.register_btn = QPushButton(" Nuevo Usuario")
         self.register_btn.setIcon(get_icon("account-plus", "white", 18))
         self.register_btn.setMinimumHeight(40)
         self.register_btn.clicked.connect(self.open_register_dialog)
-        self.register_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #10B981;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-        """)
+        self.register_btn.setProperty("success", "true")
         buttons_layout.addWidget(self.register_btn)
 
         self.login_btn = QPushButton(" Iniciar Sesión")

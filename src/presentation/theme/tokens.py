@@ -8,26 +8,44 @@ class Colors:
     PRIMARY = "#007ACC"
     PRIMARY_LIGHT = "#E6F2FA"
     PRIMARY_DARK = "#005A9E"
-    
-    # Semánticos
-    SUCCESS = "#1E7E34"   # era #28A745 (3.1:1) → 5.2:1
-    WARNING = "#856404"   # era #FFC107 (1.6:1) → 5.5:1
-    WARNING_BG = "#FFF3CD"  # fondo amarillo claro para badges/alertas
-    ERROR = "#DC3545"     # 4.5:1 AA
-    INFO = "#0C6674"      # era #17A2B8 (3.0:1) → 6.6:1
-    
+
+    # Semánticos — texto sobre blanco
+    SUCCESS = "#1E7E34"        # 5.2:1 AA
+    SUCCESS_BG = "#D1FAE5"     # fondo badge/info-box verde
+    SUCCESS_BORDER = "#6EE7B7"
+    WARNING = "#856404"        # 5.5:1 AA
+    WARNING_BG = "#FFF3CD"     # fondo badge/info-box ámbar
+    WARNING_BG_ALT = "#FEF3C7" # variante amber
+    WARNING_BORDER = "#F59E0B"
+    ERROR = "#DC3545"          # 4.5:1 AA
+    ERROR_BG = "#FEE2E2"
+    ERROR_BORDER = "#FCA5A5"
+    INFO = "#0C6674"           # 6.6:1 AA
+    INFO_BG = "#EFF6FF"        # fondo badge/info-box azul
+    INFO_BORDER = "#BFDBFE"
+
+    # Botones secundarios
+    SECONDARY = "#6B7280"      # gris neutro
+    SECONDARY_HOVER = "#4B5563"
+
+    # Terminal retro (paneles vintage)
+    TERMINAL_BG = "#0F172A"
+    TERMINAL_BORDER = "#1F2937"
+    TERMINAL_TEXT = "#D1D5DB"
+    TERMINAL_ACCENT = "#22C55E"
+
     # Superficies
     BACKGROUND = "#FFFFFF"
     SURFACE = "#F8F9FA"
     BORDER = "#E1E4E8"
     BORDER_DARK = "#D1D5DB"
-    
+
     # Texto
     TEXT_PRIMARY = "#1F2937"
     TEXT_SECONDARY = "#6B7280"
     TEXT_DISABLED = "#9CA3AF"
     TEXT_ON_PRIMARY = "#FFFFFF"
-    
+
     # Sidebar
     SIDEBAR_BG = "#3E4857"
     SIDEBAR_TEXT = "#FFFFFF"

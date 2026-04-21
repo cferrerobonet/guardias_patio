@@ -1379,8 +1379,8 @@ Revisión manual confirma: todos los `except Exception` o bien hacen `raise` (re
 | 5 | DB-BACKUP | ~~Implementar backup/restore automático~~ ✅ RESUELTO v5.9.3 | L |
 | 6 | DB-INDICES | ~~Índices faltantes~~ ✅ RESUELTO v5.15.1 (Ausencia compound indexes) | S |
 | 7 | A11Y-BASIC | ~~setAccessibleName + setTabOrder en widgets interactivos~~ ✅ RESUELTO v5.16.0 (11 formularios/widgets) | L |
-| 8 | VIS-TOKENS | Completar sistema de design tokens (FontSize, Spacing, Colors) | M |
-| 9 | VIS-CSS | Eliminar setStyleSheet inline restantes (con VIS-TOKENS) | L |
+| 8 | ~~VIS-TOKENS~~ | ~~Completar sistema de design tokens (FontSize, Spacing, Colors)~~ ✅ RESUELTO v5.19.0 | M |
+| 9 | VIS-CSS | Eliminar setStyleSheet inline restantes — parcial: 284→70 en sesión (270 restantes) | L |
 | 10 | UX-VALIDATORS | ~~QValidator en campos críticos (usuario, email, fechas)~~ ✅ RESUELTO v5.16.0 | M |
 | 11 | ~~UX-UNSAVED~~ | ~~Indicador de cambios sin guardar en formularios~~ | M | ✅ RESUELTO v5.17.0 |
 | 12 | ~~UX-DESTRUCTIVE~~ | ~~Confirmación en acciones destructivas (delete)~~ | S | ✅ RESUELTO v5.17.0 (ya implementado) |

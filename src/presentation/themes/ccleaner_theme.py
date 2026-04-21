@@ -595,15 +595,111 @@ def get_complete_stylesheet() -> str:
             background-color: #C82333;
         }}
 
-            /* ========== BOTONES DE ADVERTENCIA (NARANJA) ========== */
-            QPushButton[warning="true"] {{
-                background-color: {WARNING_ORANGE};
-                color: white;
-            }}
+        /* ========== BOTONES DE ADVERTENCIA (NARANJA) ========== */
+        QPushButton[warning="true"] {{
+            background-color: {WARNING_ORANGE};
+            color: white;
+        }}
 
-            QPushButton[warning="true"]:hover {{
-                background-color: #E0A800;
-            }}
+        QPushButton[warning="true"]:hover {{
+            background-color: #E0A800;
+        }}
+
+        /* ========== BOTONES SECUNDARIOS (GRIS) ========== */
+        QPushButton[secondary="true"] {{
+            background-color: #6B7280;
+            color: white;
+        }}
+
+        QPushButton[secondary="true"]:hover {{
+            background-color: #4B5563;
+        }}
+
+        /* ========== LABELS SEMÁNTICOS ========== */
+        QLabel#labelCaption {{
+            color: {TEXT_SECONDARY};
+            font-size: {FONT_SIZE_SMALL}px;
+        }}
+
+        QLabel#labelTitle {{
+            font-size: {FONT_SIZE_XLARGE}px;
+            font-weight: {FONT_WEIGHT_SEMIBOLD};
+            color: {PRIMARY_BLUE};
+        }}
+
+        QLabel#labelSubtitle {{
+            font-size: {FONT_SIZE_LARGE}px;
+            font-weight: {FONT_WEIGHT_SEMIBOLD};
+            color: {TEXT_PRIMARY};
+        }}
+
+        QLabel#labelSecondary {{
+            color: {TEXT_SECONDARY};
+            font-size: {FONT_SIZE_NORMAL}px;
+        }}
+
+        /* ========== INFO BOXES (objectName) ========== */
+        QLabel#infoBoxInfo {{
+            background-color: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-left: 4px solid {PRIMARY_BLUE};
+            border-radius: {RADIUS_MEDIUM}px;
+            padding: {SPACING_SM}px {SPACING_MD}px;
+            color: {TEXT_PRIMARY};
+        }}
+
+        QLabel#infoBoxSuccess {{
+            background-color: #D1FAE5;
+            border: 1px solid #6EE7B7;
+            border-left: 4px solid #22C55E;
+            border-radius: {RADIUS_MEDIUM}px;
+            padding: {SPACING_SM}px {SPACING_MD}px;
+            color: {TEXT_PRIMARY};
+        }}
+
+        QLabel#infoBoxWarning {{
+            background-color: #FEF3C7;
+            border: 1px solid #F59E0B;
+            border-left: 4px solid {WARNING_ORANGE};
+            border-radius: {RADIUS_MEDIUM}px;
+            padding: {SPACING_SM}px {SPACING_MD}px;
+            color: {TEXT_PRIMARY};
+        }}
+
+        QLabel#infoBoxError {{
+            background-color: #FEE2E2;
+            border: 1px solid #FCA5A5;
+            border-left: 4px solid {ERROR_RED};
+            border-radius: {RADIUS_MEDIUM}px;
+            padding: {SPACING_SM}px {SPACING_MD}px;
+            color: {TEXT_PRIMARY};
+        }}
+
+        /* ========== SEPARADOR HORIZONTAL ========== */
+        QFrame#separator {{
+            background-color: {BORDER_LIGHT};
+            max-height: 1px;
+            border: none;
+        }}
+
+        /* ========== GROUPBOX ESTÁNDAR ========== */
+        QGroupBox {{
+            font-weight: bold;
+            border: 1px solid {BORDER_MEDIUM};
+            border-radius: 5px;
+            margin-top: 12px;
+            padding-top: 10px;
+        }}
+
+        QGroupBox::title {{
+            subcontrol-origin: margin;
+            subcontrol-position: top left;
+            padding: 2px 5px;
+            left: 10px;
+            top: -7px;
+            background-color: {CONTENT_BG};
+            color: {TEXT_PRIMARY};
+        }}
 
         /* ========== INPUTS ========== */
         QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {{

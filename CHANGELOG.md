@@ -6,6 +6,26 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## [5.19.0] - 2026-04-21
+
+### 🎯 Resumen
+VIS-TOKENS completado. VIS-CSS parcial: 284→270 setStyleSheet inline eliminados. Corrección de regresión visual (botones sin color, fondos oscuros en paneles).
+
+### ✨ Added
+- `src/presentation/theme/tokens.py`: tokens completos — `SUCCESS_BG`, `SUCCESS_BORDER`, `WARNING_BG_ALT`, `WARNING_BORDER`, `ERROR_BG`, `ERROR_BORDER`, `INFO_BG`, `INFO_BORDER`, `SECONDARY`, `SECONDARY_HOVER`, `TERMINAL_BG/BORDER/TEXT/ACCENT`
+- `src/presentation/themes/ccleaner_theme.py`: 9 nuevas reglas globales CSS — `QPushButton[secondary="true"]`, `QLabel#labelCaption`, `QLabel#labelTitle`, `QLabel#labelSubtitle`, `QLabel#labelSecondary`, `QLabel#infoBox{Info,Success,Warning,Error}`, `QFrame#separator`, `QGroupBox` estándar
+
+### Fixed
+- Regresión visual: botones success/danger/warning sin color tras VIS-02 — causa: `setProperty("x", True)` no coincide con `[x="true"]` en PyQt6. Corregido a `"true"` string en 17 archivos
+- `QScrollArea` y `QStackedWidget` en `ccleaner_main_window.py` usaban stylesheet sin selector tipado, cascadeando a todos los hijos y pisando colores globales. Corregido con selectores tipados
+- Fondo negro (`#0f172a`) del badge "Total: -- guardias" en `calculo_panel.py` restaurado (estilo vintage)
+- Regla `QPushButton[warning="true"]` faltante añadida al tema global
+
+### 🧹 Housekeeping
+- `src/presentation/dialogs/dia_detalle_dialog.py`: 4 bloques inline `QGroupBox.setStyleSheet` eliminados (cubiertas por regla global), 4 labels migrados a `setObjectName`
+- `src/presentation/forms/login_dialog.py`: 6 `setStyleSheet` inline reemplazados por `setProperty` / `setObjectName`
+
+---
 ## [5.18.0] - 2026-04-20
 
 ### 🎯 Resumen

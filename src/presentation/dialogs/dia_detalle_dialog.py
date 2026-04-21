@@ -152,22 +152,7 @@ class DiaDetalleDialog(QDialog):
     def _crear_resumen_estadistico(self) -> QGroupBox:
         """Crear widget con resumen estadístico del día."""
         group = QGroupBox("Resumen")
-        group.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                margin-top: 12px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 2px 5px;
-                left: 10px;
-                top: -7px;
-            }
-        """)
+
         layout = QHBoxLayout()
         layout.setSpacing(15)
         layout.setContentsMargins(10, 20, 10, 10)
@@ -216,7 +201,7 @@ class DiaDetalleDialog(QDialog):
             font_valor.setPointSize(FontSize.H3)
             font_valor.setBold(True)
             label_valor.setFont(font_valor)
-            label_valor.setStyleSheet("color: #333;")
+            label_valor.setObjectName("labelSecondary")
             top_layout.addWidget(label_valor)
             top_layout.addStretch()
 
@@ -224,7 +209,7 @@ class DiaDetalleDialog(QDialog):
 
             # Nombre debajo, más separado
             label_nombre = QLabel(nombre)
-            label_nombre.setStyleSheet("color: #666; font-size: 11px; margin-top: 4px;")
+            label_nombre.setObjectName("labelCaption")
             stat_layout.addWidget(label_nombre)
 
             # Estilo simple y limpio sin marcos dobles
@@ -244,22 +229,7 @@ class DiaDetalleDialog(QDialog):
     def _crear_seccion_guardias(self) -> QGroupBox:
         """Crear sección con lista de guardias."""
         group = QGroupBox(f"Guardias ({len(self.guardias)})")
-        group.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                margin-top: 12px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 2px 5px;
-                left: 10px;
-                top: -7px;
-            }
-        """)
+
         layout = QVBoxLayout()
         layout.setSpacing(5)
 
@@ -427,22 +397,7 @@ class DiaDetalleDialog(QDialog):
     def _crear_seccion_ausencias(self) -> QGroupBox:
         """Crear sección con lista de ausencias."""
         group = QGroupBox(f"Ausencias ({len(self.ausencias)})")
-        group.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                margin-top: 12px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 2px 5px;
-                left: 10px;
-                top: -7px;
-            }
-        """)
+
         layout = QVBoxLayout()
         layout.setSpacing(5)
 
@@ -472,7 +427,7 @@ class DiaDetalleDialog(QDialog):
         fecha_inicio = ausencia.fecha_inicio.strftime("%d/%m/%Y")
         fecha_fin = ausencia.fecha_fin.strftime("%d/%m/%Y")
         label_fechas = QLabel(f"{fecha_inicio} - {fecha_fin}")
-        label_fechas.setStyleSheet("color: #666; font-size: 9px;")
+        label_fechas.setObjectName("labelCaption")
         linea1.addWidget(label_fechas)
         linea1.addStretch()
 
@@ -494,22 +449,7 @@ class DiaDetalleDialog(QDialog):
     def _crear_seccion_sustituciones(self) -> QGroupBox:
         """Crear sección con lista de sustituciones."""
         group = QGroupBox(f"Sustituciones ({len(self.sustituciones)})")
-        group.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                margin-top: 12px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 2px 5px;
-                left: 10px;
-                top: -7px;
-            }
-        """)
+
         layout = QVBoxLayout()
         layout.setSpacing(5)
 
@@ -542,7 +482,7 @@ class DiaDetalleDialog(QDialog):
 
         # Recreo
         label_recreo = QLabel(f"⏰ Recreo {guardia.recreo}")
-        label_recreo.setStyleSheet("color: #666; font-size: 9px;")
+        label_recreo.setObjectName("labelCaption")
         layout.addWidget(label_recreo)
 
         layout.addStretch()
