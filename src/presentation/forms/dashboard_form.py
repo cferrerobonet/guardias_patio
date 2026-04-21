@@ -32,7 +32,6 @@ from core.qt_imports import (
 from infrastructure.database.models import Configuracion, Guardia, Profesor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from sqlalchemy.orm import Session
 from utils import get_logger
 from utils.icons import icon_for_button
 from presentation.theme.tokens import Spacing
@@ -99,7 +98,7 @@ class GraficoCanvas(FigureCanvas):
 class DashboardForm(QWidget):
     """Dashboard principal con métricas y gráficos."""
 
-    def __init__(self, session: Session):
+    def __init__(self, session):
         super().__init__()
         self.session = session
         self.calcular_cuotas_uc = CalcularCuotasUseCase(session)

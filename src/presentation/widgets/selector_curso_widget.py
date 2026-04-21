@@ -10,7 +10,6 @@ from core.logging import get_logger
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QMessageBox, QWidget
 from services.gestor_cursos import GestorCursos
-from sqlalchemy.orm import Session
 
 logger = get_logger(__name__)
 
@@ -24,7 +23,7 @@ class SelectorCursoWidget(QWidget):
 
     curso_cambiado = pyqtSignal(int)  # Emite el ID del nuevo curso activo
 
-    def __init__(self, session: Session, parent: Optional[QWidget] = None):
+    def __init__(self, session, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.session = session
         self._inicializar_ui()

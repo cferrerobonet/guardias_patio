@@ -24,7 +24,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-from sqlalchemy.orm import Session
 from utils.icons import icon_for_button
 
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
@@ -33,7 +32,7 @@ from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 class InformesEstadisticosWidget(QGroupBox):
     """Widget para generar informes estadísticos."""
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session, parent=None):
         """
         Inicializar el widget de informes estadísticos.
 

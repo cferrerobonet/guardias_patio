@@ -35,7 +35,6 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
 )
-from sqlalchemy.orm import Session
 from sync.sync_manager import UserAuth
 from utils.icons import icon_for_button
 
@@ -61,7 +60,7 @@ class PerfilesUsuarioForm(BaseForm):
     - Indicadores visuales (BD, Logo, Activo)
     """
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session, parent=None):
         """
         Inicializa el formulario.
 

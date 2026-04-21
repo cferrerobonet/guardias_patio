@@ -20,7 +20,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from services.gestor_cursos import GestorCursos
-from sqlalchemy.orm import Session
 
 logger = get_logger(__name__)
 
@@ -28,7 +27,7 @@ logger = get_logger(__name__)
 class DialogoCrearCurso(QDialog):
     """Diálogo para crear un nuevo curso escolar."""
 
-    def __init__(self, session: Session, parent: Optional[QDialog] = None):
+    def __init__(self, session, parent: Optional[QDialog] = None):
         super().__init__(parent)
         self.session = session  # Guardamos referencia pero usaremos una nueva sesión
         self.curso_creado_id: Optional[int] = None

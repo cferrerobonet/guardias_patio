@@ -25,7 +25,6 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
-from sqlalchemy.orm import Session
 from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
@@ -56,7 +55,7 @@ class GeneracionPanel(QGroupBox):
     guardias_generadas = pyqtSignal()
     guardias_limpiadas = pyqtSignal()
 
-    def __init__(self, session: Session, sync_manager=None, parent=None):
+    def __init__(self, session, sync_manager=None, parent=None):
         """Inicializa el panel de generación.
 
         Args:
@@ -296,7 +295,6 @@ class GeneracionPanel(QGroupBox):
         if msg.exec() == QMessageBox.StandardButton.Yes:
             try:
                 self.limpiar_guardias_uc.execute()
-                self.session.commit()
                 self._mostrar_mensaje_inicial()
                 self._ultimo_resumen = None
                 self.guardias_limpiadas.emit()

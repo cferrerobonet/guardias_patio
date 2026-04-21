@@ -7,7 +7,6 @@ from presentation.theme import legacy_styles as styles
 from presentation.theme.tokens import Spacing
 from infrastructure.database.models import Profesor, Zona
 from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
-from sqlalchemy.orm import Session
 from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
@@ -33,7 +32,7 @@ class IncidenciasPanel(QGroupBox):
         No emite señales (solo visualización).
     """
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session, parent=None):
         """Inicializa el panel de incidencias.
 
         Args:

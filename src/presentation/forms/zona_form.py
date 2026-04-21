@@ -29,7 +29,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy.orm import Session
 from utils.icons import icon_for_button, icon_for_form
 
 from presentation.forms.base_form import BaseForm
@@ -47,7 +46,7 @@ class ZonaForm(BaseForm):
     # Señal que se emite cuando se modifican los datos de zonas
     datos_modificados = pyqtSignal()
 
-    def __init__(self, session: Session):
+    def __init__(self, session):
         """
         Inicializar el formulario de zonas.
 

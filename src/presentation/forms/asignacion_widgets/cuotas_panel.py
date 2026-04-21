@@ -16,7 +16,6 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
-from sqlalchemy.orm import Session
 from presentation.theme.legacy_styles import (
     format_terminal_error,
     format_terminal_info,
@@ -45,7 +44,7 @@ class CuotasPanel(QGroupBox):
 
     cuotas_calculadas = pyqtSignal(dict)  # Emite {profesor_id: cuota}
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session, parent=None):
         """Inicializa el panel de cuotas.
 
         Args:

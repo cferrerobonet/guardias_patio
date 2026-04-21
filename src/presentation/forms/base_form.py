@@ -8,7 +8,6 @@ Proporciona funcionalidad común y establece el patrón MVP.
 from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QLabel, QMessageBox, QWidget
-from sqlalchemy.orm import Session
 from utils.logger import get_logger
 from utils.ui_helpers import (
     MESSAGEBOX_STYLE,
@@ -33,7 +32,7 @@ class BaseForm(QWidget):
     # Señal emitida cuando el formulario tiene cambios sin guardar
     cambios_sin_guardar = pyqtSignal(bool)
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session, parent=None):
         """
         Inicializa el formulario base.
 

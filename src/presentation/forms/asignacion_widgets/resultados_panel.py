@@ -10,7 +10,6 @@ from application.dtos.domain_services_dtos import AnalisisEquidadRequest
 from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
 from infrastructure.database.models import Profesor
 from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
-from sqlalchemy.orm import Session
 from presentation.theme.legacy_styles import (
     format_terminal_info,
     format_terminal_label,
@@ -36,7 +35,7 @@ class ResultadosPanel(QGroupBox):
         No emite señales (solo visualización).
     """
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session, parent=None):
         """Inicializa el panel de resultados.
 
         Args:

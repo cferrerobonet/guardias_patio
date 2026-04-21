@@ -19,7 +19,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy.orm import Session
 
 from presentation.forms.asignacion_widgets import CalculoPanel, GeneracionPanel
 from presentation.forms.base_form import BaseForm
@@ -36,7 +35,7 @@ class AsignacionCalculoForm(BaseForm):
     - Analizar resultados e incidencias
     """
 
-    def __init__(self, session: Session, sync_manager=None):
+    def __init__(self, session, sync_manager=None):
         """
         Inicializar el formulario de cálculo de distribución.
 

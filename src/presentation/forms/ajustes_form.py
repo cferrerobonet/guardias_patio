@@ -23,7 +23,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy.orm import Session
 from utils.icons import icon_for_button
 
 from presentation.forms.base_form import BaseForm
@@ -46,7 +45,7 @@ class AjustesForm(BaseForm):
     - Gestión de cursos escolares
     """
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session, parent=None):
         """
         Inicializa el formulario de configuración.
 

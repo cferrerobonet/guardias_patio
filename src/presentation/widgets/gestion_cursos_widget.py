@@ -23,7 +23,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from services.gestor_cursos import GestorCursos
-from sqlalchemy.orm import Session
 from utils.icons import icon_for_button
 
 from presentation.dialogs.dialogo_crear_curso import DialogoCrearCurso
@@ -46,7 +45,7 @@ class GestionCursosWidget(QWidget):
 
     curso_modificado = pyqtSignal()  # Emitido cuando cambia algún curso
 
-    def __init__(self, session: Session, parent: Optional[QWidget] = None):
+    def __init__(self, session, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.session = session
         self._inicializar_ui()

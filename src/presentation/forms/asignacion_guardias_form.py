@@ -24,7 +24,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy.orm import Session
 from utils.icons import icon_for_button
 
 from presentation.forms.asignacion_widgets import (
@@ -68,7 +67,7 @@ class AsignacionGuardiasForm(BaseForm):
 
     # =============================================================
 
-    def __init__(self, session: Session, sync_manager=None):
+    def __init__(self, session, sync_manager=None):
         """
         Inicializar el formulario de asignación de guardias.
 

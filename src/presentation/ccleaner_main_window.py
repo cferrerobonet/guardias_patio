@@ -14,7 +14,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy.orm import Session
 
 from presentation.components.ccleaner_sidebar import SidebarMenu
 from presentation.forms.ajustes_form import AjustesForm
@@ -76,7 +75,7 @@ class ContentWrapper(QWidget):
 class CCleanerMainWindow(QMainWindow):
     """Ventana principal con diseño estilo CCleaner"""
 
-    def __init__(self, session: Session, sync_manager=None):
+    def __init__(self, session, sync_manager=None):
         super().__init__()
         self.session = session
         self.sync_manager = sync_manager

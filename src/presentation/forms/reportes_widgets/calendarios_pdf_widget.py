@@ -25,7 +25,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy.orm import Session
 
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
@@ -36,7 +35,7 @@ class CalendariosPdfWidget(QGroupBox):
     # Señal cuando se solicita generar PDFs
     generar_pdfs_solicitado = pyqtSignal()
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session, parent=None):
         """
         Inicializar el widget de exportación PDF.
 

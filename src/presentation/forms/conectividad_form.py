@@ -14,7 +14,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy.orm import Session
 
 from presentation.theme import legacy_styles as styles
 from presentation.forms.base_form import BaseForm
@@ -30,7 +29,7 @@ class ConectividadForm(BaseForm):
     - Servidor SFTP (sincronización de archivos)
     """
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session, parent=None):
         """
         Inicializa el formulario de conectividad.
 

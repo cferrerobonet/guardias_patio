@@ -135,7 +135,7 @@
 
 ---
 
-### ARQ-02 — 22 archivos de presentación importan Session (P2) — ✅ Fase 1 RESUELTA v5.6.0
+### ~~ARQ-02 — 22 archivos de presentación importan Session (P2)~~ ✅ RESUELTO v5.22.0
 
 **Problema**: 22 archivos en `src/presentation/` importan `Session` de SQLAlchemy. 3 de ellos ejecutan queries directas.
 

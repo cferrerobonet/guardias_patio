@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.22.0] - 2026-04-21
+
+### 🎯 Resumen
+ARQ-02 completado: 0 imports `from sqlalchemy.orm import Session` en `src/presentation/`.
+
+### 🧹 Housekeeping
+- 18 archivos de `src/presentation/`: eliminado import `Session` y anotaciones de tipo en parámetros `__init__`
+- `src/presentation/forms/asignacion_widgets/generacion_panel.py`: eliminado `self.session.commit()` redundante tras `limpiar_guardias_uc.execute()` (el repo ya hace commit internamente)
+- `src/presentation/widgets/gestion_cursos_widget.py`: eliminado import Session (las calls ORM directas permanecen como deuda técnica pendiente de use case)
+
+---
 ## [5.21.1] - 2026-04-21
 
 ### 🎯 Resumen
