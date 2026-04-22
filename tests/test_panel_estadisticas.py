@@ -103,7 +103,7 @@ class TestPanelEstadisticasBasico:
     def test_tiene_pestanas(self, panel):
         """Test que el panel tiene las 4 pestañas."""
         assert panel.tabs is not None
-        assert panel.tabs.count() == 4
+        assert panel.tabs.count() == 5
 
         # Verificar nombres de pestañas
         assert "Resumen" in panel.tabs.tabText(0)

@@ -1022,7 +1022,7 @@ Ya existe `icalendar_service.py`. Hay que exponerlo en la UI de forma accesible.
 
 ---
 
-### FUNC-08 — AÑADIR: Vista de "Carga por profesor" tipo heat map
+### ~~FUNC-08 — AÑADIR: Vista de "Carga por profesor" tipo heat map~~ ✅ RESUELTO v5.30.4
 **Severidad: Media**
 
 No hay una vista rápida que muestre qué profesores tienen más guardias acumuladas vs. su cuota teórica. El panel de estadísticas tiene datos pero no una visualización inmediata.

@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.30.4] - 2026-04-22
+
+### 🎯 Resumen
+Heat map de equidad en el panel de estadísticas: cuadrícula profesores × semanas con colores verde/ámbar/rojo según desviación respecto a la cuota.
+
+### ✨ Added
+- `PanelEstadisticas`: nueva pestaña "Equidad" con `tabla_heatmap` — filas=profesores, columnas=semanas del período, celda verde (en cuota), ámbar (+25%), rojo (+50%) (FUNC-08)
+
 ## [5.30.3] - 2026-04-22
 
 ### 🎯 Resumen

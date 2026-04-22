@@ -5,7 +5,11 @@ Muestra métricas, gráficos y análisis de cobertura.
 Utiliza ObtenerEstadisticasPanelUseCase para separar lógica de presentación.
 """
 
+from collections import defaultdict
+from datetime import date, timedelta
+
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QHeaderView,
     QLabel,
@@ -19,6 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from application.use_cases.asignacion_guardias import ObtenerEstadisticasPanelUseCase
+from infrastructure.database.models import Guardia, Profesor
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import (
     CONTENT_BG_ALT,
@@ -45,8 +50,8 @@ class PanelEstadisticas(BaseForm):
             session: Sesión de base de datos
         """
         super().__init__(session)
+        self.session = session
         self.setWindowTitle("Estadísticas de Guardias")
-        # Use Case para obtener estadísticas - separa lógica de BD de UI
         self._use_case = ObtenerEstadisticasPanelUseCase(session)
         self.setup_ui()
 
@@ -73,6 +78,7 @@ class PanelEstadisticas(BaseForm):
         self.tabs.addTab(self._crear_tab_profesores(), "Por Profesor")
         self.tabs.addTab(self._crear_tab_zonas(), "Por Zona")
         self.tabs.addTab(self._crear_tab_graficos(), "Gráficos")
+        self.tabs.addTab(self._crear_tab_heatmap(), "Equidad")
 
         layout_principal.addWidget(self.tabs)
         self.setLayout(layout_principal)
@@ -207,6 +213,98 @@ class PanelEstadisticas(BaseForm):
         widget.setLayout(layout)
         return widget
 
+    def _crear_tab_heatmap(self) -> QWidget:
+        widget = QWidget()
+        layout = QVBoxLayout()
+
+        leyenda = QLabel("🟢 En cuota  🟡 Ligeramente sobre (+25%)  🔴 Muy sobre (+50%)  ⬜ Sin guardias")
+        leyenda.setStyleSheet("padding: 6px; font-size: 11px;")
+        layout.addWidget(leyenda)
+
+        self.tabla_heatmap = QTableWidget()
+        self.tabla_heatmap.setStyleSheet(get_table_style())
+        self.tabla_heatmap.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.tabla_heatmap.verticalHeader().setVisible(False)
+        layout.addWidget(self.tabla_heatmap)
+
+        widget.setLayout(layout)
+        return widget
+
+    def _actualizar_heatmap_ui(self):
+        guardias = self.session.query(Guardia).all()
+        profesores = self.session.query(Profesor).all()
+
+        if not guardias or not profesores:
+            self.tabla_heatmap.setRowCount(0)
+            self.tabla_heatmap.setColumnCount(0)
+            return
+
+        fechas = [g.fecha for g in guardias if g.fecha]
+        if not fechas:
+            return
+
+        fecha_min = min(fechas)
+        fecha_max = max(fechas)
+
+        # Calcular semanas (lunes de cada semana en el rango)
+        semanas = []
+        d = fecha_min - timedelta(days=fecha_min.weekday())
+        while d <= fecha_max:
+            semanas.append(d)
+            d += timedelta(days=7)
+
+        # Calcular cuotas totales por profesor (proporcional a horas)
+        total_horas = sum(p.horas_contrato for p in profesores if p.horas_contrato)
+        total_guardias_global = len(guardias)
+        cuota_por_prof = {}
+        if total_horas > 0:
+            for p in profesores:
+                factor = (p.horas_contrato or 0) / total_horas
+                cuota_por_prof[p.id] = max(1, round(total_guardias_global * factor))
+
+        # Guardar cuota semanal media
+        n_semanas = len(semanas) or 1
+        cuota_semanal = {pid: max(1, round(c / n_semanas)) for pid, c in cuota_por_prof.items()}
+
+        # Contar guardias por (profesor_id, semana_lunes)
+        conteo: dict = defaultdict(int)
+        for g in guardias:
+            if g.fecha:
+                lunes = g.fecha - timedelta(days=g.fecha.weekday())
+                conteo[(g.profesor_id, lunes)] += 1
+
+        # Cabeceras columnas
+        col_headers = [f"S{i+1}\n{s.strftime('%d/%m')}" for i, s in enumerate(semanas)]
+        self.tabla_heatmap.setColumnCount(len(semanas) + 1)
+        self.tabla_heatmap.setHorizontalHeaderLabels(["Profesor"] + col_headers)
+        self.tabla_heatmap.setRowCount(len(profesores))
+
+        COLOR_OK = QColor(180, 230, 180)     # verde claro
+        COLOR_WARN = QColor(255, 220, 100)   # ámbar
+        COLOR_OVER = QColor(255, 140, 140)   # rojo claro
+        COLOR_NONE = QColor(240, 240, 240)   # gris claro
+
+        for row, prof in enumerate(sorted(profesores, key=lambda p: p.nombre_completo)):
+            nombre_item = QTableWidgetItem(prof.nombre_completo)
+            nombre_item.setFlags(nombre_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.tabla_heatmap.setItem(row, 0, nombre_item)
+
+            cuota_s = cuota_semanal.get(prof.id, 1)
+            for col, lunes in enumerate(semanas):
+                n = conteo.get((prof.id, lunes), 0)
+                item = QTableWidgetItem(str(n) if n > 0 else "")
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if n == 0:
+                    item.setBackground(COLOR_NONE)
+                elif n <= cuota_s * 1.25:
+                    item.setBackground(COLOR_OK)
+                elif n <= cuota_s * 1.5:
+                    item.setBackground(COLOR_WARN)
+                else:
+                    item.setBackground(COLOR_OVER)
+                self.tabla_heatmap.setItem(row, col + 1, item)
+
     def actualizar_estadisticas(self):
         """Actualizar todas las estadísticas usando el Use Case."""
         try:
@@ -218,6 +316,7 @@ class PanelEstadisticas(BaseForm):
             self._actualizar_tabla_profesores_ui()
             self._actualizar_tabla_zonas_ui()
             self._actualizar_graficos_ui()
+            self._actualizar_heatmap_ui()
         except Exception as e:
             self.manejar_excepcion(e, "actualizar estadísticas")
 
