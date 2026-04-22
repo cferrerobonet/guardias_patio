@@ -71,6 +71,8 @@ class VistaCalendario(BaseForm):
 
         # Cache de días lectivos por mes (PERF-04)
         self._dias_lectivos_cache: dict = {}
+        # Pool de CeldaDia reutilizables (PERF-01)
+        self._celda_pool: list = []
 
         self.setWindowTitle("Calendario de Guardias")
         self.resize(1400, 900)
@@ -390,10 +392,10 @@ class VistaCalendario(BaseForm):
         """Actualizar el calendario según la vista actual."""
         self.logger.info(f"📅 Actualizando calendario - Vista: {self.vista_actual}")
 
-        # Limpiar calendario anterior
+        # Limpiar calendario anterior (no destruir celdas del pool — se reutilizan)
         while self.calendario_layout.count():
             item = self.calendario_layout.takeAt(0)
-            if item.widget():
+            if item.widget() and item.widget() not in self._celda_pool:
                 item.widget().deleteLater()
 
         # Renderizar según vista
@@ -466,10 +468,11 @@ class VistaCalendario(BaseForm):
         fila = 1
         columna = dia_semana_inicio
 
+        pool_idx = 0
         for dia_num in range(1, dias_en_mes + 1):
             fecha_dia = date(self.anio_mostrado, self.mes_mostrado, dia_num)
 
-            celda = CeldaDia(
+            kwargs = dict(
                 fecha=fecha_dia,
                 guardias=guardias_por_fecha.get(fecha_dia, []),
                 ausencias=ausencias_por_fecha.get(fecha_dia, []),
@@ -479,7 +482,14 @@ class VistaCalendario(BaseForm):
                 es_hoy=(fecha_dia == self.fecha_actual),
                 modo_compacto=self.modo_compacto,
             )
-            celda.dia_clicked.connect(self._dia_seleccionado)
+            if pool_idx < len(self._celda_pool):
+                celda = self._celda_pool[pool_idx]
+                celda.actualizar(**kwargs)
+            else:
+                celda = CeldaDia(**kwargs)
+                celda.dia_clicked.connect(self._dia_seleccionado)
+                self._celda_pool.append(celda)
+            pool_idx += 1
 
             grid_calendario.addWidget(celda, fila, columna)
 

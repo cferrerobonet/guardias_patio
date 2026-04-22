@@ -1066,7 +1066,7 @@ Configurar la app desde cero (fechas, recreos, zonas, profesores) lleva tiempo. 
 
 ## 5. Rendimiento
 
-### PERF-01 — El calendario reconstruye todo el grid en cada navegación
+### ~~PERF-01 — El calendario reconstruye todo el grid en cada navegación~~ ✅ RESUELTO v5.30.5
 **Severidad: Media**
 
 Cada vez que el usuario cambia de mes, `VistaCalendario.cargar_mes()` destruye y reconstruye todo el `QGridLayout` con todos los `CeldaDia`. Para un mes con 30 días × ~10 guardias/día, esto crea y destruye ~300 widgets.

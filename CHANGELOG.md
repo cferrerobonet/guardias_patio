@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.30.5] - 2026-04-22
+
+### 🎯 Resumen
+Pool de CeldaDia en la vista mensual: las celdas se reutilizan en cada navegación en lugar de destruirse y recrearse.
+
+### 🧹 Housekeeping
+- `CeldaDia.actualizar()`: nuevo método que actualiza datos y reconstruye el contenido sin destruir el widget (PERF-01)
+- `VistaCalendario._celda_pool`: lista de celdas reutilizables; en navegación mensual se actualizan en lugar de recrearse (PERF-01)
+
 ## [5.30.4] - 2026-04-22
 
 ### 🎯 Resumen

@@ -53,6 +53,37 @@ class CeldaDia(QGroupBox):
 
         self.setup_ui()
 
+    def actualizar(
+        self,
+        fecha: date,
+        guardias,
+        ausencias,
+        sustituciones,
+        zonas_esperadas_por_recreo=None,
+        es_dia_lectivo: bool = True,
+        es_hoy: bool = False,
+        modo_compacto: bool = False,
+    ):
+        self.fecha = fecha
+        self.guardias = guardias
+        self.ausencias = ausencias
+        self.sustituciones = sustituciones
+        self.zonas_esperadas_por_recreo = zonas_esperadas_por_recreo or {}
+        self.es_dia_lectivo = es_dia_lectivo
+        self.es_hoy = es_hoy
+        self.modo_compacto = modo_compacto
+        # Limpiar layout actual
+        while self.layout() and self.layout().count():
+            item = self.layout().takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        # Eliminar el layout vacío para poder asignar uno nuevo
+        old_layout = self.layout()
+        if old_layout:
+            from PyQt6 import sip  # noqa: PLC0415
+            sip.delete(old_layout)
+        self.setup_ui()
+
     def setup_ui(self):
         """Construir interfaz de la celda."""
         if self.modo_compacto:
