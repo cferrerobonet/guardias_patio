@@ -5,6 +5,19 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.28.2] - 2026-04-22
+
+### 🎯 Resumen
+Reubicación del avatar al header del sidebar, eliminación del ítem INICIO del menú, y regla de fallos preexistentes en agents.
+
+### Changed
+- `ccleaner_sidebar.py`: avatar con iniciales movido arriba del logo en la zona del header (visible siempre); eliminado del bloque inferior de info; ítem "Inicio" eliminado del menú lateral; el nombre de usuario se oculta al colapsar, el avatar permanece visible
+- `ccleaner_main_window.py`: eliminado registro de `HomeForm` y sección "inicio"; arranque vuelve a "profesores"
+- `.claude/agents.md` (nuevo): regla documentada — no corregir fallos preexistentes
+
+### 🧹 Housekeeping
+- `home_form.py` queda en disco pero ya no está conectado a la navegación
+
 ## [5.28.1] - 2026-04-21
 
 ### 🎯 Resumen

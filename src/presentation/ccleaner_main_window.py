@@ -23,7 +23,6 @@ from presentation.forms.import_export_form import ImportExportForm
 from presentation.forms.perfiles_usuario_form import PerfilesUsuarioForm
 
 # Importar formularios existentes (los vamos a wrapper)
-from presentation.forms.home_form import HomeForm
 from presentation.forms.profesor_form import ProfesorForm
 from presentation.forms.reportes_form import ReportesForm
 from presentation.forms.zona_form import ZonaForm
@@ -145,15 +144,13 @@ class CCleanerMainWindow(QMainWindow):
 
         # Activar la primera sección (Dashboard)
         # Cambiar la sección activa inicial a "profesores" en lugar de "dashboard"
-        self.sidebar.set_active_section("inicio")
+        self.sidebar.set_active_section("profesores")
 
     def create_views(self):
         """Registrar factories de vistas — lazy loading: solo se instancian al navegar."""
         session = self.session
         sync_manager = self.sync_manager
 
-        self._register("inicio", "Inicio — Estado del día",
-                        lambda: HomeForm(session))
         self._register("profesores", "Gestión de Profesores",
                         lambda: ProfesorForm(session))
         self._register("zonas", "Gestión de Zonas",
@@ -178,7 +175,7 @@ class CCleanerMainWindow(QMainWindow):
                         lambda: PanelEstadisticas(session))
 
         # Pre-instanciar solo la sección inicial para que el stack no quede vacío
-        self._ensure_view("inicio")
+        self._ensure_view("profesores")
 
     def _register(self, section: str, title: str, factory):
         self._view_factories[section] = (title, factory)
