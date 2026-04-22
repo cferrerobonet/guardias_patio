@@ -1350,7 +1350,7 @@ Extraer el output del generador a un `QTextBrowser` con un CSS externo, o al men
 
 ---
 
-### TECH-03 — Tests de UI con `pytest-qt` no cubren los flujos críticos
+### ~~TECH-03 — Tests de UI con `pytest-qt` no cubren los flujos críticos~~ ✅ RESUELTO v5.30.8
 **Severidad: Media**
 
 Hay ~2127 tests pero la mayoría son unitarios. Los flujos críticos (login → selección de curso → generación de guardias → exportación PDF) no tienen tests de integración end-to-end.
