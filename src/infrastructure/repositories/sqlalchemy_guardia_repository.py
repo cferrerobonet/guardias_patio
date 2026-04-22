@@ -15,7 +15,7 @@ from sqlalchemy import and_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, joinedload
 
-from infrastructure.database.models import Guardia
+from infrastructure.database.models import Guardia, GuardiaAuditLog
 from infrastructure.mappers import GuardiaMapper
 
 logger = get_logger(__name__)
@@ -84,6 +84,14 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
                 self.session.add(model)
 
             self.session.flush()  # Obtener ID sin commit
+            accion = "MODIFICADA" if entity.id else "CREADA"
+            if entity.es_sustitucion:
+                accion = "SUSTITUIDA"
+            self.session.add(GuardiaAuditLog(
+                guardia_id=model.id,
+                accion=accion,
+                profesor_id=model.profesor_id,
+            ))
             return self.mapper.to_entity(model)
 
         except NotFoundError:
@@ -100,6 +108,11 @@ class SQLAlchemyGuardiaRepository(IGuardiaRepository):
             if not model:
                 return False
 
+            self.session.add(GuardiaAuditLog(
+                guardia_id=entity_id,
+                accion="ELIMINADA",
+                profesor_id=model.profesor_id,
+            ))
             self.session.delete(model)
             self.session.flush()
             return True

@@ -23,6 +23,7 @@ from presentation.forms.perfiles_usuario_form import PerfilesUsuarioForm
 
 # Importar formularios existentes (los vamos a wrapper)
 from presentation.forms.profesor_form import ProfesorForm
+from presentation.forms.auditoria_guardias_form import AuditoriaGuardiasForm
 from presentation.forms.reportes_form import ReportesForm
 from presentation.forms.zona_form import ZonaForm
 from presentation.themes.ccleaner_theme import (
@@ -148,6 +149,8 @@ class CCleanerMainWindow(QMainWindow):
                         lambda: ReportesForm(session))
         self._register("estadisticas", "Estadísticas",
                         lambda: PanelEstadisticas(session))
+        self._register("auditoria", "Auditoría de Guardias",
+                        lambda: AuditoriaGuardiasForm(session))
 
         # Pre-instanciar solo la sección inicial para que el stack no quede vacío
         self._ensure_view("profesores")

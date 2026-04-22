@@ -13,7 +13,9 @@ from sqlalchemy.orm import Session
 from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
-from infrastructure.database.models import Configuracion, Guardia, Profesor
+import json as _json
+
+from infrastructure.database.models import Configuracion, Guardia, GuardiaAuditLog, Profesor
 from services.asignador_guardias_cpsat import (
     generar_guardias_cpsat,
     guardar_guardias_cpsat_en_bd,
@@ -140,6 +142,12 @@ class GenerarGuardiasUseCase:
 
             if progress_callback:
                 progress_callback("Proceso completado", 100)
+
+            # Registrar en audit log
+            self.session.add(GuardiaAuditLog(
+                accion="GENERADA_BULK",
+                detalle=_json.dumps({"total": len(calendario), "algoritmo": algoritmo}),
+            ))
 
             # Preparar resumen
             total_generado = len(calendario)

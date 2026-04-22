@@ -7,6 +7,7 @@ from infrastructure.database.models import (
     Configuracion,
     CursoEscolar,
     Guardia,
+    GuardiaAuditLog,
     Profesor,
     Zona,
 )
@@ -19,4 +20,5 @@ __all__ = [
     "Configuracion",
     "Guardia",
     "Ausencia",
+    "GuardiaAuditLog",
 ]

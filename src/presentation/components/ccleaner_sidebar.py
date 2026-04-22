@@ -212,6 +212,7 @@ class SidebarMenu(QWidget):
         )
         self.add_menu_item(menu_layout, "reportes", "Reportes", "reportes", "file-chart")
         self.add_menu_item(menu_layout, "estadisticas", "Estadísticas", "estadisticas", "chart-bar")
+        self.add_menu_item(menu_layout, "auditoria", "Auditoría", "auditoria", "history")
 
         # Espaciador flexible antes de la información de la app
         menu_layout.addStretch()

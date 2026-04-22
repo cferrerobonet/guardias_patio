@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.30.0] - 2026-04-22
+
+### 🎯 Resumen
+Nueva funcionalidad: historial de cambios en guardias con tabla BD auditada y UI con filtros.
+
+### ✨ Added
+- `GuardiaAuditLog`: nuevo modelo ORM y tabla `guardias_audit_log` (migración `9defacb2c7e9`) — registra acciones CREADA, MODIFICADA, ELIMINADA, SUSTITUIDA, GENERADA_BULK con profesor, timestamp y detalle JSON (FUNC-02)
+- `AuditoriaGuardiasForm`: nueva vista en HERRAMIENTAS con tabla filtrable por fecha, acción y nombre de profesor (FUNC-02)
+- Sidebar: nueva entrada "Auditoría" con icono `history` en la sección HERRAMIENTAS (FUNC-02)
+
+### Changed
+- `SQLAlchemyGuardiaRepository.save()` y `delete()`: insertan entrada en `guardias_audit_log` en cada operación (FUNC-02)
+- `GenerarGuardiasUseCase.execute()`: registra entrada GENERADA_BULK con total y algoritmo tras cada generación (FUNC-02)
+
 ## [5.29.1] - 2026-04-22
 
 ### 🎯 Resumen

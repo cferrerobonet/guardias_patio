@@ -245,6 +245,26 @@ class Ausencia(Base):
     )
 
 
+class GuardiaAuditLog(Base):
+    __tablename__ = "guardias_audit_log"
+
+    id = Column(Integer, primary_key=True)
+    guardia_id = Column(Integer, nullable=True)
+    accion = Column(String, nullable=False)  # CREADA, MODIFICADA, ELIMINADA, SUSTITUIDA, GENERADA_BULK
+    profesor_id = Column(Integer, ForeignKey("profesores.id", ondelete="SET NULL"), nullable=True)
+    usuario = Column(String, nullable=True)
+    timestamp = Column(DateTime, default=_now_utc, nullable=False)
+    detalle = Column(Text, nullable=True)  # JSON con datos adicionales
+
+    profesor = relationship("Profesor", foreign_keys=[profesor_id])
+
+    __table_args__ = (
+        Index("ix_audit_log_timestamp", "timestamp"),
+        Index("ix_audit_log_accion", "accion"),
+        Index("ix_audit_log_profesor_id", "profesor_id"),
+    )
+
+
 # Exportar todos los modelos
 __all__ = [
     "Base",
@@ -254,4 +274,5 @@ __all__ = [
     "Configuracion",
     "Guardia",
     "Ausencia",
+    "GuardiaAuditLog",
 ]

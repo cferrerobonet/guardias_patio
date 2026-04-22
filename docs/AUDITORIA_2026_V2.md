@@ -860,7 +860,7 @@ El modelo `Profesor` tiene `email_corporativo`. Existe `email_service.py`. Pero 
 
 ---
 
-### FUNC-02 — AÑADIR: Historial de cambios (log de auditoría de guardias)
+### ~~FUNC-02 — AÑADIR: Historial de cambios (log de auditoría de guardias)~~ ✅ RESUELTO v5.30.0
 **Severidad: Media**
 
 No existe registro de quién cambió qué guardia y cuándo. Si hay una queja de un profesor ("yo no tenía guardia ese día"), no hay forma de verificarlo.
