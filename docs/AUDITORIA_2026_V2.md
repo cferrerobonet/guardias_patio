@@ -748,7 +748,7 @@ class QuickSearchDialog(QDialog):
 
 ---
 
-### UX-09 — Las notificaciones de error son QMessageBox bloqueantes
+### ~~UX-09 — Las notificaciones de error son QMessageBox bloqueantes~~ ✅ RESUELTO v5.29.0 (parcial — errores de negocio y validaciones de diálogos; QMessageBox se mantiene para errores destructivos/irreversibles)
 **Severidad: Media**
 
 Casi todos los errores de formulario usan `QMessageBox.warning()` que bloquea la UI y fuerza al usuario a hacer clic en "OK" antes de continuar. Para errores de validación (campo vacío, formato incorrecto) esto es excesivo.
@@ -1150,7 +1150,7 @@ except Exception:
 
 ---
 
-### BUG-02 — El selector de curso no actualiza todos los widgets correctamente
+### ~~BUG-02 — El selector de curso no actualiza todos los widgets correctamente~~ ✅ RESUELTO v5.29.0
 **Severidad: Media**
 
 Cuando el usuario cambia de curso escolar en el `SelectorCursoWidget` del sidebar, la señal se propaga a los formularios via `cargar_datos()`. Pero no todos los widgets están conectados a esta señal — solo los que tienen `BaseForm` como base y están registrados. Los formularios cargados por primera vez después del cambio de curso pueden mostrar datos del curso anterior.
@@ -1506,7 +1506,7 @@ ToastNotification(self.window(), "Curso activado correctamente", "success")
 
 ---
 
-### MODAL-03 — Validaciones de campo en diálogos usan QMessageBox secuenciales
+### ~~MODAL-03 — Validaciones de campo en diálogos usan QMessageBox secuenciales~~ ✅ RESUELTO v5.29.0
 **Archivos:** `dialogo_crear_perfil.py:135-166`, `dialogo_editar_perfil.py:102-115`, `change_password_dialog.py:149-234`, `reset_password_dialog.py:125-161`
 
 En `dialogo_crear_perfil.py` hay **5 `QMessageBox.warning()` distintos** en cadena para validar campos obligatorios (usuario, email, contraseña, confirmación, nombre duplicado). El usuario que deja todos los campos vacíos tiene que hacer clic en OK cinco veces antes de que el formulario le deje en paz.
@@ -1588,7 +1588,7 @@ El campo existe en la UI pero no se calcula. Hace que la pantalla parezca incomp
 
 ---
 
-### SCREEN-02 — El modal "Sesión iniciada" usa icono "!" (Information) en vez de icono de éxito
+### ~~SCREEN-02 — El modal "Sesión iniciada" usa icono "!" (Information) en vez de icono de éxito~~ ✅ RESUELTO v5.28.8 (modal eliminado en MODAL-01)
 **Captura:** Segunda imagen — el QMessageBox de bienvenida muestra el ícono de "!" de macOS, que visualmente se asocia con advertencia, no con éxito. Refuerza la propuesta MODAL-01 de eliminar este modal.
 
 ---

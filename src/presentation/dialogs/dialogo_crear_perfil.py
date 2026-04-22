@@ -84,6 +84,13 @@ class DialogoCrearPerfil(QDialog):
 
         layout.addLayout(form_layout)
 
+        # Label de error inline
+        self._error_label = QLabel("")
+        self._error_label.setStyleSheet("color: #DC3545; font-size: 11px;")
+        self._error_label.setWordWrap(True)
+        self._error_label.setVisible(False)
+        layout.addWidget(self._error_label)
+
         # Botones
         botones_layout = QHBoxLayout()
         botones_layout.addStretch()
@@ -123,6 +130,10 @@ class DialogoCrearPerfil(QDialog):
         QWidget.setTabOrder(self.input_password_confirm, btn_crear)
         QWidget.setTabOrder(btn_crear, btn_cancelar)
 
+    def _mostrar_error(self, mensaje: str):
+        self._error_label.setText(mensaje)
+        self._error_label.setVisible(True)
+
     def crear_perfil(self):
         """Crea el nuevo perfil con su base de datos."""
         username = self.input_usuario.text().strip()
@@ -130,26 +141,28 @@ class DialogoCrearPerfil(QDialog):
         password = self.input_password.text()
         password_confirm = self.input_password_confirm.text()
 
-        # Validaciones
+        # Validaciones inline
         if not username:
-            QMessageBox.warning(self, "Error", "El nombre de usuario es obligatorio")
+            self._mostrar_error("El nombre de usuario es obligatorio")
+            self.input_usuario.setFocus()
             return
-
         if not email:
-            QMessageBox.warning(self, "Error", "El email es obligatorio")
+            self._mostrar_error("El email es obligatorio")
+            self.input_email.setFocus()
             return
-
         if not password:
-            QMessageBox.warning(self, "Error", "La contraseña es obligatoria")
+            self._mostrar_error("La contraseña es obligatoria")
+            self.input_password.setFocus()
             return
-
         if password != password_confirm:
-            QMessageBox.warning(self, "Error", "Las contraseñas no coinciden")
+            self._mostrar_error("Las contraseñas no coinciden")
+            self.input_password_confirm.setFocus()
             return
-
         if username in self.user_auth.users:
-            QMessageBox.warning(self, "Error", f"Ya existe un usuario con el nombre '{username}'")
+            self._mostrar_error(f"Ya existe un usuario con el nombre '{username}'")
+            self.input_usuario.setFocus()
             return
+        self._error_label.setVisible(False)
 
         try:
             # Crear usuario en UserAuth

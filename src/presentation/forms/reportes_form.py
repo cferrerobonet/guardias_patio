@@ -15,7 +15,6 @@ from PyQt6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QPushButton,
     QTabWidget,
     QTextEdit,
@@ -32,6 +31,7 @@ from presentation.forms.reportes_widgets import (
 )
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
+from presentation.widgets.toast_notification import ToastNotification
 
 logger = get_logger(__name__)
 
@@ -434,12 +434,10 @@ class ReportesForm(BaseForm):
 
             email_service = get_email_service()
             if not email_service:
-                QMessageBox.warning(
-                    self,
-                    "Email no configurado",
-                    "La configuración SMTP no está disponible.\n\n"
-                    "Los PDFs se generarán pero no se enviarán por email.\n\n"
-                    "Para configurar el email, ve a Configuración > SMTP.",
+                ToastNotification(
+                    self.window(),
+                    "SMTP no configurado — los PDFs se generarán sin enviar email",
+                    "error",
                 )
                 enviar_email = False
 

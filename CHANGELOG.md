@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.29.0] - 2026-04-22
+
+### 🎯 Resumen
+Mejoras de UX: validaciones de campo inline en diálogos de perfil, errores de negocio como toasts no bloqueantes, y corrección del bug de cambio de curso que no refrescaba vistas ya cargadas.
+
+### Fixed
+- `ccleaner_main_window.py`: al cambiar de curso, se invoca `session.expire_all()` y se refrescan **todos** los widgets ya instanciados (no solo el visible) — evita que vistas cargadas antes del cambio muestren datos del curso anterior (BUG-02)
+
+### Changed
+- `dialogo_crear_perfil.py`: validaciones de campo (usuario, email, contraseña, confirmación, duplicado) pasan de 5 QMessageBox secuenciales a un único label de error inline en rojo bajo el formulario (MODAL-03)
+- `dialogo_editar_perfil.py`: validación de email vacío → label de error inline (MODAL-03)
+- `perfiles_usuario_form.py`: errores de negocio (ValidationError, NotFoundError) y aviso de acceso no permitido → ToastNotification "error" en lugar de QMessageBox bloqueante (UX-09)
+- `reportes_form.py`: aviso de SMTP no configurado → ToastNotification "error" en lugar de QMessageBox (UX-09)
+
+### 🧹 Housekeeping
+- Tests `test_dialogs_basic.py`: actualizados para verificar el label inline en lugar de mock de QMessageBox
+
 ## [5.28.9] - 2026-04-22
 
 ### 🎯 Resumen

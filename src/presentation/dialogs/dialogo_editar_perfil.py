@@ -58,6 +58,11 @@ class DialogoEditarPerfil(QDialog):
 
         layout.addLayout(form_layout)
 
+        self._error_label = QLabel("")
+        self._error_label.setStyleSheet("color: #DC3545; font-size: 11px;")
+        self._error_label.setVisible(False)
+        layout.addWidget(self._error_label)
+
         # Botones
         botones_layout = QHBoxLayout()
         botones_layout.addStretch()
@@ -99,8 +104,11 @@ class DialogoEditarPerfil(QDialog):
         email = self.input_email.text().strip()
 
         if not email:
-            QMessageBox.warning(self, "Error", "El email es obligatorio")
+            self._error_label.setText("El email es obligatorio")
+            self._error_label.setVisible(True)
+            self.input_email.setFocus()
             return
+        self._error_label.setVisible(False)
 
         try:
             # Actualizar email

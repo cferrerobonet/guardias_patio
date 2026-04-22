@@ -204,46 +204,34 @@ class CCleanerMainWindow(QMainWindow):
         else:
             logger.warning("⚠️ No se pudo conectar señal - selector_curso no disponible")
 
+    def _refresh_widget(self, widget) -> bool:
+        """Llama al método de refresco disponible en el widget. Devuelve True si lo encontró."""
+        for method in ("cargar_datos", "actualizar_calendario", "cargar_profesores",
+                       "cargar_zonas", "cargar_guardias", "refrescar"):
+            if hasattr(widget, method):
+                getattr(widget, method)()
+                return True
+        return False
+
     def _on_curso_cambiado(self, curso_id: int):
-        """
-        Maneja el cambio de curso activo.
+        """Maneja el cambio de curso activo. Invalida la sesión y refresca todos los widgets cargados."""
+        logger.info(f"🔄 Curso cambiado a ID: {curso_id} - Refrescando todas las vistas cargadas")
 
-        Refresca la vista actual para mostrar datos del nuevo curso.
-        """
-        logger.info(f"🔄 Curso cambiado a ID: {curso_id} - Refrescando vista actual")
+        # Invalidar la caché de SQLAlchemy para que todos los widgets lean datos frescos
+        try:
+            self.session.expire_all()
+        except Exception as e:
+            logger.warning(f"⚠️ expire_all falló: {e}")
 
-        # Obtener el widget actual
-        current_widget = self.content_stack.currentWidget()
-
-        if current_widget and hasattr(current_widget, "content_widget"):
-            # Es un ContentWrapper, obtener el widget real dentro
-            widget = current_widget.content_widget
+        # Refrescar todos los widgets ya instanciados
+        for section, wrapped in self.widgets.items():
+            if not hasattr(wrapped, "content_widget"):
+                continue
+            widget = wrapped.content_widget
             widget_name = widget.__class__.__name__
-
-            logger.info(f"   Widget actual: {widget_name}")
-
-            # Intentar refrescar el widget si tiene método para ello
-            if hasattr(widget, "cargar_datos"):
-                logger.info(f"   → Llamando a {widget_name}.cargar_datos()")
-                widget.cargar_datos()
-            elif hasattr(widget, "actualizar_calendario"):
-                logger.info(f"   → Llamando a {widget_name}.actualizar_calendario()")
-                widget.actualizar_calendario()
-            elif hasattr(widget, "cargar_profesores"):
-                logger.info(f"   → Llamando a {widget_name}.cargar_profesores()")
-                widget.cargar_profesores()
-            elif hasattr(widget, "cargar_zonas"):
-                logger.info(f"   → Llamando a {widget_name}.cargar_zonas()")
-                widget.cargar_zonas()
-            elif hasattr(widget, "cargar_guardias"):
-                logger.info(f"   → Llamando a {widget_name}.cargar_guardias()")
-                widget.cargar_guardias()
-            elif hasattr(widget, "refrescar"):
-                logger.info(f"   → Llamando a {widget_name}.refrescar()")
-                widget.refrescar()
+            if self._refresh_widget(widget):
+                logger.info(f"   → {widget_name} ({section}) refrescado")
             else:
-                logger.warning(f"   ⚠️ {widget_name} no tiene método de refresco")
+                logger.debug(f"   ⚠️ {widget_name} ({section}) sin método de refresco")
 
-            logger.info(f"✅ Vista {widget_name} refrescada después de cambiar al curso {curso_id}")
-        else:
-            logger.warning("⚠️ No se pudo obtener el widget actual para refrescar")
+        logger.info(f"✅ Todas las vistas refrescadas después de cambiar al curso {curso_id}")

@@ -69,9 +69,9 @@ class TestDialogoEditarPerfil:
         dlg = DialogoEditarPerfil(mock_user_auth, "admin")
         qtbot.addWidget(dlg)
         dlg.input_email.setText("")
-        with patch.object(QMessageBox, "warning") as mock_warn:
-            dlg.guardar_cambios()
-            mock_warn.assert_called_once()
+        dlg.guardar_cambios()
+        assert dlg._error_label.isVisibleTo(dlg)
+        assert dlg._error_label.text() != ""
 
     def test_guardar_cambios_usuario_no_encontrado(self, qtbot, mock_user_auth):
         from presentation.dialogs.dialogo_editar_perfil import DialogoEditarPerfil
@@ -176,9 +176,9 @@ class TestDialogoCrearPerfil:
         dlg = DialogoCrearPerfil(mock_user_auth)
         qtbot.addWidget(dlg)
         dlg.input_usuario.setText("")
-        with patch.object(QMessageBox, "warning") as mock_warn:
-            dlg.crear_perfil()
-            mock_warn.assert_called_once()
+        dlg.crear_perfil()
+        assert dlg._error_label.isVisibleTo(dlg)
+        assert dlg._error_label.text() != ""
 
     def test_crear_perfil_email_vacio(self, qtbot, mock_user_auth):
         from presentation.dialogs.dialogo_crear_perfil import DialogoCrearPerfil
@@ -186,9 +186,9 @@ class TestDialogoCrearPerfil:
         qtbot.addWidget(dlg)
         dlg.input_usuario.setText("nuevo_user")
         dlg.input_email.setText("")
-        with patch.object(QMessageBox, "warning") as mock_warn:
-            dlg.crear_perfil()
-            mock_warn.assert_called_once()
+        dlg.crear_perfil()
+        assert dlg._error_label.isVisibleTo(dlg)
+        assert dlg._error_label.text() != ""
 
     def test_crear_perfil_password_vacio(self, qtbot, mock_user_auth):
         from presentation.dialogs.dialogo_crear_perfil import DialogoCrearPerfil
@@ -197,9 +197,9 @@ class TestDialogoCrearPerfil:
         dlg.input_usuario.setText("nuevo_user")
         dlg.input_email.setText("nuevo@test.com")
         dlg.input_password.setText("")
-        with patch.object(QMessageBox, "warning") as mock_warn:
-            dlg.crear_perfil()
-            mock_warn.assert_called_once()
+        dlg.crear_perfil()
+        assert dlg._error_label.isVisibleTo(dlg)
+        assert dlg._error_label.text() != ""
 
     def test_crear_perfil_passwords_distintos(self, qtbot, mock_user_auth):
         from presentation.dialogs.dialogo_crear_perfil import DialogoCrearPerfil
@@ -209,9 +209,9 @@ class TestDialogoCrearPerfil:
         dlg.input_email.setText("nuevo@test.com")
         dlg.input_password.setText("pass1")
         dlg.input_password_confirm.setText("pass2")
-        with patch.object(QMessageBox, "warning") as mock_warn:
-            dlg.crear_perfil()
-            mock_warn.assert_called_once()
+        dlg.crear_perfil()
+        assert dlg._error_label.isVisibleTo(dlg)
+        assert dlg._error_label.text() != ""
 
     def test_crear_perfil_usuario_duplicado(self, qtbot, mock_user_auth):
         from presentation.dialogs.dialogo_crear_perfil import DialogoCrearPerfil
@@ -221,9 +221,9 @@ class TestDialogoCrearPerfil:
         dlg.input_email.setText("admin2@test.com")
         dlg.input_password.setText("pass123")
         dlg.input_password_confirm.setText("pass123")
-        with patch.object(QMessageBox, "warning") as mock_warn:
-            dlg.crear_perfil()
-            mock_warn.assert_called_once()
+        dlg.crear_perfil()
+        assert dlg._error_label.isVisibleTo(dlg)
+        assert dlg._error_label.text() != ""
 
     def test_crear_perfil_add_user_falla(self, qtbot, mock_user_auth):
         from presentation.dialogs.dialogo_crear_perfil import DialogoCrearPerfil

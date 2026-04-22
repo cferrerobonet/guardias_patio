@@ -19,7 +19,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QMessageBox,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
@@ -320,7 +319,7 @@ class PerfilesUsuarioForm(BaseForm):
                 ToastNotification(self.window(), f"Perfil '{perfil.username}' creado correctamente", "success")
 
         except ValidationError as e:
-            QMessageBox.warning(self, "⚠️ Validación", str(e))
+            ToastNotification(self.window(), str(e), "error")
         except (ValueError, TypeError) as e:
             self.mostrar_error("Error al crear perfil", str(e))
 
@@ -347,9 +346,9 @@ class PerfilesUsuarioForm(BaseForm):
                 ToastNotification(self.window(), f"Perfil '{perfil.username}' actualizado", "success")
 
         except ValidationError as e:
-            QMessageBox.warning(self, "⚠️ Validación", str(e))
+            ToastNotification(self.window(), str(e), "error")
         except NotFoundError as e:
-            QMessageBox.warning(self, "⚠️ No Encontrado", str(e))
+            ToastNotification(self.window(), str(e), "error")
         except (ValueError, TypeError) as e:
             self.mostrar_error("Error al actualizar perfil", str(e))
 
@@ -435,9 +434,9 @@ class PerfilesUsuarioForm(BaseForm):
                 ToastNotification(self.window(), f"Perfil '{username}' eliminado", "success")
 
         except ValidationError as e:
-            QMessageBox.warning(self, "⚠️ Validación", str(e))
+            ToastNotification(self.window(), str(e), "error")
         except NotFoundError as e:
-            QMessageBox.warning(self, "⚠️ No Encontrado", str(e))
+            ToastNotification(self.window(), str(e), "error")
         except (ValueError, TypeError) as e:
             self.mostrar_error("Error al eliminar perfil", str(e))
 
@@ -467,9 +466,9 @@ class PerfilesUsuarioForm(BaseForm):
             ToastNotification(self.window(), f"Logo del perfil '{username}' actualizado", "success")
 
         except ValidationError as e:
-            QMessageBox.warning(self, "⚠️ Validación", str(e))
+            ToastNotification(self.window(), str(e), "error")
         except NotFoundError as e:
-            QMessageBox.warning(self, "⚠️ No Encontrado", str(e))
+            ToastNotification(self.window(), str(e), "error")
         except (ValueError, TypeError) as e:
             self.mostrar_error("Error al actualizar logo", str(e))
 
@@ -484,9 +483,7 @@ class PerfilesUsuarioForm(BaseForm):
 
             # Verificar que es el usuario actual
             if username != self.current_username:
-                QMessageBox.warning(
-                    self, "⚠️ No Permitido", "Solo puedes cambiar la contraseña de tu propio perfil."
-                )
+                ToastNotification(self.window(), "Solo puedes cambiar la contraseña de tu propio perfil", "error")
                 return
 
             dialogo = DialogoCambiarPasswordProfesional(username, self)
@@ -499,6 +496,6 @@ class PerfilesUsuarioForm(BaseForm):
                 ToastNotification(self.window(), "Contraseña cambiada correctamente", "success")
 
         except ValidationError as e:
-            QMessageBox.warning(self, "⚠️ Validación", str(e))
+            ToastNotification(self.window(), str(e), "error")
         except (ValueError, TypeError) as e:
             self.mostrar_error("Error al cambiar contraseña", str(e))
