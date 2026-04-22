@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.28.9] - 2026-04-22
+
+### 🎯 Resumen
+Corrección de fallo preexistente en test de ajustes: eliminadas referencias a versiones antiguas de algoritmos en los textos informativos.
+
+### Fixed
+- `ajustes_widget.py`: eliminadas menciones a "v2.9/v3.0" en textos informativos del selector de algoritmo que causaban fallo en `test_info_algoritmos_muestra_solo_opciones_reales`
+
 ## [5.28.8] - 2026-04-22
 
 ### 🎯 Resumen

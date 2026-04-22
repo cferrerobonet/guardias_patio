@@ -120,7 +120,7 @@ class AjustesWidget(QGroupBox):
             "  Heurístico y ágil para uso general.\n\n"
             "• Óptimo (CP-SAT)\n"
             "  Más lento, pero busca la mejor solución posible.\n\n"
-            "Las referencias antiguas a v2.9/v3.0 ya no representan las opciones reales de la app."
+            "Selecciona el algoritmo según tus necesidades de velocidad o calidad de solución."
         )
         self._actualizar_info_algoritmo()
         layout.addWidget(self.algoritmo_info)
@@ -205,5 +205,5 @@ class AjustesWidget(QGroupBox):
             "Disponibles actualmente:\n"
             "• Rápido (v4 Híbrido): heurístico, más ágil para el día a día.\n"
             "• Óptimo (CP-SAT): más lento, pero busca la mejor solución posible.\n\n"
-            "Las opciones antiguas v2.9 y v3.0 ya no se usan como algoritmos reales de generación."
+            "Cambia el algoritmo según tus necesidades de velocidad o calidad de resultado."
         )
