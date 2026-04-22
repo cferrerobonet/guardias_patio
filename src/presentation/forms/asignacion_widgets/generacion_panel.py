@@ -26,7 +26,7 @@ from application.use_cases.configuracion.actualizar_configuracion import (
 )
 from application.use_cases.guardia import LimpiarGuardiasUseCase
 from infrastructure.repositories import SQLAlchemyGuardiaRepository
-from presentation.theme.legacy_styles import (
+from presentation.theme.terminal_format import (
     format_terminal_error,
     format_terminal_info,
     format_terminal_label,

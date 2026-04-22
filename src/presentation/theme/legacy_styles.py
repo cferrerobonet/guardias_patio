@@ -1,19 +1,21 @@
 """
-Estilos UI para la aplicación Guardias de Patio.
-Módulo centralizado en presentation/theme/ (migrado desde src/ui_styles.py).
+Estilos UI heredados — sólo para widgets que necesitan setStyleSheet() con overrides inline.
+Para botones nuevos usar setProperty("success"/"danger"/"warning", "true") + light.qss.
 """
 
-# ========== COLORES ==========
-COLOR_PRIMARY = "#2196F3"  # Azul principal
-COLOR_SUCCESS = "#4CAF50"  # Verde para acciones positivas
-COLOR_WARNING = "#FF9800"  # Naranja para ediciones
-COLOR_DANGER = "#f44336"  # Rojo para acciones destructivas
-COLOR_INFO = "#00BCD4"  # Cyan para información
+from presentation.theme.tokens import Colors
 
-COLOR_BG_LIGHT = "#f5f5f5"  # Fondo claro
-COLOR_BG_MEDIUM = "#e0e0e0"  # Fondo medio
-COLOR_TEXT_DARK = "#212121"  # Texto oscuro
-COLOR_TEXT_MEDIUM = "#757575"  # Texto medio
+# ========== COLORES — aliases de tokens.Colors (fuente única de verdad) ==========
+COLOR_PRIMARY = Colors.PRIMARY
+COLOR_SUCCESS = "#4CAF50"   # Material green — mantenido para compatibilidad dialogs
+COLOR_WARNING = "#FF9800"   # Material orange — mantenido para compatibilidad dialogs
+COLOR_DANGER = Colors.ERROR
+COLOR_INFO = "#00BCD4"
+
+COLOR_BG_LIGHT = Colors.SURFACE
+COLOR_BG_MEDIUM = Colors.BORDER_DARK
+COLOR_TEXT_DARK = Colors.TEXT_PRIMARY
+COLOR_TEXT_MEDIUM = Colors.TEXT_SECONDARY
 
 # ========== ESTILOS DE TÍTULOS ==========
 
@@ -76,7 +78,9 @@ STYLE_GROUPBOX = f"""
     }}
 """
 
-# ========== ESTILOS DE BOTONES ==========
+# ========== ESTILOS DE BOTONES (legacy) ==========
+# Usar solo en widgets que necesiten concatenar CSS inline.
+# Código nuevo: btn.setProperty("success", "true")  # gestionado por light.qss
 
 STYLE_BUTTON_PRIMARY = f"""
     QPushButton {{
@@ -288,67 +292,17 @@ def apply_compact_layout(layout):
 
 
 # ========== FUNCIONES DE FORMATEO TERMINAL ==========
-
-
-def wrap_terminal_html(content: str) -> str:
-    """
-    Envuelve el contenido HTML en un div con word-wrap para terminales.
-
-    Args:
-        content: Contenido HTML a envolver
-
-    Returns:
-        HTML envuelto con estilos de word-wrap
-    """
-    styles = "white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;"
-    return f'<div style="{styles}">{content}</div>'
-
-
-def format_terminal_header(text: str) -> str:
-    """Formatea un encabezado en estilo terminal (verde brillante)."""
-    return f'<span style="color: #00FF00; font-weight: bold;">{text}</span>'
-
-
-def format_terminal_label(text: str) -> str:
-    """Formatea una etiqueta/label (cyan claro)."""
-    return f'<span style="color: #00FFFF;">{text}</span>'
-
-
-def format_terminal_value(text: str) -> str:
-    """Formatea un valor numérico (amarillo)."""
-    return f'<span style="color: #FFFF00;">{text}</span>'
-
-
-def format_terminal_success(text: str) -> str:
-    """Formatea un mensaje de éxito (verde)."""
-    return f'<span style="color: #00FF00;">{text}</span>'
-
-
-def format_terminal_warning(text: str) -> str:
-    """Formatea una advertencia (naranja/ámbar)."""
-    return f'<span style="color: #FFA500;">{text}</span>'
-
-
-def format_terminal_error(text: str) -> str:
-    """Formatea un error (rojo)."""
-    return f'<span style="color: #FF4444;">{text}</span>'
-
-
-def format_terminal_info(text: str) -> str:
-    """Formatea información secundaria (gris claro)."""
-    return f'<span style="color: #AAAAAA;">{text}</span>'
-
-
-def format_terminal_profesor(text: str) -> str:
-    """Formatea nombre de profesor (azul brillante)."""
-    return f'<span style="color: #00BFFF;">{text}</span>'
-
-
-def format_terminal_number(text: str) -> str:
-    """Formatea números importantes (amarillo brillante)."""
-    return f'<span style="color: #FFFF00; font-weight: bold;">{text}</span>'
-
-
-def format_terminal_prompt(text: str) -> str:
-    """Formatea un prompt de terminal (verde oscuro)."""
-    return f'<span style="color: #00AA00;">$</span> <span style="color: #00FF00;">{text}</span>'
+# Delegadas a terminal_format.py — importar desde allí en código nuevo.
+from presentation.theme.terminal_format import (  # noqa: E402, F401
+    format_terminal_error,
+    format_terminal_header,
+    format_terminal_info,
+    format_terminal_label,
+    format_terminal_number,
+    format_terminal_profesor,
+    format_terminal_prompt,
+    format_terminal_success,
+    format_terminal_value,
+    format_terminal_warning,
+    wrap_terminal_html,
+)

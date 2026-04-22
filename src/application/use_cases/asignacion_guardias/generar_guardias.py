@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
+from core.usage_logger import usage_log
 import json as _json
 
 from infrastructure.database.models import Configuracion, Guardia, GuardiaAuditLog, Profesor
@@ -156,6 +157,7 @@ class GenerarGuardiasUseCase:
             mensaje = self._generar_mensaje(total_generado, esperado, diff)
 
             logger.info(f"Guardias generadas: {total_generado} de {esperado} esperados")
+            usage_log("GEN_CPSAT", algoritmo=algoritmo, guardias=total_generado, esperado=esperado)
 
             # Exportar comparación cuotas vs asignaciones para análisis
             self._exportar_comparacion_cuotas(resumen)

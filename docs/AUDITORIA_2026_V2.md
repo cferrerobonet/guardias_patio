@@ -847,7 +847,7 @@ No existe registro de quién cambió qué guardia y cuándo. Si hay una queja de
 
 ---
 
-### FUNC-03 — AÑADIR: Importación de horarios/guardias desde CSV/Excel más flexible
+### ~~FUNC-03 — AÑADIR: Importación de horarios/guardias desde CSV/Excel más flexible~~ ✅ RESUELTO v5.30.9
 **Severidad: Media**
 
 El importador de profesores desde Excel existe pero es rígido: requiere un formato exacto de columnas. Si el archivo tiene el nombre de la columna ligeramente diferente ("Nombre Completo" vs "nombre_completo"), falla.
@@ -1164,7 +1164,7 @@ def closeEvent(self, event):
 
 ---
 
-### OBS-01 — No hay métricas de uso de la app
+### ~~OBS-01 — No hay métricas de uso de la app~~ ✅ RESUELTO v5.30.9
 **Severidad: Baja**
 
 No se sabe qué secciones usa el usuario, cuánto tiempo tarda en generar guardias, cuántas veces falla el CP-SAT. Esto dificulta priorizar mejoras.
@@ -1264,7 +1264,7 @@ def check_for_updates(current_version: str, callback):
 
 ---
 
-### TECH-02 — `legacy_styles.py` con funciones `format_terminal_*` usadas en producción
+### ~~TECH-02 — `legacy_styles.py` con funciones `format_terminal_*` usadas en producción~~ ✅ RESUELTO v5.30.9
 **Severidad: Baja**
 
 `src/presentation/theme/legacy_styles.py` contiene funciones HTML de formateo de tipo "terminal retro" que se usan en `GeneracionPanel` para el output del CP-SAT. Son estilos embebidos en Python, difíciles de mantener.
@@ -1288,7 +1288,7 @@ Añadir 5-10 tests de flujo completo con `pytest-qt` usando fixtures de BD in-me
 
 ---
 
-### TECH-04 — `src/presentation/theme/legacy_styles.py` tiene estilos de botones duplicados en `light.qss`
+### ~~TECH-04 — `src/presentation/theme/legacy_styles.py` tiene estilos de botones duplicados en `light.qss`~~ ✅ RESUELTO v5.30.9
 **Severidad: Baja**
 
 `STYLE_BUTTON_SUCCESS`, `STYLE_BUTTON_DANGER`, etc. en `legacy_styles.py` duplican los selectores `QPushButton[success="true"]` y `QPushButton[danger="true"]` de `light.qss`. Hay que elegir uno.

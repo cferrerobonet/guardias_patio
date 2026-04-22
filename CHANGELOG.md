@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.30.9] - 2026-04-22
+
+### 🎯 Resumen
+Cuatro ítems de auditoría completados: métricas de uso, unificación de estilos legacy, importación flexible con mapeo de columnas y verificador de CP-SAT.
+
+### ✨ Added
+- `core/usage_logger.py`: registro local de métricas de uso (`usage_log()`) — escribe en `logs/usage.log` (OBS-01)
+- `presentation/dialogs/column_mapping_dialog.py`: diálogo de mapeo de columnas antes de importar Excel/CSV — permite asignar cada campo de la app a una columna del archivo, con previsualización de 5 filas y persistencia via QSettings (FUNC-03)
+- `presentation/theme/terminal_format.py`: funciones de formateo HTML del terminal extraídas de `legacy_styles.py` (TECH-02)
+
+### Changed
+- `importar_profesores_desde_excel()`: nuevo parámetro `column_mapping` — si se proporciona, renombra columnas por nombre; si no, comportamiento legacy por posición (FUNC-03)
+- `ImportExportForm.importar_profesores()`: muestra `ColumnMappingDialog` antes de importar y pasa mapeo y skip_rows al servicio (FUNC-03)
+- `presentation/theme/legacy_styles.py`: constantes de color reemplazadas por aliases de `tokens.Colors`; funciones de terminal re-exportadas desde `terminal_format.py` (TECH-02)
+- `CCleanerMainWindow.on_section_changed()`: emite `usage_log("NAV", ...)` en cada cambio de sección (OBS-01)
+- `GenerarGuardiasUseCase.execute()`: emite `usage_log("GEN_CPSAT", ...)` al terminar la generación (OBS-01)
+
 ## [5.30.8] - 2026-04-22
 
 ### 🎯 Resumen

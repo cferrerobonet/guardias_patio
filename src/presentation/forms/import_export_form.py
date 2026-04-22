@@ -24,6 +24,7 @@ from services.importador_profesores import importar_profesores
 from utils import get_logger
 from utils.icons import icon_for_button
 
+from presentation.dialogs.column_mapping_dialog import ColumnMappingDialog
 from presentation.forms.base_form import BaseForm
 from presentation.forms.import_export_widgets import JsonOperationsWidget
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
@@ -355,6 +356,14 @@ class ImportExportForm(BaseForm):
             if not archivo:
                 return  # Usuario canceló
 
+            # Mostrar diálogo de mapeo de columnas
+            dialogo = ColumnMappingDialog(archivo, parent=self)
+            if dialogo.exec() != ColumnMappingDialog.DialogCode.Accepted:
+                return
+
+            col_mapping = dialogo.mapping
+            skip = dialogo.skip_rows
+
             # Importar con indicador de progreso
             def tarea_importacion(progress_callback):
                 factory = RepositoryFactory(self.session)
@@ -362,7 +371,8 @@ class ImportExportForm(BaseForm):
                 return importar_profesores(
                     profesor_repo,
                     archivo,
-                    skip_rows=9,
+                    skip_rows=skip,
+                    column_mapping=col_mapping,
                     progress_callback=progress_callback,
                 )
 

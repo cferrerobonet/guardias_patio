@@ -7,6 +7,7 @@ Layout profesional con sidebar oscuro y contenido blanco.
 from datetime import datetime, timezone
 
 from core.logging import get_logger
+from core.usage_logger import usage_log
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QMessageBox,
@@ -185,6 +186,7 @@ class CCleanerMainWindow(QMainWindow):
         self._ensure_view(section)
         if section in self.widgets:
             self.content_stack.setCurrentWidget(self.widgets[section])
+            usage_log("NAV", section=section)
 
     def connect_signals(self):
         """Conectar señales de los widgets"""

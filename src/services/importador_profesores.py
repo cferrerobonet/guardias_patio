@@ -43,6 +43,7 @@ def importar_profesores_desde_excel(
     profesor_repo_or_session,
     archivo_path: str,
     skip_rows: int = 9,
+    column_mapping: Optional[dict] = None,
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> dict:
     """
@@ -100,24 +101,36 @@ def importar_profesores_desde_excel(
 
         reportar_progreso(10, "Archivo leído correctamente")
 
-        # Renombrar columnas para facilitar acceso
-        # Esperamos: Apellidos y nombre | Tel. fijo | Tel. móvil | Correo electrónico
-        columnas_esperadas = ["nombre", "tel_fijo", "tel_movil", "email"]
-
-        # Verificar que tengamos al menos 4 columnas
-        if len(df.columns) < 4:
-            error_msg = (
-                f"El archivo no tiene suficientes columnas "
-                f"(esperadas: 4, encontradas: {len(df.columns)})"
-            )
-            logger.error(error_msg)
-            resultados["errores"] += 1
-            resultados["detalles"].append({"estado": "error_archivo", "error": error_msg})
-            reportar_progreso(100, f"❌ Error: {error_msg}")
-            return resultados
-
-        # Asignar nombres de columnas
-        df.columns = columnas_esperadas + [f"extra_{i}" for i in range(len(df.columns) - 4)]
+        # Aplicar mapeo de columnas si se proporcionó; si no, usar posición legacy
+        if column_mapping:
+            col_nombre = column_mapping.get("nombre")
+            col_email = column_mapping.get("email")
+            if col_nombre and col_nombre in df.columns:
+                df = df.rename(columns={col_nombre: "nombre"})
+            if col_email and col_email in df.columns:
+                df = df.rename(columns={col_email: "email"})
+            if "nombre" not in df.columns:
+                error_msg = "La columna de nombre no se encontró en el archivo"
+                resultados["errores"] += 1
+                resultados["detalles"].append({"estado": "error_archivo", "error": error_msg})
+                reportar_progreso(100, f"❌ Error: {error_msg}")
+                return resultados
+            if "email" not in df.columns:
+                df["email"] = None
+        else:
+            # Comportamiento legacy: asignación por posición
+            columnas_esperadas = ["nombre", "tel_fijo", "tel_movil", "email"]
+            if len(df.columns) < 4:
+                error_msg = (
+                    f"El archivo no tiene suficientes columnas "
+                    f"(esperadas: 4, encontradas: {len(df.columns)})"
+                )
+                logger.error(error_msg)
+                resultados["errores"] += 1
+                resultados["detalles"].append({"estado": "error_archivo", "error": error_msg})
+                reportar_progreso(100, f"❌ Error: {error_msg}")
+                return resultados
+            df.columns = columnas_esperadas + [f"extra_{i}" for i in range(len(df.columns) - 4)]
 
         reportar_progreso(15, "Validando datos...")
 
