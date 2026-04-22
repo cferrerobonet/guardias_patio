@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.28.5] - 2026-04-22
+
+### 🎯 Resumen
+Fix: tabla de zonas no se actualizaba visualmente tras editar una zona.
+
+### Fixed
+- `zona_form.py`: añadido `session.expire_all()` tras `actualizar_zona_uc.execute()` — el identity map de SQLAlchemy devolvía los datos anteriores al recargar la tabla
+
 ## [5.28.4] - 2026-04-22
 
 ### 🎯 Resumen

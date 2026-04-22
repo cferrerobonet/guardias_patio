@@ -364,6 +364,7 @@ class ZonaForm(BaseForm):
 
                 # Ejecutar Use Case de actualización
                 zona_actualizada = self.actualizar_zona_uc.execute(self.zona_editando_id, zona_dto)
+                self.session.expire_all()
 
                 # ✅ Recargar tabla ANTES de salir del modo edición
                 self.cargar_zonas()
