@@ -1128,7 +1128,7 @@ def _dias_lectivos_cached(self, anio: int, mes: int) -> list:
 
 ## 6. Detección de bugs y observabilidad
 
-### BUG-01 — Estado inconsistente si la generación CP-SAT falla a mitad
+### ~~BUG-01 — Estado inconsistente si la generación CP-SAT falla a mitad~~ ✅ RESUELTO v5.29.1
 **Severidad: Alta**
 
 Si `generar_guardias_cpsat()` falla después de insertar algunas guardias (ej: excepción de BD, timeout del solver), la BD queda en estado parcial. No hay rollback garantizado.

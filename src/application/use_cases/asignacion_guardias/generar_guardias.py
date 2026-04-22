@@ -83,8 +83,7 @@ class GenerarGuardiasUseCase:
                     progress_callback("Eliminando guardias existentes...", 10)
 
                 self.session.query(Guardia).delete()
-                self.session.commit()
-                logger.info(f"Eliminadas {count_guardias} guardias existentes")
+                logger.info(f"Eliminadas {count_guardias} guardias existentes (pendiente commit)")
 
             # Obtener estadísticas
             if progress_callback:
@@ -160,7 +159,7 @@ class GenerarGuardiasUseCase:
                 resumen_por_profesor=resumen,
                 mensaje=mensaje,
             )
-        except (ValueError, TypeError, OSError) as e:
+        except Exception as e:
             self.session.rollback()
             logger.error(f"Error al generar guardias: {str(e)}")
             raise BusinessLogicError(f"No se pudo generar: {str(e)}") from e

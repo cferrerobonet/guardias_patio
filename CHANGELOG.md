@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.29.1] - 2026-04-22
+
+### 🎯 Resumen
+Corrección crítica de integridad: la generación de guardias es ahora atómica — el borrado de guardias previas y la inserción de las nuevas se confirman en el mismo commit.
+
+### Fixed
+- `generar_guardias.py`: eliminado el `commit()` anticipado tras el borrado de guardias existentes; ahora el delete y los inserts son una única transacción — si la generación falla a mitad, se hace rollback completo sin dejar la BD vacía (BUG-01)
+- `generar_guardias.py`: ampliado el `except` de `(ValueError, TypeError, OSError)` a `Exception` para garantizar rollback ante cualquier tipo de error (SQLAlchemyError, RuntimeError, etc.)
+
 ## [5.29.0] - 2026-04-22
 
 ### 🎯 Resumen
