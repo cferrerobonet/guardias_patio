@@ -80,6 +80,7 @@ class SidebarMenu(QWidget):
         layout.addWidget(self._toggle_btn)
 
         shortcut = QShortcut(QKeySequence("Ctrl+B"), self)
+        shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
         shortcut.activated.connect(self.toggle_collapse)
 
         # ========== SECCIÓN SUPERIOR: LOGO ==========
@@ -416,7 +417,13 @@ class SidebarMenu(QWidget):
 
     def _apply_width(self):
         w = _SIDEBAR_COLLAPSED if self._collapsed else _SIDEBAR_EXPANDED
-        self.setFixedWidth(w)
+        self.setMinimumWidth(w)
+        self.setMaximumWidth(w)
+        self.resize(w, self.height())
+        self.updateGeometry()
+        if self.parent() and self.parent().layout():
+            self.parent().layout().invalidate()
+            self.parent().layout().activate()
 
     def toggle_collapse(self):
         self._collapsed = not self._collapsed

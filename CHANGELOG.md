@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.28.6] - 2026-04-22
+
+### 🎯 Resumen
+Fix: sidebar colapsable no respondía ni al botón ni a Ctrl+B.
+
+### Fixed
+- `ccleaner_sidebar.py`: `_apply_width()` reemplaza `setFixedWidth` por `setMinimumWidth` + `setMaximumWidth` + `resize` + `updateGeometry` + invalidación del layout padre — necesario para forzar el reflayout en pantalla completa
+- `ccleaner_sidebar.py`: shortcut Ctrl+B cambiado a `ApplicationShortcut` para que funcione independientemente del widget con foco
+
 ## [5.28.5] - 2026-04-22
 
 ### 🎯 Resumen
