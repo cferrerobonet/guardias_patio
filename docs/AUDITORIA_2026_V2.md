@@ -1320,7 +1320,7 @@ Añadir campos `nombre` y `apellidos` en el modelo `Profesor`. Mantener `nombre_
 
 ## 8. Deuda técnica residual
 
-### TECH-01 — Dos sistemas de tema coexisten: `light.qss` y `ccleaner_theme.py`
+### ~~TECH-01 — Dos sistemas de tema coexisten: `light.qss` y `ccleaner_theme.py`~~ ✅ RESUELTO v5.30.7
 **Severidad: Media**
 
 `src/presentation/theme/light.qss` es el sistema nuevo. `src/presentation/themes/ccleaner_theme.py` (834 líneas) es el anterior. Ambos coexisten y se aplican en diferentes partes de la app. Esto crea inconsistencias visuales entre secciones.

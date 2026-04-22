@@ -1,82 +1,70 @@
 """
-Sistema de Temas Inspirado en CCleaner
-=======================================
-Diseño profesional con sidebar oscuro y canvas blanco limpio.
+Sistema de Temas — capa de compatibilidad.
 
-Características:
-- Sidebar oscuro (#3E4857) con texto blanco
-- Canvas blanco puro para contenido
-- Tipografía uniforme (Segoe UI / San Francisco / -apple-system)
-- Sin emojis, símbolos unicode minimalistas
-- Alto contraste y legibilidad
+Las constantes de este módulo son aliases de presentation.theme.tokens.
+No añadir constantes nuevas aquí; usar tokens.Colors directamente.
 """
 
-# ========== PALETA DE COLORES ESTILO CCLEANER ==========
+from presentation.theme.tokens import BorderRadius, Colors, FontSize, Spacing
 
-# Colores del Sidebar (Tema Oscuro)
-SIDEBAR_BG = "#3E4857"  # Fondo sidebar oscuro
-SIDEBAR_BG_DARK = "#2D3845"  # Fondo sidebar más oscuro
-SIDEBAR_TEXT = "#FFFFFF"  # Texto blanco en sidebar
-SIDEBAR_TEXT_DIM = "#B0B8C4"  # Texto secundario en sidebar
-SIDEBAR_HOVER = "#4A5668"  # Hover en sidebar
-SIDEBAR_ACTIVE = "#5B6B7F"  # Item activo en sidebar
-SIDEBAR_BORDER = "#2A3340"  # Bordes en sidebar
+# Sidebar
+SIDEBAR_BG = Colors.SIDEBAR_BG
+SIDEBAR_BG_DARK = "#2D3845"
+SIDEBAR_TEXT = Colors.SIDEBAR_TEXT
+SIDEBAR_TEXT_DIM = "#B0B8C4"
+SIDEBAR_HOVER = Colors.SIDEBAR_HOVER
+SIDEBAR_ACTIVE = "#5B6B7F"
+SIDEBAR_BORDER = Colors.SIDEBAR_BORDER
 
-# Colores principales de acción
-PRIMARY_BLUE = "#007ACC"  # Azul primario (botones principales)
-PRIMARY_BLUE_HOVER = "#005A9E"  # Hover azul
-PRIMARY_BLUE_LIGHT = "#E6F2FA"  # Fondos azul claro
+# Acción
+PRIMARY_BLUE = Colors.PRIMARY
+PRIMARY_BLUE_HOVER = Colors.PRIMARY_DARK
+PRIMARY_BLUE_LIGHT = Colors.PRIMARY_LIGHT
 
-# Colores de estado
-SUCCESS_GREEN = "#28A745"  # Verde éxito
+# Estado
+SUCCESS_GREEN = "#28A745"
 SUCCESS_GREEN_LIGHT = "#D4EDDA"
-WARNING_ORANGE = "#FFC107"  # Naranja advertencia
-WARNING_ORANGE_LIGHT = "#FFF3CD"
-ERROR_RED = "#DC3545"  # Rojo error
-ERROR_RED_LIGHT = "#F8D7DA"
+WARNING_ORANGE = "#FFC107"
+WARNING_ORANGE_LIGHT = Colors.WARNING_BG
+ERROR_RED = Colors.ERROR
+ERROR_RED_LIGHT = Colors.ERROR_BG
 
-# Grises para el canvas/contenido
-CONTENT_BG = "#FFFFFF"  # Fondo blanco puro
-CONTENT_BG_ALT = "#F8F9FA"  # Fondo alternativo
-BORDER_LIGHT = "#E1E4E8"  # Bordes claros
-BORDER_MEDIUM = "#D1D5DB"  # Bordes normales
-TEXT_PRIMARY = "#1F2937"  # Texto principal negro
-TEXT_SECONDARY = "#6B7280"  # Texto secundario gris
-TEXT_DISABLED = "#9CA3AF"  # Texto deshabilitado
+# Contenido
+CONTENT_BG = Colors.BACKGROUND
+CONTENT_BG_ALT = Colors.SURFACE
+BORDER_LIGHT = Colors.BORDER
+BORDER_MEDIUM = Colors.BORDER_DARK
+TEXT_PRIMARY = Colors.TEXT_PRIMARY
+TEXT_SECONDARY = Colors.TEXT_SECONDARY
+TEXT_DISABLED = Colors.TEXT_DISABLED
 
-# ========== TIPOGRAFÍA ==========
-
-# Familia de fuentes (fallback automático por OS)
+# Tipografía
 FONT_FAMILY = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
-
-# Tamaños de fuente
-FONT_SIZE_SMALL = 12  # Secundario
-FONT_SIZE_NORMAL = 14  # Texto normal
-FONT_SIZE_LARGE = 16  # Subtítulos
-FONT_SIZE_XLARGE = 20  # Títulos de sección
-FONT_SIZE_XXLARGE = 24  # Títulos principales
-
-# Pesos de fuente
+FONT_SIZE_SMALL = FontSize.CAPTION
+FONT_SIZE_NORMAL = FontSize.BODY
+FONT_SIZE_LARGE = FontSize.SUBTITLE
+FONT_SIZE_XLARGE = FontSize.TITLE
+FONT_SIZE_XXLARGE = FontSize.H2
 FONT_WEIGHT_NORMAL = 400
 FONT_WEIGHT_MEDIUM = 500
 FONT_WEIGHT_SEMIBOLD = 600
 FONT_WEIGHT_BOLD = 700
 
-# ========== ESPACIADO ==========
-SPACING_XS = 4
-SPACING_SM = 8
-SPACING_MD = 12
-SPACING_LG = 16
-SPACING_XL = 20
-SPACING_XXL = 24
+# Espaciado
+SPACING_XS = Spacing.XS
+SPACING_SM = Spacing.SM
+SPACING_MD = Spacing.MD
+SPACING_LG = Spacing.LG
+SPACING_XL = Spacing.XL
+SPACING_XXL = Spacing.XXL
 SPACING_XXXL = 32
 
-# ========== RADIO DE BORDES ==========
-RADIUS_SMALL = 2
-RADIUS_MEDIUM = 4
-RADIUS_LARGE = 6
+# Bordes
+RADIUS_SMALL = BorderRadius.SM
+RADIUS_MEDIUM = BorderRadius.MD
+RADIUS_LARGE = BorderRadius.LG
 
-# ========== SOMBRAS ==========
+# Sombras
 SHADOW_SMALL = "0 1px 2px rgba(0, 0, 0, 0.05)"
 SHADOW_MEDIUM = "0 2px 4px rgba(0, 0, 0, 0.08)"
 SHADOW_LARGE = "0 4px 8px rgba(0, 0, 0, 0.12)"

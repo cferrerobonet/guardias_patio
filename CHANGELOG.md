@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.30.7] - 2026-04-22
+
+### 🎯 Resumen
+Unificación de sistemas de tema: `ccleaner_theme.py` ahora es una capa de compatibilidad que redirige a `tokens.Colors/Spacing/FontSize/BorderRadius`.
+
+### 🧹 Housekeeping
+- `ccleaner_theme.py`: todas las constantes literales reemplazadas por aliases de `presentation.theme.tokens`; los importadores existentes siguen funcionando sin cambios (TECH-01)
+
 ## [5.30.6] - 2026-04-22
 
 ### 🎯 Resumen
