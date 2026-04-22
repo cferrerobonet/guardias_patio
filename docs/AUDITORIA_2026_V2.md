@@ -907,7 +907,7 @@ class ColumnMappingDialog(QDialog):
 
 ---
 
-### FUNC-04 — AÑADIR: Modo "semana típica" para restricciones de profesor
+### ~~FUNC-04 — AÑADIR: Modo "semana típica" para restricciones de profesor~~ ✅ RESUELTO v5.30.3
 **Severidad: Media**
 
 Las restricciones de días y recreos de un profesor son configurables (JSON en `dias_semana_permitidos` y `recreos_permitidos`). Pero la UI para configurarlas es una rejilla de checkboxes que no es intuitiva.

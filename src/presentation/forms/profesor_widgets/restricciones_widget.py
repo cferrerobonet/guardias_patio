@@ -34,6 +34,126 @@ from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
 logger = get_logger(__name__)
 
+_DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie"]
+_COLOR_ON = "#4CAF50"
+_COLOR_OFF = "#E0E0E0"
+_COLOR_ON_TEXT = "white"
+_COLOR_OFF_TEXT = "#888"
+
+
+class SemanaRestriccionesWidget(QWidget):
+    """Rejilla visual 5×N de disponibilidad (días × recreos) con botones toggle."""
+
+    changed = pyqtSignal()
+
+    def __init__(self, recreos: List[int], parent=None):
+        super().__init__(parent)
+        self._recreos = recreos
+        self._celdas: Dict[tuple, QPushButton] = {}  # (dia, recreo) -> QPushButton
+        self._build()
+
+    def _build(self):
+        from PyQt6.QtWidgets import QGridLayout
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 4, 0, 4)
+        layout.setSpacing(8)
+
+        # Plantillas rápidas
+        tpl_layout = QHBoxLayout()
+        tpl_layout.setSpacing(6)
+        for etiqueta, datos in [
+            ("Siempre", {d: list(self._recreos) for d in range(5)}),
+            ("Solo mañanas", {d: [r for r in self._recreos if r <= 2] for d in range(5)}),
+            ("Solo tardes", {d: [r for r in self._recreos if r > 2] for d in range(5)}),
+            ("Lun/Mié/Vie", {d: list(self._recreos) for d in [0, 2, 4]}),
+            ("Ninguno", {}),
+        ]:
+            btn = QPushButton(etiqueta)
+            btn.setObjectName("secondaryButton")
+            btn.setMaximumHeight(26)
+            _datos = datos
+            btn.clicked.connect(lambda _=False, d=_datos: self._aplicar_plantilla(d))
+            tpl_layout.addWidget(btn)
+        tpl_layout.addStretch()
+        layout.addLayout(tpl_layout)
+
+        # Rejilla
+        from PyQt6.QtWidgets import QGridLayout
+        grid = QGridLayout()
+        grid.setSpacing(4)
+
+        # Cabecera días
+        for col, dia in enumerate(_DIAS):
+            lbl = QLabel(dia)
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl.setStyleSheet("font-weight: bold; font-size: 11px;")
+            grid.addWidget(lbl, 0, col + 1)
+
+        # Filas de recreos
+        for row, recreo in enumerate(self._recreos):
+            lbl = QLabel(f"R{recreo}")
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl.setStyleSheet("font-size: 11px; color: #555;")
+            grid.addWidget(lbl, row + 1, 0)
+            for col in range(5):
+                btn = QPushButton("✓")
+                btn.setCheckable(True)
+                btn.setChecked(True)
+                btn.setFixedSize(44, 32)
+                self._aplicar_color(btn, True)
+                btn.toggled.connect(lambda checked, b=btn: self._on_toggle(b, checked))
+                self._celdas[(col, recreo)] = btn
+                grid.addWidget(btn, row + 1, col + 1)
+
+        grid_widget = QWidget()
+        grid_widget.setLayout(grid)
+        layout.addWidget(grid_widget)
+
+    def _aplicar_color(self, btn: QPushButton, on: bool):
+        color = _COLOR_ON if on else _COLOR_OFF
+        text_color = _COLOR_ON_TEXT if on else _COLOR_OFF_TEXT
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color};
+                color: {text_color};
+                border-radius: 4px;
+                border: none;
+                font-weight: bold;
+                font-size: 13px;
+            }}
+        """)
+        btn.setText("✓" if on else "")
+
+    def _on_toggle(self, btn: QPushButton, checked: bool):
+        self._aplicar_color(btn, checked)
+        self.changed.emit()
+
+    def _aplicar_plantilla(self, datos: Dict[int, List[int]]):
+        for (dia, recreo), btn in self._celdas.items():
+            activo = recreo in datos.get(dia, [])
+            btn.blockSignals(True)
+            btn.setChecked(activo)
+            self._aplicar_color(btn, activo)
+            btn.blockSignals(False)
+        self.changed.emit()
+
+    def get_restricciones_dias(self) -> Dict[int, List[int]]:
+        resultado: Dict[int, List[int]] = {}
+        for (dia, recreo), btn in self._celdas.items():
+            if btn.isChecked():
+                resultado.setdefault(dia, []).append(recreo)
+        for dia in resultado:
+            resultado[dia] = sorted(resultado[dia])
+        return resultado
+
+    def set_restricciones_dias(self, datos: Dict[int, List[int]]):
+        for (dia, recreo), btn in self._celdas.items():
+            activo = recreo in datos.get(dia, [])
+            btn.blockSignals(True)
+            btn.setChecked(activo)
+            self._aplicar_color(btn, activo)
+            btn.blockSignals(False)
+
 
 class RestriccionesWidget(QGroupBox):
     """
@@ -61,11 +181,7 @@ class RestriccionesWidget(QGroupBox):
         # Estado interno: {día_index: [recreos_permitidos]}
         self.restricciones_dias: Dict[int, List[int]] = {}
 
-        # Referencias a widgets
-        self.tabla_restricciones: Optional[QTableWidget] = None
-        self.recreos_checks: Dict[int, QCheckBox] = {}
-        self.form_panel: Optional[QWidget] = None
-        self.dia_editando: Optional[int] = None
+        # (referencias legacy eliminadas — se usa semana_widget)
 
         self._setup_ui()
         self._conectar_senales()
@@ -84,21 +200,11 @@ class RestriccionesWidget(QGroupBox):
         # Separador
         main_layout.addWidget(self._crear_separador())
 
-        # Layout horizontal: Tabla + Panel de edición (SIEMPRE VISIBLE)
-        panel_restricciones = QHBoxLayout()
-        panel_restricciones.setSpacing(6)  # Reducido de 10 a 6
-
-        # Tabla de restricciones (70%)
-        panel_restricciones.addWidget(self._crear_tabla_restricciones(), 70)
-
-        # Panel de edición lateral (30%)
-        self.form_panel = self._crear_panel_edicion()
-        panel_restricciones.addWidget(self.form_panel, 30)
-
-        # Contenedor para el panel de restricciones (siempre habilitado en modo solo lectura)
-        self.panel_restricciones_widget = QWidget()
-        self.panel_restricciones_widget.setLayout(panel_restricciones)
-        main_layout.addWidget(self.panel_restricciones_widget)
+        # Rejilla visual de disponibilidad
+        self.semana_widget = SemanaRestriccionesWidget(self.RECREOS)
+        self.semana_widget.changed.connect(self._on_semana_changed)
+        self.panel_restricciones_widget = self.semana_widget
+        main_layout.addWidget(self.semana_widget)
 
         # Checkbox principal - AL FINAL, después de la matriz
         self.usar_restricciones_checkbox = QCheckBox(
@@ -192,104 +298,10 @@ class RestriccionesWidget(QGroupBox):
 
         return layout
 
-    def _crear_tabla_restricciones(self) -> QWidget:
-        """Crear tabla de restricciones por día."""
-        container = QWidget()
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
-
-        # Título
-        titulo = QLabel("<b>Disponibilidad por Día</b>")
-        titulo.setObjectName("fieldLabel")
-        layout.addWidget(titulo)
-
-        # Tabla
-        self.tabla_restricciones = QTableWidget()
-        self.tabla_restricciones.setColumnCount(2)
-        self.tabla_restricciones.setHorizontalHeaderLabels(["Día", "Recreos"])
-        self.tabla_restricciones.horizontalHeader().setStretchLastSection(True)
-        self.tabla_restricciones.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.ResizeToContents
-        )
-        self.tabla_restricciones.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.tabla_restricciones.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self.tabla_restricciones.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.tabla_restricciones.setAlternatingRowColors(True)
-        self.tabla_restricciones.clicked.connect(self._cargar_dia_en_formulario)
-
-        # Poblar tabla con los 5 días
-        self._poblar_tabla()
-
-        layout.addWidget(self.tabla_restricciones)
-
-        container.setLayout(layout)
-        return container
-
-    def _poblar_tabla(self):
-        """Poblar tabla con los 5 días de la semana."""
-        self.tabla_restricciones.setRowCount(5)
-
-        for i in range(5):
-            # Día de la semana
-            dia_item = QTableWidgetItem(self.DIAS_SEMANA[i])
-            dia_item.setData(Qt.ItemDataRole.UserRole, i)  # Guardar índice del día
-            self.tabla_restricciones.setItem(i, 0, dia_item)
-
-            # Recreos (inicialmente vacío)
-            recreos_item = QTableWidgetItem("—")
-            recreos_item.setForeground(Qt.GlobalColor.gray)
-            self.tabla_restricciones.setItem(i, 1, recreos_item)
-
-    def _crear_panel_edicion(self) -> QWidget:
-        """Crear panel lateral de edición de recreos (SIEMPRE visible)."""
-        panel = QWidget()
-        layout = QVBoxLayout()
-        layout.setSpacing(4)  # Reducido de 6 a 4
-
-        # Label del día seleccionado
-        self.label_dia_editando = QLabel("Selecciona un día de la tabla")
-        self.label_dia_editando.setStyleSheet("font-weight: bold; font-size: 13px; color: #007ACC;")
-        self.label_dia_editando.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.label_dia_editando)
-
-        # Checkboxes de recreos
-        recreos_group = QGroupBox("Recreos disponibles:")
-        recreos_group.setStyleSheet("QGroupBox { font-weight: bold; }")
-        recreos_layout = QVBoxLayout()
-        recreos_layout.setSpacing(6)
-
-        for recreo in self.RECREOS:
-            check = QCheckBox(f"Recreo {recreo} (R{recreo})")
-            check.setObjectName("fieldLabel")
-            check.setEnabled(False)
-            recreos_layout.addWidget(check)
-            self.recreos_checks[recreo] = check
-
-        recreos_group.setLayout(recreos_layout)
-        layout.addWidget(recreos_group)
-
-        # Botones de acción - SIMPLIFICADOS
-        layout.addWidget(self._crear_separador())
-
-        # Solo 2 botones: aplicar a todos y restaurar defecto
-        btn_aplicar_todos = QPushButton("Aplicar a todos")
-        btn_aplicar_todos.clicked.connect(self._aplicar_recreos_a_todos)
-        btn_aplicar_todos.setToolTip(
-            "Copia la configuración de recreos actual a todos los días de la semana"
-        )
-        layout.addWidget(btn_aplicar_todos)
-
-        btn_limpiar_todo = QPushButton("Restaurar defecto")
-        btn_limpiar_todo.setProperty("warning", "true")
-        btn_limpiar_todo.clicked.connect(self._restaurar_por_turno)
-        btn_limpiar_todo.setToolTip("Restaura los recreos por defecto según el turno del profesor")
-        layout.addWidget(btn_limpiar_todo)
-
-        layout.addStretch()
-
-        panel.setLayout(layout)
-        return panel
+    def _on_semana_changed(self):
+        """Sincroniza el estado interno desde la rejilla visual."""
+        self.restricciones_dias = self.semana_widget.get_restricciones_dias()
+        self.restricciones_changed.emit()
 
     def _conectar_senales(self):
         """Conectar señales de los campos."""
@@ -300,11 +312,6 @@ class RestriccionesWidget(QGroupBox):
         # Señales de cambio
         self.fecha_inicio_guardias_input.dateChanged.connect(self.restricciones_changed.emit)
         self.fecha_fin_guardias_input.dateChanged.connect(self.restricciones_changed.emit)
-
-        # Auto-guardar cambios en recreos cuando se modifican los checkboxes
-        for check in self.recreos_checks.values():
-            check.stateChanged.connect(self._auto_guardar_recreos_dia_actual)
-            check.stateChanged.connect(self.restricciones_changed.emit)
 
     def _toggle_fechas_guardias(self):
         """Controlar exclusividad mutua entre fecha inicio y fin."""
@@ -335,151 +342,13 @@ class RestriccionesWidget(QGroupBox):
     def _toggle_panel_restricciones(self):
         """Activar/desactivar EDICIÓN del panel de restricciones."""
         is_checked = self.usar_restricciones_checkbox.isChecked()
-
-        # Habilitar/deshabilitar EDICIÓN de los checkboxes en el panel lateral
-        for check in self.recreos_checks.values():
-            check.setEnabled(is_checked)
-
-        # Habilitar/deshabilitar botones de edición del panel lateral
-        if self.form_panel:
-            for widget in self.form_panel.findChildren(QPushButton):
-                widget.setEnabled(is_checked)
-
-        # Si se activa, seleccionar el primer día automáticamente
-        if is_checked and self.tabla_restricciones.rowCount() > 0:
-            self.tabla_restricciones.selectRow(0)
-            self._cargar_dia_en_formulario()
-
+        self.semana_widget.setEnabled(is_checked)
         self.restricciones_changed.emit()
 
-    def _cargar_dia_en_formulario(self):
-        """
-        Cargar el día seleccionado en el formulario.
-
-        Siempre se puede ver, solo lectura si no está activado.
-        """
-        fila_actual = self.tabla_restricciones.currentRow()
-        if fila_actual < 0:
-            return
-
-        dia_item = self.tabla_restricciones.item(fila_actual, 0)
-        if not dia_item:
-            return
-
-        dia_index = dia_item.data(Qt.ItemDataRole.UserRole)
-        dia_nombre = dia_item.text()
-
-        self.dia_editando = dia_index
-        self.label_dia_editando.setText(dia_nombre)
-
-        # Cargar recreos del día (siempre se muestran)
-        recreos_actuales = self.restricciones_dias.get(dia_index, [])
-        for recreo, check in self.recreos_checks.items():
-            check.setChecked(recreo in recreos_actuales)
-
-        # Los checkboxes solo se habilitan si el checkbox principal está activado
-        is_restricciones_activas = self.usar_restricciones_checkbox.isChecked()
-        for check in self.recreos_checks.values():
-            check.setEnabled(is_restricciones_activas)
-
-    def _auto_guardar_recreos_dia_actual(self):
-        """
-        Auto-guardar cambios de recreos del día actual cuando se modifican checkboxes.
-
-        Este método se llama automáticamente cuando cambia cualquier checkbox de recreo.
-        """
-        if self.dia_editando is None:
-            return
-
-        # No auto-guardar si el checkbox de restricciones no está activo
-        if not self.usar_restricciones_checkbox.isChecked():
-            return
-
-        # Obtener recreos seleccionados
-        recreos_seleccionados = [
-            recreo for recreo, check in self.recreos_checks.items() if check.isChecked()
-        ]
-
-        # Actualizar estado interno
-        if recreos_seleccionados:
-            self.restricciones_dias[self.dia_editando] = recreos_seleccionados
-        else:
-            # Si no hay recreos, eliminar el día del diccionario
-            self.restricciones_dias.pop(self.dia_editando, None)
-
-        # Actualizar tabla
-        self._actualizar_tabla()
-
-    def _aplicar_recreos_a_dia(self):
-        """
-        Aplicar los recreos seleccionados al día actual.
-
-        NOTA: Este método ya NO es necesario con el auto-guardado,
-        pero se mantiene por compatibilidad.
-        """
-        self._auto_guardar_recreos_dia_actual()
-        self.restricciones_changed.emit()
-
-    def _aplicar_recreos_a_todos(self):
-        """Aplicar los recreos seleccionados actualmente a todos los días de la semana."""
-        # Obtener recreos seleccionados
-        recreos_seleccionados = [
-            recreo for recreo, check in self.recreos_checks.items() if check.isChecked()
-        ]
-
-        if not recreos_seleccionados:
-            return
-
-        # Aplicar a todos los días
-        for i in range(5):
-            self.restricciones_dias[i] = recreos_seleccionados.copy()
-
-        # Actualizar tabla
-        self._actualizar_tabla()
-
-        self.restricciones_changed.emit()
-
-    def _restaurar_por_turno(self):
-        """
-        Restaurar restricciones a los valores por defecto según el turno del profesor.
-
-        Este método obtiene el turno actual del widget de horario y recarga
-        la matriz con los valores predeterminados.
-        """
-        # Obtener el turno del widget de horario (padre)
-        turno_actual = "Mañana"  # Por defecto
-        try:
-            # Intentar obtener el turno del formulario padre
-            if hasattr(self.parent(), "horario_widget"):
-                turno_widget = self.parent().horario_widget
-                turno_actual = turno_widget.turno_input.currentText()
-        except (ValueError, TypeError, OSError) as e:
-            logger.debug(f"No se pudo obtener turno del widget padre: {e}")
-
-        # Preseleccionar según turno
-        self.preseleccionar_segun_turno(turno_actual)
-
-        # Si hay un día seleccionado, recargar su formulario
-        if self.dia_editando is not None:
-            self._cargar_dia_en_formulario()
-
-        self.restricciones_changed.emit()
 
     def _actualizar_tabla(self):
-        """Actualizar la tabla con el estado actual de restricciones."""
-        for i in range(5):
-            recreos = self.restricciones_dias.get(i, [])
-
-            if recreos:
-                # Formatear como "R1, R2, R4"
-                recreos_texto = ", ".join([f"R{r}" for r in sorted(recreos)])
-                recreos_item = QTableWidgetItem(recreos_texto)
-                recreos_item.setForeground(Qt.GlobalColor.black)
-            else:
-                recreos_item = QTableWidgetItem("—")
-                recreos_item.setForeground(Qt.GlobalColor.gray)
-
-            self.tabla_restricciones.setItem(i, 1, recreos_item)
+        """Sincronizar la rejilla visual con el estado interno."""
+        self.semana_widget.set_restricciones_dias(self.restricciones_dias)
 
     def _obtener_recreos_por_defecto(self, turno: str) -> Dict[int, List[int]]:
         """
@@ -540,11 +409,7 @@ class RestriccionesWidget(QGroupBox):
     def preseleccionar_segun_turno(self, turno: str):
         """Pre-seleccionar recreos según el turno del profesor."""
         turno_lower = turno.lower()
-
-        # Limpiar primero
         self.restricciones_dias.clear()
-
-        # Pre-seleccionar según turno
         for dia in range(5):
             if turno_lower == "mañana":
                 self.restricciones_dias[dia] = [1, 2]
@@ -552,13 +417,7 @@ class RestriccionesWidget(QGroupBox):
                 self.restricciones_dias[dia] = [3, 4]
             elif turno_lower == "mixto":
                 self.restricciones_dias[dia] = [1, 2, 3, 4]
-
-        # Actualizar tabla y formulario
         self._actualizar_tabla()
-
-        # Si hay un día seleccionado, recargar
-        if self.dia_editando is not None:
-            self._cargar_dia_en_formulario()
 
     # ========== Getters / Setters ==========
 
@@ -656,14 +515,6 @@ class RestriccionesWidget(QGroupBox):
 
             # ✅ IMPORTANTE: Actualizar tabla SIEMPRE después de cargar datos
             self._actualizar_tabla()
-
-            # ✅ Si hay un día seleccionado en la tabla, recargar su formulario
-            if self.dia_editando is not None:
-                self._cargar_dia_en_formulario()
-            # ✅ Si no hay día seleccionado pero hay datos, seleccionar el primer día
-            elif self.restricciones_dias and self.tabla_restricciones.rowCount() > 0:
-                self.tabla_restricciones.selectRow(0)
-                self._cargar_dia_en_formulario()
 
         except (json.JSONDecodeError, TypeError, ValueError):
             pass  # Ignorar errores de formato
@@ -767,19 +618,12 @@ class RestriccionesWidget(QGroupBox):
         """Limpiar todos los campos del widget (estado inicial)."""
         self.usar_fecha_inicio_checkbox.setChecked(False)
         self.usar_fecha_fin_checkbox.setChecked(False)
-        self.usar_restricciones_checkbox.setChecked(False)  # Desactivado por defecto
+        self.usar_restricciones_checkbox.setChecked(False)
         self.fecha_inicio_guardias_input.setDate(QDate.currentDate())
         self.fecha_fin_guardias_input.setDate(QDate.currentDate())
         self.zona_preferida_combo.setCurrentIndex(0)
         self.restricciones_dias.clear()
         self._actualizar_tabla()
-
-        for check in self.recreos_checks.values():
-            check.setChecked(False)
-            check.setEnabled(False)  # Deshabilitado por defecto
-
-        self.dia_editando = None
-        self.label_dia_editando.setText("Selecciona un día de la tabla")
 
     def validar(self) -> Tuple[bool, str]:
         """

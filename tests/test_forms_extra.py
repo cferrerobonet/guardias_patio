@@ -45,7 +45,7 @@ class TestRestriccionesWidget:
 
         w = RestriccionesWidget()
         qtbot.addWidget(w)
-        w._poblar_tabla()  # No debe lanzar
+        w._actualizar_tabla()  # No debe lanzar
 
     def test_toggle_panel(self, qtbot):
         from presentation.forms.profesor_widgets.restricciones_widget import (

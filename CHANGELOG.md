@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.30.3] - 2026-04-22
+
+### 🎯 Resumen
+Vista semana típica para restricciones de profesor: cuadrícula visual 5×N con plantillas rápidas en lugar de checkboxes.
+
+### ✨ Added
+- `SemanaRestriccionesWidget`: cuadrícula 5×N (Lun-Vie × recreos) con botones toggle verde/rojo y plantillas rápidas "Siempre", "Solo mañanas", "Solo tardes", "Lun/Mié/Vie", "Ninguno" (FUNC-04)
+
+### Changed
+- `RestriccionesWidget`: reemplaza la tabla+checkboxes por `SemanaRestriccionesWidget`; mantiene la misma API pública (FUNC-04)
+
 ## [5.30.2] - 2026-04-22
 
 ### 🎯 Resumen
