@@ -530,7 +530,7 @@ En portátiles de 13-14" (1366x768), la sidebar de 260px fijos se lleva el 19% d
 
 ---
 
-### UX-04 — El calendario mensual no cabe en pantalla a resoluciones normales
+### ~~UX-04 — El calendario mensual no cabe en pantalla a resoluciones normales~~ ✅ RESUELTO v5.30.2
 **Severidad: Alta**
 
 El `QGridLayout` del calendario mensual con 7 columnas y 5-6 filas llena bien una pantalla 1920x1080 pero a 1366x768 o en ventana no maximizada las celdas quedan ridículamente pequeñas o se genera scroll horizontal.

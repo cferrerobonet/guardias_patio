@@ -39,6 +39,7 @@ class CeldaDia(QGroupBox):
         zonas_esperadas_por_recreo: Dict[Tuple[str, int], List[Zona]] = None,
         es_dia_lectivo: bool = True,
         es_hoy: bool = False,
+        modo_compacto: bool = False,
     ):
         super().__init__()
         self.fecha = fecha
@@ -48,11 +49,15 @@ class CeldaDia(QGroupBox):
         self.zonas_esperadas_por_recreo = zonas_esperadas_por_recreo or {}
         self.es_dia_lectivo = es_dia_lectivo
         self.es_hoy = es_hoy
+        self.modo_compacto = modo_compacto
 
         self.setup_ui()
 
     def setup_ui(self):
         """Construir interfaz de la celda."""
+        if self.modo_compacto:
+            self._setup_ui_compacto()
+            return
         layout_principal = QVBoxLayout()
         layout_principal.setContentsMargins(4, 4, 4, 4)
         layout_principal.setSpacing(2)
@@ -127,6 +132,43 @@ class CeldaDia(QGroupBox):
         self.setLayout(layout_principal)
 
         # Aplicar estilo según estado
+        self._aplicar_estilo()
+
+    def _setup_ui_compacto(self):
+        """Modo compacto: solo número del día + conteo + puntos de color."""
+        layout = QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(2)
+
+        label_dia = QLabel(str(self.fecha.day))
+        font = QFont()
+        font.setBold(True)
+        font.setPointSize(FontSize.CAPTION)
+        label_dia.setFont(font)
+        label_dia.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label_dia)
+
+        if self.es_dia_lectivo and self.guardias:
+            label_cnt = QLabel(f"{len(self.guardias)}g")
+            label_cnt.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label_cnt.setStyleSheet("font-size: 11px; color: #1976D2; font-weight: bold;")
+            layout.addWidget(label_cnt)
+
+        puntos = ""
+        if self.ausencias:
+            puntos += "🔴"
+        if self.sustituciones:
+            puntos += "🟡"
+        if puntos:
+            label_puntos = QLabel(puntos)
+            label_puntos.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label_puntos.setStyleSheet("font-size: 10px;")
+            layout.addWidget(label_puntos)
+
+        layout.addStretch()
+        self.setLayout(layout)
+        self.setMinimumHeight(60)
+        self.setMaximumHeight(80)
         self._aplicar_estilo()
 
     def _agregar_guardias_agrupadas(self, layout: QVBoxLayout):

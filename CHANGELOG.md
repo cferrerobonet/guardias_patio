@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.30.2] - 2026-04-22
+
+### 🎯 Resumen
+Modo compacto en el calendario mensual: celdas reducidas con conteo de guardias y puntos de color, activable con el botón "Compacto".
+
+### ✨ Added
+- `CeldaDia`: nuevo parámetro `modo_compacto=False` — en modo compacto muestra solo número del día, conteo de guardias y puntos de color (🔴 ausencias, 🟡 sustituciones) con altura máxima de 80px (UX-04)
+- `VistaCalendario`: botón toggle "Compacto/Detalle" en la barra de controles; llama a `toggle_modo_compacto()` que alterna el modo y re-renderiza (UX-04)
+
 ## [5.30.1] - 2026-04-22
 
 ### 🎯 Resumen

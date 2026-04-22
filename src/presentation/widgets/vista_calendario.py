@@ -67,6 +67,7 @@ class VistaCalendario(BaseForm):
         self.anio_mostrado = self.fecha_actual.year
         self.semana_mostrada = self.fecha_actual.isocalendar()[1]
         self.vista_actual = self.VISTA_MENSUAL
+        self.modo_compacto = False
 
         # Cache de días lectivos por mes (PERF-04)
         self._dias_lectivos_cache: dict = {}
@@ -287,6 +288,26 @@ class VistaCalendario(BaseForm):
         """)
         barra_layout.addWidget(btn_refrescar)
 
+        # Botón modo compacto
+        self.btn_compacto = QPushButton("Compacto")
+        self.btn_compacto.setIcon(icon_for_button("view-compact"))
+        self.btn_compacto.setCheckable(True)
+        self.btn_compacto.clicked.connect(self.toggle_modo_compacto)
+        self.btn_compacto.setStyleSheet("""
+            QPushButton {
+                padding: 8px 16px;
+                background-color: #607D8B;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 11px;
+            }
+            QPushButton:hover { background-color: #546E7A; }
+            QPushButton:checked { background-color: #37474F; }
+        """)
+        barra_layout.addWidget(self.btn_compacto)
+
         return barra_layout
 
     def _estilo_boton_navegacion(self) -> str:
@@ -456,6 +477,7 @@ class VistaCalendario(BaseForm):
                 zonas_esperadas_por_recreo=obtener_zonas_esperadas_por_recreo(self.session, fecha_dia),
                 es_dia_lectivo=self._es_dia_lectivo(fecha_dia),
                 es_hoy=(fecha_dia == self.fecha_actual),
+                modo_compacto=self.modo_compacto,
             )
             celda.dia_clicked.connect(self._dia_seleccionado)
 
@@ -535,6 +557,7 @@ class VistaCalendario(BaseForm):
                 zonas_esperadas_por_recreo=obtener_zonas_esperadas_por_recreo(self.session, fecha_dia),
                 es_dia_lectivo=self._es_dia_lectivo(fecha_dia),
                 es_hoy=(fecha_dia == self.fecha_actual),
+                modo_compacto=self.modo_compacto,
             )
             celda.dia_clicked.connect(self._dia_seleccionado)
             celda.setMinimumHeight(600)  # Altura aumentada para ver más guardias
@@ -769,6 +792,13 @@ class VistaCalendario(BaseForm):
         self.mes_mostrado = self.fecha_actual.month
         self.anio_mostrado = self.fecha_actual.year
         self.semana_mostrada = self.fecha_actual.isocalendar()[1]
+        self.actualizar_calendario()
+
+    def toggle_modo_compacto(self):
+        """Alterna entre modo detalle y modo compacto en la vista mensual."""
+        self.modo_compacto = not self.modo_compacto
+        self.btn_compacto.setChecked(self.modo_compacto)
+        self.btn_compacto.setText("Detalle" if self.modo_compacto else "Compacto")
         self.actualizar_calendario()
 
     def refrescar(self):
