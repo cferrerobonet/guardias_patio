@@ -9,6 +9,7 @@ from typing import Optional
 from core.logging import get_logger
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QMessageBox, QWidget
+from presentation.widgets.toast_notification import ToastNotification
 from services.gestor_cursos import GestorCursos
 
 logger = get_logger(__name__)
@@ -162,54 +163,14 @@ class SelectorCursoWidget(QWidget):
                 self.curso_cambiado.emit(curso_id)
                 logger.info("✅ Señal curso_cambiado emitida correctamente")
 
-                msg_success = QMessageBox(self)
-                msg_success.setIcon(QMessageBox.Icon.Information)
-                msg_success.setWindowTitle("Curso Cambiado")
-                msg_success.setText(f"Ahora estás trabajando con el curso {curso.nombre}")
-                msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
-                msg_success.setDefaultButton(QMessageBox.StandardButton.Ok)
-                msg_success.setStyleSheet("""
-                    QPushButton {
-                        background-color: #27ae60;
-                        color: white;
-                        border: none;
-                        padding: 8px 16px;
-                        border-radius: 4px;
-                        font-weight: bold;
-                        min-width: 80px;
-                    }
-                    QPushButton:hover {
-                        background-color: #229954;
-                    }
-                """)
-                msg_success.exec()
+                ToastNotification(self.window(), f"Curso activo: {curso.nombre}", "success")
             else:
                 # Restaurar selección anterior
                 self._cargar_cursos()
 
         except (ValueError, TypeError, OSError) as e:
             logger.error(f"Error al cambiar curso: {e}")
-            msg_error = QMessageBox(self)
-            msg_error.setIcon(QMessageBox.Icon.Critical)
-            msg_error.setWindowTitle("Error")
-            msg_error.setText(f"No se pudo cambiar de curso:\n{e}")
-            msg_error.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msg_error.setDefaultButton(QMessageBox.StandardButton.Ok)
-            msg_error.setStyleSheet("""
-                QPushButton {
-                    background-color: #e74c3c;
-                    color: white;
-                    border: none;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    font-weight: bold;
-                    min-width: 80px;
-                }
-                QPushButton:hover {
-                    background-color: #c0392b;
-                }
-            """)
-            msg_error.exec()
+            QMessageBox.critical(self, "Error", f"No se pudo cambiar de curso:\n{e}")
             self._cargar_cursos()
 
     def refrescar(self) -> None:

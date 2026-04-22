@@ -603,24 +603,7 @@ class LoginDialog(QDialog):
 
         auth_ok, auth_msg = self.user_auth.authenticate(username, password)
         if auth_ok:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
-
             self.authenticated_user = username
-            msg = QMessageBox(self)
-            msg.setIcon(QMessageBox.Icon.Information)
-            msg.setWindowTitle("Bienvenido")
-            msg.setWindowIcon(get_corporate_icon())
-            msg.setTextFormat(Qt.TextFormat.RichText)
-            msg.setWindowFlags(
-                Qt.WindowType.Dialog
-                | Qt.WindowType.CustomizeWindowHint
-                | Qt.WindowType.WindowTitleHint
-            )
-            msg.setText(
-                f"Sesión iniciada correctamente.<br><br>"
-                f"Usuario: <span style='color: #007ACC; font-style: italic;'>{username}</span>"
-            )
-            msg.exec()
             business_metrics.login_exitoso(username=username)
             self.accept()
         else:

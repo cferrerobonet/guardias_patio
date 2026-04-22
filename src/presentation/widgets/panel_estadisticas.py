@@ -146,6 +146,17 @@ class PanelEstadisticas(BaseForm):
             QHeaderView.ResizeMode.ResizeToContents
         )
         self.tabla_profesores.setStyleSheet(get_table_style())
+        header = self.tabla_profesores.horizontalHeader()
+        header.model().setHeaderData(
+            6, Qt.Orientation.Horizontal,
+            "Fecha desde la que el profesor tiene guardias asignadas.\n'-' significa sin restricción de período.",
+            Qt.ItemDataRole.ToolTipRole,
+        )
+        header.model().setHeaderData(
+            7, Qt.Orientation.Horizontal,
+            "Fecha hasta la que el profesor tiene guardias asignadas.\n'-' significa sin restricción de período.",
+            Qt.ItemDataRole.ToolTipRole,
+        )
 
         layout.addWidget(self.tabla_profesores)
         widget.setLayout(layout)
@@ -295,6 +306,9 @@ class PanelEstadisticas(BaseForm):
         datos_zona = self._datos.por_zona
 
         self.tabla_zonas.setRowCount(len(datos_zona))
+
+        todos_na = all(zona_dto.porcentaje_cobertura in ("N/A", "-", "") for zona_dto in datos_zona)
+        self.tabla_zonas.setColumnHidden(3, todos_na)
 
         for i, zona_dto in enumerate(datos_zona):
             self.tabla_zonas.setItem(i, 0, QTableWidgetItem(zona_dto.nombre_zona))

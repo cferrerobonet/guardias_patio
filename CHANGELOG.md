@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.28.8] - 2026-04-22
+
+### 🎯 Resumen
+Reducción de modales bloqueantes: sustituidos QMessageBox de confirmación de éxito por toast notifications no intrusivos. Mejoras menores en estadísticas.
+
+### Changed
+- `login_dialog.py`: eliminado modal "Bienvenido" tras login exitoso — la apertura de la ventana principal ya confirma el acceso
+- `selector_curso_widget.py`: confirmación de cambio de curso → toast success; limpiado `setStyleSheet` inline del modal de error
+- `gestion_cursos_widget.py`: éxito de activar/cerrar/eliminar curso → toast success
+- `dialogo_crear_curso.py`: éxito de creación de curso → toast success
+- `dialogo_reasignacion.py`: resultado de reasignación automática y manual → toast (success/warning según resultado); eliminada confirmación redundante post-reasignación
+- `perfiles_usuario_form.py`: éxito de crear/editar/eliminar perfil, cambiar logo y cambiar contraseña → toast success
+- `panel_estadisticas.py`: columna "% Cobertura" en estadísticas por zona se oculta automáticamente si todos los valores son N/A; tooltips en cabeceras "Inicio Guardias" y "Fin Guardias" explicando que "-" significa sin restricción de período
+
+### 🧹 Housekeeping
+- Documentados análisis MODAL-01 a MODAL-04 y SCREEN-01 a SCREEN-03 en `AUDITORIA_2026_V2.md`
+
 ## [5.28.7] - 2026-04-22
 
 ### 🎯 Resumen

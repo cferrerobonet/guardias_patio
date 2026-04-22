@@ -177,21 +177,11 @@ class DialogoCrearCurso(QDialog):
                 GestorCursos.from_session(self.session).activar_curso(curso.id)
                 logger.info("Curso activado correctamente")
 
-            # Mensaje de éxito
-            msg_success = QMessageBox(self)
-            msg_success.setIcon(QMessageBox.Icon.Information)
-            msg_success.setWindowTitle("Curso Creado")
-
-            mensaje_exito = f"✅ Curso {curso.nombre} creado correctamente"
+            texto = f"Curso {curso.nombre} creado"
             if activar:
-                mensaje_exito += "\n\nAhora estás trabajando con este curso."
-
-            msg_success.setText(mensaje_exito)
-            msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
-
-            # FORZAR tamaño fijo para que se vean los botones en macOS
-            msg_success.exec()
-
+                texto += " y activado"
+            from presentation.widgets.toast_notification import ToastNotification
+            ToastNotification(self.window(), texto, "success")
             self.accept()
 
         except ValueError as e:

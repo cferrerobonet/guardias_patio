@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
 from core.logging import get_logger
 from presentation.dialogs.dialogo_crear_curso import DialogoCrearCurso
 from presentation.theme import legacy_styles as styles
+from presentation.widgets.toast_notification import ToastNotification
 from services.gestor_cursos import GestorCursos
 from utils.icons import icon_for_button
 
@@ -451,14 +452,7 @@ class GestionCursosWidget(QWidget):
                 # Luego activarlo
                 GestorCursos.from_session(self.session).activar_curso(curso_id)
 
-                # Mensaje de éxito
-                msg_success = QMessageBox(self)
-                msg_success.setIcon(QMessageBox.Icon.Information)
-                msg_success.setWindowTitle("Curso Activado")
-                msg_success.setText(f"El curso {curso.nombre} está ahora activo.")
-                msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
-                msg_success.exec()
-
+                ToastNotification(self.window(), f"Curso activado: {curso.nombre}", "success")
                 self._cargar_cursos()
                 self.curso_modificado.emit()
 
@@ -501,14 +495,7 @@ class GestionCursosWidget(QWidget):
             if respuesta == QMessageBox.StandardButton.Yes:
                 GestorCursos.from_session(self.session).cerrar_curso(curso_id)
 
-                # Mensaje de éxito
-                msg_success = QMessageBox(self)
-                msg_success.setIcon(QMessageBox.Icon.Information)
-                msg_success.setWindowTitle("Curso Cerrado")
-                msg_success.setText(f"El curso {curso.nombre} ha sido cerrado.")
-                msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
-                msg_success.exec()
-
+                ToastNotification(self.window(), f"Curso cerrado: {curso.nombre}", "success")
                 self._cargar_cursos()
                 self.curso_modificado.emit()
 
@@ -578,14 +565,7 @@ class GestionCursosWidget(QWidget):
                 _svc.cursos.delete(curso_id)
                 self.session.commit()
 
-                # Mensaje de éxito
-                msg_success = QMessageBox(self)
-                msg_success.setIcon(QMessageBox.Icon.Information)
-                msg_success.setWindowTitle("Curso Eliminado")
-                msg_success.setText(f"El curso {curso.nombre} ha sido eliminado.")
-                msg_success.setStandardButtons(QMessageBox.StandardButton.Ok)
-                msg_success.exec()
-
+                ToastNotification(self.window(), f"Curso eliminado: {curso.nombre}", "success")
                 self._cargar_cursos()
                 self.curso_modificado.emit()
 

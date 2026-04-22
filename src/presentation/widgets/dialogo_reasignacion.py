@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 )
 
 from presentation.theme import legacy_styles as styles
+from presentation.widgets.toast_notification import ToastNotification
 from services.gestor_ausencias import GestorAusencias
 from utils.icons import icon_for_button
 from utils.ui_helpers import get_corporate_icon
@@ -129,25 +130,18 @@ class DialogoReasignacion(QDialog):
                     self.session, self.guardias
                 )
 
-                mensaje = (
-                    f"Reasignación completada:\n\n"
-                    f"Reasignadas: {resultados['reasignadas']}\n"
-                    f"Fallidas: {resultados['fallidas']}"
-                )
-
                 if resultados["fallidas"] > 0:
-                    mensaje += "\n\nVer detalles en el log para más información."
-
-                msg = QMessageBox(self)
-                msg.setIcon(QMessageBox.Icon.Information)
-                msg.setWindowTitle("Resultado")
-                msg.setWindowFlags(
-                    Qt.WindowType.Dialog
-                    | Qt.WindowType.CustomizeWindowHint
-                    | Qt.WindowType.WindowTitleHint
-                )
-                msg.setText(mensaje)
-                msg.exec()
+                    ToastNotification(
+                        self,
+                        f"Reasignadas: {resultados['reasignadas']} · Fallidas: {resultados['fallidas']} (ver log)",
+                        "warning",
+                    )
+                else:
+                    ToastNotification(
+                        self,
+                        f"{resultados['reasignadas']} guardias reasignadas correctamente",
+                        "success",
+                    )
 
                 if resultados["reasignadas"] > 0:
                     self.close()
@@ -197,23 +191,11 @@ class DialogoReasignacion(QDialog):
                 nuevo_profesor, _ = disponibles[index]
 
                 GestorAusencias.reasignar_guardia(self.session, guardia_id, nuevo_profesor.id)
-
-                msg = QMessageBox(self)
-                msg.setIcon(QMessageBox.Icon.Information)
-                msg.setWindowTitle("Éxito")
-                msg.setWindowFlags(
-                    Qt.WindowType.Dialog
-                    | Qt.WindowType.CustomizeWindowHint
-                    | Qt.WindowType.WindowTitleHint
+                ToastNotification(
+                    self,
+                    f"Guardia reasignada a {nuevo_profesor.nombre_completo}",
+                    "success",
                 )
-                msg.setTextFormat(Qt.TextFormat.RichText)
-                msg.setText(
-                    f"Guardia reasignada a "
-                    f"<span style='color: #007ACC; "
-                    f"font-style: italic;'>{nuevo_profesor.nombre_completo}</span>"
-                )
-                msg.exec()
-
                 self.close()
 
         except (ValueError, TypeError, OSError) as e:

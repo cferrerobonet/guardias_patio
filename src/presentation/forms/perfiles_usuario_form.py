@@ -11,6 +11,7 @@ CRUD Profesional con:
 """
 
 from PyQt6.QtCore import Qt
+from presentation.widgets.toast_notification import ToastNotification
 from PyQt6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -316,13 +317,7 @@ class PerfilesUsuarioForm(BaseForm):
                 # Refrescar tabla
                 self.refrescar()
 
-                # Mensaje de éxito
-                QMessageBox.information(
-                    self,
-                    "✅ Perfil Creado",
-                    f"El perfil '{perfil.username}' se ha creado correctamente.\n"
-                    f"Se creó su base de datos automáticamente.",
-                )
+                ToastNotification(self.window(), f"Perfil '{perfil.username}' creado correctamente", "success")
 
         except ValidationError as e:
             QMessageBox.warning(self, "⚠️ Validación", str(e))
@@ -349,12 +344,7 @@ class PerfilesUsuarioForm(BaseForm):
                 # Refrescar tabla
                 self.refrescar()
 
-                # Mensaje de éxito
-                QMessageBox.information(
-                    self,
-                    "✅ Perfil Actualizado",
-                    f"El email de '{perfil.username}' se ha actualizado correctamente.",
-                )
+                ToastNotification(self.window(), f"Perfil '{perfil.username}' actualizado", "success")
 
         except ValidationError as e:
             QMessageBox.warning(self, "⚠️ Validación", str(e))
@@ -442,12 +432,7 @@ class PerfilesUsuarioForm(BaseForm):
                 # Refrescar tabla
                 self.refrescar()
 
-                # Mensaje de éxito
-                QMessageBox.information(
-                    self,
-                    "✅ Perfil Eliminado",
-                    f"El perfil '{username}' y todos sus datos han sido eliminados.",
-                )
+                ToastNotification(self.window(), f"Perfil '{username}' eliminado", "success")
 
         except ValidationError as e:
             QMessageBox.warning(self, "⚠️ Validación", str(e))
@@ -479,13 +464,7 @@ class PerfilesUsuarioForm(BaseForm):
             # Refrescar tabla
             self.refrescar()
 
-            # Mensaje de éxito
-            QMessageBox.information(
-                self,
-                "✅ Logo Actualizado",
-                f"El logo del perfil '{username}' se ha actualizado correctamente.\n"
-                f"Guardado en: {ruta_guardada}",
-            )
+            ToastNotification(self.window(), f"Logo del perfil '{username}' actualizado", "success")
 
         except ValidationError as e:
             QMessageBox.warning(self, "⚠️ Validación", str(e))
@@ -517,13 +496,7 @@ class PerfilesUsuarioForm(BaseForm):
                 # Ejecutar use case
                 self.uc_cambiar_password.execute(dto)
 
-                # Mensaje de éxito
-                QMessageBox.information(
-                    self,
-                    "✅ Contraseña Cambiada",
-                    "Tu contraseña se ha cambiado correctamente.\n"
-                    "Usa la nueva contraseña en tu próximo inicio de sesión.",
-                )
+                ToastNotification(self.window(), "Contraseña cambiada correctamente", "success")
 
         except ValidationError as e:
             QMessageBox.warning(self, "⚠️ Validación", str(e))

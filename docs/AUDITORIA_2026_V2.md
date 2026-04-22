@@ -1431,6 +1431,177 @@ Añadir 5-10 tests de flujo completo con `pytest-qt` usando fixtures de BD in-me
 
 ---
 
+---
+
+## 10. Análisis Modal → Toast (auditoría de pantallas, 22 abril 2026)
+
+### Criterio aplicado
+
+| Tipo de feedback | Mecanismo correcto |
+|---|---|
+| Operación exitosa sin consecuencias destructivas | **Toast** (no intrusivo, auto-desaparece) |
+| Error de validación de campo dentro de un formulario | **Inline** (label rojo bajo el campo) |
+| Error de negocio leve (sin datos perdidos) | **Toast tipo error** |
+| Error crítico que requiere que el usuario decida | **QMessageBox** con botón OK |
+| Confirmación antes de borrar/destruir datos | **QMessageBox.question** — mantener siempre |
+| Flujo de autenticación completado | **Sin feedback extra** (la apertura de ventana ya lo confirma) |
+
+---
+
+### ~~MODAL-01 — El login muestra un QMessageBox "Bienvenido" antes de abrir la app~~ ✅ RESUELTO v5.28.8
+**Archivo:** `src/presentation/forms/login_dialog.py:609-623`  
+**Severidad: Media — fricción innecesaria**
+
+Tras autenticación correcta, se muestra un `QMessageBox.Information` con "Sesión iniciada correctamente. Usuario: X". El usuario tiene que hacer clic en "Aceptar" antes de que la app se abra. Es el equivalente a un programa que te dice "¡Has abierto el programa!" al abrirse.
+
+La captura confirma que el modal usa el icono `!` de macOS (ícono de "advertencia/información"), que visualmente no transmite éxito.
+
+**Corrección:** Eliminar completamente el `QMessageBox`. El propio cierre del diálogo de login y la apertura de la ventana principal es el feedback suficiente. Si se quiere un toque de bienvenida, el `HomeForm` (dashboard de inicio, UX-01) puede mostrar "Buenos días, Jefatura_FpBach" en el header.
+
+```python
+# login_dialog.py → función login(), reemplazar bloque msg por:
+auth_ok, auth_msg = self.user_auth.authenticate(username, password)
+if auth_ok:
+    self.authenticated_user = username
+    business_metrics.login_exitoso(username=username)
+    self.accept()  # Directo, sin modal
+```
+
+**Esfuerzo:** XS | **Impacto:** Medio — elimina fricción en cada arranque.
+
+---
+
+### ~~MODAL-02 — Operaciones exitosas usan QMessageBox en lugar de toast~~ ✅ RESUELTO v5.28.8
+**Archivos afectados y candidatos confirmados:**
+
+| Archivo | Operación | Líneas | Acción |
+|---|---|---|---|
+| `selector_curso_widget.py` | Cambio de curso activo | 165-185 | → Toast success |
+| `gestion_cursos_widget.py` | Activar curso | 455-460 | → Toast success |
+| `gestion_cursos_widget.py` | Cerrar curso | 505-510 | → Toast success |
+| `gestion_cursos_widget.py` | Eliminar curso | 582-587 | → Toast success |
+| `dialogo_crear_curso.py` | Curso creado | 181-193 | → Toast success (y cerrar diálogo) |
+| `perfiles_usuario_form.py` | Guardar perfil, cambiar contraseña, cargar logo | 320, 353, 446, 483, 521 | → Toast success |
+| `gestor_sustituciones.py` | Sustitución confirmada | 373-374 | → Toast success |
+| `informes_estadisticos_widget.py` | Reporte generado | 189, 214, 233 | → Toast success |
+| `generacion_panel.py` | Guardias generadas | 272 | → Toast success |
+| `initial_config_dialog.py` | Varios pasos de config inicial | 373-722 | Evaluar caso a caso (algunos son pasos de un wizard, mantener) |
+
+**Ya existe** `src/presentation/widgets/toast_notification.py` (implementado en UX-05). Solo hay que sustituir los `QMessageBox.information` por `ToastNotification`.
+
+**Patrón de sustitución:**
+```python
+# Antes:
+msg_success = QMessageBox(self)
+msg_success.setIcon(QMessageBox.Icon.Information)
+msg_success.setText("El curso está ahora activo.")
+msg_success.exec()
+
+# Después:
+from presentation.widgets.toast_notification import ToastNotification
+ToastNotification(self.window(), "Curso activado correctamente", "success")
+```
+
+**Esfuerzo total:** S (1-3h, son sustituciones mecánicas) | **Impacto:** Alto — reduce interrupciones en el flujo de trabajo.
+
+---
+
+### MODAL-03 — Validaciones de campo en diálogos usan QMessageBox secuenciales
+**Archivos:** `dialogo_crear_perfil.py:135-166`, `dialogo_editar_perfil.py:102-115`, `change_password_dialog.py:149-234`, `reset_password_dialog.py:125-161`
+
+En `dialogo_crear_perfil.py` hay **5 `QMessageBox.warning()` distintos** en cadena para validar campos obligatorios (usuario, email, contraseña, confirmación, nombre duplicado). El usuario que deja todos los campos vacíos tiene que hacer clic en OK cinco veces antes de que el formulario le deje en paz.
+
+Esto viola el principio básico de UX: los errores de validación deben aparecer junto al campo que los causa, sin interrumpir el flujo.
+
+**Corrección para diálogos modales** (diferente a formularios principales — aquí no hay ToastNotification útil):
+```python
+# Añadir QLabel de error debajo de cada campo crítico:
+self.error_label = QLabel("")
+self.error_label.setStyleSheet("color: #DC3545; font-size: 11px;")
+self.error_label.setVisible(False)
+
+# Al validar, en lugar de QMessageBox:
+def _validar(self) -> bool:
+    if not self.username_input.text().strip():
+        self.error_label.setText("El nombre de usuario es obligatorio")
+        self.error_label.setVisible(True)
+        return False
+    # ...
+    self.error_label.setVisible(False)
+    return True
+```
+
+**Esfuerzo:** S por diálogo | **Impacto:** Medio — mejora UX de flujos de administración.
+
+---
+
+### ~~MODAL-04 — QMessageBox dentro de `dialogo_reasignacion.py` tras reasignación exitosa~~ ✅ RESUELTO v5.28.8
+**Archivo:** `src/presentation/widgets/dialogo_reasignacion.py:141-143`
+
+Después de confirmar una reasignación (que ya tuvo su propio `QMessageBox.question` de confirmación), se muestra un segundo `QMessageBox.Information` con "Reasignación completada". El usuario acaba de confirmar la acción; sabe que se hizo. Es redundante.
+
+**Corrección:** Cerrar el diálogo directamente (`self.accept()`). El formulario padre puede mostrar un toast si es necesario.
+
+**Esfuerzo:** XS | **Impacto:** Bajo.
+
+---
+
+### Modales que DEBEN mantenerse como QMessageBox
+
+Los siguientes usos de `QMessageBox` son correctos y no deben convertirse en toast:
+
+| Archivo | Uso | Por qué mantenerlo |
+|---|---|---|
+| `profesor_form.py`, `zona_form.py`, etc. | `question()` antes de eliminar | Requiere respuesta Yes/No del usuario |
+| `delete_user_dialog.py` | Confirmación de borrado crítico | Acción irreversible — requiere confirmación explícita |
+| `login_dialog.py` | Error de autenticación (`critical`) | El usuario debe saber por qué falló el login |
+| `gestion_cursos_widget.py` | `question()` antes de activar curso | Cambio de estado que afecta todos los datos cargados |
+| `change_password_dialog.py`, `reset_password_dialog.py` | Errores de contraseña inválida | Dentro de un diálogo modal — toast no sería visible |
+
+---
+
+### Resumen modal → toast
+
+| # | ID | Descripción | Esfuerzo | Riesgo |
+|---|---|---|---|---|
+| 1 | MODAL-01 | Eliminar modal "Bienvenido" del login | XS | Ninguno |
+| 2 | MODAL-02 | 9 `information` de operaciones exitosas → toast | S | Muy bajo |
+| 3 | MODAL-03 | Validaciones inline en diálogos de perfil | S×4 | Bajo |
+| 4 | MODAL-04 | Eliminar confirmación redundante en reasignación | XS | Ninguno |
+
+---
+
+## 11. Inconsistencias detectadas en capturas (22 abril 2026)
+
+Comparación entre capturas actuales de la app y el estado del código:
+
+### ~~SCREEN-01 — Estadísticas "Por Zona" muestra "N/A" en % Cobertura para todas las zonas~~ ✅ RESUELTO v5.28.8
+**Captura:** Panel de estadísticas, pestaña "Por Zona" — columna `% Cobertura` muestra "N/A" en las 4 zonas (Z1: 676 guardias, Z2: 488, Z3: 676, Z4: 676).
+
+El campo existe en la UI pero no se calcula. Hace que la pantalla parezca incompleta.
+
+**Causa probable:** El cálculo de cobertura por zona requiere conocer cuántos slots totales había disponibles para cada zona (que varía si hay zonas con fechas de inicio/fin). La lógica no está implementada o el denominador es 0.
+
+**Corrección:** Calcular `cobertura = guardias_zona / slots_esperados_zona * 100` o mostrar directamente el recuento en lugar de "N/A" si la cobertura no se puede calcular. "N/A" en una columna visible es confuso — mejor ocultar la columna si no tiene datos.
+
+**Esfuerzo:** S | **Riesgo:** Bajo.
+
+---
+
+### SCREEN-02 — El modal "Sesión iniciada" usa icono "!" (Information) en vez de icono de éxito
+**Captura:** Segunda imagen — el QMessageBox de bienvenida muestra el ícono de "!" de macOS, que visualmente se asocia con advertencia, no con éxito. Refuerza la propuesta MODAL-01 de eliminar este modal.
+
+---
+
+### ~~SCREEN-03 — Estadísticas "Por Profesor" muestra columnas "Inicio Guardias" y "Fin Guardias" vacías~~ ✅ RESUELTO v5.28.8 (guión) para la mayoría
+**Captura:** Tabla por profesor — de 29 profesores visibles, solo 5 tienen fecha de inicio de guardias (Aliaga, Bellver, Contelles, Cuñat, Del Toro). El resto muestra "-".
+
+Esto no es un bug (los profesores sin período restringido no tienen fechas), pero visualmente genera una tabla con muchos guiones que parece incompleta. Sería más limpio ocultar estas columnas cuando la mayoría tiene valores nulos, o añadir un tooltip explicando que "-" significa "sin restricción de período".
+
+**Esfuerzo:** XS | **Riesgo:** Ninguno.
+
+---
+
 ## Notas finales
 
 **Lo que está bien y hay que conservar:**
