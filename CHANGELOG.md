@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.28.7] - 2026-04-22
+
+### 🎯 Resumen
+Fix visual: zona gris del logo llega hasta el borde superior de la ventana.
+
+### Fixed
+- `ccleaner_sidebar.py`: botón de colapso movido al interior de `logo_section` (esquina superior derecha) — elimina el hueco blanco de 28px que quedaba encima de la zona gris
+
 ## [5.28.6] - 2026-04-22
 
 ### 🎯 Resumen

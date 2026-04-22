@@ -60,31 +60,14 @@ class SidebarMenu(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Botón toggle colapso (Ctrl+B)
         from PyQt6.QtGui import QKeySequence, QShortcut
-        self._toggle_btn = QPushButton("◀")
-        self._toggle_btn.setFixedHeight(28)
-        self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._toggle_btn.setToolTip("Colapsar/expandir sidebar (Ctrl+B)")
-        self._toggle_btn.setStyleSheet("""
-            QPushButton {
-                background-color: rgba(255,255,255,0.08);
-                color: rgba(255,255,255,0.7);
-                border: none;
-                font-size: 12px;
-                padding: 4px;
-            }
-            QPushButton:hover { background-color: rgba(255,255,255,0.15); }
-        """)
-        self._toggle_btn.clicked.connect(self.toggle_collapse)
-        layout.addWidget(self._toggle_btn)
+        from PyQt6.QtWidgets import QHBoxLayout as _QHBoxLayout
 
         shortcut = QShortcut(QKeySequence("Ctrl+B"), self)
         shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
         shortcut.activated.connect(self.toggle_collapse)
 
         # ========== SECCIÓN SUPERIOR: LOGO ==========
-        # Área superior con fondo claro para el logo
         logo_section = QWidget()
         logo_section.setStyleSheet("""
             QWidget {
@@ -93,9 +76,32 @@ class SidebarMenu(QWidget):
             }
         """)
         logo_section_layout = QVBoxLayout(logo_section)
-        logo_section_layout.setContentsMargins(12, 10, 12, 10)
+        logo_section_layout.setContentsMargins(12, 6, 12, 10)
         logo_section_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         logo_section_layout.setSpacing(8)
+
+        # Fila superior: botón de colapso alineado a la derecha
+        top_row = _QHBoxLayout()
+        top_row.setContentsMargins(0, 0, 0, 0)
+        top_row.addStretch()
+        self._toggle_btn = QPushButton("◀")
+        self._toggle_btn.setFixedSize(24, 24)
+        self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._toggle_btn.setToolTip("Colapsar/expandir sidebar (Ctrl+B)")
+        self._toggle_btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(0,0,0,0.08);
+                color: #555;
+                border: none;
+                border-radius: 4px;
+                font-size: 11px;
+                padding: 2px;
+            }
+            QPushButton:hover { background-color: rgba(0,0,0,0.15); }
+        """)
+        self._toggle_btn.clicked.connect(self.toggle_collapse)
+        top_row.addWidget(self._toggle_btn)
+        logo_section_layout.addLayout(top_row)
 
         # ── Logo ──────────────────────────────────────────────────────────
         self.logo_label = QLabel()
