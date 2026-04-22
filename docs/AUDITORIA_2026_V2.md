@@ -711,42 +711,6 @@ def _crear_card_guardia(self, guardia: Guardia) -> QWidget:
 
 ---
 
-### UX-08 — Falta barra de búsqueda global
-**Severidad: Media**
-
-Para encontrar un profesor, hay que ir a la sección de profesores y usar el filtro local. No hay forma de buscar globalmente "García López" y que aparezcan sus guardias, ausencias y sustituciones.
-
-**Propuesta:** Añadir una barra de búsqueda en la parte superior de la sidebar (o como botón `Ctrl+K` que abre un modal de búsqueda rápida). El modal muestra resultados de profesores, guardias de hoy, ausencias activas.
-
-**Cómo implementarlo** (nuevo archivo `src/presentation/widgets/quick_search.py`):
-```python
-# Ctrl+K abre QuickSearchDialog
-class QuickSearchDialog(QDialog):
-    resultado_seleccionado = pyqtSignal(str, int)  # ("profesor", id)
-    
-    def __init__(self, session, parent=None):
-        super().__init__(parent)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        self.setMinimumWidth(500)
-        # Input de búsqueda
-        self.input = QLineEdit()
-        self.input.setPlaceholderText("Buscar profesor, zona, guardia...")
-        self.input.textChanged.connect(self.buscar)
-        # Lista de resultados con QListWidget
-        self.lista = QListWidget()
-        ...
-    
-    def buscar(self, texto: str):
-        if len(texto) < 2:
-            return
-        # Buscar en profesores, zonas, etc.
-        profesores = session.query(Profesor).filter(
-            Profesor.nombre_completo.ilike(f"%{texto}%")
-        ).limit(10).all()
-        ...
-```
-
----
 
 ### ~~UX-09 — Las notificaciones de error son QMessageBox bloqueantes~~ ✅ RESUELTO v5.29.0 (parcial — errores de negocio y validaciones de diálogos; QMessageBox se mantiene para errores destructivos/irreversibles)
 **Severidad: Media**
@@ -1049,20 +1013,6 @@ El CP-SAT puede tardar entre 5 y 60 segundos dependiendo del número de profesor
 
 ---
 
-### FUNC-10 — AÑADIR: Plantillas de configuración para tipos de centro
-**Severidad: Baja — Alto valor en onboarding**
-
-Configurar la app desde cero (fechas, recreos, zonas, profesores) lleva tiempo. Para un nuevo usuario el proceso es opaco.
-
-**Lo que hay que hacer:**
-1. En el `InitialConfigDialog`, añadir una pantalla de "Plantilla de inicio rápido" con opciones como:
-   - "Colegio de infantil/primaria (1 recreo mañana)"
-   - "IES con jornada partida (recreo mañana + recreo tarde)"
-   - "Centro con jornada continua"
-2. Cada plantilla preconfigura: número de recreos, horarios típicos, zonas sugeridas (Patio Norte, Patio Sur, Entrada, Pasillos).
-3. El usuario puede modificar después, pero tiene un punto de partida razonable.
-
----
 
 ## 5. Rendimiento
 
@@ -1233,20 +1183,6 @@ Esto permite analizar el log después para entender el uso real.
 
 ## 7. Escalabilidad y compatibilidad futura
 
-### SCALA-01 — El modelo de datos no permite guardias "compartidas" entre dos profesores
-**Severidad: Media — Limitación funcional**
-
-`Guardia.profesor_id` es una FK a un único profesor. Hay centros donde una zona grande requiere dos profesores simultáneamente (patio + entrada al mismo tiempo). El modelo actual no lo soporta.
-
-**Lo que hay que hacer:**
-Añadir una relación many-to-many entre Guardia y Profesor, o añadir un campo `co_profesor_id` opcional en `Guardia`:
-```python
-co_profesor_id = Column(Integer, ForeignKey("profesores.id"), nullable=True)
-co_profesor = relationship("Profesor", foreign_keys=[co_profesor_id])
-```
-Migración Alembic correspondiente. La UI del detalle del día ya debería mostrar ambos profesores.
-
----
 
 ### ~~SCALA-03 — La sincronización SFTP es manual y puede fallar silenciosamente~~ ✅ RESUELTO v5.30.1
 **Severidad: Media**
@@ -1305,18 +1241,6 @@ def check_for_updates(current_version: str, callback):
 
 ---
 
-### SCALA-05 — El formato del campo `nombre_completo` es opaco
-**Severidad: Baja**
-
-`Profesor.nombre_completo` almacena "APELLIDOS, NOMBRE" como string libre. No hay separación entre nombre y apellidos en la BD. Esto hace difícil:
-- Ordenar por apellido (se puede, pero solo si el formato se respeta)
-- Mostrar "Nombre Apellidos" en vez de "APELLIDOS, Nombre" en emails
-- Exportar a otros formatos
-
-**Lo que hay que hacer:**
-Añadir campos `nombre` y `apellidos` en el modelo `Profesor`. Mantener `nombre_completo` como propiedad calculada `@property` que devuelve `f"{self.apellidos}, {self.nombre}"`. Migración Alembic con script de split del string existente.
-
----
 
 ## 8. Deuda técnica residual
 
@@ -1418,16 +1342,12 @@ Añadir 5-10 tests de flujo completo con `pytest-qt` usando fixtures de BD in-me
 
 | # | ID | Descripción | Esfuerzo | Impacto |
 |---|---|---|---|---|
-| 1 | UX-08 | Barra de búsqueda global (Ctrl+K) | L | Medio |
-| 2 | UX-11 | Avatar de usuario en sidebar, acento de color secundario | S | Bajo-Medio |
-| 3 | UX-10 | Barra de título contextual en área de contenido | S | Bajo |
-| 4 | FUNC-03 | Mapeo de columnas al importar Excel | L | Medio |
-| 5 | FUNC-09 | Estimación de tiempo en generación CP-SAT | S | Bajo |
-| 6 | FUNC-10 | Plantillas de configuración para tipos de centro | M | Medio |
-| 7 | SCALA-01 | Soporte co-profesor en guardia (many-to-many) | L | Bajo-Medio |
-| 8 | SCALA-04 | Verificador de actualizaciones en background | M | Medio |
-| 9 | SCALA-05 | Separar nombre/apellidos en modelo Profesor | L | Bajo |
-| 10 | FUNC-06 | Mover Conectividad dentro de Ajustes | S | Bajo |
+| 1 | UX-11 | Avatar de usuario en sidebar, acento de color secundario | S | Bajo-Medio |
+| 2 | UX-10 | Barra de título contextual en área de contenido | S | Bajo |
+| 3 | FUNC-03 | Mapeo de columnas al importar Excel | L | Medio |
+| 4 | FUNC-09 | Estimación de tiempo en generación CP-SAT | S | Bajo |
+| 5 | SCALA-04 | Verificador de actualizaciones en background | M | Medio |
+| 6 | FUNC-06 | Mover Conectividad dentro de Ajustes | S | Bajo |
 
 ---
 
