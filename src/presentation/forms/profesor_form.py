@@ -430,6 +430,7 @@ class ProfesorForm(BaseForm):
                     dias_semana_permitidos=datos_restricciones.get("dias_permitidos"),
                 )
                 self.actualizar_use_case.execute(self.profesor_editando_id, dto)
+                self.session.expire_all()
             else:
                 # Modo creación
                 dto = CrearProfesorDTO(

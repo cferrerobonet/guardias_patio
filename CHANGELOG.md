@@ -5,7 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
-## [5.28.3] - 2026-04-21
+## [5.28.4] - 2026-04-22
+
+### 🎯 Resumen
+Fix: datos obsoletos al reeditar un profesor sin salir del formulario.
+
+### Fixed
+- `profesor_form.py`: añadido `session.expire_all()` tras `actualizar_use_case.execute()` para forzar que SQLAlchemy recargue el identity map; sin esto, la segunda edición del mismo profesor mostraba los datos anteriores al primer guardado
+
+## [5.28.3] - 2026-04-22
 
 ### 🎯 Resumen
 Limpieza visual del sidebar: eliminado avatar de usuario y barra de título contextual del área de contenido.
