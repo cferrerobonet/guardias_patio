@@ -697,7 +697,7 @@ def _crear_card_guardia(self, guardia: Guardia) -> QWidget:
 
 ---
 
-### UX-07 — El formulario de profesores mezcla tabla y formulario en pantalla partida: es confuso
+### ~~UX-07 — El formulario de profesores mezcla tabla y formulario en pantalla partida: es confuso~~ ✅ RESUELTO v5.30.6
 **Severidad: Media**
 
 `ProfesorForm` usa un `QSplitter` vertical con la tabla arriba y el formulario abajo. Para editar hay que seleccionar en la tabla (arriba) y rellenar abajo. En pantallas pequeñas el formulario queda muy comprimido o hay que hacer scroll.

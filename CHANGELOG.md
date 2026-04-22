@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.30.6] - 2026-04-22
+
+### 🎯 Resumen
+Formulario de profesores como panel lateral oculto: la tabla ocupa el 100% por defecto y el formulario aparece al pulsar "Nuevo" o "Editar".
+
+### Changed
+- `ProfesorForm`: el panel de formulario está oculto por defecto; aparece al hacer clic en "Nuevo" o "Editar" y se cierra con "✕" o al guardar/cancelar (UX-07)
+- `ProfesorForm`: nuevo botón "Nuevo" en la barra de acciones de la tabla (UX-07)
+
 ## [5.30.5] - 2026-04-22
 
 ### 🎯 Resumen

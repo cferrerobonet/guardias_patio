@@ -102,24 +102,19 @@ class ProfesorForm(BaseForm):
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        # ========== CREAR SPLITTER HORIZONTAL ==========
-        # Permite redimensionar manualmente tabla vs formulario
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # ========== SECCIÓN IZQUIERDA: TABLA ==========
         left_widget = self._crear_widget_tabla()
-        splitter.addWidget(left_widget)
+        self._splitter.addWidget(left_widget)
 
-        # ========== SECCIÓN DERECHA: FORMULARIO CON SCROLL ==========
-        right_widget = self._crear_widget_formulario_con_scroll()
-        splitter.addWidget(right_widget)
+        self._form_panel = self._crear_widget_formulario_con_scroll()
+        self._splitter.addWidget(self._form_panel)
+        self._form_panel.setVisible(False)  # oculto por defecto (UX-07)
 
-        # Establecer proporciones iniciales: 70% tabla, 30% formulario
-        # (más espacio para la tabla para no comprimir información)
-        splitter.setStretchFactor(0, 70)
-        splitter.setStretchFactor(1, 30)
+        self._splitter.setStretchFactor(0, 70)
+        self._splitter.setStretchFactor(1, 30)
 
-        main_layout.addWidget(splitter)
+        main_layout.addWidget(self._splitter)
         self.setLayout(main_layout)
 
     def _crear_widget_tabla(self) -> QWidget:
@@ -246,6 +241,11 @@ class ProfesorForm(BaseForm):
         # Botón "Actualizar" eliminado - la tabla se actualiza automáticamente
         # después de cada operación (crear, editar, eliminar)
 
+        self.nuevo_btn = QPushButton("Nuevo")
+        self.nuevo_btn.setIcon(icon_for_button("add"))
+        self.nuevo_btn.setProperty("success", "true")
+        self.nuevo_btn.clicked.connect(self._abrir_formulario_nuevo)
+
         self.editar_btn = QPushButton("Editar")
         self.editar_btn.setIcon(icon_for_button("edit"))
         self.editar_btn.setProperty("warning", "true")
@@ -262,6 +262,7 @@ class ProfesorForm(BaseForm):
             "Shift+clic: rango de selección"
         )
 
+        btn_layout.addWidget(self.nuevo_btn)
         btn_layout.addWidget(self.editar_btn)
         btn_layout.addWidget(self.delete_btn)
         btn_layout.addStretch()
@@ -280,10 +281,19 @@ class ProfesorForm(BaseForm):
         layout.setContentsMargins(4, 4, 4, 4)  # Márgenes mínimos
         layout.setSpacing(4)  # Espaciado mínimo entre elementos
 
-        # Título más compacto
+        # Cabecera: título + botón cerrar
+        header_layout = QHBoxLayout()
         self.titulo_seccion = QLabel("ALTA DE PROFESOR")
         self.titulo_seccion.setObjectName("titleMain")
-        layout.addWidget(self.titulo_seccion)
+        header_layout.addWidget(self.titulo_seccion)
+        header_layout.addStretch()
+        cerrar_btn = QPushButton("✕")
+        cerrar_btn.setFixedWidth(28)
+        cerrar_btn.setToolTip("Cerrar formulario")
+        cerrar_btn.setProperty("danger", "true")
+        cerrar_btn.clicked.connect(self._cerrar_formulario)
+        header_layout.addWidget(cerrar_btn)
+        layout.addLayout(header_layout)
 
         # Widgets del formulario (layout vertical simple para no comprimir tabla)
         self.datos_basicos_widget = DatosBasicosWidget(self)
@@ -322,6 +332,21 @@ class ProfesorForm(BaseForm):
         layout.addStretch()  # Push todo hacia arriba
 
         return layout
+
+    def _abrir_formulario_nuevo(self):
+        self._limpiar_formulario()
+        self._mostrar_formulario()
+
+    def _mostrar_formulario(self):
+        self._form_panel.setVisible(True)
+        self._splitter.setStretchFactor(0, 60)
+        self._splitter.setStretchFactor(1, 40)
+
+    def _cerrar_formulario(self):
+        self._form_panel.setVisible(False)
+        self._splitter.setStretchFactor(0, 100)
+        self._splitter.setStretchFactor(1, 0)
+        self._limpiar_formulario()
 
     def _configurar_atajos(self):
         """Configurar atajos de teclado."""
@@ -365,7 +390,7 @@ class ProfesorForm(BaseForm):
 
     def cancelar_edicion(self):
         """Cancelar edición y volver a modo creación (sin recargar tabla)."""
-        self._limpiar_formulario()
+        self._cerrar_formulario()
         # NO recargar tabla - es más rápido y no se han guardado cambios
         # self.cargar_profesores()  # ELIMINADO - innecesario
 
@@ -476,13 +501,10 @@ class ProfesorForm(BaseForm):
                 self.busqueda_input.setEnabled(True)
 
                 # La selección se restaurará automáticamente en cargar_profesores()
-                self.mostrar_exito(
-                    "Profesor actualizado",
-                    "El profesor ha sido actualizado correctamente.\n\n"
-                    "Los datos permanecen visibles en el formulario.",
-                )
+                self._cerrar_formulario()
+                self.mostrar_exito("Profesor actualizado", "El profesor ha sido actualizado correctamente.")
             else:
-                self._limpiar_formulario()
+                self._cerrar_formulario()
                 self.mostrar_exito("Profesor creado", "El profesor ha sido creado correctamente.")
 
         except (ValueError, TypeError, OSError) as e:
@@ -670,6 +692,8 @@ class ProfesorForm(BaseForm):
             if self.table_manager:
                 self.table_manager.enable_table_interactions(False)
             self.busqueda_input.setEnabled(False)
+
+            self._mostrar_formulario()
 
         except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "editar profesor")
