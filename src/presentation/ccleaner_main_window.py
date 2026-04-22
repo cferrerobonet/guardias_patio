@@ -8,7 +8,6 @@ from core.logging import get_logger
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
-    QLabel,
     QMainWindow,
     QScrollArea,
     QStackedWidget,
@@ -53,37 +52,13 @@ class ContentWrapper(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Barra de título contextual fija
-        title_bar = QWidget()
-        title_bar.setFixedHeight(40)
-        title_bar.setStyleSheet(
-            "QWidget { background-color: #F8FAFC; border-bottom: 1px solid #E5E7EB; }"
-        )
-        title_bar_layout = QHBoxLayout(title_bar)
-        title_bar_layout.setContentsMargins(20, 0, 20, 0)
-        title_label = QLabel(title)
-        title_label.setStyleSheet(
-            "QLabel { font-size: 13px; font-weight: 600; color: #374151; border: none; background: transparent; }"
-        )
-        title_bar_layout.addWidget(title_label)
-        title_bar_layout.addStretch()
-        layout.addWidget(title_bar)
-
-        # Widget contenedor para añadir padding compensatorio
-        container = QWidget()
-        container_layout = QVBoxLayout(container)
-        # 16px (sidebar GESTIÓN) - 10px (formulario interno) = 6px compensatorio
-        container_layout.setContentsMargins(0, 6, 0, 0)
-        container_layout.setSpacing(0)
-        container_layout.addWidget(content_widget)
-
         # Scroll area para el contenido
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setStyleSheet(f"QScrollArea {{ background-color: {CONTENT_BG}; border: none; }} QScrollArea > QWidget > QWidget {{ background-color: {CONTENT_BG}; }}")
-        scroll.setWidget(container)
+        scroll.setWidget(content_widget)
 
         layout.addWidget(scroll)
 

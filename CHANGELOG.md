@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.28.3] - 2026-04-21
+
+### 🎯 Resumen
+Limpieza visual del sidebar: eliminado avatar de usuario y barra de título contextual del área de contenido.
+
+### Fixed
+- `ccleaner_sidebar.py`: avatar de usuario eliminado completamente (no aportaba valor con pocos usuarios sin roles)
+- `ccleaner_main_window.py`: eliminada `title_bar` de 40px en `ContentWrapper` — causaba hueco blanco sobre la zona gris del sidebar; el botón activo del menú ya indica la sección
+
 ## [5.28.2] - 2026-04-22
 
 ### 🎯 Resumen

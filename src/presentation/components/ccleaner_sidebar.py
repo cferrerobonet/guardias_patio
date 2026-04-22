@@ -96,51 +96,6 @@ class SidebarMenu(QWidget):
         logo_section_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         logo_section_layout.setSpacing(8)
 
-        # ── Avatar de usuario (fila superior) ──────────────────────────────
-        try:
-            from database.db_manager import get_current_user_id
-            _username = get_current_user_id() or ""
-            _initials = _username[:2].upper() if _username else "??"
-        except Exception:
-            _username = ""
-            _initials = "??"
-
-        from PyQt6.QtCore import QSize
-        from PyQt6.QtWidgets import QHBoxLayout as _QHBoxLayout
-        self._avatar_row = QWidget()
-        self._avatar_row.setStyleSheet("QWidget { background: transparent; border: none; }")
-        _avatar_row_layout = _QHBoxLayout(self._avatar_row)
-        _avatar_row_layout.setContentsMargins(0, 0, 0, 0)
-        _avatar_row_layout.setSpacing(8)
-
-        self._avatar_label = QLabel(_initials)
-        self._avatar_label.setFixedSize(QSize(34, 34))
-        self._avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._avatar_label.setStyleSheet("""
-            QLabel {
-                background-color: #007ACC;
-                color: white;
-                border-radius: 17px;
-                font-size: 13px;
-                font-weight: bold;
-                border: none;
-            }
-        """)
-        self._avatar_username_label = QLabel(_username or "Usuario")
-        self._avatar_username_label.setStyleSheet("""
-            QLabel {
-                color: #374151;
-                font-size: 11px;
-                font-weight: 600;
-                background: transparent;
-                border: none;
-            }
-        """)
-        _avatar_row_layout.addWidget(self._avatar_label)
-        _avatar_row_layout.addWidget(self._avatar_username_label)
-        _avatar_row_layout.addStretch()
-        logo_section_layout.addWidget(self._avatar_row)
-
         # ── Logo ──────────────────────────────────────────────────────────
         self.logo_label = QLabel()
         self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -485,10 +440,6 @@ class SidebarMenu(QWidget):
             self.logo_label.setVisible(visible)
         if hasattr(self, "selector_curso"):
             self.selector_curso.setVisible(visible)
-        if hasattr(self, "_avatar_username_label"):
-            self._avatar_username_label.setVisible(visible)
-        if hasattr(self, "_avatar_label") and not visible:
-            self._avatar_label.setVisible(True)
 
     def set_active_section(self, section: str):
         """Establecer sección activa programáticamente"""
