@@ -1248,7 +1248,7 @@ Migración Alembic correspondiente. La UI del detalle del día ya debería mostr
 
 ---
 
-### SCALA-03 — La sincronización SFTP es manual y puede fallar silenciosamente
+### ~~SCALA-03 — La sincronización SFTP es manual y puede fallar silenciosamente~~ ✅ RESUELTO v5.30.1
 **Severidad: Media**
 
 El usuario tiene que hacer clic en "Sincronizar" para subir datos al servidor SFTP. Si olvida sincronizar, los datos quedan solo locales. Si la sincronización falla, el feedback es mínimo.

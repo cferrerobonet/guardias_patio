@@ -379,6 +379,20 @@ class SidebarMenu(QWidget):
         info_layout.setContentsMargins(16, 10, 16, 10)
         info_layout.setSpacing(6)
 
+        # Estado de sincronización
+        self.sync_status_label = QLabel("— Sin conexión sync")
+        self.sync_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.sync_status_label.setWordWrap(True)
+        self.sync_status_label.setStyleSheet("""
+            QLabel {
+                color: rgba(255, 255, 255, 0.6);
+                font-size: 10px;
+                background-color: transparent;
+                border: none;
+            }
+        """)
+        info_layout.addWidget(self.sync_status_label)
+
         # Versión - centrada
         version_label = QLabel(f"📦 v{APP_VERSION}")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -414,6 +428,30 @@ class SidebarMenu(QWidget):
         info_layout.addWidget(btn_acerca)
 
         layout.addWidget(info_container)
+
+    def set_sync_status(self, estado: str, texto: str):
+        """Actualiza el indicador de estado de sync en la sidebar.
+
+        estado: 'ok' | 'warning' | 'error' | 'syncing'
+        """
+        if not hasattr(self, "sync_status_label"):
+            return
+        colores = {
+            "ok": "rgba(100,220,100,0.8)",
+            "warning": "rgba(255,200,50,0.8)",
+            "error": "rgba(255,80,80,0.8)",
+            "syncing": "rgba(100,180,255,0.8)",
+        }
+        color = colores.get(estado, "rgba(255,255,255,0.6)")
+        self.sync_status_label.setText(texto)
+        self.sync_status_label.setStyleSheet(f"""
+            QLabel {{
+                color: {color};
+                font-size: 10px;
+                background-color: transparent;
+                border: none;
+            }}
+        """)
 
     def _show_about_dialog(self):
         """Mostrar el diálogo Acerca de"""

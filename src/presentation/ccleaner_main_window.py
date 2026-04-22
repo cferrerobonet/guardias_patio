@@ -4,9 +4,12 @@ Ventana Principal Estilo CCleaner
 Layout profesional con sidebar oscuro y contenido blanco.
 """
 
+from datetime import datetime, timezone
+
 from core.logging import get_logger
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
+    QMessageBox,
     QHBoxLayout,
     QMainWindow,
     QScrollArea,
@@ -121,6 +124,11 @@ class CCleanerMainWindow(QMainWindow):
         # Activar la primera sección (Dashboard)
         # Cambiar la sección activa inicial a "profesores" en lugar de "dashboard"
         self.sidebar.set_active_section("profesores")
+
+        # Auto-sync en background cada 30 minutos
+        if self.sync_manager:
+            self._setup_auto_sync()
+            self._update_sync_status_label()
 
     def create_views(self):
         """Registrar factories de vistas — lazy loading: solo se instancian al navegar."""
@@ -238,3 +246,80 @@ class CCleanerMainWindow(QMainWindow):
                 logger.debug(f"   ⚠️ {widget_name} ({section}) sin método de refresco")
 
         logger.info(f"✅ Todas las vistas refrescadas después de cambiar al curso {curso_id}")
+
+    # ── Auto-sync ──────────────────────────────────────────────────────────────
+
+    def _setup_auto_sync(self):
+        self._auto_sync_timer = QTimer(self)
+        self._auto_sync_timer.timeout.connect(self._trigger_auto_sync)
+        self._auto_sync_timer.start(30 * 60 * 1000)  # 30 minutos
+        # Timer de UI: actualiza el label de tiempo transcurrido cada minuto
+        self._sync_ui_timer = QTimer(self)
+        self._sync_ui_timer.timeout.connect(self._update_sync_status_label)
+        self._sync_ui_timer.start(60 * 1000)
+
+    def _trigger_auto_sync(self):
+        if not self.sync_manager:
+            return
+        from presentation.widgets.sync_progress_dialog import SyncWorker
+        self._sync_worker = SyncWorker(self.sync_manager, session=self.session)
+        self.sidebar.set_sync_status("syncing", "↻ Sincronizando...")
+        self._sync_worker.finished.connect(self._on_auto_sync_finished)
+        self._sync_worker.start()
+
+    def _on_auto_sync_finished(self, success: bool):
+        self._update_sync_status_label(error=not success)
+
+    def _update_sync_status_label(self, error: bool = False):
+        if not self.sync_manager:
+            return
+        if error:
+            self.sidebar.set_sync_status("error", "✕ Error de sync")
+            return
+        last = self.sync_manager.get_last_sync_time()
+        if last is None:
+            self.sidebar.set_sync_status("warning", "⚠ Sin sincronizar")
+            return
+        # Normalizar a UTC si es naive
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        minutos = int((datetime.now(timezone.utc) - last).total_seconds() / 60)
+        if minutos < 2:
+            self.sidebar.set_sync_status("ok", "✓ Sincronizado ahora")
+        elif minutos < 60:
+            self.sidebar.set_sync_status("ok", f"✓ Sync hace {minutos} min")
+        else:
+            horas = minutos // 60
+            estado = "warning" if minutos > 60 else "ok"
+            self.sidebar.set_sync_status(estado, f"⚠ Sync hace {horas}h")
+
+    def closeEvent(self, event):
+        if not self.sync_manager:
+            event.accept()
+            return
+        last = self.sync_manager.get_last_sync_time()
+        if last is None:
+            pendiente = True
+        else:
+            if last.tzinfo is None:
+                last = last.replace(tzinfo=timezone.utc)
+            pendiente = (datetime.now(timezone.utc) - last).total_seconds() > 300
+        if pendiente:
+            resp = QMessageBox.question(
+                self,
+                "Cambios sin sincronizar",
+                "Hay cambios sin sincronizar con la nube. ¿Sincronizar antes de salir?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                | QMessageBox.StandardButton.Cancel,
+            )
+            if resp == QMessageBox.StandardButton.Cancel:
+                event.ignore()
+                return
+            if resp == QMessageBox.StandardButton.Yes:
+                from presentation.widgets.sync_progress_dialog import SyncProgressDialog, SyncWorker
+                dlg = SyncProgressDialog(self)
+                worker = SyncWorker(self.sync_manager, session=self.session)
+                worker.finished.connect(lambda _: dlg.accept())
+                worker.start()
+                dlg.exec()
+        event.accept()

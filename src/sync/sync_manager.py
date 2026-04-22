@@ -627,6 +627,20 @@ class SyncManager:
         # Luego subir cambios locales
         return self.sync_on_shutdown()
 
+    def get_last_sync_time(self) -> Optional[datetime]:
+        """Devuelve la fecha/hora de la última sincronización exitosa, o None."""
+        metadata_path = self.local_data_dir / "last_sync.json"
+        try:
+            if metadata_path.exists():
+                with open(metadata_path) as f:
+                    data = json.load(f)
+                raw = data.get("last_sync")
+                if raw:
+                    return datetime.fromisoformat(raw)
+        except (OSError, ValueError, KeyError):
+            pass
+        return None
+
 
 # ============== SISTEMA DE AUTENTICACIÓN SIMPLE ==============
 

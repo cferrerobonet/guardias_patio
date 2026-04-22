@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.30.1] - 2026-04-22
+
+### 🎯 Resumen
+Sync automático en background cada 30 minutos con indicador de estado en la sidebar y pregunta al cerrar si hay cambios sin sincronizar.
+
+### ✨ Added
+- `SyncManager.get_last_sync_time()`: devuelve la fecha/hora de la última sync exitosa desde `last_sync.json` (SCALA-03)
+- `SidebarMenu.set_sync_status(estado, texto)`: indicador de estado de sync en la parte inferior de la sidebar con colores ✓/⚠/✕ (SCALA-03)
+- `CCleanerMainWindow._setup_auto_sync()`: QTimer cada 30 min que lanza `SyncWorker` en background silencioso (SCALA-03)
+- `CCleanerMainWindow.closeEvent()`: si hay cambios sin sincronizar (>5 min desde última sync), pregunta al usuario antes de salir (SCALA-03)
+
 ## [5.30.0] - 2026-04-22
 
 ### 🎯 Resumen
