@@ -23,34 +23,25 @@ USO:
 
 from __future__ import annotations
 
-import json
 from collections import defaultdict
-from dataclasses import dataclass, field
 from datetime import date
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from services.distribucion_cuotas_service import DistribucionCuotasService
+from ortools.sat.python import cp_model
+from sqlalchemy.exc import SQLAlchemyError
+
 from infrastructure.database.models import (
-    Ausencia,
     Configuracion,
     Guardia,
     Profesor,
-    Zona,
 )
-from ortools.sat.python import cp_model
-from services.calculador_guardias import (
-    _parse_recreos_config,
-    listar_dias_lectivos,
-)
-from sqlalchemy.exc import SQLAlchemyError
+from services.distribucion_cuotas_service import DistribucionCuotasService
 from utils import get_logger
 
 logger = get_logger(__name__)
 
 
 from services._asignador_cpsat_helpers import (
-    ResultadoCPSAT,
-    Slot,
     SolverCallback,
     _es_elegible_basico,
     _generar_slots,
@@ -151,7 +142,7 @@ def generar_guardias_cpsat(
     total_elegibles = sum(len(v) for v in prof_slots.values())
     logger.info(
         f"  ✓ {total_elegibles} asignaciones elegibles "
-        f"({100*total_elegibles/(len(profesores)*len(slots)):.1f}%)"
+        f"({100 * total_elegibles / (len(profesores) * len(slots)):.1f}%)"
     )
 
     # Verificar que todos los slots tienen al menos un profesor
@@ -242,9 +233,7 @@ def generar_guardias_cpsat(
     for p in profesores:
         if prof_slots[p.id]:
             n_guardias[p.id] = model.NewIntVar(0, len(prof_slots[p.id]), f"n_{p.id}")
-            model.Add(
-                n_guardias[p.id] == sum(x[(p.id, s_idx)] for s_idx in prof_slots[p.id])
-            )
+            model.Add(n_guardias[p.id] == sum(x[(p.id, s_idx)] for s_idx in prof_slots[p.id]))
         else:
             n_guardias[p.id] = model.NewIntVar(0, 0, f"n_{p.id}")
 
@@ -336,6 +325,30 @@ def generar_guardias_cpsat(
     n_cortes = len(penalizacion_consecutividad)
     logger.info(f"  ✓ Objetivo 2: minimizar cortes entre días ({n_cortes} términos)")
 
+    # Penalización por semanas activas: menos semanas con guardias => más concentración
+    dia_ord_a_semana_ord: Dict[int, int] = {}
+    semana_key_a_ord: Dict[Tuple[int, int], int] = {}
+    for dia_ord, dia in enumerate(dias_unicos):
+        semana_key = (dia.isocalendar().year, dia.isocalendar().week)
+        if semana_key not in semana_key_a_ord:
+            semana_key_a_ord[semana_key] = len(semana_key_a_ord)
+        dia_ord_a_semana_ord[dia_ord] = semana_key_a_ord[semana_key]
+
+    penalizacion_semanas_activas: List[cp_model.IntVar] = []
+    for p in profesores:
+        semanas_del_prof: Dict[int, List[cp_model.IntVar]] = defaultdict(list)
+        for dia_ord, tiene_dia in tiene_guardia_dia[p.id].items():
+            semana_ord = dia_ord_a_semana_ord[dia_ord]
+            semanas_del_prof[semana_ord].append(tiene_dia)
+
+        for semana_ord, vars_dia in semanas_del_prof.items():
+            tiene_semana = model.NewBoolVar(f"semana_activa_{p.id}_{semana_ord}")
+            model.AddMaxEquality(tiene_semana, vars_dia)
+            penalizacion_semanas_activas.append(tiene_semana)
+
+    n_semanas_activas = len(penalizacion_semanas_activas)
+    logger.info(f"  ✓ Objetivo 2b: minimizar semanas activas ({n_semanas_activas} términos)")
+
     # -------------------------------------------------------------------------
     # OBJETIVO 3 (TERCIARIO): PREFERENCIA DE ZONA
     # -------------------------------------------------------------------------
@@ -384,27 +397,29 @@ def generar_guardias_cpsat(
     # -------------------------------------------------------------------------
     # COMBINAR OBJETIVOS CON PESOS
     # -------------------------------------------------------------------------
-    # Prioridad: Equidad >> Consecutividad > Zona
+    # Prioridad: Equidad >> Semanas activas > Consecutividad > Zona
     # Pesos elegidos para que la equidad siempre tenga prioridad absoluta.
     # Una vez garantizada equidad perfecta (max_dev=0, sum_desv=0),
     # los objetivos secundarios se optimizan con consecutividad prioritaria.
-    PESO_EQUIDAD = 1000000      # Máxima prioridad (garantiza equidad primero)
-    PESO_EQUIDAD_SUMA = 10000   # Suma de desviaciones (secundario a max_dev)
-    PESO_CONSECUTIVIDAD = 10    # Minimizar cortes entre días (prioritario)
-    PESO_ZONA = 3               # Preferencia de zona (secundario)
+    PESO_EQUIDAD = 1000000  # Máxima prioridad (garantiza equidad primero)
+    PESO_EQUIDAD_SUMA = 10000  # Suma de desviaciones (secundario a max_dev)
+    PESO_SEMANAS_ACTIVAS = 5000  # Minimizar semanas con presencia de guardias
+    PESO_CONSECUTIVIDAD = 1000  # Minimizar cortes entre días
+    PESO_ZONA = 3  # Preferencia de zona (secundario)
 
     objetivo = (
-        PESO_EQUIDAD * max_dev +
-        PESO_EQUIDAD_SUMA * sum(desviaciones) +
-        PESO_CONSECUTIVIDAD * sum(penalizacion_consecutividad) +
-        PESO_ZONA * sum(penalizacion_zona)
+        PESO_EQUIDAD * max_dev
+        + PESO_EQUIDAD_SUMA * sum(desviaciones)
+        + PESO_SEMANAS_ACTIVAS * sum(penalizacion_semanas_activas)
+        + PESO_CONSECUTIVIDAD * sum(penalizacion_consecutividad)
+        + PESO_ZONA * sum(penalizacion_zona)
     )
 
     model.Minimize(objetivo)
 
     logger.info(
         f"  ✓ Objetivo combinado: equidad({PESO_EQUIDAD}*max + {PESO_EQUIDAD_SUMA}*sum) "
-        f"+ consec({PESO_CONSECUTIVIDAD}) + zona({PESO_ZONA})"
+        f"+ semanas({PESO_SEMANAS_ACTIVAS}) + consec({PESO_CONSECUTIVIDAD}) + zona({PESO_ZONA})"
     )
 
     # =========================================================================
@@ -425,9 +440,7 @@ def generar_guardias_cpsat(
         # prof_id -> último día ordinal con guardia
         ultimo_dia_guardia: Dict[int, int] = {}
         # prof_id -> {zona: count}
-        zona_principal: Dict[int, Dict[int, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        zona_principal: Dict[int, Dict[int, int]] = defaultdict(lambda: defaultdict(int))
 
         for s_idx in range(len(slots)):
             slot = slots[s_idx]
@@ -531,9 +544,7 @@ def generar_guardias_cpsat(
     reportar(90, "Generando guardias...")
 
     # Extraer asignaciones
-    asignaciones: Dict[int, int] = {
-        p.id: solver.Value(n_guardias[p.id]) for p in profesores
-    }
+    asignaciones: Dict[int, int] = {p.id: solver.Value(n_guardias[p.id]) for p in profesores}
 
     # Crear objetos Guardia
     guardias: List[Guardia] = []
@@ -583,9 +594,9 @@ def generar_guardias_cpsat(
         fechas_ord = sorted(set(fechas))
         dias_ord_prof = [dia_a_ordinal[f] for f in fechas_ord]
         for i in range(len(dias_ord_prof) - 1):
-            salto = dias_ord_prof[i+1] - dias_ord_prof[i]
+            salto = dias_ord_prof[i + 1] - dias_ord_prof[i]
             if salto > 1:
-                huecos_totales += (salto - 1)
+                huecos_totales += salto - 1
                 profs_con_huecos += 1
 
     logger.info(f"  Huecos en consecutividad: {huecos_totales} días")
@@ -600,12 +611,12 @@ def generar_guardias_cpsat(
         if zonas_count:
             max_zona = max(zonas_count.values())
             total_prof = sum(zonas_count.values())
-            total_fuera_zona_principal += (total_prof - max_zona)
+            total_fuera_zona_principal += total_prof - max_zona
 
     logger.info(f"  Guardias fuera de zona principal: {total_fuera_zona_principal}")
     logger.info(f"  Solución óptima: {'SÍ' if es_optimo else 'NO (tiempo agotado)'}")
 
-    opt_str = 'Óptimo' if es_optimo else 'Factible'
+    opt_str = "Óptimo" if es_optimo else "Factible"
     reportar(100, f"✅ Completado: IE={indice_equidad:.1f}% ({opt_str})")
 
     logger.info("")

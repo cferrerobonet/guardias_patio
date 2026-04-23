@@ -8,7 +8,10 @@ o cuando falte configuración crítica.
 import base64
 import json
 import os
+import shutil
 import smtplib
+import sys
+from pathlib import Path
 
 import paramiko
 from dotenv import load_dotenv
@@ -16,16 +19,16 @@ from PyQt6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFileDialog,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QMessageBox,
     QPushButton,
     QTabWidget,
     QVBoxLayout,
     QWidget,
 )
+
+from core.paths import get_base_directory
 from presentation.dialogs._initial_config_tabs import create_sftp_tab, create_smtp_tab
 from utils import get_logger
 from utils.icons import icon_for_button
@@ -212,7 +215,12 @@ class InitialConfigDialog(QDialog):
 
     def _load_existing_config(self) -> None:
         """Carga la configuración existente desde .env."""
-        load_dotenv()
+        self._migrate_legacy_env_if_needed()
+        env_path = self._get_env_path()
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path, override=True)
+        else:
+            load_dotenv()
 
         # SFTP
         self.sftp_host_input.setText(os.getenv("SFTP_HOST", ""))
@@ -576,9 +584,8 @@ class InitialConfigDialog(QDialog):
         Args:
             variables: Diccionario con las variables a actualizar
         """
-        from pathlib import Path
-
-        env_path = Path(__file__).parent.parent.parent.parent / ".env"
+        env_path = self._get_env_path()
+        env_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Leer archivo existente o crear uno nuevo
         if env_path.exists():
@@ -608,6 +615,29 @@ class InitialConfigDialog(QDialog):
         logger.info(f"Archivo .env actualizado con {len(variables)} variables")
 
     @staticmethod
+    def _get_env_path() -> Path:
+        return get_base_directory() / ".env"
+
+    @staticmethod
+    def _get_legacy_bundle_env_path() -> Path:
+        return Path(__file__).resolve().parent.parent.parent.parent / ".env"
+
+    @classmethod
+    def _migrate_legacy_env_if_needed(cls) -> None:
+        if not getattr(sys, "frozen", False):
+            return
+
+        destino = cls._get_env_path()
+        origen_legacy = cls._get_legacy_bundle_env_path()
+
+        if destino.exists() or not origen_legacy.exists():
+            return
+
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(origen_legacy, destino)
+        logger.info(f"Migrado .env legacy a ruta persistente: {destino}")
+
+    @staticmethod
     def is_configuration_needed() -> bool:
         """
         Verifica si es necesario mostrar el diálogo de configuración.
@@ -615,7 +645,12 @@ class InitialConfigDialog(QDialog):
         Returns:
             True si falta configuración SFTP (obligatoria)
         """
-        load_dotenv()
+        InitialConfigDialog._migrate_legacy_env_if_needed()
+        env_path = InitialConfigDialog._get_env_path()
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path, override=True)
+        else:
+            load_dotenv()
 
         # SFTP es obligatorio
         sftp_complete = all(
@@ -633,7 +668,7 @@ class InitialConfigDialog(QDialog):
         """Desencripta un valor codificado en base64."""
         try:
             return base64.b64decode(encrypted_value.encode("utf-8")).decode("utf-8")
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError):
             return encrypted_value  # Si falla, asumir que ya está desencriptado
 
     def _load_sftp_from_json(self) -> None:

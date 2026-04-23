@@ -11,6 +11,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # Añadir el directorio raíz al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -115,7 +117,13 @@ def main():
     # Validar Configuración Inicial (SFTP/SMTP)
     # ==========================================
 
+    from core.paths import get_base_directory
     from presentation.dialogs.initial_config_dialog import InitialConfigDialog
+
+    # Cargar configuración persistente antes de validarla
+    env_path = get_base_directory() / ".env"
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path, override=True)
 
     # Verificar si es necesario configurar SFTP/SMTP
     if InitialConfigDialog.is_configuration_needed():
