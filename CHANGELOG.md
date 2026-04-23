@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.5] - 2026-04-23
+
+### 🎯 Resumen
+Eliminado el pool de CeldaDia que causaba `RuntimeError: wrapped C/C++ object has been deleted` al volver al calendario tras una sustitución.
+
+### Fixed
+- `VistaCalendario`: eliminado `_celda_pool` por completo — el pool causaba una condición de carrera con `deleteLater()` en el flujo sustitución→calendario: los objetos C++ se destruyen asíncronamente y en ciertos timings el render intentaba reutilizar celdas ya destruidas. Ahora `_renderizar_vista_mensual` crea siempre instancias nuevas de `CeldaDia`
+
 ## [5.31.4] - 2026-04-23
 
 ### 🎯 Resumen
