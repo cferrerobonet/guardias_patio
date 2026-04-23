@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.8] - 2026-04-23
+
+### 🎯 Resumen
+Corregido AttributeError al abrir el calendario con ausencias: el repositorio devolvía AusenciaEntity (sin relación `profesor`) en lugar del modelo ORM.
+
+### Fixed
+- `vista_calendario_helpers.py` → `cargar_datos_periodo()`: la consulta de ausencias pasaba por el repositorio de dominio (`AusenciaEntity`) que no tiene la relación `profesor`; ahora se consulta directamente el modelo ORM con `joinedload(AusenciaModel.profesor)`, igual que se hace con las guardias
+
 ## [5.31.7] - 2026-04-23
 
 ### 🎯 Resumen

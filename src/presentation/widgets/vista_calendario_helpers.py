@@ -9,7 +9,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 from typing import Dict, List, Optional, Tuple
 
-from infrastructure.database.models import Configuracion, Zona
+from infrastructure.database.models import Ausencia as AusenciaModel, Configuracion, Zona
 
 
 def parse_recreos_config(config: Configuracion) -> List[Dict]:
@@ -144,7 +144,16 @@ def cargar_datos_periodo(session, fecha_inicio: date, fecha_fin: date) -> tuple:
         if hasattr(g, "profesor_sustituido_id") and g.profesor_sustituido_id:
             sustituciones_por_fecha[g.fecha].append(g)
 
-    ausencias = _svc.ausencias.find_active_in_rango(fecha_inicio, fecha_fin)
+    ausencias = (
+        session.query(AusenciaModel)
+        .options(joinedload(AusenciaModel.profesor))
+        .filter(
+            AusenciaModel.activa == True,  # noqa: E712
+            AusenciaModel.fecha_inicio <= fecha_fin,
+            AusenciaModel.fecha_fin >= fecha_inicio,
+        )
+        .all()
+    )
 
     ausencias_por_fecha: defaultdict = defaultdict(list)
     for ausencia in ausencias:
