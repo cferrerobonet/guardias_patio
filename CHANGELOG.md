@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.10] - 2026-04-23
+
+### 🎯 Resumen
+Corregido error `PDFStyles is not defined` al generar calendarios PDF individuales.
+
+### Fixed
+- `services/_pdf_mini_calendario.py`: faltaba el import `from services.pdf_styles import PDFStyles`; el módulo usaba `PDFStyles.get_color_zona()` sin haberlo importado
+
 ## [5.31.9] - 2026-04-23
 
 ### 🎯 Resumen

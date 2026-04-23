@@ -17,7 +17,7 @@ NC='\033[0m'
 
 # Variables
 APP_NAME="Guardias de Patio"
-VERSION="5.31.8"
+VERSION="5.31.9"
 DMG_NAME="GuardiasDePatio-${VERSION}-macOS"
 APP_PATH="dist/${APP_NAME}.app"
 

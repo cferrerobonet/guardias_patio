@@ -13,6 +13,7 @@ from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph
 
 from infrastructure.database.models import Configuracion
+from services.pdf_styles import PDFStyles
 from utils import get_logger
 
 logger = get_logger(__name__)
