@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.9] - 2026-04-23
+
+### 🎯 Resumen
+Aviso de actualización disponible movido al sidebar (visible siempre), justo encima de la versión y el botón Acerca de.
+
+### Changed
+- El verificador de actualizaciones en background ahora se lanza desde `CCleanerMainWindow` en lugar de `HomeForm`
+- El banner de nueva versión aparece en el sidebar (botón amarillo sobre la versión), visible desde cualquier sección; al hacer clic abre la página de releases de GitHub
+
+### 🧹 Housekeeping
+- Eliminado código de banner de `HomeForm` (clase `_UpdateBanner`, señal, métodos `_lanzar_check_actualizacion` y `_on_nueva_version`)
+
 ## [5.31.8] - 2026-04-23
 
 ### 🎯 Resumen

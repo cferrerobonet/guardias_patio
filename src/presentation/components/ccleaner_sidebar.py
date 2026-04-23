@@ -393,6 +393,27 @@ class SidebarMenu(QWidget):
         """)
         info_layout.addWidget(self.sync_status_label)
 
+        # Banner de actualización disponible (oculto por defecto)
+        self._update_banner = QPushButton("🆕 Actualización disponible")
+        self._update_banner.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._update_banner.setStyleSheet("""
+            QPushButton {
+                color: #1A237E;
+                background-color: #FFF176;
+                border: 1px solid #F9A825;
+                border-radius: 4px;
+                padding: 5px 8px;
+                font-size: 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #FDD835;
+            }
+        """)
+        self._update_banner.hide()
+        self._update_banner.clicked.connect(self._on_update_banner_clicked)
+        info_layout.addWidget(self._update_banner)
+
         # Versión - centrada
         version_label = QLabel(f"📦 v{APP_VERSION}")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -452,6 +473,17 @@ class SidebarMenu(QWidget):
                 border: none;
             }}
         """)
+
+    def show_update_banner(self, nueva_version: str) -> None:
+        if not hasattr(self, "_update_banner"):
+            return
+        self._update_nueva_version = nueva_version
+        self._update_banner.setText(f"🆕 v{nueva_version} disponible")
+        self._update_banner.show()
+
+    def _on_update_banner_clicked(self) -> None:
+        import webbrowser
+        webbrowser.open("https://github.com/cferrerobonet/guardias_patio/releases/latest")
 
     def _show_about_dialog(self):
         """Mostrar el diálogo Acerca de"""

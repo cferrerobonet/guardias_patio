@@ -4,7 +4,7 @@ Panel de inicio — estado del día, alertas y accesos rápidos.
 
 from datetime import date
 
-from PyQt6.QtCore import Qt, QUrl, pyqtSignal
+from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import (
     QFrame,
@@ -17,12 +17,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from config.settings import get_settings
 from infrastructure.database.models import Ausencia, Guardia, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 from presentation.theme.tokens import Spacing
 from utils import get_logger
-from utils.update_checker import check_for_updates
 
 logger = get_logger(__name__)
 
@@ -127,15 +125,10 @@ class _UpdateBanner(QWidget):
 class HomeForm(BaseForm):
     """Dashboard de inicio: estado del día y alertas del sistema."""
 
-    _nueva_version_disponible = pyqtSignal(str)
-
     def __init__(self, session):
         super().__init__(session)
-        self._update_banner: _UpdateBanner | None = None
-        self._nueva_version_disponible.connect(self._on_nueva_version)
         self.setup_ui()
         self.cargar_datos()
-        self._lanzar_check_actualizacion()
 
     def setup_ui(self):
         root = QVBoxLayout(self)
@@ -326,13 +319,3 @@ class HomeForm(BaseForm):
             item = _AlertItem(texto, nivel)
             self._alerts_layout.insertWidget(self._alerts_layout.count() - 1, item)
 
-    def _lanzar_check_actualizacion(self):
-        current = get_settings().app_version
-        check_for_updates(current, self._nueva_version_disponible.emit)
-
-    def _on_nueva_version(self, nueva_version: str):
-        if self._update_banner is not None:
-            self._update_banner.deleteLater()
-        self._update_banner = _UpdateBanner(nueva_version, self._banner_container)
-        self._banner_layout.addWidget(self._update_banner)
-        self._banner_container.show()

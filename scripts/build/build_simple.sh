@@ -22,23 +22,24 @@ echo "=== Compilación de Guardias de Patio ==="
 echo "Fecha: $(date)"
 echo ""
 
-# Verificar Python 3.11
-PYTHON_PATH="/opt/homebrew/bin/python3.11"
+# Verificar Python 3.11 en el entorno virtual del proyecto
+PYTHON_PATH="$(pwd)/.venv/bin/python"
 if [ ! -f "$PYTHON_PATH" ]; then
-    echo "❌ Error: Python 3.11 no encontrado en $PYTHON_PATH"
+    echo "❌ Error: Python del entorno virtual no encontrado en $PYTHON_PATH"
+    echo "Activa/crea el entorno con: python3.11 -m venv .venv && source .venv/bin/activate"
     exit 1
 fi
 
-echo "✓ Python encontrado: $($PYTHON_PATH --version)"
+echo "✓ Python encontrado: $("$PYTHON_PATH" --version)"
 
 # Verificar PyInstaller
-if ! $PYTHON_PATH -m PyInstaller --version > /dev/null 2>&1; then
+if ! "$PYTHON_PATH" -m PyInstaller --version > /dev/null 2>&1; then
     echo "❌ Error: PyInstaller no está instalado"
     echo "Instala con: $PYTHON_PATH -m pip install pyinstaller"
     exit 1
 fi
 
-echo "✓ PyInstaller encontrado: $($PYTHON_PATH -m PyInstaller --version)"
+echo "✓ PyInstaller encontrado: $("$PYTHON_PATH" -m PyInstaller --version)"
 echo ""
 
 # Limpiar compilaciones anteriores
@@ -69,7 +70,8 @@ echo ""
 #
 # ⚠️  NO AGREGAR: --exclude-module=matplotlib --exclude-module=pandas
 # Estos módulos son REQUERIDOS. Si se excluyen, la app crasheará.
-$PYTHON_PATH -m PyInstaller \
+"$PYTHON_PATH" -m PyInstaller \
+    --noconfirm \
     --clean \
     --onedir \
     --windowed \
@@ -79,6 +81,8 @@ $PYTHON_PATH -m PyInstaller \
     --add-data="alembic.ini:." \
     --add-data="alembic:alembic" \
     --exclude-module=tkinter \
+    --collect-all dependency_injector \
+    --hidden-import=logging.config \
     --osx-bundle-identifier="com.guardias-patio.app" \
     src/main.py
 

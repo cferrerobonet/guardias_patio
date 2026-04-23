@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from core.logging import get_logger
 from core.usage_logger import usage_log
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QMessageBox,
     QHBoxLayout,
@@ -70,6 +70,8 @@ class ContentWrapper(QWidget):
 class CCleanerMainWindow(QMainWindow):
     """Ventana principal con diseño estilo CCleaner"""
 
+    _nueva_version_signal = pyqtSignal(str)
+
     def __init__(self, session, sync_manager=None):
         super().__init__()
         self.session = session
@@ -129,6 +131,9 @@ class CCleanerMainWindow(QMainWindow):
         if self.sync_manager:
             self._setup_auto_sync()
             self._update_sync_status_label()
+
+        # Verificar actualizaciones en background
+        self._check_updates()
 
     def create_views(self):
         """Registrar factories de vistas — lazy loading: solo se instancian al navegar."""
@@ -322,3 +327,14 @@ class CCleanerMainWindow(QMainWindow):
                 worker.start()
                 dlg.exec()
         event.accept()
+
+    def _check_updates(self) -> None:
+        from config.settings import get_settings
+        from utils.update_checker import check_for_updates
+
+        self._nueva_version_signal.connect(self._on_nueva_version)
+        check_for_updates(get_settings().app_version, self._nueva_version_signal.emit)
+
+    def _on_nueva_version(self, version: str) -> None:
+        if hasattr(self, "sidebar"):
+            self.sidebar.show_update_banner(version)
