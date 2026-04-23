@@ -113,9 +113,9 @@ class TestGestorSustitucionesBasico:
         assert gestor.btn_confirmar_sustitucion is not None
         assert gestor.btn_cancelar is not None
 
-        # Historial
-        assert gestor.tabla_historial is not None
-        assert gestor.tabla_historial.columnCount() == 5
+        # Historial (audit log embebido)
+        assert gestor._historial_audit is not None
+        assert gestor._historial_audit.tabla.columnCount() == 6
 
     def test_boton_confirmar_deshabilitado_inicialmente(self, gestor):
         """Test que el botón confirmar está deshabilitado al inicio."""

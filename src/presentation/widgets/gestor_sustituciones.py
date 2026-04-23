@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from presentation.forms.auditoria_guardias_form import AuditoriaGuardiasForm
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY, get_table_style
 from utils.icons import icon_for_button, icon_for_form
@@ -93,8 +94,11 @@ class GestorSustituciones(BaseForm):
         tabla_group.setLayout(tabla_layout)
         layout_principal.addWidget(tabla_group)
 
-        # Historial (ancho completo, colapsable)
-        layout_principal.addWidget(self._crear_seccion_historial())
+        # Historial de cambios (audit log filtrado a sustituciones)
+        self._historial_audit = AuditoriaGuardiasForm(self.session, parent=self)
+        self._historial_audit.combo_accion.setCurrentText("SUSTITUIDA")
+        self._historial_audit.cargar_datos()
+        layout_principal.addWidget(self._historial_audit)
 
         self.setLayout(layout_principal)
 
@@ -237,34 +241,6 @@ class GestorSustituciones(BaseForm):
         botones_layout.addWidget(self.btn_cancelar, 1)
 
         return botones_layout
-
-    def _crear_seccion_historial(self) -> QGroupBox:
-        """Crear sección de historial."""
-        grupo_historial = QGroupBox("Historial Reciente de Sustituciones")
-        layout_historial = QVBoxLayout()
-        layout_historial.setContentsMargins(15, 20, 15, 15)
-
-        self.tabla_historial = QTableWidget()
-        self.tabla_historial.setColumnCount(5)
-        self.tabla_historial.setHorizontalHeaderLabels(
-            ["Fecha", "Profesor Original", "Profesor Sustituto", "Turno/Recreo", "Zona"]
-        )
-        self.tabla_historial.setMaximumHeight(180)
-        self.tabla_historial.setAlternatingRowColors(True)
-        self.tabla_historial.setStyleSheet(get_table_style())
-
-        # Configurar columnas para ajustarse al contenido
-        header_hist = self.tabla_historial.horizontalHeader()
-        header_hist.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Fecha
-        header_hist.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Prof. Original
-        header_hist.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  # Prof. Sustituto
-        header_hist.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Turno/Recreo
-        header_hist.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  # Zona
-
-        layout_historial.addWidget(self.tabla_historial)
-
-        grupo_historial.setLayout(layout_historial)
-        return grupo_historial
 
     def cargar_profesores(self):
         """Cargar la lista de profesores en los combos."""
@@ -481,3 +457,4 @@ class GestorSustituciones(BaseForm):
         """Refrescar los datos."""
         self.cargar_profesores()
         self.tabla_guardias.setRowCount(0)
+        self._historial_audit.cargar_datos()

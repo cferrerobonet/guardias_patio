@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.3] - 2026-04-23
+
+### 🎯 Resumen
+Eliminado el ítem de menú Auditoría; el historial vacío de Sustituciones se reemplaza por el audit log real filtrado a sustituciones.
+
+### Changed
+- `GestorSustituciones`: elimina `tabla_historial` (nunca tenía datos) y embebe `AuditoriaGuardiasForm` prefiltrando a `SUSTITUIDA`; `refrescar()` recarga también el historial
+- `ccleaner_sidebar.py`: eliminado ítem "Auditoría" del menú HERRAMIENTAS
+- `ccleaner_main_window.py`: eliminado registro de la sección `auditoria` e import de `AuditoriaGuardiasForm`
+- `tests/test_gestor_sustituciones.py`: actualizado test `test_tiene_widgets_principales` para el nuevo atributo `_historial_audit`
+
 ## [5.31.2] - 2026-04-23
 
 ### 🎯 Resumen
