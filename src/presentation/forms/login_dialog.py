@@ -2,6 +2,7 @@
 Diálogo de Login para Sistema Multi-Usuario
 """
 
+from config.settings import get_settings
 from core.paths import get_resources_directory
 from core.observability import business_metrics
 from PyQt6.QtCore import Qt
@@ -358,6 +359,14 @@ class LoginDialog(QDialog):
         brand_layout.addWidget(app_sub)
 
         brand_layout.addStretch()
+
+        version_label = QLabel(f"v{get_settings().app_version}")
+        version_label.setStyleSheet(
+            "QLabel { font-size: 11px; color: rgba(255,255,255,0.55);"
+            " background: transparent; }"
+        )
+        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        brand_layout.addWidget(version_label)
 
         credits = QLabel("© 2026 · Carlos Ferrero Bonet")
         credits.setStyleSheet(

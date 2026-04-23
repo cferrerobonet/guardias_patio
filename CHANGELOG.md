@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.1] - 2026-04-23
+
+### 🎯 Resumen
+Versión de la app visible en el panel izquierdo del diálogo de login.
+
+### Changed
+- `LoginDialog`: añade etiqueta `vX.Y.Z` sobre los créditos en el panel de marca
+
 ## [5.31.0] - 2026-04-23
 
 ### 🎯 Resumen
