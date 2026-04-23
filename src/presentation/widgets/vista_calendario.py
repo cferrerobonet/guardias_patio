@@ -291,9 +291,10 @@ class VistaCalendario(BaseForm):
         barra_layout.addWidget(btn_refrescar)
 
         # Botón modo compacto
-        self.btn_compacto = QPushButton("Compacto")
+        self.btn_compacto = QPushButton("Compacto" if not self.modo_compacto else "Detalle")
         self.btn_compacto.setIcon(icon_for_button("view-compact"))
         self.btn_compacto.setCheckable(True)
+        self.btn_compacto.setChecked(self.modo_compacto)
         self.btn_compacto.clicked.connect(self.toggle_modo_compacto)
         self.btn_compacto.setStyleSheet("""
             QPushButton {
@@ -392,10 +393,13 @@ class VistaCalendario(BaseForm):
         """Actualizar el calendario según la vista actual."""
         self.logger.info(f"📅 Actualizando calendario - Vista: {self.vista_actual}")
 
-        # Limpiar calendario anterior (no destruir celdas del pool — se reutilizan)
+        # Invalidar pool: las celdas son hijos del widget_grid que se va a destruir
+        self._celda_pool.clear()
+
+        # Limpiar calendario anterior
         while self.calendario_layout.count():
             item = self.calendario_layout.takeAt(0)
-            if item.widget() and item.widget() not in self._celda_pool:
+            if item.widget():
                 item.widget().deleteLater()
 
         # Renderizar según vista

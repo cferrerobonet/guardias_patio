@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.2] - 2026-04-23
+
+### 🎯 Resumen
+Botón Compacto/Detalle del calendario ahora funciona; vista de detalle como modo por defecto.
+
+### Fixed
+- `VistaCalendario.actualizar_calendario()`: limpia `_celda_pool` antes de destruir el `widget_grid` contenedor — las celdas del pool quedaban como widgets Qt destruidos y la segunda renderización llamaba métodos sobre objetos zombie, impidiendo cualquier cambio visual al pulsar el botón
+- `_crear_barra_controles()`: el botón se inicializa con el texto y estado `checked` coherentes con `modo_compacto=False` (modo detalle por defecto)
+
 ## [5.31.1] - 2026-04-23
 
 ### 🎯 Resumen
