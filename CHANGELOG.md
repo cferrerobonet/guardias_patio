@@ -5,6 +5,16 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.0] - 2026-04-23
+
+### 🎯 Resumen
+Verificador de actualizaciones en background: banner no intrusivo en el HomeForm cuando hay una versión nueva en GitHub Releases (SCALA-04).
+
+### ✨ Added
+- `utils/update_checker.py`: hilo daemon que consulta la API de GitHub Releases y compara versiones semánticas
+- `HomeForm._UpdateBanner`: banner con botones "Ver cambios" (abre releases en navegador) y "Recordar más tarde" (oculta el banner)
+- `HomeForm._lanzar_check_actualizacion()`: arranca el check al iniciar el panel de inicio; usa señal Qt para notificar en el hilo principal
+
 ## [5.30.9] - 2026-04-22
 
 ### 🎯 Resumen

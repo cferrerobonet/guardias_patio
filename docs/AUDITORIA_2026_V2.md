@@ -1209,7 +1209,7 @@ self.sync_timer.start(30 * 60 * 1000)  # 30 minutos
 
 ---
 
-### SCALA-04 — No hay mecanismo de actualización de la app
+### ~~SCALA-04 — No hay mecanismo de actualización de la app~~ ✅ RESUELTO v5.31.0
 **Severidad: Baja**
 
 No hay forma de que el usuario sepa que hay una nueva versión disponible. Con macOS y el build de PyInstaller, hay que distribuir manualmente.

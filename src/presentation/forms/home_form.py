@@ -4,7 +4,8 @@ Panel de inicio — estado del día, alertas y accesos rápidos.
 
 from datetime import date
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QUrl, pyqtSignal
+from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -16,10 +17,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from config.settings import get_settings
 from infrastructure.database.models import Ausencia, Guardia, Profesor, Zona
 from presentation.forms.base_form import BaseForm
 from presentation.theme.tokens import Spacing
 from utils import get_logger
+from utils.update_checker import check_for_updates
 
 logger = get_logger(__name__)
 
@@ -84,13 +87,55 @@ class _AlertItem(QWidget):
         layout.addWidget(msg)
 
 
+class _UpdateBanner(QWidget):
+    """Banner no intrusivo que anuncia una nueva versión disponible."""
+
+    RELEASES_PAGE = "https://github.com/cferrerobonet/guardias_patio/releases/latest"
+
+    def __init__(self, nueva_version: str, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet(
+            "QWidget { background: #EFF6FF; border: 1px solid #3B82F6;"
+            " border-radius: 6px; }"
+        )
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(12)
+
+        msg = QLabel(f"Nueva versión disponible: <b>v{nueva_version}</b>")
+        msg.setStyleSheet(
+            "QLabel { font-size: 12px; color: #1D4ED8; background: transparent; border: none; }"
+        )
+        layout.addWidget(msg)
+        layout.addStretch()
+
+        btn_ver = QPushButton("Ver cambios")
+        btn_ver.setMinimumHeight(28)
+        btn_ver.setProperty("secondary", "true")
+        btn_ver.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl(self.RELEASES_PAGE))
+        )
+        layout.addWidget(btn_ver)
+
+        btn_cerrar = QPushButton("Recordar más tarde")
+        btn_cerrar.setMinimumHeight(28)
+        btn_cerrar.setProperty("secondary", "true")
+        btn_cerrar.clicked.connect(self.hide)
+        layout.addWidget(btn_cerrar)
+
+
 class HomeForm(BaseForm):
     """Dashboard de inicio: estado del día y alertas del sistema."""
 
+    _nueva_version_disponible = pyqtSignal(str)
+
     def __init__(self, session):
         super().__init__(session)
+        self._update_banner: _UpdateBanner | None = None
+        self._nueva_version_disponible.connect(self._on_nueva_version)
         self.setup_ui()
         self.cargar_datos()
+        self._lanzar_check_actualizacion()
 
     def setup_ui(self):
         root = QVBoxLayout(self)
@@ -116,6 +161,13 @@ class HomeForm(BaseForm):
         sep.setObjectName("separator")
         sep.setFixedHeight(1)
         root.addWidget(sep)
+
+        # Banner de actualización (oculto por defecto)
+        self._banner_container = QWidget()
+        self._banner_container.hide()
+        self._banner_layout = QVBoxLayout(self._banner_container)
+        self._banner_layout.setContentsMargins(0, 0, 0, 0)
+        root.addWidget(self._banner_container)
 
         # Layout principal 2 columnas
         cols = QHBoxLayout()
@@ -273,3 +325,14 @@ class HomeForm(BaseForm):
         for texto, nivel in alertas:
             item = _AlertItem(texto, nivel)
             self._alerts_layout.insertWidget(self._alerts_layout.count() - 1, item)
+
+    def _lanzar_check_actualizacion(self):
+        current = get_settings().app_version
+        check_for_updates(current, self._nueva_version_disponible.emit)
+
+    def _on_nueva_version(self, nueva_version: str):
+        if self._update_banner is not None:
+            self._update_banner.deleteLater()
+        self._update_banner = _UpdateBanner(nueva_version, self._banner_container)
+        self._banner_layout.addWidget(self._update_banner)
+        self._banner_container.show()
