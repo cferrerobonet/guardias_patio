@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.6] - 2026-04-23
+
+### 🎯 Resumen
+Corregido el bug por el que editar un profesor o zona por segunda vez mostraba los datos anteriores al último cambio.
+
+### Fixed
+- `utils/repository_cache.py` → `invalidate_repository_cache()`: se llamaba a `invalidate_cache(pattern)` sin `use_regex=True`, por lo que el patrón `".*profesor.*"` / `".*zona.*"` se trataba como substring literal y nunca coincidía con ninguna clave — la invalidación siempre eliminaba 0 entradas y la caché quedaba obsoleta indefinidamente
+
 ## [5.31.5] - 2026-04-23
 
 ### 🎯 Resumen

@@ -74,7 +74,7 @@ def invalidate_repository_cache(pattern: str):
         invalidate_repository_cache("configuracion")
         invalidate_repository_cache("zona.*")
     """
-    count = invalidate_cache(pattern)
+    count = invalidate_cache(pattern, use_regex=True)
     logger.info(
         f"Cache invalidado para repository - pattern: {pattern}, entries_invalidated: {count}"
     )
