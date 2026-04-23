@@ -255,8 +255,8 @@ class SFTPSyncBackend(SyncBackend):
         try:
             self.sftp.stat(self.base_dir)
             return True
-        except (OSError, ValueError) as e:
-            logger.info("Conexión SFTP inactiva. Reconectando...")
+        except Exception as e:
+            logger.info(f"Conexión SFTP inactiva ({e}). Reconectando...")
             self.close()
             return self._connect()
 

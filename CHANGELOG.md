@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.7] - 2026-04-23
+
+### 🎯 Resumen
+Corregido SSHException visible al usuario durante generación CP-SAT: el hilo de heartbeat SFTP no capturaba excepciones de Paramiko.
+
+### Fixed
+- `sync/session_lock.py` → `_on_heartbeat()`: captura `Exception` en lugar de `(ValueError, TypeError, OSError)` — `SSHException` de Paramiko no es `OSError`, por lo que la excepción escapaba del hilo de heartbeat y se mostraba al usuario como un error de la generación
+- `sync/sync_manager.py` → `_ensure_connected()`: mismo patrón — captura `Exception` para que una caída de conexión SSH durante la comprobación de estado provoque reconexión en lugar de propagarse
+
 ## [5.31.6] - 2026-04-23
 
 ### 🎯 Resumen

@@ -244,8 +244,8 @@ class SessionLockManager:
         """Callback del timer de heartbeat."""
         try:
             self.session_lock.update_heartbeat()
-        except (ValueError, TypeError, OSError) as e:
-            logger.error(f"Error en heartbeat: {e}")
+        except Exception as e:
+            logger.warning(f"Heartbeat SFTP no disponible (se reintentará): {e}")
 
     def stop_heartbeat(self):
         """Detiene el sistema de heartbeat."""
