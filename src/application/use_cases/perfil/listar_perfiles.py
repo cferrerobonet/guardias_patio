@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List
 
 from application.dtos.perfil_dto import PerfilDTO
+from core.paths import get_data_directory
 from database.db_manager import get_current_user_id, user_has_database
 from sync.sync_manager import UserAuth
 
@@ -29,7 +30,7 @@ class ListarPerfilesUseCase:
             tiene_bd = user_has_database(username)
 
             # Verificar si tiene logo
-            logo_path = Path("imagenes") / f"{username}.png"
+            logo_path = get_data_directory() / "imagenes" / f"{username}.png"
             tiene_logo = logo_path.exists()
 
             # Es el usuario actual

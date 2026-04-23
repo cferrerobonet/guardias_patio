@@ -7,6 +7,7 @@ Menú lateral oscuro con diseño profesional.
 from pathlib import Path
 
 from core.logging import get_logger
+from core.paths import get_data_directory
 from PyQt6.QtCore import QSettings, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
@@ -238,7 +239,7 @@ class SidebarMenu(QWidget):
             from PyQt6.QtGui import QPixmap
 
             current_user = get_current_user_id()
-            logo_path = Path("imagenes") / f"{current_user}.png"
+            logo_path = get_data_directory() / "imagenes" / f"{current_user}.png"
 
             if logo_path.exists():
                 # Cargar logo corporativo sin borde (fondo claro ya lo tiene la sección)

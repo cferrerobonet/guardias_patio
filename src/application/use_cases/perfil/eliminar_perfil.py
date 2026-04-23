@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from core.exceptions import NotFoundError, ValidationError
+from core.paths import get_data_directory
 from database.db_manager import delete_user_database, get_current_user_id
 from sync.sync_manager import UserAuth
 
@@ -40,7 +41,7 @@ class EliminarPerfilUseCase:
         delete_user_database(username)
 
         # Eliminar logo si existe
-        logo_path = Path("imagenes") / f"{username}.png"
+        logo_path = get_data_directory() / "imagenes" / f"{username}.png"
         if logo_path.exists():
             logo_path.unlink()
 

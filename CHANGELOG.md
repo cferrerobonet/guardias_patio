@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.4] - 2026-04-23
+
+### 🎯 Resumen
+Corregido OSError al guardar el logo de usuario en producción: las rutas relativas `Path("imagenes")` apuntaban al bundle de PyInstaller (solo lectura).
+
+### Fixed
+- `actualizar_logo.py`, `listar_perfiles.py`, `eliminar_perfil.py`, `actualizar_perfil.py`, `ccleaner_sidebar.py`: sustituido `Path("imagenes")` por `get_data_directory() / "imagenes"` para garantizar escritura en el directorio de datos del usuario en cualquier entorno
+
 ## [5.31.3] - 2026-04-23
 
 ### 🎯 Resumen

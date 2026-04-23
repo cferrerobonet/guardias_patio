@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 
 from core.exceptions import NotFoundError, ValidationError
+from core.paths import get_data_directory
 from sync.sync_manager import UserAuth
 
 
@@ -42,9 +43,9 @@ class ActualizarLogoUseCase:
         if archivo_origen.suffix.lower() not in extensiones_validas:
             raise ValidationError(f"Formato no válido. Use: {', '.join(extensiones_validas)}")
 
-        # Crear carpeta si no existe
-        carpeta_imagenes = Path("imagenes")
-        carpeta_imagenes.mkdir(exist_ok=True)
+        # Crear carpeta dentro del directorio de datos del usuario (escribible en producción)
+        carpeta_imagenes = get_data_directory() / "imagenes"
+        carpeta_imagenes.mkdir(parents=True, exist_ok=True)
 
         # Copiar imagen con nombre del usuario (siempre .png)
         destino = carpeta_imagenes / f"{username}.png"

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from application.dtos.perfil_dto import ActualizarPerfilDTO, PerfilDTO
 from core.exceptions import NotFoundError, ValidationError
+from core.paths import get_data_directory
 from database.db_manager import get_current_user_id, user_has_database
 from sync.sync_manager import UserAuth
 
@@ -45,7 +46,7 @@ class ActualizarPerfilUseCase:
 
         # Retornar DTO actualizado
         current_user = get_current_user_id()
-        logo_path = Path("imagenes") / f"{dto.username}.png"
+        logo_path = get_data_directory() / "imagenes" / f"{dto.username}.png"
 
         return PerfilDTO(
             username=dto.username,
