@@ -17,7 +17,7 @@ NC='\033[0m'
 
 # Variables
 APP_NAME="Guardias de Patio"
-VERSION="3.0.0"
+VERSION="5.31.6"
 DMG_NAME="GuardiasDePatio-${VERSION}-macOS"
 APP_PATH="dist/${APP_NAME}.app"
 
@@ -69,7 +69,7 @@ REQUISITOS:
 
 SOPORTE:
 - Documentación: Incluida en la aplicación
-- Versión: 2.8.0
+- Versión: 5.31.6
 
 ¡Gracias por usar Guardias de Patio!
 EOF

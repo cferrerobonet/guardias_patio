@@ -7,9 +7,13 @@ Define valores constantes utilizados en toda la aplicación para evitar
 
 # ========== CONSTANTES DE APLICACIÓN ==========
 APP_NAME = "Gestión de Guardias de Patio"
-APP_VERSION = "3.2.1"
 APP_AUTHOR = "Carlos Ferrero Bonet"
-APP_LAST_UPDATE = "2025-12-08"  # Fecha de última actualización
+
+# Fuente única de versión: settings.py → app_version
+# No modificar APP_VERSION aquí; el bump se hace solo en settings.py
+from config.settings import get_settings as _get_settings  # noqa: E402
+APP_VERSION = _get_settings().app_version
+APP_LAST_UPDATE = "2026-04-23"
 
 # ========== CONSTANTES DE BASE DE DATOS ==========
 DB_FILE = "guardias_patio.db"
