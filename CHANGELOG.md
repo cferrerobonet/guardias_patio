@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.12] - 2026-04-24
+
+### 🎯 Resumen
+Corregido error al enviar calendario PDF por email: el VO `Email` se pasaba sin convertir a string.
+
+### Fixed
+- `presentation/forms/reportes_form.py`: `str()` sobre `profesor.email_corporativo` (VO `Email`) antes de pasarlo a `send_calendar_pdf`, evitando `AttributeError: 'Email' object has no attribute 'encode'`
+
 ## [5.31.11] - 2026-04-23
 
 ### 🎯 Resumen

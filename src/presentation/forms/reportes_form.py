@@ -548,7 +548,7 @@ class ReportesForm(BaseForm):
                                     ics_path = None
 
                                 exito_email, mensaje_email = email_service.send_calendar_pdf(
-                                    to_email=profesor.email_corporativo,
+                                    to_email=str(profesor.email_corporativo),
                                     profesor_nombre=profesor.nombre_completo,
                                     pdf_path=ruta_salida,
                                     curso_escolar=curso_escolar,
