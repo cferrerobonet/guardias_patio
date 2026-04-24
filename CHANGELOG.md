@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.14] - 2026-04-24
+
+### 🎯 Resumen
+Corregido el checkbox "Seleccionar todos" en Calendarios PDF que no marcaba los profesores al activarse.
+
+### Fixed
+- `presentation/forms/reportes_widgets/calendarios_pdf_widget.py`: comparación correcta del estado del checkbox tristate (`int(state) == Qt.CheckState.Checked.value`) para que "Seleccionar todos" funcione en ambas direcciones
+
 ## [5.31.13] - 2026-04-24
 
 ### 🎯 Resumen

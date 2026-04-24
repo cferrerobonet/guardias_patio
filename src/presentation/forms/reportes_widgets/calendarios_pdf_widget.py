@@ -365,7 +365,7 @@ class CalendariosPdfWidget(QGroupBox):
 
     def _on_seleccionar_todos_changed(self, state):
         """Manejar cambio en el checkbox de seleccionar todos."""
-        seleccionado = state == Qt.CheckState.Checked
+        seleccionado = int(state) == Qt.CheckState.Checked.value
 
         # Bloquear señales temporalmente para evitar bucles
         for checkbox in self.profesor_checkboxes:
