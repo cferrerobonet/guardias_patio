@@ -461,7 +461,7 @@ class TestMplCanvas:
         """Test que se puede instanciar BarChartWidget sin args."""
         canvas = MplCanvas()
 
-        assert canvas.minimumHeight() == 200
+        assert canvas.minimumHeight() >= 60
 
 
 # ============================================================================

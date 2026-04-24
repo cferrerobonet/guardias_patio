@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.15] - 2026-04-24
+
+### 🎯 Resumen
+Gráficos de estadísticas completamente rediseñados: legibles, con altura dinámica y codificación por color.
+
+### Changed
+- `presentation/widgets/bar_chart_widget.py`: altura dinámica (26px/barra), etiquetas de apellido completo, línea de media vertical, código de color por desviación (azul/verde/ámbar/rojo), leyenda de colores; donut con total en el centro y porcentaje en cada sector
+- `presentation/widgets/panel_estadisticas.py`: eliminado `setMinimumHeight` fijo en el gráfico de barras
+
 ## [5.31.14] - 2026-04-24
 
 ### 🎯 Resumen

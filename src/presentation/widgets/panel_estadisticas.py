@@ -199,11 +199,10 @@ class PanelEstadisticas(BaseForm):
         scroll_layout = QVBoxLayout()
 
         self.canvas_profesores = BarChartWidget(titulo="Distribución de Guardias por Profesor", horizontal=True)
-        self.canvas_profesores.setMinimumHeight(250)
         scroll_layout.addWidget(self.canvas_profesores)
 
         self.canvas_zonas = PieChartWidget(titulo="Distribución de Guardias por Zona")
-        self.canvas_zonas.setMinimumHeight(300)
+        self.canvas_zonas.setMinimumHeight(380)
         scroll_layout.addWidget(self.canvas_zonas)
 
         scroll_widget.setLayout(scroll_layout)
