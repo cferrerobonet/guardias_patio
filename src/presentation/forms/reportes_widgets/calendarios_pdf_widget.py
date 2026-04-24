@@ -112,14 +112,7 @@ class CalendariosPdfWidget(QGroupBox):
 
         self.pdf_tipo_combo = QComboBox()
         self.pdf_tipo_combo.addItem(
-            "📅 Mes específico - PDF Consolidado (todos los profesores)", "mes_todos"
-        )
-        self.pdf_tipo_combo.addItem(
             "👤 Mes específico - Profesores seleccionados", "mes_seleccionados"
-        )
-        self.pdf_tipo_combo.addItem("📚 Curso completo - Todos los profesores", "curso_todos")
-        self.pdf_tipo_combo.addItem(
-            "📚 Curso completo - Profesores seleccionados", "curso_seleccionados"
         )
         self.pdf_tipo_combo.addItem(
             "🗓️ Calendario individual - Profesores seleccionados", "individual_seleccionados"
@@ -349,20 +342,14 @@ class CalendariosPdfWidget(QGroupBox):
         tipo = self.pdf_tipo_combo.currentData()
 
         # Mostrar/ocultar controles según el tipo
-        if tipo in ["mes_todos", "mes_seleccionados"]:
+        if tipo == "mes_seleccionados":
             self.fecha_container.show()
             self.curso_container.hide()
-        elif tipo in ["curso_todos", "curso_seleccionados"]:
-            self.fecha_container.hide()
-            self.curso_container.show()
         else:  # individual_seleccionados
             self.fecha_container.hide()
             self.curso_container.hide()
 
-        if tipo in ["mes_seleccionados", "curso_seleccionados", "individual_seleccionados"]:
-            self.profesores_container.show()
-        else:
-            self.profesores_container.hide()
+        self.profesores_container.show()
 
         # Mostrar opción de email solo para calendarios individuales
         if tipo == "individual_seleccionados":
@@ -371,14 +358,8 @@ class CalendariosPdfWidget(QGroupBox):
             self.email_container.hide()
 
         # Actualizar texto del botón
-        if tipo == "mes_todos":
-            self.exportar_pdf_btn.setText("Generar PDF Consolidado (Mes)")
-        elif tipo == "mes_seleccionados":
+        if tipo == "mes_seleccionados":
             self.exportar_pdf_btn.setText("Generar PDFs Seleccionados (Mes)")
-        elif tipo == "curso_todos":
-            self.exportar_pdf_btn.setText("Generar PDF Curso Completo (Todos)")
-        elif tipo == "curso_seleccionados":
-            self.exportar_pdf_btn.setText("Generar PDF Curso Completo (Seleccionados)")
         else:  # individual_seleccionados
             self.exportar_pdf_btn.setText("Generar Calendarios Individuales")
 

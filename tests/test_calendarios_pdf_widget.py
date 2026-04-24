@@ -63,8 +63,7 @@ class TestCalendariosPdfWidgetEstructura:
         """Test: El combo de tipo de exportación está presente."""
         assert widget.pdf_tipo_combo is not None
         assert isinstance(widget.pdf_tipo_combo, QComboBox)
-        # Debe tener al menos 3 opciones
-        assert widget.pdf_tipo_combo.count() >= 3
+        assert widget.pdf_tipo_combo.count() == 2
 
     def test_boton_exportar_presente(self, widget):
         """Test: El botón de exportar PDF está presente."""
@@ -128,20 +127,12 @@ class TestCalendariosPdfWidgetAnio:
 class TestCalendariosPdfWidgetTipoExportacion:
     """Tests para tipos de exportación."""
 
-    def test_tipo_mes_todos_disponible(self, widget):
-        """Test: El tipo 'mes todos' está disponible."""
-        # Buscar por data
+    def test_tipo_mes_seleccionados_disponible(self, widget):
+        """Test: El tipo 'mes seleccionados' está disponible."""
         for i in range(widget.pdf_tipo_combo.count()):
-            if widget.pdf_tipo_combo.itemData(i) == "mes_todos":
-                return  # Encontrado
-        pytest.fail("Tipo 'mes_todos' no encontrado")
-
-    def test_tipo_curso_completo_disponible(self, widget):
-        """Test: El tipo 'curso completo' está disponible."""
-        for i in range(widget.pdf_tipo_combo.count()):
-            if widget.pdf_tipo_combo.itemData(i) == "curso_todos":
+            if widget.pdf_tipo_combo.itemData(i) == "mes_seleccionados":
                 return
-        pytest.fail("Tipo 'curso_todos' no encontrado")
+        pytest.fail("Tipo 'mes_seleccionados' no encontrado")
 
     def test_tipo_individual_disponible(self, widget):
         """Test: El tipo 'individual' está disponible."""

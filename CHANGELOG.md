@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.31.13] - 2026-04-24
+
+### 🎯 Resumen
+Eliminadas las opciones redundantes del combo de exportación PDF en Reportes.
+
+### Changed
+- `presentation/forms/reportes_widgets/calendarios_pdf_widget.py`: eliminados los tipos `mes_todos`, `curso_todos` y `curso_seleccionados` del combo; simplificada la lógica de `_on_tipo_pdf_changed`
+- `tests/test_calendarios_pdf_widget.py`: actualizados los tests para reflejar las 2 opciones restantes
+
 ## [5.31.12] - 2026-04-24
 
 ### 🎯 Resumen
