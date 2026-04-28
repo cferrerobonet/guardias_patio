@@ -38,6 +38,7 @@ from services._asignador_v4_helpers import (  # noqa: F401
     _registrar_asignacion,
     _score_slot,
     _seleccionar_mejor_slot,
+    calcular_ventanas_bloque,
 )
 from services.calculador_guardias import (
     _parse_recreos_config,
@@ -168,6 +169,13 @@ def generar_guardias_v4_hibrido(
     _redistribuir_cuotas_bloqueados(ctx, matriz_elegibilidad)
 
     logger.info(f"  ✓ Cuota total: {sum(ctx.cuotas_ideales.values())} guardias")
+
+    # FASE 0.5: Ventanas de bloque por profesor para consecutividad
+    dias_lectivos_ord = listar_dias_lectivos(config)
+    ctx.dia_a_ordinal = {d: i for i, d in enumerate(dias_lectivos_ord)}
+    ctx.ventanas_bloque = calcular_ventanas_bloque(profesores, ctx.cuotas_ideales, dias_lectivos_ord)
+    logger.info(f"  ✓ Ventanas de bloque: {len(ctx.ventanas_bloque)} profesores")
+
     reportar(20, "Fase 0: Preparación completada")
 
     # =========================================================================

@@ -60,6 +60,10 @@ class ContextoAsignacion:
     ultimo_recreo: Dict[int, Optional[int]] = field(default_factory=dict)
     ultima_fecha: Dict[int, Optional[date]] = field(default_factory=dict)
 
+    # Ventanas de bloque para consecutividad (Fase C estrategia consecutividad)
+    ventanas_bloque: Dict[int, Tuple[int, int]] = field(default_factory=dict)
+    dia_a_ordinal: Dict[date, int] = field(default_factory=dict)
+
     # Calendario generado
     calendario: List[Guardia] = field(default_factory=list)
 

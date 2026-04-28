@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.32.0] - 2026-04-28
+
+### 🎯 Resumen
+Estrategia de consecutividad: modelo span directo en CP-SAT y ventanas de bloque en v4 Híbrido para alcanzar ~70% de concentración temporal de guardias por profesor.
+
+### ✨ Added
+- `services/asignador_guardias_cpsat.py`: modelo `primera/ultima/span` por profesor (sustituyendo XOR cortes y semanas activas); minimización directa del span lectivo con `PESO_SPAN=300`; métrica de concentración `guardias/span_natural×100` en la fase 8; ventanas de bloque en el hint greedy con penalización 10× por salir de la ventana asignada
+- `services/_asignador_v4_helpers.py`: función `calcular_ventanas_bloque()` (bloques con solapamiento 30%, ordenados por cuota desc); criterio 0 en `_score_slot` — penalización de slots fuera de la ventana temporal del profesor
+- `services/asignador_guardias_v4_hibrido.py`: fase 0.5 que calcula `dia_a_ordinal` y `ventanas_bloque` antes de las rondas equitativas
+- `services/_asignador_tipos.py`: campos `ventanas_bloque` y `dia_a_ordinal` en `ContextoAsignacion`
+
+### Changed
+- CP-SAT: eliminados `PESO_SEMANAS_ACTIVAS` (5 000) y `PESO_CONSECUTIVIDAD` (1 000); sustituidos por `PESO_SPAN=300` que modela directamente el span primera→última guardia
+
 ## [5.31.15] - 2026-04-24
 
 ### 🎯 Resumen

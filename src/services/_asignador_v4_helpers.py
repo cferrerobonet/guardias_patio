@@ -289,20 +289,30 @@ def _score_slot(
     profesor: Profesor,
     slot: Slot,
     ctx: ContextoAsignacion,
-) -> Tuple[int, int, int, int, date, int]:
+) -> Tuple[int, int, int, int, int, date, int]:
     """
     Calcula el score de un slot para un profesor.
 
     Menor valor = mejor slot (se ordenan ASC).
 
-    Criterios (MEJORADO v4.1):
-    1. Consecutividad: días seguidos a la última guardia (MÁXIMA PRIORIDAD)
+    Criterios:
+    0. Ventana de bloque: penalización fuerte si el slot cae fuera de la ventana asignada
+    1. Consecutividad: días seguidos a la última guardia
     2. Zona preferida / consistente
     3. Recreo consistente
     4. Día de semana consistente
     5. Fecha cronológica
     6. Recreo (desempate)
     """
+    # 0. VENTANA DE BLOQUE
+    ventana = ctx.ventanas_bloque.get(profesor.id) if ctx.ventanas_bloque else None
+    if ventana is not None and ctx.dia_a_ordinal:
+        dia_ord = ctx.dia_a_ordinal.get(slot.fecha, 0)
+        inicio, fin = ventana
+        fuera_ventana = 0 if inicio <= dia_ord <= fin else 1
+    else:
+        fuera_ventana = 0
+
     fecha_base = ctx.ultima_fecha.get(profesor.id)
 
     # 1. CONSECUTIVIDAD
@@ -318,7 +328,6 @@ def _score_slot(
             consecutividad = 3 + (distancia_dias // 7)
     else:
         consecutividad = 0
-        distancia_dias = 0
 
     # 2. Zona preferida / consistente
     zona_objetivo = ctx.ultima_zona.get(profesor.id) or getattr(
@@ -334,7 +343,7 @@ def _score_slot(
     dia_objetivo = fecha_base.weekday() if fecha_base else None
     dia_match = 0 if dia_objetivo is not None and slot.fecha.weekday() == dia_objetivo else 1
 
-    return (consecutividad, zona_match, recreo_match, dia_match, slot.fecha, slot.recreo_id)
+    return (fuera_ventana, consecutividad, zona_match, recreo_match, dia_match, slot.fecha, slot.recreo_id)
 
 
 def _seleccionar_mejor_slot(
@@ -384,3 +393,38 @@ def _registrar_asignacion(
     ctx.ultima_zona[profesor.id] = slot.zona_id
     ctx.ultimo_recreo[profesor.id] = slot.recreo_id
     ctx.ultima_fecha[profesor.id] = slot.fecha
+
+
+def calcular_ventanas_bloque(
+    profesores: List[Profesor],
+    cuotas: Dict[int, int],
+    dias_lectivos: List[date],
+) -> Dict[int, Tuple[int, int]]:
+    """
+    Asigna a cada profesor una ventana temporal (inicio_ord, fin_ord) en ordinales
+    de días lectivos, con solapamiento del 30% entre bloques consecutivos.
+    Profesores ordenados por cuota descendente (más guardias → bloque antes).
+    """
+    ventanas: Dict[int, Tuple[int, int]] = {}
+    n_dias = len(dias_lectivos)
+    if n_dias == 0:
+        return ventanas
+
+    cursor = 0
+    profs_ordenados = sorted(profesores, key=lambda p: -cuotas.get(p.id, 0))
+
+    for p in profs_ordenados:
+        cuota = cuotas.get(p.id, 0)
+        if cuota == 0:
+            ventanas[p.id] = (0, n_dias - 1)
+            continue
+
+        dias_necesarios = max(cuota, int(cuota * 1.2))
+        inicio = cursor % n_dias
+        fin = min(inicio + dias_necesarios - 1, n_dias - 1)
+        ventanas[p.id] = (inicio, fin)
+
+        avance = max(1, int(dias_necesarios * 0.7))
+        cursor = inicio + avance
+
+    return ventanas
