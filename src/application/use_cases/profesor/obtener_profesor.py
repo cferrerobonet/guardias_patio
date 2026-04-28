@@ -73,6 +73,7 @@ class ObtenerProfesorUseCase:
             tutor=entidad.es_tutor,  # Entidad usa 'es_tutor', DTO usa 'tutor'
             fecha_inicio_guardias=entidad.fecha_inicio_guardias,
             fecha_fin_guardias=entidad.fecha_fin_guardias,
+            zona_preferida_id=entidad.zona_preferida.zona_id if entidad.zona_preferida.tiene_preferencia else None,
             dias_semana_permitidos=entidad.dias_semana_permitidos,
             recreos_permitidos=entidad.recreos_permitidos,
             ajuste_guardias=entidad.ajuste_guardias,

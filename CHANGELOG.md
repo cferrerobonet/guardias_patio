@@ -5,6 +5,16 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.32.1] - 2026-04-28
+
+### 🎯 Resumen
+Corregidos 6 bugs en la edición de profesores: zona preferida nunca se guardaba ni se mostraba, y varios campos opcionales (email, fechas, horas de turno) no podían limpiarse una vez asignados.
+
+### Fixed
+- `application/use_cases/profesor/actualizar_profesor.py`: añadida actualización de `zona_preferida_id` en el ORM (el campo se ignoraba por completo al guardar); corregida imposibilidad de limpiar `email_corporativo`, `fecha_inicio_guardias`, `fecha_fin_guardias`, `horas_manana` y `horas_tarde` — todos se actualizan incondicionalmente porque `None` es un valor válido ("limpiar campo"), no "sin cambio"
+- `application/use_cases/profesor/actualizar_profesor.py` → `_convertir_a_dto`: añadido `zona_preferida_id` al DTO de retorno
+- `application/use_cases/profesor/obtener_profesor.py` → `_entidad_to_dto`: añadido mapeo `zona_preferida.zona_id` → `zona_preferida_id` en el DTO; hasta ahora siempre devolvía `None` y el formulario no mostraba la zona guardada
+
 ## [5.32.0] - 2026-04-28
 
 ### 🎯 Resumen

@@ -97,8 +97,9 @@ class ActualizarProfesorUseCase:
         if data.nombre_completo is not None:
             profesor.nombre_completo = data.nombre_completo
 
-        if data.email_corporativo is not None:
-            profesor.email_corporativo = data.email_corporativo
+        # email, fechas, zona y horas de turno se actualizan siempre porque None es
+        # un valor válido (limpiar campo), no "sin cambio"
+        profesor.email_corporativo = data.email_corporativo
 
         if data.horas_contrato is not None:
             profesor.horas_contrato = data.horas_contrato
@@ -108,20 +109,15 @@ class ActualizarProfesorUseCase:
         if data.turno is not None:
             profesor.turno = data.turno
 
-        if data.horas_manana is not None:
-            profesor.horas_manana = data.horas_manana
-
-        if data.horas_tarde is not None:
-            profesor.horas_tarde = data.horas_tarde
+        profesor.horas_manana = data.horas_manana
+        profesor.horas_tarde = data.horas_tarde
 
         if data.tutor is not None:
             profesor.tutor = data.tutor
 
-        if data.fecha_inicio_guardias is not None:
-            profesor.fecha_inicio_guardias = data.fecha_inicio_guardias
-
-        if data.fecha_fin_guardias is not None:
-            profesor.fecha_fin_guardias = data.fecha_fin_guardias
+        profesor.fecha_inicio_guardias = data.fecha_inicio_guardias
+        profesor.fecha_fin_guardias = data.fecha_fin_guardias
+        profesor.zona_preferida_id = data.zona_preferida_id
 
         if data.dias_semana_permitidos is not None:
             profesor.dias_semana_permitidos = json.dumps(data.dias_semana_permitidos)
@@ -169,6 +165,7 @@ class ActualizarProfesorUseCase:
             tutor=profesor.tutor,
             fecha_inicio_guardias=profesor.fecha_inicio_guardias,
             fecha_fin_guardias=profesor.fecha_fin_guardias,
+            zona_preferida_id=profesor.zona_preferida_id,
             dias_semana_permitidos=parse_dias_semana(profesor.dias_semana_permitidos),
             recreos_permitidos=parse_recreos(profesor.recreos_permitidos),
         )
