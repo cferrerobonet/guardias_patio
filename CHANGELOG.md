@@ -5,7 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
-## [5.34.2] - 2026-04-29
+## [5.35.0] - 2026-04-29
+
+### 🎯 Resumen
+Nueva suite de tests de cumplimiento de restricciones (`tests/compliance/`) + motor de persistencia JSON histórica de resultados con análisis de tendencias.
+
+### ✨ Added
+- `tests/compliance/__init__.py` — paquete de la suite
+- `tests/compliance/conftest.py` — fixtures `build_scenario`, `run_cpsat`, `run_v4`, `compliance_reporter` + hook `pytest_sessionfinish` que escribe el JSON de sesión
+- `tests/compliance/verifiers.py` — `ComplianceVerifier` con 13 métodos `check_rN / metric_rN` (R1–R9 restricciones DURAS, R10–R13 blandas) y `ConstraintResult` dataclass
+- `tests/compliance/scenarios.py` — 10 escenarios predefinidos S01–S10 (`ScenarioDef`)
+- `tests/compliance/test_hard_constraints.py` — 20 tests (R1–R9 × 2 algoritmos); R7 CP-SAT marcado `xfail` por gap confirmado
+- `tests/compliance/test_soft_metrics.py` — tests de métricas blandas R10–R13
+- `tests/compliance/test_regression.py` — suite de regresión S10 mixto completo × 2 algoritmos con `_THRESHOLDS` por restricción
+- `tests/compliance/compliance_reporter.py` — `ComplianceReporter` con `save_session()` (JSON en `data/reports/compliance/`), `load_history()` y `analyze_trends()` (detección de regresiones + sugerencias automáticas)
+
+### 🧹 Housekeeping
+- Gap CP-SAT documentado formalmente: `_asignador_cpsat_helpers.py::_es_elegible_basico()` no verifica `dias_semana_permitidos` (R7 xfail hasta corrección)
+
+
 
 ### 🎯 Resumen
 Corregido bug en ambos algoritmos donde `zona_preferida_id` del profesor se ignoraba tras la primera asignación, haciendo que la zona preferida no fuera la zona predominante en el calendario.
