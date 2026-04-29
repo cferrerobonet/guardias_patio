@@ -202,6 +202,7 @@ class RestriccionesWidget(QGroupBox):
 
         # Rejilla visual de disponibilidad
         self.semana_widget = SemanaRestriccionesWidget(self.RECREOS)
+        self.semana_widget.setEnabled(False)  # Se habilita solo cuando el checkbox está activo
         self.semana_widget.changed.connect(self._on_semana_changed)
         self.panel_restricciones_widget = self.semana_widget
         main_layout.addWidget(self.semana_widget)

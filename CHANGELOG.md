@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.34.1] - 2026-04-29
+
+### 🎯 Resumen
+Corregido bug donde los botones de plantilla de recreos ("Siempre", "Solo mañanas", "Lun/Mié/Vie"…) eran visualmente interactivos sin activar el checkbox, por lo que las modificaciones se descartaban al guardar.
+
+### Fixed
+- `presentation/forms/profesor_widgets/restricciones_widget.py`: `semana_widget` no se deshabilitaba al inicializar, quedando clicable aunque el checkbox "Personalizar disponibilidad" estuviera desmarcado; `get_datos()` ignoraba la matriz en ese estado, haciendo que los cambios se perdieran silenciosamente. Ahora el widget arranca deshabilitado y solo se habilita al activar el checkbox.
+
+### 🧹 Housekeeping
+- `tests/ui/test_ui_persistencia_campos.py`: añadido `test_semana_widget_deshabilitado_sin_checkbox` (verifica estado inicial) y mejorado `test_recreos_personalizados_persisten` para pulsar el QPushButton real de plantilla en lugar de llamar `_aplicar_plantilla` directamente — el test ahora detectaría este bug si volviera a introducirse
+
 ## [5.34.0] - 2026-04-29
 
 ### 🎯 Resumen

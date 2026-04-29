@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 from PyQt6.QtCore import QDate, Qt
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QPushButton
 
 from infrastructure.database.models import Configuracion, Profesor, Zona
 from presentation.forms.ajustes_form import AjustesForm
@@ -301,10 +301,26 @@ class TestProfesorCamposRestriccionesPersis:
         assert session.get(Profesor, prof_id).fecha_inicio_guardias is None
         form.close()
 
+    def test_semana_widget_deshabilitado_sin_checkbox(self, qapp, session, profesor_factory):
+        """
+        Regresión: semana_widget debe arrancar deshabilitado cuando el checkbox
+        está desmarcado, impidiendo que el usuario modifique la matriz sin activarla.
+        """
+        prof = profesor_factory("MATRIZINIT, Test", turno="mañana", horas_contrato=20.0)
+        form = ProfesorForm(session)
+        form.show()
+        QApplication.processEvents()
+        _abrir_edicion(form, 0)
+        widget = form.restricciones_widget
+        assert not widget.usar_restricciones_checkbox.isChecked()
+        assert not widget.semana_widget.isEnabled()
+        form.close()
+
     def test_recreos_personalizados_persisten(self, qapp, session, profesor_factory):
         """
-        Regresión: modificar la matriz de recreos con checkbox activo debe
-        guardarse en BD. Detecta el bug 'recreos editados pero no guardados'.
+        Regresión: pulsar botón de plantilla en la matriz y guardar debe persistir
+        los recreos en BD. Detecta el bug donde la matriz era visualmente
+        interactiva pero no guardaba sin marcar el checkbox primero.
         """
         prof = profesor_factory("RECREOS, Test", turno="mañana", horas_contrato=20.0)
         prof_id = prof.id
@@ -315,13 +331,19 @@ class TestProfesorCamposRestriccionesPersis:
         _abrir_edicion(form, 0)
 
         widget = form.restricciones_widget
-        # Activar restricciones personalizadas
+        # Activar restricciones personalizadas (habilita la matriz)
         widget.usar_restricciones_checkbox.setChecked(True)
         QApplication.processEvents()
+        assert widget.semana_widget.isEnabled()
 
-        # Aplicar plantilla "Lun/Mié/Vie" (solo días 0, 2, 4) — diferente del default mañana
-        dias_custom = {0: [1, 2], 2: [1, 2], 4: [1, 2]}
-        widget.semana_widget._aplicar_plantilla(dias_custom)
+        # Pulsar el botón de plantilla real "Lun/Mié/Vie" en la UI
+        btn_plantilla = None
+        for btn in widget.semana_widget.findChildren(QPushButton):
+            if "Lun" in btn.text():
+                btn_plantilla = btn
+                break
+        assert btn_plantilla is not None, "Botón 'Lun/Mié/Vie' no encontrado en semana_widget"
+        btn_plantilla.click()
         QApplication.processEvents()
 
         _guardar(form)
@@ -332,15 +354,12 @@ class TestProfesorCamposRestriccionesPersis:
         assert prof_bd.recreos_permitidos != ""
 
         recreos_guardados = json.loads(prof_bd.recreos_permitidos)
-        # Días 0, 2, 4 deben tener recreos; días 1, 3 no
+        # Días 0, 2, 4 deben tener recreos; días 1, 3 deben estar vacíos
         assert "0" in recreos_guardados
         assert "2" in recreos_guardados
         assert "4" in recreos_guardados
-        # Días 1 y 3 pueden estar ausentes o con lista vacía
-        recreos_dia1 = recreos_guardados.get("1", [])
-        recreos_dia3 = recreos_guardados.get("3", [])
-        assert recreos_dia1 == []
-        assert recreos_dia3 == []
+        assert recreos_guardados.get("1", []) == []
+        assert recreos_guardados.get("3", []) == []
         form.close()
 
     def test_recreos_por_defecto_se_guardan_segun_turno(self, qapp, session, profesor_factory):
