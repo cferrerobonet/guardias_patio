@@ -330,9 +330,10 @@ def _score_slot(
         consecutividad = 0
 
     # 2. Zona preferida / consistente
-    zona_objetivo = ctx.ultima_zona.get(profesor.id) or getattr(
-        profesor, "zona_preferida_id", None
-    )
+    # Priorizar siempre zona_preferida_id cuando está configurada.
+    # Usar ultima_zona solo como fallback de consistencia cuando no hay preferencia explícita.
+    zona_preferida = getattr(profesor, "zona_preferida_id", None)
+    zona_objetivo = zona_preferida if zona_preferida else ctx.ultima_zona.get(profesor.id)
     zona_match = 0 if zona_objetivo and slot.zona_id == zona_objetivo else 1
 
     # 3. Recreo consistente

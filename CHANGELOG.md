@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.34.2] - 2026-04-29
+
+### 🎯 Resumen
+Corregido bug en ambos algoritmos donde `zona_preferida_id` del profesor se ignoraba tras la primera asignación, haciendo que la zona preferida no fuera la zona predominante en el calendario.
+
+### Fixed
+- `services/_asignador_v4_helpers.py` `_score_slot()`: la lógica `ultima_zona OR zona_preferida_id` hacía que tras la primera asignación (posiblemente en zona incorrecta por disponibilidad), `ultima_zona` se anclaba y `zona_preferida_id` nunca volvía a consultarse. Ahora `zona_preferida_id` tiene prioridad permanente; `ultima_zona` solo actúa como fallback de consistencia cuando no hay preferencia explícita.
+- `services/asignador_guardias_cpsat.py` — Dos puntos:
+  - Hints greedy: el scoring del candidato usaba solo `zona_mas_usada` (cualquier zona con más asignaciones). Ahora usa `zona_preferida_id` con bonus mayor (`-0.1` vs `-0.05`) cuando está configurada.
+  - Objetivo de optimización: añadido **Objetivo 3b** con `PESO_ZONA_PREF=50` que penaliza cada guardia fuera de la zona preferida explícita del profesor — garantizando que el solver favorezca la zona preferida cuando sea matemáticamente posible.
+
 ## [5.34.1] - 2026-04-29
 
 ### 🎯 Resumen

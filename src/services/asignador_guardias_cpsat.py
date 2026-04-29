@@ -358,6 +358,31 @@ def generar_guardias_cpsat(
     logger.info(f"  ✓ Objetivo 3: maximizar concentración zona ({n_pen_zona} profesores)")
 
     # -------------------------------------------------------------------------
+    # OBJETIVO 3b: PENALIZAR GUARDIAS FUERA DE ZONA PREFERIDA EXPLÍCITA
+    # -------------------------------------------------------------------------
+    # Cuando un profesor tiene zona_preferida_id configurada, se añade una
+    # penalización por cada guardia asignada en una zona diferente.
+    PESO_ZONA_PREF = 50
+    penalizacion_zona_preferida: List[cp_model.IntVar] = []
+
+    for p in profesores:
+        if not p.zona_preferida_id:
+            continue
+        slots_fuera = [
+            s_idx for s_idx in prof_slots[p.id]
+            if slots[s_idx].zona_id != p.zona_preferida_id
+        ]
+        if not slots_fuera:
+            continue
+        pen_pref = model.NewIntVar(0, len(slots_fuera), f"penz_pref_{p.id}")
+        model.Add(pen_pref == sum(x[(p.id, s_idx)] for s_idx in slots_fuera))
+        penalizacion_zona_preferida.append(pen_pref)
+
+    n_pen_zona_pref = len(penalizacion_zona_preferida)
+    if n_pen_zona_pref:
+        logger.info(f"  ✓ Objetivo 3b: zona preferida explícita ({n_pen_zona_pref} profesores)")
+
+    # -------------------------------------------------------------------------
     # COMBINAR OBJETIVOS CON PESOS
     # -------------------------------------------------------------------------
     PESO_EQUIDAD = 1_000_000
@@ -370,13 +395,15 @@ def generar_guardias_cpsat(
         + PESO_EQUIDAD_SUMA * sum(desviaciones)
         + PESO_SPAN * sum(span.values())
         + PESO_ZONA * sum(penalizacion_zona)
+        + PESO_ZONA_PREF * sum(penalizacion_zona_preferida)
     )
 
     model.Minimize(objetivo)
 
     logger.info(
         f"  ✓ Objetivo combinado: equidad({PESO_EQUIDAD}*max + {PESO_EQUIDAD_SUMA}*sum) "
-        f"+ span({PESO_SPAN}*{len(span)} profs) + zona({PESO_ZONA})"
+        f"+ span({PESO_SPAN}*{len(span)} profs) + zona({PESO_ZONA}) "
+        f"+ zona_pref({PESO_ZONA_PREF}*{n_pen_zona_pref} profs)"
     )
 
     # =========================================================================
@@ -396,6 +423,7 @@ def generar_guardias_cpsat(
         # Tracking adicional para consecutividad y zona
         ultimo_dia_guardia: Dict[int, int] = {}
         zona_principal: Dict[int, Dict[int, int]] = defaultdict(lambda: defaultdict(int))
+        prof_por_id = {p.id: p for p in profesores}
 
         # Ventanas de bloque para guiar la semilla greedy
         cuotas_int = {p.id: int(round(cuotas_ideales[p.id])) for p in profesores}
@@ -436,9 +464,13 @@ def generar_guardias_cpsat(
                         elif diff <= 3:
                             bonus_consec = -0.05
 
-                    # Bonus zona
+                    # Bonus zona (priorizar zona_preferida_id si está configurada)
                     bonus_zona = 0.0
-                    if zona_principal[pid]:
+                    zona_pref_id = prof_por_id[pid].zona_preferida_id
+                    if zona_pref_id:
+                        if slot.zona_id == zona_pref_id:
+                            bonus_zona = -0.1
+                    elif zona_principal[pid]:
                         zona_mas_usada = max(zona_principal[pid], key=zona_principal[pid].get)
                         if slot.zona_id == zona_mas_usada:
                             bonus_zona = -0.05
