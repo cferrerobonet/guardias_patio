@@ -5,6 +5,16 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.33.0] - 2026-04-28
+
+### 🎯 Resumen
+Nueva suite de tests de UI (`tests/ui/`) con 110 tests que simulan flujos reales de usuario sobre todos los formularios principales.
+
+### ✨ Added
+- `tests/ui/` — suite completa de tests de UI con pytest-qt: ProfesorForm (28 tests), ZonaForm (8), AsignacionGuardiasForm (8), AjustesForm (4), GestionarAusenciasForm (10), validaciones de borde (9), flujos E2E completos (9), estadísticas, reportes, calendario, cursos, perfiles, import/export, sustituciones (5 skipped por rutas de importación pendientes)
+- `tests/ui/helpers.py` — context managers `confirm_yes`/`confirm_no`, helpers `select_row`, `row_center`, `dbl_click_row`
+- `tests/ui/conftest.py` — fixtures `ui_session` y `ui_config` específicas de UI
+
 ## [5.32.1] - 2026-04-28
 
 ### 🎯 Resumen
