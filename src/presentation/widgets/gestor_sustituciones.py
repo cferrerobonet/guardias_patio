@@ -98,6 +98,7 @@ class GestorSustituciones(BaseForm):
         self._historial_audit = AuditoriaGuardiasForm(self.session, parent=self)
         self._historial_audit.combo_accion.setCurrentText("SUSTITUIDA")
         self._historial_audit.cargar_datos()
+        self._historial_audit.re_sustituir_solicitada.connect(self._pre_rellenar_sustitucion)
         layout_principal.addWidget(self._historial_audit)
 
         self.setLayout(layout_principal)
@@ -155,8 +156,8 @@ class GestorSustituciones(BaseForm):
     def _crear_tabla_guardias(self) -> QTableWidget:
         """Crear tabla de guardias encontradas."""
         tabla = QTableWidget()
-        tabla.setColumnCount(5)
-        tabla.setHorizontalHeaderLabels(["ID", "Profesor", "Turno", "Recreo", "Zona"])
+        tabla.setColumnCount(6)
+        tabla.setHorizontalHeaderLabels(["ID", "Profesor", "Turno", "Recreo", "Zona", "Prof. Sustituido"])
         tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         tabla.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         tabla.setAlternatingRowColors(True)
@@ -169,6 +170,7 @@ class GestorSustituciones(BaseForm):
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Turno
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Recreo
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  # Zona
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)  # Prof. Sustituido
 
         tabla.setMinimumHeight(150)
         tabla.selectionModel().selectionChanged.connect(self.guardia_seleccionada_cambio)
@@ -287,6 +289,11 @@ class GestorSustituciones(BaseForm):
                 profesor = _svc.profesores.get_by_id(guardia.profesor_id)
                 zona = _svc.zonas.get_by_id(guardia.zona_id)
 
+                sustituido_nombre = "-"
+                if guardia.profesor_sustituido_id:
+                    prof_sust = _svc.profesores.get_by_id(guardia.profesor_sustituido_id)
+                    sustituido_nombre = prof_sust.nombre_completo if prof_sust else "-"
+
                 self.tabla_guardias.setItem(i, 0, QTableWidgetItem(str(guardia.id)))
                 self.tabla_guardias.setItem(
                     i,
@@ -298,6 +305,7 @@ class GestorSustituciones(BaseForm):
                 self.tabla_guardias.setItem(
                     i, 4, QTableWidgetItem(zona.nombre_zona if zona else "N/A")
                 )
+                self.tabla_guardias.setItem(i, 5, QTableWidgetItem(sustituido_nombre))
 
                 # Guardar el objeto guardia en la fila
                 self.tabla_guardias.item(i, 0).setData(Qt.ItemDataRole.UserRole, guardia)
@@ -452,6 +460,36 @@ class GestorSustituciones(BaseForm):
         self.combo_profesor_sustituto.setCurrentIndex(0)
         self.text_observaciones.clear()
         self.btn_confirmar_sustitucion.setEnabled(False)
+
+    def _pre_rellenar_sustitucion(self, guardia_id: int):
+        """Pre-rellena el formulario de búsqueda a partir de una guardia del historial."""
+        try:
+            from application.app_services import AppServices
+            guardia = AppServices(self.session).guardias.get_by_id(guardia_id)
+            if not guardia:
+                self.mostrar_advertencia("No encontrada", f"La guardia #{guardia_id} ya no existe.")
+                return
+
+            from PyQt6.QtCore import QDate
+            self.fecha_buscar.setDate(QDate(guardia.fecha.year, guardia.fecha.month, guardia.fecha.day))
+
+            # Seleccionar el profesor actual en el combo
+            for i in range(self.combo_profesor_original.count()):
+                if self.combo_profesor_original.itemData(i) == guardia.profesor_id:
+                    self.combo_profesor_original.setCurrentIndex(i)
+                    break
+
+            self.buscar_guardias()
+
+            # Seleccionar la fila correspondiente
+            for row in range(self.tabla_guardias.rowCount()):
+                item = self.tabla_guardias.item(row, 0)
+                if item and int(item.text()) == guardia_id:
+                    self.tabla_guardias.selectRow(row)
+                    break
+
+        except Exception as e:
+            self.manejar_excepcion(e, "pre-rellenar sustitución")
 
     def refrescar(self):
         """Refrescar los datos."""

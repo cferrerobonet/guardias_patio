@@ -1,7 +1,7 @@
 import json
 from datetime import date, timedelta
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -38,6 +38,8 @@ _COLORES_ACCION = {
 
 
 class AuditoriaGuardiasForm(QWidget):
+    re_sustituir_solicitada = pyqtSignal(int)
+
     def __init__(self, session, parent=None):
         super().__init__(parent)
         self.session = session
@@ -111,6 +113,14 @@ class AuditoriaGuardiasForm(QWidget):
         self.label_total = QLabel("")
         layout.addWidget(self.label_total)
 
+        self.btn_resustituir = QPushButton("Re-sustituir seleccionada")
+        self.btn_resustituir.setObjectName("secondaryButton")
+        self.btn_resustituir.setEnabled(False)
+        self.btn_resustituir.clicked.connect(self._emitir_resustituir)
+        layout.addWidget(self.btn_resustituir)
+
+        self.tabla.itemSelectionChanged.connect(self._actualizar_boton_resustituir)
+
     def cargar_datos(self):
         desde = self.fecha_desde.date().toPyDate()
         hasta = self.fecha_hasta.date().toPyDate() + timedelta(days=1)
@@ -169,8 +179,30 @@ class AuditoriaGuardiasForm(QWidget):
                     from PyQt6.QtGui import QColor
                     item.setBackground(QColor(color))
                 self.tabla.setItem(row, col, item)
+            # Guardar metadatos en la primera celda para el botón re-sustituir
+            self.tabla.item(row, 0).setData(
+                Qt.ItemDataRole.UserRole, (reg.guardia_id, reg.accion)
+            )
 
         self.label_total.setText(f"{len(registros)} registros")
+
+    def _actualizar_boton_resustituir(self):
+        rows = self.tabla.selectedItems()
+        if not rows:
+            self.btn_resustituir.setEnabled(False)
+            return
+        data = self.tabla.item(rows[0].row(), 0).data(Qt.ItemDataRole.UserRole)
+        guardia_id, accion = data if data else (None, None)
+        self.btn_resustituir.setEnabled(accion == "SUSTITUIDA" and guardia_id is not None)
+
+    def _emitir_resustituir(self):
+        rows = self.tabla.selectedItems()
+        if not rows:
+            return
+        data = self.tabla.item(rows[0].row(), 0).data(Qt.ItemDataRole.UserRole)
+        guardia_id, _ = data if data else (None, None)
+        if guardia_id:
+            self.re_sustituir_solicitada.emit(guardia_id)
 
     def _limpiar_filtros(self):
         self.fecha_desde.setDate(date.today() - timedelta(days=30))

@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.36.0] - 2026-04-29
+
+### 🎯 Resumen
+Reasignaciones desde ausencias integradas en el historial de sustituciones + columna "Prof. Sustituido" + botón "Re-sustituir" en historial.
+
+### ✨ Added
+- Columna "Prof. Sustituido" en la tabla de guardias del apartado Sustituciones, mostrando el profesor original cuando la guardia fue sustituida.
+- Botón "Re-sustituir seleccionada" en el historial de cambios: al seleccionar una fila SUSTITUIDA, pre-rellena el formulario de búsqueda con la fecha y el profesor actual de esa guardia para facilitar una nueva sustitución.
+
+### Fixed
+- Las reasignaciones realizadas desde el flujo de Ausencias (botón "Ver Guardias Afectadas") ahora quedan registradas en el audit log como SUSTITUIDA y almacenan el profesor original (`profesor_sustituido_id`), apareciendo correctamente en el historial de Sustituciones.
+
 ## [5.35.1] - 2026-04-29
 
 ### 🎯 Resumen

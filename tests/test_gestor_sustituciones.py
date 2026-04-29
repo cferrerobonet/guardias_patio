@@ -104,7 +104,7 @@ class TestGestorSustitucionesBasico:
 
         # Tabla guardias
         assert gestor.tabla_guardias is not None
-        assert gestor.tabla_guardias.columnCount() == 5
+        assert gestor.tabla_guardias.columnCount() == 6
 
         # Sección sustituir
         assert gestor.combo_profesor_sustituto is not None

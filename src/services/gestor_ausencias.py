@@ -3,10 +3,11 @@ Servicio para gestionar ausencias de profesores.
 Permite registrar, editar y eliminar ausencias, así como encontrar y reasignar guardias afectadas.
 """
 
+import json
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
-from infrastructure.database.models import Ausencia, Guardia, Profesor
+from infrastructure.database.models import Ausencia, Guardia, GuardiaAuditLog, Profesor
 from services.validators import AusenciaChecker, TurnoValidator
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
@@ -376,8 +377,17 @@ def reasignar_guardia(
         )
 
     # Reasignar
+    profesor_anterior_id = guardia.profesor_id
     profesor_anterior = guardia.profesor.nombre_completo
+    guardia.es_sustitucion = True
+    guardia.profesor_sustituido_id = profesor_anterior_id
     guardia.profesor_id = nuevo_profesor_id
+    session.add(GuardiaAuditLog(
+        guardia_id=guardia_id,
+        accion="SUSTITUIDA",
+        profesor_id=nuevo_profesor_id,
+        detalle=json.dumps({"profesor_anterior": str(profesor_anterior), "origen": "ausencia"}),
+    ))
     session.commit()
 
     logger.info(
