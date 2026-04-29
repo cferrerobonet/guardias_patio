@@ -11,7 +11,7 @@ from infrastructure.database.models import CursoEscolar
 
 def _get_widget(session):
     try:
-        from presentation.widgets.gestion_cursos import GestionCursosWidget
+        from presentation.widgets.gestion_cursos_widget import GestionCursosWidget
         return GestionCursosWidget(session)
     except ImportError:
         try:
@@ -80,10 +80,9 @@ class TestCursosInteraccion:
             or getattr(widget, "btn_crear", None)
         )
         if btn:
-            with patch.object(widget, "mostrar_exito", side_effect=None):
-                with patch.object(widget, "mostrar_error", side_effect=None):
-                    qtbot.mouseClick(btn, Qt.MouseButton.LeftButton)
-                    QApplication.processEvents()
+            with patch("PyQt6.QtWidgets.QDialog.exec", return_value=0):
+                qtbot.mouseClick(btn, Qt.MouseButton.LeftButton)
+                QApplication.processEvents()
 
     def test_eliminar_curso_sin_seleccion_no_crashea(self, qtbot, widget):
         """Eliminar sin selección no provoca crash."""

@@ -5,6 +5,19 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.33.1] - 2026-04-29
+
+### 🎯 Resumen
+Ampliada la suite UI con 57 nuevos tests que cubren las áreas de mayor riesgo no testeadas: reasignación, auditoría, festivos, cambio de contraseña, selector de curso y cursos escolares.
+
+### ✨ Added
+- `tests/ui/test_ui_reasignacion.py` — DialogoReasignacion: renderizado con guardias mockeadas, reasignación manual sin selección, sin disponibles, reasignación automática confirmada/cancelada
+- `tests/ui/test_ui_auditoria.py` — AuditoriaGuardiasForm: BD vacía, carga de registros, filtro por acción, por texto de profesor, limpiar filtros, rango de fechas
+- `tests/ui/test_ui_festivos_widget.py` — FestivosWidget: get/set configuración, validación formato fechas, fecha inexistente, señal config_changed
+- `tests/ui/test_ui_change_password.py` — ChangePasswordDialog: campo vacío, contraseña débil, confirmación no coincide, actual incorrecta, cambio exitoso
+- `tests/ui/test_ui_selector_curso.py` — SelectorCursoWidget: sin cursos, con cursos activo/inactivo, obtener_curso_activo_id, refrescar
+- Corregida ruta de importación en `test_ui_cursos.py` (gestion_cursos → gestion_cursos_widget): 5 tests pasan que antes estaban skipped
+
 ## [5.33.0] - 2026-04-28
 
 ### 🎯 Resumen
