@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.34.0] - 2026-04-29
+
+### 🎯 Resumen
+23 nuevos tests de persistencia campo a campo que detectan cuando una modificación en la UI no llega a la BD. Los tests revelaron y se corrigió un bug estructural en AjustesForm.
+
+### ✨ Added
+- `tests/ui/test_ui_persistencia_campos.py` — 23 tests que verifican persistencia real en BD campo a campo: nombre, email, tutor, horas_contrato, turno, horas_manana/tarde, fecha_inicio/fin guardias, zona_preferida, recreos_permitidos (personalizado, por defecto, al cambiar turno), dias_semana_permitidos, nombre_zona, ajuste_tutores, ajuste_no_tutores, festivos_automaticos
+
+### Fixed
+- `presentation/forms/ajustes_form.py`: `_generar_recreos_config_json` estaba atrapado dentro del cuerpo de `_marcar_guardado` como string literal flotante en lugar de ser un método independiente — el botón "Guardar" de AjustesForm lanzaba `AttributeError` silenciosamente en cada uso sin persistir ningún cambio de configuración
+
 ## [5.33.1] - 2026-04-29
 
 ### 🎯 Resumen

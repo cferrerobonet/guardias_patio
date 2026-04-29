@@ -349,83 +349,48 @@ class AjustesForm(BaseForm):
         if hasattr(self, "_dirty_label"):
             self._dirty_label.setVisible(False)
 
-        """
-        Genera el JSON de configuración de recreos basado en los valores del formulario.
-
-        El número de zonas se obtiene automáticamente contando las zonas en la tabla Zona.
-
-        Returns:
-            str: JSON con la configuración de recreos, o cadena vacía si no hay recreos.
-        """
+    def _generar_recreos_config_json(self) -> str:
+        """Genera el JSON de configuración de recreos basado en los valores del formulario."""
         import json
         from datetime import time
 
         from application.app_services import AppServices
 
-        # Obtener número de zonas
         num_zonas = AppServices(self.session).contar_zonas()
-
-        # Si no hay zonas, usar 4 por defecto (compatibilidad)
         if num_zonas == 0:
             num_zonas = 4
 
         recreos = []
-
-        # Obtener recreos del widget
         recreos_manana = self.fechas_recreos_widget.get_recreos_manana()
         recreos_tarde = self.fechas_recreos_widget.get_recreos_tarde()
 
-        # Recreo 1 Mañana
         hora_r1_manana = recreos_manana["recreo1"]
-        if hora_r1_manana != time(0, 0):  # Si no es 00:00 (valor por defecto)
-            recreos.append(
-                {
-                    "id": 1,
-                    "etiqueta": "Recreo 1 Mañana",
-                    "turno": "mañana",
-                    "hora": hora_r1_manana.strftime("%H:%M"),
-                    "zonas": num_zonas,
-                }
-            )
+        if hora_r1_manana != time(0, 0):
+            recreos.append({
+                "id": 1, "etiqueta": "Recreo 1 Mañana",
+                "turno": "mañana", "hora": hora_r1_manana.strftime("%H:%M"), "zonas": num_zonas,
+            })
 
-        # Recreo 2 Mañana
         hora_r2_manana = recreos_manana["recreo2"]
         if hora_r2_manana != time(0, 0):
-            recreos.append(
-                {
-                    "id": 2,
-                    "etiqueta": "Recreo 2 Mañana",
-                    "turno": "mañana",
-                    "hora": hora_r2_manana.strftime("%H:%M"),
-                    "zonas": num_zonas,
-                }
-            )
+            recreos.append({
+                "id": 2, "etiqueta": "Recreo 2 Mañana",
+                "turno": "mañana", "hora": hora_r2_manana.strftime("%H:%M"), "zonas": num_zonas,
+            })
 
-        # Recreo 1 Tarde
         hora_r1_tarde = recreos_tarde["recreo1"]
         if hora_r1_tarde != time(0, 0):
-            recreos.append(
-                {
-                    "id": 3,
-                    "etiqueta": "Recreo 1 Tarde",
-                    "turno": "tarde",
-                    "hora": hora_r1_tarde.strftime("%H:%M"),
-                    "zonas": num_zonas,
-                }
-            )
+            recreos.append({
+                "id": 3, "etiqueta": "Recreo 1 Tarde",
+                "turno": "tarde", "hora": hora_r1_tarde.strftime("%H:%M"), "zonas": num_zonas,
+            })
 
-        # Recreo 2 Tarde
         hora_r2_tarde = recreos_tarde["recreo2"]
         if hora_r2_tarde != time(0, 0):
-            recreos.append(
-                {
-                    "id": 4,
-                    "etiqueta": "Recreo 2 Tarde",
-                    "turno": "tarde",
-                    "hora": hora_r2_tarde.strftime("%H:%M"),
-                    "zonas": num_zonas,
-                }
-            )
+            recreos.append({
+                "id": 4, "etiqueta": "Recreo 2 Tarde",
+                "turno": "tarde", "hora": hora_r2_tarde.strftime("%H:%M"), "zonas": num_zonas,
+            })
 
         return json.dumps(recreos) if recreos else ""
 
