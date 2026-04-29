@@ -182,6 +182,18 @@ def desactivar_ausencia(session, ausencia_id: int) -> Ausencia:
     return ausencia
 
 
+def reactivar_ausencia(session, ausencia_id: int) -> Ausencia:
+    ausencia = session.query(Ausencia).get(ausencia_id)
+    if not ausencia:
+        raise ValueError(f"No existe la ausencia con ID {ausencia_id}")
+
+    ausencia.activa = True
+    session.commit()
+
+    logger.info(f"Ausencia {ausencia_id} reactivada")
+    return ausencia
+
+
 def obtener_guardias_afectadas(
     session,
     ausencia_id: int,
@@ -491,6 +503,7 @@ class GestorAusencias:
     editar_ausencia = staticmethod(editar_ausencia)
     eliminar_ausencia = staticmethod(eliminar_ausencia)
     desactivar_ausencia = staticmethod(desactivar_ausencia)
+    reactivar_ausencia = staticmethod(reactivar_ausencia)
     obtener_guardias_afectadas = staticmethod(obtener_guardias_afectadas)
     obtener_guardias_afectadas_por_periodo = staticmethod(obtener_guardias_afectadas_por_periodo)
     obtener_profesores_disponibles = staticmethod(obtener_profesores_disponibles)

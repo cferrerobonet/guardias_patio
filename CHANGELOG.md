@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.35.1] - 2026-04-29
+
+### 🎯 Resumen
+Botón de activar/desactivar ausencia ahora funciona como toggle bidireccional.
+
+### Fixed
+- El botón "Desactivar" en gestión de ausencias ahora cambia a "Activar" al seleccionar una ausencia inactiva, permitiendo reactivarla sin necesidad de eliminarla y volver a crear.
+
 ## [5.35.0] - 2026-04-29
 
 ### 🎯 Resumen

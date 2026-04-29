@@ -304,7 +304,7 @@ class TestGestionarAusenciasFormDesactivar:
         form.tabla_ausencias.clearSelection()
 
         with patch.object(form, "mostrar_advertencia") as mock_warning:
-            form.desactivar_ausencia_seleccionada()
+            form._toggle_estado_ausencia()
             mock_warning.assert_called_once()
 
     def test_desactivar_ausencia(self, form, datos_completos):
@@ -322,7 +322,7 @@ class TestGestionarAusenciasFormDesactivar:
             form.tabla_ausencias.selectRow(row_activa)
 
             with patch.object(form, "mostrar_exito"):
-                form.desactivar_ausencia_seleccionada()
+                form._toggle_estado_ausencia()
 
             # Refrescar la sesión y verificar que fue desactivada
             form.session.expire_all()

@@ -111,6 +111,7 @@ class GestionarAusenciasForm(BaseForm):
         tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         tabla.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         tabla.itemDoubleClicked.connect(self.cargar_ausencia_seleccionada)
+        tabla.itemSelectionChanged.connect(self._actualizar_boton_toggle)
         tabla.setColumnWidth(0, 50)
         tabla.setColumnWidth(1, 200)
         tabla.setColumnWidth(2, 120)
@@ -144,7 +145,7 @@ class GestionarAusenciasForm(BaseForm):
         self.desactivar_btn = QPushButton("Desactivar")
         self.desactivar_btn.setIcon(icon_for_button("pause"))
         self.desactivar_btn.setObjectName("secondaryButton")
-        self.desactivar_btn.clicked.connect(self.desactivar_ausencia_seleccionada)
+        self.desactivar_btn.clicked.connect(self._toggle_estado_ausencia)
         self.desactivar_btn.setToolTip("Desactivar la ausencia sin eliminarla")
         botones.addWidget(self.desactivar_btn)
 
@@ -522,8 +523,26 @@ class GestionarAusenciasForm(BaseForm):
             except (ValueError, TypeError, OSError) as e:
                 self.manejar_excepcion(e, "eliminar ausencia")
 
-    def desactivar_ausencia_seleccionada(self):
-        """Desactivar la ausencia seleccionada sin eliminarla."""
+    def _actualizar_boton_toggle(self):
+        selected_rows = self.tabla_ausencias.selectedItems()
+        if not selected_rows:
+            self.desactivar_btn.setText("Desactivar")
+            self.desactivar_btn.setIcon(icon_for_button("pause"))
+            self.desactivar_btn.setToolTip("Desactivar la ausencia sin eliminarla")
+            return
+
+        row = selected_rows[0].row()
+        estado = self.tabla_ausencias.item(row, 6).text()
+        if estado == "Inactiva":
+            self.desactivar_btn.setText("Activar")
+            self.desactivar_btn.setIcon(icon_for_button("check"))
+            self.desactivar_btn.setToolTip("Reactivar la ausencia")
+        else:
+            self.desactivar_btn.setText("Desactivar")
+            self.desactivar_btn.setIcon(icon_for_button("pause"))
+            self.desactivar_btn.setToolTip("Desactivar la ausencia sin eliminarla")
+
+    def _toggle_estado_ausencia(self):
         selected_rows = self.tabla_ausencias.selectedItems()
         if not selected_rows:
             self.mostrar_advertencia(
@@ -534,13 +553,19 @@ class GestionarAusenciasForm(BaseForm):
         try:
             row = selected_rows[0].row()
             ausencia_id = int(self.tabla_ausencias.item(row, 0).text())
+            estado = self.tabla_ausencias.item(row, 6).text()
 
-            GestorAusencias.desactivar_ausencia(self.session, ausencia_id)
-            self.mostrar_exito("Éxito", "Ausencia desactivada correctamente")
+            if estado == "Inactiva":
+                GestorAusencias.reactivar_ausencia(self.session, ausencia_id)
+                self.mostrar_exito("Éxito", "Ausencia reactivada correctamente")
+            else:
+                GestorAusencias.desactivar_ausencia(self.session, ausencia_id)
+                self.mostrar_exito("Éxito", "Ausencia desactivada correctamente")
+
             self.cargar_ausencias()
 
         except (ValueError, TypeError, OSError) as e:
-            self.manejar_excepcion(e, "desactivar ausencia")
+            self.manejar_excepcion(e, "cambiar estado ausencia")
 
     def actualizar_preview_guardias(self):
         """Actualizar el preview de guardias afectadas."""
