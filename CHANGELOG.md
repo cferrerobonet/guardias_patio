@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.36.1] - 2026-04-29
+
+### 🎯 Resumen
+35 nuevos tests de beta testing: toggle ausencia, reasignación con audit, re-sustituir, columna Prof. Sustituido, AuditoriaGuardiasForm y lógica de negocio.
+
+### ✨ Added
+- `tests/test_auditoria_guardias_form.py` — nuevo archivo con 14 tests para `AuditoriaGuardiasForm`: botón Re-sustituir, señal, filtros, detalle JSON.
+- Tests toggle ausencia: activar inactiva, cambio de texto del botón, reset al deseleccionar.
+- Tests integración `reasignar_guardia`: verifica `es_sustitucion`, `profesor_sustituido_id`, entrada audit log SUSTITUIDA con origen="ausencia", ausencia de un solo día.
+- Tests `reactivar_ausencia`: éxito e ID inexistente.
+- Tests columna "Prof. Sustituido": muestra "-" en guardias normales y nombre correcto en sustituidas.
+- Tests re-sustituir: pre-relleno de fecha y selección de fila, guardia inexistente.
+- Tests lógica de negocio: observaciones persistidas, observaciones vacías no sobreescriben notas previas, comportamiento documentado de doble sustitución.
+
 ## [5.36.0] - 2026-04-29
 
 ### 🎯 Resumen

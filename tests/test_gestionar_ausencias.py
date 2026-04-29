@@ -332,6 +332,61 @@ class TestGestionarAusenciasFormDesactivar:
             # Si no hay ausencias activas, el test pasa
             pass
 
+    def test_activar_ausencia_inactiva(self, form, datos_completos):
+        """Toggle sobre ausencia inactiva la reactiva."""
+        row_inactiva = None
+        for row in range(form.tabla_ausencias.rowCount()):
+            if form.tabla_ausencias.item(row, 6).text() == "Inactiva":
+                row_inactiva = row
+                break
+
+        assert row_inactiva is not None, "Debe haber una ausencia inactiva en los datos de test"
+        form.tabla_ausencias.selectRow(row_inactiva)
+
+        with patch.object(form, "mostrar_exito"):
+            form._toggle_estado_ausencia()
+
+        form.session.expire_all()
+        ausencias_inactivas = form.session.query(Ausencia).filter_by(activa=False).count()
+        assert ausencias_inactivas == 0
+
+    def test_boton_cambia_a_activar_con_inactiva_seleccionada(self, form, datos_completos):
+        """Al seleccionar una fila inactiva el botón pasa a 'Activar'."""
+        row_inactiva = None
+        for row in range(form.tabla_ausencias.rowCount()):
+            if form.tabla_ausencias.item(row, 6).text() == "Inactiva":
+                row_inactiva = row
+                break
+
+        assert row_inactiva is not None
+        form.tabla_ausencias.selectRow(row_inactiva)
+
+        assert form.desactivar_btn.text() == "Activar"
+
+    def test_boton_cambia_a_desactivar_con_activa_seleccionada(self, form, datos_completos):
+        """Al seleccionar una fila activa el botón pasa a 'Desactivar'."""
+        row_activa = None
+        for row in range(form.tabla_ausencias.rowCount()):
+            if form.tabla_ausencias.item(row, 6).text() == "Activa":
+                row_activa = row
+                break
+
+        assert row_activa is not None
+        form.tabla_ausencias.selectRow(row_activa)
+
+        assert form.desactivar_btn.text() == "Desactivar"
+
+    def test_boton_vuelve_a_desactivar_al_deseleccionar(self, form, datos_completos):
+        """Deseleccionar deja el botón en 'Desactivar' (estado neutro)."""
+        for row in range(form.tabla_ausencias.rowCount()):
+            if form.tabla_ausencias.item(row, 6).text() == "Inactiva":
+                form.tabla_ausencias.selectRow(row)
+                break
+
+        assert form.desactivar_btn.text() == "Activar"
+        form.tabla_ausencias.clearSelection()
+        assert form.desactivar_btn.text() == "Desactivar"
+
 
 # ============================================================================
 # TEST: PREVIEW GUARDIAS AFECTADAS

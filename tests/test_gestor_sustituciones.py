@@ -704,3 +704,226 @@ class TestGestorSustitucionesRendimiento:
 
         assert gestor.tabla_guardias.rowCount() == 100
         assert elapsed < 2.0  # <2s para 100 guardias
+
+
+# ============================================================================
+# TEST: COLUMNA PROF. SUSTITUIDO
+# ============================================================================
+
+
+class TestGestorSustitucionesColumnaProfesorSustituido:
+    """Tests para la columna Prof. Sustituido en la tabla de guardias."""
+
+    def test_columna_muestra_guion_para_guardia_normal(
+        self, gestor, guardias_test, profesores_test
+    ):
+        """Guardia sin sustitución muestra '-' en columna Prof. Sustituido."""
+        gestor.cargar_profesores()
+        gestor.fecha_buscar.setDate(date.today())
+        gestor.buscar_guardias()
+
+        for row in range(gestor.tabla_guardias.rowCount()):
+            sustituido = gestor.tabla_guardias.item(row, 5).text()
+            assert sustituido == "-", f"Fila {row}: esperaba '-', obtuvo '{sustituido}'"
+
+    def test_columna_muestra_nombre_para_guardia_sustituida(
+        self, gestor, guardias_test, profesores_test, session
+    ):
+        """Guardia sustituida muestra el nombre del profesor original."""
+        g1 = guardias_test[0]
+        g1.es_sustitucion = True
+        g1.profesor_sustituido_id = profesores_test[0].id
+        g1.profesor_id = profesores_test[2].id
+        session.commit()
+
+        gestor.cargar_profesores()
+        gestor.fecha_buscar.setDate(date.today())
+        gestor.buscar_guardias()
+
+        sustituido_nombre = None
+        for row in range(gestor.tabla_guardias.rowCount()):
+            item = gestor.tabla_guardias.item(row, 0)
+            if item and int(item.text()) == g1.id:
+                sustituido_nombre = gestor.tabla_guardias.item(row, 5).text()
+                break
+
+        assert sustituido_nombre == "Ana García"
+
+    def test_columna_6_tiene_cabecera_correcta(self, gestor):
+        """La sexta columna tiene la cabecera 'Prof. Sustituido'."""
+        header = gestor.tabla_guardias.horizontalHeaderItem(5)
+        assert header is not None
+        assert "Sustituido" in header.text()
+
+
+# ============================================================================
+# TEST: RE-SUSTITUIR DESDE HISTORIAL
+# ============================================================================
+
+
+class TestGestorSustitucionesResustituir:
+    """Tests para el flujo de Re-sustituir desde el historial."""
+
+    def test_pre_rellenar_establece_fecha_correcta(
+        self, gestor, guardias_test, profesores_test
+    ):
+        """_pre_rellenar_sustitucion establece la fecha del guardia en el buscador."""
+        g1 = guardias_test[0]
+        gestor.cargar_profesores()
+        gestor._pre_rellenar_sustitucion(g1.id)
+
+        fecha_ui = gestor.fecha_buscar.date().toPyDate()
+        assert fecha_ui == g1.fecha
+
+    def test_pre_rellenar_selecciona_fila_correcta(
+        self, gestor, guardias_test, profesores_test
+    ):
+        """_pre_rellenar_sustitucion selecciona la fila de esa guardia en la tabla."""
+        g1 = guardias_test[0]
+        gestor.cargar_profesores()
+        gestor._pre_rellenar_sustitucion(g1.id)
+
+        selected = gestor.tabla_guardias.selectedItems()
+        assert len(selected) > 0
+        row = selected[0].row()
+        guardia_id_ui = int(gestor.tabla_guardias.item(row, 0).text())
+        assert guardia_id_ui == g1.id
+
+    def test_pre_rellenar_guardia_inexistente_muestra_advertencia(self, gestor):
+        """_pre_rellenar_sustitucion con ID inválido muestra advertencia y no explota."""
+        with patch.object(gestor, "mostrar_advertencia") as mock_warn:
+            gestor._pre_rellenar_sustitucion(99999)
+            mock_warn.assert_called_once()
+
+    def test_historial_emite_signal_al_pulsar_resustituir(
+        self, gestor, guardias_test, profesores_test, session
+    ):
+        """El botón Re-sustituir del historial emite la señal con el guardia_id correcto."""
+        from infrastructure.database.models import GuardiaAuditLog
+        g1 = guardias_test[0]
+        log = GuardiaAuditLog(guardia_id=g1.id, accion="SUSTITUIDA", profesor_id=profesores_test[0].id)
+        session.add(log)
+        session.commit()
+
+        gestor._historial_audit.cargar_datos()
+
+        from PyQt6.QtCore import Qt
+        tabla = gestor._historial_audit.tabla
+        for row in range(tabla.rowCount()):
+            data = tabla.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            if data and data[1] == "SUSTITUIDA" and data[0] == g1.id:
+                tabla.selectRow(row)
+                break
+
+        received = []
+        gestor._historial_audit.re_sustituir_solicitada.connect(
+            lambda gid: received.append(gid)
+        )
+        gestor._historial_audit.btn_resustituir.click()
+
+        assert received == [g1.id]
+
+
+# ============================================================================
+# TEST: LÓGICA DE NEGOCIO
+# ============================================================================
+
+
+class TestGestorSustitucionesLogicaNegocio:
+    """Tests de comportamiento de negocio no cubiertos por tests básicos."""
+
+    def test_observaciones_se_persisten_en_guardia(
+        self, gestor, guardias_test, profesores_test, session
+    ):
+        """Las observaciones introducidas se guardan en guardia.notas."""
+        gestor.cargar_profesores()
+        gestor.fecha_buscar.setDate(date.today())
+        gestor.buscar_guardias()
+        gestor.tabla_guardias.selectRow(0)
+
+        for i in range(gestor.combo_profesor_sustituto.count()):
+            if gestor.combo_profesor_sustituto.itemData(i) == profesores_test[2].id:
+                gestor.combo_profesor_sustituto.setCurrentIndex(i)
+                break
+
+        gestor.text_observaciones.setPlainText("Motivo urgente")
+
+        with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes):
+            with patch.object(gestor, "mostrar_exito"):
+                gestor.confirmar_sustitucion()
+
+        g = guardias_test[0]
+        session.expire(g)
+        session.refresh(g)
+        assert g.notas == "Motivo urgente"
+
+    def test_observaciones_vacias_no_sobreescriben_notas_previas(
+        self, gestor, guardias_test, profesores_test, session
+    ):
+        """Con observaciones vacías, notas previas en la guardia se conservan."""
+        g = guardias_test[0]
+        g.notas = "Nota previa importante"
+        session.commit()
+
+        gestor.cargar_profesores()
+        gestor.fecha_buscar.setDate(date.today())
+        gestor.buscar_guardias()
+        gestor.tabla_guardias.selectRow(0)
+
+        for i in range(gestor.combo_profesor_sustituto.count()):
+            if gestor.combo_profesor_sustituto.itemData(i) == profesores_test[2].id:
+                gestor.combo_profesor_sustituto.setCurrentIndex(i)
+                break
+
+        gestor.text_observaciones.clear()
+
+        with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes):
+            with patch.object(gestor, "mostrar_exito"):
+                gestor.confirmar_sustitucion()
+
+        session.expire(g)
+        session.refresh(g)
+        assert g.notas == "Nota previa importante"
+
+    def test_doble_sustitucion_documenta_comportamiento(
+        self, gestor, guardias_test, profesores_test, session
+    ):
+        """Doble sustitución: profesor_sustituido_id queda con el inmediatamente anterior.
+
+        Escenario: g1 pasa de prof[0] a prof[2] (primera sustitución manual).
+        Segunda sustitución: prof[2] → prof[0], que quedó libre al perder g1.
+        El resultado documenta que profesor_sustituido_id es prof[2], no prof[0] original.
+        """
+        # Primera sustitución (directa en BD): prof[0] → prof[2]
+        g1 = guardias_test[0]
+        g1.es_sustitucion = True
+        g1.profesor_sustituido_id = profesores_test[0].id
+        g1.profesor_id = profesores_test[2].id
+        session.commit()
+
+        # Segunda sustitución via UI: prof[2] → prof[0] (prof[0] ya no tiene guardia hoy)
+        gestor.cargar_profesores()
+        gestor.fecha_buscar.setDate(date.today())
+        gestor.buscar_guardias()
+
+        for row in range(gestor.tabla_guardias.rowCount()):
+            item = gestor.tabla_guardias.item(row, 0)
+            if item and int(item.text()) == g1.id:
+                gestor.tabla_guardias.selectRow(row)
+                break
+
+        for i in range(gestor.combo_profesor_sustituto.count()):
+            if gestor.combo_profesor_sustituto.itemData(i) == profesores_test[0].id:
+                gestor.combo_profesor_sustituto.setCurrentIndex(i)
+                break
+
+        with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes):
+            with patch.object(gestor, "mostrar_exito"):
+                gestor.confirmar_sustitucion()
+
+        session.expire(g1)
+        session.refresh(g1)
+        # Nuevo asignado es prof[0]
+        assert g1.profesor_id == profesores_test[0].id
+        # El sustituido inmediato es prof[2], no el prof[0] original
+        assert g1.profesor_sustituido_id == profesores_test[2].id

@@ -22,6 +22,7 @@ from services.gestor_ausencias import (
     obtener_profesores_disponibles,
     reasignar_guardia,
     reasignar_guardias_automaticamente,
+    reactivar_ausencia,
     registrar_ausencia,
 )
 from sqlalchemy.orm import Session
@@ -305,6 +306,25 @@ def test_desactivar_ausencia_no_existe(mock_session):
     # Act & Assert
     with pytest.raises(ValueError, match="No existe la ausencia"):
         desactivar_ausencia(mock_session, 999)
+
+
+def test_reactivar_ausencia_exito(mock_session, ausencia_fixture):
+    """Test: reactivar ausencia inactiva la vuelve a poner activa."""
+    ausencia_fixture.activa = False
+    mock_session.query(Ausencia).get.return_value = ausencia_fixture
+
+    resultado = reactivar_ausencia(mock_session, 1)
+
+    assert resultado.activa is True
+    mock_session.commit.assert_called_once()
+
+
+def test_reactivar_ausencia_no_existe(mock_session):
+    """Test: error si la ausencia no existe."""
+    mock_session.query(Ausencia).get.return_value = None
+
+    with pytest.raises(ValueError, match="No existe la ausencia"):
+        reactivar_ausencia(mock_session, 999)
 
 
 # =============================================================================
@@ -779,3 +799,109 @@ def test_reasignar_guardias_automaticamente_commit_parcial(mock_session):
         assert resultados["reasignadas"] == 1
         assert resultados["fallidas"] == 1
         mock_session.commit.assert_called()  # Commit parcial
+
+
+# =============================================================================
+# TESTS INTEGRACIÓN: reasignar_guardia() — verificación de estado en BD real
+# =============================================================================
+
+
+@pytest.fixture
+def datos_reasignacion(session, profesor_factory, zona_factory):
+    """Fixture con BD real para tests de integración de reasignación."""
+    from infrastructure.database.models import Guardia, Zona
+    prof1 = profesor_factory(nombre_completo="Profesor Original")
+    prof2 = profesor_factory(nombre_completo="Profesor Nuevo")
+    zona = zona_factory(nombre_zona="Patio")
+
+    guardia = Guardia(
+        profesor_id=prof1.id,
+        zona_id=zona.id,
+        fecha=date(2025, 11, 10),
+        turno="mañana",
+        recreo=1,
+    )
+    session.add(guardia)
+    session.commit()
+    return {"prof1": prof1, "prof2": prof2, "guardia": guardia}
+
+
+def test_reasignar_guardia_marca_es_sustitucion(session, datos_reasignacion):
+    """reasignar_guardia establece es_sustitucion=True en la guardia."""
+    g = datos_reasignacion["guardia"]
+    p2 = datos_reasignacion["prof2"]
+
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=False):
+        reasignar_guardia(session, g.id, p2.id)
+
+    session.expire(g)
+    session.refresh(g)
+    assert g.es_sustitucion is True
+
+
+def test_reasignar_guardia_guarda_profesor_sustituido_id(session, datos_reasignacion):
+    """reasignar_guardia almacena el ID del profesor original en profesor_sustituido_id."""
+    g = datos_reasignacion["guardia"]
+    p1 = datos_reasignacion["prof1"]
+    p2 = datos_reasignacion["prof2"]
+
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=False):
+        reasignar_guardia(session, g.id, p2.id)
+
+    session.expire(g)
+    session.refresh(g)
+    assert g.profesor_sustituido_id == p1.id
+
+
+def test_reasignar_guardia_crea_audit_log_sustituida(session, datos_reasignacion):
+    """reasignar_guardia crea entrada SUSTITUIDA en GuardiaAuditLog."""
+    from infrastructure.database.models import GuardiaAuditLog
+    g = datos_reasignacion["guardia"]
+    p2 = datos_reasignacion["prof2"]
+
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=False):
+        reasignar_guardia(session, g.id, p2.id)
+
+    log = session.query(GuardiaAuditLog).filter_by(guardia_id=g.id, accion="SUSTITUIDA").first()
+    assert log is not None
+    assert log.profesor_id == p2.id
+
+
+def test_reasignar_guardia_audit_detalle_origen_ausencia(session, datos_reasignacion):
+    """El detalle del audit log de reasignar_guardia contiene origen='ausencia'."""
+    import json
+    from infrastructure.database.models import GuardiaAuditLog
+    g = datos_reasignacion["guardia"]
+    p2 = datos_reasignacion["prof2"]
+
+    with patch("services.validators.AusenciaChecker.profesor_ausente", return_value=False):
+        reasignar_guardia(session, g.id, p2.id)
+
+    log = session.query(GuardiaAuditLog).filter_by(guardia_id=g.id, accion="SUSTITUIDA").first()
+    detalle = json.loads(log.detalle)
+    assert detalle["origen"] == "ausencia"
+    assert "profesor_anterior" in detalle
+
+
+def test_reasignar_guardia_ausencia_un_dia(session, datos_reasignacion):
+    """reasignar_guardia funciona correctamente con ausencias de un solo día."""
+    from infrastructure.database.models import Ausencia
+    g = datos_reasignacion["guardia"]
+    p1 = datos_reasignacion["prof1"]
+    p2 = datos_reasignacion["prof2"]
+
+    ausencia = Ausencia(
+        profesor_id=p2.id,
+        tipo="baja_medica",
+        fecha_inicio=date(2025, 11, 9),
+        fecha_fin=date(2025, 11, 9),
+        activa=True,
+    )
+    session.add(ausencia)
+    session.commit()
+
+    # p2 no está ausente el día 10 (solo el 9), debe poder recibir la guardia
+    reasignar_guardia(session, g.id, p2.id)
+    session.expire(g)
+    session.refresh(g)
+    assert g.profesor_id == p2.id
