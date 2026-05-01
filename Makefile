@@ -1,4 +1,4 @@
-.PHONY: help install icon app dmg clean test test-fast test-ui mutation windows
+.PHONY: help install icon app dmg clean test test-fast test-ui bench mutation windows
 
 help:
 	@echo "🛠️  Guardias de Patio - Comandos disponibles:"
@@ -20,6 +20,7 @@ help:
 	@echo "  make test        - Ejecutar todos los tests"
 	@echo "  make test-fast   - Tests sin UI (~30s, paralelo con xdist)"
 	@echo "  make test-ui     - Solo tests de UI (PyQt6)"
+	@echo "  make bench       - Benchmarks de rendimiento (pytest-benchmark)"
 	@echo "  make mutation    - Ejecutar mutation testing (mutmut)"
 	@echo "  make run         - Ejecutar aplicación"
 	@echo ""
@@ -55,11 +56,15 @@ test:
 
 test-fast:
 	@echo "⚡ Tests rápidos (sin UI, paralelo)..."
-	pytest tests/ -m "not ui and not slow" -n auto --tb=short -q
+	pytest tests/ -m "not ui and not slow and not benchmark" -n auto --tb=short -q
 
 test-ui:
 	@echo "🖥️  Tests de UI (PyQt6)..."
 	pytest tests/ -m "ui" --tb=short -v
+
+bench:
+	@echo "📊 Ejecutando benchmarks de rendimiento..."
+	pytest tests/test_benchmark_cpsat.py --benchmark-only --benchmark-sort=mean -v
 
 mutation:
 	@echo "🧬 Ejecutando mutation testing con mutmut..."

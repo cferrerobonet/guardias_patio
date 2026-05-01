@@ -5,6 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.38.0] - 2026-05-01
+
+### 🎯 Resumen
+Cobertura de tests extendida a API REST, sync SFTP, migraciones Alembic y dominio con Hypothesis + benchmarks con pytest-benchmark. Corregidos 3 bugs reales de la API (NotFoundError no capturado en PUT/GET de zonas y PUT de profesores devolvía 500 en vez de 404).
+
+### ✨ Added
+- `tests/test_api.py` — 34 tests de la API REST con `TestClient` y BD in-memory (`StaticPool`): autenticación JWT, CRUD completo de profesores y zonas, security headers.
+- `tests/test_sync_backend.py` — 20 tests de `LocalSyncBackend` (upload, download, file_exists, path traversal) y `DataExporter.export_to_json`.
+- `tests/test_alembic_migrations.py` — 10 tests de integridad de migraciones: `upgrade head` sobre BD vacía, tablas y columnas críticas presentes, `downgrade` marcado como `xfail` por constraints sin nombre en SQLite.
+- `tests/test_hypothesis_domain.py` — 14 tests basados en propiedades con Hypothesis: política de contraseñas, JWT round-trip, path traversal `LocalSyncBackend`, validación `ZonaDTO`.
+- `tests/test_benchmark_cpsat.py` — 6 benchmarks de rendimiento (pytest-benchmark): política contraseñas, JWT encode/decode, generación de slots, exportación JSON. Target `make bench`.
+- `make bench` en Makefile para ejecutar benchmarks de forma aislada.
+- `hypothesis>=6.100.0` y `pytest-benchmark>=4.0.0` en `requirements.txt`.
+- Marker `benchmark` registrado en `pytest.ini`, excluido de `make test-fast`.
+
+### Fixed
+- `src/api/routers/zonas.py`: `GET /{zona_id}` y `PUT /{zona_id}` devolvían HTTP 500 cuando el recurso no existía (no capturaban `NotFoundError`). Ahora devuelven 404.
+- `src/api/routers/profesores.py`: `PUT /{profesor_id}` devolvía HTTP 500 para ID inexistente. Ahora devuelve 404.
+
 ## [5.37.0] - 2026-05-01
 
 ### 🎯 Resumen

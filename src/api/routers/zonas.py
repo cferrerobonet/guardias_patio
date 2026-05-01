@@ -17,7 +17,7 @@ from application.use_cases.zona.crear_zona import CrearZonaUseCase
 from application.use_cases.zona.eliminar_zona import EliminarZonaUseCase
 from application.use_cases.zona.listar_zonas import ListarZonasUseCase
 from application.use_cases.zona.obtener_zona import ObtenerZonaUseCase
-from core.exceptions import BusinessLogicError
+from core.exceptions import BusinessLogicError, NotFoundError
 
 router = APIRouter(prefix="/zonas", tags=["zonas"])
 
@@ -57,6 +57,8 @@ def obtener_zona(zona_id: int, db: Session = Depends(get_db)):
         return ZonaResponse(id=dto.id, nombre_zona=dto.nombre_zona, descripcion=dto.descripcion)
     except HTTPException:
         raise
+    except NotFoundError:
+        raise _build_error("not_found", f"Zona {zona_id} no encontrada", 404)
     except (ValueError, OSError) as e:
         raise _build_error("internal_error", str(e), 500)
 
@@ -83,6 +85,8 @@ def actualizar_zona(zona_id: int, zona: ActualizarZonaDTO, db: Session = Depends
         return ZonaResponse(id=dto.id, nombre_zona=dto.nombre_zona, descripcion=dto.descripcion)
     except HTTPException:
         raise
+    except NotFoundError:
+        raise _build_error("not_found", f"Zona {zona_id} no encontrada", 404)
     except BusinessLogicError as e:
         raise _build_error("conflict", str(e), 409)
     except (ValueError, OSError) as e:

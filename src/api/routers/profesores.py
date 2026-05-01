@@ -177,6 +177,8 @@ def actualizar_profesor(
         )
     except HTTPException:
         raise
+    except NotFoundError:
+        raise _build_error("not_found", f"Profesor {profesor_id} no encontrado", 404)
     except (ValidationError, BusinessLogicError) as e:
         raise _build_error("validation_error", str(e), 422)
     except (ValueError, TypeError, OSError) as e:
