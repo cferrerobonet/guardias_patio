@@ -11,6 +11,8 @@ import pytest
 from presentation.forms.reportes_widgets.calendarios_pdf_widget import CalendariosPdfWidget
 from PyQt6.QtWidgets import QComboBox, QPushButton
 
+pytestmark = pytest.mark.ui
+
 
 @pytest.fixture
 def widget(qtbot, session):

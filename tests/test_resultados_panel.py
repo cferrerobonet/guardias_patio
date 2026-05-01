@@ -11,6 +11,8 @@ import pytest
 from presentation.forms.asignacion_widgets.resultados_panel import ResultadosPanel
 from PyQt6.QtWidgets import QTextEdit
 
+pytestmark = pytest.mark.ui
+
 
 @dataclass
 class MockResumenGeneracion:

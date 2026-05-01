@@ -12,6 +12,8 @@ from infrastructure.database.models import Guardia
 from presentation.widgets.bar_chart_widget import BarChartWidget, PieChartWidget
 from presentation.widgets.panel_estadisticas import MplCanvas, PanelEstadisticas
 
+pytestmark = pytest.mark.ui
+
 # ============================================================================
 # FIXTURES
 # ============================================================================

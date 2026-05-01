@@ -18,6 +18,8 @@ from presentation.forms.asignacion_guardias_form import AsignacionGuardiasForm
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMessageBox
 
+pytestmark = pytest.mark.ui
+
 # ========================================
 # FIXTURES
 # ========================================

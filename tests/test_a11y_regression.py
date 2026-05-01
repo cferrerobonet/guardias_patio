@@ -11,6 +11,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.ui
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 

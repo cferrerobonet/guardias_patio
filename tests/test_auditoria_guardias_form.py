@@ -14,6 +14,8 @@ from PyQt6.QtWidgets import QApplication
 from infrastructure.database.models import GuardiaAuditLog, Profesor
 from presentation.forms.auditoria_guardias_form import AuditoriaGuardiasForm
 
+pytestmark = pytest.mark.ui
+
 
 # ============================================================================
 # FIXTURES

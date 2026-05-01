@@ -11,6 +11,8 @@ from presentation.widgets.progress_indicators import (
 )
 from PyQt6.QtWidgets import QWidget
 
+pytestmark = pytest.mark.ui
+
 # ========== FIXTURES ==========
 
 

@@ -14,6 +14,8 @@ from presentation.widgets.gestor_sustituciones import GestorSustituciones
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMessageBox
 
+pytestmark = pytest.mark.ui
+
 # ============================================================================
 # FIXTURES
 # ============================================================================

@@ -15,6 +15,8 @@ from pathlib import Path
 import pytest
 from infrastructure.database.models import Configuracion, Guardia, Profesor, Zona
 
+pytestmark = pytest.mark.ui
+
 
 # ---------------------------------------------------------------------------
 # Fixtures auxiliares

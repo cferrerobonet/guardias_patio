@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.37.0] - 2026-05-01
+
+### 🎯 Resumen
+Infraestructura de tests mejorada: `pytestmark = pytest.mark.ui` en 12 ficheros, pytest-xdist para ejecución paralela y nuevos targets `make test-fast` (~15s) y `make test-ui`.
+
+### ✨ Added
+- `pytest-xdist>=3.5.0` en `requirements.txt` para ejecución paralela de tests no-UI.
+- `make test-fast` — ejecuta tests sin marcador `ui` en paralelo (`-n auto`), completados en ~15s.
+- `make test-ui` — ejecuta solo tests con marcador `ui` (PyQt6).
+
+### 🧹 Housekeeping
+- Añadido `pytestmark = pytest.mark.ui` a nivel módulo en 12 ficheros de test que usan `qtbot`/`qapp` pero carecían del marcador: `test_a11y_regression`, `test_asignacion_guardias_form`, `test_auditoria_guardias_form`, `test_calendarios_pdf_widget`, `test_dia_detalle_dialog`, `test_flujo_ui`, `test_gestor_sustituciones`, `test_modales_perfil`, `test_panel_estadisticas`, `test_progress_indicators`, `test_resultados_panel`, `test_vista_calendario`.
+- Añadido `import pytest` en `test_dia_detalle_dialog.py` que carecía de él.
+
 ## [5.36.1] - 2026-04-29
 
 ### 🎯 Resumen

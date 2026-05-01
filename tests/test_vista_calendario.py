@@ -17,6 +17,8 @@ from infrastructure.database.models import Ausencia, Guardia
 from presentation.widgets.vista_calendario import CeldaDia, VistaCalendario
 from PyQt6.QtWidgets import QGroupBox, QLabel, QPushButton
 
+pytestmark = pytest.mark.ui
+
 # ========================================
 # FIXTURES
 # ========================================

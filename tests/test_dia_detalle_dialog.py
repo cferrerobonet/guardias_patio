@@ -5,7 +5,10 @@ Tests para DiaDetalleDialog - ventana de detalle de guardias del día.
 from datetime import date
 
 from infrastructure.database.models import Ausencia, Guardia
+import pytest
 from presentation.dialogs.dia_detalle_dialog import DiaDetalleDialog
+
+pytestmark = pytest.mark.ui
 
 
 class TestDiaDetalleDialogBasico:
