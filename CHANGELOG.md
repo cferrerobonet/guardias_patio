@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.39.0] - 2026-05-01
+
+### 🎯 Resumen
+Cobertura de tests completada: routers de guardias/cuotas/equidad/estadísticas, `LockoutManager`, `UserAuth.authenticate` y `SessionLock`. Corregidos 3 bugs reales de la API descubiertos por los tests.
+
+### ✨ Added
+- `tests/test_api_guardias.py` — 34 tests de routers: GET/POST/DELETE guardias, exports CSV (BOM UTF-8) y XLSX, cuotas, equidad con umbral personalizado, estadísticas resumen y por-profesor.
+- `tests/test_security_lockout.py` — 18 tests de `LockoutManager` (bloqueo tras 5 intentos, delay progresivo, reset, expiración automática, persistencia entre instancias) y `UserAuth.authenticate` (bcrypt, lockout integrado, bloqueo expirado).
+- `tests/test_session_lock.py` — 14 tests de `SessionLock` con `LocalSyncBackend`: acquire, doble adquisición falla, lock expirado permite nuevo, heartbeat, release elimina archivo local, get_lock_info.
+
+### Fixed
+- `src/api/routers/cuotas.py`: `response.cuotas` tiene claves enteras (profesor_id) pero el modelo `Dict[str, ...]` requiere strings → `ResponseValidationError` en producción. Ahora convierte claves con `str(k)`.
+- `src/api/routers/equidad.py`: parámetro `incluir_cuotas_detalle` no existe en `AnalisisEquidadRequest` (campo correcto: `incluir_detalle`) → `TypeError` silencioso en producción. Corregido nombre del parámetro.
+
+### 🧹 Housekeeping
+- `test_api_guardias.py` usa fixture `autouse/scope=module` con save/restore del override para evitar conflicto con otros módulos API que también sobreescriben `app.dependency_overrides[get_db]`.
+
 ## [5.38.0] - 2026-05-01
 
 ### 🎯 Resumen

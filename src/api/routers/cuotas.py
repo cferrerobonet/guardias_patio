@@ -65,7 +65,7 @@ def calcular_cuotas(
         # Convertir DTOs a dict para JSON
         return {
             "exitoso": response.exitoso,
-            "cuotas": response.cuotas,
+            "cuotas": {str(k): v for k, v in response.cuotas.items()},
             "cuotas_detalle": [asdict(dto) for dto in response.cuotas_detalle],
             "total_guardias": response.total_guardias,
             "mensaje": response.mensaje,

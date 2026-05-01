@@ -30,7 +30,7 @@ class AnalisisEquidadApiResponse(BaseModel):
 def analizar_equidad(
     configuracion_id: int,
     umbral_desbalance: float = 0.15,
-    incluir_cuotas_detalle: bool = False,
+    incluir_detalle: bool = False,
     db: Session = Depends(get_db),
 ):
     """
@@ -53,7 +53,7 @@ def analizar_equidad(
         request = AnalisisEquidadRequest(
             configuracion_id=configuracion_id,
             umbral_desbalance=umbral_desbalance,
-            incluir_cuotas_detalle=incluir_cuotas_detalle,
+            incluir_detalle=incluir_detalle,
         )
         response = use_case.execute(request)
 
