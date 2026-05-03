@@ -476,17 +476,79 @@ class SidebarMenu(QWidget):
             }}
         """)
 
-    def show_update_banner(self, nueva_version: str) -> None:
+    def show_update_banner(self, nueva_version: str, download_url: str = "") -> None:
         if not hasattr(self, "_update_banner"):
             return
         self._update_nueva_version = nueva_version
+        self._update_download_url = download_url
         self._update_banner.setText(f"🆕 v{nueva_version} disponible")
         self._update_banner.show()
 
     def _on_update_banner_clicked(self) -> None:
-        import webbrowser
+        url = getattr(self, "_update_download_url", "")
+        if url:
+            self._descargar_e_instalar(url)
+        else:
+            import webbrowser
+            webbrowser.open("https://github.com/cferrerobonet/guardias_patio/releases/latest")
 
-        webbrowser.open("https://github.com/cferrerobonet/guardias_patio/releases/latest")
+    def _descargar_e_instalar(self, url: str) -> None:
+        import subprocess
+        import tempfile
+        import urllib.request
+        from pathlib import Path
+
+        from PyQt6.QtCore import QThread, pyqtSignal as Signal
+        from PyQt6.QtWidgets import QMessageBox, QProgressDialog
+
+        version = getattr(self, "_update_nueva_version", "")
+        nombre = url.split("/")[-1]
+        destino = Path(tempfile.gettempdir()) / nombre
+
+        progreso = QProgressDialog(
+            f"Descargando Guardias de Patio v{version}…", "Cancelar", 0, 100, self
+        )
+        progreso.setWindowTitle("Actualización")
+        progreso.setMinimumDuration(0)
+        progreso.setValue(0)
+
+        cancelado = [False]
+
+        def _on_cancel():
+            cancelado[0] = True
+
+        progreso.canceled.connect(_on_cancel)
+
+        class _Descargador(QThread):
+            progreso_signal = Signal(int)
+            error_signal = Signal(str)
+            listo_signal = Signal(str)
+
+            def __init__(self, url, destino):
+                super().__init__()
+                self._url = url
+                self._destino = destino
+
+            def run(self):
+                try:
+                    def _reporthook(count, block_size, total):
+                        if total > 0:
+                            pct = min(int(count * block_size * 100 / total), 100)
+                            self.progreso_signal.emit(pct)
+
+                    urllib.request.urlretrieve(self._url, self._destino, _reporthook)
+                    self.listo_signal.emit(str(self._destino))
+                except Exception as e:
+                    self.error_signal.emit(str(e))
+
+        hilo = _Descargador(url, destino)
+        hilo.progreso_signal.connect(lambda v: progreso.setValue(v) if not cancelado[0] else hilo.terminate())
+        hilo.listo_signal.connect(lambda path: (progreso.close(), subprocess.run(["open", path])))
+        hilo.error_signal.connect(lambda err: (
+            progreso.close(),
+            QMessageBox.critical(self, "Error de descarga", f"No se pudo descargar la actualización:\n{err}"),
+        ))
+        hilo.start()
 
     def _show_about_dialog(self):
         """Mostrar el diálogo Acerca de"""

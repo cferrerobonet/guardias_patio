@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.42.0] - 2026-05-03
+
+### 🎯 Resumen
+Descarga e instalación automática del DMG al detectar una nueva versión desde GitHub Releases.
+
+### ✨ Added
+- `update_checker.py`: el callback ahora incluye la URL de descarga del asset `.dmg` del release.
+- `ccleaner_sidebar.py`: al pulsar el banner de actualización se descarga el DMG con barra de progreso y se abre automáticamente (`open`). Si no hay asset DMG, redirige al navegador como antes.
+
+### Changed
+- Señal `_nueva_version_signal` ampliada a `pyqtSignal(str, str)` para transportar versión y URL de descarga.
+
+---
+
 ## [5.41.0] - 2026-05-03
 
 ### 🎯 Resumen

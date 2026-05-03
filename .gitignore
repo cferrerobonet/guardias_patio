@@ -97,6 +97,9 @@ ARCHIVO_HISTORICO_*.zip
 documentacion/datos ejemplo/*.pdf
 Calendario_*.pdf
 
+# Documentos con credenciales de producción
+docs/Configuración inicial*.pdf
+
 # ============================================================================
 # NOTA IMPORTANTE: 
 # Los siguientes archivos SÍ se suben a Git (NO están en .gitignore):
