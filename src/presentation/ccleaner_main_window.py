@@ -34,8 +34,7 @@ from presentation.themes.ccleaner_theme import (
     get_complete_stylesheet,
 )
 from presentation.widgets import (
-    GestionarAusenciasForm,
-    GestorSustituciones,
+    AusenciasSustitucionesWidget,
     PanelEstadisticas,
     VistaCalendario,
 )
@@ -152,10 +151,11 @@ class CCleanerMainWindow(QMainWindow):
                         lambda: AsignacionCalculoForm(session, sync_manager=sync_manager))
         self._register("calendario", "Calendario de Guardias",
                         lambda: VistaCalendario(session))
-        self._register("ausencias", "Gestión de Ausencias",
-                        lambda: GestionarAusenciasForm(session))
-        self._register("sustituciones", "Gestión de Sustituciones",
-                        lambda: GestorSustituciones(session))
+        self._register(
+            "ausencias_sustituciones",
+            "Ausencias / Sustituciones",
+            lambda: AusenciasSustitucionesWidget(session),
+        )
         self._register("importar", "Importar / Exportar Datos",
                         lambda: ImportExportForm(session))
         self._register("reportes", "Generador de Reportes",

@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.40.0] - 2026-05-03
+
+### 🎯 Resumen
+Módulo Ausencias/Sustituciones unificado: los dos ítems de menú separados se fusionan en uno solo con flujo integrado (buscar guardias afectadas → asignar sustitutos → guardar).
+
+### ✨ Added
+- `src/presentation/widgets/ausencias_sustituciones.py` — `AusenciasSustitucionesWidget`: panel de búsqueda de ausencias colapsable, tabla de guardias a cubrir con combo de sustituto por fila e indicador 🔴/🟢, botón auto-asignar y panel de historial de sustituciones con filtros.
+
+### Changed
+- `src/presentation/components/ccleaner_sidebar.py`: sustituidos los ítems "Ausencias" y "Sustituciones" por un único ítem "Ausencias/Sustituciones" (`section_id="ausencias_sustituciones"`, icono `account-switch`).
+- `src/presentation/ccleaner_main_window.py`: registra `ausencias_sustituciones` → `AusenciasSustitucionesWidget`; eliminados registros de `ausencias` y `sustituciones`.
+- `src/presentation/widgets/__init__.py`: exporta `AusenciasSustitucionesWidget`.
+- `src/services/assignment/assignment_executor.py`: `guardar_guardias` borra ausencias (`Ausencia`) antes de borrar guardias al regenerar el calendario.
+
 ## [5.39.0] - 2026-05-01
 
 ### 🎯 Resumen

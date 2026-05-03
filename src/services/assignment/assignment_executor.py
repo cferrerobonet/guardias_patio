@@ -13,7 +13,7 @@ from services.asignacion_guardia_service import AsignacionGuardiaService
 from services.disponibilidad_profesor_service import DisponibilidadProfesorService
 from services.distribucion_cuotas_service import DistribucionCuotasService
 from services.equidad_guardias_service import EquidadGuardiasService
-from infrastructure.database.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor
 from services.assignment.profesor_filter import ProfesorFilter, _limpiar_cache_elegibilidad
 from services.assignment.score_calculator import ScoreCalculator
 from services.assignment.slot_builder import SlotBuilder
@@ -196,6 +196,7 @@ class AssignmentExecutor:
             return
 
         # Limpiar guardias existentes
+        self.session.query(Ausencia).delete()
         self.session.query(Guardia).delete()
 
         # Insertar nuevas guardias

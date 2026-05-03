@@ -199,9 +199,9 @@ class SidebarMenu(QWidget):
 
         # ========== PERSONAL ==========
         self.add_category(menu_layout, "PERSONAL")
-        self.add_menu_item(menu_layout, "ausencias", "Ausencias", "ausencias", "hospital-box")
         self.add_menu_item(
-            menu_layout, "sustituciones", "Sustituciones", "sustituciones", "swap-horizontal"
+            menu_layout, "ausencias_sustituciones",
+            "Ausencias/Sustituciones", "ausencias_sustituciones", "account-switch"
         )
 
         menu_layout.addSpacing(4)
