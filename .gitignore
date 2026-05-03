@@ -81,6 +81,7 @@ benchmark_results.log
 
 # Build y distribución (PyInstaller, DMG, EXE)
 build/
+!scripts/build/
 dist/
 *.dmg
 *.exe

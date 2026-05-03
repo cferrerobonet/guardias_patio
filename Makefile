@@ -1,4 +1,4 @@
-.PHONY: help install icon app dmg clean test test-fast test-ui bench mutation windows
+.PHONY: help install icon app dmg release clean test test-fast test-ui bench mutation windows
 
 help:
 	@echo "🛠️  Guardias de Patio - Comandos disponibles:"
@@ -8,7 +8,8 @@ help:
 	@echo "  make install     - Instalar PyInstaller"
 	@echo "  make icon        - Crear icono .icns"
 	@echo "  make app         - Crear aplicación .app"
-	@echo "  make dmg         - Crear instalador DMG"
+	@echo "  make dmg         - Crear instalador DMG y publicar GitHub Release
+  make release     - Publicar GitHub Release con el DMG existente (sin recompilar)"
 	@echo ""
 	@echo "  Windows (desde macOS con Wine/VM):"
 	@echo "  ────────────────────────────────────────"
@@ -39,9 +40,24 @@ app: icon
 	pyinstaller "Guardias de Patio.spec"
 
 dmg: icon
-	@echo "📀 Creando DMG instalable..."
+	@echo "📀 Creando DMG instalable y publicando release..."
 	chmod +x scripts/build/build_dmg.sh
 	scripts/build/build_dmg.sh
+
+release:
+	@VERSION=$$(python3 -c "import sys; sys.path.insert(0,'src'); from config.settings import get_settings; print(get_settings().app_version)"); \
+	DMG="GuardiasPatio_v$${VERSION}_macOS.dmg"; \
+	if [ ! -f "$$DMG" ]; then echo "❌ No se encuentra $$DMG. Ejecuta primero: make dmg"; exit 1; fi; \
+	TAG="v$${VERSION}"; \
+	echo "🚀 Publicando $$TAG con $$DMG..."; \
+	if git ls-remote --tags origin "$$TAG" | grep -q "$$TAG"; then \
+		gh release upload "$$TAG" "$$DMG" --clobber; \
+	else \
+		git tag "$$TAG" 2>/dev/null || true; \
+		git push origin "$$TAG"; \
+		gh release create "$$TAG" "$$DMG" --title "Guardias de Patio $${VERSION}" --generate-notes; \
+	fi; \
+	echo "✅ Release publicado: https://github.com/cferrerobonet/guardias_patio/releases/tag/$$TAG"
 
 clean:
 	@echo "🧹 Limpiando archivos de build..."
