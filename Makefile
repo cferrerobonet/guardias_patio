@@ -31,18 +31,17 @@ install:
 
 icon:
 	@echo "🎨 Creando icono..."
-	chmod +x create_icon.sh
-	./create_icon.sh
+	chmod +x scripts/build/create_icon.sh
+	scripts/build/create_icon.sh
 
 app: icon
 	@echo "🔨 Construyendo aplicación..."
-	chmod +x build_dmg.sh
-	pyinstaller guardias_patio.spec
+	pyinstaller "Guardias de Patio.spec"
 
 dmg: icon
-	@echo "💿 Creando DMG instalable..."
-	chmod +x build_dmg.sh
-	./build_dmg.sh
+	@echo "📀 Creando DMG instalable..."
+	chmod +x scripts/build/build_dmg.sh
+	scripts/build/build_dmg.sh
 
 clean:
 	@echo "🧹 Limpiando archivos de build..."
