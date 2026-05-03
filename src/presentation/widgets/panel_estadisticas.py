@@ -132,7 +132,7 @@ class PanelEstadisticas(BaseForm):
         layout = QVBoxLayout()
 
         self.tabla_profesores = QTableWidget()
-        self.tabla_profesores.setColumnCount(9)
+        self.tabla_profesores.setColumnCount(10)
         self.tabla_profesores.setHorizontalHeaderLabels(
             [
                 "Profesor",
@@ -143,7 +143,8 @@ class PanelEstadisticas(BaseForm):
                 "Estado",
                 "Inicio Guardias",
                 "Fin Guardias",
-                "Sustituciones",
+                "Veces sustituto",
+                "Veces sustituido",
             ]
         )
         # Ajustar ancho automático de columnas al contenido
@@ -167,7 +168,13 @@ class PanelEstadisticas(BaseForm):
         header.model().setHeaderData(
             8,
             Qt.Orientation.Horizontal,
-            "Número de guardias cubiertas por este profesor como sustituto.",
+            "Número de guardias cubiertas por este profesor como sustituto de otro.",
+            Qt.ItemDataRole.ToolTipRole,
+        )
+        header.model().setHeaderData(
+            9,
+            Qt.Orientation.Horizontal,
+            "Número de guardias en las que este profesor fue sustituido por otro.",
             Qt.ItemDataRole.ToolTipRole,
         )
 
@@ -362,10 +369,15 @@ class PanelEstadisticas(BaseForm):
         """Actualizar la tabla de estadísticas por profesor con datos del DTO."""
         datos_profesor = self._datos.por_profesor
 
-        # Pre-calcular sustituciones por profesor (como sustituto)
-        sust_por_prof: dict[int, int] = {}
+        # Pre-calcular sustituciones por profesor
+        sust_por_prof: dict[int, int] = {}  # veces que actuó como sustituto
+        sustituido_por_prof: dict[int, int] = {}  # veces que fue sustituido
         for g in self.session.query(Guardia).filter(Guardia.es_sustitucion == True).all():  # noqa: E712
             sust_por_prof[g.profesor_id] = sust_por_prof.get(g.profesor_id, 0) + 1
+            if g.profesor_sustituido_id is not None:
+                sustituido_por_prof[g.profesor_sustituido_id] = (
+                    sustituido_por_prof.get(g.profesor_sustituido_id, 0) + 1
+                )
 
         self.tabla_profesores.setRowCount(len(datos_profesor))
 
@@ -415,11 +427,17 @@ class PanelEstadisticas(BaseForm):
             fecha_fin_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tabla_profesores.setItem(i, 7, fecha_fin_item)
 
-            # Sustituciones (centrado)
+            # Veces sustituto (centrado)
             sust_count = sust_por_prof.get(prof_dto.profesor_id, 0)
             sust_item = QTableWidgetItem(str(sust_count) if sust_count else "—")
             sust_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tabla_profesores.setItem(i, 8, sust_item)
+
+            # Veces sustituido (centrado)
+            sustituido_count = sustituido_por_prof.get(prof_dto.profesor_id, 0)
+            sustituido_item = QTableWidgetItem(str(sustituido_count) if sustituido_count else "—")
+            sustituido_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.tabla_profesores.setItem(i, 9, sustituido_item)
 
     def _actualizar_tabla_zonas_ui(self):
         """Actualizar la tabla de estadísticas por zona con datos del DTO."""

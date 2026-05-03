@@ -7,10 +7,10 @@ import json
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
+from sqlalchemy.orm import joinedload
+
 from infrastructure.database.models import Ausencia, Guardia, GuardiaAuditLog, Profesor
 from services.validators import AusenciaChecker, TurnoValidator
-from sqlalchemy.orm import joinedload
-from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -318,8 +318,17 @@ def obtener_profesores_disponibles(
                 if guardias_dia == 0:
                     disponibles.append((p, guardias_dia))
 
-    # Ordenar por menor carga
-    disponibles.sort(key=lambda x: x[1])
+    # Pre-calcular sustituciones acumuladas para ordenar por equidad
+    sust_acumuladas: dict[int, int] = {}
+    for p, _ in disponibles:
+        sust_acumuladas[p.id] = (
+            session.query(Guardia)
+            .filter(Guardia.profesor_id == p.id, Guardia.es_sustitucion == True)  # noqa: E712
+            .count()
+        )
+
+    # Ordenar por (guardias hoy, sustituciones acumuladas) — menor carga primero
+    disponibles.sort(key=lambda x: (x[1], sust_acumuladas.get(x[0].id, 0)))
 
     return disponibles
 
@@ -382,12 +391,14 @@ def reasignar_guardia(
     guardia.es_sustitucion = True
     guardia.profesor_sustituido_id = profesor_anterior_id
     guardia.profesor_id = nuevo_profesor_id
-    session.add(GuardiaAuditLog(
-        guardia_id=guardia_id,
-        accion="SUSTITUIDA",
-        profesor_id=nuevo_profesor_id,
-        detalle=json.dumps({"profesor_anterior": str(profesor_anterior), "origen": "ausencia"}),
-    ))
+    session.add(
+        GuardiaAuditLog(
+            guardia_id=guardia_id,
+            accion="SUSTITUIDA",
+            profesor_id=nuevo_profesor_id,
+            detalle=json.dumps({"profesor_anterior": str(profesor_anterior), "origen": "ausencia"}),
+        )
+    )
     session.commit()
 
     logger.info(

@@ -5,6 +5,27 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.41.0] - 2026-05-03
+
+### 🎯 Resumen
+Mejoras de UX, equidad en auto-asignación, detección de solapamientos y limpieza de widgets obsoletos.
+
+### ✨ Added
+- Detección de ausencias solapadas en `buscar_guardias`: avisa si el profesor ya tiene una ausencia activa en ese período.
+- Label de resultado inline en el panel de guardias a cubrir (verde/naranja) al guardar sustituciones.
+- Estadísticas Por Profesor: columna `Veces sustituto` + nueva columna `Veces sustituido`.
+- Test a11y del nuevo widget `AusenciasSustitucionesWidget`.
+
+### Changed
+- Auto-asignación ahora ordena candidatos por `(guardias hoy, sustituciones acumuladas)` para favorecer equidad.
+- Historial de sustituciones: rango por defecto ampliado a 9 meses (cubre el curso escolar completo).
+- Eliminados widgets obsoletos `GestionarAusenciasForm` y `GestorSustituciones` y sus tests asociados.
+
+### 🧹 Housekeeping
+- Eliminados: `src/presentation/widgets/gestionar_ausencias.py`, `gestor_sustituciones.py`, tests UI/a11y correspondientes.
+
+---
+
 ## [5.40.1] - 2026-05-03
 
 ### 🎯 Resumen

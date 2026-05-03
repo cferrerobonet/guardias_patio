@@ -125,7 +125,7 @@ class TestPanelEstadisticasBasico:
     def test_tiene_tablas(self, panel):
         """Test que tiene las tablas de profesores y zonas."""
         assert panel.tabla_profesores is not None
-        assert panel.tabla_profesores.columnCount() == 9
+        assert panel.tabla_profesores.columnCount() == 10
 
         assert panel.tabla_zonas is not None
         assert panel.tabla_zonas.columnCount() == 4

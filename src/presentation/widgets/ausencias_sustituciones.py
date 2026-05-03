@@ -192,6 +192,12 @@ class AusenciasSustitucionesWidget(BaseForm):
         botones.addWidget(self.btn_guardar)
         lay.addLayout(botones)
 
+        self.lbl_resultado = QLabel("")
+        self.lbl_resultado.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.lbl_resultado.setStyleSheet("font-size: 12px; padding: 4px 0;")
+        self.lbl_resultado.setVisible(False)
+        lay.addWidget(self.lbl_resultado)
+
         return contenedor
 
     def _crear_panel_historial(self) -> QGroupBox:
@@ -209,7 +215,7 @@ class AusenciasSustitucionesWidget(BaseForm):
         self.hist_desde = QDateEdit()
         self.hist_desde.setCalendarPopup(True)
         self.hist_desde.setDisplayFormat("dd/MM/yyyy")
-        self.hist_desde.setDate(QDate.currentDate().addMonths(-1))
+        self.hist_desde.setDate(QDate.currentDate().addMonths(-9))
         filtros.addWidget(self.hist_desde)
 
         lbl_h = QLabel("Hasta:")
@@ -304,7 +310,24 @@ class AusenciasSustitucionesWidget(BaseForm):
             inicio = self.fecha_inicio.date().toPyDate()
             fin = self.fecha_fin.date().toPyDate()
 
+            from infrastructure.database.models import Ausencia
             from services.gestor_ausencias import obtener_guardias_afectadas_por_periodo
+
+            solapadas = (
+                self.session.query(Ausencia)
+                .filter(
+                    Ausencia.profesor_id == profesor_id,
+                    Ausencia.activa == True,  # noqa: E712
+                    Ausencia.fecha_inicio <= fin,
+                    Ausencia.fecha_fin >= inicio,
+                )
+                .count()
+            )
+            if solapadas > 0:
+                self.mostrar_advertencia(
+                    "Ausencia solapada",
+                    "Este profesor ya tiene una ausencia registrada en ese período.",
+                )
 
             guardias = obtener_guardias_afectadas_por_periodo(
                 self.session, profesor_id, inicio, fin
@@ -455,20 +478,28 @@ class AusenciasSustitucionesWidget(BaseForm):
                     "\n".join(errores[:5]),
                 )
             if guardadas > 0:
-                self.mostrar_exito(
-                    "Sustituciones guardadas",
-                    f"{guardadas} sustitución(es) registrada(s) correctamente.",
+                self._mostrar_resultado(
+                    f"✔ {guardadas} sustitución(es) guardada(s) correctamente.", ok=True
                 )
                 self.limpiar_formulario()
                 self.cargar_historial()
                 self.sustitucion_guardada.emit()
+            elif not errores:
+                self._mostrar_resultado("Sin cambios: no hay sustitutos asignados.", ok=False)
         except Exception as e:
             self.manejar_excepcion(e, "guardar sustituciones")
+
+    def _mostrar_resultado(self, texto: str, ok: bool):
+        color = "#27AE60" if ok else "#E67E22"
+        self.lbl_resultado.setStyleSheet(f"font-size: 12px; padding: 4px 0; color: {color};")
+        self.lbl_resultado.setText(texto)
+        self.lbl_resultado.setVisible(True)
 
     def limpiar_formulario(self):
         self.tabla_guardias.setRowCount(0)
         self._guardias_en_tabla = []
         self.lbl_sin_guardias.setVisible(False)
+        self.lbl_resultado.setVisible(False)
         self.btn_auto.setEnabled(False)
         self.btn_guardar.setEnabled(False)
         self.btn_cancelar_tabla.setEnabled(False)
