@@ -4,10 +4,6 @@ Sidebar estilo CCleaner
 Menú lateral oscuro con diseño profesional.
 """
 
-from pathlib import Path
-
-from core.logging import get_logger
-from core.paths import get_data_directory
 from PyQt6.QtCore import QSettings, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
@@ -17,12 +13,14 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from utils.icon_manager import get_icon
 
+from core.logging import get_logger
+from core.paths import get_data_directory
 from presentation.themes.ccleaner_theme import (
     SIDEBAR_BG,
     get_sidebar_style,
 )
+from utils.icon_manager import get_icon
 
 logger = get_logger(__name__)
 
@@ -200,8 +198,11 @@ class SidebarMenu(QWidget):
         # ========== PERSONAL ==========
         self.add_category(menu_layout, "PERSONAL")
         self.add_menu_item(
-            menu_layout, "ausencias_sustituciones",
-            "Ausencias/Sustituciones", "ausencias_sustituciones", "account-switch"
+            menu_layout,
+            "ausencias_sustituciones",
+            "Ausencias/Sustituciones",
+            "ausencias_sustituciones",
+            "account-switch",
         )
 
         menu_layout.addSpacing(4)
@@ -235,8 +236,9 @@ class SidebarMenu(QWidget):
 
         # Buscar logo corporativo del usuario actual
         try:
-            from database.db_manager import get_current_user_id
             from PyQt6.QtGui import QPixmap
+
+            from database.db_manager import get_current_user_id
 
             current_user = get_current_user_id()
             logo_path = get_data_directory() / "imagenes" / f"{current_user}.png"
@@ -483,6 +485,7 @@ class SidebarMenu(QWidget):
 
     def _on_update_banner_clicked(self) -> None:
         import webbrowser
+
         webbrowser.open("https://github.com/cferrerobonet/guardias_patio/releases/latest")
 
     def _show_about_dialog(self):

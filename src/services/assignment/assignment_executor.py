@@ -9,16 +9,16 @@ from collections import defaultdict
 from datetime import date
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from services.asignacion_guardia_service import AsignacionGuardiaService
-from services.disponibilidad_profesor_service import DisponibilidadProfesorService
-from services.distribucion_cuotas_service import DistribucionCuotasService
-from services.equidad_guardias_service import EquidadGuardiasService
 from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor
+from infrastructure.repositories.repository_factory import RepositoryFactory
+from services.asignacion_guardia_service import AsignacionGuardiaService
 from services.assignment.profesor_filter import ProfesorFilter, _limpiar_cache_elegibilidad
 from services.assignment.score_calculator import ScoreCalculator
 from services.assignment.slot_builder import SlotBuilder
+from services.disponibilidad_profesor_service import DisponibilidadProfesorService
+from services.distribucion_cuotas_service import DistribucionCuotasService
+from services.equidad_guardias_service import EquidadGuardiasService
 from services.estadisticas_service import EstadisticasService
-from infrastructure.repositories.repository_factory import RepositoryFactory
 from utils import get_logger
 
 logger = get_logger(__name__)

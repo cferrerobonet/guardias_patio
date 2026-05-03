@@ -6,19 +6,19 @@ Layout profesional con sidebar oscuro y contenido blanco.
 
 from datetime import datetime, timezone
 
-from core.logging import get_logger
-from core.usage_logger import usage_log
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
-    QMessageBox,
     QHBoxLayout,
     QMainWindow,
+    QMessageBox,
     QScrollArea,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
 
+from core.logging import get_logger
+from core.usage_logger import usage_log
 from presentation.components.ccleaner_sidebar import SidebarMenu
 from presentation.forms.ajustes_form import AjustesForm
 from presentation.forms.asignacion_calculo_form import AsignacionCalculoForm
@@ -60,7 +60,9 @@ class ContentWrapper(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setStyleSheet(f"QScrollArea {{ background-color: {CONTENT_BG}; border: none; }} QScrollArea > QWidget > QWidget {{ background-color: {CONTENT_BG}; }}")
+        scroll.setStyleSheet(
+            f"QScrollArea {{ background-color: {CONTENT_BG}; border: none; }} QScrollArea > QWidget > QWidget {{ background-color: {CONTENT_BG}; }}"
+        )
         scroll.setWidget(content_widget)
 
         layout.addWidget(scroll)
@@ -139,29 +141,26 @@ class CCleanerMainWindow(QMainWindow):
         session = self.session
         sync_manager = self.sync_manager
 
-        self._register("profesores", "Gestión de Profesores",
-                        lambda: ProfesorForm(session))
-        self._register("zonas", "Gestión de Zonas",
-                        lambda: ZonaForm(session))
-        self._register("ajustes", "Ajustes del Curso Escolar",
-                        lambda: AjustesForm(session))
-        self._register("perfiles", "Gestión de Perfiles de Usuario",
-                        lambda: PerfilesUsuarioForm(session))
-        self._register("asignacion_calculo", "Cálculo y Asignación",
-                        lambda: AsignacionCalculoForm(session, sync_manager=sync_manager))
-        self._register("calendario", "Calendario de Guardias",
-                        lambda: VistaCalendario(session))
+        self._register("profesores", "Gestión de Profesores", lambda: ProfesorForm(session))
+        self._register("zonas", "Gestión de Zonas", lambda: ZonaForm(session))
+        self._register("ajustes", "Ajustes del Curso Escolar", lambda: AjustesForm(session))
+        self._register(
+            "perfiles", "Gestión de Perfiles de Usuario", lambda: PerfilesUsuarioForm(session)
+        )
+        self._register(
+            "asignacion_calculo",
+            "Cálculo y Asignación",
+            lambda: AsignacionCalculoForm(session, sync_manager=sync_manager),
+        )
+        self._register("calendario", "Calendario de Guardias", lambda: VistaCalendario(session))
         self._register(
             "ausencias_sustituciones",
             "Ausencias / Sustituciones",
             lambda: AusenciasSustitucionesWidget(session),
         )
-        self._register("importar", "Importar / Exportar Datos",
-                        lambda: ImportExportForm(session))
-        self._register("reportes", "Generador de Reportes",
-                        lambda: ReportesForm(session))
-        self._register("estadisticas", "Estadísticas",
-                        lambda: PanelEstadisticas(session))
+        self._register("importar", "Importar / Exportar Datos", lambda: ImportExportForm(session))
+        self._register("reportes", "Generador de Reportes", lambda: ReportesForm(session))
+        self._register("estadisticas", "Estadísticas", lambda: PanelEstadisticas(session))
 
         # Pre-instanciar solo la sección inicial para que el stack no quede vacío
         self._ensure_view("profesores")
@@ -221,8 +220,14 @@ class CCleanerMainWindow(QMainWindow):
 
     def _refresh_widget(self, widget) -> bool:
         """Llama al método de refresco disponible en el widget. Devuelve True si lo encontró."""
-        for method in ("cargar_datos", "actualizar_calendario", "cargar_profesores",
-                       "cargar_zonas", "cargar_guardias", "refrescar"):
+        for method in (
+            "cargar_datos",
+            "actualizar_calendario",
+            "cargar_profesores",
+            "cargar_zonas",
+            "cargar_guardias",
+            "refrescar",
+        ):
             if hasattr(widget, method):
                 getattr(widget, method)()
                 return True
@@ -266,6 +271,7 @@ class CCleanerMainWindow(QMainWindow):
         if not self.sync_manager:
             return
         from presentation.widgets.sync_progress_dialog import SyncWorker
+
         self._sync_worker = SyncWorker(self.sync_manager, session=self.session)
         self.sidebar.set_sync_status("syncing", "↻ Sincronizando...")
         self._sync_worker.finished.connect(self._on_auto_sync_finished)
@@ -313,7 +319,8 @@ class CCleanerMainWindow(QMainWindow):
                 self,
                 "Cambios sin sincronizar",
                 "Hay cambios sin sincronizar con la nube. ¿Sincronizar antes de salir?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.Yes
+                | QMessageBox.StandardButton.No
                 | QMessageBox.StandardButton.Cancel,
             )
             if resp == QMessageBox.StandardButton.Cancel:
@@ -321,6 +328,7 @@ class CCleanerMainWindow(QMainWindow):
                 return
             if resp == QMessageBox.StandardButton.Yes:
                 from presentation.widgets.sync_progress_dialog import SyncProgressDialog, SyncWorker
+
                 dlg = SyncProgressDialog(self)
                 worker = SyncWorker(self.sync_manager, session=self.session)
                 worker.finished.connect(lambda _: dlg.accept())

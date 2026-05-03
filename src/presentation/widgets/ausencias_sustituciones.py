@@ -2,8 +2,6 @@
 Widget unificado para gestión de ausencias y sustituciones.
 """
 
-from datetime import date
-
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -13,6 +11,7 @@ from PyQt6.QtWidgets import (
     QHeaderView,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -22,7 +21,6 @@ from PyQt6.QtWidgets import (
 from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY, get_table_style
 from utils.icons import icon_for_button
-
 
 _DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
@@ -34,6 +32,7 @@ class AusenciasSustitucionesWidget(BaseForm):
 
     def __init__(self, session):
         from infrastructure.repositories.repository_factory import RepositoryFactory
+
         session_real = session.session if isinstance(session, RepositoryFactory) else session
         super().__init__(session_real)
         self._guardias_en_tabla: list = []
@@ -137,7 +136,9 @@ class AusenciasSustitucionesWidget(BaseForm):
         self.btn_auto.setMinimumHeight(35)
         self.btn_auto.setProperty("secondary", "true")
         self.btn_auto.setEnabled(False)
-        self.btn_auto.setAccessibleName("Asignar automáticamente sustitutos a todas las guardias pendientes")
+        self.btn_auto.setAccessibleName(
+            "Asignar automáticamente sustitutos a todas las guardias pendientes"
+        )
         self.btn_auto.clicked.connect(self.auto_asignar)
         cabecera.addWidget(self.btn_auto)
         lay.addLayout(cabecera)
@@ -273,6 +274,7 @@ class AusenciasSustitucionesWidget(BaseForm):
     def cargar_profesores(self):
         try:
             from application.app_services import AppServices
+
             profesores = sorted(
                 AppServices(self.session).profesores.get_all(),
                 key=lambda p: p.nombre_completo,
@@ -302,6 +304,7 @@ class AusenciasSustitucionesWidget(BaseForm):
             fin = self.fecha_fin.date().toPyDate()
 
             from services.gestor_ausencias import obtener_guardias_afectadas_por_periodo
+
             guardias = obtener_guardias_afectadas_por_periodo(
                 self.session, profesor_id, inicio, fin
             )
@@ -362,14 +365,20 @@ class AusenciasSustitucionesWidget(BaseForm):
     def _combo_sustituto_para_guardia(self, g) -> QComboBox:
         try:
             from services.gestor_ausencias import obtener_profesores_disponibles
+
             disponibles = obtener_profesores_disponibles(
-                self.session, g.fecha, g.turno, g.recreo,
+                self.session,
+                g.fecha,
+                g.turno,
+                g.recreo,
                 excluir_profesor_id=g.profesor_id,
             )
         except Exception:
             disponibles = []
 
         combo = QComboBox()
+        combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        combo.setMinimumWidth(200)
         combo.addItem("— Sin asignar —", None)
         for prof, _ in disponibles:
             combo.addItem(prof.nombre_completo, prof.id)
@@ -390,7 +399,8 @@ class AusenciasSustitucionesWidget(BaseForm):
     def auto_asignar(self):
         try:
             pendientes = [
-                g for i, g in enumerate(self._guardias_en_tabla)
+                g
+                for i, g in enumerate(self._guardias_en_tabla)
                 if (w := self.tabla_guardias.cellWidget(i, 6)) and w.currentData() is None
             ]
 
@@ -402,6 +412,7 @@ class AusenciasSustitucionesWidget(BaseForm):
                 return
 
             from services.gestor_ausencias import reasignar_guardias_automaticamente
+
             resultado = reasignar_guardias_automaticamente(self.session, pendientes)
 
             self._rellenar_tabla(self._guardias_en_tabla)
@@ -428,6 +439,7 @@ class AusenciasSustitucionesWidget(BaseForm):
                     continue
                 try:
                     from services.gestor_ausencias import reasignar_guardia
+
                     reasignar_guardia(self.session, g.id, nuevo_profesor_id)
                     guardadas += 1
                 except ValueError as ve:
@@ -463,6 +475,7 @@ class AusenciasSustitucionesWidget(BaseForm):
     def cargar_historial(self):
         try:
             from infrastructure.database.models import Guardia
+
             desde = self.hist_desde.date().toPyDate()
             hasta = self.hist_hasta.date().toPyDate()
             prof_id = self.combo_hist_profesor.currentData()
@@ -478,6 +491,7 @@ class AusenciasSustitucionesWidget(BaseForm):
             guardias = q.order_by(Guardia.fecha).all()
 
             from application.app_services import AppServices
+
             svc = AppServices(self.session)
             prof_cache: dict[int, object] = {}
 
@@ -493,14 +507,16 @@ class AusenciasSustitucionesWidget(BaseForm):
             for i, g in enumerate(guardias):
                 self.tabla_historial.insertRow(i)
                 zona_nombre = g.zona.nombre_zona if g.zona else "N/A"
-                for j, texto in enumerate([
-                    g.fecha.strftime("%d/%m/%Y"),
-                    g.turno.capitalize(),
-                    str(g.recreo),
-                    zona_nombre,
-                    _nombre(g.profesor_sustituido_id),
-                    _nombre(g.profesor_id),
-                ]):
+                for j, texto in enumerate(
+                    [
+                        g.fecha.strftime("%d/%m/%Y"),
+                        g.turno.capitalize(),
+                        str(g.recreo),
+                        zona_nombre,
+                        _nombre(g.profesor_sustituido_id),
+                        _nombre(g.profesor_id),
+                    ]
+                ):
                     item = QTableWidgetItem(texto)
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                     self.tabla_historial.setItem(i, j, item)
@@ -516,6 +532,7 @@ class AusenciasSustitucionesWidget(BaseForm):
             return
         try:
             from infrastructure.database.models import Guardia
+
             self.session.query(Guardia).filter(
                 Guardia.es_sustitucion == True  # noqa: E712
             ).update({"es_sustitucion": False, "profesor_sustituido_id": None})

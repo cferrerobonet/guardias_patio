@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
+
 from infrastructure.database.models import Guardia
 from presentation.widgets.bar_chart_widget import BarChartWidget, PieChartWidget
 from presentation.widgets.panel_estadisticas import MplCanvas, PanelEstadisticas
@@ -124,7 +125,7 @@ class TestPanelEstadisticasBasico:
     def test_tiene_tablas(self, panel):
         """Test que tiene las tablas de profesores y zonas."""
         assert panel.tabla_profesores is not None
-        assert panel.tabla_profesores.columnCount() == 8
+        assert panel.tabla_profesores.columnCount() == 9
 
         assert panel.tabla_zonas is not None
         assert panel.tabla_zonas.columnCount() == 4

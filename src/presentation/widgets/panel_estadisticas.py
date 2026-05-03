@@ -6,7 +6,7 @@ Utiliza ObtenerEstadisticasPanelUseCase para separar lógica de presentación.
 """
 
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import timedelta
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
@@ -28,13 +28,11 @@ from presentation.forms.base_form import BaseForm
 from presentation.themes.ccleaner_theme import (
     CONTENT_BG_ALT,
     PRIMARY_BLUE,
-    SUCCESS_GREEN,
     TEXT_PRIMARY,
     get_table_style,
 )
-from utils.icons import icon_for_button
-
 from presentation.widgets.bar_chart_widget import BarChartWidget, PieChartWidget
+from utils.icons import icon_for_button
 
 MplCanvas = BarChartWidget
 
@@ -134,7 +132,7 @@ class PanelEstadisticas(BaseForm):
         layout = QVBoxLayout()
 
         self.tabla_profesores = QTableWidget()
-        self.tabla_profesores.setColumnCount(8)
+        self.tabla_profesores.setColumnCount(9)
         self.tabla_profesores.setHorizontalHeaderLabels(
             [
                 "Profesor",
@@ -145,6 +143,7 @@ class PanelEstadisticas(BaseForm):
                 "Estado",
                 "Inicio Guardias",
                 "Fin Guardias",
+                "Sustituciones",
             ]
         )
         # Ajustar ancho automático de columnas al contenido
@@ -154,13 +153,21 @@ class PanelEstadisticas(BaseForm):
         self.tabla_profesores.setStyleSheet(get_table_style())
         header = self.tabla_profesores.horizontalHeader()
         header.model().setHeaderData(
-            6, Qt.Orientation.Horizontal,
+            6,
+            Qt.Orientation.Horizontal,
             "Fecha desde la que el profesor tiene guardias asignadas.\n'-' significa sin restricción de período.",
             Qt.ItemDataRole.ToolTipRole,
         )
         header.model().setHeaderData(
-            7, Qt.Orientation.Horizontal,
+            7,
+            Qt.Orientation.Horizontal,
             "Fecha hasta la que el profesor tiene guardias asignadas.\n'-' significa sin restricción de período.",
+            Qt.ItemDataRole.ToolTipRole,
+        )
+        header.model().setHeaderData(
+            8,
+            Qt.Orientation.Horizontal,
+            "Número de guardias cubiertas por este profesor como sustituto.",
             Qt.ItemDataRole.ToolTipRole,
         )
 
@@ -198,7 +205,9 @@ class PanelEstadisticas(BaseForm):
         scroll_widget = QWidget()
         scroll_layout = QVBoxLayout()
 
-        self.canvas_profesores = BarChartWidget(titulo="Distribución de Guardias por Profesor", horizontal=True)
+        self.canvas_profesores = BarChartWidget(
+            titulo="Distribución de Guardias por Profesor", horizontal=True
+        )
         scroll_layout.addWidget(self.canvas_profesores)
 
         self.canvas_zonas = PieChartWidget(titulo="Distribución de Guardias por Zona")
@@ -216,7 +225,9 @@ class PanelEstadisticas(BaseForm):
         widget = QWidget()
         layout = QVBoxLayout()
 
-        leyenda = QLabel("🟢 En cuota  🟡 Ligeramente sobre (+25%)  🔴 Muy sobre (+50%)  ⬜ Sin guardias")
+        leyenda = QLabel(
+            "🟢 En cuota  🟡 Ligeramente sobre (+25%)  🔴 Muy sobre (+50%)  ⬜ Sin guardias"
+        )
         leyenda.setStyleSheet("padding: 6px; font-size: 11px;")
         layout.addWidget(leyenda)
 
@@ -273,15 +284,15 @@ class PanelEstadisticas(BaseForm):
                 conteo[(g.profesor_id, lunes)] += 1
 
         # Cabeceras columnas
-        col_headers = [f"S{i+1}\n{s.strftime('%d/%m')}" for i, s in enumerate(semanas)]
+        col_headers = [f"S{i + 1}\n{s.strftime('%d/%m')}" for i, s in enumerate(semanas)]
         self.tabla_heatmap.setColumnCount(len(semanas) + 1)
         self.tabla_heatmap.setHorizontalHeaderLabels(["Profesor"] + col_headers)
         self.tabla_heatmap.setRowCount(len(profesores))
 
-        COLOR_OK = QColor(180, 230, 180)     # verde claro
-        COLOR_WARN = QColor(255, 220, 100)   # ámbar
-        COLOR_OVER = QColor(255, 140, 140)   # rojo claro
-        COLOR_NONE = QColor(240, 240, 240)   # gris claro
+        COLOR_OK = QColor(180, 230, 180)  # verde claro
+        COLOR_WARN = QColor(255, 220, 100)  # ámbar
+        COLOR_OVER = QColor(255, 140, 140)  # rojo claro
+        COLOR_NONE = QColor(240, 240, 240)  # gris claro
 
         for row, prof in enumerate(sorted(profesores, key=lambda p: p.nombre_completo)):
             nombre_item = QTableWidgetItem(prof.nombre_completo)
@@ -351,6 +362,11 @@ class PanelEstadisticas(BaseForm):
         """Actualizar la tabla de estadísticas por profesor con datos del DTO."""
         datos_profesor = self._datos.por_profesor
 
+        # Pre-calcular sustituciones por profesor (como sustituto)
+        sust_por_prof: dict[int, int] = {}
+        for g in self.session.query(Guardia).filter(Guardia.es_sustitucion == True).all():  # noqa: E712
+            sust_por_prof[g.profesor_id] = sust_por_prof.get(g.profesor_id, 0) + 1
+
         self.tabla_profesores.setRowCount(len(datos_profesor))
 
         for i, prof_dto in enumerate(datos_profesor):
@@ -399,6 +415,12 @@ class PanelEstadisticas(BaseForm):
             fecha_fin_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tabla_profesores.setItem(i, 7, fecha_fin_item)
 
+            # Sustituciones (centrado)
+            sust_count = sust_por_prof.get(prof_dto.profesor_id, 0)
+            sust_item = QTableWidgetItem(str(sust_count) if sust_count else "—")
+            sust_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.tabla_profesores.setItem(i, 8, sust_item)
+
     def _actualizar_tabla_zonas_ui(self):
         """Actualizar la tabla de estadísticas por zona con datos del DTO."""
         datos_zona = self._datos.por_zona
@@ -430,5 +452,3 @@ class PanelEstadisticas(BaseForm):
     def refrescar(self):
         """Refrescar las estadísticas (útil después de generar guardias)."""
         self.actualizar_estadisticas()
-
-
