@@ -5,6 +5,16 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.40.1] - 2026-05-03
+
+### 🎯 Resumen
+Correcciones de UI en el widget Ausencias/Sustituciones.
+
+### Fixed
+- Combo de sustituto con altura insuficiente: filas forzadas a 48 px, combo con `setMinimumHeight(36)` y `setDefaultSectionSize(48)`.
+
+---
+
 ## [5.40.0] - 2026-05-03
 
 ### 🎯 Resumen

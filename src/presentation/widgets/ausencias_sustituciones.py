@@ -162,6 +162,7 @@ class AusenciasSustitucionesWidget(BaseForm):
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(6, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)
+        self.tabla_guardias.verticalHeader().setDefaultSectionSize(48)
         lay.addWidget(self.tabla_guardias)
 
         self.lbl_sin_guardias = QLabel(
@@ -358,6 +359,8 @@ class AusenciasSustitucionesWidget(BaseForm):
             estado_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tabla_guardias.setCellWidget(i, 7, estado_lbl)
 
+            self.tabla_guardias.setRowHeight(i, 48)
+
             combo.currentIndexChanged.connect(
                 lambda _, row=i, lbl=estado_lbl: self._on_combo_changed(row, lbl)
             )
@@ -379,6 +382,7 @@ class AusenciasSustitucionesWidget(BaseForm):
         combo = QComboBox()
         combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         combo.setMinimumWidth(200)
+        combo.setMinimumHeight(36)
         combo.addItem("— Sin asignar —", None)
         for prof, _ in disponibles:
             combo.addItem(prof.nombre_completo, prof.id)
