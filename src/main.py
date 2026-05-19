@@ -16,9 +16,11 @@ from dotenv import load_dotenv
 # Añadir el directorio raíz al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from core.paths import get_logs_directory
+
 # Configurar logging ANTES de cualquier import
-log_dir = Path(__file__).parent.parent / "logs"
-log_dir.mkdir(exist_ok=True)
+log_dir = get_logs_directory()
+log_dir.mkdir(parents=True, exist_ok=True)
 
 for _old_log in glob.glob(str(log_dir / "app_*.log")):
     if (datetime.now() - datetime.fromtimestamp(os.path.getmtime(_old_log))).days > 30:

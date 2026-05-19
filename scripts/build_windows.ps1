@@ -1,208 +1,180 @@
 # Script de compilación automática para Windows
-# Versión: 1.0
-# Fecha: 2025-11-05
-# 
-# Este script automatiza la compilación del ejecutable y del instalador
-# asegurando que todas las dependencias estén incluidas correctamente
 
 param(
-    [string]$Version = "3.0.0",
+    [string]$Version = "",
     [switch]$SkipClean = $false,
     [switch]$SkipInstaller = $false
 )
 
-# Configuración de rutas
-$VenvPath = "C:\dev\guardias-patio\.venv"
-$DistPath = "C:\dev\gdp_dist"
-$BuildPath = "C:\dev\gdp_build"
-$OutputPath = "C:\dev\gdp_out"
 $WorkspacePath = $PSScriptRoot | Split-Path -Parent
+$DistPath = Join-Path $WorkspacePath "dist"
+$BuildPath = Join-Path $WorkspacePath "build"
+$OutputPath = Join-Path $WorkspacePath "Output"
+$SettingsPath = Join-Path $WorkspacePath "src\config\settings.py"
+$InstallerScript = Join-Path $WorkspacePath "installer_windows.iss"
 
-# Colores para output
-function Write-Success { Write-Host "✓ $args" -ForegroundColor Green }
-function Write-Error { Write-Host "✗ $args" -ForegroundColor Red }
-function Write-Info { Write-Host "ℹ $args" -ForegroundColor Cyan }
+function Write-Success { Write-Host "[OK] $args" -ForegroundColor Green }
+function Write-ErrorMsg { Write-Host "[ERROR] $args" -ForegroundColor Red }
+function Write-Info { Write-Host "[INFO] $args" -ForegroundColor Cyan }
 function Write-Step { Write-Host "`n=== $args ===" -ForegroundColor Yellow }
 
-# Verificar que el venv existe
-if (-not (Test-Path "$VenvPath\Scripts\python.exe")) {
-    Write-Error "Virtual environment no encontrado en $VenvPath"
-    Write-Info "Ejecuta primero: python -m venv $VenvPath"
-    exit 1
-}
+function Resolve-PythonPath {
+    $Candidates = @(
+        (Join-Path $WorkspacePath ".venv-win\Scripts\python.exe"),
+        (Join-Path $WorkspacePath ".venv\Scripts\python.exe")
+    )
 
-Write-Step "PASO 1: Verificar dependencias críticas"
-
-# Dependencias que DEBEN estar instaladas en el venv
-$RequiredPackages = @(
-    "matplotlib",
-    "reportlab",
-    "PyQt6",
-    "sqlalchemy",
-    "alembic",
-    "pydantic",
-    "structlog",
-    "python-dotenv",
-    "paramiko",
-    "psutil",
-    "bcrypt",
-    "cryptography"
-)
-
-$MissingPackages = @()
-foreach ($package in $RequiredPackages) {
-    $installed = & "$VenvPath\Scripts\pip.exe" show $package 2>$null
-    if (-not $installed) {
-        $MissingPackages += $package
-        Write-Error "Falta $package"
-    } else {
-        Write-Success "$package instalado"
+    foreach ($candidate in $Candidates) {
+        if (Test-Path $candidate) {
+            return $candidate
+        }
     }
+
+    $pythonCmd = Get-Command python -ErrorAction SilentlyContinue
+    if ($pythonCmd) {
+        return $pythonCmd.Source
+    }
+
+    return $null
 }
 
-if ($MissingPackages.Count -gt 0) {
-    Write-Error "Faltan paquetes. Instalar con:"
-    Write-Host "  & '$VenvPath\Scripts\pip.exe' install $($MissingPackages -join ' ')"
+function Resolve-AppVersion {
+    if ($Version) {
+        return $Version
+    }
+
+    if (-not (Test-Path $SettingsPath)) {
+        return "0.0.0"
+    }
+
+    $settingsContent = Get-Content $SettingsPath -Raw
+    $match = [regex]::Match($settingsContent, 'app_version\s*:\s*str\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+)"')
+    if ($match.Success) {
+        return $match.Groups[1].Value
+    }
+
+    return "0.0.0"
+}
+
+Set-Location $WorkspacePath
+
+$ResolvedVersion = Resolve-AppVersion
+$PythonPath = Resolve-PythonPath
+
+if (-not $PythonPath) {
+    Write-ErrorMsg "No se encontró Python. Crea .venv-win o instala Python en PATH."
     exit 1
 }
 
-# Verificar que email_validator NO está instalado (causa conflictos con pydantic)
-$emailValidator = & "$VenvPath\Scripts\pip.exe" show email_validator 2>$null
-if ($emailValidator) {
-    Write-Error "email_validator está instalado y debe eliminarse"
-    Write-Info "Ejecutando: pip uninstall -y email_validator"
-    & "$VenvPath\Scripts\pip.exe" uninstall -y email_validator
-    Write-Success "email_validator eliminado"
+Write-Step "PASO 1: Preparar entorno"
+Write-Info "Python seleccionado: $PythonPath"
+Write-Info "Versión de app: $ResolvedVersion"
+
+& $PythonPath -m pip install --upgrade pip | Out-Null
+& $PythonPath -m pip install -r "requirements.txt"
+if ($LASTEXITCODE -ne 0) {
+    Write-ErrorMsg "Falló instalación de requirements.txt"
+    exit 1
+}
+
+& $PythonPath -m pip install pyinstaller
+if ($LASTEXITCODE -ne 0) {
+    Write-ErrorMsg "Falló instalación de PyInstaller"
+    exit 1
 }
 
 Write-Step "PASO 2: Limpiar directorios de compilación"
-
 if (-not $SkipClean) {
-    if (Test-Path $DistPath) {
-        Remove-Item -Path $DistPath -Recurse -Force
-        Write-Success "Limpiado $DistPath"
-    }
     if (Test-Path $BuildPath) {
         Remove-Item -Path $BuildPath -Recurse -Force
         Write-Success "Limpiado $BuildPath"
     }
-    if (Test-Path "$WorkspacePath\GuardiasDePatio.spec") {
-        Remove-Item "$WorkspacePath\GuardiasDePatio.spec" -Force
-        Write-Success "Eliminado spec anterior"
+    if (Test-Path (Join-Path $DistPath "GuardiasDePatio")) {
+        Remove-Item -Path (Join-Path $DistPath "GuardiasDePatio") -Recurse -Force
+        Write-Success "Limpiado dist\\GuardiasDePatio"
     }
-} else {
-    Write-Info "Omitiendo limpieza (--SkipClean)"
+    if (Test-Path $OutputPath) {
+        Remove-Item -Path $OutputPath -Recurse -Force
+        Write-Success "Limpiado $OutputPath"
+    }
 }
+
+New-Item -ItemType Directory -Path $OutputPath -Force | Out-Null
 
 Write-Step "PASO 3: Compilar ejecutable con PyInstaller"
 
-Set-Location $WorkspacePath
-
-# Argumentos críticos para PyInstaller
 $PyInstallerArgs = @(
-    "--windowed",                                           # Sin consola
-    "--noconfirm",                                         # No pedir confirmación
-    "--clean",                                             # Limpiar cache
-    "--icon=imagenes/logo.ico",                           # Icono
-    "--add-data", "imagenes;imagenes",                    # Incluir imágenes
-    "--add-data", "alembic;alembic",                      # Incluir migraciones
-    "--exclude-module", "tkinter",                        # Excluir tkinter (no usado)
-    "--exclude-module", "email_validator",                # Excluir email_validator
-    "--hidden-import=matplotlib",                         # CRÍTICO: matplotlib
-    "--hidden-import=matplotlib.backends.backend_qtagg",  # CRÍTICO: backend Qt6
-    "--hidden-import=reportlab",                          # CRÍTICO: reportlab
+    "--windowed",
+    "--noconfirm",
+    "--clean",
+    "--icon=imagenes/logo.ico",
+    "--add-data", "imagenes;imagenes",
+    "--add-data", "alembic;alembic",
+    "--add-data", "alembic.ini;.",
+    "--exclude-module", "tkinter",
+    "--exclude-module", "email_validator",
+    "--collect-all", "dependency_injector",
+    "--collect-all", "ortools",
+    "--collect-binaries", "ortools",
+    "--collect-data", "ortools",
+    "--collect-submodules", "ortools",
+    "--hidden-import=logging.config",
+    "--hidden-import=logging.handlers",
+    "--hidden-import=dependency_injector.errors",
+    "--hidden-import=ortools.sat.python.cp_model_helper",
+    "--hidden-import=matplotlib",
+    "--hidden-import=matplotlib.backends.backend_qtagg",
+    "--hidden-import=reportlab",
     "--distpath", $DistPath,
     "--workpath", $BuildPath,
     "--name", "GuardiasDePatio",
     "src/main.py"
 )
 
-Write-Info "Ejecutando PyInstaller..."
-& "$VenvPath\Scripts\pyinstaller.exe" @PyInstallerArgs
-
-if (-not (Test-Path "$DistPath\GuardiasDePatio\GuardiasDePatio.exe")) {
-    Write-Error "PyInstaller falló - ejecutable no generado"
+& $PythonPath -m PyInstaller @PyInstallerArgs
+if (-not (Test-Path (Join-Path $DistPath "GuardiasDePatio\GuardiasDePatio.exe"))) {
+    Write-ErrorMsg "PyInstaller falló: no se generó dist\\GuardiasDePatio\\GuardiasDePatio.exe"
     exit 1
 }
-
 Write-Success "Ejecutable generado"
 
-Write-Step "PASO 4: Verificar dependencias en el ejecutable"
-
-$HasMatplotlib = Test-Path "$DistPath\GuardiasDePatio\_internal\matplotlib"
-$HasReportlab = Test-Path "$DistPath\GuardiasDePatio\_internal\reportlab"
-$HasEmailValidator = Get-ChildItem "$DistPath\GuardiasDePatio\_internal" -Filter "*email_validator*" -Directory -ErrorAction SilentlyContinue
-
-if (-not $HasMatplotlib) {
-    Write-Error "matplotlib NO incluido en el ejecutable"
-    exit 1
-}
-Write-Success "matplotlib incluido"
-
-if (-not $HasReportlab) {
-    Write-Error "reportlab NO incluido - copiando manualmente..."
-    Copy-Item -Path "$VenvPath\Lib\site-packages\reportlab" `
-              -Destination "$DistPath\GuardiasDePatio\_internal\reportlab" `
-              -Recurse -Force
-    if (Test-Path "$DistPath\GuardiasDePatio\_internal\reportlab") {
-        Write-Success "reportlab copiado manualmente"
-    } else {
-        Write-Error "Falló la copia de reportlab"
-        exit 1
-    }
-} else {
-    Write-Success "reportlab incluido"
-}
-
-if ($HasEmailValidator) {
-    Write-Error "email_validator presente - eliminando..."
-    Get-ChildItem "$DistPath\GuardiasDePatio\_internal" -Recurse -Filter "*email_validator*" | Remove-Item -Recurse -Force
-    Write-Success "email_validator eliminado"
-} else {
-    Write-Success "email_validator NO presente (correcto)"
-}
-
-Write-Step "PASO 5: Compilar instalador con Inno Setup"
-
 if ($SkipInstaller) {
-    Write-Info "Omitiendo compilación de instalador (--SkipInstaller)"
-    Write-Success "Ejecutable listo en: $DistPath\GuardiasDePatio\GuardiasDePatio.exe"
+    Write-Success "Compilación completa sin instalador (--SkipInstaller)"
     exit 0
 }
 
-# Verificar Inno Setup
+Write-Step "PASO 4: Compilar instalador con Inno Setup"
+
+if (-not (Test-Path $InstallerScript)) {
+    Write-ErrorMsg "No existe $InstallerScript"
+    exit 1
+}
+
 $InnoSetup = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 if (-not (Test-Path $InnoSetup)) {
-    Write-Error "Inno Setup no encontrado en: $InnoSetup"
-    Write-Info "Descarga desde: https://jrsoftware.org/isdl.php"
+    $InnoSetup = Get-ChildItem -Path "C:\Program Files*" -Recurse -Filter "ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+}
+
+if (-not $InnoSetup) {
+    Write-ErrorMsg "Inno Setup no encontrado"
     exit 1
 }
 
-Write-Info "Compilando instalador con Inno Setup..."
-& $InnoSetup "$WorkspacePath\installer_windows.iss"
-
+& $InnoSetup "/DMyAppVersion=$ResolvedVersion" $InstallerScript
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Inno Setup falló con código de salida: $LASTEXITCODE"
+    Write-ErrorMsg "Inno Setup falló con código $LASTEXITCODE"
     exit 1
 }
 
-# Verificar que se creó el instalador
-$InstallerPath = "$OutputPath\GuardiasDePatio-$Version-Windows-Setup.exe"
+$InstallerPath = Join-Path $OutputPath "GuardiasDePatio-$ResolvedVersion-Windows-Setup.exe"
 if (-not (Test-Path $InstallerPath)) {
-    Write-Error "Instalador no generado en: $InstallerPath"
+    Write-ErrorMsg "Instalador no generado en $InstallerPath"
     exit 1
 }
 
 $InstallerInfo = Get-Item $InstallerPath
+Write-Step "COMPILACIÓN COMPLETADA"
 Write-Success "Instalador creado"
-Write-Info "  Archivo: $($InstallerInfo.Name)"
-Write-Info "  Tamaño: $([math]::Round($InstallerInfo.Length / 1MB, 2)) MB"
-Write-Info "  Ruta: $InstallerPath"
-
-Write-Step "✅ COMPILACIÓN COMPLETADA EXITOSAMENTE"
-Write-Host ""
-Write-Host "Próximos pasos:" -ForegroundColor Cyan
-Write-Host "  1. Desinstala versiones anteriores de Guardias de Patio"
-Write-Host "  2. Ejecuta el instalador: $InstallerPath"
-Write-Host "  3. Prueba la aplicación"
-Write-Host ""
+Write-Info "Archivo: $($InstallerInfo.Name)"
+Write-Info "Tamaño: $([math]::Round($InstallerInfo.Length / 1MB, 2)) MB"
+Write-Info "Ruta: $InstallerPath"

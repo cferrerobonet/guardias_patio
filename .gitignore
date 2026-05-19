@@ -6,6 +6,8 @@
 # Entornos Virtuales de Python (se crean con: python -m venv .venv)
 venv/
 .venv/
+.venv-win/
+.venv-unix/
 env/
 ENV/
 

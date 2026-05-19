@@ -1,0 +1,3 @@
+[console_scripts]
+guardias-api = src.api.main:app
+guardias-gui = src.main:main
