@@ -162,6 +162,8 @@ class TestCCleanerMainWindow:
         window = CCleanerMainWindow(session)
         qtbot.addWidget(window)
         assert window is not None
+        assert window.isMaximized()
+        assert not window.isFullScreen()
 
     def test_add_view(self, qtbot, session):
         from PyQt6.QtWidgets import QLabel

@@ -5,6 +5,19 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.42.1] - 2026-05-19
+
+### 🎯 Resumen
+Corregida la apertura de la ventana principal en Windows para recuperar los controles nativos de cerrar/minimizar al iniciar la app.
+
+### Fixed
+- `src/presentation/ccleaner_main_window.py`: la ventana principal ya no se abre en pantalla completa (`showFullScreen()`), ahora se abre maximizada (`showMaximized()`), mostrando la barra y botones del sistema en Windows.
+
+### 🧹 Housekeeping
+- `tests/test_core_and_main_window.py`: añadidas aserciones de regresión para verificar que la ventana inicia maximizada y no en pantalla completa.
+
+---
+
 ## [5.42.0] - 2026-05-03
 
 ### 🎯 Resumen

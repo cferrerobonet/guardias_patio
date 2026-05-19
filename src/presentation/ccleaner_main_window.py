@@ -86,8 +86,8 @@ class CCleanerMainWindow(QMainWindow):
         self.setWindowTitle("Guardias de Patio")
         self.setMinimumSize(1400, 900)
 
-        # Abrir en pantalla completa
-        self.showFullScreen()
+        # Abrir maximizada para mantener los controles nativos de la ventana en Windows
+        self.showMaximized()
 
         # Aplicar stylesheet global
         self.setStyleSheet(get_complete_stylesheet())
