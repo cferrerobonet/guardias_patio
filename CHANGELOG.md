@@ -5,6 +5,19 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.42.2] - 2026-05-19
+
+### 🎯 Resumen
+Nueva release oficial para GitHub como versión vigente del proyecto.
+
+### Changed
+- `src/config/settings.py`: bump de versión de la aplicación a `5.42.2`.
+
+### 🧹 Housekeeping
+- `CHANGELOG.md`: registrada la publicación de la release oficial `v5.42.2`.
+
+---
+
 ## [5.42.1] - 2026-05-19
 
 ### 🎯 Resumen
