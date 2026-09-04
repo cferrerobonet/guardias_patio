@@ -73,8 +73,15 @@ echo "${BLUE}💿 Creando DMG instalable...${NC}"
 TMP_DMG_DIR="$(mktemp -d)"
 echo "  • Directorio temporal: $TMP_DMG_DIR"
 
-# Copiar la app
-cp -R "$APP_PATH" "$TMP_DMG_DIR/"
+# Copiar la app sin atributos extendidos (iCloud Drive los añade y rompen codesign)
+ditto --norsrc --noextattr --noqtn "$APP_PATH" "$TMP_DMG_DIR/${APP_NAME}.app"
+xattr -cr "$TMP_DMG_DIR/${APP_NAME}.app"
+
+# Firmar ad-hoc fuera de iCloud y verificar
+echo "${BLUE}🔏 Firmando bundle (ad-hoc)...${NC}"
+codesign -s - --force --deep "$TMP_DMG_DIR/${APP_NAME}.app"
+codesign --verify --deep --strict "$TMP_DMG_DIR/${APP_NAME}.app"
+echo "${GREEN}✓ Firma verificada${NC}"
 
 # Crear enlace simbólico a Applications
 ln -s /Applications "$TMP_DMG_DIR/Applications"

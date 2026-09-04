@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.42.3] - 2026-09-04
+
+### 🎯 Resumen
+Corregido el build de macOS: el bundle se firma fuera de iCloud Drive para que la firma ad-hoc sea válida.
+
+### Fixed
+- `scripts/build/build_dmg.sh`: la app se copia sin atributos extendidos a un directorio temporal, se firma ad-hoc con `codesign --deep` y se verifica con `--strict` antes de crear el DMG. iCloud Drive añadía atributos que hacían fallar la firma y dejaban el bundle con una firma inválida.
+- `Makefile`: corregido un `echo` partido en `make help` que rompía el Makefile con "missing separator".
+
+---
+
 ## [5.42.2] - 2026-05-19
 
 ### 🎯 Resumen
