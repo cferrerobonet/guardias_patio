@@ -61,23 +61,38 @@ def create_sync_backend(backend_type: str = "sftp") -> SyncBackend:
         raise ValueError(f"Backend desconocido: {backend_type}")
 
 
+class SyncConfigurationError(RuntimeError):
+    """
+    No se puede sincronizar con el servidor.
+
+    Se lanza tanto si no hay configuración como si la hay pero no sirve. Nunca se
+    sustituye por un almacenamiento local a espaldas del usuario: una app que dice
+    haber guardado en la nube cuando no lo ha hecho pierde datos sin que nadie se
+    entere.
+    """
+
+
 def get_default_backend() -> SyncBackend:
     """
-    Obtiene el backend por defecto (SFTP si está configurado, sino Local).
+    Devuelve el backend de sincronización con el servidor.
 
     Returns:
-        SyncBackend configurado
-    """
-    try:
-        # Intentar usar SFTP si está configurado
-        if validate_sftp_config():
-            logger.info("✓ Configuración SFTP válida. Creando backend SFTP...")
-            return create_sync_backend("sftp")
-        else:
-            logger.warning("⚠ Configuración SFTP no válida")
-    except (ConnectionError, OSError, ValueError, RuntimeError) as e:
-        logger.error(f"❌ Error al crear backend SFTP: {e}", exc_info=True)
+        SyncBackend contra el servidor configurado.
 
-    # Fallback a local
-    logger.warning("⚠ Usando backend local como fallback (NO se sincronizará con la nube)")
-    return create_sync_backend("local")
+    Raises:
+        SyncConfigurationError: si no hay servidor configurado o no se puede usar.
+            Quien llama decide qué hacer, y debe decírselo al usuario.
+    """
+    if not validate_sftp_config():
+        raise SyncConfigurationError(
+            "No hay servidor de sincronización configurado. "
+            "Revisa los datos de conexión en Ajustes."
+        )
+
+    try:
+        return create_sync_backend("sftp")
+    except (ConnectionError, OSError, ValueError, RuntimeError, ImportError) as e:
+        logger.error(f"No se pudo crear el backend SFTP: {e}", exc_info=True)
+        raise SyncConfigurationError(
+            f"No se puede conectar con el servidor de sincronización: {e}"
+        ) from e

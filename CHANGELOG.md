@@ -5,6 +5,33 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.47.0] - 2026-09-04
+
+### 🎯 Resumen
+La nube pasa a ser la copia buena de cada cuenta. Cambiar de equipo funciona y la aplicación deja de perder datos en silencio.
+
+### Changed
+- **Al abrir se reconstruye la base local con lo que hay en la nube**, en vez de fusionar. Ese solo cambio resuelve los dos problemas de fondo que impedían usar varios equipos: los identificadores dejan de chocar, porque ya no hay dos series distintas que mezclar, y las bajas se propagan en lugar de reaparecer.
+- **Sin haber descargado no se sube.** Si la descarga inicial falla, la sesión avisa y queda sin permiso de subida, así el portátil que trabajó sin cobertura no puede sobrescribir el trabajo bueno.
+- **Antes de subir se comprueba que nadie haya subido entretanto.** Cada subida lleva un número de versión que crece; si el servidor tiene otra, no se sobrescribe y el envío queda pendiente. Sustituye a la comparación de relojes entre equipos.
+- La guarda de descarga ya no cuenta registros, que rechazaba borrados legítimos, sino que valida que el fichero sea una exportación real.
+
+### Fixed
+- `backend_factory`: si el servidor no está configurado o no responde, se lanza `SyncConfigurationError` en lugar de devolver un almacenamiento local. La aplicación avisa de que esa sesión no se sincronizará y de que el trabajo se queda en ese equipo. Era la causa de que hubiera usuarios trabajando sin errores cuyos datos nunca llegaron al servidor.
+- Subida atómica en los dos backends: se escribe en un temporal y se renombra, así un corte de conexión no deja truncado el único fichero del servidor.
+- Se conservan tres versiones anteriores en el servidor antes de reemplazar, mediante renombrados.
+- Una subida fallida queda marcada como pendiente y bloquea la descarga siguiente, para no descargar encima de un trabajo que aún no se había enviado.
+- El bloqueo de sesión falla cerrado: si no se puede comprobar si la cuenta está abierta en otro equipo, la aplicación no arranca.
+
+### ✨ Added
+- `tests/audit/test_sincronizacion_nube.py`: diez escenarios con dos equipos compartiendo servidor. Cambiar de equipo lleva los datos; una baja llega al otro equipo; dos equipos no mezclan entidades; sin descarga no se sube; no se sobrescribe lo que subió otro; un fichero corrupto no borra lo local; se conservan versiones.
+
+### 🧹 Housekeeping
+- Diez hallazgos de sincronización cerrados y verificados. Quedan los dos de la Fase 2: la cuenta todavía vive en cada equipo y las credenciales siguen viajando en el fichero de datos.
+- Borrados los entornos virtuales `.venv-win` y `.venv-1` que quedaban en el repositorio, 634 MB de restos inservibles.
+
+---
+
 ## [5.46.1] - 2026-09-04
 
 ### 🎯 Resumen

@@ -53,7 +53,7 @@ from PyQt6.QtWidgets import QApplication, QMessageBox
 
 from presentation.ccleaner_main_window import CCleanerMainWindow
 from presentation.forms.login_dialog import LoginDialog
-from sync import SyncManager, get_default_backend
+from sync import SyncConfigurationError, SyncManager, get_default_backend
 from utils.corporate_branding import apply_corporate_branding
 
 # Configurar logging
@@ -288,8 +288,19 @@ def main():
                             return 0
                         # Si aceptó (Reintentar), continúa el loop
                     else:
+                        # Sin poder leer el bloqueo no se puede saber si hay otra
+                        # sesión abierta. Ante la duda no se entra: entrar y subir
+                        # después machacaría el trabajo de quien esté dentro.
                         logger.error("No se pudo obtener información del bloqueo")
-                        break
+                        QMessageBox.critical(
+                            None,
+                            "No se puede comprobar la sesión",
+                            "No se ha podido comprobar si la cuenta está abierta en otro "
+                            "equipo.\n\nPara no arriesgar los datos, la aplicación no se "
+                            "abrirá. Inténtalo de nuevo cuando haya conexión.",
+                        )
+                        session.close()
+                        return 1
             else:
                 # Se agotaron los reintentos
                 QMessageBox.critical(
@@ -309,22 +320,51 @@ def main():
         if sync_manager.sync_on_startup(session=session):
             logger.info("✓ Sincronización inicial completada")
         else:
-            logger.warning("⚠ La sincronización inicial tuvo problemas (continuar de todos modos)")
+            # Sin haber traído los datos de la nube, esta sesión trabaja sobre una
+            # copia que puede estar vieja. Se avisa y se prohíbe subir al cerrar.
+            motivo = sync_manager.motivo_bloqueo or "no se pudieron descargar los datos"
+            logger.warning(f"⚠ Sincronización inicial fallida: {motivo}")
+            aviso = QMessageBox()
+            aviso.setIcon(QMessageBox.Icon.Warning)
+            aviso.setWindowTitle("Sin datos actualizados")
+            aviso.setText("No se han podido traer los datos de la nube.")
+            aviso.setInformativeText(
+                f"{motivo}\n\nPuedes consultar lo que hay en este equipo, pero los "
+                "cambios NO se subirán al cerrar, para no sobrescribir el trabajo "
+                "que haya en la nube."
+            )
+            aviso.exec()
 
-    except Exception as e:
-        logger.error(f"Error al inicializar sincronización: {e}")
+    except SyncConfigurationError as e:
+        # Sin nube no se finge que la hay: el usuario tiene que saber que su
+        # trabajo se queda en este equipo y no llegará a los demás.
+        sync_manager = None
+        logger.error(f"Sin sincronización: {e}")
         from utils.ui_helpers import get_corporate_icon
 
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setWindowTitle("Aviso de Sincronización")
+        msg.setWindowTitle("Sin sincronización con la nube")
         msg.setWindowIcon(get_corporate_icon())
         msg.setWindowFlags(
             Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )
-        msg.setText("No se pudo conectar al servidor de sincronización.")
+        msg.setText("Esta sesión NO se sincronizará con la nube.")
         msg.setInformativeText(
-            "La aplicación funcionará en modo local.\n\nLos datos se guardarán solo en este equipo."
+            f"{e}\n\nTodo lo que hagas se guardará únicamente en este equipo. No se "
+            "subirá al servidor ni lo verás desde otro ordenador.\n\n"
+            "Revisa los datos de conexión en Ajustes."
+        )
+        msg.exec()
+    except Exception as e:
+        sync_manager = None
+        logger.exception(f"Error al inicializar sincronización: {e}")
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setWindowTitle("Sin sincronización con la nube")
+        msg.setText("Esta sesión NO se sincronizará con la nube.")
+        msg.setInformativeText(
+            f"{e}\n\nTodo lo que hagas se guardará únicamente en este equipo."
         )
         msg.exec()
 

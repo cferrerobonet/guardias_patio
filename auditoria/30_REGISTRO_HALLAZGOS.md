@@ -113,21 +113,21 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 | ID | Sev. | Conf. | Título | Ubicación | Estado | Ficha |
 | --- | --- | --- | --- | --- | --- | --- |
-| SYNC-001 | P0 | alta | La app cae a modo local en silencio si el servidor no está bien configurado o no responde: guarda, sincroniza y cierra sin un solo aviso, y los datos nunca salen del equipo | `sync/backend_factory.py:64-82` | NUEVO (explica el caso observado en producción) | [[12_SINCRONIZACION_NUBE]] |
+| SYNC-001 | P0 | alta | La app cae a modo local en silencio si el servidor no está bien configurado o no responde: guarda, sincroniza y cierra sin un solo aviso, y los datos nunca salen del equipo | `sync/backend_factory.py:64-82` | **RESUELTO VERIFICADO v5.47.0** · `get_default_backend()` lanza `SyncConfigurationError`; la app avisa de que no habrá nube y no finge | [[12_SINCRONIZACION_NUBE]] |
 | SYNC-002 | P1 | alta | La configuración se da por válida sin probar la conexión: solo comprueba que los campos no estén vacíos | `config/sftp_config.py:50-62`, `dialogs/initial_config_dialog.py:641-665` | NUEVO | 12 |
-| SYNC-003 | P1 | alta | Si la descarga inicial falla, solo se escribe en el registro y se trabaja sobre datos viejos | `main.py:309-312` | NUEVO | 12 |
-| SYNC-004 | P1 | alta | Si la subida final falla, no hay reintento ni marca de pendiente: la app ya se está cerrando | `main.py:378-415` | NUEVO | 12 |
-| SYNC-005 | P0 | alta | La fusión empareja registros por el identificador autoincremental local: dos equipos generan el mismo número para entidades distintas | `sync/data_exporter.py:219,252,285…` | NUEVO · con el modelo de reemplazo decidido (un equipo cada vez) se resuelve al reconstruir la base local desde la nube, sin necesidad de identificadores estables | 12 |
-| SYNC-006 | P0 | alta | Las bajas no se propagan y reaparecen: la importación solo crea y actualiza | `sync/sync_manager.py:505` | NUEVO · se resuelve con el mismo cambio que SYNC-005 | 12 |
-| SYNC-007 | P1 | alta | La subida no es atómica: un corte deja truncado el único fichero del servidor | `sync/sync_manager.py:290-303` | NUEVO | 12 |
-| SYNC-008 | P1 | alta | No hay copias ni versiones en el servidor | copias solo locales en `database/db_manager.py` | NUEVO | 12 |
+| SYNC-003 | P1 | alta | Si la descarga inicial falla, solo se escribe en el registro y se trabaja sobre datos viejos | `main.py:309-312` | **RESUELTO VERIFICADO v5.47.0** · aviso visible y sesión sin permiso de subida | 12 |
+| SYNC-004 | P1 | alta | Si la subida final falla, no hay reintento ni marca de pendiente: la app ya se está cerrando | `main.py:378-415` | **RESUELTO VERIFICADO v5.47.0** · queda marcado `pendiente_subida` y bloquea la descarga siguiente para no perderlo | 12 |
+| SYNC-005 | P0 | alta | La fusión empareja registros por el identificador autoincremental local: dos equipos generan el mismo número para entidades distintas | `sync/data_exporter.py:219,252,285…` | **RESUELTO VERIFICADO v5.47.0** · al abrir se reconstruye la base local desde la nube: no hay dos linajes que fusionar | 12 |
+| SYNC-006 | P0 | alta | Las bajas no se propagan y reaparecen: la importación solo crea y actualiza | `sync/sync_manager.py:505` | **RESUELTO VERIFICADO v5.47.0** · mismo cambio; test de dos equipos con baja que se propaga | 12 |
+| SYNC-007 | P1 | alta | La subida no es atómica: un corte deja truncado el único fichero del servidor | `sync/sync_manager.py:290-303` | **RESUELTO VERIFICADO v5.47.0** · subida a temporal y renombrado atómico en ambos backends | 12 |
+| SYNC-008 | P1 | alta | No hay copias ni versiones en el servidor | copias solo locales en `database/db_manager.py` | **RESUELTO VERIFICADO v5.47.0** · se conservan 3 versiones anteriores en el servidor | 12 |
 | SYNC-009 | P0 | alta | Las cuentas viven en cada equipo y la carpeta remota depende solo del nombre: no se puede entrar desde otro equipo, y la contraseña no protege nada. Cualquiera puede registrar el nombre de otro en su equipo y quedarse con sus datos | `sync/sync_manager.py:650-700,415-419` | NUEVO · **elevado a P0** el 2026-09-04 al confirmarse que habrá varias cuentas con datos separados | 12 |
-| SYNC-010 | P2 | alta | El bloqueo de sesión falla abierto si no se puede leer su información | `main.py:290-292` | NUEVO | 12 |
+| SYNC-010 | P2 | alta | El bloqueo de sesión falla abierto si no se puede leer su información | `main.py:290-292` | **RESUELTO VERIFICADO v5.47.0** · si no se puede leer el bloqueo, no se entra | 12 |
 | SYNC-011 | P2 | alta | El bloqueo no cubre el trabajo sin red | `sync/session_lock.py` | NUEVO | 12 |
-| SYNC-012 | P2 | alta | La guarda de descarga solo cuenta registros: rechaza borrados legítimos y no protege la subida | `sync/sync_manager.py:459-466` | NUEVO | 12 |
+| SYNC-012 | P2 | alta | La guarda de descarga solo cuenta registros: rechaza borrados legítimos y no protege la subida | `sync/sync_manager.py:459-466` | **RESUELTO VERIFICADO v5.47.0** · la guarda pasa a ser validez del fichero y número de versión, no recuento de registros | 12 |
 | SYNC-013 | P2 | alta | Credenciales de correo y servidor viajan en el JSON, cifradas con una clave propia de cada equipo, así que ni sirven fuera ni deberían estar ahí | `sync/data_exporter.py:66-68`, `data_exporter_helpers.py:25-36` | NUEVO | 12 |
 | SYNC-014 | P2 | alta | La sincronización automática cada 30 min solo sube, nunca descarga | `presentation/ccleaner_main_window.py:262-270` | NUEVO | 12 |
-| SYNC-015 | P3 | alta | La decisión de descargar depende de comparar relojes de equipos distintos | `sync/sync_manager.py:440-447` | NUEVO | 12 |
+| SYNC-015 | P3 | alta | La decisión de descargar depende de comparar relojes de equipos distintos | `sync/sync_manager.py:440-447` | **RESUELTO VERIFICADO v5.47.0** · se decide por número de versión, no por fechas | 12 |
 
 ## COD · Calidad de código
 

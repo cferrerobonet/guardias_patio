@@ -164,7 +164,7 @@ fichero de la nube, no hay dos linajes que fusionar: los identificadores vienen 
 se propagan solas. Ambos dejan de ser un problema de diseño y pasan a resolverse con el mismo
 cambio que el resto.
 
-### Fase 1 — La nube es la copia buena
+### Fase 1 — La nube es la copia buena ✅ implementada en v5.47.0
 
 | Cambio | Efecto |
 | --- | --- |
@@ -181,6 +181,11 @@ cambio que el resto.
 | La sincronización automática comprueba antes de subir | Deja de machacar a ciegas |
 
 Con esto, cambiar de equipo funciona: cierras en uno, abres en otro y tienes lo tuyo.
+
+Implementado y verificado con diez escenarios en `tests/audit/test_sincronizacion_nube.py`, entre
+ellos: cambiar de equipo lleva los datos; una baja hecha en un equipo llega al otro; dos equipos
+no mezclan entidades distintas; sin haber descargado no se sube; no se sobrescribe lo que subió
+otro equipo; un fichero corrupto no borra lo local; y se conservan versiones anteriores.
 
 ### Fase 2 — Que la cuenta sea de verdad (requisito, no mejora)
 

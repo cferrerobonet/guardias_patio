@@ -67,7 +67,8 @@ Mejoras funcionales propuestas (FUN-001…012) se listan en 07 y en el registro 
 ## Estado global
 
 - **Veredicto:** `PARCIAL`. Hay evidencia estática reproducible y comandos ejecutados; faltan la reproducción del cierre en la máquina Windows y la validación manual con lector de pantalla.
-- **Bloqueantes de certificación:** SYNC-001/005/006/009 (pérdida de datos y falta de aislamiento entre cuentas en producción), CRW-001/002/003/005, UXA-001…007, BLD-001/002, QA-001.
+- **Bloqueantes de certificación:** SYNC-009 (sin aislamiento real entre cuentas), CRW-001/002/003/005, UXA-001…007, BLD-001/002, QA-001.
+- **Resueltos y verificados en v5.47.0:** diez hallazgos de sincronización (SYNC-001/003/004/005/006/007/008/010/012/015). La nube pasa a ser la copia buena: al abrir se reconstruye la base local con lo que hay en el servidor, sin descarga previa no se permite subir, la subida es atómica y se conservan versiones anteriores. Quedan SYNC-009 y SYNC-013, de la Fase 2.
 - **Resueltos y verificados en v5.45.1:** QA-013 (el entorno virtual sale de iCloud Drive, que estaba corrompiendo las bibliotecas de Qt y abortaba la app al arrancar).
 - **Resueltos y verificados en v5.44.0:** QA-008 (la suite completa vuelve a ejecutarse de una pasada: 2.454 pasan en 47 s), CRW-006 (`faulthandler`), CRW-008 (nombres indefinidos), BLD-007 (build de diagnóstico).
 - **Gates ejecutados en este commit:** colección pytest, ruff, bandit y suite completa por fichero (2.376 pasan, 0 fallan, 4 ficheros bloqueados). Detalle y método en [[01_BASELINE_Y_ADAPTADOR]].

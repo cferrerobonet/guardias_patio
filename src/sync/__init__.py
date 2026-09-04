@@ -2,7 +2,11 @@
 Módulo de sincronización multi-usuario.
 """
 
-from sync.backend_factory import create_sync_backend, get_default_backend
+from sync.backend_factory import (
+    SyncConfigurationError,
+    create_sync_backend,
+    get_default_backend,
+)
 from sync.data_exporter import DataExporter
 from sync.sync_manager import (
     LocalSyncBackend,
@@ -21,4 +25,5 @@ __all__ = [
     "DataExporter",
     "create_sync_backend",
     "get_default_backend",
+    "SyncConfigurationError",
 ]

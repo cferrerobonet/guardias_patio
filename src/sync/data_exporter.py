@@ -49,13 +49,16 @@ class DataExporter:
     """Exporta e importa datos de la base de datos a/desde JSON."""
 
     @staticmethod
-    def export_to_json(session: Session, output_path: Path) -> bool:
+    def export_to_json(session: Session, output_path: Path, sync_version: int = 0) -> bool:
         """
         Exporta todos los datos de la base de datos a un archivo JSON.
 
         Args:
             session: Sesión de SQLAlchemy
             output_path: Ruta donde guardar el JSON
+            sync_version: Número que crece en cada subida. Permite detectar si otro
+                equipo subió algo mientras esta sesión trabajaba, sin depender de
+                comparar relojes de máquinas distintas.
 
         Returns:
             True si la exportación fue exitosa
@@ -64,6 +67,7 @@ class DataExporter:
             data = {
                 "export_date": datetime.now().isoformat(),
                 "version": "1.0",
+                "sync_version": sync_version,
                 "smtp_config": export_smtp_config(),  # Config global SMTP
                 "sftp_config": export_sftp_config(),  # Config global SFTP
                 "cursos_escolares": [],  # NUEVO: Cursos escolares

@@ -295,20 +295,28 @@ class TestBackendFactory:
             out = get_default_backend()
         assert out is fake
 
-    def test_get_default_backend_fallback_local(self):
-        fake_local = MagicMock()
+    def test_get_default_backend_no_cae_a_local_en_silencio(self):
+        """Si el servidor falla, se avisa; nunca se guarda en local fingiendo que hay nube."""
+        from sync.backend_factory import SyncConfigurationError
 
         def _side(bt):
             if bt == "sftp":
                 raise RuntimeError("boom")
-            return fake_local
+            return MagicMock()
 
         with (
             patch("sync.backend_factory.validate_sftp_config", return_value=True),
             patch("sync.backend_factory.create_sync_backend", side_effect=_side),
         ):
-            out = get_default_backend()
-        assert out is fake_local
+            with pytest.raises(SyncConfigurationError):
+                get_default_backend()
+
+    def test_get_default_backend_sin_configuracion_avisa(self):
+        from sync.backend_factory import SyncConfigurationError
+
+        with patch("sync.backend_factory.validate_sftp_config", return_value=False):
+            with pytest.raises(SyncConfigurationError):
+                get_default_backend()
 
 
 # ---------------------------------------------------------------------------
@@ -391,68 +399,89 @@ class TestSyncManagerFlow:
         assert ok is True
         assert (manager.local_data_dir / "last_sync.json").exists()
 
-    def test_sync_startup_download_and_import(self, tmp_path):
+    def test_sync_startup_descarga_y_reconstruye(self, tmp_path):
+        """Al abrir se reconstruye la base local con lo que hay en la nube."""
         manager, backend = self._make_manager(tmp_path)
         backend.file_exists.return_value = True
-        backend.get_last_modified.return_value = datetime.now() + timedelta(seconds=60)
-
-        # Crear local antiguo
-        local_json = manager.local_data_dir / "guardias_patio_data.json"
-        local_json.write_text(json.dumps({"profesores": []}), encoding="utf-8")
 
         def _download(_remote, out_path):
-            out_path.write_text(json.dumps({"profesores": [{"id": 1}], "guardias": []}), encoding="utf-8")
+            out_path.write_text(
+                json.dumps({"sync_version": 7, "profesores": [{"id": 1}], "guardias": []}),
+                encoding="utf-8",
+            )
             return True
 
         backend.download_file.side_effect = _download
 
         session = MagicMock()
-        session.query.return_value.count.return_value = 1
-        with (
-            patch("sync.sync_manager._count_json_records", side_effect=[2, 1, 1]),
-            patch("sync.data_exporter.DataExporter.import_from_json", return_value=True) as importer,
-        ):
+        with patch("sync.data_exporter.DataExporter.import_from_json", return_value=True) as importer:
             ok = manager.sync_on_startup(session=session)
 
         assert ok is True
         importer.assert_called_once()
+        # Reemplazo, no fusión: así las bajas se propagan.
+        assert importer.call_args.kwargs["clear_existing"] is True
+        assert manager.version_descargada == 7
+        assert manager.puede_subir is True
 
-    def test_sync_startup_blocks_if_remote_has_fewer_records(self, tmp_path):
+    def test_sync_startup_rechaza_un_fichero_corrupto(self, tmp_path):
         manager, backend = self._make_manager(tmp_path)
         backend.file_exists.return_value = True
-        backend.get_last_modified.return_value = datetime.now() + timedelta(seconds=60)
-
-        local_json = manager.local_data_dir / "guardias_patio_data.json"
-        local_json.write_text(json.dumps({"profesores": [{"id": 1}, {"id": 2}]}), encoding="utf-8")
 
         def _download(_remote, out_path):
-            out_path.write_text(json.dumps({"profesores": []}), encoding="utf-8")
+            out_path.write_text("{esto no es json", encoding="utf-8")
             return True
 
         backend.download_file.side_effect = _download
 
-        with patch("sync.sync_manager._count_json_records", side_effect=[0, 2]):
-            ok = manager.sync_on_startup()
+        ok = manager.sync_on_startup(session=MagicMock())
 
         assert ok is False
+        assert manager.puede_subir is False
 
-    def test_sync_startup_imports_when_db_empty_and_local_json(self, tmp_path):
+    def test_sin_descarga_no_se_permite_subir(self, tmp_path):
+        """El escenario del portátil sin cobertura: no se machaca lo bueno con datos viejos."""
         manager, backend = self._make_manager(tmp_path)
-        backend.file_exists.return_value = False
-        local_json = manager.local_data_dir / "guardias_patio_data.json"
-        local_json.write_text(json.dumps({"profesores": [{"id": 1}]}), encoding="utf-8")
+        backend.file_exists.return_value = True
+        backend.download_file.return_value = False
 
-        session = MagicMock()
-        session.query.return_value.first.return_value = None  # BD vacía
+        assert manager.sync_on_startup(session=MagicMock()) is False
+        assert manager.sync_on_shutdown(session=MagicMock()) is False
+        backend.upload_file.assert_not_called()
 
-        with (
-            patch("sync.sync_manager._count_json_records", return_value=1),
-            patch("sync.data_exporter.DataExporter.import_from_json", return_value=True) as importer,
-        ):
-            ok = manager.sync_on_startup(session=session)
+    def test_no_sobrescribe_si_alguien_subio_entretanto(self, tmp_path):
+        manager, backend = self._make_manager(tmp_path)
+        manager.puede_subir = True
+        manager.version_descargada = 4
+        backend.file_exists.return_value = True
 
-        assert ok is True
-        importer.assert_called_once()
+        def _download(_remote, out_path):
+            out_path.write_text(json.dumps({"sync_version": 9, "profesores": []}), encoding="utf-8")
+            return True
+
+        backend.download_file.side_effect = _download
+
+        def _export(_session, out_path, sync_version=0):
+            out_path.write_text(json.dumps({"sync_version": sync_version}), encoding="utf-8")
+            return True
+
+        with patch("sync.data_exporter.DataExporter.export_to_json", side_effect=_export):
+            ok = manager.sync_on_shutdown(session=MagicMock())
+
+        assert ok is False
+        backend.upload_file.assert_not_called()
+        assert manager._leer_metadata_local()["pendiente_subida"] is True
+
+    def test_una_subida_pendiente_bloquea_la_descarga_siguiente(self, tmp_path):
+        """Si la sesión anterior no llegó a subir, no se descarga encima de su trabajo."""
+        manager, backend = self._make_manager(tmp_path)
+        manager._guardar_metadata_local(3, pendiente_subida=True)
+
+        ok = manager.sync_on_startup(session=MagicMock())
+
+        assert ok is False
+        assert manager.puede_subir is False
+        backend.download_file.assert_not_called()
 
     def test_sync_shutdown_without_session_and_no_json(self, tmp_path):
         manager, _backend = self._make_manager(tmp_path)
@@ -461,6 +490,7 @@ class TestSyncManagerFlow:
 
     def test_sync_shutdown_export_error(self, tmp_path):
         manager, _backend = self._make_manager(tmp_path)
+        manager.puede_subir = True
         session = MagicMock()
         with patch("sync.data_exporter.DataExporter.export_to_json", return_value=False):
             ok = manager.sync_on_shutdown(session=session)
@@ -468,11 +498,13 @@ class TestSyncManagerFlow:
 
     def test_sync_shutdown_upload_success_and_progress(self, tmp_path):
         manager, backend = self._make_manager(tmp_path)
+        manager.puede_subir = True
+        backend.file_exists.return_value = False
         backend.upload_file.return_value = True
         session = MagicMock()
         progress = []
 
-        def _export(_session, out_path):
+        def _export(_session, out_path, sync_version=0):
             out_path.write_text(json.dumps({"ok": True}), encoding="utf-8")
             return True
 
@@ -489,9 +521,11 @@ class TestSyncManagerFlow:
 
     def test_sync_shutdown_upload_exception(self, tmp_path):
         manager, backend = self._make_manager(tmp_path)
+        manager.puede_subir = True
+        backend.file_exists.return_value = False
         session = MagicMock()
 
-        def _export(_session, out_path):
+        def _export(_session, out_path, sync_version=0):
             out_path.write_text(json.dumps({"ok": True}), encoding="utf-8")
             return True
 

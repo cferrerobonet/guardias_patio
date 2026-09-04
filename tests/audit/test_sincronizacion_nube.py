@@ -1,12 +1,15 @@
-"""Regresión de los hallazgos SYNC (subida y descarga en la nube).
+"""Sincronización en la nube: escenarios de dos equipos y hallazgos pendientes.
 
-Los tests marcados xfail(strict=True) describen el comportamiento que hace falta para que
-un mismo usuario maneje los mismos datos desde cualquier equipo. Ver auditoria/12.
+El modelo es «la copia de la nube es la buena»: una cuenta la usa una persona, que
+puede cambiar de equipo, y el flujo es descargar, editar y subir. Ver auditoria/12.
+
+Los tests marcados xfail(strict=True) describen lo que aún falta (Fase 2).
 """
 
 import inspect
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import create_engine
@@ -14,123 +17,220 @@ from sqlalchemy.orm import sessionmaker
 
 from infrastructure.database.models import Base, Profesor, Zona
 from sync.data_exporter import DataExporter
+from sync.sync_manager import LocalSyncBackend, SyncManager
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def _sesion_nueva():
-    """Simula un equipo distinto: su propia base de datos, con sus propios identificadores."""
+def _base_de_datos():
+    """Una base de datos propia, como la que tendría cada equipo."""
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)()
 
 
-# ---------------------------------------------------------------------------
-# SYNC-001: no caer a modo local en silencio
-# ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=True,
-    reason="SYNC-001: get_default_backend() devuelve un backend local cuando el servidor "
-    "no está configurado o falla, sin que nada se lo comunique al usuario",
-)
-def test_no_hay_caida_silenciosa_a_local():
-    from sync import backend_factory
-
-    fuente = inspect.getsource(backend_factory.get_default_backend)
-    assert "create_sync_backend(\"local\")" not in fuente, (
-        "el reserva a local debe ser una decisión explícita del usuario, no un efecto colateral"
-    )
+@pytest.fixture
+def nube(tmp_path):
+    """El servidor compartido por todos los equipos."""
+    return LocalSyncBackend(tmp_path / "nube")
 
 
-def test_la_caida_a_local_al_menos_queda_registrada():
-    """Comportamiento actual que debe conservarse hasta que se corrija SYNC-001."""
-    from sync import backend_factory
+@pytest.fixture
+def equipo(tmp_path, nube):
+    """Fabrica equipos distintos que comparten cuenta y servidor."""
 
-    fuente = inspect.getsource(backend_factory.get_default_backend)
-    assert "NO se sincronizará con la nube" in fuente
+    def _crear(nombre: str, usuario: str = "jefatura"):
+        carpeta = tmp_path / nombre
+        carpeta.mkdir(parents=True, exist_ok=True)
+        with patch("sync.sync_manager.get_user_data_directory", return_value=carpeta):
+            gestor = SyncManager(nube, usuario)
+        return gestor, _base_de_datos()
+
+    return _crear
 
 
 # ---------------------------------------------------------------------------
-# SYNC-005: identificadores locales que colisionan entre equipos
+# El escenario que se pide: cambiar de equipo sin perder nada
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=True,
-    reason="SYNC-005: la fusión empareja por id autoincremental, así que dos zonas distintas "
-    "creadas en equipos distintos se consideran la misma",
-)
-def test_zonas_de_dos_equipos_no_se_mezclan(tmp_path):
-    equipo_a = _sesion_nueva()
-    equipo_a.add(Zona(nombre_zona="Patio Principal"))
-    equipo_a.commit()
+def test_cambiar_de_equipo_lleva_los_datos(equipo):
+    portatil, bd_portatil = equipo("portatil")
+    sobremesa, bd_sobremesa = equipo("sobremesa")
 
-    equipo_b = _sesion_nueva()
-    equipo_b.add(Zona(nombre_zona="Cafetería"))
-    equipo_b.commit()
+    # En el portátil se da de alta el curso.
+    assert portatil.sync_on_startup(session=bd_portatil) is True
+    bd_portatil.add(Zona(nombre_zona="Patio Principal"))
+    bd_portatil.add(Profesor(nombre_completo="García, Ana", horas_contrato=25.0, porcentaje_jornada=100, turno="mañana"))
+    bd_portatil.commit()
+    assert portatil.sync_on_shutdown(session=bd_portatil) is True
 
-    # Ambas zonas recibieron el id 1 en su propia base de datos.
-    assert equipo_a.query(Zona).one().id == equipo_b.query(Zona).one().id == 1
-
-    exportado = tmp_path / "datos.json"
-    assert DataExporter.export_to_json(equipo_a, exportado)
-    assert DataExporter.import_from_json(equipo_b, exportado, clear_existing=False)
-
-    nombres = sorted(z.nombre_zona for z in equipo_b.query(Zona).all())
-    assert nombres == ["Cafetería", "Patio Principal"], (
-        f"se esperaban las dos zonas y quedaron: {nombres}"
-    )
+    # Al día siguiente se sigue desde el sobremesa.
+    assert sobremesa.sync_on_startup(session=bd_sobremesa) is True
+    assert [z.nombre_zona for z in bd_sobremesa.query(Zona).all()] == ["Patio Principal"]
+    assert [p.nombre_completo for p in bd_sobremesa.query(Profesor).all()] == ["García, Ana"]
 
 
-# ---------------------------------------------------------------------------
-# SYNC-006: las bajas deben propagarse
-# ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=True,
-    reason="SYNC-006: la importación solo crea y actualiza, así que un registro eliminado "
-    "en otro equipo reaparece en la siguiente sincronización",
-)
-def test_un_profesor_eliminado_no_reaparece(tmp_path):
-    equipo_a = _sesion_nueva()
-    equipo_a.add_all(
+def test_una_baja_hecha_en_un_equipo_llega_al_otro(equipo):
+    """SYNC-006: antes el registro eliminado reaparecía en la siguiente sincronización."""
+    portatil, bd_portatil = equipo("portatil")
+    sobremesa, bd_sobremesa = equipo("sobremesa")
+
+    portatil.sync_on_startup(session=bd_portatil)
+    bd_portatil.add_all(
         [
-            Profesor(nombre_completo="García, Ana", horas_contrato=25.0, turno="mañana"),
-            Profesor(nombre_completo="López, Luis", horas_contrato=20.0, turno="tarde"),
+            Profesor(nombre_completo="García, Ana", horas_contrato=25.0, porcentaje_jornada=100, turno="mañana"),
+            Profesor(nombre_completo="López, Luis", horas_contrato=20.0, porcentaje_jornada=80, turno="tarde"),
         ]
     )
-    equipo_a.commit()
+    bd_portatil.commit()
+    portatil.sync_on_shutdown(session=bd_portatil)
 
-    exportado = tmp_path / "datos.json"
-    assert DataExporter.export_to_json(equipo_a, exportado)
+    # El sobremesa recibe los dos y da de baja a uno.
+    sobremesa.sync_on_startup(session=bd_sobremesa)
+    assert bd_sobremesa.query(Profesor).count() == 2
+    bd_sobremesa.delete(
+        bd_sobremesa.query(Profesor).filter_by(nombre_completo="López, Luis").one()
+    )
+    bd_sobremesa.commit()
+    sobremesa.sync_on_shutdown(session=bd_sobremesa)
 
-    # El equipo A da de baja a uno y vuelve a sincronizar más tarde.
-    equipo_a.delete(equipo_a.query(Profesor).filter_by(nombre_completo="López, Luis").one())
-    equipo_a.commit()
+    # El portátil vuelve a abrir: la baja está aplicada y no resucita.
+    portatil.sync_on_startup(session=bd_portatil)
+    assert [p.nombre_completo for p in bd_portatil.query(Profesor).all()] == ["García, Ana"]
 
-    # El equipo B ya tenía el fichero anterior y lo importa.
-    assert DataExporter.import_from_json(equipo_a, exportado, clear_existing=False)
 
-    nombres = sorted(p.nombre_completo for p in equipo_a.query(Profesor).all())
-    assert nombres == ["García, Ana"], f"el profesor dado de baja ha vuelto: {nombres}"
+def test_dos_equipos_no_mezclan_entidades_distintas(equipo):
+    """SYNC-005: los identificadores locales ya no chocan, porque no se fusiona."""
+    portatil, bd_portatil = equipo("portatil")
+    sobremesa, bd_sobremesa = equipo("sobremesa")
+
+    portatil.sync_on_startup(session=bd_portatil)
+    bd_portatil.add(Zona(nombre_zona="Patio Principal"))
+    bd_portatil.commit()
+    portatil.sync_on_shutdown(session=bd_portatil)
+
+    # El sobremesa tenía otra zona suya, creada sin conexión, con el mismo id 1.
+    bd_sobremesa.add(Zona(nombre_zona="Cafetería"))
+    bd_sobremesa.commit()
+    assert bd_sobremesa.query(Zona).one().id == 1
+
+    sobremesa.sync_on_startup(session=bd_sobremesa)
+
+    # Manda la nube: queda su zona, no una mezcla de las dos.
+    zonas = [z.nombre_zona for z in bd_sobremesa.query(Zona).all()]
+    assert zonas == ["Patio Principal"]
+
+
+def test_la_version_crece_en_cada_subida(equipo):
+    portatil, bd = equipo("portatil")
+    portatil.sync_on_startup(session=bd)
+    bd.add(Zona(nombre_zona="Patio"))
+    bd.commit()
+
+    portatil.sync_on_shutdown(session=bd)
+    assert portatil.version_descargada == 1
+    portatil.sync_on_shutdown(session=bd)
+    assert portatil.version_descargada == 2
 
 
 # ---------------------------------------------------------------------------
-# SYNC-007: la subida debe ser atómica
+# Las defensas
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=True,
-    reason="SYNC-007: sftp.put escribe directamente sobre la ruta final; un corte deja "
-    "truncado el único fichero del servidor",
-)
+def test_sin_descargar_no_se_sube(equipo, nube):
+    """El portátil sin cobertura no puede machacar el trabajo bueno."""
+    portatil, bd = equipo("portatil")
+    otro, bd_otro = equipo("otro")
+    otro.sync_on_startup(session=bd_otro)
+    bd_otro.add(Zona(nombre_zona="Zona buena"))
+    bd_otro.commit()
+    otro.sync_on_shutdown(session=bd_otro)
+
+    with patch.object(LocalSyncBackend, "download_file", return_value=False):
+        assert portatil.sync_on_startup(session=bd) is False
+    assert portatil.puede_subir is False
+    assert portatil.sync_on_shutdown(session=bd) is False
+
+    # Lo que hay en la nube sigue intacto.
+    comprobador, bd_comprobador = equipo("comprobador")
+    comprobador.sync_on_startup(session=bd_comprobador)
+    assert [z.nombre_zona for z in bd_comprobador.query(Zona).all()] == ["Zona buena"]
+
+
+def test_no_se_sobrescribe_lo_que_subio_otro_equipo(equipo):
+    portatil, bd_portatil = equipo("portatil")
+    sobremesa, bd_sobremesa = equipo("sobremesa")
+
+    portatil.sync_on_startup(session=bd_portatil)
+    bd_portatil.add(Zona(nombre_zona="Inicial"))
+    bd_portatil.commit()
+    portatil.sync_on_shutdown(session=bd_portatil)
+
+    # Los dos abren con la misma versión.
+    sobremesa.sync_on_startup(session=bd_sobremesa)
+    portatil.sync_on_startup(session=bd_portatil)
+
+    # El sobremesa termina antes y sube.
+    bd_sobremesa.add(Zona(nombre_zona="Del sobremesa"))
+    bd_sobremesa.commit()
+    assert sobremesa.sync_on_shutdown(session=bd_sobremesa) is True
+
+    # El portátil ya no puede sobrescribirlo a ciegas.
+    bd_portatil.add(Zona(nombre_zona="Del portatil"))
+    bd_portatil.commit()
+    assert portatil.sync_on_shutdown(session=bd_portatil) is False
+    assert portatil._leer_metadata_local()["pendiente_subida"] is True
+
+
+def test_un_fichero_corrupto_no_borra_los_datos_locales(equipo):
+    portatil, bd = equipo("portatil")
+    portatil.sync_on_startup(session=bd)
+    bd.add(Zona(nombre_zona="Mis datos"))
+    bd.commit()
+    portatil.sync_on_shutdown(session=bd)
+
+    def _descarga_corrupta(_remote, destino):
+        destino.write_text("{ esto no es json", encoding="utf-8")
+        return True
+
+    with patch.object(LocalSyncBackend, "download_file", side_effect=_descarga_corrupta):
+        assert portatil.sync_on_startup(session=bd) is False
+
+    assert [z.nombre_zona for z in bd.query(Zona).all()] == ["Mis datos"]
+
+
+def test_se_conservan_versiones_anteriores_en_el_servidor(equipo, nube):
+    portatil, bd = equipo("portatil")
+    portatil.sync_on_startup(session=bd)
+    bd.add(Zona(nombre_zona="Primera"))
+    bd.commit()
+    portatil.sync_on_shutdown(session=bd)
+    bd.add(Zona(nombre_zona="Segunda"))
+    bd.commit()
+    portatil.sync_on_shutdown(session=bd)
+
+    anterior = portatil.get_remote_path("guardias_patio_data.json.1")
+    assert nube.file_exists(anterior), "debe quedar una copia de la versión anterior"
+
+
+def test_no_hay_caida_silenciosa_a_local():
+    """SYNC-001: si el servidor no sirve, se avisa; nunca se guarda en local fingiendo nube."""
+    from sync import backend_factory
+
+    fuente = inspect.getsource(backend_factory.get_default_backend)
+    assert 'create_sync_backend("local")' not in fuente
+    assert "SyncConfigurationError" in fuente
+
+
 def test_la_subida_es_atomica():
+    """SYNC-007: un corte de conexión no puede dejar truncado el fichero bueno."""
+    from sync.sync_manager import LocalSyncBackend as Local
     from sync.sync_manager import SFTPSyncBackend
 
-    fuente = inspect.getsource(SFTPSyncBackend.upload_file)
-    assert "rename" in fuente or "posix_rename" in fuente, (
-        "subir a un nombre temporal y renombrar al final, que en SFTP es atómico"
-    )
+    assert "posix_rename" in inspect.getsource(SFTPSyncBackend.upload_file)
+    assert "os.replace" in inspect.getsource(Local.upload_file)
 
 
 # ---------------------------------------------------------------------------
-# SYNC-013: las credenciales no deben viajar en el fichero de datos
+# Pendiente: Fase 2, que la cuenta sea de verdad
 # ---------------------------------------------------------------------------
 @pytest.mark.xfail(
     strict=True,
@@ -138,7 +238,7 @@ def test_la_subida_es_atomica():
     "con una clave propia de cada equipo, así que ni sirve fuera ni debería estar ahí",
 )
 def test_el_fichero_sincronizado_no_lleva_credenciales(tmp_path):
-    sesion = _sesion_nueva()
+    sesion = _base_de_datos()
     exportado = tmp_path / "datos.json"
     assert DataExporter.export_to_json(sesion, exportado)
 
@@ -147,15 +247,11 @@ def test_el_fichero_sincronizado_no_lleva_credenciales(tmp_path):
     assert not presentes, f"el fichero de datos incluye credenciales: {presentes}"
 
 
-# ---------------------------------------------------------------------------
-# SYNC-009: la cuenta debe poder usarse desde otro equipo
-# ---------------------------------------------------------------------------
 def test_las_cuentas_no_salen_del_equipo():
-    """Deja constancia de por qué hoy no se puede entrar con la misma cuenta desde otro equipo."""
+    """SYNC-009: por qué hoy no se puede entrar con la misma cuenta desde otro equipo."""
     from sync.sync_manager import UserAuth
 
-    fuente = inspect.getsource(UserAuth)
-    assert "users.json" in fuente
+    assert "users.json" in inspect.getsource(UserAuth)
     exportador = (ROOT / "src" / "sync" / "data_exporter.py").read_text(encoding="utf-8")
     if "usuarios" not in exportador:
         pytest.xfail(

@@ -12,12 +12,11 @@ import logging
 import os
 import re
 import shutil
+import tempfile
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
-
-from sqlalchemy.exc import SQLAlchemyError
 
 from core.paths import get_user_data_directory
 
@@ -70,6 +69,16 @@ class SyncBackend(ABC):
         """Obtiene la fecha de última modificación."""
         pass
 
+    def move_file(self, remote_src: str, remote_dst: str) -> bool:
+        """
+        Renombra un fichero ya subido. Se usa para publicar una subida de forma
+        atómica y para rotar versiones anteriores.
+
+        Los backends que no sepan renombrar devuelven False y quien llama decide;
+        la rotación es un extra, nunca un requisito para que la subida funcione.
+        """
+        return False
+
 
 class LocalSyncBackend(SyncBackend):
     """
@@ -94,7 +103,11 @@ class LocalSyncBackend(SyncBackend):
         try:
             dest = self._safe_path(remote_path)
             dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(local_path, dest)
+            # Escribir a un temporal y renombrar: si algo se corta a mitad, el
+            # fichero bueno sigue intacto en lugar de quedar truncado.
+            temporal = dest.with_name(dest.name + ".tmp")
+            shutil.copy2(local_path, temporal)
+            os.replace(temporal, dest)
             logger.info(f"Archivo subido: {remote_path}")
             return True
         except ValueError as e:
@@ -134,6 +147,19 @@ class LocalSyncBackend(SyncBackend):
         if path.exists():
             return datetime.fromtimestamp(path.stat().st_mtime)
         return None
+
+    def move_file(self, remote_src: str, remote_dst: str) -> bool:
+        try:
+            origen = self._safe_path(remote_src)
+            destino = self._safe_path(remote_dst)
+            if not origen.exists():
+                return False
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(origen, destino)
+            return True
+        except (ValueError, OSError) as e:
+            logger.warning(f"No se pudo renombrar {remote_src} → {remote_dst}: {e}")
+            return False
 
 
 class SFTPSyncBackend(SyncBackend):
@@ -297,7 +323,19 @@ class SFTPSyncBackend(SyncBackend):
             full_path = f"{self.base_dir}/{remote_path}"
             # Crear directorios remotos si no existen
             self._mkdir_p(str(Path(full_path).parent))
-            self.sftp.put(str(local_path), full_path)
+            # Subir a un temporal y renombrar. El renombrado en SFTP es atómico,
+            # así que un corte de conexión nunca deja el fichero bueno a medias.
+            temporal = f"{full_path}.tmp"
+            self.sftp.put(str(local_path), temporal)
+            try:
+                self.sftp.posix_rename(temporal, full_path)
+            except (OSError, AttributeError):
+                # Servidores sin la extensión posix-rename: borrar y renombrar.
+                try:
+                    self.sftp.remove(full_path)
+                except OSError:
+                    pass
+                self.sftp.rename(temporal, full_path)
             logger.info(f"Archivo subido vía SFTP: {remote_path}")
             return True
         except ValueError as e:
@@ -305,6 +343,25 @@ class SFTPSyncBackend(SyncBackend):
             return False
         except (OSError, ValueError) as e:
             logger.error(f"Error subiendo vía SFTP: {e}")
+            return False
+
+    def move_file(self, remote_src: str, remote_dst: str) -> bool:
+        try:
+            origen = f"{self.base_dir}/{self._sanitize_path(remote_src)}"
+            destino = f"{self.base_dir}/{self._sanitize_path(remote_dst)}"
+            if not self._ensure_connected():
+                return False
+            try:
+                self.sftp.posix_rename(origen, destino)
+            except (OSError, AttributeError):
+                try:
+                    self.sftp.remove(destino)
+                except OSError:
+                    pass
+                self.sftp.rename(origen, destino)
+            return True
+        except (ValueError, OSError) as e:
+            logger.warning(f"No se pudo renombrar {remote_src} → {remote_dst}: {e}")
             return False
 
     def download_file(self, remote_path: str, local_path: Path) -> bool:
@@ -353,7 +410,9 @@ class SFTPSyncBackend(SyncBackend):
         except ValueError:
             return None
         except (ConnectionError, OSError) as e:
-            logger.warning(f"Error de conexión o I/O al obtener last_modified para {remote_path}: {e}")
+            logger.warning(
+                f"Error de conexión o I/O al obtener last_modified para {remote_path}: {e}"
+            )
             return None
 
     def _mkdir_p(self, remote_dir: str):
@@ -392,7 +451,7 @@ def _count_json_records(path: Path) -> int:
         data = _json.loads(path.read_text(encoding="utf-8"))
         keys = ("profesores", "guardias", "zonas", "cursos_escolares", "ausencias")
         return sum(len(data.get(k, [])) for k in keys)
-    except (ValueError, KeyError) as e:
+    except (ValueError, KeyError):
         return 0
 
 
@@ -401,12 +460,20 @@ class SyncManager:
     Gestor principal de sincronización multi-usuario.
     """
 
+    #: Copias anteriores que se conservan en el servidor antes de reemplazar.
+    VERSIONES_CONSERVADAS = 3
+
     def __init__(self, backend: SyncBackend, username: str):
         self.backend = backend
         self.username = username
         self.user_hash = self._hash_username(username)
         self.local_data_dir = get_user_data_directory() / self.user_hash
         self.local_data_dir.mkdir(parents=True, exist_ok=True)
+        #: Versión de los datos con los que trabaja esta sesión.
+        self.version_descargada = 0
+        #: Hasta que la descarga de arranque salga bien, esta sesión no puede subir.
+        self.puede_subir = False
+        self.motivo_bloqueo: Optional[str] = None
 
         logger.info(f"SyncManager inicializado para usuario: {username}")
 
@@ -418,189 +485,261 @@ class SyncManager:
         """Obtiene la ruta remota para un archivo del usuario."""
         return f"users/{self.user_hash}/{filename}"
 
+    # ------------------------------------------------------------------
+    # Modelo: la copia de la nube es la buena.
+    # Una cuenta la usa una persona, que puede cambiar de equipo. El flujo es
+    # descargar, editar y subir. Por eso al abrir se reconstruye la base local
+    # con lo que hay en la nube (así las bajas se propagan y los identificadores
+    # no chocan) y no se permite subir si antes no se pudo descargar.
+    # ------------------------------------------------------------------
+
+    def _leer_version(self, path: Path) -> int:
+        """Lee el número de versión que lleva dentro un fichero de datos."""
+        try:
+            datos = json.loads(path.read_text(encoding="utf-8"))
+            return int(datos.get("sync_version", 0))
+        except (OSError, ValueError, TypeError):
+            return 0
+
+    def _es_fichero_de_datos_valido(self, path: Path) -> bool:
+        """Comprueba que lo descargado es una exportación y no un fichero a medias."""
+        try:
+            datos = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            logger.error("El fichero descargado no es un JSON válido")
+            return False
+        if not isinstance(datos, dict):
+            logger.error("El fichero descargado no tiene la estructura esperada")
+            return False
+        esperadas = {"profesores", "zonas", "configuracion", "guardias", "ausencias",
+                     "cursos_escolares"}
+        if not (set(datos) & esperadas):
+            logger.error("El fichero descargado no contiene ninguna sección conocida")
+            return False
+        return True
+
+    def _rotar_versiones_remotas(self) -> None:
+        """
+        Conserva unas cuantas copias anteriores en el servidor antes de reemplazar.
+
+        Son renombrados, así que cuestan poco, y dan a dónde volver si una subida
+        resulta ser mala. Es un extra: si falla, la subida sigue adelante.
+        """
+        nombre = "guardias_patio_data.json"
+        try:
+            for n in range(self.VERSIONES_CONSERVADAS - 1, 0, -1):
+                origen = self.get_remote_path(f"{nombre}.{n}")
+                if self.backend.file_exists(origen):
+                    self.backend.move_file(origen, self.get_remote_path(f"{nombre}.{n + 1}"))
+            actual = self.get_remote_path(nombre)
+            if self.backend.file_exists(actual):
+                self.backend.move_file(actual, self.get_remote_path(f"{nombre}.1"))
+        except (OSError, ValueError) as e:
+            logger.warning(f"No se pudieron rotar las versiones remotas: {e}")
+
+    def _bloquear_subida(self, motivo: str) -> None:
+        self.puede_subir = False
+        self.motivo_bloqueo = motivo
+        logger.error(f"🔒 Subida bloqueada: {motivo}")
+
     def sync_on_startup(self, session=None) -> bool:
         """
-        Sincroniza datos al iniciar la aplicación.
-        Descarga el JSON de la nube y lo importa a la base de datos.
+        Trae los datos de la nube y reconstruye con ellos la base local.
 
-        Args:
-            session: Sesión de SQLAlchemy (opcional, para importar datos)
+        Si algo impide descargar, la sesión queda sin permiso para subir. Es
+        preferible trabajar sabiendo que no hay nube a machacar el trabajo bueno
+        con una copia vieja.
         """
-        logger.info("Iniciando sincronización de inicio...")
+        logger.info("Iniciando sincronización de arranque...")
+        self.puede_subir = False
+        self.motivo_bloqueo = None
 
-        # Archivo JSON con todos los datos
         json_filename = "guardias_patio_data.json"
         local_json_path = self.local_data_dir / json_filename
         remote_path = self.get_remote_path(json_filename)
 
-        success = True
+        metadata = self._leer_metadata_local()
+        if metadata.get("pendiente_subida"):
+            self._bloquear_subida(
+                "La sesión anterior no llegó a subir sus cambios. No se descarga nada "
+                "para no perderlos; hay que resolver ese envío pendiente primero."
+            )
+            return False
 
-        if self.backend.file_exists(remote_path):
-            # Archivo existe en la nube
-            remote_modified = self.backend.get_last_modified(remote_path)
-            local_modified = None
+        try:
+            existe_remoto = self.backend.file_exists(remote_path)
+        except (OSError, ValueError, RuntimeError) as e:
+            self._bloquear_subida(f"No se pudo consultar el servidor: {e}")
+            return False
 
-            if local_json_path.exists():
-                local_modified = datetime.fromtimestamp(local_json_path.stat().st_mtime)
+        if not existe_remoto:
+            # Cuenta nueva: todavía no hay nada en la nube y lo local es el origen.
+            logger.info("No hay datos en la nube para esta cuenta; se subirán al cerrar")
+            self.version_descargada = int(metadata.get("sync_version", 0))
+            self.puede_subir = True
+            self._guardar_metadata_local(self.version_descargada, pendiente_subida=False)
+            return True
 
-            # Descargar si no existe localmente o si el remoto es más nuevo
-            if not local_modified or (remote_modified and remote_modified > local_modified):
-                logger.info("📥 Descargando datos actualizados desde la nube...")
+        tmp_path = Path(tempfile.mktemp(suffix=".json"))
+        try:
+            if not self.backend.download_file(remote_path, tmp_path):
+                self._bloquear_subida("No se pudieron descargar los datos de la nube")
+                return False
 
-                # Descargar a un archivo temporal para comparar antes de sobreescribir
-                import tempfile
-                tmp_path = Path(tempfile.mktemp(suffix=".json"))
+            if not self._es_fichero_de_datos_valido(tmp_path):
+                self._bloquear_subida("Los datos descargados no son válidos")
+                return False
+
+            version_remota = self._leer_version(tmp_path)
+
+            if session is not None:
+                from sync.data_exporter import DataExporter
+
+                logger.info("📥 Reconstruyendo la base local con los datos de la nube...")
+                if not DataExporter.import_from_json(session, tmp_path, clear_existing=True):
+                    self._bloquear_subida("No se pudieron importar los datos descargados")
+                    return False
+
+            shutil.move(str(tmp_path), str(local_json_path))
+            self.version_descargada = version_remota
+            self.puede_subir = True
+            self._guardar_metadata_local(version_remota, pendiente_subida=False)
+            logger.info(f"✅ Datos de la nube aplicados (versión {version_remota})")
+            return True
+
+        except (OSError, ValueError, RuntimeError) as e:
+            self._bloquear_subida(f"Error al sincronizar con la nube: {e}")
+            return False
+        finally:
+            if tmp_path.exists():
                 try:
-                    if self.backend.download_file(remote_path, tmp_path):
-                        # Guardia de seguridad: no sobreescribir si el remoto tiene menos registros
-                        # que el local, para evitar que un JSON vacío/corrupto machaque datos reales.
-                        remote_records = _count_json_records(tmp_path)
-                        local_records = _count_json_records(local_json_path) if local_json_path.exists() else 0
-
-                        if local_records > 0 and remote_records < local_records:
-                            logger.warning(
-                                f"⚠️  SYNC BLOQUEADO: el JSON remoto tiene {remote_records} registros "
-                                f"pero el local tiene {local_records}. "
-                                "Se conservan los datos locales para evitar pérdida de datos."
-                            )
-                            success = False
-                        else:
-                            # Reemplazar el local con el remoto
-                            import shutil
-                            shutil.move(str(tmp_path), str(local_json_path))
-                            logger.info(f"✓ Datos descargados a {local_json_path} ({remote_records} registros)")
-
-                            # Importar JSON a la base de datos si se proporciona session
-                            if session:
-                                from sync.data_exporter import DataExporter
-
-                                logger.info("📊 Importando datos a la base de datos local...")
-                                if DataExporter.import_from_json(
-                                    session, local_json_path, clear_existing=False
-                                ):
-                                    logger.info("✅ Datos importados exitosamente")
-                                else:
-                                    logger.error("❌ Error al importar datos")
-                                    success = False
-                    else:
-                        success = False
-                finally:
-                    if tmp_path.exists():
-                        tmp_path.unlink()
-            else:
-                logger.info("✓ Datos locales están actualizados")
-        else:
-            logger.info("ℹ️  No hay datos en la nube aún")
-
-        # Importar JSON local a la BD si la BD está vacía y el JSON tiene datos.
-        # Cubre el caso de reinstalación o nueva compilación donde la BD se crea vacía
-        # pero el JSON local (procedente de una sync anterior) ya tiene todos los datos.
-        if session and local_json_path.exists() and _count_json_records(local_json_path) > 0:
-            try:
-                from infrastructure.database.models import Profesor
-                db_empty = session.query(Profesor).first() is None
-                if db_empty:
-                    from sync.data_exporter import DataExporter
-                    logger.info("📊 BD vacía con JSON local disponible — importando datos...")
-                    if DataExporter.import_from_json(session, local_json_path, clear_existing=False):
-                        logger.info("✅ Datos del JSON local importados a la BD")
-                    else:
-                        logger.error("❌ Error al importar JSON local a la BD")
-            except SQLAlchemyError as e:
-                logger.error(f"Error en importación de BD vacía: {e}")
-
-        # Guardar timestamp de última sincronización
-        self._save_sync_metadata()
-
-        return success
+                    tmp_path.unlink()
+                except OSError:
+                    pass
 
     def sync_on_shutdown(self, session=None, progress_callback=None) -> bool:
         """
-        Sincroniza datos al cerrar la aplicación.
-        Exporta la base de datos a JSON y la sube a la nube.
+        Sube el estado actual, reemplazando el de la nube.
 
-        Args:
-            session: Sesión de SQLAlchemy (obligatorio, para exportar datos)
-            progress_callback: Función callback para reportar progreso
-                               Debe aceptar (step: str, details: dict)
+        Antes comprueba que nadie haya subido nada desde que empezó esta sesión.
+        Si lo hay, no sobrescribe: deja el envío pendiente y avisa.
         """
         logger.info("Iniciando sincronización de cierre...")
 
-        # Exportar base de datos a JSON
+        if not self.puede_subir:
+            motivo = self.motivo_bloqueo or "la sesión no descargó los datos al abrir"
+            logger.error(f"⛔ No se sube nada: {motivo}")
+            if progress_callback:
+                progress_callback("error", {"message": motivo})
+            return False
+
         json_filename = "guardias_patio_data.json"
         local_json_path = self.local_data_dir / json_filename
+        remote_path = self.get_remote_path(json_filename)
+        nueva_version = self.version_descargada + 1
 
         if session:
             from sync.data_exporter import DataExporter
 
             logger.info("📤 Exportando base de datos a JSON...")
-
             if progress_callback:
                 progress_callback("exporting", {"message": "Exportando datos de la base de datos"})
 
-            if not DataExporter.export_to_json(session, local_json_path):
+            if not DataExporter.export_to_json(
+                session, local_json_path, sync_version=nueva_version
+            ):
                 logger.error("❌ Error al exportar datos a JSON")
                 if progress_callback:
                     progress_callback("error", {"message": "Error al exportar datos"})
                 return False
-            logger.info("✓ Datos exportados exitosamente")
-        else:
-            logger.warning("⚠️  No se proporcionó sesión de base de datos, omitiendo exportación")
-            if not local_json_path.exists():
-                logger.error("❌ No hay datos JSON para sincronizar")
-                if progress_callback:
-                    progress_callback("error", {"message": "No hay datos para sincronizar"})
-                return False
+        elif not local_json_path.exists():
+            logger.error("❌ No hay datos que subir")
+            if progress_callback:
+                progress_callback("error", {"message": "No hay datos para sincronizar"})
+            return False
 
-        # Obtener tamaño del archivo para mostrar en progreso
-        file_size_kb = 0
-        if local_json_path.exists():
-            file_size_kb = local_json_path.stat().st_size // 1024
+        file_size_kb = local_json_path.stat().st_size // 1024 if local_json_path.exists() else 0
 
-        # Conectar al servidor
         if progress_callback:
-            progress_callback("connecting", {"message": "Conectando al servidor SFTP"})
+            progress_callback("connecting", {"message": "Conectando al servidor"})
 
-        # Subir JSON a la nube
-        success = True
-        if local_json_path.exists():
-            remote_path = self.get_remote_path(json_filename)
-            logger.info("☁️  Subiendo datos a la nube...")
-
-            if progress_callback:
-                progress_callback(
-                    "uploading",
-                    {"message": "Subiendo archivo a la nube", "file_size_kb": file_size_kb},
-                )
-
-            try:
-                if self.backend.upload_file(local_json_path, remote_path):
-                    logger.info("✅ Datos sincronizados con la nube")
-                    if progress_callback:
-                        progress_callback("complete", {"message": "Sincronización completada"})
-                else:
-                    logger.error("❌ Error al subir datos a la nube")
-                    success = False
-                    if progress_callback:
-                        progress_callback("error", {"message": "Error al subir datos a la nube"})
-            except (OSError, IOError, RuntimeError) as e:
-                logger.error(f"❌ Excepción al subir datos a la nube: {e}")
-                success = False
-                if progress_callback:
-                    progress_callback("error", {"message": f"Error de conexión: {str(e)}"})
-        else:
-            logger.warning(f"❌ {json_filename} no existe localmente")
-            success = False
-            if progress_callback:
-                progress_callback("error", {"message": f"{json_filename} no existe"})
-
-        # Guardar timestamp de última sincronización
+        # ¿Ha subido alguien algo mientras trabajábamos?
+        tmp_path = Path(tempfile.mktemp(suffix=".json"))
         try:
-            self._save_sync_metadata()
-        except (ValueError, TypeError, OSError) as e:
-            logger.warning(f"Error al guardar metadata de sincronización: {e}")
+            if self.backend.file_exists(remote_path) and self.backend.download_file(
+                remote_path, tmp_path
+            ):
+                version_remota = self._leer_version(tmp_path)
+                if version_remota != self.version_descargada:
+                    motivo = (
+                        f"El servidor tiene la versión {version_remota} y esta sesión partió "
+                        f"de la {self.version_descargada}. No se sobrescribe."
+                    )
+                    logger.error(f"⛔ {motivo}")
+                    self._guardar_metadata_local(self.version_descargada, pendiente_subida=True)
+                    if progress_callback:
+                        progress_callback("error", {"message": motivo})
+                    return False
+        except (OSError, ValueError, RuntimeError) as e:
+            logger.warning(f"No se pudo comprobar la versión remota: {e}")
+        finally:
+            if tmp_path.exists():
+                try:
+                    tmp_path.unlink()
+                except OSError:
+                    pass
 
-        return success
+        if progress_callback:
+            progress_callback(
+                "uploading",
+                {"message": "Subiendo a la nube", "file_size_kb": file_size_kb},
+            )
+
+        self._rotar_versiones_remotas()
+
+        try:
+            if self.backend.upload_file(local_json_path, remote_path):
+                self.version_descargada = nueva_version
+                self._guardar_metadata_local(nueva_version, pendiente_subida=False)
+                logger.info(f"✅ Datos sincronizados (versión {nueva_version})")
+                if progress_callback:
+                    progress_callback("complete", {"message": "Sincronización completada"})
+                self._save_sync_metadata()
+                return True
+            raise OSError("el servidor rechazó la subida")
+        except (OSError, IOError, RuntimeError) as e:
+            logger.error(f"❌ No se pudieron subir los datos: {e}")
+            self._guardar_metadata_local(self.version_descargada, pendiente_subida=True)
+            if progress_callback:
+                progress_callback("error", {"message": f"Error al subir: {e}"})
+            return False
+
+    def _ruta_metadata_local(self) -> Path:
+        return self.local_data_dir / "last_sync.json"
+
+    def _leer_metadata_local(self) -> dict:
+        try:
+            return json.loads(self._ruta_metadata_local().read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+
+    def _guardar_metadata_local(self, sync_version: int, pendiente_subida: bool) -> None:
+        metadata = self._leer_metadata_local()
+        metadata.update(
+            {
+                "username": self.username,
+                "user_hash": self.user_hash,
+                "sync_version": sync_version,
+                "pendiente_subida": pendiente_subida,
+                "last_sync": datetime.now().isoformat(),
+            }
+        )
+        try:
+            self._ruta_metadata_local().write_text(
+                json.dumps(metadata, indent=2), encoding="utf-8"
+            )
+        except OSError as e:
+            logger.warning(f"No se pudo guardar el estado de sincronización: {e}")
 
     def _save_sync_metadata(self):
         """Guarda metadata de sincronización."""
