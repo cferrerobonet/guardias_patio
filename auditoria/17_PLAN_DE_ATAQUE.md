@@ -15,11 +15,11 @@ tipo: referencia
 
 | Orden | Lote | IDs | Resultado esperado | Sev. máx. | Riesgo | Esfuerzo | Depende de | Tests / gates | Estado |
 | ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | **Diagnóstico Windows** | CRW-006, BLD-007 | `faulthandler` en frozen; build `-Debug`; protocolo ejecutado en el PC Windows; causa confirmada | P2 | bajo | XS+S | – | log + Event Viewer adjuntos al registro | pendiente |
+| 0 | **Diagnóstico Windows** | ~~CRW-006~~, ~~BLD-007~~ | `faulthandler` activo y build `-Diagnostico` ✅ **v5.44.0**. Falta ejecutar el protocolo en el PC Windows y confirmar la causa | P2 | bajo | XS+S | – | log + Visor de eventos adjuntos al registro | **parcial** — bloqueado por acceso a Windows |
 | 1 | **Frontera solver↔Qt y cancelación** | CRW-001, CRW-004, CRW-002, CRW-008 | Ningún callback de OR-Tools toca Qt; cancelar detiene el solver; log en vivo vía señal | P0 | medio | M | 0 | `tests/audit/test_crash_windows_regresion.py` sin xfail; 10 generaciones Windows | pendiente |
 | 2 | **Hilos seguros** | CRW-005, CRW-007, CRW-009 | excepthook thread-aware; sync post-generación en worker; commit del audit log | P1 | bajo | S | 1 | ídem + `test_excepthook_no_crea_widgets_fuera_del_hilo_gui` | pendiente |
 | 3 | **Sesión por hilo (generación y sync)** | CRW-003 (parcial), ESC-003 (parcial) | `SessionFactory` inyectada; worker de generación y `SyncWorker` con sesión propia; DTOs a la GUI | P1 | alto | L | 2 | `test_worker_no_reutiliza_sesion_gui`; suite completa; BD en fichero | pendiente |
-| 4 | **Suite ejecutable de una pasada** | QA-008, QA-001, QA-002, QA-003, QA-005, QA-009, QA-010 | Los 4 tests que abren modales se parchean o se reescriben; `make venv` con todas las deps; `xfail_strict`; tests del formulario real | P1 | bajo | M | – | `pytest tests/` termina sin bloqueos; 0 fallos; 0 `xpassed` | pendiente |
+| 4 | **Suite ejecutable de una pasada** | ~~QA-008~~, QA-001, QA-002, QA-003, QA-005, QA-009, QA-010 | Guarda de diálogos modales ✅ **v5.44.0**: 2.454 tests pasan de una pasada en 47 s. Falta `make venv` con todas las deps, `xfail_strict`, y migrar los tests del formulario muerto | P1 | bajo | M | – | `pytest tests/` termina sin bloqueos ✅; 0 fallos ✅ | **parcial** |
 | 5 | **Build reproducible** | BLD-001, BLD-002, BLD-003, BLD-005 | Specs versionados; un script por plataforma; versión única; actualizador multiplataforma | P1 | bajo | S | – | `test_version_unica`; build en ambas plataformas | pendiente |
 | 6 | **Preflight y panel de estado** | UXF-001, UXF-002, UXF-008, FUN-001 | Caso de uso `PreflightGeneracion`; vista Inicio con checklist; botones con motivo | P1 | medio | M | 3 | `tests/audit/test_guardarrailes_flujo.py` sin xfail; GP-1 ≤ 3 clics | pendiente |
 | 7 | **Refresco de curso y dirty state** | UXA-007, UXA-004, UXF-004 | `ContentWrapper` expone widget; refresco atómico; guard central | P1 | medio | M | 6 | spies por vista A→B→A; matriz dirty×salida | pendiente |
@@ -46,5 +46,5 @@ tipo: referencia
 
 Dos frentes, independientes entre sí:
 
-1. **Lote 0** en la máquina Windows: compilar la variante de diagnóstico, reproducir el cierre y registrar el resultado en [[06_CRASH_WINDOWS_GENERACION]] §5. Es lo único que puede confirmar cuál de las causas CRW produce el cierre.
-2. **Lote 4**, que puede empezar ya en local: desbloquear los 4 tests modales para que la suite vuelva a ejecutarse de una sola pasada. Sin eso, ningún lote posterior tiene red de seguridad.
+1. **Lote 0** en la máquina Windows: ya se puede compilar la variante de diagnóstico con `scripts/build_windows.ps1 -Diagnostico` y la app deja rastro en `faulthandler.log`. Falta ejecutar el protocolo de [[06_CRASH_WINDOWS_GENERACION]] §5 y registrar el resultado. Es lo único que puede confirmar cuál de las causas CRW produce el cierre.
+2. **Lote 1** (frontera solver↔Qt, CRW-001/004/002), que ya tiene red de seguridad: la suite completa vuelve a ejecutarse de una pasada y `tests/audit` cubre cada hallazgo.

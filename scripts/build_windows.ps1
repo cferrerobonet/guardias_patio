@@ -3,7 +3,11 @@
 param(
     [string]$Version = "",
     [switch]$SkipClean = $false,
-    [switch]$SkipInstaller = $false
+    [switch]$SkipInstaller = $false,
+    # Compila una variante con consola visible y faulthandler activo, para
+    # diagnosticar cierres silenciosos. No genera instalador.
+    # Uso: powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1 -Diagnostico
+    [switch]$Diagnostico = $false
 )
 
 $WorkspacePath = $PSScriptRoot | Split-Path -Parent
@@ -103,8 +107,15 @@ New-Item -ItemType Directory -Path $OutputPath -Force | Out-Null
 
 Write-Step "PASO 3: Compilar ejecutable con PyInstaller"
 
+$AppName = if ($Diagnostico) { "GuardiasDePatio-debug" } else { "GuardiasDePatio" }
+$ModoVentana = if ($Diagnostico) { "--console" } else { "--windowed" }
+if ($Diagnostico) {
+    Write-Info "Modo diagnostico: consola visible, nombre $AppName, sin instalador"
+    $env:PYTHONFAULTHANDLER = "1"
+}
+
 $PyInstallerArgs = @(
-    "--windowed",
+    $ModoVentana,
     "--noconfirm",
     "--clean",
     "--icon=imagenes/logo.ico",
@@ -127,16 +138,24 @@ $PyInstallerArgs = @(
     "--hidden-import=reportlab",
     "--distpath", $DistPath,
     "--workpath", $BuildPath,
-    "--name", "GuardiasDePatio",
+    "--name", $AppName,
     "src/main.py"
 )
 
 & $PythonPath -m PyInstaller @PyInstallerArgs
-if (-not (Test-Path (Join-Path $DistPath "GuardiasDePatio\GuardiasDePatio.exe"))) {
-    Write-ErrorMsg "PyInstaller falló: no se generó dist\\GuardiasDePatio\\GuardiasDePatio.exe"
+$ExeGenerado = Join-Path $DistPath "$AppName\$AppName.exe"
+if (-not (Test-Path $ExeGenerado)) {
+    Write-ErrorMsg "PyInstaller fallo: no se genero $ExeGenerado"
     exit 1
 }
-Write-Success "Ejecutable generado"
+Write-Success "Ejecutable generado: $ExeGenerado"
+
+if ($Diagnostico) {
+    Write-Info "Lanza el exe desde cmd y reproduce el fallo:"
+    Write-Info "  $ExeGenerado 2>&1 | Tee-Object -FilePath crash.txt"
+    Write-Info "Revisa tambien %APPDATA%\GuardiasDePatio\logs\faulthandler.log"
+    exit 0
+}
 
 if ($SkipInstaller) {
     Write-Success "Compilación completa sin instalador (--SkipInstaller)"

@@ -492,3 +492,89 @@ def pytest_collection_modifyitems(config, items):
         else:
             # Por defecto, marcar como unit
             item.add_marker(pytest.mark.unit)
+
+
+# ============================================================================
+# GUARDA CONTRA DIÁLOGOS MODALES (QA-008)
+# ============================================================================
+
+
+class DialogoModalMostrado:
+    """Registro de un diálogo que la UI intentó abrir durante un test."""
+
+    def __init__(self, clase: str, titulo: str, texto: str):
+        self.clase = clase
+        self.titulo = titulo
+        self.texto = texto
+
+    def __repr__(self) -> str:
+        return f"<{self.clase} {self.titulo!r}: {self.texto[:60]!r}>"
+
+
+@pytest.fixture(autouse=True)
+def dialogos_modales(request):
+    """
+    Impide que un diálogo modal bloquee la suite indefinidamente.
+
+    `QMessageBox.exec()` y `QDialog.exec()` detienen el hilo hasta que alguien
+    pulsa un botón. En una ejecución desatendida no hay nadie, así que el test
+    se cuelga para siempre y ni pytest-timeout lo rescata: su manejador de
+    señales no llega a ejecutarse mientras Qt está dentro de su bucle de
+    eventos en C++.
+
+    Esta fixture sustituye ambos métodos por una respuesta inmediata y segura,
+    y deja constancia de cada diálogo para poder afirmar sobre él:
+
+        def test_avisa_al_borrar(dialogos_modales, ...):
+            form.eliminar()
+            assert any("eliminar" in d.texto.lower() for d in dialogos_modales)
+
+    La respuesta es el botón por defecto del propio diálogo; si no lo tiene, se
+    elige la opción más conservadora disponible (No, luego Cancel, luego Ok).
+
+    Para probar el comportamiento modal real, marcar el test con
+    `@pytest.mark.modales_reales`.
+    """
+    mostrados: list = []
+
+    if "modales_reales" in request.keywords:
+        yield mostrados
+        return
+
+    from PyQt6.QtWidgets import QDialog, QMessageBox
+
+    exec_messagebox_original = QMessageBox.exec
+    exec_dialog_original = QDialog.exec
+
+    def _respuesta_segura(caja: "QMessageBox") -> int:
+        boton_defecto = caja.defaultButton()
+        if boton_defecto is not None:
+            return caja.standardButton(boton_defecto)
+        disponibles = caja.standardButtons()
+        for opcion in (
+            QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Close,
+            QMessageBox.StandardButton.Ok,
+        ):
+            if disponibles & opcion:
+                return opcion
+        return QMessageBox.StandardButton.NoButton
+
+    def _exec_messagebox(self):
+        mostrados.append(DialogoModalMostrado("QMessageBox", self.windowTitle(), self.text()))
+        return _respuesta_segura(self)
+
+    def _exec_dialog(self):
+        mostrados.append(
+            DialogoModalMostrado(type(self).__name__, self.windowTitle(), "")
+        )
+        return QDialog.DialogCode.Rejected
+
+    QMessageBox.exec = _exec_messagebox
+    QDialog.exec = _exec_dialog
+    try:
+        yield mostrados
+    finally:
+        QMessageBox.exec = exec_messagebox_original
+        QDialog.exec = exec_dialog_original

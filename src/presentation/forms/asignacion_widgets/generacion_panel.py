@@ -6,6 +6,8 @@ Combina:
 - Análisis de incidencias y recomendaciones
 """
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QComboBox,

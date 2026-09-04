@@ -177,12 +177,13 @@ class TestImportExportFormImportar:
 
     @patch("presentation.forms.import_export_form.QFileDialog.getOpenFileName")
     @patch("presentation.forms.import_export_form.ExportadorDatos.importar_todo")
-    @patch("presentation.forms.import_export_form.QMessageBox.question")
-    @patch("presentation.forms.import_export_form.QMessageBox.information")
+    @patch(
+        "presentation.forms.import_export_form.QMessageBox.exec",
+        return_value=QMessageBox.StandardButton.Yes,
+    )
     def test_importar_datos_exitoso(
         self,
-        mock_info,
-        mock_question,
+        mock_exec,
         mock_importar,
         mock_file_dialog,
         qtbot,
@@ -199,7 +200,6 @@ class TestImportExportFormImportar:
 
         # Configurar mocks
         mock_file_dialog.return_value = (temp_file.name, "JSON Files (*.json)")
-        mock_question.return_value = QMessageBox.StandardButton.Yes
         mock_importar.return_value = {
             "profesores": 2,
             "zonas": 2,
@@ -235,16 +235,18 @@ class TestImportExportFormImportar:
         assert texto == "" or "cancelado" in texto.lower()
 
     @patch("presentation.forms.import_export_form.QFileDialog.getOpenFileName")
-    @patch("presentation.forms.import_export_form.QMessageBox.question")
+    @patch(
+        "presentation.forms.import_export_form.QMessageBox.exec",
+        return_value=QMessageBox.StandardButton.No,
+    )
     def test_importar_datos_confirmacion_rechazada(
-        self, mock_question, mock_file_dialog, qtbot, session
+        self, mock_exec, mock_file_dialog, qtbot, session
     ):
         """Test: Rechazar confirmación cancela la importación."""
         temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
         temp_file.close()
 
         mock_file_dialog.return_value = (temp_file.name, "JSON Files (*.json)")
-        mock_question.return_value = QMessageBox.StandardButton.No  # Usuario rechaza
 
         form = ImportExportForm(session)
         qtbot.addWidget(form)

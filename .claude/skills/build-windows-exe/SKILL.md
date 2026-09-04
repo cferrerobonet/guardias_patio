@@ -38,7 +38,16 @@ powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1
 
 ## Variante de diagnóstico (cierres silenciosos)
 
-Hasta que el script incorpore `-Debug`, ejecutar PyInstaller a mano con consola y faulthandler:
+Disponible en el script desde la versión 5.44.0:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1 -Diagnostico
+.\dist\GuardiasDePatio-debug\GuardiasDePatio-debug.exe 2>&1 | Tee-Object -FilePath crash.txt
+```
+
+Compila con consola visible, activa `PYTHONFAULTHANDLER`, nombra el artefacto `GuardiasDePatio-debug` y no genera instalador. La aplicación además escribe `%APPDATA%\GuardiasDePatio\logs\faulthandler.log` con la pila de todos los hilos si se produce un fallo nativo.
+
+Equivalente manual, si hiciera falta ajustar algo:
 
 ```powershell
 $env:PYTHONFAULTHANDLER = "1"

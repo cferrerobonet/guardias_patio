@@ -17,6 +17,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from core.paths import get_user_data_directory
 
 try:

@@ -66,6 +66,7 @@ Mejoras funcionales propuestas (FUN-001…012) se listan en 07 y en el registro 
 
 - **Veredicto:** `PARCIAL`. Hay evidencia estática reproducible y comandos ejecutados; faltan la reproducción del cierre en la máquina Windows y la validación manual con lector de pantalla.
 - **Bloqueantes de certificación:** CRW-001/002/003/005, UXA-001…007, BLD-001/002, QA-001.
+- **Resueltos y verificados en v5.44.0:** QA-008 (la suite completa vuelve a ejecutarse de una pasada: 2.454 pasan en 47 s), CRW-006 (`faulthandler`), CRW-008 (nombres indefinidos), BLD-007 (build de diagnóstico).
 - **Gates ejecutados en este commit:** colección pytest, ruff, bandit y suite completa por fichero (2.376 pasan, 0 fallan, 4 ficheros bloqueados). Detalle y método en [[01_BASELINE_Y_ADAPTADOR]].
 
 ## Orden de lectura recomendado

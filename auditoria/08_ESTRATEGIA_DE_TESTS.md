@@ -15,14 +15,15 @@ tipo: referencia
 
 | Aspecto | Evidencia | Valoración |
 | --- | --- | --- |
-| Volumen | 2.432 tests colectados en 131 ficheros. Ejecutados por fichero: **2.376 pasan, 0 fallan**, 12 omitidos, 5 `xfail`, 7 `xpassed`, ~39 sin ejecutar por cuelgue | Alto y, salvo los cuelgues, sano |
+| Volumen | **2.454 pasan, 0 fallan**, 11 omitidos, 29 `xfail`, en una sola pasada de 47 s (v5.44.0) | Sano |
 | Base de datos | `sqlite:///:memory:` con rollback por test (`tests/conftest.py:28-62`) | Rápido, pero no prueba fichero, PRAGMAs, `journal_mode`, bloqueos ni migraciones reales |
 | UI | pytest-qt con `QT_QPA_PLATFORM=offscreen` | Correcto; sin tests de afinidad de hilos ni de `ejecutar_con_progreso` con solver real |
 | Formulario real de generación | `tests/ui/test_ui_asignacion.py` prueba `AsignacionGuardiasForm`, que no está registrada en la app | Cobertura ilusoria (QA-003) |
 | Entorno | `.venv` sin intérprete válido; `/opt/homebrew/bin/python3.11` carece de `hypothesis`, `PyJWT`, `pytest-xdist`, `pytest-timeout`, `playwright` → 6 errores de colección y `make test-fast` inoperativo | QA-001 |
 | Configuración | `pytest.ini` fuerza `--cov` y `filterwarnings = error`; `timeout = 300` sin plugin | QA-002 |
 | Fallo tolerado | fichero de reglas de agentes (`.claude/`) documenta un test roto que "no se corrige" | QA-005 |
-| Hilos | Ningún test verifica que widgets sólo se toquen en el hilo GUI | QA-004 |
+| Hilos | Ningún test verificaba la afinidad de hilo; ahora `tests/audit` la cubre | QA-004 |
+| Diálogos modales | Guarda `dialogos_modales` en `tests/conftest.py`: ningún `exec()` sin parchear puede volver a bloquear la suite | QA-008 resuelto |
 | Build | Ningún test de spec/versión/artefacto | BLD |
 
 ## 2. Pirámide objetivo

@@ -24,9 +24,9 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | CRW-003 | P1 | alta | Session SQLAlchemy compartida entre GUI, worker, sync y cierre | `db_manager.py:344-350`, `ccleaner_main_window.py:262-270`, `main.py:390-398` | NUEVO | 06 |
 | CRW-004 | P2 | alta | Cancelar se ignora en las fases del solver (10 avisos) y sólo se propaga vía callback C++ | `asignador_guardias_cpsat.py:77-82`, `progress_worker.py:41-42` | NUEVO (verificado con test) | 06 |
 | CRW-005 | P1 | alta | `sys.excepthook` crea QMessageBox desde cualquier hilo; SyncWorker captura poco | `main.py:60-95`, `sync_progress_dialog.py:34-47` | NUEVO | 06 |
-| CRW-006 | P2 | alta | Sin faulthandler; StreamHandler muerto en windowed; logging duplicado | `main.py:31-34`, `core/logging.py:149-179` | NUEVO | 06 |
+| CRW-006 | P2 | alta | ~~Sin faulthandler; StreamHandler muerto en windowed~~ | `main.py:31-46` | **RESUELTO VERIFICADO v5.44.0** · `tests/audit/test_crash_windows_regresion.py::test_main_activa_faulthandler`. Queda pendiente el logging duplicado (COD-005) | 06 |
 | CRW-007 | P2 | alta | Sync SFTP en el hilo GUI tras generar; excepciones escapan del slot | `generacion_panel.py:314-316,327-328,416-427` | NUEVO | 06 |
-| CRW-008 | P3 | alta | `SQLAlchemyError` sin importar en tres módulos | `generacion_panel.py:413`, `gestion_cursos_widget.py:572`, `sync_manager.py:507` | NUEVO | 06 |
+| CRW-008 | P3 | alta | ~~`SQLAlchemyError` sin importar en tres módulos y `Container` sin declarar~~ | `generacion_panel.py`, `gestion_cursos_widget.py`, `sync_manager.py`, `wiring.py` | **RESUELTO VERIFICADO v5.44.0** · `tests/audit/test_calidad_estatica.py::test_sin_nombres_indefinidos` | 06 |
 | CRW-009 | P2 | media | Audit log de generación sin commit propio | `generar_guardias.py:150-153` | NUEVO | 06 |
 
 ## UXA · Accesibilidad y UX (Ola 4, 2026-08-04, reconciliados en este commit)
@@ -89,7 +89,7 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | BLD-004 | P2 | alta | Sin CI, sin firma/notarización | NUEVO | 09 |
 | BLD-005 | P2 | alta | Actualizador sólo `.dmg`; Windows sin actualizaciones | NUEVO | 09 |
 | BLD-006 | P3 | alta | Instalador con admin y sin cierre de instancias | NUEVO | 09 |
-| BLD-007 | P2 | alta | Sin build de diagnóstico con consola | NUEVO | 09 |
+| BLD-007 | P2 | alta | ~~Sin build de diagnóstico con consola~~ | **RESUELTO VERIFICADO v5.44.0** · `scripts/build_windows.ps1 -Diagnostico` | 09 |
 
 ## QA · Tests
 
@@ -102,8 +102,8 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | QA-005 | P2 | alta | Fallo preexistente tolerado; skips amplios | NUEVO | 08 |
 | QA-006 | P3 | alta | Nada sobre SQLite en fichero ni migraciones reales | NUEVO (fixture creada) | 08 |
 | QA-007 | P3 | alta | Sin E2E web | NUEVO (suite creada) | 08 |
-| QA-008 | P1 | alta | Cuatro tests bloquean la suite indefinidamente al abrir un diálogo modal y esperar en `msg.exec()`: `test_config_widgets_extra.py::TestSMTPConfigWidgetExtra::test_toggle_editable` (+ variante SFTP), `test_import_export_form.py::TestImportExportFormExportar::test_exportar_datos_error`, `ui/test_ui_asignacion.py::TestAsignacionGeneracion::test_generar_con_mock_algoritmo_exitoso`, `ui/test_ui_persistencia_campos.py::TestProfesorCamposHorarioPersis::test_horas_manana_persiste`. `pytest-timeout` no los rescata y además descarta cualquier alarma externa. ~39 tests nunca llegan a ejecutarse | NUEVO (verificado) | 08 |
-| QA-009 | P3 | alta | 7 marcas `xfail` obsoletas que ya pasan (6 en `test_dialogs_basic.py`, 1 en `test_gestor_ausencias.py`): ocultan comportamiento correcto y con `strict` serían fallos | NUEVO (verificado) | 08 |
+| QA-008 | P1 | alta | ~~Cuatro tests bloquean la suite indefinidamente al abrir un diálogo modal~~ | **RESUELTO VERIFICADO v5.44.0** · guarda `dialogos_modales` en `tests/conftest.py` + dos tests de importación corregidos. La suite completa pasa de una sola pasada en 47 s | 08 |
+| QA-009 | P3 | alta | 7 tests marcados `xfail` pasan al ejecutarse aislados pero fallan dentro de la suite completa (`test_dialogs_basic.py` ×6, `test_gestor_ausencias.py` ×1): dependen del orden de ejecución | NUEVO (verificado) | 08 |
 | QA-010 | P3 | alta | `tests/__pycache__` conserva bytecode compilado desde una ubicación anterior del proyecto (carpeta OneDrive inexistente) y de otra versión de pytest | NUEVO (verificado) | 08 |
 
 ## COD · Calidad de código

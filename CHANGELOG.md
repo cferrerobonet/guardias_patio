@@ -5,6 +5,28 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.44.0] - 2026-09-04
+
+### 🎯 Resumen
+La suite de tests vuelve a poder ejecutarse entera de una sola pasada (2.454 tests en 47 s) y la app deja rastro cuando se cierra por un fallo nativo, requisito para diagnosticar el cierre en Windows.
+
+### ✨ Added
+- `tests/conftest.py`: guarda `dialogos_modales`, una fixture automática que impide que un `QMessageBox.exec()` o `QDialog.exec()` sin parchear bloquee la suite indefinidamente. Responde con el botón por defecto del propio diálogo, o con la opción más conservadora disponible, y deja constancia de cada diálogo para poder afirmar sobre él. Se desactiva con el marcador `modales_reales`.
+- `src/main.py`: `faulthandler` activo contra `logs/faulthandler.log`, que escribe la pila de todos los hilos ante un fallo nativo. Es la única evidencia disponible cuando la aplicación se cierra de golpe en un build congelado.
+- `scripts/build_windows.ps1`: parámetro `-Diagnostico` que compila con consola visible, activa `PYTHONFAULTHANDLER`, nombra el artefacto `GuardiasDePatio-debug` y omite el instalador.
+
+### Fixed
+- Cuatro tests bloqueaban la suite para siempre al abrir diálogos modales que nadie podía responder: `test_toggle_editable` (SMTP y SFTP), `test_exportar_datos_error`, `test_generar_con_mock_algoritmo_exitoso` y `test_horas_manana_persiste`. Ninguno podía pasar desatendido y dejaban ~39 tests sin ejecutar.
+- `test_importar_datos_exitoso` y `test_importar_datos_confirmacion_rechazada` sustituían `QMessageBox.question`, que el código no usa: la confirmación real se construye como instancia y se abre con `exec()`. Ahora sustituyen el método correcto y el primero deja de fallar.
+- `SQLAlchemyError` se usaba sin importar en `generacion_panel.py`, `gestion_cursos_widget.py` y `sync_manager.py`: cuando ocurría el error que se pretendía manejar saltaba un `NameError` y se perdía el mensaje real. `Container` se anotaba sin declarar en `wiring.py`.
+- `src/main.py` creaba un `StreamHandler` sobre `sys.stdout` incluso en un build sin consola, donde vale `None`.
+
+### 🧹 Housekeeping
+- Retiradas las marcas de fallo esperado de los dos tests de auditoría que la corrección deja en verde.
+- Registro de hallazgos y plan de ataque actualizados: QA-008, CRW-006, CRW-008 y BLD-007 pasan a resueltos y verificados.
+
+---
+
 ## [5.43.0] - 2026-09-04
 
 ### 🎯 Resumen

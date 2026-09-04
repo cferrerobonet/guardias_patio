@@ -104,7 +104,7 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 - **Prueba:** `::test_excepthook_no_crea_widgets_fuera_del_hilo_gui`.
 - **Esfuerzo:** XS.
 
-### [CRW-006] Sin `faulthandler`, con handler de consola muerto y logging configurado dos veces
+### [CRW-006] ~~Sin `faulthandler`, con handler de consola muerto~~ ✅ RESUELTO v5.44.0
 
 - **Tipo:** deuda · **Severidad:** P2 · **Confianza:** alta.
 - **Ubicación:** `src/main.py:31-34` (`StreamHandler(sys.stdout)`; en build windowed `sys.stdout` es `None`), `src/core/logging.py:149-179` (segunda configuración de handlers), evidencia de líneas triplicadas en `logs/guardias_patio.log` (cada registro aparece 3 veces).
@@ -120,7 +120,7 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 - **Recomendación:** reutilizar `SyncWorker`; capturar `Exception` con mensaje claro; no mezclar el resultado de la generación con el de la sync.
 - **Esfuerzo:** S.
 
-### [CRW-008] `SQLAlchemyError` sin importar en tres módulos
+### [CRW-008] ~~`SQLAlchemyError` sin importar en tres módulos~~ ✅ RESUELTO v5.44.0
 
 - **Tipo:** bug · **Severidad:** P3 · **Confianza:** alta (ruff F821).
 - **Ubicación:** `src/presentation/forms/asignacion_widgets/generacion_panel.py:413`, `src/presentation/widgets/gestion_cursos_widget.py:572`, `src/sync/sync_manager.py:507`.
@@ -138,16 +138,16 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 
 1. **Recoger el último log:** `%APPDATA%\GuardiasDePatio\logs\app_*.log` más reciente. Enviar las últimas 200 líneas. Buscar `Guardando guardias`, `Proceso completado`, `Error en WorkerThread`, `EXCEPCIÓN NO MANEJADA`.
 2. **Visor de eventos:** Windows Logs → Application → error 1000 con `GuardiasDePatio.exe`; anotar *Faulting module* (`Qt6Core.dll`, `Qt6Widgets.dll`, `python311.dll`, `sqlite3.dll`, `_pywrapcp*.pyd`/`ortools`), *Exception code* (0xC0000005 = acceso inválido; 0x40000015/0xC0000409 = abort/terminate).
-3. **Ejecutar con consola:** compilar con la skill `build-windows-exe` y `-Debug` (añade `--console` y `PYTHONFAULTHANDLER=1`), lanzar desde `cmd`, generar, copiar la salida.
+3. **Ejecutar con consola:** compilar con `powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1 -Diagnostico` (ya disponible desde v5.44.0: añade `--console` y activa `PYTHONFAULTHANDLER`), lanzar `dist\GuardiasDePatio-debug\GuardiasDePatio-debug.exe` desde `cmd`, generar y copiar la salida. Revisar además `%APPDATA%\GuardiasDePatio\logs\faulthandler.log`, que ahora recoge la pila de todos los hilos ante un fallo nativo.
 4. **Aislar el solver:** repetir con algoritmo "Rápido (v4 Híbrido)". Si no falla, CRW-001 confirmado. Si falla igual, priorizar CRW-003/005.
 5. **Aislar la sync:** repetir con la variable `DISABLE_SESSION_LOCK=1` y sin red. Si deja de fallar, priorizar CRW-005/007.
 6. Registrar resultados en [[30_REGISTRO_HALLAZGOS]] con veredicto y actualizar la confianza de CRW-001.
 
 ## 6. Orden de remediación
 
-1. CRW-005 y CRW-006 (XS, sin riesgo): dan visibilidad y eliminan un vector de cierre.
+1. ~~CRW-006~~ ✅ v5.44.0. Queda CRW-005 (XS, sin riesgo): elimina un vector de cierre.
 2. CRW-001 y CRW-004 (M+S): frontera solver↔Qt y cancelación cooperativa.
-3. CRW-002 y CRW-008 (S).
+3. CRW-002 (S). ~~CRW-008~~ ✅ v5.44.0.
 4. CRW-007 y CRW-009 (S).
 5. CRW-003 (L) por lotes: generación → sync → resto de vistas.
 

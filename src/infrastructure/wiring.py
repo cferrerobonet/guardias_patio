@@ -26,7 +26,10 @@ Nota: Esta es la "fase 2 opcional" de ARQ-04. Main.py todavía usa Session
 directamente (backward compatible). Wiring DI es opt-in por ahora.
 """
 
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional
+
+if TYPE_CHECKING:  # sólo para anotaciones: evita el import circular en tiempo de ejecución
+    from infrastructure.container import Container
 
 from core.logging import get_logger
 

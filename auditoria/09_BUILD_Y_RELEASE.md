@@ -36,7 +36,7 @@ tipo: referencia
 | BLD-004 | P2 | Sin CI ni firma: no hay verificación automática de tests/lint/build; macOS sólo firma ad-hoc (Gatekeeper avisa), Windows sin firma (SmartScreen) | ausencia de `.github/` | Workflow con matriz `macos-latest`/`windows-latest`: tests → build → artefactos → release al etiquetar; notarización con Apple ID cuando haya cuenta de desarrollador; firma Windows con certificado o al menos hash publicado |
 | BLD-005 | P2 | El actualizador sólo busca `.dmg`; Windows nunca recibe actualizaciones; `make release` sólo sube el DMG | `src/utils/update_checker.py:26-30`, `Makefile:39-51` | Buscar asset por plataforma (`.dmg`/`-Setup.exe`); subir ambos al release |
 | BLD-006 | P3 | Instalador exige admin e instala en Program Files; no cierra la app en ejecución al actualizar | `installer_windows.iss:13-18` | `PrivilegesRequired=lowest`, `DefaultDirName={localappdata}\Programs\Guardias de Patio`, `CloseApplications=yes` |
-| BLD-007 | P2 | No hay variante de build con consola para diagnosticar cierres (ligado a CRW-006) | `scripts/build_windows.ps1:107` | Parámetro `-Debug` que añade `--console` y nombre `GuardiasDePatio-debug.exe` |
+| BLD-007 | ~~P2~~ | ~~No hay variante de build con consola~~ ✅ **RESUELTO v5.44.0** | `scripts/build_windows.ps1` | `-Diagnostico` compila con `--console`, activa `PYTHONFAULTHANDLER`, nombra el artefacto `GuardiasDePatio-debug` y omite el instalador |
 
 ## 3. Skills creados
 

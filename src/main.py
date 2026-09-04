@@ -4,6 +4,7 @@ Punto de entrada para la aplicación con diseño CCleaner
 Ejecutar: python src/main_ccleaner.py
 """
 
+import faulthandler
 import glob
 import logging
 import os
@@ -28,10 +29,22 @@ for _old_log in glob.glob(str(log_dir / "app_*.log")):
 
 log_file = log_dir / f"app_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
+# Un fallo nativo (Qt, OR-Tools, sqlite) mata el proceso sin dejar traza de Python.
+# faulthandler escribe la pila de todos los hilos en ese momento, que es la única
+# evidencia disponible cuando la app se cierra de golpe en un build congelado.
+_faulthandler_file = open(log_dir / "faulthandler.log", "a", encoding="utf-8")
+faulthandler.enable(file=_faulthandler_file, all_threads=True)
+
+# En un build "windowed" no hay consola: sys.stdout es None y StreamHandler(None)
+# escribe en stderr o falla. Sólo se añade cuando hay salida real.
+_handlers: list[logging.Handler] = [logging.FileHandler(log_file, encoding="utf-8")]
+if sys.stdout is not None:
+    _handlers.append(logging.StreamHandler(sys.stdout))
+
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler(log_file, encoding="utf-8"), logging.StreamHandler(sys.stdout)],
+    handlers=_handlers,
 )
 
 from PyQt6.QtCore import QLibraryInfo, QLocale, Qt, QTranslator

@@ -168,10 +168,13 @@ def test_syncworker_captura_cualquier_excepcion():
 # ---------------------------------------------------------------------------
 # CRW-006: faulthandler en builds congelados
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(strict=True, reason="CRW-006: main.py no activa faulthandler")
 def test_main_activa_faulthandler():
+    """CRW-006 resuelto en v5.44.0: sin esto un fallo nativo no deja ninguna traza."""
     fuente = (ROOT / "src" / "main.py").read_text(encoding="utf-8")
-    assert "faulthandler" in fuente
+    assert "faulthandler.enable(" in fuente
+    assert "sys.stdout is not None" in fuente, (
+        "en un build windowed sys.stdout es None: no debe crearse StreamHandler"
+    )
 
 
 # ---------------------------------------------------------------------------

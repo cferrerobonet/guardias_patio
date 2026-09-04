@@ -19,10 +19,8 @@ def _ruff(*args):
     )
 
 
-@pytest.mark.xfail(
-    strict=True, reason="CRW-008: 4 nombres indefinidos (SQLAlchemyError ×3, Container)"
-)
 def test_sin_nombres_indefinidos():
+    """CRW-008 resuelto en v5.44.0: ruff no debe encontrar ningún nombre indefinido."""
     r = _ruff("src", "--select", "F821", "--quiet")
     if r.returncode not in (0, 1):
         pytest.skip(f"ruff no disponible: {r.stderr[:200]}")
