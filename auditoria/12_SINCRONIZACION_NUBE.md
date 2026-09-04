@@ -16,9 +16,16 @@ tipo: referencia
 > Cualquier usuario, desde cualquier equipo, usando el mismo usuario y contraseña, maneja la misma información sin perder datos y sin transportar copias de seguridad a mano.
 
 > [!NOTE] Modelo de uso decidido por CarlosFB (2026-09-04)
-> Un solo usuario edita los datos de su cuenta, y a veces cambia de equipo. **No hay edición simultánea.**
-> Esto acota mucho el trabajo: la nube pasa a ser la copia buena de la cuenta y el flujo es
-> descargar, editar, subir. No hace falta fusionar nada, y por tanto se descarta la Fase 3.
+> **Varias cuentas, cada una con sus propios datos.** Dentro de cada cuenta trabaja una sola
+> persona, que a veces cambia de equipo. No hay edición simultánea de una misma cuenta.
+>
+> Para la mecánica de sincronización esto no cambia nada: la nube es la copia buena de cada
+> cuenta y el flujo es descargar, editar, subir. Se descarta la Fase 3, la fusión real.
+>
+> Lo que sí cambia es la prioridad de la Fase 2. Con varias cuentas, que la contraseña proteja
+> de verdad los datos deja de ser una mejora y pasa a ser un requisito: hoy la carpeta remota
+> depende solo del nombre de usuario, así que cualquiera puede registrar el nombre de otro en
+> su equipo, con la contraseña que quiera, y quedarse con sus datos (SYNC-009).
 
 **Veredicto: el diseño actual no puede cumplirlo, y además falla en silencio.** No es un problema de ajustes: hay tres barreras de fondo. Las cuentas viven en cada ordenador, la fusión de datos empareja registros por un número que cada equipo genera por su cuenta, y las bajas no se propagan. Encima, cuando la subida no ocurre, la aplicación no lo dice.
 
@@ -175,9 +182,10 @@ cambio que el resto.
 
 Con esto, cambiar de equipo funciona: cierras en uno, abres en otro y tienes lo tuyo.
 
-### Fase 2 — Que la cuenta sea de verdad
+### Fase 2 — Que la cuenta sea de verdad (requisito, no mejora)
 
-Guardar la ficha de la cuenta junto a los datos del usuario en el servidor, con la contraseña
+Con varias cuentas en juego, esta fase deja de ser opcional: es lo único que separa los datos de
+una persona de los de otra. Guardar la ficha de la cuenta junto a los datos del usuario en el servidor, con la contraseña
 cifrada como ya se hace en el registro local, y validar contra ella al entrar. Así el mismo usuario
 y contraseña funcionan desde cualquier equipo, que es lo pedido, y la contraseña pasa a proteger
 algo. Además hay que sacar las credenciales de correo y servidor del fichero de datos (SYNC-013).
@@ -200,5 +208,6 @@ vez la misma cuenta, habría que retomarla.
 ## 7. Decisiones
 
 1. ~~¿Uno cada vez, o varios a la vez?~~ **Resuelto 2026-09-04: uno cada vez.** Fases 1 y 2; Fase 3 descartada.
-2. **Pendiente: ¿cuentas compartidas o individuales?** Hoy todo el mundo entra como `Jefatura_FpBach` y comparte un único conjunto de datos. Si cada persona debe tener los suyos, hay que darles nombres distintos y decidir qué ocurre con lo que ya existe.
+2. ~~¿Cuentas compartidas o individuales?~~ **Resuelto 2026-09-04: individuales**, una por persona, cada una con sus datos.
+   Queda por decidir la transición: hoy todo el mundo entra como `Jefatura_FpBach` y comparte un único conjunto de datos. Hay que definir quién se queda con ese conjunto y cómo arrancan las demás cuentas, y hacerlo **antes** de repartir credenciales nuevas, porque en cuanto alguien entre con un nombre distinto empezará con una carpeta vacía.
 3. **Pendiente: ¿qué hacer si no hay servidor?** Bloquear el arranque, o permitir trabajo local declarado, visible y sin sincronización. Recomendado lo segundo, con aviso permanente en la ventana.

@@ -121,7 +121,7 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | SYNC-006 | P0 | alta | Las bajas no se propagan y reaparecen: la importación solo crea y actualiza | `sync/sync_manager.py:505` | NUEVO · se resuelve con el mismo cambio que SYNC-005 | 12 |
 | SYNC-007 | P1 | alta | La subida no es atómica: un corte deja truncado el único fichero del servidor | `sync/sync_manager.py:290-303` | NUEVO | 12 |
 | SYNC-008 | P1 | alta | No hay copias ni versiones en el servidor | copias solo locales en `database/db_manager.py` | NUEVO | 12 |
-| SYNC-009 | P1 | alta | Las cuentas viven en cada equipo y la carpeta remota depende solo del nombre: no se puede entrar desde otro equipo, y la contraseña no protege los datos | `sync/sync_manager.py:650-700,415-419` | NUEVO | 12 |
+| SYNC-009 | P0 | alta | Las cuentas viven en cada equipo y la carpeta remota depende solo del nombre: no se puede entrar desde otro equipo, y la contraseña no protege nada. Cualquiera puede registrar el nombre de otro en su equipo y quedarse con sus datos | `sync/sync_manager.py:650-700,415-419` | NUEVO · **elevado a P0** el 2026-09-04 al confirmarse que habrá varias cuentas con datos separados | 12 |
 | SYNC-010 | P2 | alta | El bloqueo de sesión falla abierto si no se puede leer su información | `main.py:290-292` | NUEVO | 12 |
 | SYNC-011 | P2 | alta | El bloqueo no cubre el trabajo sin red | `sync/session_lock.py` | NUEVO | 12 |
 | SYNC-012 | P2 | alta | La guarda de descarga solo cuenta registros: rechaza borrados legítimos y no protege la subida | `sync/sync_manager.py:459-466` | NUEVO | 12 |
