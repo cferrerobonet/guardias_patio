@@ -8,8 +8,8 @@ help:
 	@echo "  make install     - Instalar PyInstaller"
 	@echo "  make icon        - Crear icono .icns"
 	@echo "  make app         - Crear aplicación .app"
-	@echo "  make dmg         - Crear instalador DMG y publicar GitHub Release
-  make release     - Publicar GitHub Release con el DMG existente (sin recompilar)"
+	@echo "  make dmg         - Crear instalador DMG y publicar GitHub Release"
+	@echo "  make release     - Publicar GitHub Release con el DMG existente (sin recompilar)"
 	@echo ""
 	@echo "  Windows (desde macOS con Wine/VM):"
 	@echo "  ────────────────────────────────────────"
