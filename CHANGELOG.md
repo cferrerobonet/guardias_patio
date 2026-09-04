@@ -5,6 +5,27 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.43.0] - 2026-09-04
+
+### 🎯 Resumen
+Auditoría integral de la aplicación de escritorio (UX, caminos dorados, guardarraíles, consistencia visual, cierre en Windows, calidad, escalabilidad, build) con suite de tests de auditoría, skills de compilación y fichero de instrucciones optimizado.
+
+### ✨ Added
+- `auditoria/`: 13 documentos (índice, baseline, plan maestro, casos de uso y presupuesto de clics, inventario visual, contrato de diseño, análisis del cierre en Windows, funcionalidad/calidad/escalabilidad, estrategia de tests, build y release, skills, eficiencia de agentes, plan de ataque y registro de 81 hallazgos).
+- `tests/audit/`: fixture de BD SQLite en fichero, regresión de hilos/solver/excepthook (CRW), guardarraíles de flujo (UXF), ratchets de consistencia visual (VIS) y gates estáticos; los tests `xfail(strict=True)` documentan hallazgos abiertos y obligan a retirar la marca al corregirlos.
+- `tests/e2e_playwright/`: E2E de la API FastAPI (Swagger, ReDoc, 401, versión) con Playwright; se omite si no está instalado.
+- Skills de proyecto: `build-windows-exe`, `build-macos-dmg`, `tests-locales`, `auditoria-desktop`.
+- `pytest.ini`: marker `audit`. `requirements.txt`: `pytest-timeout`, `playwright`, `pytest-playwright`.
+
+### Changed
+- Fichero de instrucciones del asistente (`.claude/`): reescrito con mapa rápido, comandos que funcionan y skills; `.agents/rules` y `.agents/workflows` pasan a enlazarlo para no duplicar contexto.
+
+### 🧹 Housekeeping
+- Baseline de la suite medido ejecutando cada fichero por separado: **2.376 tests pasan, 0 fallan**, 12 omitidos, 5 `xfail`, 7 `xpassed`. El único fallo inicial era por falta de `tenacity` en el intérprete.
+- Detectados y documentados (sin corregir, modo auditoría): 4 tests que bloquean la suite indefinidamente al abrir diálogos modales, 4 nombres indefinidos (`SQLAlchemyError`, `Container`), specs de PyInstaller ignorados por git y borrados por `make clean`, tres scripts de build de Windows divergentes, 4 versiones distintas del proyecto en el repo, 7 marcas `xfail` obsoletas y caché de bytecode heredada de otra ubicación.
+
+---
+
 ## [5.42.3] - 2026-09-04
 
 ### 🎯 Resumen

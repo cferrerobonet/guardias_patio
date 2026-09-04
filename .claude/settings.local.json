@@ -10,7 +10,29 @@
       "Bash(python -m pytest tests/ --tb=line -q)",
       "Bash(python -m pytest tests/ --tb=short -q)",
       "Bash(python -m pytest tests/ -x --tb=no -q)",
-      "Bash(python -m pytest tests/ -x --tb=short -q)"
+      "Bash(python -m pytest tests/ -x --tb=short -q)",
+      "Bash(/opt/homebrew/bin/python3.11 -m pytest *)",
+      "Bash(/opt/homebrew/bin/python3.11 -m ruff *)",
+      "Bash(/opt/homebrew/bin/python3.11 -m bandit *)",
+      "Bash(/opt/homebrew/bin/python3.11 -m mypy *)",
+      "Bash(QT_QPA_PLATFORM=offscreen *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git rev-parse*)",
+      "Bash(git ls-files*)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(wc *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(sed -n *)",
+      "Bash(cat *)",
+      "Bash(make test*)",
+      "Bash(make bench)"
     ]
   }
 }

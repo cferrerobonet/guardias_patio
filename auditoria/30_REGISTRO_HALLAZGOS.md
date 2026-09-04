@@ -1,0 +1,158 @@
+---
+tags:
+  - gestion-centro
+  - auditoria
+fecha_actualizacion: 2026-09-04
+estado: activo
+prioridad: 1-urgente
+tipo: referencia
+---
+
+# Registro canónico de hallazgos
+
+> [!NOTE] Reglas
+> Fuente única del estado. Un hallazgo por fila; la ficha completa vive en el documento indicado en *Ficha*. Al resolver: cambiar *Estado* a `RESUELTO VERIFICADO vX.Y.Z`, citar el test de regresión y tachar el ítem en el plan. Los recuentos de [[00_INDICE]] se derivan de esta tabla.
+
+Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN` · `RIESGO ACEPTADO` · `BY DESIGN` · `NO VERIFICADO` · `DESCARTADO`. Confianza: alta / media / baja.
+
+## CRW · Cierre en Windows, hilos y sesión
+
+| ID | Sev. | Conf. | Título | Ubicación | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- | --- |
+| CRW-001 | P0 | media | Señales Qt emitidas desde hilos internos de OR-Tools durante el solve | `_asignador_cpsat_helpers.py:233-244`, `progress_worker.py:40-43` | NUEVO · RIESGO A CONFIRMAR en Windows | [[06_CRASH_WINDOWS_GENERACION]] |
+| CRW-002 | P1 | alta | Handler de logging modifica widgets desde el hilo que loguea; loggers obsoletos | `progress_handlers.py:41-52`, `progress_indicators.py:278-292,343-359` | NUEVO | 06 |
+| CRW-003 | P1 | alta | Session SQLAlchemy compartida entre GUI, worker, sync y cierre | `db_manager.py:344-350`, `ccleaner_main_window.py:262-270`, `main.py:390-398` | NUEVO | 06 |
+| CRW-004 | P2 | alta | Cancelar se ignora en las fases del solver (10 avisos) y sólo se propaga vía callback C++ | `asignador_guardias_cpsat.py:77-82`, `progress_worker.py:41-42` | NUEVO (verificado con test) | 06 |
+| CRW-005 | P1 | alta | `sys.excepthook` crea QMessageBox desde cualquier hilo; SyncWorker captura poco | `main.py:60-95`, `sync_progress_dialog.py:34-47` | NUEVO | 06 |
+| CRW-006 | P2 | alta | Sin faulthandler; StreamHandler muerto en windowed; logging duplicado | `main.py:31-34`, `core/logging.py:149-179` | NUEVO | 06 |
+| CRW-007 | P2 | alta | Sync SFTP en el hilo GUI tras generar; excepciones escapan del slot | `generacion_panel.py:314-316,327-328,416-427` | NUEVO | 06 |
+| CRW-008 | P3 | alta | `SQLAlchemyError` sin importar en tres módulos | `generacion_panel.py:413`, `gestion_cursos_widget.py:572`, `sync_manager.py:507` | NUEVO | 06 |
+| CRW-009 | P2 | media | Audit log de generación sin commit propio | `generar_guardias.py:150-153` | NUEVO | 06 |
+
+## UXA · Accesibilidad y UX (Ola 4, 2026-08-04, reconciliados en este commit)
+
+| ID | Sev. | Conf. | Título | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- |
+| UXA-001 | P1 | alta | Ventana y diálogos no caben en pantallas/escalados habituales | PERSISTE | `_work/paquete_ux_accesibilidad.md` |
+| UXA-002 | P1 | alta | Sin foco visible consistente | PERSISTE | ídem |
+| UXA-003 | P1 | alta | Toasts no anunciables ni persistentes | PERSISTE | ídem |
+| UXA-004 | P1 | alta | Contrato de cambios sin guardar no conectado | PERSISTE | ídem |
+| UXA-005 | P1 | alta | Campos sin nombre/relación accesible | PERSISTE | ídem |
+| UXA-006 | P1 | alta | Validaciones no identifican el campo | PERSISTE | ídem |
+| UXA-007 | P1 | alta | Cambio de curso no refresca vistas (`ContentWrapper` sin `content_widget`) | PERSISTE (verificado `ccleaner_main_window.py:45-68,246-248`) | ídem |
+| UXA-008 | P2 | alta | Tablas sin contrato accesible/adaptable | PERSISTE | ídem |
+| UXA-009 | P2 | alta | Gráficos QPainter sin semántica | PERSISTE | ídem |
+| UXA-010 | P2 | alta | Sistema visual fragmentado y contrastes AA fallidos | PERSISTE (ampliado en VIS-001/002) | ídem |
+| UXA-011 | P2 | media | Cargas de tablas bloquean el hilo GUI | PERSISTE (ESC-001) | ídem |
+| UXA-012 | P2 | alta | Suite a11y con skips amplios | PERSISTE | ídem |
+| UXA-013 | P2 | alta | Navegación sin título/estado accesible | PERSISTE | ídem |
+| UXA-014 | P3 | alta | Anti-patrones y tipografía microscópica | PERSISTE (VIS-003) | ídem |
+
+## UXF · Flujo, guardarraíles y clics
+
+| ID | Sev. | Conf. | Título | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- |
+| UXF-001 | P1 | alta | Sin secuencia guiada ni panel de estado; la app abre en Profesores | NUEVO | [[03_UX_CASOS_DE_USO_Y_CAMINOS_DORADOS]] |
+| UXF-002 | P1 | alta | Guardarraíl "cuotas antes de generar" es un flag de UI, no precondición de dominio | NUEVO | 03 |
+| UXF-003 | P2 | alta | Generar requiere 2 modales previos y clic de cierre | NUEVO | 03 |
+| UXF-004 | P2 | alta | Cambio de curso: confirmación + toast sin refresco | NUEVO (dup. parcial UXA-007) | 03 |
+| UXF-005 | P2 | alta | Primer arranque exige SFTP; sin modo local | NUEVO | 03 |
+| UXF-006 | P2 | alta | Limpiar guardias con la misma prominencia que Generar | NUEVO | 03 |
+| UXF-007 | P2 | alta | Sin protección de cambios sin guardar | DUPLICADO → UXA-004 | 03 |
+| UXF-008 | P3 | alta | Motivo de bloqueo sólo en tooltip | NUEVO | 03 |
+| UXF-009 | P2 | media | Ausencias sin deshacer ni vista previa | NUEVO | 03 |
+| UXF-010 | P2 | alta | Cinco exportaciones PDF con diálogo cada una y sin recordar carpeta | NUEVO | 03 |
+| UXF-011 | P3 | alta | Atajos de teclado casi inexistentes | NUEVO | 03 |
+
+## VIS · Consistencia visual
+
+| ID | Sev. | Conf. | Título | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- |
+| VIS-001 | P2 | alta | Cuatro capas de estilo + 287 inline | NUEVO | [[04_INVENTARIO_SUPERFICIES_E_INCONSISTENCIAS_VISUALES]] |
+| VIS-002 | P2 | alta | Dos identidades cromáticas (tokens vs Tailwind vs terminal) | NUEVO | 04 |
+| VIS-003 | P2 | alta | Fuente `-apple-system` inexistente en Windows; 43 usos < 11 px | NUEVO | 04 |
+| VIS-004 | P3 | alta | Emojis como iconos (327 líneas) | NUEVO | 04 |
+| VIS-005 | P2 | alta | Terminal retro para resultados | NUEVO | 04 |
+| VIS-006 | P2 | alta | Títulos inconsistentes; título registrado no se pinta | NUEVO | 04 |
+| VIS-007 | P2 | alta | Botones sin jerarquía | NUEVO | 04 |
+| VIS-008 | P3 | alta | Tres lenguajes de feedback | NUEVO | 04 |
+| VIS-009 | P2 | alta | Mínimo 1400×900 vs settings 1200×800 | NUEVO (dup. parcial UXA-001) | 04 |
+| VIS-010 | P3 | alta | Identidad "ccleaner" y branding EPLA inconsistentes | NUEVO | 04 |
+
+## BLD · Build y release
+
+| ID | Sev. | Conf. | Título | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- |
+| BLD-001 | P1 | alta | `.spec` ignorados por git y borrados por `make clean` | NUEVO | [[09_BUILD_Y_RELEASE]] |
+| BLD-002 | P1 | alta | Tres scripts Windows divergentes; Makefile/README apuntan a los obsoletos | NUEVO | 09 |
+| BLD-003 | P2 | alta | Cuatro versiones distintas en el repo | NUEVO | 09 |
+| BLD-004 | P2 | alta | Sin CI, sin firma/notarización | NUEVO | 09 |
+| BLD-005 | P2 | alta | Actualizador sólo `.dmg`; Windows sin actualizaciones | NUEVO | 09 |
+| BLD-006 | P3 | alta | Instalador con admin y sin cierre de instancias | NUEVO | 09 |
+| BLD-007 | P2 | alta | Sin build de diagnóstico con consola | NUEVO | 09 |
+
+## QA · Tests
+
+| ID | Sev. | Conf. | Título | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- |
+| QA-001 | P1 | alta | Entorno de tests no reproducible; 6 errores de colección | NUEVO | [[08_ESTRATEGIA_DE_TESTS]] |
+| QA-002 | P2 | alta | `pytest.ini` con cov obligatorio y `timeout` sin plugin | NUEVO | 08 |
+| QA-003 | P2 | alta | Tests del formulario muerto `AsignacionGuardiasForm` | NUEVO | 08 |
+| QA-004 | P2 | alta | Sin tests de hilos/cancelación/excepthook | NUEVO (tests creados, xfail) | 08 |
+| QA-005 | P2 | alta | Fallo preexistente tolerado; skips amplios | NUEVO | 08 |
+| QA-006 | P3 | alta | Nada sobre SQLite en fichero ni migraciones reales | NUEVO (fixture creada) | 08 |
+| QA-007 | P3 | alta | Sin E2E web | NUEVO (suite creada) | 08 |
+| QA-008 | P1 | alta | Cuatro tests bloquean la suite indefinidamente al abrir un diálogo modal y esperar en `msg.exec()`: `test_config_widgets_extra.py::TestSMTPConfigWidgetExtra::test_toggle_editable` (+ variante SFTP), `test_import_export_form.py::TestImportExportFormExportar::test_exportar_datos_error`, `ui/test_ui_asignacion.py::TestAsignacionGeneracion::test_generar_con_mock_algoritmo_exitoso`, `ui/test_ui_persistencia_campos.py::TestProfesorCamposHorarioPersis::test_horas_manana_persiste`. `pytest-timeout` no los rescata y además descarta cualquier alarma externa. ~39 tests nunca llegan a ejecutarse | NUEVO (verificado) | 08 |
+| QA-009 | P3 | alta | 7 marcas `xfail` obsoletas que ya pasan (6 en `test_dialogs_basic.py`, 1 en `test_gestor_ausencias.py`): ocultan comportamiento correcto y con `strict` serían fallos | NUEVO (verificado) | 08 |
+| QA-010 | P3 | alta | `tests/__pycache__` conserva bytecode compilado desde una ubicación anterior del proyecto (carpeta OneDrive inexistente) y de otra versión de pytest | NUEVO (verificado) | 08 |
+
+## COD · Calidad de código
+
+| ID | Sev. | Conf. | Título | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- |
+| COD-001 | P2 | alta | Ruff 355 avisos; configuración obsoleta | NUEVO | [[07_FUNCIONALIDAD_CALIDAD_ESCALABILIDAD]] |
+| COD-002 | P2 | alta | Captura comodín `(ValueError, TypeError, OSError)` y 67 `except Exception` | NUEVO | 07 |
+| COD-003 | P2 | alta | Presentación con ORM y queries; servicios con Session | NUEVO | 07 |
+| COD-004 | P3 | alta | Código muerto (forms, estilos, loggers, specs) | NUEVO | 07 |
+| COD-005 | P3 | alta | Logging con niveles erróneos y 646 JSON sin rotación | NUEVO | 07 |
+| COD-006 | P3 | alta | 25 `print`, 7 TODO | NUEVO | 07 |
+| COD-007 | P2 | alta | mypy estricto sólo en domain | NUEVO | 07 |
+| COD-008 | P3 | alta | Seis módulos > 790 líneas | NUEVO | 07 |
+
+## ESC · Escalabilidad y arquitectura
+
+| ID | Sev. | Conf. | Título | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- |
+| ESC-001 | P2 | alta | Tablas item-based sin modelo | NUEVO | 07 |
+| ESC-002 | P2 | media | Solver sin descomposición, workers y timeout fijos | NUEVO | 07 |
+| ESC-003 | P2 | alta | Sync completa cada 30 min y al cerrar | NUEVO | 07 |
+| ESC-004 | P3 | alta | Sin ruta a multiusuario real | NUEVO | 07 |
+| ESC-005 | P2 | media | Caché por regex sin `curso_id` | NUEVO | 07 |
+| ESC-006 | P3 | alta | Arranque secuencial en hilo GUI | NUEVO | 07 |
+
+## SEC · Seguridad y privacidad
+
+| ID | Sev. | Conf. | Título | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- |
+| SEC-001 | P2 | alta | Credenciales en `.env` en texto plano | NUEVO | 07 |
+| SEC-002 | P3 | alta | `api_secret_key` vacío por defecto | NUEVO | 07 |
+| SEC-003 | P3 | media | Bandit 3 medios | NUEVO | 07 |
+
+## DEV · Eficiencia de agentes
+
+| ID | Sev. | Conf. | Título | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- |
+| DEV-001 | P2 | alta | Instrucciones del proyecto duplican `.agents/*` | RESUELTO VERIFICADO v5.43.0 (reescritura) | [[11_EFICIENCIA_AGENTES_Y_TOKENS]] |
+| DEV-002 | P2 | alta | Sin mapa rápido | RESUELTO VERIFICADO v5.43.0 | 11 |
+| DEV-003 | P3 | alta | Comandos incorrectos/lentos | RESUELTO VERIFICADO v5.43.0 (documentación); Makefile pendiente (BLD-002) | 11 |
+| DEV-004 | P3 | alta | Sin skills de proyecto | RESUELTO VERIFICADO v5.43.0 | 11 |
+| DEV-005 | P3 | alta | Permisos mínimos → prompts | NUEVO | 11 |
+| DEV-006 | P3 | alta | Agente portable de 41 KB leído entero | NUEVO | 11 |
+
+## FUN · Mejoras funcionales (tipo `mejora`, sin severidad)
+
+FUN-001…FUN-014 en [[07_FUNCIONALIDAD_CALIDAD_ESCALABILIDAD]] §1. Estado: `PROPUESTA` pendiente de decisión de producto.
+
+## Positivos a preservar
+
+Listados en 04 §5 y 07 §5.

@@ -1,123 +1,69 @@
-# Guardias de Patio — Instrucciones para Claude
+# Guardias de Patio — Instrucciones del asistente
 
-## Reglas de comunicación
+## Comunicación
+- Español. Respuestas mínimas: sin explicaciones no pedidas, sin código de ejemplo no solicitado.
+- No añadir docstrings, comentarios, type hints ni error handling a código no modificado. No refactorizar lo no pedido.
+- No crear archivos nuevos (ni `.md`) salvo necesidad estricta o petición explícita.
+- Nunca escribir la palabra prohibida por la bóveda (nombre del asistente) en ningún archivo del proyecto.
 
-- Respuestas mínimas. Sin explicaciones innecesarias, sin código de ejemplo no solicitado.
-- No añadir docstrings, comentarios, type annotations ni error handling a código no modificado.
-- No refactorizar ni "mejorar" código que no se haya pedido tocar.
-- No crear archivos nuevos salvo que sea estrictamente necesario.
-- No crear archivos markdown para documentar cambios salvo petición explícita.
-- Responder siempre en español.
+## Stack
+Python 3.11 · PyQt6 6.7.0 · SQLAlchemy 2.0 + Alembic · FastAPI · OR-Tools CP-SAT · Pydantic v2 · Ruff (100 cols, comillas dobles) · mypy estricto sólo en `domain/` · pytest + pytest-qt.
+Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario en `data/users/{hash}/guardias_patio.db`.
 
-## Stack y convenciones
+## Mapa rápido (no volver a explorar)
+| Qué | Dónde |
+| --- | --- |
+| Entry GUI / API | `src/main.py` (login, sync, ventana) / `src/api/main.py` |
+| Ventana y navegación | `src/presentation/ccleaner_main_window.py` (10 vistas registradas en `create_views`), `components/ccleaner_sidebar.py` |
+| Vista de generación **real** | `forms/asignacion_calculo_form.py` → `asignacion_widgets/calculo_panel.py` (cuotas) + `generacion_panel.py` (generar, resultados, emails) |
+| Progreso / hilos | `widgets/progress_indicators.py` (`ejecutar_con_progreso`, `ProgressDialog`), `progress_worker.py` (`WorkerThread`), `progress_handlers.py` |
+| Caso de uso generación | `application/use_cases/asignacion_guardias/generar_guardias.py` → `services/asignador_guardias_cpsat.py` (+ `_asignador_cpsat_helpers.py`) o `services/asignador_guardias_v4_hibrido.py` |
+| Sesión BD y PRAGMAs | `database/db_manager.py` (`initialize_user_database`, NullPool, `check_same_thread=False`, journal DELETE) |
+| Sync SFTP y bloqueo | `sync/sync_manager.py`, `sync/session_lock.py`, `widgets/sync_progress_dialog.py` (`SyncWorker`) |
+| Tema y tokens | `presentation/theme/tokens.py`, `theme/light.qss`, `themes/ccleaner_theme.py` (tres capas + inline) |
+| Modelos ORM | `infrastructure/database/models.py` |
+| Versión canónica | `src/config/settings.py` → `app_version` (pyproject/README están desincronizados) |
+| Build | macOS: `Makefile` (`make dmg`) + `scripts/build/build_dmg.sh` · Windows: `scripts/build_windows.ps1` (canónico). Ignorar `scripts/build/build_windows.*`, `create_dmg.sh`, `build_simple.sh` |
+| Código muerto (no tocar ni testear) | `forms/asignacion_guardias_form.py`, `forms/dashboard_form.py`, `forms/home_form.py`, `ui_styles.py` |
+| Auditoría vigente | `auditoria/00_INDICE.md` → `30_REGISTRO_HALLAZGOS.md` (estado) · `17_PLAN_DE_ATAQUE.md` (backlog) · `06_CRASH_WINDOWS_GENERACION.md` |
 
-- **Python 3.11+**, PyQt6 6.7.0, SQLAlchemy 2.0, FastAPI, OR-Tools CP-SAT, Pydantic v2
-- **Arquitectura**: Clean Architecture híbrida + DDD táctico (entities, VOs, repo pattern)
-- **Linter/Formatter**: Ruff (line-length=100, quote-style=double)
-- **Types**: mypy strict progresivo — obligatorio en `domain/`, relajado en `presentation/`
-- **Tests**: pytest + pytest-qt (~2100 tests). Ejecutar con `make test` o `pytest tests/ -v`
-- **DB**: SQLite por usuario (`data/users/{hash}/guardias_patio.db`), migraciones con Alembic
-- **Entry points**: GUI (`src/main.py`), API REST (`src/api/main.py`)
-
-## Estructura src/
-
+## Comandos que funcionan
+```bash
+PY=/opt/homebrew/bin/python3.11; export QT_QPA_PLATFORM=offscreen   # los .venv del repo no sirven
+$PY -m pytest tests/test_x.py -q --no-cov -x                         # un fichero
+$PY -m pytest tests/audit -q --no-cov                                 # suite de auditoría
+$PY -m pytest tests/ -q --no-cov --timeout=120 -p no:cacheprovider    # todo (requiere pytest-timeout)
+$PY -m ruff check src --statistics
 ```
-src/
-├── api/              # FastAPI REST
-├── application/      # Use cases, DTOs, factories
-├── config/           # Pydantic BaseSettings (settings.py)
-├── core/             # Cross-cutting: exceptions, logging, paths
-├── database/         # SQLAlchemy db_manager
-├── domain/           # Entities, VOs, repo interfaces, domain services
-├── infrastructure/   # Repos concretos, mappers, DB
-├── models/           # ORM SQLAlchemy (models.py)
-├── presentation/     # PyQt6 UI (ventanas, diálogos, componentes)
-├── services/         # Servicios de aplicación — polimórficos (Session | RepositoryFactory)
-├── sync/             # SFTP sync (Paramiko) a 1&1 IONOS
-├── utils/            # Helpers, constantes, validadores
-```
+Los tests de API necesitan `GUARDIAS_API_SECRET_KEY=<cualquiera>` en el entorno y `slowapi` instalado.
+Conocido: `tests/test_config_widgets_extra.py::*::test_toggle_editable` se cuelga en offscreen; `tests/test_widgets_ui.py::TestAjustesWidget::test_info_algoritmos_muestra_solo_opciones_reales` falla de antes (no corregir salvo petición).
 
 ## Patrón polimórfico (Session | RepositoryFactory)
-
-Todos los servicios en `src/services/` y clases en `src/presentation/` aceptan indistintamente una `Session` de SQLAlchemy o un `RepositoryFactory`. Normalizar siempre en `__init__`:
-
+Servicios en `src/services/` y clases en `src/presentation/` aceptan ambos; normalizar en `__init__`:
 ```python
-from infrastructure.repositories.repository_factory import RepositoryFactory
-
-def __init__(self, session_or_factory):
-    self.session = (
-        session_or_factory.session
-        if isinstance(session_or_factory, RepositoryFactory)
-        else session_or_factory
-    )
+self.session = session_or_factory.session if isinstance(session_or_factory, RepositoryFactory) else session_or_factory
 ```
+En funciones standalone, sin anotación `: Session` en el parámetro.
 
-Para funciones standalone (sin clase), eliminar la anotación de tipo `: Session` del parámetro.
+## Versionado, commits, changelog
+- SemVer en `app_version`: fix → patch · feat → minor · breaking → major. Bump manual.
+- Conventional Commits en español, minúscula tras los dos puntos: `tipo(scope): descripción`. Tipos: feat, fix, refactor, style, perf, test, chore, docs. Scopes: ui, api, domain, sync, db, algo, config, build.
+- `CHANGELOG.md` (Keep a Changelog, español): secciones `🎯 Resumen`, `✨ Added`, `Changed`, `Fixed`, `🧹 Housekeeping`.
 
-## Versionado
+## Workflow post-modificaciones (obligatorio, sin pedir confirmación)
+1. Tests: `$PY -m pytest tests/ --tb=no -q --no-cov` (corregir sólo fallos nuevos).
+2. Bump `app_version`.
+3. Entrada en `CHANGELOG.md` con fecha.
+4. `git add -A && git commit -m "tipo(scope): descripción" && git tag v{versión} && git push && git push --tags`.
 
-- Versión en `src/config/settings.py` → campo `app_version`
-- Semantic Versioning: MAJOR.MINOR.PATCH
-  - fix → patch (+0.0.1)
-  - feat → minor (+0.1.0)
-  - breaking change → major (+1.0.0)
-- Bump manual: editar `app_version` en settings.py
+## Seguimiento de auditorías/guiones (obligatorio)
+Al completar un ítem de un documento de auditoría o guion: tacharlo (`~~texto~~ ✅ RESUELTO vX.Y.Z`) en el documento fuente y en `auditoria/30_REGISTRO_HALLAZGOS.md`; commit junto al código.
 
-## Commits
+## Archivos protegidos (no modificar)
+`sftp_config.json`, `smtp_config.json`, `data/`, `alembic/versions/` existentes (sólo crear nuevas), `.env`.
 
-Conventional Commits en español, minúscula tras los dos puntos:
+## Skills del proyecto
+`/build-windows-exe` · `/build-macos-dmg` · `/tests-locales` · `/auditoria-desktop`. No cargar `.agents/AGENTE_AUDITORIA_INTEGRAL_PORTABLE.md` completo: usar `auditoria/02_PLAN_MAESTRO_AUDITORIA.md`.
 
-```
-tipo(scope): descripción breve en español
-```
-
-Tipos: `feat`, `fix`, `refactor`, `style`, `perf`, `test`, `chore`, `docs`
-Scope opcional: `ui`, `api`, `domain`, `sync`, `db`, `algo`, `config`
-
-## CHANGELOG.md
-
-Formato Keep a Changelog (español) + SemVer. Secciones:
-
-- `🎯 Resumen` — una línea resumen
-- `✨ Added` — nuevas funcionalidades
-- `Changed` — cambios en funcionalidades existentes
-- `Fixed` — correcciones de bugs
-- `🧹 Housekeeping` — limpieza, refactors internos
-
-## Workflow post-modificaciones (OBLIGATORIO)
-
-Después de CADA conjunto de modificaciones, ejecutar en este orden:
-
-1. **Tests** — `pytest tests/ --tb=no -q`. Si hay fallos nuevos, corregirlos antes de continuar.
-2. **Bump versión** — Editar `app_version` en `src/config/settings.py`
-3. **CHANGELOG.md** — Añadir entrada con fecha actual bajo la nueva versión
-4. **Commit + tag + push** (sin pedir confirmación):
-   ```bash
-   git add -A
-   git commit -m "tipo(scope): descripción"
-   git tag v{nueva_versión}
-   git push && git push --tags
-   ```
-
-## Seguimiento de auditorías/guiones (OBLIGATORIO)
-
-Cuando se implementen cambios a partir de un documento de auditoría, guion técnico o lista de tareas estructurada:
-
-- Al completar cada ítem, actualizar el documento fuente marcándolo como resuelto (`~~texto~~` + `✅ RESUELTO vX.Y.Z`) antes de pasar al siguiente.
-- Hacer commit del documento actualizado junto con los cambios de código (o inmediatamente después).
-
-## Archivos protegidos (NO MODIFICAR)
-
-- `sftp_config.json`, `smtp_config.json` — credenciales, gitignored
-- `data/` — datos de usuario, gitignored
-- `alembic/versions/` — migraciones existentes (solo crear nuevas)
-
-## Optimización de tokens
-
-- Leer archivos en bloques grandes, no línea a línea.
-- No releer archivos ya leídos en la misma conversación.
-- Usar Grep para búsquedas exactas, Agent/Explore solo para búsquedas abiertas.
-- No explorar directorios ya conocidos de esta sesión.
-- Antes de editar, confirmar que se tiene contexto suficiente; no buscar de más.
-- Agrupar ediciones múltiples en paralelo cuando no haya dependencias entre ellas.
-- No repetir información que el usuario ya sabe.
+## Tokens
+Leer por rangos con `grep -n`; no releer; no listar `src/` (usar el mapa); un fichero de tests a la vez; suite completa sólo al final.
