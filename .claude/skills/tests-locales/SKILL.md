@@ -12,7 +12,7 @@ Ejecución y Depuración → "Tests: fichero abierto", "Tests: suite completa", 
 ## Intérprete y dependencias
 
 ```bash
-PY=.venv/bin/python                      # reparado y alineado con requirements.txt (PyQt 6.7.0)
+PY=~/.venvs/guardias-patio/bin/python    # fuera de iCloud: dentro del repo se corrompe
 export QT_QPA_PLATFORM=offscreen
 $PY -m pip install -r requirements.txt
 $PY -m pip install hypothesis pytest-xdist pytest-timeout PyJWT slowapi playwright pytest-playwright
@@ -20,7 +20,12 @@ export GUARDIAS_API_SECRET_KEY=secreto-de-pruebas   # los tests de API fallan al
 $PY -m playwright install chromium       # sólo para tests/e2e_playwright
 ```
 
-`.venv-1` y `.venv-win` son restos de otras instalaciones: no usarlos.
+`.venv`, `.venv-1` y `.venv-win`, dentro del repositorio, están corruptos: iCloud duplica y altera sus binarios. No usarlos. Recrear el entorno fuera con:
+
+```bash
+python3.11 -m venv ~/.venvs/guardias-patio
+~/.venvs/guardias-patio/bin/python -m pip install -r requirements.txt pyinstaller ruff mypy
+```
 
 ## Comandos
 

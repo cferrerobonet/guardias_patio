@@ -29,7 +29,7 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 
 ## Comandos que funcionan
 ```bash
-PY=.venv/bin/python; export QT_QPA_PLATFORM=offscreen   # .venv reparado en v5.45.0 (PyQt 6.7.0, igual que el build)
+PY=~/.venvs/guardias-patio/bin/python; export QT_QPA_PLATFORM=offscreen   # fuera de iCloud, obligatorio
 $PY -m pytest tests/test_x.py -q --no-cov -x                         # un fichero
 $PY -m pytest tests/audit -q --no-cov                                 # suite de auditoría
 $PY -m pytest tests/ -q --no-cov --timeout=120 -p no:cacheprovider    # todo (requiere pytest-timeout)
@@ -61,6 +61,13 @@ Al completar un ítem de un documento de auditoría o guion: tacharlo (`~~texto~
 
 ## Archivos protegidos (no modificar)
 `sftp_config.json`, `smtp_config.json`, `data/`, `alembic/versions/` existentes (sólo crear nuevas), `.env`.
+
+## Entorno
+El intérprete vive en `~/.venvs/guardias-patio`, **fuera de iCloud**: dentro del repositorio iCloud duplica y altera los binarios (402 copias " 2" en `.venv`), Qt deja de reconocer sus complementos y la app aborta al crear la `QApplication`. El `.venv` del repo está corrupto y se puede borrar. Recrear con:
+```bash
+python3.11 -m venv ~/.venvs/guardias-patio
+~/.venvs/guardias-patio/bin/python -m pip install -r requirements.txt pyinstaller ruff mypy
+```
 
 ## VS Code
 Ejecución y Depuración trae 9 configuraciones (app, app sin bloqueo de sesión, app en modo diagnóstico, API, y cinco de tests) y Terminal → Ejecutar tarea otras 10 (tests, lint, formato, compilar macOS/Windows, limpiar). Usan el intérprete seleccionado en el editor: elegir `.venv`. `launch.json`, `tasks.json` y `extensions.json` están versionados; `settings.json` es de cada equipo.

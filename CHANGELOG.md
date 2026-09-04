@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.45.1] - 2026-09-04
+
+### 🎯 Resumen
+La aplicación abortaba al arrancar desde VS Code. La causa no era el código: un entorno virtual no puede vivir dentro de iCloud Drive.
+
+### Fixed
+- Al lanzar la app desde el editor, el intérprete moría con `SIGABRT` a los dos segundos. El volcado de hilos añadido en 5.44.0 señaló el punto exacto, `src/main.py` al construir la `QApplication`, y el informe del sistema completó el recorrido hasta `QGuiApplicationPrivate::createPlatformIntegration()`: Qt no lograba inicializar ningún complemento de plataforma.
+- Origen: el proyecto está en una carpeta de iCloud Drive y el entorno virtual estaba dentro. iCloud había creado **402 archivos duplicados** en `.venv` (`libqcocoa 2.dylib`, `QtGui 2.pyi`…). Qt inspeccionaba su carpeta de complementos y no reconocía ninguno válido. Es el mismo motivo por el que `scripts/build/build_dmg.sh` ya copiaba el bundle fuera de iCloud antes de firmarlo.
+- El entorno pasa a `~/.venvs/guardias-patio`, fuera de la carpeta sincronizada. Verificado: crea la `QApplication` con el backend real de macOS, la app arranca hasta el diálogo de acceso y la suite completa pasa (2.454 tests).
+- `.vscode/settings.json` apunta al nuevo intérprete. El `.venv` del repositorio queda corrupto y ocupa 711 MB: se puede borrar.
+
+### 🧹 Housekeeping
+- Corregido el registro de auditoría: lo dado por resuelto en 5.45.0 (reparar el entorno en su sitio) era insuficiente. QA-012 queda superado por **QA-013**, que documenta la incompatibilidad entre entornos virtuales e iCloud Drive.
+
+---
+
 ## [5.45.0] - 2026-09-04
 
 ### 🎯 Resumen

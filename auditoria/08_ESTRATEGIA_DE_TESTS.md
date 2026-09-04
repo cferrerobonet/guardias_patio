@@ -71,7 +71,16 @@ Para el escritorio, el equivalente es pytest-qt (`qtbot.mouseClick`, `waitSignal
 
 El `.venv` del repositorio estaba inservible: se creó cuando el proyecto vivía en una carpeta de OneDrive y su intérprete apuntaba a un Python 3.11.14 que ya no existe, además de traer PyQt 6.11 frente al 6.7.0 que fija `requirements.txt`. `settings.json` apuntaba justamente a ese intérprete, así que el descubrimiento de tests del editor no funcionaba.
 
-Reparado en sitio (`python3.11 -m venv --upgrade`, sin volver a descargar los 700 MB) y alineado con `requirements.txt`, incluido PyInstaller para poder compilar. Al bajar de PyQt 6.11 a 6.7.0 quedó un Qt incompleto sin el complemento `offscreen`, que abortaba el intérprete al crear la aplicación; se resolvió reinstalando `PyQt6` y `PyQt6-Qt6` con `--force-reinstall`.
+Repararlo en su sitio no era suficiente, porque el sitio es el problema: **el proyecto vive en iCloud Drive y ahí un entorno virtual se corrompe**. iCloud había creado 402 archivos duplicados dentro de `.venv` (`libqcocoa 2.dylib`, `QtGui 2.pyi`…). Qt inspeccionaba su carpeta de complementos, no reconocía ninguno válido y abortaba el proceso en `QGuiApplicationPrivate::createPlatformIntegration()` al construir la `QApplication`; la aplicación se cerraba nada más lanzarla desde el editor. El propio proyecto ya convivía con este problema: `build_dmg.sh` copia el bundle fuera de iCloud antes de firmarlo por la misma razón.
+
+El entorno pasa a `~/.venvs/guardias-patio`, fuera de la carpeta sincronizada, alineado con `requirements.txt` e incluyendo PyInstaller, ruff y mypy. Verificado: crea la `QApplication` con el backend real de macOS, la aplicación arranca hasta el diálogo de acceso y la suite completa pasa.
+
+```bash
+python3.11 -m venv ~/.venvs/guardias-patio
+~/.venvs/guardias-patio/bin/python -m pip install -r requirements.txt pyinstaller ruff mypy
+```
+
+El `.venv` que quedó dentro del repositorio está corrupto y ocupa 711 MB: se puede borrar.
 
 `.vscode/launch.json`, `tasks.json` y `extensions.json` pasan a estar versionados (con `.vscode/*` y excepciones, porque git no entra en un directorio excluido) para que el PC de Windows tenga las mismas configuraciones. `settings.json` sigue siendo de cada equipo.
 
