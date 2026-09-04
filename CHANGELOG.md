@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.46.1] - 2026-09-04
+
+### 🎯 Resumen
+Registrado el modelo de uso decidido para la sincronización: un solo usuario edita su cuenta y a veces cambia de equipo. Sin edición simultánea, el trabajo pendiente se reduce bastante.
+
+### Changed
+- `auditoria/12_SINCRONIZACION_NUBE.md`: la solución pasa a ser **reemplazo, no fusión**. La copia de la nube es la buena y el flujo es descargar, editar, subir. Al reconstruir la base local desde el fichero de la nube al abrir, los dos hallazgos más profundos dejan de requerir trabajo propio: la colisión de identificadores y las bajas que resucitan nacen de fusionar dos conjuntos divergentes, y con un solo linaje no se dan.
+- Fase 3, la fusión real con identificadores estables y marcas de baja, queda **descartada**. Solo haría falta para edición simultánea.
+- Plan de ataque y registro actualizados en consecuencia.
+
+---
+
 ## [5.46.0] - 2026-09-04
 
 ### 🎯 Resumen

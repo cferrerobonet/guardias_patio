@@ -15,6 +15,11 @@ tipo: referencia
 
 > Cualquier usuario, desde cualquier equipo, usando el mismo usuario y contraseña, maneja la misma información sin perder datos y sin transportar copias de seguridad a mano.
 
+> [!NOTE] Modelo de uso decidido por CarlosFB (2026-09-04)
+> Un solo usuario edita los datos de su cuenta, y a veces cambia de equipo. **No hay edición simultánea.**
+> Esto acota mucho el trabajo: la nube pasa a ser la copia buena de la cuenta y el flujo es
+> descargar, editar, subir. No hace falta fusionar nada, y por tanto se descarta la Fase 3.
+
 **Veredicto: el diseño actual no puede cumplirlo, y además falla en silencio.** No es un problema de ajustes: hay tres barreras de fondo. Las cuentas viven en cada ordenador, la fusión de datos empareja registros por un número que cada equipo genera por su cuenta, y las bajas no se propagan. Encima, cuando la subida no ocurre, la aplicación no lo dice.
 
 ## 2. Cómo funciona hoy
@@ -142,29 +147,46 @@ Protege de dos sesiones simultáneas conectadas, no de una sesión aislada que l
 
 ## 5. Diseño objetivo
 
-### Fase 1 — Que deje de perder datos (sin cambiar el modelo)
+Con el modelo decidido —un usuario, un conjunto de datos, un equipo cada vez— la solución es
+**reemplazo, no fusión**: la copia de la nube es la buena y el flujo es descargar, editar, subir.
 
-Sirve ya para el caso real: **una persona, varios equipos, uno cada vez**.
+Esto tiene una consecuencia importante y favorable. Los dos hallazgos más profundos, la colisión
+de identificadores (SYNC-005) y las bajas que resucitan (SYNC-006), **nacen de intentar fusionar**
+dos conjuntos de datos divergentes. Si al abrir la base de datos local se reconstruye a partir del
+fichero de la nube, no hay dos linajes que fusionar: los identificadores vienen dados y las bajas
+se propagan solas. Ambos dejan de ser un problema de diseño y pasan a resolverse con el mismo
+cambio que el resto.
+
+### Fase 1 — La nube es la copia buena
 
 | Cambio | Efecto |
 | --- | --- |
-| Prohibir la caída silenciosa a local | El usuario sabe siempre si está en la nube o no |
-| Probar la conexión al configurar | No se acepta una configuración que no funciona |
-| Descarga obligatoria al abrir; si falla, sesión marcada y **sin permiso para subir** | Se acaba el escenario del portátil sin cobertura |
+| Nunca caer a modo local en silencio | El usuario sabe siempre si está trabajando contra la nube |
+| Probar conexión y escritura al configurar | No se acepta una configuración que no funciona |
+| Al abrir: descargar y **reconstruir** la base de datos local con ese contenido | Las bajas se propagan y los identificadores dejan de chocar |
+| Si la descarga falla: avisar y **prohibir la subida** de esa sesión | Se acaba el escenario del portátil sin cobertura |
+| Número de versión que crece en cada subida | Se detecta si alguien subió algo entremedias, sin depender de relojes |
+| Antes de subir, comprobar que la versión remota es la que se descargó | Si no coincide, no se sobrescribe: se avisa |
 | Subida atómica, a temporal y renombrado | Nunca queda un fichero a medias |
-| Rotación de versiones en el servidor | Siempre hay a dónde volver |
+| Rotación de unas cuantas versiones en el servidor | Siempre hay a dónde volver |
 | Cola de pendientes que se reintenta al abrir | Una subida fallida no se pierde |
-| Bloqueo que falla cerrado | Ante la duda, no se entra |
-| Sincronización automática que primero comprueba el servidor | Deja de machacar a ciegas |
-| Número de versión en lugar de fechas | Inmune a relojes desajustados |
+| Bloqueo de sesión que falla cerrado | Ante la duda, no se entra |
+| La sincronización automática comprueba antes de subir | Deja de machacar a ciegas |
+
+Con esto, cambiar de equipo funciona: cierras en uno, abres en otro y tienes lo tuyo.
 
 ### Fase 2 — Que la cuenta sea de verdad
 
-Guardar la ficha de la cuenta junto a los datos del usuario en el servidor y validar contra ella al entrar, con la contraseña cifrada como ya se hace. Con eso, el mismo usuario y contraseña funcionan desde cualquier equipo, que es literalmente lo pedido, y la contraseña pasa a proteger algo.
+Guardar la ficha de la cuenta junto a los datos del usuario en el servidor, con la contraseña
+cifrada como ya se hace en el registro local, y validar contra ella al entrar. Así el mismo usuario
+y contraseña funcionan desde cualquier equipo, que es lo pedido, y la contraseña pasa a proteger
+algo. Además hay que sacar las credenciales de correo y servidor del fichero de datos (SYNC-013).
 
-### Fase 3 — Fusión real, si alguna vez hace falta trabajar a la vez
+### Fase 3 — Descartada
 
-Requiere identificador estable por registro, fecha de última modificación y marca de baja. Sin eso no hay fusión posible, solo reemplazo. Es el trabajo más grande y **solo merece la pena si de verdad va a haber edición simultánea**; si el uso es «uno cada vez desde distintos equipos», la Fase 1 más la Fase 2 lo resuelven.
+Fusión real con identificadores estables, marcas de última modificación y de baja. Solo haría falta
+para edición simultánea, que se ha descartado. Si algún día dos personas tuvieran que editar a la
+vez la misma cuenta, habría que retomarla.
 
 ## 6. Pruebas que deberían existir
 
@@ -175,8 +197,8 @@ Requiere identificador estable por registro, fecha de última modificación y ma
 - Relojes desajustados: la descarga sigue decidiéndose bien.
 - Identificadores que colisionan entre equipos: la fusión no mezcla entidades.
 
-## 7. Decisiones que requieren a CarlosFB
+## 7. Decisiones
 
-1. **¿Uno cada vez, o varios a la vez?** Si es uno cada vez, con Fases 1 y 2 basta. Si es simultáneo, hay que abordar la Fase 3.
-2. **¿Cuentas compartidas o individuales?** Hoy todo el mundo entra como `Jefatura_FpBach` y comparte un único conjunto de datos. Si cada persona debe tener los suyos, hay que darles nombres distintos, y conviene decidir qué pasa con los datos que ya existen.
-3. **¿Qué hacer si no hay servidor?** Bloquear el arranque, o permitir trabajo local declarado y sin sincronización.
+1. ~~¿Uno cada vez, o varios a la vez?~~ **Resuelto 2026-09-04: uno cada vez.** Fases 1 y 2; Fase 3 descartada.
+2. **Pendiente: ¿cuentas compartidas o individuales?** Hoy todo el mundo entra como `Jefatura_FpBach` y comparte un único conjunto de datos. Si cada persona debe tener los suyos, hay que darles nombres distintos y decidir qué ocurre con lo que ya existe.
+3. **Pendiente: ¿qué hacer si no hay servidor?** Bloquear el arranque, o permitir trabajo local declarado, visible y sin sincronización. Recomendado lo segundo, con aviso permanente en la ventana.

@@ -117,8 +117,8 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | SYNC-002 | P1 | alta | La configuración se da por válida sin probar la conexión: solo comprueba que los campos no estén vacíos | `config/sftp_config.py:50-62`, `dialogs/initial_config_dialog.py:641-665` | NUEVO | 12 |
 | SYNC-003 | P1 | alta | Si la descarga inicial falla, solo se escribe en el registro y se trabaja sobre datos viejos | `main.py:309-312` | NUEVO | 12 |
 | SYNC-004 | P1 | alta | Si la subida final falla, no hay reintento ni marca de pendiente: la app ya se está cerrando | `main.py:378-415` | NUEVO | 12 |
-| SYNC-005 | P0 | alta | La fusión empareja registros por el identificador autoincremental local: dos equipos generan el mismo número para entidades distintas | `sync/data_exporter.py:219,252,285…` | NUEVO | 12 |
-| SYNC-006 | P0 | alta | Las bajas no se propagan y reaparecen: la importación solo crea y actualiza | `sync/sync_manager.py:505` | NUEVO | 12 |
+| SYNC-005 | P0 | alta | La fusión empareja registros por el identificador autoincremental local: dos equipos generan el mismo número para entidades distintas | `sync/data_exporter.py:219,252,285…` | NUEVO · con el modelo de reemplazo decidido (un equipo cada vez) se resuelve al reconstruir la base local desde la nube, sin necesidad de identificadores estables | 12 |
+| SYNC-006 | P0 | alta | Las bajas no se propagan y reaparecen: la importación solo crea y actualiza | `sync/sync_manager.py:505` | NUEVO · se resuelve con el mismo cambio que SYNC-005 | 12 |
 | SYNC-007 | P1 | alta | La subida no es atómica: un corte deja truncado el único fichero del servidor | `sync/sync_manager.py:290-303` | NUEVO | 12 |
 | SYNC-008 | P1 | alta | No hay copias ni versiones en el servidor | copias solo locales en `database/db_manager.py` | NUEVO | 12 |
 | SYNC-009 | P1 | alta | Las cuentas viven en cada equipo y la carpeta remota depende solo del nombre: no se puede entrar desde otro equipo, y la contraseña no protege los datos | `sync/sync_manager.py:650-700,415-419` | NUEVO | 12 |
