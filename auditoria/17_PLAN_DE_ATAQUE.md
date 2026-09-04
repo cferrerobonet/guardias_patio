@@ -16,6 +16,8 @@ tipo: referencia
 | Orden | Lote | IDs | Resultado esperado | Sev. máx. | Riesgo | Esfuerzo | Depende de | Tests / gates | Estado |
 | ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | **Diagnóstico Windows** | ~~CRW-006~~, ~~BLD-007~~ | `faulthandler` activo y build `-Diagnostico` ✅ **v5.44.0**. Falta ejecutar el protocolo en el PC Windows y confirmar la causa | P2 | bajo | XS+S | – | log + Visor de eventos adjuntos al registro | **parcial** — bloqueado por acceso a Windows |
+| 0 bis | **Sincronización: dejar de perder datos** | SYNC-001, SYNC-002, SYNC-003, SYNC-004, SYNC-007, SYNC-008, SYNC-010, SYNC-014, SYNC-015 | Nunca caer a local en silencio; probar conexión al configurar; descarga obligatoria al abrir y sin permiso de subida si falla; subida atómica; versiones en el servidor; bloqueo que falla cerrado | P0 | medio | M | – | dos equipos simulados, subida interrumpida, arranque sin red | pendiente |
+| 0 ter | **Cuenta de verdad** | SYNC-009, SYNC-013 | La ficha de la cuenta vive junto a los datos del usuario y se valida al entrar; las credenciales salen del fichero de datos | P1 | medio | M | 0 bis | entrar desde dos equipos con la misma cuenta | pendiente |
 | 1 | **Frontera solver↔Qt y cancelación** | CRW-001, CRW-004, CRW-002, CRW-008 | Ningún callback de OR-Tools toca Qt; cancelar detiene el solver; log en vivo vía señal | P0 | medio | M | 0 | `tests/audit/test_crash_windows_regresion.py` sin xfail; 10 generaciones Windows | pendiente |
 | 2 | **Hilos seguros** | CRW-005, CRW-007, CRW-009 | excepthook thread-aware; sync post-generación en worker; commit del audit log | P1 | bajo | S | 1 | ídem + `test_excepthook_no_crea_widgets_fuera_del_hilo_gui` | pendiente |
 | 3 | **Sesión por hilo (generación y sync)** | CRW-003 (parcial), ESC-003 (parcial) | `SessionFactory` inyectada; worker de generación y `SyncWorker` con sesión propia; DTOs a la GUI | P1 | alto | L | 2 | `test_worker_no_reutiliza_sesion_gui`; suite completa; BD en fichero | pendiente |
@@ -36,6 +38,7 @@ tipo: referencia
 
 ## Decisiones requeridas de CarlosFB
 
+0. **Sincronización:** ¿uno cada vez desde distintos equipos, o edición simultánea? Con lo primero bastan los lotes 0 bis y 0 ter; lo segundo obliga a identificadores estables y fusión real (SYNC-005/006), que es el trabajo grande.
 1. ¿Modo local sin SFTP en el primer arranque (UXF-005)? Recomendado: sí, con aviso persistente.
 2. ¿Paleta: mantener azul #007ACC o adoptar el #0E5FA8 propuesto (más contraste)? Ambos válidos; elegir uno.
 3. ¿Fuente por SO (Segoe UI / SF Pro) o una fuente embebida (Inter)? Recomendado: por SO (sin licencias, render nativo).

@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.46.0] - 2026-09-04
+
+### 🎯 Resumen
+Auditoría a fondo de la sincronización en la nube. Explica por qué hay usuarios cuyos datos nunca llegaron al servidor y qué hace falta para que una misma cuenta maneje la misma información desde cualquier equipo.
+
+### ✨ Added
+- `auditoria/12_SINCRONIZACION_NUBE.md`: 15 hallazgos con evidencia, cinco escenarios concretos de pérdida de datos y un diseño objetivo en tres fases.
+- `tests/audit/test_sincronizacion_nube.py`: seis pruebas que fijan los hallazgos principales. Dos son demostraciones ejecutables, no inspección de código: dos equipos simulados crean zonas distintas que reciben el mismo identificador y acaban fusionadas en una, y un profesor dado de baja reaparece en la siguiente sincronización.
+
+### 🧹 Housekeeping
+- Hallazgo **SYNC-001**, el más grave: si el servidor no está bien configurado o no responde, la aplicación cambia a un almacenamiento local sin decir nada. Guarda, sincroniza y cierra con normalidad mientras los datos nunca salen del equipo. Es la explicación del caso observado en producción, con varios usuarios trabajando sin errores y una sola carpeta en el servidor.
+- **SYNC-005** y **SYNC-006** son los obstáculos de fondo para el uso multiequipo: la fusión empareja registros por el identificador autoincremental de cada base de datos, y las bajas no se propagan.
+- **SYNC-009**: las cuentas viven en cada ordenador y la carpeta remota depende solo del nombre de usuario, así que hoy no se puede entrar con la misma cuenta desde otro equipo y la contraseña no protege los datos.
+- Registro, índice y plan de ataque actualizados: 103 hallazgos, con dos lotes nuevos al frente del backlog.
+
+---
+
 ## [5.45.1] - 2026-09-04
 
 ### 🎯 Resumen
