@@ -5,6 +5,31 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.45.0] - 2026-09-04
+
+### 🎯 Resumen
+El proyecto vuelve a poder ejecutarse, depurarse y compilarse desde VS Code: entorno virtual reparado y configuraciones de Ejecución y Depuración y de tareas listas para macOS y Windows.
+
+### ✨ Added
+- `.vscode/launch.json`: nueve configuraciones de Ejecución y Depuración — la aplicación, la aplicación sin bloqueo de sesión, la aplicación en modo diagnóstico (con `faulthandler` y avisos de hilos de Qt), la API con recarga, y cinco de tests (fichero abierto, fichero abierto con ventanas visibles, suite completa, auditoría y cumplimiento del algoritmo). Usan el intérprete seleccionado en el editor, así que funcionan igual en macOS y en Windows.
+- `.vscode/tasks.json`: diez tareas — tests, tests con cobertura, auditoría, lint, formato, compilar la app y el DMG de macOS, compilar el exe e instalador de Windows, compilar Windows en modo diagnóstico y limpiar artefactos.
+- `.vscode/extensions.json`: extensiones recomendadas.
+
+### Fixed
+- El entorno virtual del repositorio estaba inservible: se creó cuando el proyecto vivía en otra carpeta y su intérprete apuntaba a un Python 3.11.14 inexistente. Reparado en sitio sin volver a descargar los 700 MB de paquetes.
+- El entorno traía PyQt 6.11 mientras el proyecto fija 6.7.0, de modo que no reproducía lo que se compila. Alineado con `requirements.txt`, más PyInstaller para poder construir. La bajada de versión dejó un Qt incompleto, sin el complemento `offscreen`, que abortaba el intérprete al crear la aplicación; resuelto reinstalando `PyQt6` y `PyQt6-Qt6`.
+- `settings.json` apuntaba a ese intérprete roto, por lo que el descubrimiento de tests del editor no funcionaba. Ahora apunta al entorno reparado y descubre los tests sin cobertura, que era lo que lo hacía lento.
+- `tests/audit/test_calidad_estatica.py` daba por fallido el lint cuando `ruff` no estaba instalado en el intérprete; ahora se omite con un motivo claro.
+- Tests intermitentes en `TestListarProfesoresUseCase`: fallaban dentro de la suite y pasaban aislados. La causa es la caché global de consultas, cuya clave se construye con `str(self)` e incluye la dirección de memoria del objeto; como Python reutiliza direcciones, instancias distintas comparten entrada y un test recibía el resultado de otro. Se añade la fixture `_cache_limpio`, que vacía la caché alrededor de cada test. Tres ejecuciones consecutivas de la suite completa quedan limpias.
+
+### 🧹 Housekeeping
+- Registrado **ESC-007**: la colisión de claves de caché no es solo un problema de tests. En la aplicación, un caso de uso recién creado puede recibir el resultado cacheado de otro ya destruido durante el tiempo de vida de la entrada (3 minutos en el listado de profesores). Demostrado: 300 instancias creadas y destruidas en serie generan una sola clave. Además `cache_key_prefix` se acepta y nunca se usa. Pendiente de corregir en el código.
+
+### Changed
+- `.gitignore`: `launch.json`, `tasks.json` y `extensions.json` pasan a versionarse para que el PC de Windows tenga las mismas configuraciones. Hace falta excluir con `.vscode/*` en vez de `.vscode/`, porque git no entra en un directorio excluido y las excepciones no llegarían a aplicarse. `settings.json` sigue siendo de cada equipo.
+
+---
+
 ## [5.44.0] - 2026-09-04
 
 ### 🎯 Resumen

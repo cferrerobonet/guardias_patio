@@ -29,14 +29,14 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 
 ## Comandos que funcionan
 ```bash
-PY=/opt/homebrew/bin/python3.11; export QT_QPA_PLATFORM=offscreen   # los .venv del repo no sirven
+PY=.venv/bin/python; export QT_QPA_PLATFORM=offscreen   # .venv reparado en v5.45.0 (PyQt 6.7.0, igual que el build)
 $PY -m pytest tests/test_x.py -q --no-cov -x                         # un fichero
 $PY -m pytest tests/audit -q --no-cov                                 # suite de auditoría
 $PY -m pytest tests/ -q --no-cov --timeout=120 -p no:cacheprovider    # todo (requiere pytest-timeout)
 $PY -m ruff check src --statistics
 ```
 Los tests de API necesitan `GUARDIAS_API_SECRET_KEY=<cualquiera>` en el entorno y `slowapi` instalado.
-Conocido: `tests/test_config_widgets_extra.py::*::test_toggle_editable` se cuelga en offscreen; `tests/test_widgets_ui.py::TestAjustesWidget::test_info_algoritmos_muestra_solo_opciones_reales` falla de antes (no corregir salvo petición).
+La suite completa pasa de una sola pasada (~2.454 tests, 47 s). La fixture automática `dialogos_modales` de `tests/conftest.py` impide que un `exec()` modal la bloquee; marcador `modales_reales` para desactivarla.
 
 ## Patrón polimórfico (Session | RepositoryFactory)
 Servicios en `src/services/` y clases en `src/presentation/` aceptan ambos; normalizar en `__init__`:
@@ -61,6 +61,9 @@ Al completar un ítem de un documento de auditoría o guion: tacharlo (`~~texto~
 
 ## Archivos protegidos (no modificar)
 `sftp_config.json`, `smtp_config.json`, `data/`, `alembic/versions/` existentes (sólo crear nuevas), `.env`.
+
+## VS Code
+Ejecución y Depuración trae 9 configuraciones (app, app sin bloqueo de sesión, app en modo diagnóstico, API, y cinco de tests) y Terminal → Ejecutar tarea otras 10 (tests, lint, formato, compilar macOS/Windows, limpiar). Usan el intérprete seleccionado en el editor: elegir `.venv`. `launch.json`, `tasks.json` y `extensions.json` están versionados; `settings.json` es de cada equipo.
 
 ## Skills del proyecto
 `/build-windows-exe` · `/build-macos-dmg` · `/tests-locales` · `/auditoria-desktop`. No cargar `.agents/AGENTE_AUDITORIA_INTEGRAL_PORTABLE.md` completo: usar `auditoria/02_PLAN_MAESTRO_AUDITORIA.md`.

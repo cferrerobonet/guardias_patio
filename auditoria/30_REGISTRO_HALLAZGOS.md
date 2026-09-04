@@ -105,6 +105,8 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | QA-008 | P1 | alta | ~~Cuatro tests bloquean la suite indefinidamente al abrir un diálogo modal~~ | **RESUELTO VERIFICADO v5.44.0** · guarda `dialogos_modales` en `tests/conftest.py` + dos tests de importación corregidos. La suite completa pasa de una sola pasada en 47 s | 08 |
 | QA-009 | P3 | alta | 7 tests marcados `xfail` pasan al ejecutarse aislados pero fallan dentro de la suite completa (`test_dialogs_basic.py` ×6, `test_gestor_ausencias.py` ×1): dependen del orden de ejecución | NUEVO (verificado) | 08 |
 | QA-010 | P3 | alta | `tests/__pycache__` conserva bytecode compilado desde una ubicación anterior del proyecto (carpeta OneDrive inexistente) y de otra versión de pytest | NUEVO (verificado) | 08 |
+| QA-011 | P2 | alta | ~~Tests intermitentes en `TestListarProfesoresUseCase`~~: causa identificada, la caché global se comparte entre tests por colisión de claves (ESC-007) | **RESUELTO VERIFICADO v5.45.0** · fixture `_cache_limpio` en `tests/conftest.py` | 08 |
+| QA-012 | P2 | alta | El `.venv` del repositorio estaba inservible: su intérprete apuntaba a un Python que ya no existe y traía PyQt 6.11 cuando el proyecto fija 6.7.0, así que no reproducía lo que se compila. `settings.json` de VS Code apuntaba a ese intérprete roto | **RESUELTO VERIFICADO v5.45.0** · `.venv` reparado y alineado con `requirements.txt` | 08 |
 
 ## COD · Calidad de código
 
@@ -129,6 +131,7 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | ESC-004 | P3 | alta | Sin ruta a multiusuario real | NUEVO | 07 |
 | ESC-005 | P2 | media | Caché por regex sin `curso_id` | NUEVO | 07 |
 | ESC-006 | P3 | alta | Arranque secuencial en hilo GUI | NUEVO | 07 |
+| ESC-007 | P2 | alta | La clave de la caché de consultas se construye con `str(self)`, que incluye la dirección de memoria del objeto. Python reutiliza direcciones: 300 instancias creadas y destruidas en serie generan **una sola clave**. Un caso de uso nuevo puede recibir el resultado cacheado de otro anterior durante el TTL (3 min en profesores). Además `cache_key_prefix` se acepta pero nunca se usa | `utils/cache.py:59-87`, `utils/repository_cache.py:40-63,100-105`, `application/use_cases/profesor/listar_profesores.py:40-41` | NUEVO (verificado con demostración) | 07 |
 
 ## SEC · Seguridad y privacidad
 

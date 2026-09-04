@@ -67,6 +67,14 @@ Playwright automatiza navegadores; **no puede accionar widgets Qt**. En este pro
 
 Para el escritorio, el equivalente es pytest-qt (`qtbot.mouseClick`, `waitSignal`, `waitUntil`) con la ventana real y BD en fichero, que es lo que hace `tests/audit`. Si se quiere grabación de vídeo/capturas de la app nativa, usar `QWidget.grab()` en tests y guardar PNG como evidencia.
 
+## 4 bis. Entorno de desarrollo en VS Code (v5.45.0)
+
+El `.venv` del repositorio estaba inservible: se creó cuando el proyecto vivía en una carpeta de OneDrive y su intérprete apuntaba a un Python 3.11.14 que ya no existe, además de traer PyQt 6.11 frente al 6.7.0 que fija `requirements.txt`. `settings.json` apuntaba justamente a ese intérprete, así que el descubrimiento de tests del editor no funcionaba.
+
+Reparado en sitio (`python3.11 -m venv --upgrade`, sin volver a descargar los 700 MB) y alineado con `requirements.txt`, incluido PyInstaller para poder compilar. Al bajar de PyQt 6.11 a 6.7.0 quedó un Qt incompleto sin el complemento `offscreen`, que abortaba el intérprete al crear la aplicación; se resolvió reinstalando `PyQt6` y `PyQt6-Qt6` con `--force-reinstall`.
+
+`.vscode/launch.json`, `tasks.json` y `extensions.json` pasan a estar versionados (con `.vscode/*` y excepciones, porque git no entra en un directorio excluido) para que el PC de Windows tenga las mismas configuraciones. `settings.json` sigue siendo de cada equipo.
+
 ## 5. Comandos canónicos
 
 ```bash

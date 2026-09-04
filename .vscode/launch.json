@@ -1,0 +1,153 @@
+{
+  // Configuraciones de Ejecución y Depuración.
+  // El intérprete es el que esté seleccionado en VS Code (barra inferior).
+  // Recomendado: el `.venv` del proyecto, que fija PyQt6 6.7.0 igual que el build.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "App: ejecutar",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/main.py",
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1"
+      }
+    },
+    {
+      "name": "App: ejecutar sin bloqueo de sesión",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/main.py",
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        // Evita competir con la sesión abierta en otro equipo mientras se depura.
+        "DISABLE_SESSION_LOCK": "1"
+      }
+    },
+    {
+      "name": "App: diagnosticar cierre (faulthandler + trazas de hilos)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/main.py",
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "DISABLE_SESSION_LOCK": "1",
+        "PYTHONFAULTHANDLER": "1",
+        // Qt avisa por consola cuando se toca un widget desde otro hilo.
+        "QT_LOGGING_RULES": "qt.*.debug=true"
+      }
+    },
+    {
+      "name": "API REST (uvicorn con recarga)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}/src",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "args": ["api.main:app", "--host", "127.0.0.1", "--port", "8000", "--reload"],
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "GUARDIAS_API_SECRET_KEY": "secreto-de-desarrollo"
+      }
+    },
+    {
+      "name": "Tests: fichero abierto",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "args": ["${file}", "-v", "--no-cov", "-p", "no:cacheprovider", "-p", "no:timeout"],
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "QT_QPA_PLATFORM": "offscreen",
+        "GUARDIAS_API_SECRET_KEY": "secreto-de-pruebas"
+      }
+    },
+    {
+      "name": "Tests: fichero abierto con ventanas visibles",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "args": ["${file}", "-v", "-s", "--no-cov", "-p", "no:cacheprovider", "-p", "no:timeout"],
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "GUARDIAS_API_SECRET_KEY": "secreto-de-pruebas"
+      }
+    },
+    {
+      "name": "Tests: suite completa",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "args": [
+        "tests/",
+        "-q",
+        "--no-cov",
+        "-p", "no:cacheprovider",
+        "-p", "no:timeout",
+        "--ignore=tests/test_benchmark_cpsat.py",
+        "--ignore=tests/e2e_playwright"
+      ],
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "QT_QPA_PLATFORM": "offscreen",
+        "GUARDIAS_API_SECRET_KEY": "secreto-de-pruebas"
+      }
+    },
+    {
+      "name": "Tests: auditoría",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "args": ["tests/audit", "-v", "--no-cov", "-p", "no:cacheprovider", "-p", "no:timeout"],
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "QT_QPA_PLATFORM": "offscreen"
+      }
+    },
+    {
+      "name": "Tests: cumplimiento del algoritmo",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "args": ["tests/compliance", "-v", "--no-cov", "-p", "no:cacheprovider", "-p", "no:timeout"],
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "QT_QPA_PLATFORM": "offscreen"
+      }
+    }
+  ]
+}

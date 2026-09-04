@@ -11,12 +11,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _ruff(*args):
-    return subprocess.run(
+    resultado = subprocess.run(
         [sys.executable, "-m", "ruff", "check", *args],
         cwd=ROOT,
         capture_output=True,
         text=True,
     )
+    if "No module named ruff" in resultado.stderr:
+        pytest.skip("ruff no está instalado en este intérprete")
+    return resultado
 
 
 def test_sin_nombres_indefinidos():

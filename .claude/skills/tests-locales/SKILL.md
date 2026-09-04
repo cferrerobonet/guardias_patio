@@ -5,10 +5,14 @@ description: Ejecutar los tests de Guardias de Patio en local (pytest, pytest-qt
 
 # Tests en local
 
+## Desde VS Code
+
+Ejecución y Depuración → "Tests: fichero abierto", "Tests: suite completa", "Tests: auditoría" o "Tests: cumplimiento del algoritmo". Terminal → Ejecutar tarea para las mismas sin depurador. Requiere tener seleccionado el intérprete `.venv`.
+
 ## Intérprete y dependencias
 
 ```bash
-PY=/opt/homebrew/bin/python3.11          # el único con PyQt6 + OR-Tools instalados
+PY=.venv/bin/python                      # reparado y alineado con requirements.txt (PyQt 6.7.0)
 export QT_QPA_PLATFORM=offscreen
 $PY -m pip install -r requirements.txt
 $PY -m pip install hypothesis pytest-xdist pytest-timeout PyJWT slowapi playwright pytest-playwright
@@ -16,7 +20,7 @@ export GUARDIAS_API_SECRET_KEY=secreto-de-pruebas   # los tests de API fallan al
 $PY -m playwright install chromium       # sólo para tests/e2e_playwright
 ```
 
-`.venv`, `.venv-1` y `.venv-win` del repo no tienen intérprete válido: no usarlos.
+`.venv-1` y `.venv-win` son restos de otras instalaciones: no usarlos.
 
 ## Comandos
 

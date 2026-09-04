@@ -63,6 +63,7 @@ Clean Architecture híbrida con capa `services/` legacy (ADR-001). SQLite por us
 | ESC-004 | P3 | Multiusuario real no existe: un usuario = una BD; el bloqueo de sesión impide trabajo simultáneo | `sync/session_lock.py` | Ruta incremental documentada en ADR: (1) API FastAPI como servicio local, (2) Postgres compartido opcional (`db_manager` ya contempla QueuePool), (3) UI que consume DTOs; conserva SQLite para modo local |
 | ESC-005 | P2 | Caché global con invalidación por regex y TTL; riesgo de datos de otro curso tras cambio | `utils/cache.py`, `utils/repository_cache.py`, CHANGELOG (fix cbbfe4f) | Clave de caché que incluya `curso_id`; invalidación por evento de dominio; medir si la caché aporta algo real |
 | ESC-006 | P3 | Arranque secuencial en el hilo GUI: migración multi-curso, adquisición de lock con reintentos, sync de arranque | `main.py:206-283` | Splash con worker y pasos visibles; timeouts; la ventana principal aparece en < 2 s |
+| ESC-007 | P2 | Clave de caché basada en la dirección de memoria del objeto: 300 instancias en serie producen una sola clave, de modo que un caso de uso puede servir el resultado de otro durante el TTL. `cache_key_prefix` se acepta y se ignora | `utils/cache.py:59-87`, `utils/repository_cache.py:40-63` | Construir la clave con datos estables: nombre cualificado de la función, identidad del recurso y `curso_id`; nunca con `str(self)`. Excluir `self` como se excluye la sesión. Usar el prefijo o eliminarlo del API |
 
 ### Arquitectura objetivo (ADR propuesto)
 

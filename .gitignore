@@ -26,7 +26,14 @@ htmlcov/
 
 # IDEs y Editores (configuraciones locales del usuario)
 .idea/
-.vscode/
+# Configuración del editor: se versiona lo compartido para que funcione igual en
+# macOS y en el PC de Windows. settings.json queda fuera por ser de cada equipo.
+# Debe ser `.vscode/*` y no `.vscode/`: git no entra en un directorio excluido y
+# las excepciones de dentro no llegarían a aplicarse.
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
 *.swp
 *.swo
 *~

@@ -1,0 +1,125 @@
+{
+  // Tareas del proyecto: Terminal → Ejecutar tarea…  (o Ctrl/Cmd+Shift+B para la de compilación)
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Tests: suite completa",
+      "type": "shell",
+      "group": { "kind": "test", "isDefault": true },
+      "command": "${command:python.interpreterPath}",
+      "args": [
+        "-m", "pytest", "tests/", "-q", "--no-cov",
+        "-p", "no:cacheprovider", "-p", "no:timeout",
+        "--ignore=tests/test_benchmark_cpsat.py",
+        "--ignore=tests/e2e_playwright"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "QT_QPA_PLATFORM": "offscreen",
+          "GUARDIAS_API_SECRET_KEY": "secreto-de-pruebas",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: auditoría",
+      "type": "shell",
+      "group": "test",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "pytest", "tests/audit", "-v", "--no-cov", "-p", "no:cacheprovider", "-p", "no:timeout"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": { "QT_QPA_PLATFORM": "offscreen", "PYTHONDONTWRITEBYTECODE": "1" }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: con cobertura",
+      "type": "shell",
+      "group": "test",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "pytest", "tests/", "-q", "-p", "no:cacheprovider", "-p", "no:timeout", "--ignore=tests/test_benchmark_cpsat.py", "--ignore=tests/e2e_playwright"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "QT_QPA_PLATFORM": "offscreen",
+          "GUARDIAS_API_SECRET_KEY": "secreto-de-pruebas"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint: ruff",
+      "type": "shell",
+      "group": "build",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "ruff", "check", "src", "tests"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": {
+        "owner": "python",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^\\s*-->\\s+(.+):(\\d+):(\\d+)$",
+          "file": 1, "line": 2, "column": 3
+        }
+      }
+    },
+    {
+      "label": "Formato: ruff format",
+      "type": "shell",
+      "group": "build",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "ruff", "format", "src", "tests"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Compilar: app de macOS (.app)",
+      "type": "shell",
+      "group": "build",
+      "command": "make",
+      "args": ["app"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Compilar: DMG de macOS y publicar release",
+      "type": "shell",
+      "group": { "kind": "build", "isDefault": true },
+      "command": "make",
+      "args": ["dmg"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Compilar: exe e instalador de Windows",
+      "type": "shell",
+      "group": "build",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "scripts\\build_windows.ps1"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Compilar: Windows en modo diagnóstico (consola visible)",
+      "detail": "Genera GuardiasDePatio-debug.exe con consola y faulthandler para ver por qué se cierra la app",
+      "type": "shell",
+      "group": "build",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "scripts\\build_windows.ps1", "-Diagnostico"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Limpiar artefactos de build",
+      "type": "shell",
+      "command": "rm",
+      "args": ["-rf", "build", "dist"],
+      "windows": { "command": "powershell", "args": ["-Command", "Remove-Item -Recurse -Force build,dist -ErrorAction SilentlyContinue"] },
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}

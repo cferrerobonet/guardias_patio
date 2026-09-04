@@ -53,12 +53,12 @@ Artefactos intermedios: `_work/paquete_ux_accesibilidad.md` (paquete Ola 4 de 20
 | UXF · Flujo, guardarraíles y clics | 0 | 2 | 7 | 2 | 11 |
 | VIS · Consistencia visual | 0 | 0 | 7 | 3 | 10 |
 | BLD · Build y release | 0 | 2 | 4 | 1 | 7 |
-| QA · Tests y calidad de pruebas | 0 | 2 | 4 | 4 | 10 |
+| QA · Tests y calidad de pruebas | 0 | 2 | 6 | 4 | 12 |
 | COD · Calidad de código | 0 | 0 | 4 | 4 | 8 |
-| ESC · Escalabilidad y arquitectura | 0 | 0 | 4 | 2 | 6 |
+| ESC · Escalabilidad y arquitectura | 0 | 0 | 5 | 2 | 7 |
 | SEC · Seguridad y privacidad | 0 | 0 | 1 | 2 | 3 |
 | DEV · Eficiencia de agentes y tokens | 0 | 0 | 2 | 4 | 6 |
-| **Total** | **1** | **17** | **42** | **24** | **84** |
+| **Total** | **1** | **17** | **45** | **24** | **87** |
 
 Mejoras funcionales propuestas (FUN-001…012) se listan en 07 y en el registro como tipo `mejora`, sin severidad.
 
@@ -66,6 +66,7 @@ Mejoras funcionales propuestas (FUN-001…012) se listan en 07 y en el registro 
 
 - **Veredicto:** `PARCIAL`. Hay evidencia estática reproducible y comandos ejecutados; faltan la reproducción del cierre en la máquina Windows y la validación manual con lector de pantalla.
 - **Bloqueantes de certificación:** CRW-001/002/003/005, UXA-001…007, BLD-001/002, QA-001.
+- **Resueltos y verificados en v5.45.0:** QA-012 (`.venv` reparado y alineado con `requirements.txt`; VS Code queda utilizable para ejecutar, depurar y compilar).
 - **Resueltos y verificados en v5.44.0:** QA-008 (la suite completa vuelve a ejecutarse de una pasada: 2.454 pasan en 47 s), CRW-006 (`faulthandler`), CRW-008 (nombres indefinidos), BLD-007 (build de diagnóstico).
 - **Gates ejecutados en este commit:** colección pytest, ruff, bandit y suite completa por fichero (2.376 pasan, 0 fallan, 4 ficheros bloqueados). Detalle y método en [[01_BASELINE_Y_ADAPTADOR]].
 
