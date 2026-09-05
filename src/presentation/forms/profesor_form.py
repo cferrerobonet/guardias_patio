@@ -95,7 +95,12 @@ class ProfesorForm(BaseForm):
 
         # Cargar datos iniciales
         self.cargar_profesores()
+
         self.cargar_zonas()
+
+        # Detectar ediciones sin guardar para el guard de navegación (UXA-004).
+        # Va al final: rellenar los campos con datos no es una edición del usuario.
+        self.vigilar_cambios()
 
     def setup_ui(self):
         """Construir la interfaz del formulario con diseño responsivo."""
@@ -388,11 +393,19 @@ class ProfesorForm(BaseForm):
         self.delete_btn.setEnabled(True)
         self.busqueda_input.setEnabled(True)
 
+        # Formulario vacío = sin cambios pendientes (UXA-004)
+        self.descartar_cambios()
+
     def cancelar_edicion(self):
         """Cancelar edición y volver a modo creación (sin recargar tabla)."""
         self._cerrar_formulario()
         # NO recargar tabla - es más rápido y no se han guardado cambios
         # self.cargar_profesores()  # ELIMINADO - innecesario
+
+    def guardar_cambios_pendientes(self) -> bool:
+        """Permite al guard de navegación ofrecer «Guardar» (UXA-004)."""
+        self.guardar_profesor()
+        return not self.tiene_cambios()
 
     def guardar_profesor(self):
         """Crear o actualizar profesor según el modo actual."""
@@ -532,7 +545,9 @@ class ProfesorForm(BaseForm):
                 AppServices(self.session).zonas.get_all(), key=lambda z: z.nombre_zona
             )
             zonas_list = [(z.id, z.nombre_zona) for z in zonas_all]
-            self.restricciones_widget.cargar_zonas(zonas_list)
+            # Poblar el widget no es una edición del usuario (UXA-004).
+            with self.cargando():
+                self.restricciones_widget.cargar_zonas(zonas_list)
 
         except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar zonas")
@@ -694,6 +709,8 @@ class ProfesorForm(BaseForm):
             self.busqueda_input.setEnabled(False)
 
             self._mostrar_formulario()
+            # Lo que se acaba de volcar en los campos no son cambios del usuario.
+            self.descartar_cambios()
 
         except (ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "editar profesor")

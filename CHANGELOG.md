@@ -5,6 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.59.0] - 2026-09-05
+
+### 🎯 Resumen
+La aplicación deja de tirar a la basura, sin decir nada, lo que estabas escribiendo.
+
+### Fixed
+- **Los cambios sin guardar ya no se pierden en silencio.** Si estabas editando un profesor o una zona y cambiabas de sección, cerrabas la aplicación o cambiabas de curso, lo escrito desaparecía sin un solo aviso. Ahora la aplicación pregunta qué hacer: guardar, descartar o seguir editando. El aviso es uno solo y vive en la ventana principal, no repetido en cada pantalla.
+- **Al cambiar de curso se avisa antes de descartar.** Ahí no cabe «seguir editando», porque lo pendiente pertenece al curso que dejas atrás, pero sí se ofrece guardarlo antes.
+
+### Changed
+- Los formularios detectan solos que has tocado un campo, sea del tipo que sea. Rellenarlos al abrir un registro no cuenta como edición tuya: si contara, el aviso saltaría siempre y acabaría ignorándose.
+- La pantalla de Ajustes tenía su propio mecanismo de cambios pendientes, en paralelo al general. Ahora usa el mismo.
+
+### 🧹 Housekeeping
+- `auditoria/`: UXA-004 y UXF-004 resueltos; lote 7 cerrado. La infraestructura llevaba tiempo escrita en `BaseForm` pero no la llamaba nadie.
+- 16 pruebas nuevas con la matriz completa de estado × salida × decisión, incluida una que comprueba que ningún formulario nace ya marcado como modificado. Total: 2.539.
+
+---
+
 ## [5.58.0] - 2026-09-05
 
 ### 🎯 Resumen

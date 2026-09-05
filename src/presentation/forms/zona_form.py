@@ -74,6 +74,9 @@ class ZonaForm(BaseForm):
 
         self.cargar_zonas()
 
+        # Detectar ediciones sin guardar para el guard de navegación (UXA-004)
+        self.vigilar_cambios()
+
     # ========== PROPIEDADES DE COMPATIBILIDAD ==========
 
     @property
@@ -332,6 +335,11 @@ class ZonaForm(BaseForm):
 
         return right_section
 
+    def guardar_cambios_pendientes(self) -> bool:
+        """Permite al guard de navegación ofrecer «Guardar» (UXA-004)."""
+        self.guardar_zona()
+        return not self.tiene_cambios()
+
     def guardar_zona(self):
         """Guardar o actualizar una zona usando el Use Case correspondiente"""
         try:
@@ -521,6 +529,9 @@ class ZonaForm(BaseForm):
         if self.table_manager:
             self.table_manager.enable_table_interactions(False)
 
+        # Lo que se acaba de volcar en los campos no son cambios del usuario.
+        self.descartar_cambios()
+
     def cancelar_edicion(self):
         """Cancelar la edición y volver al modo 'nueva zona' (sin recargar tabla)."""
         self.zona_editando_id = None
@@ -691,6 +702,9 @@ class ZonaForm(BaseForm):
         # Re-habilitar interacción con la tabla después de cancelar/guardar
         if self.table_manager:
             self.table_manager.enable_table_interactions(True)
+
+        # Formulario vacío = sin cambios pendientes (UXA-004)
+        self.descartar_cambios()
 
     def validar_formulario(self) -> bool:
         """

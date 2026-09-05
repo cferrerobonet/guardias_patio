@@ -342,12 +342,20 @@ class AjustesForm(BaseForm):
         """Marca que hay cambios sin guardar."""
         self._dirty = True
         self._dirty_label.setVisible(True)
+        # Y por el contrato común, que es lo que consulta el guard de navegación.
+        self._mark_dirty()
 
     def _marcar_guardado(self) -> None:
         """Marca que todos los cambios han sido guardados."""
         self._dirty = False
         if hasattr(self, "_dirty_label"):
             self._dirty_label.setVisible(False)
+        self._mark_clean()
+
+    def guardar_cambios_pendientes(self) -> bool:
+        """Permite al guard de navegación ofrecer «Guardar» (UXA-004)."""
+        self.guardar_configuracion()
+        return not self.tiene_cambios()
 
     def _generar_recreos_config_json(self) -> str:
         """Genera el JSON de configuración de recreos basado en los valores del formulario."""

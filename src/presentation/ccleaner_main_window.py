@@ -83,6 +83,7 @@ class CCleanerMainWindow(QMainWindow):
         self.sync_manager = sync_manager
         self.widgets: dict = {}
         self._view_factories: dict = {}
+        self._seccion_actual = "profesores"
         self.setup_ui()
 
     def setup_ui(self):
@@ -195,10 +196,59 @@ class CCleanerMainWindow(QMainWindow):
 
     def on_section_changed(self, section: str):
         """Cambiar de sección — instancia el widget si es la primera vez."""
+        if section == self._seccion_actual:
+            return
+
+        # Guard central de cambios sin guardar. Antes cambiar de sección los
+        # descartaba en silencio (UXA-004).
+        if not self.confirmar_salida_de_la_vista_actual():
+            self.sidebar.set_active_section(self._seccion_actual)
+            return
+
         self._ensure_view(section)
         if section in self.widgets:
             self.content_stack.setCurrentWidget(self.widgets[section])
+            self._seccion_actual = section
             usage_log("NAV", section=section)
+
+    def vista_actual(self):
+        """Widget de contenido de la sección visible, o None."""
+        envoltorio = self.content_stack.currentWidget()
+        return getattr(envoltorio, "content_widget", None)
+
+    def confirmar_salida_de_la_vista_actual(self) -> bool:
+        """Pregunta qué hacer con los cambios pendientes. False = quedarse.
+
+        Se usa igual al navegar entre secciones y al cerrar la aplicación, para
+        no duplicar el modal en cada formulario (UXA-004).
+        """
+        vista = self.vista_actual()
+        if vista is None or not getattr(vista, "tiene_cambios", lambda: False)():
+            return True
+
+        caja = QMessageBox(self)
+        caja.setIcon(QMessageBox.Icon.Warning)
+        caja.setWindowTitle("Cambios sin guardar")
+        caja.setText("Hay cambios sin guardar en esta pantalla.")
+        caja.setInformativeText("¿Qué quieres hacer con ellos?")
+
+        boton_guardar = None
+        if getattr(vista, "puede_guardar_desde_el_guard", lambda: False)():
+            boton_guardar = caja.addButton("Guardar", QMessageBox.ButtonRole.AcceptRole)
+        caja.addButton("Descartar", QMessageBox.ButtonRole.DestructiveRole)
+        boton_cancelar = caja.addButton("Seguir editando", QMessageBox.ButtonRole.RejectRole)
+        caja.setDefaultButton(boton_cancelar)
+        caja.exec()
+
+        pulsado = caja.clickedButton()
+        if pulsado is boton_cancelar:
+            return False
+        if boton_guardar is not None and pulsado is boton_guardar:
+            return bool(vista.guardar_cambios_pendientes())
+
+        if hasattr(vista, "descartar_cambios"):
+            vista.descartar_cambios()
+        return True
 
     def connect_signals(self):
         """Conectar señales de los widgets"""
@@ -303,6 +353,30 @@ class CCleanerMainWindow(QMainWindow):
 
     def _on_curso_cambiado(self, curso_id: int):
         """Al cambiar de curso, todas las vistas abiertas deben mostrar el nuevo."""
+        # Los cambios pendientes son del curso anterior: aquí no cabe "seguir
+        # editando", pero sí avisar y dar la opción de guardarlos (UXF-004).
+        vista = self.vista_actual()
+        if vista is not None and getattr(vista, "tiene_cambios", lambda: False)():
+            caja = QMessageBox(self)
+            caja.setIcon(QMessageBox.Icon.Warning)
+            caja.setWindowTitle("Cambios sin guardar")
+            caja.setText("Hay cambios sin guardar que pertenecen al curso anterior.")
+            caja.setInformativeText(
+                "Al cambiar de curso se descartan, porque ya no corresponden a los "
+                "datos que vas a ver."
+            )
+            boton_guardar = None
+            if getattr(vista, "puede_guardar_desde_el_guard", lambda: False)():
+                boton_guardar = caja.addButton("Guardar antes", QMessageBox.ButtonRole.AcceptRole)
+            descartar = caja.addButton("Descartar", QMessageBox.ButtonRole.DestructiveRole)
+            caja.setDefaultButton(boton_guardar or descartar)
+            caja.exec()
+
+            if boton_guardar is not None and caja.clickedButton() is boton_guardar:
+                vista.guardar_cambios_pendientes()
+            if hasattr(vista, "descartar_cambios"):
+                vista.descartar_cambios()
+
         self.recargar_todas_las_vistas(f"curso {curso_id}")
 
     # ── Auto-sync ──────────────────────────────────────────────────────────────
@@ -356,6 +430,9 @@ class CCleanerMainWindow(QMainWindow):
             self.sidebar.set_sync_status(estado, f"⚠ Sync hace {horas}h")
 
     def closeEvent(self, event):
+        if not self.confirmar_salida_de_la_vista_actual():
+            event.ignore()
+            return
         if not self.sync_manager:
             event.accept()
             return

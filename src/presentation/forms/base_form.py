@@ -5,8 +5,24 @@ Clase base para todos los formularios de la aplicación.
 Proporciona funcionalidad común y establece el patrón MVP.
 """
 
+from contextlib import contextmanager
+
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QLabel, QMessageBox, QWidget
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDateEdit,
+    QDateTimeEdit,
+    QDoubleSpinBox,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPlainTextEdit,
+    QSpinBox,
+    QTextEdit,
+    QTimeEdit,
+    QWidget,
+)
 
 from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
@@ -46,6 +62,75 @@ class BaseForm(QWidget):
         self.logger = get_logger(self.__class__.__name__)
         self._tiene_cambios = False
         self._label_cambios: QLabel | None = None
+        #: Mientras es True, rellenar campos no cuenta como edición del usuario.
+        self._cargando = False
+
+    #: Señal de cada tipo de campo que indica que el usuario lo ha tocado.
+    SENALES_DE_EDICION = (
+        (QLineEdit, "textEdited"),
+        (QPlainTextEdit, "textChanged"),
+        (QTextEdit, "textChanged"),
+        (QCheckBox, "toggled"),
+        (QComboBox, "currentIndexChanged"),
+        (QSpinBox, "valueChanged"),
+        (QDoubleSpinBox, "valueChanged"),
+        (QDateEdit, "dateChanged"),
+        (QTimeEdit, "timeChanged"),
+        (QDateTimeEdit, "dateTimeChanged"),
+    )
+
+    def vigilar_cambios(self, raiz: QWidget | None = None) -> int:
+        """Conecta los campos editables para detectar ediciones sin guardar.
+
+        Llamar al final de la construcción de la interfaz. Devuelve cuántos campos
+        quedan vigilados. Los cambios hechos por código —al cargar un registro—
+        no cuentan si se envuelven en `cargando()` (UXA-004).
+        """
+        raiz = raiz or self
+        vigilados = 0
+        for tipo, nombre_senal in self.SENALES_DE_EDICION:
+            for campo in raiz.findChildren(tipo):
+                # QDateTimeEdit hereda de QDateEdit y QTimeEdit: evitar duplicados.
+                if getattr(campo, "_vigilado_por_base_form", False):
+                    continue
+                senal = getattr(campo, nombre_senal, None)
+                if senal is None:
+                    continue
+                senal.connect(self._al_editar_campo)
+                campo._vigilado_por_base_form = True
+                vigilados += 1
+        return vigilados
+
+    def _al_editar_campo(self, *_args) -> None:
+        if not self._cargando:
+            self._mark_dirty()
+
+    @contextmanager
+    def cargando(self):
+        """Rellena campos por código sin que cuente como edición del usuario."""
+        previo = self._cargando
+        self._cargando = True
+        try:
+            yield
+        finally:
+            self._cargando = previo
+            self._mark_clean()
+
+    def descartar_cambios(self) -> None:
+        """Olvida el estado de cambios pendientes (tras guardar o descartar)."""
+        self._mark_clean()
+
+    def guardar_cambios_pendientes(self) -> bool:
+        """Guarda los cambios del formulario.
+
+        Devuelve True si se guardaron. Los formularios que sepan guardarse lo
+        redefinen; el guard de navegación sólo ofrece "Guardar" cuando existe.
+        """
+        return False
+
+    def puede_guardar_desde_el_guard(self) -> bool:
+        """True si este formulario implementa `guardar_cambios_pendientes`."""
+        return type(self).guardar_cambios_pendientes is not BaseForm.guardar_cambios_pendientes
 
     def _mark_dirty(self) -> None:
         """Marca el formulario como modificado sin guardar."""
