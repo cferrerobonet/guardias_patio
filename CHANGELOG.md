@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.51.0] - 2026-09-05
+
+### 🎯 Resumen
+Comprobado y fijado con pruebas que actualizar la aplicación no se lleva por delante los datos de quien la usa.
+
+### ✨ Added
+- `tests/audit/test_datos_sobreviven_actualizacion.py`: nueve comprobaciones que fijan que la base de datos, las copias automáticas, las cuentas, la configuración y los registros viven en la carpeta del usuario del sistema operativo y no dentro del programa, en macOS, Windows y Linux. También que al abrir se hace copia y se aplican las migraciones pendientes sobre la base existente, que el instalador de Windows no declara borrados en zonas de datos, y que en un equipo nuevo se puede teclear un usuario que ese ordenador todavía no conoce.
+- `auditoria/09_BUILD_Y_RELEASE.md`: tabla de qué se guarda y dónde, y qué ocurre al instalar encima.
+
+### 🧹 Housekeeping
+- Documentado un caso particular: quien ejecuta desde el código fuente tiene los datos en la carpeta del proyecto. Al pasar a la aplicación instalada esa copia no se ve y arranca vacía, pero los datos vuelven al entrar porque se descargan del servidor.
+
+---
+
 ## [5.50.0] - 2026-09-05
 
 ### 🎯 Resumen

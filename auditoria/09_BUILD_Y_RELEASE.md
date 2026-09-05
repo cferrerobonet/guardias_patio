@@ -59,7 +59,48 @@ tag vX.Y.Z ──► CI
    └─ release GitHub con ambos assets + notas desde CHANGELOG
 ```
 
-## 5. Checklist de release manual (mientras no haya CI)
+## 6. Actualizar sin perder datos (verificado v5.51.0)
+
+Instalar una versión nueva sustituye el programa, no los datos. Está comprobado con
+`tests/audit/test_datos_sobreviven_actualizacion.py`:
+
+| Qué | Dónde vive | Sobrevive |
+| --- | --- | --- |
+| Base de datos de cada usuario | `<datos>/data/users/<hash>/guardias_patio.db` | Sí |
+| Copias de seguridad automáticas | `<datos>/data/users/<hash>/backups/` | Sí |
+| Cuentas locales | `<datos>/data/users.json` | Sí |
+| Conexión al servidor y correo | `<datos>/.env` | Sí |
+| Clave de cifrado | `~/.guardias_patio_key` | Sí |
+| Registros | `<datos>/logs/` | Sí |
+
+Donde `<datos>` es, en la aplicación ya instalada:
+
+- macOS: `~/Library/Application Support/GuardiasDePatio`
+- Windows: `%APPDATA%\GuardiasDePatio`
+- Linux: `~/.local/share/GuardiasDePatio`
+
+Es decir, fuera del programa. El DMG sustituye la aplicación en Aplicaciones y el
+instalador de Windows escribe en Archivos de programa; ninguno toca esas carpetas.
+El instalador tampoco declara borrados en zonas de datos al desinstalar.
+
+**Cambios de estructura entre versiones.** Al abrir, `initialize_user_database`
+hace una copia de seguridad y después aplica las migraciones pendientes sobre la
+base que ya existe. Una versión nueva con cambios de esquema no rompe los datos
+de antes.
+
+**Instalación en un equipo que nunca ha tenido la aplicación.** La lista de
+usuarios está vacía, pero el campo permite teclear el nombre, y la cuenta se
+valida contra el servidor. Después la base local se reconstruye con lo que hay en
+la nube. Lo único que hay que introducir es la conexión al servidor la primera vez.
+
+> [!WARNING] Caso particular de quien ejecuta desde el código fuente
+> En modo desarrollo los datos están en la carpeta del proyecto, no en la del
+> sistema. Al pasar a la aplicación instalada, esa copia local no se ve y la
+> aplicación arranca vacía; los datos vuelven al entrar, porque se descargan del
+> servidor.
+
+
+## 7. Checklist de release manual (mientras no haya CI)
 
 - [ ] `app_version` actualizado y CHANGELOG con la fecha.
 - [ ] `pytest tests/ --no-cov -q` verde (incluido `tests/audit`).
