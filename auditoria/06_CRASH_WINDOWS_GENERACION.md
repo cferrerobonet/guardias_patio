@@ -52,9 +52,10 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 
 ## 4. Hallazgos (fichas)
 
-### [CRW-001] Señales Qt emitidas desde los hilos internos de OR-Tools
+### ~~[CRW-001] Señales Qt emitidas desde los hilos internos de OR-Tools~~ ✅ RESUELTO v5.52.0
 
-- **Estado:** NUEVO · **Tipo:** bug · **Severidad:** P0 · **Prioridad:** inmediata · **Confianza:** media (evidencia estática sólida; falta reproducción en Windows).
+- **Estado:** RESUELTO VERIFICADO v5.52.0 · **Tipo:** bug · **Severidad:** P0 · **Confianza:** media (evidencia estática sólida; falta confirmar en Windows que era ésta la causa del cierre).
+- **Solución aplicada:** `SolverCallback` ya no recibe el callback de la aplicación: sólo publica en un `ProgresoSolver` protegido por `threading.Lock`. `resolver_con_progreso` lanza `solver.Solve` en un hilo propio y, desde el hilo llamante, recoge cada 250 ms lo publicado y lo reporta. Ningún hilo creado por OR-Tools vuelve a entrar en código de la aplicación, y menos aún en Qt.
 - **Ubicación:** `src/services/_asignador_cpsat_helpers.py:233-244` (`on_solution_callback` llama a `progress_callback`), `src/services/asignador_guardias_cpsat.py:512-514` (callback pasado a `solver.Solve` con `num_search_workers = 8`), `src/application/use_cases/asignacion_guardias/generar_guardias.py:118-122` (`adapter_callback`), `src/presentation/forms/asignacion_widgets/generacion_panel.py:289-292` (`adapted_callback`), `src/presentation/widgets/progress_worker.py:40-43` (`callback_progreso` → `self.progreso.emit`).
 - **Evidencia:** la cadena de callbacks no cambia de hilo en ningún punto; `CpSolverSolutionCallback.on_solution_callback` se ejecuta en un hilo creado por OR-Tools (no por Qt ni por Python). Ese hilo emite `pyqtSignal` y, a través del handler de progreso (`actualizar_progreso`), añade texto al `QTextEdit`. Qt "adopta" el hilo nativo la primera vez que lo toca y libera esa adopción cuando el hilo termina, que es exactamente **al final del `Solve`** cuando OR-Tools destruye sus 8 workers. En Windows la limpieza de hilos adoptados se hace desde `DllMain`/watcher de Qt y es una fuente conocida de accesos inválidos cuando interviene además el GIL de Python. El momento coincide con el síntoma: "a punto de terminar".
 - **Pasos de reproducción (Windows):** build congelado, curso con ≥ 20 profesores, algoritmo "Óptimo (CP-SAT)", pulsar Generar, esperar al final del solve.
@@ -68,9 +69,10 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 - **Criterios de aceptación:** [ ] `services/` sin imports de PyQt6 ni callbacks Qt; [ ] 10 generaciones consecutivas en Windows sin cierre; [ ] progreso visible durante el solve; [ ] cancelar detiene el solver en < 2 s.
 - **Esfuerzo:** M. **Dependencias:** ninguna. **Producción:** verificación en el PC Windows.
 
-### [CRW-002] El handler de logging escribe en widgets desde el hilo que loguea
+### ~~[CRW-002] El handler de logging escribe en widgets desde el hilo que loguea~~ ✅ RESUELTO v5.52.0
 
-- **Tipo:** bug · **Severidad:** P1 · **Confianza:** alta.
+- **Estado:** RESUELTO VERIFICADO v5.52.0 · **Tipo:** bug · **Severidad:** P1 · **Confianza:** alta.
+- **Solución aplicada:** `ProgressLogHandler` publica en la señal `linea` de un `_PuenteLog` que vive en el hilo GUI y está conectada en cola; el `QTextEdit` sólo se toca desde allí. La lista de loggers pasa a ser `services.asignador_guardias_cpsat` y `services.asignador_guardias_v4_hibrido`, y se les sube el nivel a INFO mientras el diálogo está abierto: heredaban WARNING, así que el panel de detalle no mostraba nada.
 - **Ubicación:** `src/presentation/widgets/progress_handlers.py:41-52` (`ProgressLogHandler.emit` → `progress_dialog.agregar_al_log`), `src/presentation/widgets/progress_indicators.py:343-359` (`QTextEdit.append` + scrollbar), `:278-292` (se instala en `services.asignador_iterativo`, `services.asignador_ilp`, `services.orquestador_asignacion_guardias`, `services.asignador_guardias_v3_simple`).
 - **Evidencia:** `logging.Handler.emit` se ejecuta en el hilo que hace `logger.info`, es decir, el worker o los hilos del solver. Toca `QTextEdit` directamente. Hoy está **latente** porque tres de los cuatro loggers ya no existen y el cuarto (`orquestador`) no se usa en la generación; en cuanto alguien añada el logger de CP-SAT, el crash es inmediato.
 - **Recomendación:** el handler emite una señal `linea_log(str)` de un `QObject` que vive en el hilo GUI; el diálogo la conecta con `QueuedConnection`. Actualizar la lista de loggers a `services.asignador_guardias_cpsat` y `services.asignador_guardias_v4_hibrido`.
@@ -86,9 +88,10 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 - **Prueba:** `tests/audit/test_crash_windows_regresion.py::test_worker_no_reutiliza_sesion_gui` (xfail hasta el fix) y test de integración con BD en fichero (`tests/audit/conftest.py::db_fichero`).
 - **Esfuerzo:** L (toca 10 vistas). Puede hacerse por lotes empezando por generación y sync.
 
-### [CRW-004] Cancelar se traga en las fases del solver y sólo se propaga a través del callback C++
+### ~~[CRW-004] Cancelar se traga en las fases del solver y sólo se propaga a través del callback C++~~ ✅ RESUELTO v5.52.0
 
-- **Tipo:** bug · **Severidad:** P2 · **Confianza:** alta (verificado con `tests/audit`).
+- **Estado:** RESUELTO VERIFICADO v5.52.0 · **Tipo:** bug · **Severidad:** P2 · **Confianza:** alta (verificado con `tests/audit`).
+- **Solución aplicada:** `WorkerThread` expone un `threading.Event` que `cancelar()` activa y que se pasa a la tarea si declara el parámetro `cancelacion`; el callback de progreso ya no lanza. Los dos asignadores comprueban el evento en cada fase y `reportar` deja de tragarse `InterruptedError`. Durante el solve, el bucle de sondeo llama a `solver.stop_search()`, que es la parada asíncrona documentada de OR-Tools: nada cruza ya el callback C++.
 - **Ubicación:** `src/services/asignador_guardias_cpsat.py:77-82` (`reportar` captura `OSError`; `InterruptedError` es subclase de `OSError`), `src/presentation/widgets/progress_worker.py:41-42` (raise dentro de `callback_progreso`), `src/services/_asignador_cpsat_helpers.py:240-244`.
 - **Evidencia:** el test `test_cancelacion_interrumpe_la_generacion_sin_tragarse_la_excepcion` registra 10 avisos "Error en callback de progreso" antes de que la excepción llegue al llamante: las fases 1-5 ignoran la cancelación y el trabajo continúa. La excepción acaba propagándose porque OR-Tools 9.14 re-lanza las excepciones Python ocurridas en `on_solution_callback` al terminar `Solve` (comprobado en macOS). Ese comportamiento depende de la versión de OR-Tools y del wrapper; en el build de Windows no se ha verificado, y en cualquier caso una excepción que atraviesa el callback deja el solver en parada abrupta con 8 hilos activos.
 - **Recomendación:** el callback nunca lanza: consulta una bandera de cancelación y llama a `self.StopSearch()`; `reportar` no captura `InterruptedError`; cada fase comprueba la bandera y sale limpiamente con `rollback`.
@@ -139,15 +142,15 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 1. **Recoger el último log:** `%APPDATA%\GuardiasDePatio\logs\app_*.log` más reciente. Enviar las últimas 200 líneas. Buscar `Guardando guardias`, `Proceso completado`, `Error en WorkerThread`, `EXCEPCIÓN NO MANEJADA`.
 2. **Visor de eventos:** Windows Logs → Application → error 1000 con `GuardiasDePatio.exe`; anotar *Faulting module* (`Qt6Core.dll`, `Qt6Widgets.dll`, `python311.dll`, `sqlite3.dll`, `_pywrapcp*.pyd`/`ortools`), *Exception code* (0xC0000005 = acceso inválido; 0x40000015/0xC0000409 = abort/terminate).
 3. **Ejecutar con consola:** compilar con `powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1 -Diagnostico` (ya disponible desde v5.44.0: añade `--console` y activa `PYTHONFAULTHANDLER`), lanzar `dist\GuardiasDePatio-debug\GuardiasDePatio-debug.exe` desde `cmd`, generar y copiar la salida. Revisar además `%APPDATA%\GuardiasDePatio\logs\faulthandler.log`, que ahora recoge la pila de todos los hilos ante un fallo nativo.
-4. **Aislar el solver:** repetir con algoritmo "Rápido (v4 Híbrido)". Si no falla, CRW-001 confirmado. Si falla igual, priorizar CRW-003/005.
+4. **Aislar el solver:** repetir con algoritmo "Rápido (v4 Híbrido)". Si no falla, CRW-001 confirmado. Si falla igual, priorizar CRW-003/005. Desde v5.52.0 la frontera solver↔Qt ya está cerrada, así que si el cierre persiste la causa está en CRW-003/005.
 5. **Aislar la sync:** repetir con la variable `DISABLE_SESSION_LOCK=1` y sin red. Si deja de fallar, priorizar CRW-005/007.
 6. Registrar resultados en [[30_REGISTRO_HALLAZGOS]] con veredicto y actualizar la confianza de CRW-001.
 
 ## 6. Orden de remediación
 
 1. ~~CRW-006~~ ✅ v5.44.0. Queda CRW-005 (XS, sin riesgo): elimina un vector de cierre.
-2. CRW-001 y CRW-004 (M+S): frontera solver↔Qt y cancelación cooperativa.
-3. CRW-002 (S). ~~CRW-008~~ ✅ v5.44.0.
+2. ~~CRW-001 y CRW-004 (M+S): frontera solver↔Qt y cancelación cooperativa.~~ ✅ v5.52.0
+3. ~~CRW-002 (S).~~ ✅ v5.52.0 ~~CRW-008~~ ✅ v5.44.0.
 4. CRW-007 y CRW-009 (S).
 5. CRW-003 (L) por lotes: generación → sync → resto de vistas.
 

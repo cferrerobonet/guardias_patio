@@ -7,6 +7,7 @@ Extraído de asignador_guardias_cpsat.py para reducir su tamaño (ARQ-05).
 from __future__ import annotations
 
 import json
+import threading
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date
@@ -214,19 +215,47 @@ def _es_elegible_basico(profesor: Profesor, slot: Slot, session) -> bool:
 # =============================================================================
 
 
+class ProgresoSolver:
+    """Buzón seguro entre los hilos de OR-Tools y el hilo que lanzó el solve (CRW-001).
+
+    Los hilos internos del solver sólo escriben aquí; nadie más los toca. El hilo
+    llamante recoge el último aviso con ``tomar()`` y es el único que informa hacia
+    fuera, de modo que ninguna capa superior (Qt incluida) se ejecuta en un hilo
+    creado por C++.
+    """
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._pendiente: Optional[Tuple[int, str]] = None
+
+    def publicar(self, porcentaje: int, mensaje: str = "") -> None:
+        with self._lock:
+            self._pendiente = (porcentaje, mensaje)
+
+    def tomar(self) -> Optional[Tuple[int, str]]:
+        """Devuelve el último aviso publicado y lo consume, o None si no hay nada."""
+        with self._lock:
+            pendiente, self._pendiente = self._pendiente, None
+        return pendiente
+
+
 class SolverCallback(cp_model.CpSolverSolutionCallback):
-    """Callback para reportar progreso durante la resolución."""
+    """Callback de soluciones de CP-SAT.
+
+    Se ejecuta en los hilos internos de OR-Tools, así que se limita a publicar en un
+    ``ProgresoSolver``: no llama a callbacks de la aplicación ni toca la interfaz.
+    """
 
     def __init__(
         self,
         variables: Dict,
         cuotas_ideales: Dict[int, float],
-        progress_callback: Optional[Callable[[int, str], None]] = None,
+        progreso: Optional["ProgresoSolver"] = None,
     ):
         super().__init__()
         self.variables = variables
         self.cuotas_ideales = cuotas_ideales
-        self.progress_callback = progress_callback
+        self.progreso = progreso
         self.solution_count = 0
         self.best_objective = float("inf")
 
@@ -237,11 +266,66 @@ class SolverCallback(cp_model.CpSolverSolutionCallback):
         if current_obj < self.best_objective:
             self.best_objective = current_obj
 
-            if self.progress_callback:
+            if self.progreso is not None:
                 # Estimar progreso basado en mejora del objetivo
-                progreso = min(85, 40 + self.solution_count * 2)
-                self.progress_callback(
-                    progreso, f"Solución {self.solution_count}: obj={current_obj}"
+                porcentaje = min(85, 40 + self.solution_count * 2)
+                self.progreso.publicar(
+                    porcentaje, f"Solución {self.solution_count}: obj={current_obj}"
                 )
+
+
+def resolver_con_progreso(
+    solver,
+    model,
+    callback: "SolverCallback",
+    progreso: "ProgresoSolver",
+    reportar: Callable[[int, str], None],
+    cancelacion: Optional[threading.Event] = None,
+    intervalo: float = 0.25,
+) -> int:
+    """Ejecuta ``solver.Solve`` en un hilo aparte y vigila desde el hilo llamante.
+
+    El solve bloquea, así que corre en su propio hilo; el llamante se queda en un
+    bucle que cada ``intervalo`` segundos recoge el progreso publicado y lo reporta.
+    Así el callback de la aplicación se invoca siempre desde el hilo llamante
+    (CRW-001) y la cancelación se propaga con ``stop_search()``, sin lanzar
+    excepciones a través del callback C++ de CP-SAT (CRW-004).
+    """
+    resultado: Dict[str, object] = {}
+
+    def _resolver():
+        try:
+            resultado["status"] = solver.Solve(model, callback)
+        except BaseException as e:  # noqa: BLE001 - se re-lanza en el hilo llamante
+            resultado["error"] = e
+
+    hilo = threading.Thread(target=_resolver, name="cpsat-solve", daemon=True)
+    hilo.start()
+
+    try:
+        while hilo.is_alive():
+            hilo.join(intervalo)
+            if cancelacion is not None and cancelacion.is_set():
+                solver.stop_search()
+            pendiente = progreso.tomar()
+            if pendiente is not None:
+                reportar(*pendiente)
+    except BaseException:
+        # Cancelación o error del propio reportar: parar el solver y esperar a que
+        # sus hilos terminen antes de dejar salir la excepción.
+        solver.stop_search()
+        hilo.join(timeout=30)
+        raise
+
+    hilo.join()
+
+    if "error" in resultado:
+        raise resultado["error"]
+
+    pendiente = progreso.tomar()
+    if pendiente is not None:
+        reportar(*pendiente)
+
+    return resultado["status"]
 
 

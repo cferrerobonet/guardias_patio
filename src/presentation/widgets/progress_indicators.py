@@ -35,6 +35,14 @@ from utils.ui_helpers import get_corporate_icon
 _logger = get_logger(__name__)
 
 
+# Loggers de los algoritmos vivos, los únicos cuyo detalle interesa mostrar durante
+# la generación. Los antiguos (iterativo, ilp, orquestador, v3) ya no existen.
+LOGGERS_CAPTURADOS = (
+    "services.asignador_guardias_cpsat",
+    "services.asignador_guardias_v4_hibrido",
+)
+
+
 class ProgressDialog(QDialog):
     """
     Diálogo de progreso para operaciones largas con cancelación.
@@ -123,6 +131,7 @@ class ProgressDialog(QDialog):
         self._progress_history = []  # Para calcular tiempo estimado
         self._cpu_percent = 0.0
         self._log_handler = None  # Handler para capturar logs
+        self._niveles_previos = {}  # Niveles de los loggers antes de capturarlos
 
         # Layout principal
         layout = QVBoxLayout()
@@ -279,15 +288,15 @@ class ProgressDialog(QDialog):
         """Instala un handler de logging para capturar logs en tiempo real."""
         try:
             self._log_handler = ProgressLogHandler(self)
-            # Añadir a los loggers relevantes
-            loggers_to_capture = [
-                logging.getLogger("services.asignador_iterativo"),
-                logging.getLogger("services.asignador_ilp"),
-                logging.getLogger("services.orquestador_asignacion_guardias"),
-                logging.getLogger("services.asignador_guardias_v3_simple"),
-            ]
-            for logger in loggers_to_capture:
+            self._niveles_previos = {}
+            for nombre in LOGGERS_CAPTURADOS:
+                logger = logging.getLogger(nombre)
                 logger.addHandler(self._log_handler)
+                # Sin esto el detalle nunca se ve: el nivel efectivo heredado es
+                # WARNING y los info del algoritmo se descartan antes del handler.
+                if logger.getEffectiveLevel() > logging.INFO:
+                    self._niveles_previos[nombre] = logger.level
+                    logger.setLevel(logging.INFO)
         except (ValueError, TypeError, OSError) as e:
             _logger.debug(f"No se pudo instalar log handler: {e}")
 
@@ -295,14 +304,11 @@ class ProgressDialog(QDialog):
         """Desinstala el handler de logging."""
         if self._log_handler:
             try:
-                loggers = [
-                    logging.getLogger("services.asignador_iterativo"),
-                    logging.getLogger("services.asignador_ilp"),
-                    logging.getLogger("services.orquestador_asignacion_guardias"),
-                    logging.getLogger("services.asignador_guardias_v3_simple"),
-                ]
-                for logger in loggers:
+                for nombre in LOGGERS_CAPTURADOS:
+                    logger = logging.getLogger(nombre)
                     logger.removeHandler(self._log_handler)
+                    if nombre in self._niveles_previos:
+                        logger.setLevel(self._niveles_previos.pop(nombre))
                 self._log_handler = None
             except (ValueError, TypeError, OSError) as e:
                 _logger.debug(f"No se pudo desinstalar log handler: {e}")

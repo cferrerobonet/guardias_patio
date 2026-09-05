@@ -5,6 +5,7 @@ Genera todas las guardias del curso y las guarda en la base de datos.
 """
 
 import json
+import threading
 from datetime import datetime
 from typing import Callable, Optional
 
@@ -62,6 +63,7 @@ class GenerarGuardiasUseCase:
         self,
         eliminar_existentes: bool = True,
         progress_callback: Optional[Callable[[str, int], None]] = None,
+        cancelacion: Optional[threading.Event] = None,
     ) -> ResumenGeneracionDTO:
         """
         Ejecutar la generación de guardias.
@@ -70,6 +72,7 @@ class GenerarGuardiasUseCase:
             eliminar_existentes: Si True, elimina las guardias existentes antes
             progress_callback: Función opcional para reportar progreso
                               Recibe (mensaje: str, porcentaje: int)
+            cancelacion: Evento que, al activarse, detiene la generación
 
         Returns:
             ResumenGeneracionDTO con el resultado de la generación
@@ -128,14 +131,18 @@ class GenerarGuardiasUseCase:
             # - "cpsat" u "optimo": Algoritmo CP-SAT (más lento, garantiza óptimo)
             if algoritmo in ("cpsat", "optimo", "cp-sat"):
                 logger.info("✨ Usando algoritmo CP-SAT (optimización garantizada)")
-                calendario, resumen = generar_guardias_cpsat(self.session, adapter_callback)
+                calendario, resumen = generar_guardias_cpsat(
+                    self.session, adapter_callback, cancelacion=cancelacion
+                )
                 # Guardar en base de datos
                 if progress_callback:
                     progress_callback("Guardando guardias en base de datos...", 80)
                 guardar_guardias_cpsat_en_bd(self.session, calendario)
             else:
                 logger.info("✨ Usando algoritmo v4.0 Híbrido (5 fases)")
-                calendario, resumen = generar_guardias_v4_hibrido(self.session, adapter_callback)
+                calendario, resumen = generar_guardias_v4_hibrido(
+                    self.session, adapter_callback, cancelacion=cancelacion
+                )
                 # Guardar en base de datos
                 if progress_callback:
                     progress_callback("Guardando guardias en base de datos...", 80)

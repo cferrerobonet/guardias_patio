@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.52.0] - 2026-09-05
+
+### 🎯 Resumen
+El solucionador de guardias deja de hablar directamente con la interfaz. Es la causa más probable de que la aplicación se cerrara sola en Windows justo cuando el cálculo estaba a punto de terminar, y además hace que el botón Cancelar funcione de verdad.
+
+### Fixed
+- **El cálculo ya no toca la interfaz desde sus propios hilos.** OR-Tools reparte el trabajo entre ocho hilos internos y, hasta ahora, cualquiera de ellos podía acabar escribiendo en la ventana de progreso. Ahora esos hilos sólo dejan una nota en un buzón interno y es el hilo principal del cálculo quien la recoge cada cuarto de segundo y la muestra. La ventana de progreso sigue actualizándose igual de fluida (CRW-001).
+- **Cancelar detiene el cálculo de inmediato.** Antes el aviso de cancelación se ignoraba en las primeras fases —la generación seguía adelante— y llegaba al solucionador por un camino que lo dejaba parado en seco. Ahora se comprueba en cada fase y el solucionador se detiene con su mecanismo propio, en menos de dos segundos (CRW-004).
+- **El detalle del progreso vuelve a verse.** El panel desplegable de la ventana de progreso escuchaba a cuatro componentes que ya no existen, y además con un nivel de detalle que descartaba los mensajes antes de mostrarlos: estaba siempre vacío. Ahora sigue a los dos algoritmos actuales y los escribe desde el hilo correcto (CRW-002).
+
+### 🧹 Housekeeping
+- `auditoria/`: CRW-001, CRW-002 y CRW-004 pasan a resueltos; el lote 1 del plan de ataque queda cerrado y el siguiente frente es el lote 2.
+- Cuatro pruebas nuevas de regresión y cinco que estaban marcadas como fallo esperado pasan a exigirse: 2.511 pruebas en verde.
+
+---
+
 ## [5.51.2] - 2026-09-05
 
 ### 🎯 Resumen

@@ -6,17 +6,43 @@ Extraído desde progress_indicators.py para reducir tamaño del módulo principa
 
 import logging
 
-from PyQt6.QtCore import QObject, pyqtSlot
+from PyQt6.QtCore import QObject, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import QDialog
 
 
+class _PuenteLog(QObject):
+    """Portador de la señal que cruza del hilo que loguea al hilo GUI.
+
+    Vive en el hilo GUI, así que la conexión en cola hace que `_entregar` se ejecute
+    siempre ahí, sea cual sea el hilo que emitió.
+    """
+
+    linea = pyqtSignal(str)
+
+    def __init__(self, progress_dialog):
+        super().__init__()
+        self._dialogo = progress_dialog
+        self.linea.connect(self._entregar, Qt.ConnectionType.QueuedConnection)
+
+    @pyqtSlot(str)
+    def _entregar(self, mensaje: str):
+        self._dialogo.agregar_al_log(mensaje)
+
+
 class ProgressLogHandler(logging.Handler):
-    """Handler de logging que redirige mensajes al diálogo de progreso."""
+    """Handler de logging que redirige mensajes al diálogo de progreso.
+
+    `emit` se ejecuta en el hilo que llama a `logger.info` —el worker o los hilos del
+    solver—, así que no puede tocar widgets. Publica en una señal que Qt entrega en
+    el hilo GUI mediante conexión en cola (CRW-002).
+    """
 
     def __init__(self, progress_dialog):
         super().__init__()
         self.progress_dialog = progress_dialog
         self.setLevel(logging.INFO)
+
+        self._puente = _PuenteLog(progress_dialog)
 
         # Filtrar solo mensajes relevantes para el usuario
         self.keywords = [
@@ -47,8 +73,8 @@ class ProgressLogHandler(logging.Handler):
             if any(keyword in msg for keyword in self.keywords):
                 # Limpiar formato para mejor visualización
                 msg_clean = msg.replace("=" * 70, "").strip()
-                if msg_clean and self.progress_dialog.text_log:
-                    self.progress_dialog.agregar_al_log(msg_clean)
+                if msg_clean:
+                    self._puente.linea.emit(msg_clean)
         except (ValueError, TypeError, OSError):
             self.handleError(record)
 

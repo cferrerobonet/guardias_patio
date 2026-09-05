@@ -4,6 +4,8 @@ Worker thread para operaciones largas con progreso.
 Extraído desde progress_indicators.py para reducir tamaño del módulo principal.
 """
 
+import inspect
+import threading
 from typing import Callable
 
 from PyQt6.QtCore import QMutex, QThread, QWaitCondition, pyqtSignal
@@ -29,22 +31,41 @@ class WorkerThread(QThread):
         self.args = args
         self.kwargs = kwargs
         self._debe_cancelar = False
+        # Canal de cancelación cooperativo: la tarea lo consulta cuando puede parar.
+        # Antes se cancelaba lanzando desde el callback de progreso, que en CP-SAT
+        # se ejecutaba dentro de un callback C++ (CRW-004).
+        self.cancelacion = threading.Event()
 
         # Para manejo de decisiones del usuario desde worker thread
         self._decision_mutex = QMutex()
         self._decision_condition = QWaitCondition()
         self._decision_result = None
 
+    def _funcion_acepta_cancelacion(self) -> bool:
+        """¿La tarea declara un parámetro `cancelacion` al que pasarle el evento?"""
+        try:
+            parametros = inspect.signature(self.funcion).parameters
+        except (TypeError, ValueError):
+            return False
+        return "cancelacion" in parametros
+
     def run(self):
         """Ejecutar función en thread separado."""
         try:
             def callback_progreso(actual: int, total: int, detalle: str = ""):
-                if self._debe_cancelar:
-                    raise InterruptedError("Operación cancelada por el usuario")
+                # No lanza nunca: la cancelación viaja por `self.cancelacion`.
                 self.progreso.emit(actual, total, detalle)
 
-            resultado = self.funcion(callback_progreso, *self.args, **self.kwargs)
-            self.finalizado.emit(resultado)
+            kwargs = dict(self.kwargs)
+            if self._funcion_acepta_cancelacion():
+                kwargs["cancelacion"] = self.cancelacion
+
+            resultado = self.funcion(callback_progreso, *self.args, **kwargs)
+
+            if self.cancelacion.is_set():
+                self.error.emit(InterruptedError("Operación cancelada por el usuario"))
+            else:
+                self.finalizado.emit(resultado)
 
         except InterruptedError as e:
             self.error.emit(e)
@@ -60,6 +81,7 @@ class WorkerThread(QThread):
     def cancelar(self):
         """Solicitar cancelación de la operación."""
         self._debe_cancelar = True
+        self.cancelacion.set()
 
     def solicitar_decision_usuario(self, diagnostico):
         """

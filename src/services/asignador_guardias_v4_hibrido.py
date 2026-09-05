@@ -16,6 +16,8 @@ Exporta para compatibilidad con importadores externos:
 
 from __future__ import annotations
 
+import threading
+
 from typing import Callable, Dict, List, Optional, Tuple
 
 from infrastructure.database.models import Configuracion, Guardia, Profesor, Zona
@@ -58,6 +60,7 @@ logger = get_logger(__name__)
 def generar_guardias_v4_hibrido(
     session,
     progress_callback: Optional[Callable[[int, str], None]] = None,
+    cancelacion: Optional[threading.Event] = None,
 ) -> Tuple[List[Guardia], Dict[int, int]]:
     """
     Genera el calendario de guardias con el algoritmo v4.0 Híbrido.
@@ -77,9 +80,15 @@ def generar_guardias_v4_hibrido(
     """
 
     def reportar(porcentaje: int, mensaje: str = ""):
+        # Igual que en CP-SAT: cada fase comprueba la cancelación y sale limpiamente,
+        # y una petición de cancelación del llamante nunca se traga (CRW-004).
+        if cancelacion is not None and cancelacion.is_set():
+            raise InterruptedError("Operación cancelada por el usuario")
         if progress_callback:
             try:
                 progress_callback(porcentaje, mensaje)
+            except InterruptedError:
+                raise
             except (ValueError, TypeError, OSError) as e:
                 logger.warning(f"Error en callback de progreso: {e}")
 

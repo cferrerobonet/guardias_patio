@@ -8,6 +8,7 @@ Ver auditoria/06_CRASH_WINDOWS_GENERACION.md.
 import inspect
 import logging
 import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -21,10 +22,6 @@ pytestmark = pytest.mark.ui
 # ---------------------------------------------------------------------------
 # CRW-002: el handler de logging no debe tocar widgets fuera del hilo GUI
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=True,
-    reason="CRW-002: ProgressLogHandler.emit llama a agregar_al_log en el hilo que loguea",
-)
 def test_log_handler_no_toca_widgets_fuera_del_hilo_gui(qapp, qtbot, monkeypatch):
     from presentation.widgets.progress_indicators import ProgressDialog
 
@@ -38,7 +35,7 @@ def test_log_handler_no_toca_widgets_fuera_del_hilo_gui(qapp, qtbot, monkeypatch
         return original(self, mensaje)
 
     monkeypatch.setattr(ProgressDialog, "agregar_al_log", espia)
-    logger = logging.getLogger("services.orquestador_asignacion_guardias")
+    logger = logging.getLogger("services.asignador_guardias_cpsat")
 
     def trabajo():
         logger.info("Generando guardias desde un hilo secundario")
@@ -48,7 +45,7 @@ def test_log_handler_no_toca_widgets_fuera_del_hilo_gui(qapp, qtbot, monkeypatch
     t.join(timeout=5)
     qapp.processEvents()
 
-    assert hilos_llamada, "el handler no capturó el mensaje (loggers obsoletos)"
+    assert hilos_llamada, "el handler no capturó el mensaje"
     gui = QApplication.instance().thread()
     assert all(h is gui for h in hilos_llamada), "agregar_al_log se ejecutó fuera del hilo GUI"
     dialog._cancelado = True
@@ -69,17 +66,15 @@ def test_log_handler_captura_los_loggers_de_los_algoritmos_actuales(qapp, qtbot)
     }
     dialog._cancelado = True
     dialog.close()
-    if not capturados:
-        pytest.xfail("CRW-002: el handler sólo se instala en loggers de módulos inexistentes")
+    assert capturados == {
+        "services.asignador_guardias_cpsat",
+        "services.asignador_guardias_v4_hibrido",
+    }, f"el handler no cubre los algoritmos vivos: {capturados}"
 
 
 # ---------------------------------------------------------------------------
 # CRW-001: los callbacks del solver no deben ejecutarse fuera del hilo que lanzó el solve
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=False,
-    reason="CRW-001: on_solution_callback se invoca desde los hilos de OR-Tools y emite señales Qt",
-)
 def test_callbacks_del_solver_no_salen_del_hilo_llamante(session, configuracion_basica):
     from services.asignador_guardias_cpsat import generar_guardias_cpsat
 
@@ -108,10 +103,6 @@ def test_services_no_importa_qt():
 # ---------------------------------------------------------------------------
 # CRW-004: cancelar no debe tragarse ni lanzar a través de C++
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=True,
-    reason="CRW-004: reportar() captura OSError (InterruptedError) en las fases y sigue generando",
-)
 def test_cancelacion_interrumpe_la_generacion_sin_tragarse_la_excepcion(
     session, configuracion_basica, caplog
 ):
@@ -135,10 +126,109 @@ def test_worker_no_lanza_dentro_del_callback_del_solver():
     from presentation.widgets import progress_worker
 
     fuente = inspect.getsource(progress_worker.WorkerThread.run)
-    if "raise InterruptedError" in fuente:
-        pytest.xfail(
-            "CRW-004: callback_progreso lanza InterruptedError (llega al callback C++ de CP-SAT)"
-        )
+    assert "raise InterruptedError" not in fuente, (
+        "CRW-004: callback_progreso no debe lanzar (llegaría al callback C++ de CP-SAT); "
+        "la cancelación viaja por el evento WorkerThread.cancelacion"
+    )
+
+
+def test_resolver_con_progreso_para_el_solver_al_cancelar():
+    """CRW-004: cancelar llama a stop_search() y corta el solve en menos de 2 s."""
+    from services._asignador_cpsat_helpers import ProgresoSolver, resolver_con_progreso
+
+    cancelacion = threading.Event()
+    parado = threading.Event()
+
+    class SolverFalso:
+        def Solve(self, model, callback):  # noqa: N802 - imita la API de OR-Tools
+            for _ in range(400):  # ~8 s si nadie lo detiene
+                if parado.is_set():
+                    return "PARADO"
+                time.sleep(0.02)
+            return "COMPLETO"
+
+        def stop_search(self):
+            parado.set()
+
+    progreso = ProgresoSolver()
+    hilos_reportar = []
+
+    def reportar(porcentaje, mensaje=""):
+        hilos_reportar.append(threading.get_ident())
+
+    threading.Timer(0.2, cancelacion.set).start()
+    inicio = time.monotonic()
+    status = resolver_con_progreso(SolverFalso(), None, None, progreso, reportar, cancelacion)
+    tardanza = time.monotonic() - inicio
+
+    assert status == "PARADO", "el solver siguió trabajando tras la cancelación"
+    assert tardanza < 2, f"la cancelación tardó {tardanza:.1f} s en detener el solve"
+    assert all(h == threading.get_ident() for h in hilos_reportar), (
+        "reportar se ejecutó fuera del hilo llamante"
+    )
+
+
+def test_progreso_publicado_por_el_solver_lo_reporta_el_hilo_llamante():
+    """CRW-001: lo que publican los hilos de OR-Tools sale por el hilo llamante."""
+    from services._asignador_cpsat_helpers import ProgresoSolver, resolver_con_progreso
+
+    progreso = ProgresoSolver()
+    avisos = []
+
+    class SolverFalso:
+        def Solve(self, model, callback):  # noqa: N802
+            # Publica desde un hilo ajeno, como hacen los workers del solver.
+            hilo = threading.Thread(target=lambda: progreso.publicar(42, "Solución 1"))
+            hilo.start()
+            hilo.join()
+            time.sleep(0.4)
+            return "COMPLETO"
+
+        def stop_search(self):
+            pass
+
+    def reportar(porcentaje, mensaje=""):
+        avisos.append((porcentaje, mensaje, threading.get_ident()))
+
+    resolver_con_progreso(SolverFalso(), None, None, progreso, reportar)
+
+    assert avisos, "el progreso publicado por el solver no llegó a reportarse"
+    assert all(a[2] == threading.get_ident() for a in avisos)
+
+
+def test_worker_pasa_el_evento_de_cancelacion_a_la_tarea(qapp, qtbot):
+    """CRW-004: la tarea que declara `cancelacion` recibe el evento del worker."""
+    from presentation.widgets.progress_worker import WorkerThread
+
+    recibido = {}
+
+    def tarea(progress_callback, cancelacion=None):
+        recibido["evento"] = cancelacion
+        return "ok"
+
+    worker = WorkerThread(tarea)
+    with qtbot.waitSignal(worker.finalizado, timeout=5000):
+        worker.start()
+    worker.wait()
+
+    assert recibido["evento"] is worker.cancelacion
+
+
+def test_worker_cancelado_avisa_con_interrupted_error(qapp, qtbot):
+    """CRW-004: cancelar sigue terminando en InterruptedError, pero sin lanzar en el callback."""
+    from presentation.widgets.progress_worker import WorkerThread
+
+    def tarea(progress_callback, cancelacion=None):
+        cancelacion.wait(timeout=5)
+        return "ok"
+
+    worker = WorkerThread(tarea)
+    with qtbot.waitSignal(worker.error, timeout=5000) as blocker:
+        worker.start()
+        worker.cancelar()
+    worker.wait()
+
+    assert isinstance(blocker.args[0], InterruptedError)
 
 
 # ---------------------------------------------------------------------------

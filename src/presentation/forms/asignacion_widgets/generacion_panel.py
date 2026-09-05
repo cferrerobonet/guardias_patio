@@ -278,13 +278,14 @@ class GeneracionPanel(QGroupBox):
                 )
 
             # Función para ejecutar con progreso
-            def tarea_generacion(progress_callback):
+            def tarea_generacion(progress_callback, cancelacion=None):
                 def adapted_callback(mensaje: str, porcentaje: int):
                     progress_callback(porcentaje, 100, mensaje)
 
                 return self.generar_guardias_uc.execute(
                     eliminar_existentes=eliminar_existentes,
                     progress_callback=adapted_callback,
+                    cancelacion=cancelacion,
                 )
 
             # Ejecutar con indicador de progreso

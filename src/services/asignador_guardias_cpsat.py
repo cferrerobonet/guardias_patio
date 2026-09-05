@@ -23,6 +23,7 @@ USO:
 
 from __future__ import annotations
 
+import threading
 from collections import defaultdict
 from datetime import date
 from typing import Callable, Dict, List, Optional, Set, Tuple
@@ -42,9 +43,11 @@ logger = get_logger(__name__)
 
 
 from services._asignador_cpsat_helpers import (
+    ProgresoSolver,
     SolverCallback,
     _es_elegible_basico,
     _generar_slots,
+    resolver_con_progreso,
 )
 from services._asignador_v4_helpers import calcular_ventanas_bloque
 
@@ -58,6 +61,7 @@ def generar_guardias_cpsat(
     progress_callback: Optional[Callable[[int, str], None]] = None,
     timeout_seconds: float = 120.0,
     use_hints: bool = True,
+    cancelacion: Optional[threading.Event] = None,
 ) -> Tuple[List[Guardia], Dict[int, int]]:
     """
     Genera el calendario de guardias usando CP-SAT de OR-Tools.
@@ -70,15 +74,23 @@ def generar_guardias_cpsat(
         progress_callback: Callback para reportar progreso (porcentaje, mensaje)
         timeout_seconds: Tiempo máximo de resolución (default: 120s)
         use_hints: Si True, genera una solución greedy como hint inicial
+        cancelacion: Evento que, al activarse, detiene la generación en la fase en curso
 
     Returns:
         Tupla (lista de guardias, diccionario profesor_id -> guardias_asignadas)
     """
 
     def reportar(porcentaje: int, mensaje: str = ""):
+        # La cancelación se comprueba en cada fase: así se sale limpiamente en vez de
+        # seguir trabajando hasta el final (CRW-004).
+        if cancelacion is not None and cancelacion.is_set():
+            raise InterruptedError("Operación cancelada por el usuario")
         if progress_callback:
             try:
                 progress_callback(porcentaje, mensaje)
+            except InterruptedError:
+                # Petición de cancelación del llamante: nunca se traga.
+                raise
             except (ValueError, TypeError, OSError) as e:
                 logger.warning(f"Error en callback de progreso: {e}")
 
@@ -508,10 +520,13 @@ def generar_guardias_cpsat(
     solver.parameters.linearization_level = 2
     solver.parameters.cp_model_presolve = True
 
-    # Callback para progreso
-    callback = SolverCallback(x, cuotas_ideales, progress_callback)
+    # El callback sólo publica en un buzón; informar es cosa del hilo llamante (CRW-001)
+    progreso_solver = ProgresoSolver()
+    callback = SolverCallback(x, cuotas_ideales, progreso_solver)
 
-    status = solver.Solve(model, callback)
+    status = resolver_con_progreso(
+        solver, model, callback, progreso_solver, reportar, cancelacion
+    )
 
     # =========================================================================
     # FASE 7: PROCESAR RESULTADO
