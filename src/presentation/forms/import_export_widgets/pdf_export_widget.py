@@ -63,7 +63,7 @@ class PdfExportWidget(QGroupBox):
         info.setStyleSheet(
             f"""
             color: {TEXT_SECONDARY};
-            font-size: 11px;
+            font-size: 12px;
             font-weight: normal;
         """
         )
@@ -202,7 +202,7 @@ class PdfExportWidget(QGroupBox):
         curso_info.setStyleSheet(
             f"""
             color: {TEXT_SECONDARY};
-            font-size: 10px;
+            font-size: 12px;
             font-style: italic;
         """
         )
@@ -286,7 +286,7 @@ class PdfExportWidget(QGroupBox):
             """
             QCheckBox {
                 font-weight: bold;
-                color: #059669;
+                color: #166529;
                 font-size: 12px;
             }
             QCheckBox::indicator {
@@ -306,7 +306,7 @@ class PdfExportWidget(QGroupBox):
         email_info.setStyleSheet(
             f"""
             color: {TEXT_SECONDARY};
-            font-size: 10px;
+            font-size: 12px;
             font-style: italic;
             margin-left: 24px;
         """
@@ -418,7 +418,7 @@ class PdfExportWidget(QGroupBox):
                 checkbox.setStyleSheet(
                     """
                     QCheckBox {
-                        font-size: 11px;
+                        font-size: 12px;
                     }
                     QCheckBox::indicator {
                         width: 16px;

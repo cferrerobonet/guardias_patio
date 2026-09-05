@@ -61,7 +61,7 @@ class ChangePasswordDialog(QDialog):
             QLabel {
                 font-size: 18px;
                 font-weight: bold;
-                color: #007ACC;
+                color: #0E5FA8;
                 padding: 20px;
             }
         """)
@@ -198,7 +198,7 @@ class ChangePasswordDialog(QDialog):
                 | Qt.WindowType.WindowTitleHint
             )
             msg.setText(
-                f"La contraseña de <span style='color: #007ACC; font-style: italic;'>"
+                f"La contraseña de <span style='color: #0E5FA8; font-style: italic;'>"
                 f"{self.username}</span> ha sido cambiada correctamente.<br><br>"
                 f"La próxima vez que inicies sesión, usa tu nueva contraseña."
             )
@@ -213,7 +213,7 @@ class ChangePasswordDialog(QDialog):
                     min-height: 35px;
                     padding: 5px 15px;
                     font-size: 13px;
-                    background-color: #059669;
+                    background-color: #166529;
                     color: white;
                     border: 2px solid #047857;
                     border-radius: 4px;

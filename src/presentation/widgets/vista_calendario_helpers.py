@@ -187,7 +187,7 @@ def estilo_dia_miniatura(fecha: date, num_guardias: int, fecha_actual: date) -> 
                 background-color: #FBC02D;
                 color: white;
                 border-radius: 3px;
-                font-size: 9px;
+                font-size: 12px;
                 font-weight: bold;
             }
         """
@@ -198,7 +198,7 @@ def estilo_dia_miniatura(fecha: date, num_guardias: int, fecha_actual: date) -> 
                 background-color: rgb({255 - intensidad}, {242 - intensidad // 2}, 253);
                 border: 1px solid #90CAF9;
                 border-radius: 3px;
-                font-size: 8px;
+                font-size: 12px;
             }}
         """
     else:
@@ -207,6 +207,6 @@ def estilo_dia_miniatura(fecha: date, num_guardias: int, fecha_actual: date) -> 
                 background-color: #FAFAFA;
                 border: 1px solid #E0E0E0;
                 border-radius: 3px;
-                font-size: 8px;
+                font-size: 12px;
             }
         """

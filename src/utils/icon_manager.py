@@ -61,7 +61,7 @@ class IconManager:
         Example:
             >>> icon_manager = IconManager()
             >>> white_icon = icon_manager.get_icon("account", "white", 24)
-            >>> blue_icon = icon_manager.get_icon("calendar", "#007ACC", 32)
+            >>> blue_icon = icon_manager.get_icon("calendar", "#0E5FA8", 32)
         """
         # Construir la ruta completa al archivo SVG
         icon_file = self._icons_path / f"{icon_name}.svg"

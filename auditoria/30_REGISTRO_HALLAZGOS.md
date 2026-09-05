@@ -42,7 +42,7 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | UXA-007 | P1 | alta | Cambio de curso no refresca vistas (`ContentWrapper` sin `content_widget`) | **RESUELTO VERIFICADO v5.49.0** · `ContentWrapper` conserva la vista y el refresco por cambio de curso funciona | ídem |
 | UXA-008 | P2 | alta | Tablas sin contrato accesible/adaptable | PERSISTE | ídem |
 | UXA-009 | P2 | alta | Gráficos QPainter sin semántica | PERSISTE | ídem |
-| UXA-010 | P2 | alta | Sistema visual fragmentado y contrastes AA fallidos | PERSISTE (ampliado en VIS-001/002) | ídem |
+| UXA-010 | P2 | alta | Sistema visual fragmentado y contrastes AA fallidos | **PARCIAL v5.58.0** · el primario pasa de 4,51:1 a 6,52:1 y su variante oscura a 7,98:1; los verdes de acento a 5,1:1 y 7,2:1. Falta auditar el resto de combinaciones y el anillo de foco (lote 11) | ídem |
 | UXA-011 | P2 | media | Cargas de tablas bloquean el hilo GUI | PERSISTE (ESC-001) | ídem |
 | UXA-012 | P2 | alta | Suite a11y con skips amplios | PERSISTE | ídem |
 | UXA-013 | P2 | alta | Navegación sin título/estado accesible | PERSISTE | ídem |
@@ -68,15 +68,15 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 | ID | Sev. | Conf. | Título | Estado | Ficha |
 | --- | --- | --- | --- | --- | --- |
-| VIS-001 | P2 | alta | Cuatro capas de estilo + 287 inline | NUEVO | [[04_INVENTARIO_SUPERFICIES_E_INCONSISTENCIAS_VISUALES]] |
-| VIS-002 | P2 | alta | Dos identidades cromáticas (tokens vs Tailwind vs terminal) | NUEVO | 04 |
-| VIS-003 | P2 | alta | Fuente `-apple-system` inexistente en Windows; 43 usos < 11 px | NUEVO | 04 |
+| VIS-001 | P2 | alta | Cuatro capas de estilo + 288 inline | **PARCIAL v5.58.0** · `light.qss` deja de llevar colores escritos a mano: usa marcadores `@TOKEN@` que `hoja_de_estilos.construir_hoja_de_estilos()` resuelve desde `tokens.Colors`, con test que impide volver a escribir un color que ya tiene token. **Siguen los 288 estilos en línea y las capas `legacy_styles` (25 ficheros) y `ccleaner_theme` (14)**: sacarlos vista por vista es el resto del hallazgo · `test_la_hoja_de_estilos_no_repite_colores_que_ya_son_token` | [[04_INVENTARIO_SUPERFICIES_E_INCONSISTENCIAS_VISUALES]] |
+| VIS-002 | P2 | alta | ~~Dos identidades cromáticas (tokens vs Tailwind)~~ | **RESUELTO VERIFICADO v5.58.0** · una sola paleta: primario `#0E5FA8` (6,5:1 sobre blanco, frente al 4,51:1 justo del anterior), y los azules y verdes de Tailwind sustituidos por los tokens en 28 ficheros · `test_tokens_no_definen_dos_primarios_distintos` ya no es xfail | 04 |
+| VIS-003 | P2 | alta | ~~Fuente `-apple-system` inexistente en Windows; usos < 12 px~~ | **RESUELTO VERIFICADO v5.58.0** · pila tipográfica por sistema (Segoe UI / SF Pro Text / Cantarell) con cuerpo base propio de cada uno, en la aplicación y en la hoja de estilos; los 89 tamaños por debajo de 12 px suben al mínimo del contrato · ratchet `font_size_menor_12px` a 0 | 04 |
 | VIS-004 | P3 | alta | Emojis como iconos (327 líneas) | NUEVO | 04 |
 | VIS-005 | P2 | alta | Terminal retro para resultados | NUEVO | 04 |
 | VIS-006 | P2 | alta | Títulos inconsistentes; título registrado no se pinta | NUEVO | 04 |
 | VIS-007 | P2 | alta | Botones sin jerarquía | NUEVO | 04 |
 | VIS-008 | P3 | alta | Tres lenguajes de feedback | NUEVO | 04 |
-| VIS-009 | P2 | alta | Mínimo 1400×900 vs settings 1200×800 | NUEVO (dup. parcial UXA-001) | 04 |
+| VIS-009 | P2 | alta | ~~Mínimo 1400×900 vs settings 1200×800~~ | **RESUELTO VERIFICADO v5.58.0** · un único mínimo, 1024×700, leído de `settings`. Pendiente de comprobar en una pantalla pequeña real: el entorno de pruebas sin pantalla recorta el tamaño de ventana y no permite verificarlo · `test_un_unico_minimo_de_ventana` | 04 |
 | VIS-010 | P3 | alta | Identidad "ccleaner" y branding EPLA inconsistentes | NUEVO | 04 |
 
 ## BLD · Build y release

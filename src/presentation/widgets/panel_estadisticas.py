@@ -235,7 +235,7 @@ class PanelEstadisticas(BaseForm):
         leyenda = QLabel(
             "🟢 En cuota  🟡 Ligeramente sobre (+25%)  🔴 Muy sobre (+50%)  ⬜ Sin guardias"
         )
-        leyenda.setStyleSheet("padding: 6px; font-size: 11px;")
+        leyenda.setStyleSheet("padding: 6px; font-size: 12px;")
         layout.addWidget(leyenda)
 
         self.tabla_heatmap = QTableWidget()
@@ -458,7 +458,7 @@ class PanelEstadisticas(BaseForm):
         """Actualizar los gráficos con datos del DTO."""
         grafico_prof = self._datos.grafico_profesores
         if grafico_prof.cantidades:
-            colores = ["#007ACC"] * len(grafico_prof.nombres)
+            colores = ["#0E5FA8"] * len(grafico_prof.nombres)
             datos_prof = list(zip(grafico_prof.nombres, grafico_prof.cantidades, colores))
             self.canvas_profesores.set_datos(datos_prof)
 

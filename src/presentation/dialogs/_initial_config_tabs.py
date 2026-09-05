@@ -200,7 +200,7 @@ def create_smtp_tab(dialog) -> QWidget:
         "<li><b>Recuperación de contraseñas:</b> Códigos de recuperación por email</li>"
         "<li><b>Notificaciones:</b> Alertas y avisos importantes</li>"
         "</ul>"
-        "<p style='color: #059669;'>"
+        "<p style='color: #166529;'>"
         "<b>Esta funcionalidad NO es crítica.</b> Si no configuras SMTP ahora, podrás "
         "seguir usando la aplicación normalmente. Solo necesitarás copiar manualmente los "
         "calendarios o códigos de recuperación."
@@ -215,7 +215,7 @@ def create_smtp_tab(dialog) -> QWidget:
         QLabel {
             padding: 15px;
             background-color: #d1fae5;
-            border-left: 4px solid #10b981;
+            border-left: 4px solid #1E7E34;
             border-radius: 5px;
             line-height: 1.5;
         }

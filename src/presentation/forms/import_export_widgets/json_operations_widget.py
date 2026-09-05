@@ -68,7 +68,7 @@ class JsonOperationsWidget(QWidget):
         info.setStyleSheet(
             f"""
             color: {TEXT_SECONDARY};
-            font-size: 11px;
+            font-size: 12px;
             font-weight: normal;
         """
         )
@@ -98,7 +98,7 @@ class JsonOperationsWidget(QWidget):
         info.setStyleSheet(
             f"""
             color: {ERROR_RED};
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bold;
             padding: 5px;
         """

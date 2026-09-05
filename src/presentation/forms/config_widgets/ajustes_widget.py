@@ -57,7 +57,7 @@ class AjustesWidget(QGroupBox):
         # ===== Multiplicador tutores =====
         label_tutores = QLabel("Multiplicador tutores:")
         label_tutores.setStyleSheet(
-            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;"
+            styles.STYLE_LABEL_FIELD + "font-size: 12px; margin-bottom: 1px;"
         )
         layout.addWidget(label_tutores)
 
@@ -80,7 +80,7 @@ class AjustesWidget(QGroupBox):
         # ===== Multiplicador no tutores =====
         label_no_tutores = QLabel("Multiplicador no tutores:")
         label_no_tutores.setStyleSheet(
-            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;"
+            styles.STYLE_LABEL_FIELD + "font-size: 12px; margin-bottom: 1px;"
         )
         layout.addWidget(label_no_tutores)
 
@@ -103,7 +103,7 @@ class AjustesWidget(QGroupBox):
         # ===== Información de algoritmo (solo lectura) =====
         label_algoritmo = QLabel("Algoritmos disponibles:")
         label_algoritmo.setStyleSheet(
-            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px; margin-top: 4px;"
+            styles.STYLE_LABEL_FIELD + "font-size: 12px; margin-bottom: 1px; margin-top: 4px;"
         )
         layout.addWidget(label_algoritmo)
 
@@ -112,7 +112,7 @@ class AjustesWidget(QGroupBox):
         self.algoritmo_info.setWordWrap(True)
         self.algoritmo_info.setStyleSheet(
             styles.STYLE_INPUT + "padding: 10px 12px; background-color: #f8f8f8; color: #334155; "
-            "font-size: 11px; line-height: 1.45; border: 1px solid #d7dee7;"
+            "font-size: 12px; line-height: 1.45; border: 1px solid #d7dee7;"
         )
         self.algoritmo_info.setToolTip(
             "ALGORITMOS DISPONIBLES ACTUALMENTE:\n\n"

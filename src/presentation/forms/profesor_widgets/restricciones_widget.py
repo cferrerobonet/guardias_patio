@@ -86,14 +86,14 @@ class SemanaRestriccionesWidget(QWidget):
         for col, dia in enumerate(_DIAS):
             lbl = QLabel(dia)
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setStyleSheet("font-weight: bold; font-size: 11px;")
+            lbl.setStyleSheet("font-weight: bold; font-size: 12px;")
             grid.addWidget(lbl, 0, col + 1)
 
         # Filas de recreos
         for row, recreo in enumerate(self._recreos):
             lbl = QLabel(f"R{recreo}")
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setStyleSheet("font-size: 11px; color: #555;")
+            lbl.setStyleSheet("font-size: 12px; color: #555;")
             grid.addWidget(lbl, row + 1, 0)
             for col in range(5):
                 btn = QPushButton("✓")

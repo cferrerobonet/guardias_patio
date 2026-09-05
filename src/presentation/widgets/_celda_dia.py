@@ -114,7 +114,7 @@ class CeldaDia(QGroupBox):
 
         if indicadores:
             label_indicadores = QLabel(" ".join(indicadores))
-            label_indicadores.setStyleSheet("font-size: 9px; color: #666;")
+            label_indicadores.setStyleSheet("font-size: 12px; color: #666;")
             header_layout.addWidget(label_indicadores)
 
         header_layout.addStretch()
@@ -156,7 +156,7 @@ class CeldaDia(QGroupBox):
         total_guardias = len(self.guardias)
         if total_guardias > 0:
             label_total = QLabel(f"Total: {total_guardias} guardias")
-            label_total.setStyleSheet("font-size: 8px; color: #999; font-weight: bold;")
+            label_total.setStyleSheet("font-size: 12px; color: #999; font-weight: bold;")
             label_total.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout_principal.addWidget(label_total)
 
@@ -182,7 +182,7 @@ class CeldaDia(QGroupBox):
         if self.es_dia_lectivo and self.guardias:
             label_cnt = QLabel(f"{len(self.guardias)}g")
             label_cnt.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label_cnt.setStyleSheet("font-size: 11px; color: #1976D2; font-weight: bold;")
+            label_cnt.setStyleSheet("font-size: 12px; color: #1976D2; font-weight: bold;")
             layout.addWidget(label_cnt)
 
         puntos = ""
@@ -193,7 +193,7 @@ class CeldaDia(QGroupBox):
         if puntos:
             label_puntos = QLabel(puntos)
             label_puntos.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label_puntos.setStyleSheet("font-size: 10px;")
+            label_puntos.setStyleSheet("font-size: 12px;")
             layout.addWidget(label_puntos)
 
         layout.addStretch()
@@ -238,7 +238,7 @@ class CeldaDia(QGroupBox):
             icono_turno = "☀" if turno == "mañana" else "🌙"
             label_grupo = QLabel(f"{icono_turno} Recreo {recreo} ({turno})")
             label_grupo.setStyleSheet(
-                "font-size: 9px; font-weight: bold; color: #1565C0; "
+                "font-size: 12px; font-weight: bold; color: #1565C0; "
                 "background-color: #E3F2FD; padding: 3px 5px; border-radius: 2px;"
             )
             layout.addWidget(label_grupo)
@@ -270,7 +270,7 @@ class CeldaDia(QGroupBox):
         zona_label.setStyleSheet("""
             background-color: #1976D2;
             color: white;
-            font-size: 8px;
+            font-size: 12px;
             font-weight: bold;
             padding: 2px 4px;
             border-radius: 2px;
@@ -280,13 +280,13 @@ class CeldaDia(QGroupBox):
         h_layout.addWidget(zona_label)
 
         nombre_label = QLabel(nombre_mostrar)
-        nombre_label.setStyleSheet("font-size: 8px; color: #333;")
+        nombre_label.setStyleSheet("font-size: 12px; color: #333;")
         h_layout.addWidget(nombre_label, 1)
 
         if es_sustitucion:
             sust_label = QLabel("S")
             sust_label.setToolTip("Sustitución")
-            sust_label.setStyleSheet("font-size: 8px;")
+            sust_label.setStyleSheet("font-size: 12px;")
             h_layout.addWidget(sust_label)
 
         if es_sustitucion:
@@ -323,7 +323,7 @@ class CeldaDia(QGroupBox):
         zona_label.setStyleSheet("""
             background-color: #D32F2F;
             color: white;
-            font-size: 8px;
+            font-size: 12px;
             font-weight: bold;
             padding: 2px 4px;
             border-radius: 2px;
@@ -333,7 +333,7 @@ class CeldaDia(QGroupBox):
         h_layout.addWidget(zona_label)
 
         texto_label = QLabel("SIN GUARDIA ASIGNADA")
-        texto_label.setStyleSheet("font-size: 8px; color: #B71C1C; font-weight: bold;")
+        texto_label.setStyleSheet("font-size: 12px; color: #B71C1C; font-weight: bold;")
         h_layout.addWidget(texto_label, 1)
 
         widget.setStyleSheet("""
@@ -352,7 +352,7 @@ class CeldaDia(QGroupBox):
         """Agregar información de ausencias."""
         label_titulo = QLabel("🏥 Ausencias:")
         label_titulo.setStyleSheet(
-            "font-size: 9px; font-weight: bold; color: #C62828; "
+            "font-size: 12px; font-weight: bold; color: #C62828; "
             "background-color: #FFEBEE; padding: 2px; border-radius: 2px; margin-top: 4px;"
         )
         layout.addWidget(label_titulo)
@@ -370,7 +370,7 @@ class CeldaDia(QGroupBox):
 
             label = QLabel(texto)
             label.setStyleSheet(
-                "font-size: 8px; padding: 1px 3px; margin-left: 5px; "
+                "font-size: 12px; padding: 1px 3px; margin-left: 5px; "
                 "background-color: #FFCDD2; border-left: 2px solid #F44336; color: #B71C1C;"
             )
             label.setToolTip(f"Ausencia: {profesor} - {ausencia.motivo}")
@@ -378,7 +378,7 @@ class CeldaDia(QGroupBox):
 
         if len(self.ausencias) > 5:
             label_mas = QLabel(f"  ... y {len(self.ausencias) - 5} más")
-            label_mas.setStyleSheet("font-size: 7px; color: #999; font-style: italic;")
+            label_mas.setStyleSheet("font-size: 12px; color: #999; font-style: italic;")
             layout.addWidget(label_mas)
 
     def _aplicar_estilo(self):
@@ -403,7 +403,7 @@ class CeldaDia(QGroupBox):
             estilo = """
                 QGroupBox {
                     background-color: #E3F2FD;
-                    border: 2px solid #007ACC;
+                    border: 2px solid #0E5FA8;
                     border-radius: 6px;
                 }
             """

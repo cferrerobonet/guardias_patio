@@ -64,7 +64,7 @@ class CalendariosPdfWidget(QGroupBox):
         info.setStyleSheet(
             f"""
             color: {TEXT_SECONDARY};
-            font-size: 11px;
+            font-size: 12px;
             font-weight: normal;
         """
         )
@@ -211,7 +211,7 @@ class CalendariosPdfWidget(QGroupBox):
         curso_info.setStyleSheet(
             f"""
             color: {TEXT_SECONDARY};
-            font-size: 10px;
+            font-size: 12px;
             font-style: italic;
         """
         )
@@ -302,7 +302,7 @@ class CalendariosPdfWidget(QGroupBox):
             """
             QCheckBox {
                 font-weight: bold;
-                color: #059669;
+                color: #166529;
                 font-size: 12px;
             }
             QCheckBox::indicator {
@@ -322,7 +322,7 @@ class CalendariosPdfWidget(QGroupBox):
         email_info.setStyleSheet(
             f"""
             color: {TEXT_SECONDARY};
-            font-size: 10px;
+            font-size: 12px;
             font-style: italic;
             margin-left: 24px;
         """
@@ -458,7 +458,7 @@ class CalendariosPdfWidget(QGroupBox):
                 checkbox.setStyleSheet(
                     """
                     QCheckBox {
-                        font-size: 11px;
+                        font-size: 12px;
                     }
                     QCheckBox::indicator {
                         width: 16px;

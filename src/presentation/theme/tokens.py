@@ -1,16 +1,55 @@
 """
 Design tokens centralizados para toda la aplicación.
-Contiene paletas de colores, espaciados y tamaños de fuente.
+Contiene paletas de colores, espaciados, tamaños de fuente y la familia
+tipográfica de cada sistema operativo.
 """
 
+import sys
+
+
+#: Pila tipográfica por sistema. `-apple-system` no es una familia real fuera del
+#: navegador: en Windows y Linux no resolvía y Qt caía a su fuente por defecto,
+#: de modo que la aplicación no se veía como se diseñó (VIS-003).
+FAMILIAS_POR_SISTEMA = {
+    "darwin": ["SF Pro Text", "Helvetica Neue", "Helvetica", "Arial"],
+    "win32": ["Segoe UI", "Tahoma", "Arial"],
+    "linux": ["Cantarell", "Noto Sans", "DejaVu Sans", "Arial"],
+}
+
+#: Cuerpo base por sistema. El mismo valor en puntos no se ve igual en cada uno:
+#: la fuente del sistema es de 13 pt en macOS y de 9 pt en Windows. Se mantiene el
+#: 14 de macOS, que es con el que están medidas las pantallas actuales.
+CUERPO_POR_SISTEMA = {"darwin": 14, "win32": 10, "linux": 10}
+
+
+def _clave_de_sistema() -> str:
+    if sys.platform.startswith("win"):
+        return "win32"
+    if sys.platform == "darwin":
+        return "darwin"
+    return "linux"
+
+
+def familias_del_sistema() -> list:
+    """Familias tipográficas a probar, en orden, en este sistema operativo."""
+    return list(FAMILIAS_POR_SISTEMA[_clave_de_sistema()])
+
+
+def cuerpo_del_sistema() -> int:
+    """Tamaño base de la fuente, en puntos, para este sistema operativo."""
+    return CUERPO_POR_SISTEMA[_clave_de_sistema()]
+
 class Colors:
-    # Primarios
-    PRIMARY = "#007ACC"
-    PRIMARY_LIGHT = "#E6F2FA"
-    PRIMARY_DARK = "#005A9E"
+    # Primarios. El azul anterior (#007ACC) daba 4,51:1 sobre blanco: pasaba el
+    # mínimo AA por una centésima y no dejaba margen para los estados hover ni
+    # para el anillo de foco. Este da 6,52:1 (VIS-002, UXA-010).
+    PRIMARY = "#0E5FA8"        # 6,5:1 sobre blanco
+    PRIMARY_LIGHT = "#E6F2FA"  # fondo de selección y realces suaves
+    PRIMARY_DARK = "#0C5291"   # 8,0:1 — hover, pressed y foco
 
     # Semánticos — texto sobre blanco
-    SUCCESS = "#1E7E34"        # 5.2:1 AA
+    SUCCESS = "#1E7E34"        # 5,1:1 AA
+    SUCCESS_DARK = "#166529"   # 7,2:1 — hover y bordes de acento
     SUCCESS_BG = "#D1FAE5"     # fondo badge/info-box verde
     SUCCESS_BORDER = "#6EE7B7"
     WARNING = "#856404"        # 5.5:1 AA
@@ -61,8 +100,11 @@ class Spacing:
     XXL = 24
 
 class FontSize:
-    CAPTION = 11
-    BODY = 14
+    # Escala del contrato de diseño. 12 px es el mínimo absoluto legible: por
+    # debajo había 86 usos, algunos de 7 px (VIS-003).
+    CAPTION = 12   # metadatos, celdas densas
+    SMALL = 13     # cuerpo de tablas y formularios
+    BODY = 14      # cuerpo general
     SUBTITLE = 16
     H3 = 18
     TITLE = 20

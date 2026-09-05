@@ -160,7 +160,7 @@ class SMTPConfigWidget(QGroupBox):
             QLabel {
                 padding: 10px;
                 background-color: #eff6ff;
-                border-left: 4px solid #3b82f6;
+                border-left: 4px solid #0E5FA8;
                 color: #1e40af;
                 font-size: 12px;
                 margin-top: 10px;
@@ -245,7 +245,7 @@ class SMTPConfigWidget(QGroupBox):
                 min-height: 35px;
                 padding: 5px 15px;
                 font-size: 13px;
-                background-color: #059669;
+                background-color: #166529;
                 color: white;
                 border: 2px solid #047857;
                 border-radius: 4px;
@@ -603,11 +603,11 @@ Sistema de Gestión de Guardias de Patio
                 "✅ Email de Prueba Enviado",
                 f"La conexión SMTP se estableció correctamente y se envió "
                 f"un email de prueba.<br><br>"
-                f"<b>Servidor:</b> <span style='color: #007ACC; "
+                f"<b>Servidor:</b> <span style='color: #0E5FA8; "
                 f"font-style: italic;'>{smtp_server}:{smtp_port}</span><br>"
-                f"<b>Usuario:</b> <span style='color: #007ACC; "
+                f"<b>Usuario:</b> <span style='color: #0E5FA8; "
                 f"font-style: italic;'>{smtp_user}</span><br>"
-                f"<b>Email enviado a:</b> <span style='color: #007ACC; "
+                f"<b>Email enviado a:</b> <span style='color: #0E5FA8; "
                 f"font-style: italic;'>{destination_email}</span><br><br>"
                 "Revisa tu bandeja de entrada (y spam) para verificar que llegó el email.",
             )
@@ -676,7 +676,7 @@ Sistema de Gestión de Guardias de Patio
                 min-height: 35px;
                 padding: 5px 15px;
                 font-size: 13px;
-                background-color: #059669;
+                background-color: #166529;
                 color: white;
                 border: 2px solid #047857;
                 border-radius: 4px;

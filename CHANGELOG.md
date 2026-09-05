@@ -5,6 +5,30 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.58.0] - 2026-09-05
+
+### 🎯 Resumen
+La aplicación pasa a tener un solo azul, una tipografía que existe en Windows y ningún texto por debajo del tamaño legible.
+
+### Fixed
+- **En Windows la aplicación no se veía como está diseñada.** La fuente global era `-apple-system`, que no es una familia real fuera del navegador: Windows y Linux no la encontraban y caían a la fuente por defecto del sistema. Ahora cada sistema usa la suya —Segoe UI en Windows, SF Pro Text en macOS, Cantarell en Linux— con el cuerpo que le corresponde, porque el mismo tamaño en puntos no se ve igual en cada uno.
+- **Textos ilegibles.** Había 89 tamaños por debajo de 12 px, algunos de 7 px. Todos suben al mínimo de 12 px que fija el contrato de diseño.
+- **Dos tamaños mínimos de ventana en conflicto.** Los ajustes decían 1200×800 y la ventana imponía 1400×900; ganaba la ventana, que no cabe en un portátil de 1366×768. Ahora hay un solo valor, 1024×700, y sale de los ajustes.
+
+### Changed
+- **Un solo azul en toda la aplicación.** Convivían dos identidades: la de los tokens y una paleta prestada en los paneles de cálculo. Ahora todo usa `#0E5FA8`, que además contrasta 6,5 a 1 sobre blanco, frente al 4,51 del anterior, que se quedaba a una centésima del mínimo accesible y no dejaba margen para los estados de pulsado o de foco.
+- **La hoja de estilos ya no lleva colores escritos a mano.** Lleva marcadores que se resuelven desde los tokens al arrancar, de modo que cambiar un color se hace en un único sitio. Una prueba impide volver a escribir a mano un color que ya tiene token.
+
+### 🧹 Housekeeping
+- `auditoria/`: VIS-002, VIS-003 y VIS-009 resueltos. VIS-001 y UXA-010 quedan parciales y el lote 8 se parte: los 288 estilos en línea y las dos capas antiguas pasan a un lote propio, porque exigen revisar vista por vista.
+- Ratchets: tamaños por debajo de 12 px de 89 a 0; colores sueltos de 631 a 562.
+- 2.523 pruebas, ningún fallo.
+
+### ⚠️ Pendiente de comprobar
+- El mínimo de 1024×700 no se ha podido verificar en una pantalla pequeña real: el entorno de pruebas sin pantalla recorta el tamaño de la ventana. Conviene abrir la aplicación en un portátil pequeño y confirmar que todo sigue alcanzable.
+
+---
+
 ## [5.57.0] - 2026-09-05
 
 ### 🎯 Resumen

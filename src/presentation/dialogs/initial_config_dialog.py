@@ -181,14 +181,14 @@ class InitialConfigDialog(QDialog):
         self.continue_btn.setIcon(icon_for_button("check"))
         self.continue_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10b981;
+                background-color: #1E7E34;
                 color: white;
                 padding: 10px 20px;
                 border-radius: 5px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #059669;
+                background-color: #166529;
             }
             QPushButton:disabled {
                 background-color: #d1d5db;
@@ -260,7 +260,7 @@ class InitialConfigDialog(QDialog):
                 QLabel {
                     padding: 8px;
                     background-color: #d1fae5;
-                    border-left: 4px solid #10b981;
+                    border-left: 4px solid #1E7E34;
                     border-radius: 3px;
                 }
             """)
@@ -301,7 +301,7 @@ class InitialConfigDialog(QDialog):
                 QLabel {
                     padding: 8px;
                     background-color: #d1fae5;
-                    border-left: 4px solid #10b981;
+                    border-left: 4px solid #1E7E34;
                     border-radius: 3px;
                 }
             """)

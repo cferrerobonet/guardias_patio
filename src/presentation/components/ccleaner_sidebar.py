@@ -93,7 +93,7 @@ class SidebarMenu(QWidget):
                 color: #555;
                 border: none;
                 border-radius: 4px;
-                font-size: 11px;
+                font-size: 12px;
                 padding: 2px;
             }
             QPushButton:hover { background-color: rgba(0,0,0,0.15); }
@@ -278,7 +278,7 @@ class SidebarMenu(QWidget):
         label.setStyleSheet("""
             QLabel#categoryLabel {
                 color: rgba(255, 255, 255, 0.95);
-                font-size: 11px;
+                font-size: 12px;
                 font-weight: 700;
                 letter-spacing: 1.5px;
                 text-transform: uppercase;
@@ -336,12 +336,12 @@ class SidebarMenu(QWidget):
                 color: white;
             }
             QPushButton[active="true"] {
-                background-color: #007ACC;
+                background-color: #0E5FA8;
                 color: white;
                 font-weight: 600;
             }
             QPushButton[active="true"]:hover {
-                background-color: #005A9E;
+                background-color: #0C5291;
             }
         """)
         btn.clicked.connect(lambda: self.on_menu_clicked(btn, section))
@@ -388,7 +388,7 @@ class SidebarMenu(QWidget):
         self.sync_status_label.setStyleSheet("""
             QLabel {
                 color: rgba(255, 255, 255, 0.6);
-                font-size: 10px;
+                font-size: 12px;
                 background-color: transparent;
                 border: none;
             }
@@ -405,7 +405,7 @@ class SidebarMenu(QWidget):
                 border: 1px solid #F9A825;
                 border-radius: 4px;
                 padding: 5px 8px;
-                font-size: 10px;
+                font-size: 12px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -440,7 +440,7 @@ class SidebarMenu(QWidget):
                 border: 1px solid rgba(255, 255, 255, 0.2);
                 border-radius: 4px;
                 padding: 6px 12px;
-                font-size: 11px;
+                font-size: 12px;
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 0.2);
@@ -470,7 +470,7 @@ class SidebarMenu(QWidget):
         self.sync_status_label.setStyleSheet(f"""
             QLabel {{
                 color: {color};
-                font-size: 10px;
+                font-size: 12px;
                 background-color: transparent;
                 border: none;
             }}

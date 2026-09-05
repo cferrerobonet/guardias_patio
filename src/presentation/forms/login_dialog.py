@@ -53,7 +53,7 @@ class RegisterDialog(QDialog):
             QLabel {
                 font-size: 18px;
                 font-weight: bold;
-                color: #007ACC;
+                color: #0E5FA8;
                 padding: 20px;
             }
         """)
@@ -108,7 +108,7 @@ class RegisterDialog(QDialog):
             "✓ Las contraseñas deben coincidir\n"
             "✓ Email obligatorio para recuperación"
         )
-        requirements.setStyleSheet("color: #6B7280; font-size: 11px; padding: 0px 40px;")
+        requirements.setStyleSheet("color: #6B7280; font-size: 12px; padding: 0px 40px;")
         layout.addWidget(requirements)
 
         # Botones
@@ -256,7 +256,7 @@ class RegisterDialog(QDialog):
                 | Qt.WindowType.WindowTitleHint
             )
             msg.setText(
-                f"Usuario <span style='color: #007ACC; font-style: italic;'>{username}</span> "
+                f"Usuario <span style='color: #0E5FA8; font-style: italic;'>{username}</span> "
                 f"registrado correctamente.<br><br>"
                 f"Ahora puedes iniciar sesión con tus credenciales."
             )
@@ -301,7 +301,7 @@ class LoginDialog(QDialog):
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
         self.setWindowTitle("Iniciar Sesión - Guardias de Patio")
-        self.setWindowIcon(get_icon("login", "#007ACC", 32))
+        self.setWindowIcon(get_icon("login", "#0E5FA8", 32))
         self.setModal(True)
         self.setFixedSize(720, 480)
 
@@ -320,7 +320,7 @@ class LoginDialog(QDialog):
         brand_panel = QLabel()
         brand_panel.setFixedWidth(280)
         brand_panel.setStyleSheet(
-            "QLabel { background-color: #007ACC; }"
+            "QLabel { background-color: #0E5FA8; }"
         )
         brand_layout = QVBoxLayout(brand_panel)
         brand_layout.setContentsMargins(24, 40, 24, 32)
@@ -368,7 +368,7 @@ class LoginDialog(QDialog):
 
         version_label = QLabel(f"v{get_settings().app_version}")
         version_label.setStyleSheet(
-            "QLabel { font-size: 11px; color: rgba(255,255,255,0.55);"
+            "QLabel { font-size: 12px; color: rgba(255,255,255,0.55);"
             " background: transparent; }"
         )
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -376,7 +376,7 @@ class LoginDialog(QDialog):
 
         credits = QLabel("© 2026 · Carlos Ferrero Bonet")
         credits.setStyleSheet(
-            "QLabel { font-size: 10px; color: rgba(255,255,255,0.55);"
+            "QLabel { font-size: 12px; color: rgba(255,255,255,0.55);"
             " background: transparent; }"
         )
         credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -433,9 +433,9 @@ class LoginDialog(QDialog):
         form_layout_outer.addSpacing(8)
 
         forgot_password_label = QLabel(
-            '<a href="#" style="color: #007ACC; text-decoration: none;">¿Olvidaste tu contraseña?</a>'
+            '<a href="#" style="color: #0E5FA8; text-decoration: none;">¿Olvidaste tu contraseña?</a>'
         )
-        forgot_password_label.setStyleSheet("font-size: 11px; background: transparent;")
+        forgot_password_label.setStyleSheet("font-size: 12px; background: transparent;")
         forgot_password_label.setTextFormat(Qt.TextFormat.RichText)
         forgot_password_label.linkActivated.connect(self.open_forgot_password_dialog)
         forgot_password_label.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -449,9 +449,9 @@ class LoginDialog(QDialog):
         self.login_btn.clicked.connect(self.login)
         self.login_btn.setDefault(True)
         self.login_btn.setStyleSheet(
-            "QPushButton { background-color: #007ACC; color: white; border: none;"
+            "QPushButton { background-color: #0E5FA8; color: white; border: none;"
             " border-radius: 6px; font-size: 14px; font-weight: 600; }"
-            "QPushButton:hover { background-color: #005A9E; }"
+            "QPushButton:hover { background-color: #0C5291; }"
         )
         form_layout_outer.addWidget(self.login_btn)
 
@@ -478,7 +478,7 @@ class LoginDialog(QDialog):
         form_layout_outer.addStretch()
 
         info_label = QLabel("¿Primera vez? Haz clic en Nuevo Usuario")
-        info_label.setStyleSheet("QLabel { color: #9CA3AF; font-size: 11px; background: transparent; }")
+        info_label.setStyleSheet("QLabel { color: #9CA3AF; font-size: 12px; background: transparent; }")
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         form_layout_outer.addWidget(info_label)
 
@@ -595,7 +595,7 @@ class LoginDialog(QDialog):
                 | Qt.WindowType.WindowTitleHint
             )
             msg.setText(
-                "Por favor, introduce tu <span style='color: #007ACC; "
+                "Por favor, introduce tu <span style='color: #0E5FA8; "
                 "font-style: italic;'>nueva contraseña</span> para iniciar sesión."
             )
             msg.exec()

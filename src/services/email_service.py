@@ -462,7 +462,7 @@ Sistema de Gestión de Guardias
 
         tabla_html = (
             "<table style='border-collapse:collapse;width:100%;font-size:13px'>"
-            "<thead><tr style='background:#007ACC;color:white'>"
+            "<thead><tr style='background:#0E5FA8;color:white'>"
             "<th style='padding:8px 10px;text-align:left'>Día</th>"
             "<th style='padding:8px 10px;text-align:left'>Turno</th>"
             "<th style='padding:8px 10px;text-align:left'>Recreo</th>"

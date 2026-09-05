@@ -167,7 +167,7 @@ class VistaCalendario(BaseForm):
 
         # Grupo: Selector de vista
         label_vista = QLabel("Vista:")
-        label_vista.setStyleSheet("font-weight: bold; font-size: 11px;")
+        label_vista.setStyleSheet("font-weight: bold; font-size: 12px;")
         barra_layout.addWidget(label_vista)
 
         self.combo_vista = QComboBox()
@@ -181,7 +181,7 @@ class VistaCalendario(BaseForm):
                 border: 2px solid #2196F3;
                 border-radius: 4px;
                 background-color: white;
-                font-size: 11px;
+                font-size: 12px;
             }
             QComboBox:hover {
                 background-color: #E3F2FD;
@@ -234,7 +234,7 @@ class VistaCalendario(BaseForm):
                 border: none;
                 border-radius: 4px;
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 12px;
             }
             QPushButton:hover {
                 background-color: #45A049;
@@ -258,7 +258,7 @@ class VistaCalendario(BaseForm):
                 border: 2px solid #2196F3;
                 border-radius: 4px;
                 background-color: white;
-                font-size: 11px;
+                font-size: 12px;
             }
         """)
         barra_layout.addWidget(self.spin_anio)
@@ -277,7 +277,7 @@ class VistaCalendario(BaseForm):
                 border: none;
                 border-radius: 4px;
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 12px;
             }
             QPushButton:hover {
                 background-color: #1976D2;
@@ -302,7 +302,7 @@ class VistaCalendario(BaseForm):
                 border: none;
                 border-radius: 4px;
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 12px;
             }
             QPushButton:hover { background-color: #546E7A; }
             QPushButton:checked { background-color: #37474F; }
@@ -321,7 +321,7 @@ class VistaCalendario(BaseForm):
                 border: none;
                 border-radius: 4px;
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 12px;
             }
             QPushButton:hover {
                 background-color: #1976D2;
@@ -337,7 +337,7 @@ class VistaCalendario(BaseForm):
         leyenda_layout.setSpacing(15)
 
         label_titulo = QLabel("LEYENDA:")
-        label_titulo.setStyleSheet("font-weight: bold; font-size: 10px; color: #1976D2;")
+        label_titulo.setStyleSheet("font-weight: bold; font-size: 12px; color: #1976D2;")
         leyenda_layout.addWidget(label_titulo)
 
         # Items de leyenda con colores
@@ -358,7 +358,7 @@ class VistaCalendario(BaseForm):
                 background-color: {bg_color};
                 border: 1px solid {border_color};
                 border-radius: 3px;
-                font-size: 9px;
+                font-size: 12px;
             """)
             leyenda_layout.addWidget(label)
 
@@ -635,7 +635,7 @@ class VistaCalendario(BaseForm):
         for i, dia in enumerate(dias_semana_cortos):
             label = QLabel(dia)
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setStyleSheet("font-size: 8px; font-weight: bold; color: #666;")
+            label.setStyleSheet("font-size: 12px; font-weight: bold; color: #666;")
             grid.addWidget(label, 0, i)
 
         # Días del mes

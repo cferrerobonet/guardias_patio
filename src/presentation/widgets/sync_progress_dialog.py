@@ -120,7 +120,7 @@ class SyncProgressDialog(QDialog):
 
         # Detalles (oculto por defecto)
         self.details_label = QLabel("")
-        self.details_label.setStyleSheet("color: #666; font-size: 10px;")
+        self.details_label.setStyleSheet("color: #666; font-size: 12px;")
         self.details_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.details_label.setWordWrap(True)
         layout.addWidget(self.details_label)

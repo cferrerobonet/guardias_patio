@@ -1,13 +1,13 @@
 /* ========== GLOBAL ========== */
 QWidget {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-family: @FONT_FAMILY@;
     font-size: 14px;
-    color: #1F2937;
+    color: @TEXT_PRIMARY@;
 }
 
 /* ========== BOTONES GENERALES ========== */
 QPushButton {
-    background-color: #007ACC;
+    background-color: @PRIMARY@;
     color: white;
     padding: 8px 16px;
     border: none;
@@ -16,28 +16,28 @@ QPushButton {
 }
 
 QPushButton:hover {
-    background-color: #005A9E;
+    background-color: @PRIMARY_DARK@;
 }
 
 QPushButton:pressed {
-    background-color: #005A9E;
+    background-color: @PRIMARY_DARK@;
 }
 
 QPushButton:disabled {
-    background-color: #D1D5DB;
-    color: #9CA3AF;
+    background-color: @BORDER_DARK@;
+    color: @TEXT_DISABLED@;
 }
 
 /* ========== SECUNDARIOS ========== */
 QPushButton#secondaryButton {
     background-color: transparent;
-    color: #1F2937;
-    border: 1px solid #D1D5DB;
+    color: @TEXT_PRIMARY@;
+    border: 1px solid @BORDER_DARK@;
 }
 
 QPushButton#secondaryButton:hover {
-    background-color: #F8F9FA;
-    border-color: #6B7280;
+    background-color: @SURFACE@;
+    border-color: @SECONDARY@;
 }
 
 /* ========== BOTONES DE ÉXITO Y PELIGRO ========== */
@@ -49,7 +49,7 @@ QPushButton[success="true"]:hover {
     background-color: #218838;
 }
 QPushButton[danger="true"] {
-    background-color: #DC3545;
+    background-color: @ERROR@;
     color: white;
 }
 QPushButton[danger="true"]:hover {
@@ -58,71 +58,71 @@ QPushButton[danger="true"]:hover {
 
 /* ========== INPUTS ========== */
 QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
-    background-color: #FFFFFF;
-    color: #1F2937;
+    background-color: @BACKGROUND@;
+    color: @TEXT_PRIMARY@;
     padding: 8px 12px;
-    border: 1px solid #D1D5DB;
+    border: 1px solid @BORDER_DARK@;
     border-radius: 4px;
     min-height: 28px;
 }
 
 QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
-    border-color: #007ACC;
+    border-color: @PRIMARY@;
 }
 
 /* ========== COMBOBOX ========== */
 QComboBox {
-    background-color: #FFFFFF;
-    color: #1F2937;
+    background-color: @BACKGROUND@;
+    color: @TEXT_PRIMARY@;
     padding: 8px 12px;
-    border: 1px solid #D1D5DB;
+    border: 1px solid @BORDER_DARK@;
     border-radius: 4px;
 }
 
 QComboBox:hover {
-    border-color: #6B7280;
+    border-color: @SECONDARY@;
 }
 
 QComboBox:focus {
-    border-color: #007ACC;
+    border-color: @PRIMARY@;
 }
 
 QComboBox QAbstractItemView {
-    background-color: #FFFFFF;
-    color: #1F2937;
-    border: 1px solid #D1D5DB;
-    selection-background-color: #E6F2FA;
-    selection-color: #1F2937;
+    background-color: @BACKGROUND@;
+    color: @TEXT_PRIMARY@;
+    border: 1px solid @BORDER_DARK@;
+    selection-background-color: @PRIMARY_LIGHT@;
+    selection-color: @TEXT_PRIMARY@;
 }
 
 /* ========== TABLAS ========== */
 QTableWidget, QTableView {
-    background-color: #FFFFFF;
-    alternate-background-color: #F8F9FA;
-    gridline-color: #E1E4E8;
-    color: #1F2937;
-    border: 1px solid #E1E4E8;
+    background-color: @BACKGROUND@;
+    alternate-background-color: @SURFACE@;
+    gridline-color: @BORDER@;
+    color: @TEXT_PRIMARY@;
+    border: 1px solid @BORDER@;
     border-radius: 4px;
 }
 
 QTableWidget::item:selected, QTableView::item:selected {
-    background-color: #E6F2FA;
-    color: #1F2937;
+    background-color: @PRIMARY_LIGHT@;
+    color: @TEXT_PRIMARY@;
 }
 
 QHeaderView::section {
-    background-color: #F8F9FA;
-    color: #1F2937;
+    background-color: @SURFACE@;
+    color: @TEXT_PRIMARY@;
     font-weight: 600;
     padding: 8px;
     border: none;
-    border-bottom: 2px solid #E1E4E8;
+    border-bottom: 2px solid @BORDER@;
 }
 
 /* ========== SIDEBAR ========== */
 QWidget#sidebar {
-    background-color: #3E4857;
-    border-right: 1px solid #2A3340;
+    background-color: @SIDEBAR_BG@;
+    border-right: 1px solid @SIDEBAR_BORDER@;
 }
 
 QLabel#sidebarTitle {
@@ -134,7 +134,7 @@ QLabel#sidebarTitle {
 
 QLabel#menuCategory {
     color: rgba(255, 255, 255, 0.75);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1.8px;
@@ -155,7 +155,7 @@ QPushButton#menuButton:hover {
 }
 
 QPushButton#menuButtonActive {
-    background-color: #007ACC;
+    background-color: @PRIMARY@;
     color: white;
     font-weight: bold;
     text-align: left;
@@ -176,7 +176,7 @@ QLabel#heading3 {
     font-weight: 600;
 }
 QLabel#secondary {
-    color: #6B7280;
+    color: @SECONDARY@;
     font-size: 12px;
 }
 
@@ -190,7 +190,7 @@ QLabel#fieldLabel {
 }
 
 QLabel#smallFieldLabel {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: bold;
     color: #212121;
     margin-bottom: 1px;
@@ -200,10 +200,10 @@ QLabel#smallFieldLabel {
 QLabel#titleMain {
     font-size: 18px;
     font-weight: bold;
-    color: #007ACC;
+    color: @PRIMARY@;
     background-color: #f5f5f5;
     padding: 9px 14px;
-    border-left: 4px solid #007ACC;
+    border-left: 4px solid @PRIMARY@;
     border-radius: 4px;
     margin-bottom: 8px;
     min-height: 24px;
@@ -213,7 +213,7 @@ QLabel#titleMain {
 QGroupBox {
     font-weight: bold;
     font-size: 13px;
-    color: #007ACC;
+    color: @PRIMARY@;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
     margin-top: 16px;
@@ -229,7 +229,7 @@ QGroupBox::title {
     top: -2px;
     background-color: #f5f5f5;
     border-radius: 4px;
-    color: #1F2937;
+    color: @TEXT_PRIMARY@;
 }
 
 /* ========== MESSAGEBOX ========== */
@@ -239,13 +239,13 @@ QMessageBox {
 }
 
 QMessageBox QLabel {
-    color: #1f2937;
+    color: @TEXT_PRIMARY@;
     font-size: 14px;
     padding: 10px;
 }
 
 QMessageBox QPushButton {
-    background-color: #059669;
+    background-color: @SUCCESS_DARK@;
     color: white;
     font-weight: 600;
     font-size: 13px;
@@ -317,7 +317,7 @@ QScrollArea {
 /* Etiqueta descriptiva secundaria (desc/descripcion widgets) */
 QLabel#formDescription {
     color: #666666;
-    font-size: 11px;
+    font-size: 12px;
     margin-bottom: 10px;
 }
 

@@ -88,7 +88,7 @@ class SessionLockedDialog(QDialog):
         )
         explanation.setWordWrap(True)
         explanation.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        explanation.setStyleSheet("font-size: 11px; color: #666; margin-top: 10px;")
+        explanation.setStyleSheet("font-size: 12px; color: #666; margin-top: 10px;")
         layout.addWidget(explanation)
 
         # Botones

@@ -47,7 +47,7 @@ class CalculoPanel(QGroupBox):
                 background-color: #ffffff;
                 font-weight: bold;
                 font-size: 13px;
-                border: 2px solid #3b82f6;
+                border: 2px solid #0E5FA8;
                 border-radius: 6px;
                 margin-top: 16px;
                 padding-top: 14px;

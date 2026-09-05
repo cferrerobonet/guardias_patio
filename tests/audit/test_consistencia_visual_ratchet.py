@@ -4,10 +4,14 @@ Sólo pueden bajar, salvo subida deliberada y anotada aquí. Ver auditoria/04 y 
 Subidas registradas:
 - 2026-09-05, v5.56.0: `setStyleSheet` 287 → 289 (vista de estado del curso y aviso
   de bloqueo del panel de generación).
-- 2026-09-05, v5.57.0: vuelve a 288 al retirarse la vista de estado del curso. El +1
-  que queda es el aviso de bloqueo (UXF-008), superficie nueva sin hoja de estilos
-  central todavía; entra en el inventario del lote 8, que baja este umbral de golpe
-  al crear `app.qss`."""
+- 2026-09-05, v5.57.0: vuelve a 288 al retirarse la vista de estado del curso.
+
+Bajadas registradas (lote 8, v5.58.0):
+- `font_size_menor_12px` 89 → 0: el contrato de diseño fija 12 px como mínimo
+  absoluto y había usos de hasta 7 px.
+- `hex_literales` 631 → 562.
+- `setStyleSheet` sigue en 288: reducirlo es sacar los estilos en línea a la hoja
+  central, vista por vista, y eso es el resto de VIS-001."""
 
 import re
 from pathlib import Path
@@ -18,9 +22,9 @@ ROOT = Path(__file__).resolve().parents[2]
 PRES = ROOT / "src" / "presentation"
 UMBRALES = {
     "setStyleSheet": 288,
-    "hex_literales": 631,
-    "font_size_menor_12px": 89,
-    "lineas_con_emoji": 327,
+    "hex_literales": 562,
+    "font_size_menor_12px": 0,
+    "lineas_con_emoji": 326,
     "setFixed": 21,
     "setMinimum": 150,
 }
@@ -69,3 +73,65 @@ def test_fuente_global_existe_en_windows():
     main = (ROOT / "src" / "main.py").read_text(encoding="utf-8")
     if 'QFont("-apple-system")' in main:
         pytest.xfail("VIS-003: fuente global -apple-system; usar pila por SO")
+
+
+# ---------------------------------------------------------------------------
+# VIS-001: la hoja de estilos se construye desde los tokens
+# ---------------------------------------------------------------------------
+QSS = ROOT / "src" / "presentation" / "theme" / "light.qss"
+
+#: Colores que siguen escritos a mano en light.qss por no tener token todavía.
+#: Sólo puede bajar: cada uno que se resuelva es un token nuevo o un duplicado menos.
+LITERALES_SIN_TOKEN = 28
+
+
+def test_la_hoja_de_estilos_no_repite_colores_que_ya_son_token():
+    """Si un color tiene token, en la hoja va el marcador, no el hexadecimal."""
+    import sys
+
+    sys.path.insert(0, str(ROOT / "src"))
+    from presentation.theme.tokens import Colors
+
+    con_token = {
+        v.upper() for v in vars(Colors).values() if isinstance(v, str) and v.startswith("#")
+    }
+    texto = QSS.read_text(encoding="utf-8")
+    repetidos = sorted({h.upper() for h in re.findall(r"#[0-9A-Fa-f]{6}\b", texto)} & con_token)
+
+    assert not repetidos, (
+        f"estos colores tienen token y están escritos a mano en light.qss: {repetidos}"
+    )
+
+
+def test_ratchet_de_colores_sueltos_en_la_hoja():
+    literales = re.findall(r"#[0-9A-Fa-f]{6}\b", QSS.read_text(encoding="utf-8"))
+    assert len(literales) <= LITERALES_SIN_TOKEN, (
+        f"{len(literales)} colores sin token en light.qss (umbral {LITERALES_SIN_TOKEN}). "
+        "Si añades color, dale un token; si has resuelto alguno, baja el umbral."
+    )
+
+
+def test_la_hoja_construida_no_deja_marcadores_sin_resolver():
+    import sys
+
+    sys.path.insert(0, str(ROOT / "src"))
+    from presentation.theme.hoja_de_estilos import construir_hoja_de_estilos
+
+    hoja = construir_hoja_de_estilos()
+    assert hoja, "la hoja de estilos salió vacía"
+    assert not re.findall(r"@[A-Z_]+@", hoja), "quedan marcadores sin token"
+    # Y la familia tipográfica es la del sistema, no la del navegador.
+    assert "-apple-system" not in hoja
+
+
+def test_un_unico_minimo_de_ventana():
+    """VIS-009: había 1400x900 en la ventana y 1200x800 en ajustes."""
+    import inspect
+    import sys
+
+    sys.path.insert(0, str(ROOT / "src"))
+    from presentation import ccleaner_main_window
+
+    fuente = inspect.getsource(ccleaner_main_window.CCleanerMainWindow.setup_ui)
+    assert "setMinimumSize(1400, 900)" not in fuente
+    assert "window_min_width" in fuente

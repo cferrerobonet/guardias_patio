@@ -46,7 +46,7 @@ class ResetPasswordDialog(QDialog):
             QLabel {
                 font-size: 18px;
                 font-weight: bold;
-                color: #007ACC;
+                color: #0E5FA8;
                 padding: 20px;
             }
         """)
@@ -183,7 +183,7 @@ class ResetPasswordDialog(QDialog):
             Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )
         msg.setText(
-            f"La contraseña de <span style='color: #007ACC; font-style: italic;'>"
+            f"La contraseña de <span style='color: #0E5FA8; font-style: italic;'>"
             f"{self.username}</span> ha sido cambiada correctamente.<br><br>"
             f"Ahora puedes iniciar sesión con tu nueva contraseña."
         )

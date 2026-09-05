@@ -145,7 +145,7 @@ class SFTPConfigWidget(QGroupBox):
             QLabel {
                 padding: 10px;
                 background-color: #eff6ff;
-                border-left: 4px solid #3b82f6;
+                border-left: 4px solid #0E5FA8;
                 color: #1e40af;
                 font-size: 12px;
                 margin-top: 10px;
@@ -237,7 +237,7 @@ class SFTPConfigWidget(QGroupBox):
                 min-height: 35px;
                 padding: 5px 15px;
                 font-size: 13px;
-                background-color: #059669;
+                background-color: #166529;
                 color: white;
                 border: 2px solid #047857;
                 border-radius: 4px;
@@ -484,13 +484,13 @@ class SFTPConfigWidget(QGroupBox):
         )
         success_msg.setText(
             f"La conexión SFTP se estableció correctamente.<br><br>"
-            f"<b>Servidor:</b> <span style='color: #007ACC; "
+            f"<b>Servidor:</b> <span style='color: #0E5FA8; "
             f"font-style: italic;'>{sftp_host}:{sftp_port}</span><br>"
-            f"<b>Usuario:</b> <span style='color: #007ACC; "
+            f"<b>Usuario:</b> <span style='color: #0E5FA8; "
             f"font-style: italic;'>{sftp_user}</span><br>"
-            f"<b>Directorio:</b> <span style='color: #007ACC; "
+            f"<b>Directorio:</b> <span style='color: #0E5FA8; "
             f"font-style: italic;'>{sftp_basedir}</span><br>"
-            f"<b>Archivos encontrados:</b> <span style='color: #059669; "
+            f"<b>Archivos encontrados:</b> <span style='color: #166529; "
             f"font-weight: bold;'>{file_count}</span><br><br>"
             "El servidor está listo para sincronizar copias de seguridad."
         )
@@ -506,7 +506,7 @@ class SFTPConfigWidget(QGroupBox):
                 min-height: 35px;
                 padding: 5px 15px;
                 font-size: 13px;
-                background-color: #059669;
+                background-color: #166529;
                 color: white;
                 border: 2px solid #047857;
                 border-radius: 4px;

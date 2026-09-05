@@ -59,7 +59,7 @@ class DialogoEditarPerfil(QDialog):
         layout.addLayout(form_layout)
 
         self._error_label = QLabel("")
-        self._error_label.setStyleSheet("color: #DC3545; font-size: 11px;")
+        self._error_label.setStyleSheet("color: #DC3545; font-size: 12px;")
         self._error_label.setVisible(False)
         layout.addWidget(self._error_label)
 

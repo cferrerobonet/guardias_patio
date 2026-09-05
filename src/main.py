@@ -209,18 +209,20 @@ def main():
     else:
         logger.warning("⚠ No se pudo cargar la traducción de Qt al español")
 
-    # Configurar fuente global
-    font = QFont("-apple-system")
-    font.setPointSize(14)
+    # Configurar fuente global con la pila propia de cada sistema (VIS-003)
+    from presentation.theme.tokens import cuerpo_del_sistema, familias_del_sistema
+
+    font = QFont()
+    font.setFamilies(familias_del_sistema())
+    font.setPointSize(cuerpo_del_sistema())
     app.setFont(font)
 
-    # Aplicar stylesheet global a toda la aplicación
-    theme_path = Path(__file__).parent / "presentation" / "theme" / "light.qss"
-    if theme_path.exists():
-        with open(theme_path, "r", encoding="utf-8") as f:
-            app.setStyleSheet(f.read())
-    else:
-        logger.warning(f"Stylesheet no encontrado: {theme_path}")
+    # Aplicar stylesheet global a toda la aplicación, construida desde los tokens
+    from presentation.theme.hoja_de_estilos import construir_hoja_de_estilos
+
+    hoja = construir_hoja_de_estilos()
+    if hoja:
+        app.setStyleSheet(hoja)
 
     # ==========================================
     # Sistema de Login y Sincronización SFTP

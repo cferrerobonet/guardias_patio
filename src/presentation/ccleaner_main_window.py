@@ -87,8 +87,12 @@ class CCleanerMainWindow(QMainWindow):
 
     def setup_ui(self):
         """Configurar la interfaz principal"""
+        from config.settings import get_settings
+
         self.setWindowTitle("Guardias de Patio")
-        self.setMinimumSize(1400, 900)
+        ajustes = get_settings()
+        # Una sola fuente para el mínimo: la que está en ajustes (VIS-009).
+        self.setMinimumSize(ajustes.window_min_width, ajustes.window_min_height)
 
         # Abrir maximizada para mantener los controles nativos de la ventana en Windows
         self.showMaximized()

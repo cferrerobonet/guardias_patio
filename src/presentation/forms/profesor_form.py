@@ -729,12 +729,12 @@ class ProfesorForm(BaseForm):
             nombre_profesor = profesores_a_eliminar[0][1]
             mensaje = (
                 f"¿Eliminar al profesor "
-                f"<span style='color: #007ACC; font-style: italic;'>{nombre_profesor}</span>?"
+                f"<span style='color: #0E5FA8; font-style: italic;'>{nombre_profesor}</span>?"
             )
         else:
             nombres_html = "<br>• ".join(
                 [
-                    f"<span style='color: #007ACC; font-style: italic;'>{nombre}</span>"
+                    f"<span style='color: #0E5FA8; font-style: italic;'>{nombre}</span>"
                     for _, nombre in profesores_a_eliminar
                 ]
             )

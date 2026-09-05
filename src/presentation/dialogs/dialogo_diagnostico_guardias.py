@@ -105,7 +105,7 @@ class DialogoDiagnosticoGuardias(QDialog):
             recomendacion.setWordWrap(True)
             recomendacion.setStyleSheet(
                 "background-color: #ecf0f1; padding: 10px; border-radius: 5px; "
-                "color: #2c3e50; font-size: 11px;"
+                "color: #2c3e50; font-size: 12px;"
             )
             layout.addWidget(recomendacion)
 
@@ -180,7 +180,7 @@ class DialogoDiagnosticoGuardias(QDialog):
             # Descripción del problema
             lbl_descripcion = QLabel(f"• {problema.descripcion}")
             lbl_descripcion.setWordWrap(True)
-            lbl_descripcion.setStyleSheet("font-size: 11px; margin-left: 10px;")
+            lbl_descripcion.setStyleSheet("font-size: 12px; margin-left: 10px;")
             layout_grupo.addWidget(lbl_descripcion)
 
             # Sugerencias (si las hay)
@@ -189,7 +189,7 @@ class DialogoDiagnosticoGuardias(QDialog):
                     lbl_sugerencia = QLabel(f"   → {sugerencia}")
                     lbl_sugerencia.setWordWrap(True)
                     lbl_sugerencia.setStyleSheet(
-                        "font-size: 11px; color: #7f8c8d; margin-left: 30px; "
+                        "font-size: 12px; color: #7f8c8d; margin-left: 30px; "
                         "margin-top: 3px; font-style: italic;"
                     )
                     layout_grupo.addWidget(lbl_sugerencia)
@@ -201,7 +201,7 @@ class DialogoDiagnosticoGuardias(QDialog):
                     # Mostrar nombres si son pocos
                     nombres = [p["nombre"] for p in profesores]
                     lbl_detalle = QLabel(f"   Afectados: {', '.join(nombres)}")
-                    lbl_detalle.setStyleSheet("font-size: 11px; color: #95a5a6; margin-left: 30px;")
+                    lbl_detalle.setStyleSheet("font-size: 12px; color: #95a5a6; margin-left: 30px;")
                     layout_grupo.addWidget(lbl_detalle)
 
             # Espaciado entre problemas

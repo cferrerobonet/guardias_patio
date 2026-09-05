@@ -106,7 +106,7 @@ class GeneracionPanel(QGroupBox):
                 background-color: #ffffff;
                 font-weight: bold;
                 font-size: 13px;
-                border: 2px solid #10b981;
+                border: 2px solid #1E7E34;
                 border-radius: 6px;
                 margin-top: 16px;
                 padding-top: 14px;
@@ -118,7 +118,7 @@ class GeneracionPanel(QGroupBox):
                 left: 12px;
                 top: -2px;
                 background-color: white;
-                color: #059669;
+                color: #166529;
             }
         """)
         self._setup_ui()
@@ -156,7 +156,7 @@ class GeneracionPanel(QGroupBox):
                 min-width: 150px;
             }
             QComboBox:hover {
-                border-color: #10b981;
+                border-color: #1E7E34;
             }
             QComboBox::drop-down {
                 border: none;

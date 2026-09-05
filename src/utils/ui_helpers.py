@@ -48,7 +48,7 @@ MESSAGEBOX_STYLE = """
         padding: 10px;
     }
     QMessageBox QPushButton {
-        background-color: #059669 !important;
+        background-color: #166529 !important;
         color: white !important;
         font-weight: 600 !important;
         font-size: 13px !important;

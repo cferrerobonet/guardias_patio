@@ -53,7 +53,7 @@ class PerfilUsuarioWidget(QGroupBox):
         # ===== Nombre de usuario (solo lectura) =====
         label_username = QLabel("Usuario:")
         label_username.setStyleSheet(
-            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;"
+            styles.STYLE_LABEL_FIELD + "font-size: 12px; margin-bottom: 1px;"
         )
         layout.addWidget(label_username)
 
@@ -69,7 +69,7 @@ class PerfilUsuarioWidget(QGroupBox):
                 padding: 3px;
                 margin-bottom: 2px;
                 font-weight: 500;
-                font-size: 10px;
+                font-size: 12px;
             }
         """
         )
@@ -102,7 +102,7 @@ class PerfilUsuarioWidget(QGroupBox):
 
         self.change_password_btn = QPushButton("Cambiar Contraseña")
         self.change_password_btn.setStyleSheet(
-            styles.STYLE_BUTTON_WARNING + "padding: 4px 6px; font-size: 10px;"
+            styles.STYLE_BUTTON_WARNING + "padding: 4px 6px; font-size: 12px;"
         )
         self.change_password_btn.setToolTip("Cambiar la contraseña de acceso al sistema")
         self.change_password_btn.clicked.connect(self.password_change_requested.emit)

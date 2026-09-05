@@ -20,7 +20,7 @@ PAD_BOT = 12
 def _color_por_valor(valor, media, max_val):
     """Devuelve color según desviación respecto a la media."""
     if media <= 0:
-        return QColor("#007ACC")
+        return QColor("#0E5FA8")
     ratio = valor / media
     if ratio <= 0.85:
         return QColor("#60A5FA")   # azul claro — bajo
@@ -202,7 +202,7 @@ class PieChartWidget(QWidget):
     """Gráfico de tarta (donut) nativo con QPainter."""
 
     COLORS = [
-        "#007ACC", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
+        "#0E5FA8", "#1E7E34", "#F59E0B", "#EF4444", "#8B5CF6",
         "#06B6D4", "#84CC16", "#F97316", "#EC4899", "#6B7280",
     ]
 

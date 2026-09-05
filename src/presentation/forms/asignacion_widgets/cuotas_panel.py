@@ -96,7 +96,7 @@ class CuotasPanel(QGroupBox):
         self.total_badge = QLabel("Total: -- guardias")
         self.total_badge.setStyleSheet("""
             QLabel {
-                background-color: #10b981;
+                background-color: #1E7E34;
                 color: white;
                 font-weight: bold;
                 font-size: 14px;

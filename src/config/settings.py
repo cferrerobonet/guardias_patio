@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # ========== APLICACIÓN ==========
     app_name: str = "Gestión de Guardias de Patio"
-    app_version: str = "5.57.0"
+    app_version: str = "5.58.0"
     app_author: str = "Carlos Ferrero Bonet"
     environment: Literal["development", "production", "testing"] = "production"
 
@@ -95,8 +95,11 @@ class Settings(BaseSettings):
     max_intentos_asignacion: int = 1000
 
     # ========== UI ==========
-    window_min_width: int = 1200
-    window_min_height: int = 800
+    # Mínimo real de la ventana. Antes había dos cifras distintas —1200x800 aquí y
+    # 1400x900 en la ventana— y ganaba la segunda, que no cabe en un portátil de
+    # 1366x768 ni en una pantalla escalada al 125% (VIS-009).
+    window_min_width: int = 1024
+    window_min_height: int = 700
     max_width_input_short: int = 100
     max_width_input_medium: int = 200
     max_width_input_long: int = 350

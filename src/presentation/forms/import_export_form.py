@@ -156,7 +156,7 @@ class ImportExportForm(BaseForm):
         info.setStyleSheet(
             f"""
             color: {TEXT_SECONDARY};
-            font-size: 11px;
+            font-size: 12px;
             font-weight: normal;
         """
         )

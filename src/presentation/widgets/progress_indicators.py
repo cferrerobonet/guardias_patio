@@ -178,7 +178,7 @@ class ProgressDialog(QDialog):
         self.label_tiempo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_tiempo.setStyleSheet("""
             QLabel {
-                font-size: 11px;
+                font-size: 12px;
                 color: #757575;
                 font-family: 'Courier New', monospace;
             }
@@ -193,7 +193,7 @@ class ProgressDialog(QDialog):
         self.label_cpu = QLabel("💻 CPU: 0%")
         self.label_cpu.setStyleSheet("""
             QLabel {
-                font-size: 10px;
+                font-size: 12px;
                 color: #666;
                 padding: 4px 8px;
                 background-color: #f0f0f0;
@@ -206,7 +206,7 @@ class ProgressDialog(QDialog):
         self.label_eta = QLabel("ETA: calculando...")
         self.label_eta.setStyleSheet("""
             QLabel {
-                font-size: 10px;
+                font-size: 12px;
                 color: #666;
                 padding: 4px 8px;
                 background-color: #f0f0f0;
@@ -234,7 +234,7 @@ class ProgressDialog(QDialog):
             label_log = QLabel("Detalles del proceso:")
             label_log.setStyleSheet("""
                 QLabel {
-                    font-size: 11px;
+                    font-size: 12px;
                     font-weight: bold;
                     color: #666666;
                     margin-top: 5px;
@@ -251,7 +251,7 @@ class ProgressDialog(QDialog):
                     border: 1px solid #DDDDDD;
                     border-radius: 4px;
                     font-family: 'Courier New', monospace;
-                    font-size: 10px;
+                    font-size: 12px;
                     padding: 8px;
                 }
             """)
@@ -437,7 +437,7 @@ class ProgressDialog(QDialog):
             )
             self.label_cpu.setStyleSheet(f"""
                 QLabel {{
-                    font-size: 10px;
+                    font-size: 12px;
                     color: {color};
                     font-weight: bold;
                     padding: 4px 8px;

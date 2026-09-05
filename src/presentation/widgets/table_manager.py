@@ -55,21 +55,21 @@ class TableManager:
             """
             QTableWidget {
                 gridline-color: #e0e0e0;
-                selection-background-color: #007ACC;
+                selection-background-color: #0E5FA8;
                 selection-color: white;
             }
             QTableWidget::item:hover {
                 background-color: #e8f4ff;
             }
             QTableWidget::item:selected {
-                background-color: #007ACC;
+                background-color: #0E5FA8;
                 color: white;
             }
             QTableWidget QHeaderView::section {
                 background-color: #f5f5f5;
                 padding: 6px;
                 border: none;
-                border-bottom: 2px solid #007ACC;
+                border-bottom: 2px solid #0E5FA8;
                 font-weight: bold;
             }
         """

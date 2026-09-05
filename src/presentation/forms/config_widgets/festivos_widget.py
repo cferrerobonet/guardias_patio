@@ -63,7 +63,7 @@ class FestivosWidget(QGroupBox):
         # ===== Días no lectivos personalizados =====
         label_custom = QLabel("Días no lectivos (YYYY-MM-DD):")
         label_custom.setStyleSheet(
-            styles.STYLE_LABEL_FIELD + "font-size: 10px; margin-bottom: 1px;"
+            styles.STYLE_LABEL_FIELD + "font-size: 12px; margin-bottom: 1px;"
         )
         layout.addWidget(label_custom)
 

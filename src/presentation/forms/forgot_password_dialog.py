@@ -46,7 +46,7 @@ class ForgotPasswordDialog(QDialog):
             QLabel {
                 font-size: 18px;
                 font-weight: bold;
-                color: #007ACC;
+                color: #0E5FA8;
                 padding: 20px;
             }
         """)
@@ -99,7 +99,7 @@ class ForgotPasswordDialog(QDialog):
         send_btn.setDefault(True)
         send_btn.setStyleSheet("""
             QPushButton {
-                background-color: #007ACC;
+                background-color: #0E5FA8;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -107,7 +107,7 @@ class ForgotPasswordDialog(QDialog):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #005A9E;
+                background-color: #0C5291;
             }
         """)
         buttons_layout.addWidget(send_btn)
@@ -201,7 +201,7 @@ class ForgotPasswordDialog(QDialog):
         )
         msg.setText(
             f"Se ha enviado un código de recuperación a:<br><br>"
-            f"<span style='color: #007ACC; font-style: italic;'>{email}</span><br><br>"
+            f"<span style='color: #0E5FA8; font-style: italic;'>{email}</span><br><br>"
             f"Revisa tu bandeja de entrada (y también la carpeta de spam).<br><br>"
             f"Usa el código recibido en el siguiente paso para restablecer tu contraseña."
         )

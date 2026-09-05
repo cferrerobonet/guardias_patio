@@ -50,7 +50,7 @@ class _StatCard(QWidget):
 
         lbl = QLabel(label)
         lbl.setStyleSheet(
-            "QLabel { font-size: 11px; color: #6B7280; background: transparent; border: none; }"
+            "QLabel { font-size: 12px; color: #6B7280; background: transparent; border: none; }"
         )
         lbl.setWordWrap(True)
         layout.addWidget(lbl)
@@ -66,7 +66,7 @@ class _AlertItem(QWidget):
 
     def __init__(self, texto: str, nivel: str = "warning", parent=None):
         super().__init__(parent)
-        colores = {"warning": "#F59E0B", "error": "#EF4444", "info": "#3B82F6", "ok": "#10B981"}
+        colores = {"warning": "#F59E0B", "error": "#EF4444", "info": "#0E5FA8", "ok": "#1E7E34"}
         color = colores.get(nivel, "#F59E0B")
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 6, 8, 6)
@@ -74,7 +74,7 @@ class _AlertItem(QWidget):
 
         dot = QLabel("●")
         dot.setStyleSheet(
-            f"QLabel {{ color: {color}; font-size: 10px; background: transparent; }}"
+            f"QLabel {{ color: {color}; font-size: 12px; background: transparent; }}"
         )
         dot.setFixedWidth(14)
         layout.addWidget(dot)
@@ -93,7 +93,7 @@ class _UpdateBanner(QWidget):
     def __init__(self, nueva_version: str, parent=None):
         super().__init__(parent)
         self.setStyleSheet(
-            "QWidget { background: #EFF6FF; border: 1px solid #3B82F6;"
+            "QWidget { background: #EFF6FF; border: 1px solid #0E5FA8;"
             " border-radius: 6px; }"
         )
         layout = QHBoxLayout(self)
@@ -178,10 +178,10 @@ class HomeForm(BaseForm):
 
         cards_row = QHBoxLayout()
         cards_row.setSpacing(12)
-        self._card_guardias = _StatCard("Guardias hoy", "—", "#007ACC")
+        self._card_guardias = _StatCard("Guardias hoy", "—", "#0E5FA8")
         self._card_ausencias = _StatCard("Ausencias activas", "—", "#EF4444")
         self._card_sustituciones = _StatCard("Sustituciones hoy", "—", "#F59E0B")
-        self._card_total = _StatCard("Guardias totales", "—", "#10B981")
+        self._card_total = _StatCard("Guardias totales", "—", "#1E7E34")
         for card in (self._card_guardias, self._card_ausencias,
                      self._card_sustituciones, self._card_total):
             cards_row.addWidget(card)

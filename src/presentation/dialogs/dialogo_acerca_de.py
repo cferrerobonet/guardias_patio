@@ -230,7 +230,7 @@ class DialogoAcercaDe(QDialog):
         license_text.setStyleSheet("""
             QLabel {
                 font-family: monospace;
-                font-size: 11px;
+                font-size: 12px;
                 color: #555;
                 padding: 10px;
             }

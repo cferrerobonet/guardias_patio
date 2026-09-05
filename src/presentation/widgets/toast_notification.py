@@ -8,7 +8,7 @@ class ToastNotification(QWidget):
     _COLORES = {
         "success": ("#1E7E34", "#D1FAE5", "#166534"),
         "error": ("#DC3545", "#FEE2E2", "#991B1B"),
-        "info": ("#007ACC", "#E6F2FA", "#1E40AF"),
+        "info": ("#0E5FA8", "#E6F2FA", "#1E40AF"),
         "warning": ("#856404", "#FFF3CD", "#92400E"),
     }
 

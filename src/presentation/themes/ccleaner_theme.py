@@ -95,7 +95,7 @@ def get_sidebar_style() -> str:
             color: rgba(255, 255, 255, 0.75);
             background-color: transparent;
             font-family: {FONT_FAMILY};
-            font-size: 11px;
+            font-size: 12px;
             font-weight: {FONT_WEIGHT_BOLD};
             text-transform: uppercase;
             letter-spacing: 1.8px;
