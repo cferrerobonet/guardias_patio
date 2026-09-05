@@ -98,9 +98,10 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 - **Prueba:** `tests/audit/test_crash_windows_regresion.py::test_cancelacion_interrumpe_la_generacion_sin_tragarse_la_excepcion` y `::test_worker_no_lanza_dentro_del_callback_del_solver`.
 - **Esfuerzo:** S.
 
-### [CRW-005] `sys.excepthook` crea un `QMessageBox` desde cualquier hilo
+### ~~[CRW-005] `sys.excepthook` crea un `QMessageBox` desde cualquier hilo~~ ✅ RESUELTO v5.53.0
 
-- **Tipo:** bug · **Severidad:** P1 · **Confianza:** alta.
+- **Estado:** RESUELTO VERIFICADO v5.53.0 · **Tipo:** bug · **Severidad:** P1 · **Confianza:** alta.
+- **Solución aplicada:** el hook compara `QThread.currentThread()` con el hilo de la `QApplication`; fuera del hilo GUI se limita a registrar el fallo y deja constancia de por qué no muestra diálogo. `SyncWorker.run` captura `Exception` con traza completa, así que una `SSHException` de paramiko ya no escapa hacia el hook.
 - **Ubicación:** `src/main.py:60-95`, `src/presentation/widgets/sync_progress_dialog.py:34-47` (`SyncWorker.run` sólo captura `ValueError, TypeError, OSError`), `src/utils/update_checker.py:10-23` (hilo `threading.Thread`).
 - **Evidencia:** PyQt6 invoca `sys.excepthook` para excepciones no capturadas en `QThread.run` reimplementado, **en el hilo del worker**. Una `paramiko.SSHException` (no es `OSError`) en `SyncWorker` llega al hook, que construye y ejecuta un `QMessageBox` fuera del hilo GUI: cierre inmediato. Ocurre al cerrar la app o en el auto-sync de 30 min, y la sincronización se dispara justo después de generar (`_sincronizar`).
 - **Recomendación:** hook que comprueba `QThread.currentThread() is QApplication.instance().thread()`; si no, sólo loguea y emite una señal a la ventana principal. `SyncWorker` captura `Exception`.
@@ -115,9 +116,10 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 - **Recomendación:** en `main.py`, si `getattr(sys, "frozen", False)`: `faulthandler.enable(open(log_dir/"faulthandler.log", "a"))` y no crear `StreamHandler` cuando `sys.stdout is None`. Una sola función `setup_logging()` idempotente.
 - **Esfuerzo:** XS.
 
-### [CRW-007] Tras generar, la sincronización SFTP bloquea el hilo GUI y sus errores escapan del slot
+### ~~[CRW-007] Tras generar, la sincronización SFTP bloquea el hilo GUI y sus errores escapan del slot~~ ✅ RESUELTO v5.53.0
 
-- **Tipo:** bug · **Severidad:** P2 · **Confianza:** alta.
+- **Estado:** RESUELTO VERIFICADO v5.53.0 · **Tipo:** bug · **Severidad:** P2 · **Confianza:** alta.
+- **Solución aplicada:** `_sincronizar` reutiliza `SyncWorker` con `SyncProgressDialog`, el mismo patrón que el cierre de la aplicación y el auto-sync, y captura `Exception`. La sesión sigue compartiéndose con el worker: eso es CRW-003 y se aborda en el lote 3.
 - **Ubicación:** `src/presentation/forms/asignacion_widgets/generacion_panel.py:314-316,416-427` y `:327-328` (`except (ValueError, TypeError, OSError)`).
 - **Evidencia:** `sync_on_shutdown` sube por SFTP en el hilo GUI (segundos congelada). Excepciones de paramiko o SQLAlchemy salen de `_generar_guardias` y llegan al excepthook: el usuario ve "Error inesperado" tras una generación correcta.
 - **Recomendación:** reutilizar `SyncWorker`; capturar `Exception` con mensaje claro; no mezclar el resultado de la generación con el de la sync.
@@ -130,9 +132,10 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 - **Impacto:** cuando ocurre el error que se pretendía manejar, salta `NameError` y se pierde el mensaje real.
 - **Prueba:** `tests/audit/test_calidad_estatica.py::test_sin_nombres_indefinidos`.
 
-### [CRW-009] Registro de auditoría de la generación sin commit propio
+### ~~[CRW-009] Registro de auditoría de la generación sin commit propio~~ ✅ RESUELTO v5.53.0
 
-- **Tipo:** bug · **Severidad:** P2 · **Confianza:** media.
+- **Estado:** RESUELTO VERIFICADO v5.53.0 · **Tipo:** bug · **Severidad:** P2 · **Confianza:** media.
+- **Solución aplicada:** el caso de uso hace `commit` tras añadir el registro. Además captura `InterruptedError` antes que `Exception`, para que cancelar no se anuncie como error de negocio.
 - **Ubicación:** `src/application/use_cases/asignacion_guardias/generar_guardias.py:150-153` (`session.add(GuardiaAuditLog(...))` sin `commit`; `autoflush=False` en `db_manager.py:382`).
 - **Impacto:** el registro se persiste sólo si otro flujo hace commit después; con rollback por un error posterior, se pierde.
 - **Recomendación:** el caso de uso gestiona su transacción: `commit` al final, `rollback` en error.
@@ -143,15 +146,15 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 2. **Visor de eventos:** Windows Logs → Application → error 1000 con `GuardiasDePatio.exe`; anotar *Faulting module* (`Qt6Core.dll`, `Qt6Widgets.dll`, `python311.dll`, `sqlite3.dll`, `_pywrapcp*.pyd`/`ortools`), *Exception code* (0xC0000005 = acceso inválido; 0x40000015/0xC0000409 = abort/terminate).
 3. **Ejecutar con consola:** compilar con `powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1 -Diagnostico` (ya disponible desde v5.44.0: añade `--console` y activa `PYTHONFAULTHANDLER`), lanzar `dist\GuardiasDePatio-debug\GuardiasDePatio-debug.exe` desde `cmd`, generar y copiar la salida. Revisar además `%APPDATA%\GuardiasDePatio\logs\faulthandler.log`, que ahora recoge la pila de todos los hilos ante un fallo nativo.
 4. **Aislar el solver:** repetir con algoritmo "Rápido (v4 Híbrido)". Si no falla, CRW-001 confirmado. Si falla igual, priorizar CRW-003/005. Desde v5.52.0 la frontera solver↔Qt ya está cerrada, así que si el cierre persiste la causa está en CRW-003/005.
-5. **Aislar la sync:** repetir con la variable `DISABLE_SESSION_LOCK=1` y sin red. Si deja de fallar, priorizar CRW-005/007.
+5. **Aislar la sync:** repetir con la variable `DISABLE_SESSION_LOCK=1` y sin red. Si deja de fallar, priorizar CRW-003 (CRW-005 y CRW-007 ya están resueltos desde v5.53.0).
 6. Registrar resultados en [[30_REGISTRO_HALLAZGOS]] con veredicto y actualizar la confianza de CRW-001.
 
 ## 6. Orden de remediación
 
-1. ~~CRW-006~~ ✅ v5.44.0. Queda CRW-005 (XS, sin riesgo): elimina un vector de cierre.
+1. ~~CRW-006~~ ✅ v5.44.0. ~~CRW-005 (XS, sin riesgo): elimina un vector de cierre.~~ ✅ v5.53.0
 2. ~~CRW-001 y CRW-004 (M+S): frontera solver↔Qt y cancelación cooperativa.~~ ✅ v5.52.0
 3. ~~CRW-002 (S).~~ ✅ v5.52.0 ~~CRW-008~~ ✅ v5.44.0.
-4. CRW-007 y CRW-009 (S).
+4. ~~CRW-007 y CRW-009 (S).~~ ✅ v5.53.0
 5. CRW-003 (L) por lotes: generación → sync → resto de vistas.
 
 Cada lote se cierra con la suite `tests/audit` verde (retirando las marcas `xfail`) y una generación completa en Windows con `faulthandler` activo.

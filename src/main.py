@@ -86,11 +86,24 @@ def main():
             logger.critical(line.rstrip())
         logger.critical("=" * 80)
 
-        # Mostrar diálogo de error al usuario si la app Qt ya está en marcha
+        # Mostrar diálogo de error al usuario si la app Qt ya está en marcha.
+        # PyQt llama a este hook en el hilo donde ocurrió la excepción, así que crear
+        # aquí un widget sin comprobarlo tumba el proceso: es justo lo que pasaba con
+        # los errores de paramiko en SyncWorker (CRW-005).
         try:
+            from PyQt6.QtCore import QThread
             from PyQt6.QtWidgets import QApplication, QMessageBox
 
-            if QApplication.instance() is not None:
+            app_qt = QApplication.instance()
+            en_hilo_gui = app_qt is not None and QThread.currentThread() is app_qt.thread()
+
+            if app_qt is not None and not en_hilo_gui:
+                logger.critical(
+                    "Excepción en un hilo secundario: no se muestra diálogo "
+                    "(crear widgets fuera del hilo GUI cierra la aplicación)"
+                )
+
+            if en_hilo_gui:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Icon.Critical)
                 msg.setWindowTitle("Error inesperado")

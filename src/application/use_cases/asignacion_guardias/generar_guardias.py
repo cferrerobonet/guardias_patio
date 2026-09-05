@@ -151,11 +151,14 @@ class GenerarGuardiasUseCase:
             if progress_callback:
                 progress_callback("Proceso completado", 100)
 
-            # Registrar en audit log
+            # Registrar en audit log. El commit es propio: las guardias ya se
+            # guardaron dentro de guardar_*_en_bd, y sin esto el registro sólo
+            # sobrevivía si otro flujo hacía commit más tarde (CRW-009).
             self.session.add(GuardiaAuditLog(
                 accion="GENERADA_BULK",
                 detalle=_json.dumps({"total": len(calendario), "algoritmo": algoritmo}),
             ))
+            self.session.commit()
 
             # Preparar resumen
             total_generado = len(calendario)
@@ -176,6 +179,11 @@ class GenerarGuardiasUseCase:
                 resumen_por_profesor=resumen,
                 mensaje=mensaje,
             )
+        except InterruptedError:
+            # Cancelación del usuario: no es un error que anunciar como tal.
+            self.session.rollback()
+            logger.info("Generación cancelada por el usuario")
+            raise
         except Exception as e:
             self.session.rollback()
             logger.error(f"Error al generar guardias: {str(e)}")

@@ -417,19 +417,40 @@ class GeneracionPanel(QGroupBox):
                 self._mostrar_error(f"Error al limpiar: {e}")
 
     def _sincronizar(self):
-        """Sincroniza con la nube."""
+        """Sincroniza con la nube en un hilo aparte, con diálogo de progreso.
+
+        Subir por SFTP desde el hilo GUI dejaba la ventana congelada varios segundos
+        y cualquier error de red acababa en el manejador global, que anunciaba un
+        "Error inesperado" después de una generación correcta (CRW-007).
+        """
+        from utils.logger import get_logger
+
+        logger = get_logger(__name__)
+
         try:
-            from utils.logger import get_logger
+            from presentation.widgets.sync_progress_dialog import (
+                SyncProgressDialog,
+                SyncWorker,
+            )
 
-            logger = get_logger(__name__)
             logger.info("Sincronizando con la nube...")
-            if self.sync_manager.sync_on_shutdown(session=self.session):
-                logger.info("✓ Sincronizado correctamente")
-        except (ValueError, TypeError, OSError) as e:
-            from utils.logger import get_logger
+            dialogo = SyncProgressDialog(self)
+            worker = SyncWorker(self.sync_manager, session=self.session)
+            worker.finished.connect(lambda ok: self._fin_sincronizacion(dialogo, ok))
+            worker.start()
+            dialogo.exec()
+            worker.wait()
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"⚠ Error al sincronizar: {type(e).__name__}: {e}")
 
-            logger = get_logger(__name__)
-            logger.warning(f"⚠ Error al sincronizar: {e}")
+    def _fin_sincronizacion(self, dialogo, correcto: bool):
+        """Cierra el diálogo de sincronización y deja constancia del resultado."""
+        from utils.logger import get_logger
+
+        get_logger(__name__).info(
+            "✓ Sincronizado correctamente" if correcto else "⚠ La sincronización no se completó"
+        )
+        dialogo.accept()
 
     def _mostrar_resultados(self, resumen):
         """Muestra resultados de generación con incidencias."""

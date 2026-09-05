@@ -5,6 +5,24 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.53.0] - 2026-09-05
+
+### 🎯 Resumen
+Un fallo en una tarea de fondo ya no puede cerrar la aplicación, y sincronizar después de generar deja de congelar la ventana.
+
+### Fixed
+- **Un error en segundo plano ya no cierra la aplicación.** El manejador global de errores construía una ventana de aviso sin mirar desde dónde le llamaban; hacerlo desde una tarea de fondo cierra el programa en el acto. Ahora comprueba si está en el hilo de la interfaz y, si no lo está, se limita a dejarlo escrito en el registro. El caso típico era un fallo de conexión al servidor durante la sincronización automática (CRW-005).
+- **La sincronización ya no se traga sus propios errores.** El worker que sube los datos solo capturaba tres tipos de error; los de la librería de conexión SFTP no estaban entre ellos y se escapaban hacia el manejador global. Ahora captura cualquier fallo y lo registra con su traza (CRW-005).
+- **Sincronizar tras generar no congela la ventana.** La subida al servidor se hacía en el hilo de la interfaz: varios segundos con la aplicación bloqueada y, si algo fallaba, un "Error inesperado" justo después de una generación correcta. Ahora usa el mismo diálogo de progreso que la sincronización de cierre (CRW-007).
+- **El registro de auditoría de cada generación se guarda de verdad.** Se añadía sin confirmar la operación, así que solo sobrevivía si otro proceso confirmaba más tarde; ante cualquier error posterior se perdía (CRW-009).
+- **Cancelar una generación se anuncia como cancelación, no como error.** La cancelación quedaba envuelta en un error de negocio y llegaba al usuario como "No se pudo generar".
+
+### 🧹 Housekeeping
+- `auditoria/`: CRW-005, CRW-007 y CRW-009 pasan a resueltos y el lote 2 queda cerrado. De los nueve hallazgos del cierre en Windows solo sigue abierto CRW-003, la sesión de base de datos compartida entre hilos.
+- `tests/audit/test_crash_windows_regresion.py` ya no tiene ningún fallo esperado: 16 pruebas en verde. Total: 2.516.
+
+---
+
 ## [5.52.0] - 2026-09-05
 
 ### 🎯 Resumen

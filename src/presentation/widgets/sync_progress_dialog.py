@@ -40,8 +40,10 @@ class SyncWorker(QThread):
             success = self._sync_manager.sync_on_shutdown(
                 session=self._session, progress_callback=on_progress
             )
-        except (ValueError, TypeError, OSError) as e:
-            logger.error(f"Error en SyncWorker: {e}")
+        except Exception as e:  # noqa: BLE001
+            # Nada puede escapar de run(): iría al excepthook, que se ejecutaría en
+            # este hilo. Paramiko lanza SSHException, que no es OSError (CRW-005).
+            logger.error(f"Error en SyncWorker: {type(e).__name__}: {e}", exc_info=True)
             self.progress_updated.emit("error", {"message": str(e)})
             success = False
 

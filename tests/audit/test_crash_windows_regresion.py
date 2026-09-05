@@ -234,20 +234,18 @@ def test_worker_cancelado_avisa_con_interrupted_error(qapp, qtbot):
 # ---------------------------------------------------------------------------
 # CRW-005: excepthook y SyncWorker seguros en hilos
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=True, reason="CRW-005: exception_hook crea QMessageBox sin comprobar el hilo"
-)
 def test_excepthook_comprueba_el_hilo_antes_de_crear_widgets():
     fuente = (ROOT / "src" / "main.py").read_text(encoding="utf-8")
     inicio = fuente.index("def exception_hook")
     fin = fuente.index("sys.excepthook = exception_hook")
     cuerpo = fuente[inicio:fin]
     assert "currentThread" in cuerpo or ".thread()" in cuerpo
+    # Y la comprobación debe ir ANTES de construir el widget, no después.
+    assert cuerpo.index("currentThread") < cuerpo.index("QMessageBox()"), (
+        "el QMessageBox se construye antes de comprobar el hilo"
+    )
 
 
-@pytest.mark.xfail(
-    strict=True, reason="CRW-005: SyncWorker.run sólo captura ValueError/TypeError/OSError"
-)
 def test_syncworker_captura_cualquier_excepcion():
     from presentation.widgets.sync_progress_dialog import SyncWorker
 
@@ -270,9 +268,33 @@ def test_main_activa_faulthandler():
 # ---------------------------------------------------------------------------
 # CRW-009: el caso de uso de generación gestiona su transacción
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(strict=True, reason="CRW-009: GuardiaAuditLog se añade sin commit propio")
 def test_generar_guardias_hace_commit_del_audit_log():
     from application.use_cases.asignacion_guardias import generar_guardias
 
     fuente = inspect.getsource(generar_guardias.GenerarGuardiasUseCase.execute)
     assert "self.session.commit()" in fuente
+
+
+def test_sincronizar_del_panel_no_bloquea_el_hilo_gui():
+    """CRW-007: la sync posterior a generar corre en SyncWorker, no en el hilo GUI."""
+    from presentation.forms.asignacion_widgets import generacion_panel
+
+    fuente = inspect.getsource(generacion_panel.GeneracionPanel._sincronizar)
+    assert "SyncWorker" in fuente, "la sincronización sigue ejecutándose en el hilo GUI"
+    assert "sync_on_shutdown" not in fuente, (
+        "sync_on_shutdown llamado directamente: vuelve a bloquear la interfaz"
+    )
+    assert "except Exception" in fuente, (
+        "sólo captura ValueError/TypeError/OSError: un fallo de paramiko escaparía del slot"
+    )
+
+
+def test_generar_guardias_deja_pasar_la_cancelacion():
+    """La cancelación no debe disfrazarse de BusinessLogicError (si no, sale un error feo)."""
+    from application.use_cases.asignacion_guardias import generar_guardias
+
+    fuente = inspect.getsource(generar_guardias.GenerarGuardiasUseCase.execute)
+    assert "except InterruptedError" in fuente
+    assert fuente.index("except InterruptedError") < fuente.index("except Exception"), (
+        "InterruptedError debe capturarse antes que Exception"
+    )
