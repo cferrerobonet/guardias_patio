@@ -74,3 +74,21 @@ def test_make_clean_no_borra_specs():
     bloque = makefile[makefile.index("clean:") :].split("\n\n")[0]
     if "*.spec" in bloque:
         pytest.xfail("BLD-001: make clean borra *.spec, entrada del build de macOS")
+
+
+def test_los_scripts_de_powershell_llevan_marca_de_orden():
+    """
+    Windows PowerShell 5.1 lee los ficheros sin marca de orden con la codificación
+    ANSI del sistema. Entonces una «Ó» pasa a ser dos caracteres, y el segundo es
+    una comilla tipográfica que PowerShell toma como delimitador de cadena: el
+    script deja de analizarse. Con acentos, la marca es obligatoria.
+    """
+    sin_marca = []
+    for script in ROOT.rglob("*.ps1"):
+        if ".venv" in script.parts or "build" in script.parts[:1]:
+            continue
+        datos = script.read_bytes()
+        tiene_acentos = any(b > 127 for b in datos)
+        if tiene_acentos and not datos.startswith(b"\xef\xbb\xbf"):
+            sin_marca.append(str(script.relative_to(ROOT)))
+    assert not sin_marca, sin_marca

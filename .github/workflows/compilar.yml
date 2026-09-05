@@ -68,7 +68,10 @@ jobs:
       - name: Instalar Inno Setup
         run: choco install innosetup --no-progress -y
       - name: Compilar exe e instalador
-        run: powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1
+        # pwsh (PowerShell 7) lee los ficheros sin marca de orden como UTF-8;
+        # el "powershell" clásico los leería como ANSI y rompería los acentos.
+        shell: pwsh
+        run: ./scripts/build_windows.ps1
       - name: Leer la versión
         id: version
         shell: bash

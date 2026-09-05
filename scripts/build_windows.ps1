@@ -1,4 +1,10 @@
-# Script de compilación automática para Windows
+﻿# Script de compilación automática para Windows
+#
+# IMPORTANTE: este fichero se guarda en UTF-8 CON marca de orden de bytes (BOM).
+# Windows PowerShell 5.1 lee los ficheros sin marca usando la codificación ANSI
+# del sistema, y entonces una «Ó» se convierte en dos caracteres, el segundo de
+# los cuales es una comilla tipográfica que PowerShell acepta como delimitador
+# de cadena. El script deja de analizarse y falla con «missing the terminator».
 
 param(
     [string]$Version = "",
