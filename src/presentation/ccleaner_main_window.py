@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
+    QLabel,
     QMainWindow,
     QMessageBox,
     QScrollArea,
@@ -58,6 +59,18 @@ class ContentWrapper(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
+
+        # Cabecera con el título de la vista. El título se pasaba al envoltorio y
+        # nunca se pintaba: cada pantalla ponía el suyo, o no ponía ninguno
+        # (VIS-006). Aquí es uno y el mismo para todas.
+        self.cabecera = QLabel(title)
+        self.cabecera.setObjectName("cabeceraDeVista")
+        layout.addWidget(self.cabecera)
+
+        # Un lector de pantalla necesita saber en qué sección se ha entrado
+        # (UXA-013): sin esto, cambiar de vista no anunciaba nada.
+        self.setAccessibleName(title)
+        content_widget.setAccessibleName(title)
 
         # Scroll area para el contenido
         scroll = QScrollArea()

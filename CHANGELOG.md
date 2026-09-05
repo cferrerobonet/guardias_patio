@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.72.0] - 2026-09-05
+
+### 🎯 Resumen
+Todas las pantallas se presentan igual, y los avisos dejan de pasar desapercibidos.
+
+### Fixed
+- **Cada pantalla tenía un título distinto, o ninguno.** El nombre de la sección se le pasaba al marco de la aplicación y allí no se pintaba nunca; siete pantallas ponían el suyo por su cuenta, con su propio formato, y el resto no mostraba nada. Ahora hay una única cabecera para todas. Los títulos de los paneles interiores —«ZONAS REGISTRADAS», «NUEVA ZONA»— pasan a un estilo más ligero, para que se distingan de la cabecera en vez de competir con ella.
+- **Los avisos flotantes eran invisibles para un lector de pantalla** y desaparecían a los dos segundos y medio, errores incluidos: quien miraba a otro lado se quedaba sin enterarse de que algo había fallado. Ahora se anuncian, y la duración depende de lo que digan: un éxito se va solo, una advertencia dura más y **un error espera a que lo cierres**.
+- **Cambiar de sección no decía nada a un lector de pantalla.** Ahora cada pantalla se anuncia con su nombre al entrar.
+- **Los botones secundarios se veían como principales.** Se marcaban de dos maneras distintas y solo una tenía estilo asociado, así que la mitad salían con el aspecto de la acción principal.
+
+### 🧹 Housekeeping
+- `auditoria/`: UXA-003, UXA-013, VIS-006 y VIS-007 resueltos. La jerarquía completa de botones queda escrita en la hoja de estilos, para que la próxima pantalla no invente una variante nueva.
+- 2.620 pruebas, ningún fallo.
+
+---
+
 ## [5.71.0] - 2026-09-05
 
 ### 🎯 Resumen

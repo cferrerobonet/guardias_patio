@@ -68,12 +68,6 @@ class ReportesForm(BaseForm):
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
 
-        # Título
-        titulo = QLabel("REPORTES E INFORMES")
-        titulo.setObjectName("titleMain")
-        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        main_layout.addWidget(titulo)
-
         # Descripción
         desc = QLabel(
             "Genera calendarios PDF individuales o reportes estadísticos detallados "

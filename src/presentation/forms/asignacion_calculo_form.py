@@ -77,11 +77,6 @@ class AsignacionCalculoForm(BaseForm):
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)
 
-        # Título principal
-        titulo = QLabel("CÁLCULO Y ASIGNACIÓN")
-        titulo.setObjectName("titleMain")
-        main_layout.addWidget(titulo)
-
         # Instrucciones compactas
         instrucciones = QLabel(
             "Revisa las estadísticas del curso y calcula las cuotas de distribución "

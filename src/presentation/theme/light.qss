@@ -29,13 +29,18 @@ QPushButton:disabled {
 }
 
 /* ========== SECUNDARIOS ========== */
-QPushButton#secondaryButton {
+/* Secundario. Se marcaba de dos formas —`objectName` en unos sitios y la
+   propiedad `secondary` en otros— y sólo la primera tenía regla: los botones
+   marcados con la propiedad se veían como primarios (VIS-007). */
+QPushButton#secondaryButton,
+QPushButton[secondary="true"] {
     background-color: transparent;
     color: @TEXT_PRIMARY@;
     border: 1px solid @BORDER_DARK@;
 }
 
-QPushButton#secondaryButton:hover {
+QPushButton#secondaryButton:hover,
+QPushButton[secondary="true"]:hover {
     background-color: @SURFACE@;
     border-color: @SECONDARY@;
 }
@@ -436,4 +441,39 @@ QPushButton#botonDialogo {
 QPushButton#botonPrimarioDeVista {
     min-height: 36px;
     font-weight: 600;
+}
+
+/* Cabecera de vista: una sola, puesta por el envoltorio, en vez de que cada
+   pantalla pinte la suya (o ninguna) (VIS-006). */
+QLabel#cabeceraDeVista {
+    font-size: 20px;
+    font-weight: 600;
+    color: @TEXT_PRIMARY@;
+    background-color: @BACKGROUND@;
+    border-bottom: 1px solid @BORDER@;
+    padding: 14px 24px;
+}
+
+/* ========== JERARQUÍA DE BOTONES (VIS-007) ==========
+   Un botón es, por orden de peso:
+     #botonPrimarioDeVista  la acción principal de la pantalla (36 px)
+     (por defecto)          acción normal, azul primario
+     [secondary="true"]     alternativa o cancelar, sin relleno
+     [success="true"]       confirma algo que ya está bien encaminado
+     [warning="true"]       acción que conviene mirar dos veces
+     [danger="true"]        destruye datos
+   No hay más variantes: si hace falta otra, se añade aquí, no en la vista. */
+
+/* Título de un panel dentro de una vista: menos peso que la cabecera, para que
+   se distinga de ella (VIS-006). Antes compartían el estilo `titleMain` y una
+   pantalla podía mostrar dos títulos idénticos, uno dentro de otro. */
+QLabel#tituloDePanel {
+    font-size: 14px;
+    font-weight: 600;
+    color: @TEXT_PRIMARY@;
+    background-color: @SURFACE@;
+    padding: 8px 12px;
+    border-left: 3px solid @PRIMARY@;
+    border-radius: 4px;
+    margin-bottom: 6px;
 }

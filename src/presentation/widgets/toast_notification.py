@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QWidget
 
 
@@ -12,9 +12,24 @@ class ToastNotification(QWidget):
         "warning": ("#856404", "#FFF3CD", "#92400E"),
     }
 
-    def __init__(self, parent: QWidget, message: str, tipo: str = "success", duracion_ms: int = 2500):
+    #: Cuánto se queda cada tipo en pantalla. Un fallo no puede desaparecer solo
+    #: a los dos segundos y medio: quien mira a otro lado se queda sin enterarse
+    #: de que algo salió mal (UXA-003).
+    DURACIONES = {
+        "success": 2500,
+        "info": 3000,
+        "warning": 8000,
+        "error": 0,  # 0 = hasta que se pulse
+    }
+
+    def __init__(
+        self,
+        parent: QWidget,
+        message: str,
+        tipo: str = "success",
+        duracion_ms: int | None = None,
+    ):
         super().__init__(parent)
-        from PyQt6.QtCore import Qt
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -44,12 +59,42 @@ class ToastNotification(QWidget):
         label.setWordWrap(False)
         layout.addWidget(label)
 
+        # Un lector de pantalla no ve una ventana flotante sin nombre: sin esto,
+        # el aviso pasa completamente desapercibido (UXA-003).
+        etiquetas = {
+            "success": "Aviso",
+            "info": "Información",
+            "warning": "Advertencia",
+            "error": "Error",
+        }
+        self.setAccessibleName(f"{etiquetas.get(tipo, 'Aviso')}: {message}")
+        label.setAccessibleName(self.accessibleName())
+        self.setToolTip(message)
+
         self.adjustSize()
         self._posicionar(parent)
         self.show()
         self.raise_()
 
-        QTimer.singleShot(duracion_ms, self.close)
+        from utils.ui_helpers import announce
+
+        announce(f"{etiquetas.get(tipo, 'Aviso')}. {message}", label)
+
+        if duracion_ms is None:
+            duracion_ms = self.DURACIONES.get(tipo, 2500)
+        if duracion_ms > 0:
+            QTimer.singleShot(duracion_ms, self.close)
+        else:
+            # Los errores esperan: se cierran al pulsarlos.
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            label.setText(f"{message}   ✕")
+            self.adjustSize()
+            self._posicionar(parent)
+
+    def mousePressEvent(self, event):
+        """Pulsar el aviso lo cierra, sobre todo los que no caducan solos."""
+        self.close()
+        super().mousePressEvent(event)
 
     def _posicionar(self, parent: QWidget):
         try:

@@ -59,11 +59,6 @@ class ConectividadForm(BaseForm):
         content_layout.setContentsMargins(20, 20, 20, 20)
         content_layout.setSpacing(15)
 
-        # Título principal
-        titulo = QLabel("🌐 CONECTIVIDAD")
-        titulo.setObjectName("titleMain")
-        content_layout.addWidget(titulo)
-
         # Descripción
         descripcion = QLabel(
             "Configura las conexiones externas del sistema para el envío de correos "

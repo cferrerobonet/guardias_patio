@@ -187,7 +187,7 @@ class ZonaForm(BaseForm):
 
         # Título con contador
         self.titulo_lista_zonas = QLabel("ZONAS REGISTRADAS (0)")
-        self.titulo_lista_zonas.setObjectName("titleMain")
+        self.titulo_lista_zonas.setObjectName("tituloDePanel")
         left_section.addWidget(self.titulo_lista_zonas)
 
         # Tabla de zonas
@@ -310,7 +310,7 @@ class ZonaForm(BaseForm):
 
         # Título del formulario
         self.titulo_form = QLabel("NUEVA ZONA")
-        self.titulo_form.setObjectName("titleMain")
+        self.titulo_form.setObjectName("tituloDePanel")
         right_section.addWidget(self.titulo_form)
 
         # Widget de datos de zona

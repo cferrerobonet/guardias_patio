@@ -50,10 +50,6 @@ class AuditoriaGuardiasForm(QWidget):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(16)
 
-        titulo = QLabel("HISTORIAL DE CAMBIOS EN GUARDIAS")
-        titulo.setObjectName("titleMain")
-        layout.addWidget(titulo)
-
         # Barra de filtros
         filtros = QHBoxLayout()
         filtros.setSpacing(12)

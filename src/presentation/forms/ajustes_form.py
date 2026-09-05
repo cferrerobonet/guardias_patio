@@ -151,11 +151,6 @@ class AjustesForm(BaseForm):
         content_layout.setContentsMargins(Spacing.MD, Spacing.MD, Spacing.MD, Spacing.MD)
         content_layout.setSpacing(Spacing.SM)
 
-        # Título principal
-        titulo = QLabel("AJUSTES DEL CURSO ESCOLAR")
-        titulo.setObjectName("titleMain")
-        content_layout.addWidget(titulo)
-
         # Indicador de cambios sin guardar
         self._dirty_label = QLabel("● Cambios sin guardar")
         self._dirty_label.setStyleSheet("color: #D97706; font-size: 12px; font-weight: bold;")

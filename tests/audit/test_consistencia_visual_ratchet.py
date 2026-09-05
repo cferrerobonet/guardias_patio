@@ -27,9 +27,9 @@ UMBRALES = {
     "setStyleSheet": 260,
     "hex_literales": 471,
     "font_size_menor_12px": 0,
-    "lineas_con_emoji": 326,
-    "setFixed": 21,
-    "setMinimum": 150,
+    "lineas_con_emoji": 324,
+    "setFixed": 18,
+    "setMinimum": 139,
 }
 EMOJI = re.compile("[\U0001f300-\U0001faff☀-➿]")
 

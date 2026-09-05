@@ -81,12 +81,6 @@ class ImportExportForm(BaseForm):
         main_layout.setContentsMargins(Spacing.XL, Spacing.XL, Spacing.XL, Spacing.XL)
         main_layout.setSpacing(15)
 
-        # Título
-        titulo = QLabel("IMPORTAR / EXPORTAR DATOS")
-        titulo.setObjectName("titleMain")
-        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        main_layout.addWidget(titulo)
-
         # Descripción
         desc = QLabel(
             "Gestiona la importación y exportación de datos de la aplicación. "

@@ -98,11 +98,6 @@ class PerfilesUsuarioForm(BaseForm):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
-        # ===== TÍTULO =====
-        titulo = QLabel("GESTIÓN DE PERFILES DE USUARIO")
-        titulo.setObjectName("titleMain")
-        layout.addWidget(titulo)
-
         # ===== DESCRIPCIÓN =====
         descripcion = QLabel(
             "Administra todos los perfiles del sistema. Cada perfil tiene su propia "

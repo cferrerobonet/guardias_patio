@@ -148,7 +148,7 @@ class ProfesorForm(BaseForm):
 
         # Título con contador
         self.titulo_lista_profesores = QLabel("PROFESORES REGISTRADOS (0)")
-        self.titulo_lista_profesores.setObjectName("titleMain")
+        self.titulo_lista_profesores.setObjectName("tituloDePanel")
         layout.addWidget(self.titulo_lista_profesores)
 
         # Campo de búsqueda
@@ -296,7 +296,7 @@ class ProfesorForm(BaseForm):
         # Cabecera: título + botón cerrar
         header_layout = QHBoxLayout()
         self.titulo_seccion = QLabel("ALTA DE PROFESOR")
-        self.titulo_seccion.setObjectName("titleMain")
+        self.titulo_seccion.setObjectName("tituloDePanel")
         header_layout.addWidget(self.titulo_seccion)
         header_layout.addStretch()
         cerrar_btn = QPushButton("✕")
