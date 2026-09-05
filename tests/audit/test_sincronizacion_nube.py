@@ -59,7 +59,14 @@ def test_cambiar_de_equipo_lleva_los_datos(equipo):
     # En el portátil se da de alta el curso.
     assert portatil.sync_on_startup(session=bd_portatil) is True
     bd_portatil.add(Zona(nombre_zona="Patio Principal"))
-    bd_portatil.add(Profesor(nombre_completo="García, Ana", horas_contrato=25.0, porcentaje_jornada=100, turno="mañana"))
+    bd_portatil.add(
+        Profesor(
+            nombre_completo="García, Ana",
+            horas_contrato=25.0,
+            porcentaje_jornada=100,
+            turno="mañana",
+        )
+    )
     bd_portatil.commit()
     assert portatil.sync_on_shutdown(session=bd_portatil) is True
 
@@ -77,8 +84,18 @@ def test_una_baja_hecha_en_un_equipo_llega_al_otro(equipo):
     portatil.sync_on_startup(session=bd_portatil)
     bd_portatil.add_all(
         [
-            Profesor(nombre_completo="García, Ana", horas_contrato=25.0, porcentaje_jornada=100, turno="mañana"),
-            Profesor(nombre_completo="López, Luis", horas_contrato=20.0, porcentaje_jornada=80, turno="tarde"),
+            Profesor(
+                nombre_completo="García, Ana",
+                horas_contrato=25.0,
+                porcentaje_jornada=100,
+                turno="mañana",
+            ),
+            Profesor(
+                nombre_completo="López, Luis",
+                horas_contrato=20.0,
+                porcentaje_jornada=80,
+                turno="tarde",
+            ),
         ]
     )
     bd_portatil.commit()
@@ -87,9 +104,7 @@ def test_una_baja_hecha_en_un_equipo_llega_al_otro(equipo):
     # El sobremesa recibe los dos y da de baja a uno.
     sobremesa.sync_on_startup(session=bd_sobremesa)
     assert bd_sobremesa.query(Profesor).count() == 2
-    bd_sobremesa.delete(
-        bd_sobremesa.query(Profesor).filter_by(nombre_completo="López, Luis").one()
-    )
+    bd_sobremesa.delete(bd_sobremesa.query(Profesor).filter_by(nombre_completo="López, Luis").one())
     bd_sobremesa.commit()
     sobremesa.sync_on_shutdown(session=bd_sobremesa)
 
@@ -299,3 +314,55 @@ def test_sin_conexion_se_entra_con_la_copia_local(tmp_path, nube):
     sin_red = UserAuth(users_file=tmp_path / "equipo.json", backend=None)
     ok, mensaje = sin_red.authenticate("jefatura", "Guardias2026!")
     assert ok is True, mensaje
+
+
+# ---------------------------------------------------------------------------
+# Cuentas antiguas y primera subida
+# ---------------------------------------------------------------------------
+def test_no_se_puede_registrar_un_nombre_con_datos_en_el_servidor(tmp_path, nube, equipo):
+    """
+    El agujero: el nombre de usuario es público. Antes bastaba con conocerlo y
+    registrarlo con cualquier contraseña para bajarse los datos de esa persona.
+    """
+    from sync.sync_manager import UserAuth
+
+    # Una cuenta antigua: tiene datos en el servidor pero su contraseña nunca se publicó.
+    veterano, bd = equipo("veterano", usuario="jefatura")
+    veterano.sync_on_startup(session=bd)
+    bd.add(Zona(nombre_zona="Datos de la jefatura"))
+    bd.commit()
+    veterano.sync_on_shutdown(session=bd)
+
+    intruso = UserAuth(users_file=tmp_path / "intruso.json", backend=nube)
+    assert intruso.register_user("jefatura", "LaQueSeaMe1!") is False
+    assert "ya tiene datos en el servidor" in intruso.ultimo_motivo_registro
+
+
+def test_un_equipo_con_datos_los_sube_al_abrir(equipo, nube):
+    """Si la nube está vacía y el equipo tiene datos, la carpeta se crea al abrir."""
+    portatil, bd = equipo("portatil")
+    bd.add(Zona(nombre_zona="Patio"))
+    bd.add(
+        Profesor(
+            nombre_completo="García, Ana",
+            horas_contrato=25.0,
+            porcentaje_jornada=100,
+            turno="mañana",
+        )
+    )
+    bd.commit()
+
+    assert nube.file_exists(portatil.get_remote_path("guardias_patio_data.json")) is False
+    assert portatil.sync_on_startup(session=bd) is True
+    assert nube.file_exists(portatil.get_remote_path("guardias_patio_data.json")) is True
+
+    # Y otro equipo ya puede recibirlos sin esperar a que el primero cierre.
+    sobremesa, bd_sobremesa = equipo("sobremesa")
+    sobremesa.sync_on_startup(session=bd_sobremesa)
+    assert [z.nombre_zona for z in bd_sobremesa.query(Zona).all()] == ["Patio"]
+
+
+def test_un_equipo_vacio_no_sube_nada(equipo, nube):
+    portatil, bd = equipo("portatil")
+    assert portatil.sync_on_startup(session=bd) is True
+    assert nube.file_exists(portatil.get_remote_path("guardias_patio_data.json")) is False

@@ -68,6 +68,7 @@ Mejoras funcionales propuestas (FUN-001…012) se listan en 07 y en el registro 
 
 - **Veredicto:** `PARCIAL`. Hay evidencia estática reproducible y comandos ejecutados; faltan la reproducción del cierre en la máquina Windows y la validación manual con lector de pantalla.
 - **Bloqueantes de certificación:** CRW-001/002/003/005, UXA-001…007, BLD-001/002, QA-001.
+- **Resueltos y verificados en v5.49.0:** SYNC-016 (nadie puede apropiarse de una cuenta antigua conociendo solo el nombre), SYNC-017 (la carpeta del servidor se crea al abrir) y UXA-007/UXA-015 (los datos recargados se ven sin reiniciar).
 - **Resueltos y verificados en v5.48.0:** SYNC-009 y SYNC-013. La cuenta vive en el servidor junto a los datos, así que el mismo usuario y contraseña funcionan desde cualquier equipo y nadie puede apropiarse de un nombre ajeno. Las credenciales dejan de viajar en el fichero de datos. **Los 15 hallazgos de sincronización quedan cerrados.**
 - **Resueltos y verificados en v5.47.0:** diez hallazgos de sincronización (SYNC-001/003/004/005/006/007/008/010/012/015). La nube pasa a ser la copia buena: al abrir se reconstruye la base local con lo que hay en el servidor, sin descarga previa no se permite subir, la subida es atómica y se conservan versiones anteriores. Quedan SYNC-009 y SYNC-013, de la Fase 2.
 - **Resueltos y verificados en v5.45.1:** QA-013 (el entorno virtual sale de iCloud Drive, que estaba corrompiendo las bibliotecas de Qt y abortaba la app al arrancar).

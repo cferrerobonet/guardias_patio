@@ -63,14 +63,10 @@ def test_existe_preflight_de_generacion_en_application(session):
 
 
 def test_cambio_de_curso_refresca_las_vistas_cargadas(qapp):
-    """UXA-007: ContentWrapper debe exponer el widget para que _on_curso_cambiado lo refresque."""
+    """UXA-007 resuelto en v5.49.0: el envoltorio conserva la vista para poder recargarla."""
     from PyQt6.QtWidgets import QLabel
 
     from presentation.ccleaner_main_window import ContentWrapper
 
     w = ContentWrapper("Título", QLabel("contenido"))
-    if not hasattr(w, "content_widget"):
-        pytest.xfail(
-            "UXA-007: ContentWrapper no guarda content_widget; el refresco por curso no ocurre"
-        )
     assert isinstance(w.content_widget, QLabel)

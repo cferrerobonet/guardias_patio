@@ -39,7 +39,7 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | UXA-004 | P1 | alta | Contrato de cambios sin guardar no conectado | PERSISTE | ídem |
 | UXA-005 | P1 | alta | Campos sin nombre/relación accesible | PERSISTE | ídem |
 | UXA-006 | P1 | alta | Validaciones no identifican el campo | PERSISTE | ídem |
-| UXA-007 | P1 | alta | Cambio de curso no refresca vistas (`ContentWrapper` sin `content_widget`) | PERSISTE (verificado `ccleaner_main_window.py:45-68,246-248`) | ídem |
+| UXA-007 | P1 | alta | Cambio de curso no refresca vistas (`ContentWrapper` sin `content_widget`) | **RESUELTO VERIFICADO v5.49.0** · `ContentWrapper` conserva la vista y el refresco por cambio de curso funciona | ídem |
 | UXA-008 | P2 | alta | Tablas sin contrato accesible/adaptable | PERSISTE | ídem |
 | UXA-009 | P2 | alta | Gráficos QPainter sin semántica | PERSISTE | ídem |
 | UXA-010 | P2 | alta | Sistema visual fragmentado y contrastes AA fallidos | PERSISTE (ampliado en VIS-001/002) | ídem |
@@ -128,6 +128,9 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | SYNC-013 | P2 | alta | Credenciales de correo y servidor viajan en el JSON, cifradas con una clave propia de cada equipo, así que ni sirven fuera ni deberían estar ahí | `sync/data_exporter.py:66-68`, `data_exporter_helpers.py:25-36` | **RESUELTO VERIFICADO v5.48.0** · las credenciales salen del fichero de datos; las de ficheros antiguos se ignoran | 12 |
 | SYNC-014 | P2 | alta | La sincronización automática cada 30 min solo sube, nunca descarga | `presentation/ccleaner_main_window.py:262-270` | NUEVO | 12 |
 | SYNC-015 | P3 | alta | La decisión de descargar depende de comparar relojes de equipos distintos | `sync/sync_manager.py:440-447` | **RESUELTO VERIFICADO v5.47.0** · se decide por número de versión, no por fechas | 12 |
+| SYNC-016 | P0 | alta | Un nombre de usuario es público: bastaba con conocerlo y registrarlo con cualquier contraseña para descargarse y manipular los datos de esa persona. Afectaba a las cuentas antiguas, con datos en el servidor pero sin ficha de contraseña publicada | `sync/sync_manager.py` (`_comprobar_nombre_disponible`) | **RESUELTO VERIFICADO v5.49.0** · no se puede registrar un nombre que ya tenga datos en el servidor; se indica cómo activarlo desde el equipo de origen | [[12_SINCRONIZACION_NUBE]] |
+| SYNC-017 | P2 | alta | Una cuenta con datos solo en local no creaba su carpeta en el servidor hasta cerrar la aplicación | `sync/sync_manager.py` (`sync_on_startup`) | **RESUELTO VERIFICADO v5.49.0** · si la nube está vacía y el equipo tiene datos, se suben al abrir | 12 |
+| UXA-015 | P1 | alta | Los datos recargados no se veían: había que cerrar y volver a abrir la aplicación. El envoltorio de cada vista no conservaba el widget y las señales de importación no las escuchaba nadie | `presentation/ccleaner_main_window.py` | **RESUELTO VERIFICADO v5.49.0** · recarga central que vacía la caché y repinta las vistas abiertas | 12 |
 
 ## COD · Calidad de código
 

@@ -47,6 +47,10 @@ class ContentWrapper(QWidget):
 
     def __init__(self, title: str, content_widget: QWidget, parent=None):
         super().__init__(parent)
+        #: La vista real. Hay que conservarla: es a quien se le pide recargar
+        #: cuando cambian los datos.
+        self.content_widget = content_widget
+        self.title = title
         self.setup_ui(title, content_widget)
 
     def setup_ui(self, title: str, content_widget: QWidget):
@@ -172,7 +176,9 @@ class CCleanerMainWindow(QMainWindow):
         """Instancia el widget de una sección si aún no existe."""
         if section not in self.widgets and section in self._view_factories:
             title, factory = self._view_factories[section]
-            wrapped = ContentWrapper(title, factory())
+            vista = factory()
+            self._conectar_senales_de_recarga(vista)
+            wrapped = ContentWrapper(title, vista)
             self.widgets[section] = wrapped
             self.content_stack.addWidget(wrapped)
 
@@ -233,28 +239,66 @@ class CCleanerMainWindow(QMainWindow):
                 return True
         return False
 
-    def _on_curso_cambiado(self, curso_id: int):
-        """Maneja el cambio de curso activo. Invalida la sesión y refresca todos los widgets cargados."""
-        logger.info(f"🔄 Curso cambiado a ID: {curso_id} - Refrescando todas las vistas cargadas")
+    #: Señales que emiten las vistas cuando cambian los datos de fondo.
+    SENALES_DE_RECARGA = (
+        "profesores_importados",
+        "zonas_importadas",
+        "datos_recargados",
+        "guardias_generadas",
+        "guardias_limpiadas",
+    )
 
-        # Invalidar la caché de SQLAlchemy para que todos los widgets lean datos frescos
+    def recargar_todas_las_vistas(self, motivo: str = "cambio de datos"):
+        """
+        Vuelve a pintar todas las vistas ya abiertas.
+
+        Una importación o una descarga sustituyen los datos por debajo. Sin esto
+        las vistas siguen mostrando lo anterior y hay que cerrar y volver a abrir
+        la aplicación para ver lo nuevo.
+        """
+        logger.info(f"🔄 Recargando vistas ({motivo})")
+
+        # La caché de consultas guarda resultados durante minutos: si no se vacía,
+        # las vistas se repintan con los datos viejos.
+        try:
+            from utils.cache import clear_all_cache
+
+            clear_all_cache()
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"No se pudo vaciar la caché: {e}")
+
         try:
             self.session.expire_all()
-        except Exception as e:
-            logger.warning(f"⚠️ expire_all falló: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"expire_all falló: {e}")
 
-        # Refrescar todos los widgets ya instanciados
+        refrescadas = 0
         for section, wrapped in self.widgets.items():
-            if not hasattr(wrapped, "content_widget"):
+            widget = getattr(wrapped, "content_widget", None)
+            if widget is None:
                 continue
-            widget = wrapped.content_widget
-            widget_name = widget.__class__.__name__
-            if self._refresh_widget(widget):
-                logger.info(f"   → {widget_name} ({section}) refrescado")
-            else:
-                logger.debug(f"   ⚠️ {widget_name} ({section}) sin método de refresco")
+            try:
+                if self._refresh_widget(widget):
+                    refrescadas += 1
+                else:
+                    logger.debug(f"   {section} no expone forma de recargarse")
+            except Exception as e:  # noqa: BLE001 - una vista rota no puede tumbar al resto
+                logger.error(f"   Error recargando {section}: {e}")
 
-        logger.info(f"✅ Todas las vistas refrescadas después de cambiar al curso {curso_id}")
+        logger.info(f"✅ {refrescadas} vistas recargadas")
+
+    def _conectar_senales_de_recarga(self, widget):
+        """Conecta las señales de datos de una vista recién creada."""
+        for nombre in self.SENALES_DE_RECARGA:
+            senal = getattr(widget, nombre, None)
+            if senal is not None and hasattr(senal, "connect"):
+                senal.connect(
+                    lambda _=None, n=nombre: self.recargar_todas_las_vistas(n)
+                )
+
+    def _on_curso_cambiado(self, curso_id: int):
+        """Al cambiar de curso, todas las vistas abiertas deben mostrar el nuevo."""
+        self.recargar_todas_las_vistas(f"curso {curso_id}")
 
     # ── Auto-sync ──────────────────────────────────────────────────────────────
 

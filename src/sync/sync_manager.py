@@ -491,6 +491,22 @@ class RemoteAccounts:
                 except OSError:
                     pass
 
+    def has_data(self, username: str) -> bool:
+        """
+        ¿Esa cuenta ya tiene datos en el servidor?
+
+        Sirve para las cuentas antiguas, creadas antes de que la ficha se guardara
+        en el servidor: existe su carpeta con datos pero no hay contraseña con la
+        que comprobar quién es. En ese caso no se puede dejar registrar el nombre,
+        porque bastaría con saberlo para llevarse los datos de otra persona.
+        """
+        try:
+            return self.backend.file_exists(
+                f"users/{hash_username(username)}/guardias_patio_data.json"
+            )
+        except (OSError, ValueError, RuntimeError):
+            return False
+
     def publish(self, username: str, ficha: dict) -> bool:
         """Guarda la ficha de la cuenta en el servidor."""
         remote_path = remote_account_path(username)
@@ -609,6 +625,19 @@ class SyncManager:
         except (OSError, ValueError) as e:
             logger.warning(f"No se pudieron rotar las versiones remotas: {e}")
 
+    def _hay_datos_locales(self, session) -> bool:
+        """¿Merece la pena subir? Sí en cuanto haya algo que perder."""
+        try:
+            from infrastructure.database.models import Guardia, Profesor, Zona
+
+            return any(
+                session.query(modelo).first() is not None
+                for modelo in (Profesor, Zona, Guardia)
+            )
+        except Exception as e:  # noqa: BLE001 - nunca debe impedir abrir la aplicación
+            logger.warning(f"No se pudo comprobar si hay datos locales: {e}")
+            return False
+
     def _bloquear_subida(self, motivo: str) -> None:
         self.puede_subir = False
         self.motivo_bloqueo = motivo
@@ -646,10 +675,18 @@ class SyncManager:
 
         if not existe_remoto:
             # Cuenta nueva: todavía no hay nada en la nube y lo local es el origen.
-            logger.info("No hay datos en la nube para esta cuenta; se subirán al cerrar")
+            # Cuenta que todavía no tiene nada en la nube. Si este equipo ya tiene
+            # datos, se suben ahora mismo: así la carpeta queda creada desde el
+            # primer momento y no se depende de que la sesión termine bien.
             self.version_descargada = int(metadata.get("sync_version", 0))
             self.puede_subir = True
             self._guardar_metadata_local(self.version_descargada, pendiente_subida=False)
+
+            if session is not None and self._hay_datos_locales(session):
+                logger.info("La nube está vacía y este equipo tiene datos: subiéndolos ahora")
+                return self.sync_on_shutdown(session=session)
+
+            logger.info("No hay datos en la nube para esta cuenta ni en este equipo")
             return True
 
         tmp_path = Path(tempfile.mktemp(suffix=".json"))
@@ -881,6 +918,34 @@ class UserAuth:
         self.users_file = users_file
         self.users = self._load_users()
         self.remote = RemoteAccounts(backend) if backend is not None else None
+        #: Explicación del último registro rechazado, para poder decírselo al usuario.
+        self.ultimo_motivo_registro = ""
+
+    def _comprobar_nombre_disponible(self, username: str) -> tuple[bool, str]:
+        """
+        Decide si se puede registrar ese nombre.
+
+        Un nombre de usuario es público y fácil de adivinar, así que registrarlo no
+        puede dar acceso a los datos de quien ya lo usa.
+        """
+        if self.remote is None:
+            return True, ""
+
+        if self.remote.fetch(username) is not None:
+            return False, (
+                f"El usuario «{username}» ya existe. Entra con su contraseña; no hace "
+                "falta volver a registrarlo aunque cambies de equipo."
+            )
+
+        if self.remote.has_data(username):
+            return False, (
+                f"El usuario «{username}» ya tiene datos en el servidor, pero su "
+                "contraseña todavía no está publicada, así que no se puede comprobar "
+                "que seas su propietario.\n\nEntra una vez desde el equipo donde "
+                "creaste la cuenta y quedará disponible desde cualquier ordenador."
+            )
+
+        return True, ""
 
     def _traer_cuenta_del_servidor(self, username: str) -> Optional[dict]:
         """
@@ -928,7 +993,7 @@ class UserAuth:
                 json.dump(self.users, f, indent=2)
             # Asegurar permisos incluso si el archivo existía
             os.chmod(self.users_file, 0o600)
-            logger.debug(f"users.json guardado con permisos 600")
+            logger.debug("users.json guardado con permisos 600")
         except OSError as e:
             logger.error(f"Error guardando users.json con permisos seguros: {e}")
 
@@ -941,10 +1006,15 @@ class UserAuth:
         """
         if username in self.users:
             logger.warning(f"Usuario {username} ya existe")
+            self.ultimo_motivo_registro = (
+                f"El usuario «{username}» ya existe en este equipo. Entra con su contraseña."
+            )
             return False
 
-        if self.remote is not None and self.remote.fetch(username) is not None:
-            logger.warning(f"El nombre '{username}' ya está registrado en el servidor")
+        ok, motivo = self._comprobar_nombre_disponible(username)
+        if not ok:
+            logger.warning(motivo)
+            self.ultimo_motivo_registro = motivo
             return False
 
         # Validar username: solo alfanuméricos, puntos, guiones, guiones bajos

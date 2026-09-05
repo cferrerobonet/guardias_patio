@@ -267,18 +267,18 @@ class RegisterDialog(QDialog):
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
-            msg.setWindowTitle("Usuario existente")
+            msg.setWindowTitle("No se puede registrar ese usuario")
             msg.setWindowIcon(get_corporate_icon())
-            msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
                 Qt.WindowType.Dialog
                 | Qt.WindowType.CustomizeWindowHint
                 | Qt.WindowType.WindowTitleHint
             )
+            # El motivo importa: no es lo mismo un nombre libre ya usado en este
+            # equipo que un nombre cuyos datos están en el servidor.
             msg.setText(
-                f"El usuario <span style='color: #007ACC; font-style: italic;'>{username}</span> "
-                f"ya está registrado.<br>"
-                f"Por favor, elige otro nombre de usuario."
+                self.user_auth.ultimo_motivo_registro
+                or f"El usuario «{username}» ya está registrado. Elige otro nombre."
             )
             msg.exec()
             self.username_input.selectAll()

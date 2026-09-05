@@ -5,6 +5,24 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.49.0] - 2026-09-05
+
+### 🎯 Resumen
+Cierra el agujero por el que bastaba conocer un nombre de usuario para llevarse sus datos, crea la carpeta del servidor al abrir la aplicación y hace que los datos recargados se vean sin tener que reiniciar.
+
+### Fixed
+- **Nadie puede apropiarse de una cuenta conociendo solo su nombre.** Un nombre de usuario es público. Las cuentas antiguas tienen datos en el servidor pero todavía no han publicado su contraseña, así que hasta ahora cualquiera podía registrar ese nombre con la contraseña que quisiera y descargarse y manipular todos sus datos. Ahora el registro se rechaza si ese usuario ya tiene datos en el servidor, y el mensaje explica que hay que entrar una vez desde el equipo donde se creó la cuenta para dejarla disponible en cualquier ordenador.
+- El diálogo de registro dice el motivo real del rechazo, en vez de un genérico «elige otro nombre».
+- **Los datos recargados se ven sin reiniciar.** Una importación o un cambio de curso sustituían los datos por debajo pero las vistas seguían mostrando lo anterior. Eran dos fallos encadenados: el envoltorio de cada vista no conservaba el widget, así que el refresco no llegaba a ninguna parte, y las señales que emitía el formulario de importación no las escuchaba nadie. Ahora hay una recarga central que vacía la caché de consultas, invalida la sesión y repinta todas las vistas abiertas. Una vista que falle al recargarse no impide que se recarguen las demás.
+
+### Changed
+- Si la nube está vacía y el equipo ya tiene datos, se suben **al abrir**, de modo que la carpeta del usuario queda creada desde el primer momento en lugar de depender de que la sesión termine bien.
+
+### ✨ Added
+- `tests/audit/test_recarga_en_vivo.py` y tres escenarios más de cuentas y primera subida. Suite completa: 2.480 tests.
+
+---
+
 ## [5.48.0] - 2026-09-05
 
 ### 🎯 Resumen
