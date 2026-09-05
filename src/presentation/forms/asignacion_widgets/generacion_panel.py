@@ -213,7 +213,8 @@ class GeneracionPanel(QGroupBox):
         layout.addWidget(self.content_text)
 
         # Botón de notificación por email (solo visible post-generación)
-        self.btn_notificar = QPushButton("✉ Enviar emails a profesores")
+        self.btn_notificar = QPushButton("Enviar emails a profesores")
+        self.btn_notificar.setIcon(icon_for_button("email"))
         self.btn_notificar.setMinimumHeight(36)
         self.btn_notificar.setProperty("success", "true")
         self.btn_notificar.setToolTip(

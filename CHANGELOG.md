@@ -5,6 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.73.0] - 2026-09-05
+
+### 🎯 Resumen
+Los emojis dejan de hacer de iconos donde se veían.
+
+### Changed
+- **Botones e iconos de verdad.** El sobre de «Enviar emails», el calendario de la exportación y las equis de cerrar y limpiar eran emojis: se ven distintos en cada versión de Windows y un lector de pantalla los lee en voz alta con nombres largos. Ahora son iconos del propio juego de la aplicación, y los botones que solo tenían un símbolo dicen qué hacen.
+- **El estado de una sustitución se dice con palabras.** Era un círculo verde o rojo, que no distingue quien no percibe bien los colores. Ahora pone «Asignado» o «Sin asignar».
+- El candado del título de la ventana de contraseña y el emoji de escuela del acceso también se van; el logotipo pasa a tener nombre para el lector de pantalla.
+
+### Descartado
+- **El panel de resultados con aspecto de terminal se queda tal cual**, por decisión expresa. Hay una prueba que lo fija, para que no acabe «modernizado» en una limpieza futura.
+
+### 🧹 Housekeeping
+- `auditoria/`: VIS-004 resuelto y VIS-005 descartado. **Lote 9 cerrado.** Al clasificar los 327 usos de emoji resultó que la mayoría son mensajes de registro que nadie ve, comentarios del código o el propio panel de resultados.
+- 2.623 pruebas, ningún fallo.
+
+---
+
 ## [5.72.0] - 2026-09-05
 
 ### 🎯 Resumen

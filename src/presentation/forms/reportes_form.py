@@ -32,6 +32,7 @@ from presentation.widgets.progress_indicators import ejecutar_con_progreso
 from presentation.widgets.toast_notification import ToastNotification
 from services.exportador_pdf import ExportadorPDF
 from utils import get_logger
+from utils.icons import icon_for_button
 
 logger = get_logger(__name__)
 
@@ -682,7 +683,8 @@ class ReportesForm(BaseForm):
         layout.addLayout(row)
 
         # Botón exportar
-        btn = QPushButton("📅 Exportar archivo .ics")
+        btn = QPushButton("Exportar archivo .ics")
+        btn.setIcon(icon_for_button("calendar"))
         btn.setMinimumHeight(36)
         btn.clicked.connect(self._exportar_ical)
         layout.addWidget(btn)

@@ -125,3 +125,56 @@ def test_la_jerarquia_de_botones_esta_escrita():
     qss = (ROOT / "src" / "presentation" / "theme" / "light.qss").read_text(encoding="utf-8")
     assert "JERARQUÍA DE BOTONES" in qss
     assert "botonPrimarioDeVista" in qss
+
+
+# ---------------------------------------------------------------------------
+# VIS-004: emojis donde debería haber iconos
+# ---------------------------------------------------------------------------
+EMOJI = re.compile("[\U0001f300-\U0001faff☀-➿]")
+
+#: Únicos emojis que quedan en botones o títulos: las casillas de la matriz de
+#: restricciones, cuyo ✓ es el estado visible de un interruptor y que desde
+#: v5.60.0 ya se anuncian con nombre y estado propios.
+EMOJIS_ACEPTADOS_EN_CONTROLES = 2
+
+
+def test_los_botones_y_titulos_no_usan_emojis_como_iconos():
+    """Un emoji se ve distinto en cada sistema y el lector lo lee en voz alta."""
+    encontrados = []
+    for fichero in (ROOT / "src" / "presentation").rglob("*.py"):
+        for numero, linea in enumerate(
+            fichero.read_text(encoding="utf-8", errors="ignore").splitlines(), 1
+        ):
+            texto = linea.strip()
+            if not EMOJI.search(texto):
+                continue
+            if re.search(r'setWindowTitle\(|QPushButton\("|setText\("', texto):
+                encontrados.append(f"{fichero.name}:{numero}")
+
+    assert len(encontrados) <= EMOJIS_ACEPTADOS_EN_CONTROLES, (
+        f"emojis nuevos en controles: {encontrados}"
+    )
+
+
+def test_el_estado_de_una_sustitucion_se_dice_con_palabras():
+    """Un círculo verde o rojo no lo distingue quien no ve colores."""
+    import inspect
+
+    from presentation.widgets import ausencias_sustituciones
+
+    fuente = inspect.getsource(ausencias_sustituciones.AusenciasSustitucionesWidget._on_combo_changed)
+    assert "🟢" not in fuente and "🔴" not in fuente
+    assert "Asignado" in fuente
+    assert "setAccessibleName" in fuente
+
+
+def test_el_terminal_retro_se_queda(qapp, session):
+    """Decisión de producto de CarlosFB (2026-09-05): el panel de resultados gusta
+    como está. Este test existe para que no se 'modernice' por descuido."""
+    from presentation.forms.asignacion_widgets.generacion_panel import GeneracionPanel
+
+    panel = GeneracionPanel(session)
+    try:
+        assert panel.content_text.objectName() == "terminalRetro"
+    finally:
+        panel.close()

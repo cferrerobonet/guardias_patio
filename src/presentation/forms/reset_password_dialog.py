@@ -34,7 +34,7 @@ class ResetPasswordDialog(QDialog):
 
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
-        self.setWindowTitle("🔐 Cambiar Contraseña")
+        self.setWindowTitle("Cambiar Contraseña")
         self.setWindowIcon(get_corporate_icon())
         self.setModal(True)
         self.setFixedWidth(500)

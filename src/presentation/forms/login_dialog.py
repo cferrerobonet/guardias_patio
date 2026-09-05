@@ -322,8 +322,13 @@ class LoginDialog(QDialog):
             )
             logo_label.setPixmap(scaled)
         else:
-            logo_label.setText("🏫")
-            logo_label.setStyleSheet("font-size: 52px; background: transparent;")
+            # Sólo si falta el logotipo. Un emoji aquí lo leía el lector de pantalla
+            # como «escuela», y en Windows se ve distinto en cada versión (VIS-004).
+            logo_label.setText("EPLA")
+            logo_label.setStyleSheet(
+                "font-size: 34px; font-weight: 700; color: white; background: transparent;"
+            )
+        logo_label.setAccessibleName("Logotipo de Guardias de Patio")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         logo_label.setStyleSheet("background: transparent;")
         brand_layout.addWidget(logo_label)

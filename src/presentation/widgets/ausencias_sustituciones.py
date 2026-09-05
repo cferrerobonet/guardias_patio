@@ -434,7 +434,13 @@ class AusenciasSustitucionesWidget(BaseForm):
     def _on_combo_changed(self, row: int, estado_lbl: QLabel):
         combo = self.tabla_guardias.cellWidget(row, 6)
         if combo:
-            estado_lbl.setText("🟢" if combo.currentData() is not None else "🔴")
+            asignado = combo.currentData() is not None
+            # El contrato de diseño pide texto, no un círculo de color: un emoji
+            # no lo distingue quien no ve colores ni lo lee bien un lector (VIS-004).
+            estado_lbl.setText("Asignado" if asignado else "Sin asignar")
+            estado_lbl.setAccessibleName(
+                "Sustituto asignado" if asignado else "Sin sustituto asignado"
+            )
 
     def auto_asignar(self):
         try:

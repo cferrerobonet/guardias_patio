@@ -447,7 +447,7 @@ class ProgressDialog(QDialog):
             """)
         except ImportError:
             # psutil no disponible
-            self.label_cpu.setText("💻 CPU: N/A")
+            self.label_cpu.setText("CPU: N/A")
         except (ValueError, TypeError, OSError) as e:
             _logger.debug(f"Error actualizando CPU: {e}")
 
