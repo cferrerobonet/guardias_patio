@@ -542,6 +542,7 @@ def ejecutar_con_progreso(
     titulo: str = "Procesando...",
     mensaje: str = "Por favor espere...",
     *args,
+    cerrar_al_terminar: bool = False,
     **kwargs,
 ) -> Optional[object]:
     """
@@ -552,6 +553,8 @@ def ejecutar_con_progreso(
         funcion: Función a ejecutar (debe aceptar callback_progreso como primer arg)
         titulo: Título del diálogo
         mensaje: Mensaje del diálogo
+        cerrar_al_terminar: si la operación acaba bien, cerrar el diálogo sin pedir
+            un clic más. Los errores siempre esperan a que se lean (UXF-003)
         *args: Argumentos para la función
         **kwargs: Argumentos nombrados para la función
 
@@ -607,6 +610,11 @@ def ejecutar_con_progreso(
     def on_finalizado(resultado):
         resultado_final[0] = resultado
         dialog.completar("Generación completada exitosamente")
+        if cerrar_al_terminar:
+            # Un clic menos: el resultado se pinta en la vista, no en este diálogo.
+            # Sólo cuando ha ido bien; un error se queda hasta que se lea.
+            dialog._cancelado = True
+            dialog.close()
 
     def on_error(error):
         error_final[0] = error

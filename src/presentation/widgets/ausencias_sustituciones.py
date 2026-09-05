@@ -250,6 +250,19 @@ class AusenciasSustitucionesWidget(BaseForm):
             "Eliminar todas las sustituciones del calendario actual"
         )
         self.btn_limpiar_historial.clicked.connect(self.limpiar_historial)
+
+        self.btn_deshacer = QPushButton("Deshacer sustitución")
+        self.btn_deshacer.setIcon(icon_for_button("undo"))
+        self.btn_deshacer.setMinimumHeight(35)
+        self.btn_deshacer.setAccessibleName(
+            "Devolver la guardia seleccionada a su profesor original"
+        )
+        self.btn_deshacer.setToolTip(
+            "Selecciona una fila del historial para devolver esa guardia al profesor original"
+        )
+        self.btn_deshacer.clicked.connect(self.deshacer_seleccion)
+        filtros.addWidget(self.btn_deshacer)
+
         filtros.addWidget(self.btn_limpiar_historial)
 
         lay.addLayout(filtros)
@@ -554,9 +567,50 @@ class AusenciasSustitucionesWidget(BaseForm):
                 ):
                     item = QTableWidgetItem(texto)
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                    if j == 0:
+                        # El id viaja en la primera celda: es lo que permite deshacer
+                        item.setData(Qt.ItemDataRole.UserRole, g.id)
                     self.tabla_historial.setItem(i, j, item)
         except Exception as e:
             self.manejar_excepcion(e, "cargar historial")
+
+    def deshacer_seleccion(self):
+        """Devuelve la sustitución seleccionada a su profesor original (UXF-009)."""
+        fila = self.tabla_historial.currentRow()
+        if fila < 0:
+            self.mostrar_advertencia(
+                "Nada seleccionado",
+                "Selecciona en el historial la sustitución que quieres deshacer.",
+            )
+            return
+
+        celda = self.tabla_historial.item(fila, 0)
+        guardia_id = celda.data(Qt.ItemDataRole.UserRole) if celda else None
+        if guardia_id is None:
+            return
+
+        fecha = celda.text()
+        original = self.tabla_historial.item(fila, 4)
+        sustituto = self.tabla_historial.item(fila, 5)
+        if not self.confirmar_accion(
+            "Deshacer sustitución",
+            f"La guardia del {fecha} volverá a "
+            f"{original.text() if original else 'su profesor'}.\n\n"
+            f"Se retira a {sustituto.text() if sustituto else 'el sustituto'}.",
+        ):
+            return
+
+        try:
+            from services.gestor_ausencias import deshacer_sustitucion
+
+            deshacer_sustitucion(self.session, guardia_id)
+            self._mostrar_resultado(f"✔ Sustitución del {fecha} deshecha.", ok=True)
+            self.cargar_historial()
+            self.sustitucion_guardada.emit()
+        except ValueError as e:
+            self.mostrar_advertencia("No se pudo deshacer", str(e))
+        except Exception as e:  # noqa: BLE001
+            self.manejar_excepcion(e, "deshacer sustitución")
 
     def limpiar_historial(self):
         if not self.confirmar_accion(

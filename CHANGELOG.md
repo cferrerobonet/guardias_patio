@@ -5,6 +5,24 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.71.0] - 2026-09-05
+
+### 🎯 Resumen
+Generar el calendario pasa de cinco clics a tres, y una sustitución puesta por error se puede deshacer.
+
+### ✨ Added
+- **Deshacer una sustitución.** En el historial, seleccionas la fila y la guardia vuelve a su profesor original. La aplicación ya guardaba a quién sustituía cada cambio, así que la vuelta atrás siempre fue posible: lo que faltaba era ofrecerla. Antes, una sustitución equivocada solo se arreglaba reasignando a mano, y el historial quedaba contando una historia que no era.
+
+### Changed
+- **Generar el calendario: de cinco clics a tres.** Desaparece el aviso previo que solo se podía aceptar —la primera generación no decide nada, así que el resumen se muestra en la propia pantalla— y el diálogo de progreso se cierra solo al terminar bien. Al regenerar sobre un curso que ya tiene guardias siguen siendo cuatro, porque ahí sí hay que elegir entre «desde hoy» y «todo el curso», y eso es una decisión, no ceremonia.
+- **Un error nunca se cierra solo.** El cierre automático es solo para cuando todo ha ido bien; si algo falla, el aviso se queda hasta que lo leas.
+
+### 🧹 Housekeeping
+- `auditoria/`: UXF-003 y UXF-009 resueltos. **Lote 10 cerrado por completo.**
+- 2.611 pruebas, ningún fallo.
+
+---
+
 ## [5.70.0] - 2026-09-05
 
 ### 🎯 Resumen

@@ -157,3 +157,153 @@ def test_el_atajo_se_anuncia_en_el_boton(qapp, session):
             assert boton.accessibleName(), f"{seccion} sin nombre accesible"
     finally:
         ventana.close()
+
+
+# ---------------------------------------------------------------------------
+# UXF-003: menos ceremonia para generar
+# ---------------------------------------------------------------------------
+def test_la_primera_generacion_no_pide_confirmar_lo_obvio():
+    """Sin guardias que perder no hay nada que decidir: el resumen va en la vista."""
+    import inspect
+
+    from presentation.forms.asignacion_widgets.generacion_panel import GeneracionPanel
+
+    fuente = inspect.getsource(GeneracionPanel._generar_guardias)
+    assert "Resumen de Generación" not in fuente, "sigue el modal informativo previo"
+    assert "cerrar_al_terminar=True" in fuente
+
+
+def test_el_cierre_automatico_es_opcional_y_por_defecto_no_actua():
+    """Sólo lo pide quien pinta el resultado en su propia vista.
+
+    El comportamiento en marcha no se puede comprobar aquí: la guarda de diálogos
+    modales de la suite anula `exec()`, y sin bucle de eventos la señal de fin no
+    llega a entregarse. Lo que sí se fija es el contrato.
+    """
+    import inspect
+
+    from presentation.widgets.progress_indicators import ejecutar_con_progreso
+
+    firma = inspect.signature(ejecutar_con_progreso)
+    assert firma.parameters["cerrar_al_terminar"].default is False
+    assert firma.parameters["cerrar_al_terminar"].kind is inspect.Parameter.KEYWORD_ONLY
+
+
+def test_un_error_no_se_cierra_solo():
+    """Cerrar automáticamente un error sería esconderlo."""
+    import inspect
+
+    from presentation.widgets import progress_indicators
+
+    fuente = inspect.getsource(progress_indicators.ejecutar_con_progreso)
+    posicion_cierre = fuente.index("if cerrar_al_terminar:")
+    posicion_error = fuente.index("def on_error(")
+    assert posicion_cierre < posicion_error, "el cierre automático debe vivir en on_finalizado"
+
+
+# ---------------------------------------------------------------------------
+# UXF-009: deshacer una sustitución
+# ---------------------------------------------------------------------------
+def _escenario_sustitucion(session):
+    import datetime
+
+    from infrastructure.database.models import Guardia, Profesor, Zona
+
+    session.add_all(
+        [
+            Profesor(
+                nombre_completo="Original, A",
+                horas_contrato=25.0,
+                porcentaje_jornada=100.0,
+                turno="mañana",
+                tutor=False,
+                activo=True,
+            ),
+            Profesor(
+                nombre_completo="Sustituto, B",
+                horas_contrato=25.0,
+                porcentaje_jornada=100.0,
+                turno="mañana",
+                tutor=False,
+                activo=True,
+            ),
+            Zona(nombre_zona="Patio", activa=True),
+        ]
+    )
+    session.commit()
+    original, sustituto = session.query(Profesor).all()
+    zona = session.query(Zona).first()
+    session.add(
+        Guardia(
+            profesor_id=original.id,
+            zona_id=zona.id,
+            fecha=datetime.date(2025, 10, 1),
+            turno="mañana",
+            recreo=1,
+        )
+    )
+    session.commit()
+    return session.query(Guardia).first(), original, sustituto
+
+
+def test_deshacer_devuelve_la_guardia_a_su_profesor(session):
+    from services.gestor_ausencias import deshacer_sustitucion, reasignar_guardia
+
+    guardia, original, sustituto = _escenario_sustitucion(session)
+    reasignar_guardia(session, guardia.id, sustituto.id)
+    session.refresh(guardia)
+    assert guardia.profesor_id == sustituto.id
+
+    deshacer_sustitucion(session, guardia.id)
+    session.refresh(guardia)
+
+    assert guardia.profesor_id == original.id
+    assert guardia.es_sustitucion is False
+    assert guardia.profesor_sustituido_id is None
+
+
+def test_deshacer_queda_registrado(session):
+    from infrastructure.database.models import GuardiaAuditLog
+    from services.gestor_ausencias import deshacer_sustitucion, reasignar_guardia
+
+    guardia, _original, sustituto = _escenario_sustitucion(session)
+    reasignar_guardia(session, guardia.id, sustituto.id)
+    deshacer_sustitucion(session, guardia.id)
+
+    acciones = [a.accion for a in session.query(GuardiaAuditLog).all()]
+    assert "SUSTITUIDA" in acciones
+    assert "SUSTITUCION_DESHECHA" in acciones
+
+
+def test_no_se_puede_deshacer_lo_que_no_es_sustitucion(session):
+    from services.gestor_ausencias import deshacer_sustitucion
+
+    guardia, _o, _s = _escenario_sustitucion(session)
+
+    with pytest.raises(ValueError, match="no es una sustitución"):
+        deshacer_sustitucion(session, guardia.id)
+
+
+def test_el_historial_ofrece_deshacer(qapp, session):
+    from presentation.widgets.ausencias_sustituciones import AusenciasSustitucionesWidget
+
+    widget = AusenciasSustitucionesWidget(session=session)
+    try:
+        assert widget.btn_deshacer.accessibleName()
+        assert hasattr(widget, "deshacer_seleccion")
+    finally:
+        widget.close()
+
+
+def test_deshacer_sin_seleccionar_nada_avisa(qapp, session, monkeypatch):
+    from presentation.widgets.ausencias_sustituciones import AusenciasSustitucionesWidget
+
+    widget = AusenciasSustitucionesWidget(session=session)
+    avisos = []
+    monkeypatch.setattr(type(widget), "mostrar_advertencia", lambda self, t, m: avisos.append(t))
+    try:
+        widget.tabla_historial.setCurrentCell(-1, -1)
+        widget.deshacer_seleccion()
+        assert avisos, "no avisó de que no hay nada seleccionado"
+    finally:
+        widget.close()

@@ -280,7 +280,6 @@ class GeneracionPanel(QGroupBox):
 
     def _generar_guardias(self):
         """Genera el calendario de guardias."""
-        from PyQt6.QtWidgets import QMessageBox
 
         from presentation.widgets.progress_indicators import ejecutar_con_progreso
 
@@ -319,10 +318,15 @@ class GeneracionPanel(QGroupBox):
                 if not seguir:
                     return
             else:
-                QMessageBox.information(
-                    self,
-                    "Resumen de Generación",
-                    f"Se va a generar el calendario de guardias.\n\n{resumen_previo}",
+                # Primera generación del curso: no hay nada que decidir, así que el
+                # resumen se pinta en la propia vista en vez de en un modal que sólo
+                # se puede aceptar (UXF-003).
+                self.content_text.setHtml(
+                    wrap_terminal_html(
+                        format_terminal_info(
+                            "Generando el calendario de guardias...\n\n" + resumen_previo
+                        )
+                    )
                 )
 
             # Antes de nada, copia de seguridad: generar borra las guardias del
@@ -349,6 +353,7 @@ class GeneracionPanel(QGroupBox):
                 tarea_generacion,
                 titulo="Generando Guardias",
                 mensaje=f"Preparando generación ({n_profesores} profesores, {tiempo_est})...",
+                cerrar_al_terminar=True,
             )
 
             if resumen:

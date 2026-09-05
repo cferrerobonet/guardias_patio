@@ -408,6 +408,42 @@ def reasignar_guardia(
     return guardia
 
 
+def deshacer_sustitucion(session, guardia_id: int) -> Guardia:
+    """Devuelve una guardia sustituida a su profesor original (UXF-009).
+
+    La reasignación ya guardaba a quién sustituía (`profesor_sustituido_id`), así
+    que la vuelta atrás siempre fue posible: lo que faltaba era ofrecerla. Antes,
+    una sustitución puesta por error sólo se podía arreglar reasignando a mano y
+    dejando el rastro equivocado en el historial.
+    """
+    guardia = session.query(Guardia).get(guardia_id)
+    if not guardia:
+        raise ValueError(f"No existe la guardia con ID {guardia_id}")
+
+    if not guardia.es_sustitucion or guardia.profesor_sustituido_id is None:
+        raise ValueError("Esa guardia no es una sustitución: no hay nada que deshacer")
+
+    profesor_original_id = guardia.profesor_sustituido_id
+    sustituto = guardia.profesor.nombre_completo if guardia.profesor else "?"
+
+    guardia.profesor_id = profesor_original_id
+    guardia.profesor_sustituido_id = None
+    guardia.es_sustitucion = False
+
+    session.add(
+        GuardiaAuditLog(
+            guardia_id=guardia_id,
+            accion="SUSTITUCION_DESHECHA",
+            profesor_id=profesor_original_id,
+            detalle=json.dumps({"sustituto_retirado": str(sustituto)}),
+        )
+    )
+    session.commit()
+
+    logger.info(f"Sustitución deshecha en la guardia {guardia_id}: vuelve el profesor original")
+    return guardia
+
+
 def reasignar_guardias_automaticamente(
     session,
     guardias: List[Guardia],
