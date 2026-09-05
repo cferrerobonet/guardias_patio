@@ -6,8 +6,6 @@ Permite visualizar todos los cursos y realizar operaciones de gestión.
 
 from typing import Optional
 
-from sqlalchemy.exc import SQLAlchemyError
-
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
@@ -21,6 +19,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 from core.logging import get_logger
 from presentation.dialogs.dialogo_crear_curso import DialogoCrearCurso

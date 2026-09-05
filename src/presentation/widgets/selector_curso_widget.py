@@ -6,9 +6,10 @@ Permite cambiar entre cursos escolares de forma rápida desde la UI principal.
 
 from typing import Optional
 
-from core.logging import get_logger
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QMessageBox, QWidget
+
+from core.logging import get_logger
 from presentation.widgets.toast_notification import ToastNotification
 from services.gestor_cursos import GestorCursos
 

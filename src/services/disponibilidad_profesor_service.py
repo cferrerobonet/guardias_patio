@@ -13,12 +13,11 @@ Integra:
 from datetime import date
 from typing import List, Optional, Tuple
 
+from domain.value_objects import Turno
 from infrastructure.database.models import Ausencia, Guardia, Profesor
 from infrastructure.repositories.repository_factory import RepositoryFactory
 from services.validators import AusenciaChecker, TurnoValidator
 from utils import get_logger
-
-from domain.value_objects import Turno
 
 logger = get_logger(__name__)
 

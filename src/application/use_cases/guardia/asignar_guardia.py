@@ -6,15 +6,14 @@ Caso de uso para asignar una guardia a un profesor en una zona específica.
 
 from typing import Optional, Union
 
-from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
-from core.logging import get_logger
-from core.observability import with_metrics
-from core.observability import business_metrics
-from domain.entities import GuardiaEntity, ProfesorEntity, ZonaEntity
-from domain.repositories import IGuardiaRepository, IProfesorRepository, IZonaRepository
 from sqlalchemy.orm import Session
 
 from application.dtos import CrearGuardiaDTO, GuardiaDTO
+from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
+from core.logging import get_logger
+from core.observability import business_metrics, with_metrics
+from domain.entities import GuardiaEntity, ProfesorEntity, ZonaEntity
+from domain.repositories import IGuardiaRepository, IProfesorRepository, IZonaRepository
 
 logger = get_logger(__name__)
 

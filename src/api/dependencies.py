@@ -6,8 +6,9 @@ Gestiona las dependencias de la API, principalmente la sesión de base de datos.
 
 from typing import Generator
 
-from database.db_manager import SessionLocal
 from sqlalchemy.orm import Session
+
+from database.db_manager import SessionLocal
 
 
 def get_db() -> Generator[Session, None, None]:

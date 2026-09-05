@@ -498,7 +498,8 @@ class SidebarMenu(QWidget):
         import urllib.request
         from pathlib import Path
 
-        from PyQt6.QtCore import QThread, pyqtSignal as Signal
+        from PyQt6.QtCore import QThread
+        from PyQt6.QtCore import pyqtSignal as Signal
         from PyQt6.QtWidgets import QMessageBox, QProgressDialog
 
         version = getattr(self, "_update_nueva_version", "")

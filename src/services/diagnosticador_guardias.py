@@ -7,11 +7,12 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List
 
+from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
+
 from infrastructure.database.models import Configuracion, Guardia, Profesor
 from infrastructure.repositories.repository_factory import RepositoryFactory
 from services.validators import TurnoValidator
-from sqlalchemy import or_
-from sqlalchemy.orm import joinedload
 
 # Instancia del validador de turnos
 _turno_validator = TurnoValidator()

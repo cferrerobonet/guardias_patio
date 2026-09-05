@@ -20,11 +20,6 @@ O el alias más corto:
 
 from datetime import datetime, timezone
 
-
-def _now_utc() -> datetime:
-    """Devuelve la hora actual UTC compatible con Python 3.12+."""
-    return datetime.now(timezone.utc)
-
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -41,6 +36,12 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.orm import declarative_base, relationship
+
+
+def _now_utc() -> datetime:
+    """Devuelve la hora actual UTC compatible con Python 3.12+."""
+    return datetime.now(timezone.utc)
+
 
 Base = declarative_base()
 

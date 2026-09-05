@@ -7,9 +7,10 @@ Extraído de vista_calendario.py para reducir su tamaño (ARQ-05).
 import json
 from collections import defaultdict
 from datetime import date, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
-from infrastructure.database.models import Ausencia as AusenciaModel, Configuracion, Zona
+from infrastructure.database.models import Ausencia as AusenciaModel
+from infrastructure.database.models import Configuracion, Zona
 
 
 def parse_recreos_config(config: Configuracion) -> List[Dict]:
@@ -115,9 +116,10 @@ def cargar_datos_periodo(session, fecha_inicio: date, fecha_fin: date) -> tuple:
     Returns:
         Tupla de (guardias_por_fecha, ausencias_por_fecha, sustituciones_por_fecha)
     """
+    from sqlalchemy.orm import joinedload
+
     from application.app_services import AppServices
     from infrastructure.database.models import Guardia as GuardiaModel
-    from sqlalchemy.orm import joinedload
 
     _svc = AppServices(session)
     curso_activo = _svc.cursos.find_active()

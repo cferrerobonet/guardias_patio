@@ -2,11 +2,10 @@
 
 import re
 
+from application.dtos.perfil_dto import CrearPerfilDTO, PerfilDTO
 from core.exceptions import ValidationError
 from database.db_manager import create_user_database, get_current_user_id
 from sync.sync_manager import UserAuth
-
-from application.dtos.perfil_dto import CrearPerfilDTO, PerfilDTO
 
 
 class CrearPerfilUseCase:

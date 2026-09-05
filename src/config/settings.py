@@ -28,13 +28,14 @@ try:
 
     PYDANTIC_V2 = True
 except ImportError:
-    # Fallback para Pydantic v1
-    from pydantic import BaseSettings
-    from pydantic import validator as field_validator
+    # Fallback para Pydantic v1. Las redefiniciones son deliberadas: es el patrón
+    # de compatibilidad entre versiones, y mypy no distingue las dos ramas.
+    from pydantic import BaseSettings  # type: ignore[no-redef]
+    from pydantic import validator as field_validator  # type: ignore[no-redef]
 
     PYDANTIC_V2 = False
 
-    class SettingsConfigDict:
+    class SettingsConfigDict:  # type: ignore[no-redef]
         """Stub para compatibilidad."""
 
         pass
@@ -50,7 +51,7 @@ class Settings(BaseSettings):
 
     # ========== APLICACIÓN ==========
     app_name: str = "Gestión de Guardias de Patio"
-    app_version: str = "5.60.0"
+    app_version: str = "5.61.0"
     app_author: str = "Carlos Ferrero Bonet"
     environment: Literal["development", "production", "testing"] = "production"
 

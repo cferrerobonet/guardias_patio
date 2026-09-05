@@ -5,15 +5,15 @@ Permite registrar una nueva zona en el sistema validando los datos de entrada.
 Invalida cache de zonas tras crear.
 """
 
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from application.dtos.zona_dto import CrearZonaDTO, ZonaDTO
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
 from infrastructure.database.models import Zona
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
 from utils.logger import get_logger
 from utils.repository_cache import invalidate_zonas_cache
-
-from application.dtos.zona_dto import CrearZonaDTO, ZonaDTO
 
 logger = get_logger(__name__)
 

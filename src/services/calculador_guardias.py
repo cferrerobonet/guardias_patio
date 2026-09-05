@@ -140,7 +140,7 @@ def _parse_custom_no_lectivos(csv_text: Optional[str]) -> set:
         try:
             y, m, d = [int(x) for x in t.split("-")]
             fechas.add(date(y, m, d))
-        except (ValueError, TypeError, OSError) as e:
+        except (ValueError, TypeError, OSError):
             continue
     return fechas
 
@@ -187,7 +187,7 @@ def _parse_recreos_config(config: Configuracion) -> List[dict]:
                 }
             )
         return out
-    except (ValueError, KeyError) as e:
+    except (ValueError, KeyError):
         return []
 
 

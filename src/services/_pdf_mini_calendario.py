@@ -8,9 +8,7 @@ from calendar import monthcalendar
 
 from reportlab.graphics.shapes import Circle, Drawing, Polygon, Rect, String
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import Paragraph
 
 from infrastructure.database.models import Configuracion
 from services.pdf_styles import PDFStyles

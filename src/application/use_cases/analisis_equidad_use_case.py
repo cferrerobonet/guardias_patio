@@ -8,9 +8,6 @@ Coordina la obtención de datos y presentación de resultados.
 import logging
 from typing import List
 
-from services.distribucion_cuotas_service import DistribucionCuotasService
-from services.equidad_guardias_service import EquidadGuardiasService
-from infrastructure.database.models import Guardia, Profesor
 from sqlalchemy.orm import Session
 
 from application.dtos.domain_services_dtos import (
@@ -19,6 +16,9 @@ from application.dtos.domain_services_dtos import (
     CuotaProfesorDTO,
     EquidadMetricasDTO,
 )
+from infrastructure.database.models import Guardia, Profesor
+from services.distribucion_cuotas_service import DistribucionCuotasService
+from services.equidad_guardias_service import EquidadGuardiasService
 
 logger = logging.getLogger(__name__)
 

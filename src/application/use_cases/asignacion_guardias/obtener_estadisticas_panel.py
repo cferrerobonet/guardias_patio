@@ -7,8 +7,6 @@ el widget PanelEstadisticas de forma centralizada.
 
 from collections import defaultdict
 
-from core.observability import with_metrics
-from infrastructure.database.models import Guardia, Profesor, Zona
 from sqlalchemy.orm import Session
 
 from application.dtos.asignacion_guardias_dto import (
@@ -18,6 +16,8 @@ from application.dtos.asignacion_guardias_dto import (
     EstadisticaZonaDTO,
     ResumenPanelDTO,
 )
+from core.observability import with_metrics
+from infrastructure.database.models import Guardia, Profesor, Zona
 
 
 class ObtenerEstadisticasPanelUseCase:

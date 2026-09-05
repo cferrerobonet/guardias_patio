@@ -19,7 +19,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from presentation.theme import legacy_styles as styles
 from utils.validators import validar_horas_contrato
 
 

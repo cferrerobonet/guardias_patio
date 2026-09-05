@@ -6,9 +6,10 @@ Permite a los profesores importar sus guardias a calendarios digitales.
 from datetime import datetime, timedelta
 from typing import List, Optional
 
+from sqlalchemy.orm import joinedload
+
 from infrastructure.database.models import Configuracion, Guardia, Profesor
 from infrastructure.repositories.repository_factory import RepositoryFactory
-from sqlalchemy.orm import joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)

@@ -8,7 +8,6 @@ sincronización de copias de seguridad entre diferentes dispositivos.
 import os
 
 import paramiko
-from presentation.theme import legacy_styles as styles
 from dotenv import load_dotenv
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -20,6 +19,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
 from utils import get_logger
 from utils.icons import icon_for_button
 
@@ -420,7 +420,7 @@ class SFTPConfigWidget(QGroupBox):
             try:
                 files = sftp.listdir(sftp_basedir)
                 file_count = len(files)
-            except (OSError, ValueError) as e:
+            except (OSError, ValueError):
                 # Si no existe el directorio, intentar crearlo
                 sftp.mkdir(sftp_basedir)
                 file_count = 0

@@ -7,13 +7,13 @@ Con caching para optimizar lecturas frecuentes.
 
 from typing import Union
 
+from sqlalchemy.orm import Session
+
+from application.dtos import ProfesorDTO
 from core.observability import with_metrics
 from domain.entities import ProfesorEntity
 from domain.repositories import IProfesorRepository
-from sqlalchemy.orm import Session
 from utils.repository_cache import cache_profesores
-
-from application.dtos import ProfesorDTO
 
 
 class ListarProfesoresUseCase:

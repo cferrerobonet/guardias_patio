@@ -252,7 +252,8 @@ class AppServices:
 
     def profesores_con_guardias_en_curso(self, curso_id: int):
         """Retorna entidades ProfesorEntity distintas que tienen guardias en el curso dado."""
-        from infrastructure.database.models import Guardia as GuardiaModel, Profesor as ProfesorModel
+        from infrastructure.database.models import Guardia as GuardiaModel
+        from infrastructure.database.models import Profesor as ProfesorModel
         from infrastructure.mappers.profesor_mapper import ProfesorMapper
 
         models = (
@@ -267,7 +268,8 @@ class AppServices:
 
     def ausencias_de_profesores_en_curso(self, curso_id: int):
         """Retorna ausencias de profesores que tienen guardias en el curso dado."""
-        from infrastructure.database.models import Ausencia as AusenciaModel, Guardia as GuardiaModel
+        from infrastructure.database.models import Ausencia as AusenciaModel
+        from infrastructure.database.models import Guardia as GuardiaModel
         from infrastructure.mappers.ausencia_mapper import AusenciaMapper
 
         profesor_ids = [

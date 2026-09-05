@@ -4,7 +4,6 @@ Ausencia Mapper
 Convierte entre el modelo SQLAlchemy Ausencia y la entidad AusenciaEntity.
 """
 
-import json
 from typing import Optional
 
 from domain.entities.ausencia_entity import AusenciaEntity

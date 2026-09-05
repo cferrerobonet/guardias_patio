@@ -1,6 +1,5 @@
 """Use Case: Eliminar un perfil de usuario."""
 
-from pathlib import Path
 
 from core.exceptions import NotFoundError, ValidationError
 from core.paths import get_data_directory

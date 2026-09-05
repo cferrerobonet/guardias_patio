@@ -9,14 +9,15 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Callable, Optional
 
-from infrastructure.database.models import Guardia, Profesor
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-from services.gestor_cursos import GestorCursos
 from sqlalchemy.orm import joinedload
+
+from infrastructure.database.models import Guardia, Profesor
+from services.gestor_cursos import GestorCursos
 from utils import get_logger
 
 logger = get_logger(__name__)

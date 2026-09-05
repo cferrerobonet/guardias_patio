@@ -22,12 +22,10 @@ from core.exceptions import (
 )
 from infrastructure.database.models import Guardia, Profesor, Zona
 from infrastructure.repositories.repository_factory import RepositoryFactory
-from sqlalchemy.exc import SQLAlchemyError
-from utils import get_logger
-
 from services.disponibilidad_profesor_service import (
     DisponibilidadProfesorService,
 )
+from utils import get_logger
 
 logger = get_logger(__name__)
 

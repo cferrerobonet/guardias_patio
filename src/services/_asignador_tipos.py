@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Dict, List, Optional, Set, Tuple
 
-from infrastructure.database.models import Guardia, Profesor, Zona
+from infrastructure.database.models import Guardia, Profesor
 
 
 @dataclass(frozen=True)

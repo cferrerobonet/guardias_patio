@@ -11,7 +11,6 @@ CRUD Profesional con:
 """
 
 from PyQt6.QtCore import Qt
-from presentation.widgets.toast_notification import ToastNotification
 from PyQt6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -42,6 +41,7 @@ from presentation.dialogs.modales_perfil import (
 )
 from presentation.forms.base_form import BaseForm
 from presentation.theme import legacy_styles as styles
+from presentation.widgets.toast_notification import ToastNotification
 from sync.sync_manager import UserAuth
 from utils.icons import icon_for_button
 
@@ -459,6 +459,7 @@ class PerfilesUsuarioForm(BaseForm):
 
             # Ejecutar use case
             ruta_guardada = self.uc_actualizar_logo.execute(username, archivo)
+            self.logger.info(f"Logo actualizado para {username}: {ruta_guardada}")
 
             # Refrescar tabla
             self.refrescar()

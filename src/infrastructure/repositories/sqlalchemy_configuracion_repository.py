@@ -2,14 +2,14 @@
 SQLAlchemy Configuracion Repository Implementation
 """
 
-import json
 from typing import Optional
+
+from sqlalchemy.orm import Session
 
 from domain.entities.configuracion_entity import ConfiguracionEntity
 from domain.repositories.configuracion_repository import IConfiguracionRepository
 from infrastructure.database.models import Configuracion
 from infrastructure.mappers.configuracion_mapper import ConfiguracionMapper
-from sqlalchemy.orm import Session
 
 
 class SQLAlchemyConfiguracionRepository(IConfiguracionRepository):

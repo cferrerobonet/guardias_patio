@@ -6,6 +6,7 @@ Define operaciones para gestionar ausencias de profesores.
 
 from abc import abstractmethod
 from datetime import date
+from typing import Optional
 
 from domain.repositories.base_repository import IBaseRepository
 
@@ -16,7 +17,7 @@ class IAusenciaRepository(IBaseRepository):
     """
 
     @abstractmethod
-    def find_by_profesor_and_date(self, profesor_id: int, fecha: date):
+    def find_by_profesor_and_date(self, profesor_id: int, fecha: date) -> Optional[object]:
         """
         Busca ausencia activa de un profesor en una fecha específica.
 

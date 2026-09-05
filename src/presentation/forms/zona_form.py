@@ -4,17 +4,6 @@ Formulario de gestión de zonas de recreo.
 Permite realizar operaciones CRUD sobre las zonas usando patrón MVP.
 """
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
-from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
-from application.use_cases.zona import (
-    ActualizarZonaUseCase,
-    CrearZonaUseCase,
-    EliminarZonaUseCase,
-    ListarZonasUseCase,
-    ObtenerZonaUseCase,
-)
-from core.exceptions import BusinessLogicError, NotFoundError
 from pydantic import ValidationError
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -29,11 +18,21 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from utils.icons import icon_for_button, icon_for_form
 
+from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
+from application.use_cases.zona import (
+    ActualizarZonaUseCase,
+    CrearZonaUseCase,
+    EliminarZonaUseCase,
+    ListarZonasUseCase,
+    ObtenerZonaUseCase,
+)
+from core.exceptions import BusinessLogicError, NotFoundError
 from presentation.forms.base_form import BaseForm
 from presentation.forms.zona_widgets import DatosZonaWidget
+from presentation.theme.tokens import Spacing
 from presentation.widgets.table_manager import TableManager
+from utils.icons import icon_for_button, icon_for_form
 
 
 class ZonaForm(BaseForm):

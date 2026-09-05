@@ -6,7 +6,6 @@ tipográfica de cada sistema operativo.
 
 import sys
 
-
 #: Pila tipográfica por sistema. `-apple-system` no es una familia real fuera del
 #: navegador: en Windows y Linux no resolvía y Qt caía a su fuente por defecto,
 #: de modo que la aplicación no se veía como se diseñó (VIS-003).

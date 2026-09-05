@@ -6,8 +6,6 @@ Permite generar calendarios PDF e informes estadísticos.
 
 import os
 
-from presentation.theme import legacy_styles as styles
-from infrastructure.database.models import Configuracion, Guardia, Profesor
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -21,9 +19,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from services.exportador_pdf import ExportadorPDF
-from utils import get_logger
 
+from infrastructure.database.models import Configuracion, Profesor
 from presentation.forms.base_form import BaseForm
 from presentation.forms.reportes_widgets import (
     CalendariosPdfWidget,
@@ -32,6 +29,8 @@ from presentation.forms.reportes_widgets import (
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
 from presentation.widgets.toast_notification import ToastNotification
+from services.exportador_pdf import ExportadorPDF
+from utils import get_logger
 
 logger = get_logger(__name__)
 

@@ -8,9 +8,9 @@ import os
 import sys
 from typing import TYPE_CHECKING, Optional
 
+from core.logging import get_logger
 from utils import setup_logging
 from utils.corporate_branding import apply_corporate_branding
-from core.logging import get_logger
 
 logger = get_logger(__name__)
 

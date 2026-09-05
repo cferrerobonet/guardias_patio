@@ -3,23 +3,23 @@ Exportación PDF individual de profesor (versión optimizada con mini calendario
 Extraído de exportador_pdf.py para reducir tamaño de archivo.
 """
 
-from calendar import monthcalendar
 from collections import defaultdict
 from datetime import date, datetime
 from typing import Callable, Optional
 
-from infrastructure.database.models import Configuracion, Guardia, Profesor
 from reportlab.graphics.shapes import Circle, Drawing, Polygon, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from sqlalchemy.orm import joinedload
+
+from infrastructure.database.models import Configuracion, Guardia, Profesor
+from services._pdf_mini_calendario import crear_mini_calendario, obtener_hora_recreo
 from services.gestor_cursos import GestorCursos
 from services.pdf_styles import PDFStyles
-from sqlalchemy.orm import joinedload
 from utils import get_logger
-from services._pdf_mini_calendario import crear_mini_calendario, obtener_hora_recreo
 
 logger = get_logger(__name__)
 

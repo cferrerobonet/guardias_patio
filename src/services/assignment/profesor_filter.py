@@ -12,9 +12,9 @@ from datetime import date
 from typing import Dict, List, Set, Tuple
 
 from infrastructure.database.models import Profesor
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from services.assignment.slot_builder import Slot
 from services.validators import AusenciaChecker, TurnoValidator
-from infrastructure.repositories.repository_factory import RepositoryFactory
 from utils import get_logger
 
 logger = get_logger(__name__)

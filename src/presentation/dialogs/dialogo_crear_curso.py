@@ -7,7 +7,6 @@ Permite al usuario configurar un curso y opcionalmente copiar profesores.
 from datetime import date
 from typing import Optional
 
-from core.logging import get_logger
 from PyQt6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -19,6 +18,8 @@ from PyQt6.QtWidgets import (
     QSpinBox,
     QVBoxLayout,
 )
+
+from core.logging import get_logger
 from services.gestor_cursos import GestorCursos
 
 logger = get_logger(__name__)

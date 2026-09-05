@@ -71,6 +71,7 @@ class WorkerThread(QThread):
             self.error.emit(e)
         except Exception as e:
             import traceback
+
             from utils.logger import get_logger
 
             logger = get_logger(__name__)

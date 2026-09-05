@@ -114,7 +114,7 @@ class HorasContrato:
             return self.value == other
         return False
 
-    def __lt__(self, other: "HorasContrato") -> bool:
+    def __lt__(self, other: object) -> bool:
         """Permite comparaciones de menor que."""
         if isinstance(other, HorasContrato):
             return self.value < other.value
@@ -122,7 +122,7 @@ class HorasContrato:
             return self.value < other
         return NotImplemented
 
-    def __le__(self, other: "HorasContrato") -> bool:
+    def __le__(self, other: object) -> bool:
         """Permite comparaciones de menor o igual."""
         if isinstance(other, HorasContrato):
             return self.value <= other.value

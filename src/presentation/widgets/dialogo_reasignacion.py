@@ -4,7 +4,6 @@ Diálogo de reasignación de guardias afectadas por ausencias.
 Extraído de gestionar_ausencias.py para reducir su tamaño (ARQ-05).
 """
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -17,7 +16,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from presentation.theme import legacy_styles as styles
 from presentation.widgets.toast_notification import ToastNotification
 from services.gestor_ausencias import GestorAusencias
 from utils.icons import icon_for_button

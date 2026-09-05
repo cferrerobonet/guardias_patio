@@ -4,11 +4,12 @@ Use Case: Eliminar una zona.
 Permite eliminar una zona del sistema, verificando que no tenga guardias asignadas.
 """
 
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
 from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
 from infrastructure.database.models import Guardia, Zona
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
 from utils.logger import get_logger
 from utils.repository_cache import invalidate_zonas_cache
 

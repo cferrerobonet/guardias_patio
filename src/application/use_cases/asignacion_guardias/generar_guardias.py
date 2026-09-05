@@ -5,6 +5,7 @@ Genera todas las guardias del curso y las guarda en la base de datos.
 """
 
 import json
+import json as _json
 import threading
 from datetime import datetime
 from typing import Callable, Optional
@@ -15,8 +16,6 @@ from application.dtos.asignacion_guardias_dto import ResumenGeneracionDTO
 from core.exceptions import BusinessLogicError
 from core.observability import with_metrics
 from core.usage_logger import usage_log
-import json as _json
-
 from infrastructure.database.models import Configuracion, Guardia, GuardiaAuditLog, Profesor
 from services.asignador_guardias_cpsat import (
     generar_guardias_cpsat,
@@ -284,6 +283,26 @@ class GenerarGuardiasUseCase:
                 json.dump(comparacion, f, ensure_ascii=False, indent=2)
 
             logger.info(f"📊 Comparación exportada a: {filepath}")
+            self._podar_comparaciones_antiguas(logs_dir)
 
         except (OSError, ValueError) as e:
             logger.warning(f"No se pudo exportar comparación: {e}")
+
+    @staticmethod
+    def _podar_comparaciones_antiguas(logs_dir, conservar: int = 20) -> None:
+        """Deja sólo las últimas comparaciones y borra el resto.
+
+        Cada generación escribía un JSON con fecha en el nombre y nadie los
+        borraba nunca: se acumulaban cientos en la carpeta de registros del
+        usuario (COD-005).
+        """
+        try:
+            archivos = sorted(
+                logs_dir.glob("comparacion_cuotas_*.json"),
+                key=lambda f: f.stat().st_mtime,
+                reverse=True,
+            )
+            for sobrante in archivos[conservar:]:
+                sobrante.unlink(missing_ok=True)
+        except OSError as e:
+            logger.debug(f"No se pudieron podar las comparaciones antiguas: {e}")

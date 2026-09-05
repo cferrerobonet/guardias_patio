@@ -17,10 +17,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
-from core.paths import get_user_data_directory
 from sqlalchemy import create_engine, event, pool, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
+
+from core.paths import get_user_data_directory
 from utils.constants import TIMEOUT_DB
 from utils.logger import get_logger
 
@@ -111,12 +112,13 @@ def _run_alembic_migrations(engine, db_path: Path) -> bool:
         True si Alembic completó correctamente, False en caso de fallo.
     """
     try:
-        from alembic import command
-        from alembic.config import Config
-
         # Configurar Alembic
         import sys
         from pathlib import Path
+
+        from alembic.config import Config
+
+        from alembic import command
 
         # Obtener ruta al alembic.ini
         if getattr(sys, "frozen", False):

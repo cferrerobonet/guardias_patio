@@ -1,6 +1,5 @@
 """Use Case: Listar todos los perfiles del sistema."""
 
-from pathlib import Path
 from typing import List
 
 from application.dtos.perfil_dto import PerfilDTO

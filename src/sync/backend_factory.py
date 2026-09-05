@@ -42,7 +42,7 @@ def create_sync_backend(backend_type: str = "sftp") -> SyncBackend:
             )
 
         try:
-            import paramiko
+            import paramiko  # noqa: F401 - se importa para comprobar que está
         except ImportError:
             raise ImportError("Paramiko no está instalado. Ejecuta: pip install paramiko")
 

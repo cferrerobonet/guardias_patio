@@ -2,9 +2,6 @@
 Diálogo de Login para Sistema Multi-Usuario
 """
 
-from config.settings import get_settings
-from core.paths import get_resources_directory
-from core.observability import business_metrics
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QRegularExpressionValidator
 from PyQt6.QtWidgets import (
@@ -18,6 +15,10 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
+from config.settings import get_settings
+from core.observability import business_metrics
+from core.paths import get_resources_directory
 from sync.sync_manager import UserAuth
 from utils.icon_manager import get_icon
 from utils.icons import icon_for_button
@@ -148,7 +149,6 @@ class RegisterDialog(QDialog):
 
         # Validaciones
         if not username:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
@@ -160,7 +160,6 @@ class RegisterDialog(QDialog):
             return
 
         if not email:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
@@ -175,7 +174,6 @@ class RegisterDialog(QDialog):
 
         # Validación básica de email
         if "@" not in email or "." not in email:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
@@ -187,7 +185,6 @@ class RegisterDialog(QDialog):
             return
 
         if not password:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
@@ -199,7 +196,6 @@ class RegisterDialog(QDialog):
             return
 
         if len(password) < 4:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
@@ -213,7 +209,6 @@ class RegisterDialog(QDialog):
         # Validar política completa de contraseñas
         policy_ok, policy_msg = self.user_auth.validate_password_policy(password)
         if not policy_ok:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
@@ -225,7 +220,6 @@ class RegisterDialog(QDialog):
             return
 
         if password != password_confirm:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
@@ -242,7 +236,6 @@ class RegisterDialog(QDialog):
 
         # Intentar registrar
         if self.user_auth.register_user(username, password, email):
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             self.registered_username = username
             msg = QMessageBox(self)
@@ -263,7 +256,6 @@ class RegisterDialog(QDialog):
             msg.exec()
             self.accept()
         else:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
@@ -582,7 +574,6 @@ class LoginDialog(QDialog):
             self.password_input.clear()
             self.password_input.setFocus()
 
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
@@ -606,7 +597,6 @@ class LoginDialog(QDialog):
         password = self.password_input.text()
 
         if not username or not password:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
@@ -622,7 +612,6 @@ class LoginDialog(QDialog):
             business_metrics.login_exitoso(username=username)
             self.accept()
         else:
-            from utils.ui_helpers import MESSAGEBOX_STYLE
 
             business_metrics.login_fallido(username=username, razon=auth_msg)
             msg = QMessageBox(self)

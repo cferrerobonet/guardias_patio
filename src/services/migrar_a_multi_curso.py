@@ -10,11 +10,11 @@ Se ejecuta automáticamente al iniciar la aplicación si detecta datos huérfano
 from datetime import date
 from typing import Optional
 
+from sqlalchemy import func
+
 from core.logging import get_logger
 from infrastructure.database.models import CursoEscolar, Guardia
 from services.gestor_cursos import GestorCursos
-from sqlalchemy import func
-from sqlalchemy.exc import SQLAlchemyError
 
 logger = get_logger(__name__)
 

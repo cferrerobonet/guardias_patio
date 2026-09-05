@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import json
 import threading
-from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Callable, Dict, List, Optional, Set, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
+
+from ortools.sat.python import cp_model
 
 from infrastructure.database.models import (
     Ausencia,
@@ -20,7 +21,6 @@ from infrastructure.database.models import (
     Profesor,
     Zona,
 )
-from ortools.sat.python import cp_model
 from services.calculador_guardias import (
     _parse_recreos_config,
     listar_dias_lectivos,

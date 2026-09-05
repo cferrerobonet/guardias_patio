@@ -4,12 +4,13 @@ SQLAlchemy CursoEscolar Repository Implementation
 
 from typing import Optional
 
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
 from domain.entities.curso_escolar_entity import CursoEscolarEntity
 from domain.repositories.curso_escolar_repository import ICursoEscolarRepository
 from infrastructure.database.models import CursoEscolar
 from infrastructure.mappers.curso_escolar_mapper import CursoEscolarMapper
-from sqlalchemy import or_
-from sqlalchemy.orm import Session
 
 
 class SQLAlchemyCursoEscolarRepository(ICursoEscolarRepository):

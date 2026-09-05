@@ -13,8 +13,11 @@ from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
 
-from utils.icons import Icons, get_icon  # noqa: F401
 from core.paths import get_resources_directory
+
+# `get_icon` NO se importa: este módulo define el suyo más abajo, y tenerlo
+# también importado hacía dudar de cuál de los dos se exporta.
+from utils.icons import Icons  # noqa: F401
 
 logger = logging.getLogger(__name__)
 

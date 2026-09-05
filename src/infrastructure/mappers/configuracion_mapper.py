@@ -6,7 +6,7 @@ Convierte entre el modelo SQLAlchemy Configuracion y la entidad ConfiguracionEnt
 
 import ast
 import json
-from typing import Any, Optional
+from typing import Optional
 
 from domain.entities.configuracion_entity import ConfiguracionEntity
 from infrastructure.database.models import Configuracion

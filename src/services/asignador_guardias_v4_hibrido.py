@@ -17,8 +17,9 @@ Exporta para compatibilidad con importadores externos:
 from __future__ import annotations
 
 import threading
-
 from typing import Callable, Dict, List, Optional, Tuple
+
+from sqlalchemy.exc import SQLAlchemyError
 
 from infrastructure.database.models import Configuracion, Guardia, Profesor, Zona
 from services._asignador_tipos import ContextoAsignacion, ResultadoGeneracion, Slot  # noqa: F401
@@ -47,7 +48,6 @@ from services.calculador_guardias import (
     calcular_guardias_por_profesor,
     listar_dias_lectivos,
 )
-from sqlalchemy.exc import SQLAlchemyError
 from utils import get_logger
 
 logger = get_logger(__name__)

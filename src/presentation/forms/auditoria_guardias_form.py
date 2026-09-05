@@ -17,7 +17,6 @@ from PyQt6.QtWidgets import (
 
 from infrastructure.database.models import GuardiaAuditLog, Profesor
 
-
 _ACCIONES = ["Todas", "CREADA", "MODIFICADA", "ELIMINADA", "SUSTITUIDA", "GENERADA_BULK"]
 
 _ETIQUETAS_ACCION = {

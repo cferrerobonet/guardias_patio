@@ -7,14 +7,14 @@ Implementación concreta del repositorio de profesores usando SQLAlchemy.
 from datetime import date
 from typing import Optional
 
-from core.exceptions import DatabaseError, ProfesorNotFoundError
-from core.logging import get_logger, log_function_call
-from domain.entities import ProfesorEntity
-from domain.repositories import IProfesorRepository
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, joinedload
 
+from core.exceptions import DatabaseError, ProfesorNotFoundError
+from core.logging import get_logger, log_function_call
+from domain.entities import ProfesorEntity
+from domain.repositories import IProfesorRepository
 from infrastructure.database.models import Guardia, Profesor
 from infrastructure.mappers import ProfesorMapper
 

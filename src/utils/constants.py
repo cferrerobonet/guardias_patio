@@ -12,6 +12,7 @@ APP_AUTHOR = "Carlos Ferrero Bonet"
 # Fuente única de versión: settings.py → app_version
 # No modificar APP_VERSION aquí; el bump se hace solo en settings.py
 from config.settings import get_settings as _get_settings  # noqa: E402
+
 APP_VERSION = _get_settings().app_version
 APP_LAST_UPDATE = "2026-04-23"
 

@@ -12,8 +12,6 @@ import json
 from datetime import date
 from typing import Dict, List, Optional, Tuple
 
-from presentation.theme import legacy_styles as styles
-from core.logging import get_logger
 from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -21,15 +19,14 @@ from PyQt6.QtWidgets import (
     QDateEdit,
     QGroupBox,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
     QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from core.logging import get_logger
+from presentation.theme import legacy_styles as styles
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 
 logger = get_logger(__name__)
@@ -80,7 +77,6 @@ class SemanaRestriccionesWidget(QWidget):
         layout.addLayout(tpl_layout)
 
         # Rejilla
-        from PyQt6.QtWidgets import QGridLayout
         grid = QGridLayout()
         grid.setSpacing(4)
 

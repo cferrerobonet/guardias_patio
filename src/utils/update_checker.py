@@ -4,7 +4,6 @@ import urllib.request
 from threading import Thread
 from typing import Callable
 
-
 RELEASES_URL = "https://api.github.com/repos/cferrerobonet/guardias_patio/releases/latest"
 
 

@@ -141,7 +141,7 @@ def obtener_guardias(
         )
         return PaginatedGuardiasResponse(items=items, total=total, page=page, size=len(items), pages=pages)
 
-    except (ValueError, TypeError, OSError) as e:
+    except (ValueError, TypeError, OSError):
         logger.exception("Error en listado de guardias")
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
@@ -197,7 +197,7 @@ def contar_guardias(
         )
         return {"total": total}
 
-    except (ValueError, TypeError, OSError) as e:
+    except (ValueError, TypeError, OSError):
         logger.exception("Error en conteo de guardias")
         raise HTTPException(status_code=500, detail="Error al contar guardias")
 
@@ -243,7 +243,7 @@ def exportar_guardias_csv(
     start = perf_counter()
     try:
         dtos = _get_guardias_dtos(configuracion_id, fecha_inicio, fecha_fin, profesor_id, zona_id, turno, db)
-    except (ValueError, TypeError, OSError) as e:
+    except (ValueError, TypeError, OSError):
         logger.exception("Error al exportar guardias CSV")
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
@@ -291,7 +291,7 @@ def exportar_guardias_xlsx(
 
     try:
         dtos = _get_guardias_dtos(configuracion_id, fecha_inicio, fecha_fin, profesor_id, zona_id, turno, db)
-    except (ValueError, TypeError, OSError) as e:
+    except (ValueError, TypeError, OSError):
         logger.exception("Error al exportar guardias XLSX")
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 

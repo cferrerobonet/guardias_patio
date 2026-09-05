@@ -6,8 +6,9 @@ import logging
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
-from presentation.theme.tokens import FontSize
 from PyQt6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+
+from presentation.theme.tokens import FontSize
 from utils.icons import icon_for_button
 
 logger = logging.getLogger(__name__)
@@ -144,5 +145,5 @@ class SessionLockedDialog(QDialog):
 
             dt = datetime.fromisoformat(iso_string)
             return dt.strftime("%d/%m/%Y %H:%M:%S")
-        except (ValueError, TypeError, OSError) as e:
+        except (ValueError, TypeError, OSError):
             return iso_string

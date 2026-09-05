@@ -14,9 +14,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from utils.icons import icon_for_button
 
 from services.diagnosticador_guardias import DiagnosticoCompleto, ProblemaDetectado
+from utils.icons import icon_for_button
 
 
 class DialogoDiagnosticoGuardias(QDialog):

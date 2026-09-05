@@ -41,7 +41,7 @@ def _hash_username(username: str) -> str:
 
 def _verify_user(username: str, password: str) -> tuple[bool, Optional[str]]:
     """Valida credenciales contra data/users.json usando bcrypt.
-    
+
     Returns:
         (is_valid, error_message)
     """
@@ -95,7 +95,7 @@ def _verify_user(username: str, password: str) -> tuple[bool, Optional[str]]:
                 if delay:
                     time.sleep(min(delay, 2))
                 return False, "Error de autenticación"
-    
+
     # Usuario no encontrado también cuenta como intento fallido
     locked, delay = lockout_mgr.record_failed_attempt(username)
     if delay:

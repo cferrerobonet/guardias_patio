@@ -3,15 +3,12 @@ Diálogo de mapeo de columnas para importación de Excel/CSV (FUNC-03).
 Permite al usuario asignar columnas del archivo a los campos de la app.
 """
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
     QGroupBox,
-    QHBoxLayout,
-    QLabel,
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,

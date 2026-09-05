@@ -5,8 +5,6 @@ Este módulo implementa la UI para exportar/importar datos en JSON
 y profesores desde Excel.
 """
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFileDialog,
@@ -18,17 +16,18 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+
 from infrastructure.repositories.repository_factory import RepositoryFactory
+from presentation.dialogs.column_mapping_dialog import ColumnMappingDialog
+from presentation.forms.base_form import BaseForm
+from presentation.forms.import_export_widgets import JsonOperationsWidget
+from presentation.theme.tokens import Spacing
+from presentation.themes.ccleaner_theme import TEXT_SECONDARY
+from presentation.widgets.progress_indicators import ejecutar_con_progreso
 from services.exportador import ExportadorDatos
 from services.importador_profesores import importar_profesores
 from utils import get_logger
 from utils.icons import icon_for_button
-
-from presentation.dialogs.column_mapping_dialog import ColumnMappingDialog
-from presentation.forms.base_form import BaseForm
-from presentation.forms.import_export_widgets import JsonOperationsWidget
-from presentation.themes.ccleaner_theme import TEXT_SECONDARY
-from presentation.widgets.progress_indicators import ejecutar_con_progreso
 
 logger = get_logger(__name__)
 
@@ -203,7 +202,7 @@ class ImportExportForm(BaseForm):
             try:
                 user_auth = UserAuth()
                 usuario_count = len(user_auth.users)
-            except (ValueError, TypeError, OSError) as e:
+            except (ValueError, TypeError, OSError):
                 usuario_count = 0
 
             mensaje = (
@@ -229,7 +228,7 @@ class ImportExportForm(BaseForm):
             # Confirmación previa
             limpiar = self.limpiar_checkbox.isChecked()
             if limpiar:
-                from utils.ui_helpers import MESSAGEBOX_STYLE, get_corporate_icon
+                from utils.ui_helpers import get_corporate_icon
 
                 msg = QMessageBox(self)
                 msg.setIcon(QMessageBox.Icon.Question)

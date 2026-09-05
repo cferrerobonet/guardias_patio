@@ -8,12 +8,12 @@ from datetime import date
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from infrastructure.database.models import Guardia, Profesor
 from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
+from infrastructure.database.models import Guardia, Profesor
 
 router = APIRouter(prefix="/estadisticas", tags=["estadisticas"])
 

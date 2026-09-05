@@ -1,6 +1,5 @@
 """Use Case: Actualizar un perfil existente."""
 
-from pathlib import Path
 
 from application.dtos.perfil_dto import ActualizarPerfilDTO, PerfilDTO
 from core.exceptions import NotFoundError, ValidationError

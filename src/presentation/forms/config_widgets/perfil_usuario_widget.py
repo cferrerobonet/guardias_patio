@@ -7,9 +7,10 @@ Muestra y permite editar información del usuario actual:
 - Botón cambiar contraseña
 """
 
-from presentation.theme import legacy_styles as styles
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout
+
+from presentation.theme import legacy_styles as styles
 
 
 class PerfilUsuarioWidget(QGroupBox):

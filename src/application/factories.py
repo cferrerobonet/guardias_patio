@@ -15,13 +15,14 @@ Uso:
     resultado = use_case.execute()
 """
 
+from sqlalchemy.orm import Session
+
 from infrastructure.mappers import ProfesorMapper
 from infrastructure.repositories import (
     SQLAlchemyGuardiaRepository,
     SQLAlchemyProfesorRepository,
     SQLAlchemyZonaRepository,
 )
-from sqlalchemy.orm import Session
 
 
 def crear_obtener_profesor_use_case(session: Session):

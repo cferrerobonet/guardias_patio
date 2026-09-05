@@ -35,7 +35,8 @@ Uso:
     )
 """
 
-from typing import Any, Dict, Optional, Type
+from datetime import date
+from typing import Any, Dict, Optional, Type, Union
 
 
 class GuardiasBaseException(Exception):
@@ -58,7 +59,7 @@ class GuardiasBaseException(Exception):
         code: Optional[str] = None,
         context: Optional[Dict[str, Any]] = None,
         original_error: Optional[Exception] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         self.message = message or self.default_message
         self.code = code or self.default_code
@@ -169,7 +170,7 @@ class ProfesorNotFoundError(NotFoundError):
     default_message = "El profesor no fue encontrado"
     default_code = "PROFESOR_NOT_FOUND"
 
-    def __init__(self, profesor_id: Optional[int] = None, **kwargs):
+    def __init__(self, profesor_id: Optional[int] = None, **kwargs: Any):
         if profesor_id:
             kwargs["profesor_id"] = profesor_id
         super().__init__(**kwargs)
@@ -181,7 +182,7 @@ class ZonaNotFoundError(NotFoundError):
     default_message = "La zona no fue encontrada"
     default_code = "ZONA_NOT_FOUND"
 
-    def __init__(self, zona_id: Optional[int] = None, **kwargs):
+    def __init__(self, zona_id: Optional[int] = None, **kwargs: Any):
         if zona_id:
             kwargs["zona_id"] = zona_id
         super().__init__(**kwargs)
@@ -193,7 +194,7 @@ class GuardiaNotFoundError(NotFoundError):
     default_message = "La guardia no fue encontrada"
     default_code = "GUARDIA_NOT_FOUND"
 
-    def __init__(self, guardia_id: Optional[int] = None, **kwargs):
+    def __init__(self, guardia_id: Optional[int] = None, **kwargs: Any):
         if guardia_id:
             kwargs["guardia_id"] = guardia_id
         super().__init__(**kwargs)
@@ -205,7 +206,7 @@ class AusenciaNotFoundError(NotFoundError):
     default_message = "La ausencia no fue encontrada"
     default_code = "AUSENCIA_NOT_FOUND"
 
-    def __init__(self, ausencia_id: Optional[int] = None, **kwargs):
+    def __init__(self, ausencia_id: Optional[int] = None, **kwargs: Any):
         if ausencia_id:
             kwargs["ausencia_id"] = ausencia_id
         super().__init__(**kwargs)
@@ -229,7 +230,7 @@ class MaxGuardiasDiaExceededError(BusinessLogicError):
     default_message = "Se ha excedido el máximo de guardias permitidas por día"
     default_code = "MAX_GUARDIAS_DIA_EXCEEDED"
 
-    def __init__(self, profesor_id: Optional[int] = None, fecha: Optional[str] = None, **kwargs):
+    def __init__(self, profesor_id: Optional[int] = None, fecha: Optional[Union[str, date]] = None, **kwargs: Any):
         if profesor_id:
             kwargs["profesor_id"] = profesor_id
         if fecha:
@@ -246,9 +247,9 @@ class ProfesorAusenteError(BusinessLogicError):
     def __init__(
         self,
         profesor_id: Optional[int] = None,
-        fecha: Optional[str] = None,
+        fecha: Optional[Union[str, date]] = None,
         ausencia_id: Optional[int] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         if profesor_id:
             kwargs["profesor_id"] = profesor_id
@@ -289,8 +290,8 @@ class GuardiaConflictError(BusinessLogicError):
     def __init__(
         self,
         guardia_id: Optional[int] = None,
-        fecha: Optional[str] = None,
-        **kwargs,
+        fecha: Optional[Union[str, date]] = None,
+        **kwargs: Any,
     ):
         if guardia_id:
             kwargs["guardia_id"] = guardia_id
@@ -305,7 +306,7 @@ class GuardiaInvalidaError(BusinessLogicError):
     default_message = "La guardia no es válida (faltan datos requeridos)"
     default_code = "GUARDIA_INVALIDA"
 
-    def __init__(self, guardia_id: Optional[int] = None, **kwargs):
+    def __init__(self, guardia_id: Optional[int] = None, **kwargs: Any):
         if guardia_id:
             kwargs["guardia_id"] = guardia_id
         super().__init__(**kwargs)
@@ -404,7 +405,7 @@ class ExportError(InfrastructureError):
     default_message = "Error al exportar los datos"
     default_code = "EXPORT_ERROR"
 
-    def __init__(self, format: Optional[str] = None, **kwargs):
+    def __init__(self, format: Optional[str] = None, **kwargs: Any):
         if format:
             kwargs["format"] = format
         super().__init__(**kwargs)
@@ -416,7 +417,7 @@ class ImportError(InfrastructureError):
     default_message = "Error al importar los datos"
     default_code = "IMPORT_ERROR"
 
-    def __init__(self, format: Optional[str] = None, **kwargs):
+    def __init__(self, format: Optional[str] = None, **kwargs: Any):
         if format:
             kwargs["format"] = format
         super().__init__(**kwargs)
@@ -435,7 +436,9 @@ class FileSystemError(InfrastructureError):
 
 
 def wrap_exception(
-    original_error: Exception, new_exception_class: Type[GuardiasBaseException], **kwargs
+    original_error: Exception,
+    new_exception_class: Type[GuardiasBaseException],
+    **kwargs: Any,
 ) -> GuardiasBaseException:
     """
     Envuelve una excepción externa en una excepción de la aplicación.

@@ -92,3 +92,61 @@ def test_los_scripts_de_powershell_llevan_marca_de_orden():
         if tiene_acentos and not datos.startswith(b"\xef\xbb\xbf"):
             sin_marca.append(str(script.relative_to(ROOT)))
     assert not sin_marca, sin_marca
+
+
+# ---------------------------------------------------------------------------
+# COD-001 / COD-007: ratchets de calidad estática
+# ---------------------------------------------------------------------------
+
+#: Avisos de ruff que quedan en `src/`, todos `E501` (líneas largas), concentrados
+#: en cadenas de texto —sobre todo el HTML de los correos—. Sólo puede bajar.
+AVISOS_RUFF = 104
+
+
+def _ejecutar(comando: list, cwd: Path | None = None) -> tuple:
+    """Lanza una herramienta con el intérprete del entorno y devuelve (salida, ok)."""
+    proceso = subprocess.run(
+        [sys.executable, "-m", *comando],
+        cwd=cwd or ROOT,
+        capture_output=True,
+        text=True,
+    )
+    return proceso.stdout + proceso.stderr, proceso.returncode == 0
+
+
+def test_ratchet_de_avisos_de_ruff():
+    """COD-001: la deuda de estilo sólo puede bajar."""
+    salida, _ = _ejecutar(["ruff", "check", "src", "--statistics"])
+    if "No module named" in salida:
+        pytest.skip("ruff no está instalado en este entorno")
+
+    total = sum(
+        int(m) for m in re.findall(r"^\s*(\d+)\s+[EWFI]\d+", salida, re.M)
+    )
+    assert total <= AVISOS_RUFF, (
+        f"ruff: {total} avisos (umbral {AVISOS_RUFF}). Si has reducido deuda, baja el "
+        "umbral; nunca lo subas.\n" + salida
+    )
+
+
+def test_el_dominio_pasa_mypy_sin_errores():
+    """COD-007: la rigurosidad declarada para `domain` tiene que aplicarse de verdad.
+
+    Hasta v5.61.0 convivían `mypy.ini` y `[tool.mypy]` en `pyproject.toml`. Ganaba
+    el primero, cuyas secciones por módulo apuntaban a rutas inexistentes, así que
+    las reglas estrictas del segundo nunca llegaron a aplicarse.
+    """
+    # mypy resuelve los módulos desde `src/`, que es la raíz de paquetes.
+    salida, ok = _ejecutar(["mypy", "domain", "--no-error-summary"], cwd=ROOT / "src")
+    if "No module named" in salida:
+        pytest.skip("mypy no está instalado en este entorno")
+
+    errores = [línea for línea in salida.splitlines() if ": error:" in línea]
+    assert not errores, "mypy encuentra errores en domain:\n" + "\n".join(errores)
+
+
+def test_una_sola_configuracion_de_mypy():
+    """Dos ficheros de configuración significan que uno de los dos no se aplica."""
+    assert not (ROOT / "mypy.ini").exists(), (
+        "mypy.ini vuelve a existir: gana sobre pyproject.toml y deja sus reglas sin efecto"
+    )

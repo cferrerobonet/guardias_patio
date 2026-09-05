@@ -5,12 +5,6 @@ Permite calcular la distribución teórica de guardias por profesor
 y generar el calendario de guardias.
 """
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
-from application.use_cases.asignacion_guardias import (
-    ObtenerEstadisticasUseCase,
-)
-from core.exceptions import BusinessLogicError
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QGridLayout,
@@ -20,8 +14,13 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from application.use_cases.asignacion_guardias import (
+    ObtenerEstadisticasUseCase,
+)
+from core.exceptions import BusinessLogicError
 from presentation.forms.asignacion_widgets import CalculoPanel, GeneracionPanel
 from presentation.forms.base_form import BaseForm
+from presentation.theme.tokens import Spacing
 
 
 class AsignacionCalculoForm(BaseForm):

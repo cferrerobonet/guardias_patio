@@ -7,17 +7,16 @@ Invalida cache de profesores tras crear.
 
 from typing import Optional, Union
 
+from sqlalchemy.orm import Session
+
+from application.dtos import CrearProfesorDTO, ProfesorDTO
 from core.exceptions import ValidationError
 from core.logging import get_logger
-from core.observability import with_metrics
-from core.observability import business_metrics
+from core.observability import business_metrics, with_metrics
 from domain.entities import ProfesorEntity
 from domain.repositories import IProfesorRepository
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
-from sqlalchemy.orm import Session
 from utils.repository_cache import invalidate_profesores_cache
-
-from application.dtos import CrearProfesorDTO, ProfesorDTO
 
 logger = get_logger(__name__)
 

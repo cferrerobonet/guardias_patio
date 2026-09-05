@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
 from sync.sync_manager import UserAuth
 from utils.ui_helpers import get_corporate_icon
 

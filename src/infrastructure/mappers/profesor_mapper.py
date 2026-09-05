@@ -11,7 +11,6 @@ from typing import Optional
 from core.logging import get_logger
 from domain.entities import ProfesorEntity
 from domain.value_objects import Email, HorasContrato, Turno, ZonaPreferida
-
 from infrastructure.database.models import Profesor
 
 logger = get_logger(__name__)

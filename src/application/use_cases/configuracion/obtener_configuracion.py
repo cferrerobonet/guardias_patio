@@ -5,14 +5,14 @@ Obtiene la configuración actual del curso escolar.
 Con caching para optimizar lecturas frecuentes.
 """
 
+from sqlalchemy.orm import Session
+
+from application.dtos.configuracion_dto import ConfiguracionDTO
 from core.exceptions import NotFoundError
 from core.logging import get_logger
 from core.observability import with_metrics
 from infrastructure.database.models import Configuracion
-from sqlalchemy.orm import Session
 from utils.repository_cache import cache_configuracion
-
-from application.dtos.configuracion_dto import ConfiguracionDTO
 
 logger = get_logger(__name__)
 

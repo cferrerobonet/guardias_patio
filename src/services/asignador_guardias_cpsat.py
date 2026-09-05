@@ -36,12 +36,6 @@ from infrastructure.database.models import (
     Guardia,
     Profesor,
 )
-from services.distribucion_cuotas_service import DistribucionCuotasService
-from utils import get_logger
-
-logger = get_logger(__name__)
-
-
 from services._asignador_cpsat_helpers import (
     ProgresoSolver,
     SolverCallback,
@@ -50,6 +44,10 @@ from services._asignador_cpsat_helpers import (
     resolver_con_progreso,
 )
 from services._asignador_v4_helpers import calcular_ventanas_bloque
+from services.distribucion_cuotas_service import DistribucionCuotasService
+from utils import get_logger
+
+logger = get_logger(__name__)
 
 # =============================================================================
 # FUNCIÓN PRINCIPAL: GENERADOR CP-SAT

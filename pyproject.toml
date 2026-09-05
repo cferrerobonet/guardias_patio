@@ -1,6 +1,6 @@
 [project]
 name = "guardias-de-patio"
-version = "5.60.0"
+version = "5.61.0"
 description = "Sistema de gestión de guardias de patio para centros educativos"
 requires-python = ">=3.11"
 dependencies = [
@@ -49,9 +49,17 @@ guardias-api = "src.api.main:app"
 
 [tool.ruff]
 line-length = 100
+exclude = [".venv", "alembic/versions"]
+
+[tool.ruff.lint]
+# `select`/`ignore` en la raíz quedaron obsoletos: ruff avisaba en cada ejecución.
 select = ["E", "F", "W", "I"]
 ignore = []
-exclude = [".venv", "alembic/versions"]
+
+[tool.ruff.lint.per-file-ignores]
+# main.py inserta la raíz del proyecto en sys.path antes de importar nada suyo:
+# esos imports no pueden ir arriba del todo.
+"src/main.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"

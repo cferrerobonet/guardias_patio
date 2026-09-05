@@ -14,8 +14,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
 from dotenv import load_dotenv
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -27,6 +25,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
+from presentation.theme.tokens import Spacing
 from utils import get_logger
 from utils.icons import icon_for_button
 

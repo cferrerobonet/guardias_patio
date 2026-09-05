@@ -5,6 +5,7 @@ Define operaciones para gestionar cursos escolares.
 """
 
 from abc import abstractmethod
+from typing import Optional
 
 from domain.repositories.base_repository import IBaseRepository
 
@@ -25,7 +26,7 @@ class ICursoEscolarRepository(IBaseRepository):
         pass
 
     @abstractmethod
-    def find_by_year(self, anio_inicio: int):
+    def find_by_year(self, anio_inicio: int) -> Optional[object]:
         """
         Busca curso por año de inicio.
 

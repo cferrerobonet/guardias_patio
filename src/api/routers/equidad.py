@@ -7,13 +7,13 @@ Endpoints para análisis de equidad de guardias.
 from dataclasses import asdict
 from typing import Any, Dict, List
 
-from application.dtos.domain_services_dtos import AnalisisEquidadRequest
-from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
+from application.dtos.domain_services_dtos import AnalisisEquidadRequest
+from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
 
 router = APIRouter(prefix="/equidad", tags=["equidad"])
 

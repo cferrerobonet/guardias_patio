@@ -27,6 +27,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from api.auth import create_token_response, get_current_user
@@ -38,10 +39,9 @@ from api.routers import (
     profesores_router,
     zonas_router,
 )
+from config.settings import get_settings
 from core.logging import get_logger
 from core.observability.health import get_health_checker
-from config.settings import get_settings
-from starlette.exceptions import HTTPException as StarletteHTTPException
 
 logger = get_logger(__name__)
 _version = get_settings().app_version
@@ -240,7 +240,7 @@ def health_check():
             status_code=http_code,
             content={"status": state, "version": _version, "components": components},
         )
-    except (ValueError, TypeError, OSError) as e:
+    except (ValueError, TypeError, OSError):
         return {"status": "healthy", "version": _version}
 
 

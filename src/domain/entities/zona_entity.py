@@ -4,7 +4,7 @@ Domain Entity: Zona
 Representa una zona de recreo en el dominio de negocio.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 

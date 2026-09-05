@@ -136,14 +136,14 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 | ID | Sev. | Conf. | Título | Estado | Ficha |
 | --- | --- | --- | --- | --- | --- |
-| COD-001 | P2 | alta | Ruff 355 avisos; configuración obsoleta | NUEVO | [[07_FUNCIONALIDAD_CALIDAD_ESCALABILIDAD]] |
-| COD-002 | P2 | alta | Captura comodín `(ValueError, TypeError, OSError)` y 67 `except Exception` | NUEVO | 07 |
-| COD-003 | P2 | alta | Presentación con ORM y queries; servicios con Session | NUEVO | 07 |
-| COD-004 | P3 | alta | Código muerto (forms, estilos, loggers, specs) | NUEVO · ampliado v5.54.0: `services/orquestador_asignacion_guardias.py` importa `asignador_iterativo` y `asignador_ilp`, **que ya no existen**; es código no importable que sólo se sostiene en tests gracias a módulos falsos inyectados en `sys.modules`. Al borrarlo, borrar también su test | 07 |
-| COD-005 | P3 | alta | Logging con niveles erróneos y 646 JSON sin rotación | NUEVO | 07 |
-| COD-006 | P3 | alta | 25 `print`, 7 TODO | NUEVO | 07 |
-| COD-007 | P2 | alta | mypy estricto sólo en domain | NUEVO | 07 |
-| COD-008 | P3 | alta | Seis módulos > 790 líneas | NUEVO | 07 |
+| COD-001 | P2 | alta | ~~Ruff 355 avisos; configuración obsoleta~~ | **RESUELTO PARCIAL v5.61.0** · `select`/`ignore` movidos a `[tool.ruff.lint]` (ruff avisaba en cada ejecución); **342 → 104 avisos**, todos `E501` en cadenas de texto, sobre todo el HTML de los correos. `E402` de `main.py` documentado como excepción en la configuración, no con `noqa` sueltos · ratchet `test_ratchet_de_avisos_de_ruff` | [[07_FUNCIONALIDAD_CALIDAD_ESCALABILIDAD]] |
+| COD-002 | P2 | alta | Captura comodín `(ValueError, TypeError, OSError)` y `except Exception` | NUEVO · recuento actual: 111 capturas comodín y 73 `except Exception`. **No es un cambio mecánico**: en el lote 2 se vio que esa tupla se tragaba `SSHException` de paramiko y también `InterruptedError`. Cada una necesita decidir qué debe capturar. Va al lote 14 bis | 07 |
+| COD-003 | P2 | alta | Presentación con ORM y queries; servicios con Session | NUEVO · pendiente, es cambio arquitectónico. Lote 14 bis | 07 |
+| COD-004 | P3 | alta | ~~Código muerto (forms, estilos, loggers, specs)~~ | **RESUELTO VERIFICADO v5.61.0** · **2.130 líneas fuera**: `asignacion_guardias_form.py`, `home_form.py`, `dashboard_form.py`, `ui_styles.py` (envoltorio obsoleto), `orquestador_asignacion_guardias.py` (importaba dos módulos inexistentes) y su test, que fabricaba módulos falsos en `sys.modules`. Las diez vistas siguen instanciándose · `test_formularios_muertos_no_estan_registrados` | 07 |
+| COD-005 | P3 | alta | ~~646 JSON sin rotación~~; niveles de logging | **RESUELTO PARCIAL v5.61.0** · cada generación dejaba un `comparacion_cuotas_*.json` con fecha y nadie los borraba; ahora se conservan los 20 últimos. El registro de la aplicación **ya tenía** rotación (10 MB × 5). Los niveles erróneos siguen sin revisar | 07 |
+| COD-006 | P3 | alta | ~~25 `print`, 7 TODO~~ | **DESCARTADO v5.61.0 · falso positivo del recuento original.** De los 25 `print`, 9 están en ejemplos de docstring y 16 dentro de `print_cache_stats()`, cuya función es precisamente imprimir por consola. Y los 7 «TODO» son la palabra **TODOS** en español («todos los profesores»). Verificado recorriendo el AST: no hay nada que corregir | 07 |
+| COD-007 | P2 | alta | ~~mypy estricto sólo en domain~~ | **RESUELTO PARCIAL v5.61.0** · el hallazgo se quedaba corto: convivían `mypy.ini` y `[tool.mypy]` en `pyproject.toml`, ganaba el primero y sus secciones por módulo apuntaban a rutas inexistentes (`src.domain.*`), **así que la rigurosidad declarada no se aplicaba a nada**. Unificado en `pyproject.toml`; al aplicarse de verdad afloraron 40 errores en `domain`, ahora **0**. Entre ellos, dos comparadores anotados como si sólo aceptaran su propio tipo, que hacían inalcanzable la rama que compara con números. Extenderlo a `application` (535 errores) queda para el 14 bis · `test_el_dominio_pasa_mypy_sin_errores`, `test_una_sola_configuracion_de_mypy` | 07 |
+| COD-008 | P3 | alta | Siete módulos > 778 líneas | NUEVO · el mayor es `sync/sync_manager.py` (1.151). Partirlos es refactor con riesgo de regresión y conviene hacerlo módulo a módulo. Lote 14 bis | 07 |
 
 ## ESC · Escalabilidad y arquitectura
 

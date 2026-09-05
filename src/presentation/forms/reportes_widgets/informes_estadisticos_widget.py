@@ -11,8 +11,6 @@ Genera reportes detallados con estadísticas y gráficos sobre:
 
 from datetime import datetime
 
-from presentation.theme import legacy_styles as styles
-from presentation.theme.tokens import Spacing
 from PyQt6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -24,9 +22,10 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-from utils.icons import icon_for_button
 
+from presentation.theme.tokens import Spacing
 from presentation.themes.ccleaner_theme import TEXT_SECONDARY
+from utils.icons import icon_for_button
 
 
 class InformesEstadisticosWidget(QGroupBox):

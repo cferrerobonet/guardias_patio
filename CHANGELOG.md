@@ -5,6 +5,28 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.61.0] - 2026-09-05
+
+### 🎯 Resumen
+Limpieza a fondo del código: fuera 2.130 líneas que no usaba nadie y las comprobaciones automáticas de calidad pasan a funcionar de verdad.
+
+### Fixed
+- **Las comprobaciones de tipos no se estaban aplicando.** Había dos ficheros de configuración de mypy y ganaba el que tenía las rutas mal escritas, así que las reglas estrictas del otro nunca llegaron a ejecutarse. Al unificarlos afloraron 40 errores en la capa de dominio; ahora son 0. Entre ellos, dos comparadores declarados como si solo aceptaran su propio tipo, lo que dejaba muerta la parte del código que compara con números.
+- **Los ficheros de comparación de cuotas se acumulaban sin límite.** Cada generación dejaba uno con la fecha en el nombre y nadie los borraba. Ahora se conservan los veinte últimos. (El registro de la aplicación ya rotaba correctamente.)
+
+### 🧹 Housekeeping
+- **2.130 líneas de código muerto eliminadas:** tres formularios que ninguna pantalla registraba, un módulo de estilos marcado como obsoleto y el orquestador de asignación, que importaba dos módulos inexistentes y solo se sostenía porque su propio test fabricaba módulos falsos.
+- **Avisos de estilo: de 342 a 104**, todos de la misma clase —líneas largas dentro de textos, sobre todo el HTML de los correos—. La configuración usaba una forma obsoleta que hacía saltar un aviso en cada ejecución.
+- Dos comprobaciones nuevas impiden que la deuda vuelva a crecer y que reaparezca la doble configuración.
+
+### Descartado
+- **«25 print y 7 TODO» era un falso positivo.** De los 25 `print`, 9 están en ejemplos de documentación y 16 dentro de una función cuyo cometido es imprimir por consola. Y los 7 «TODO» resultaron ser la palabra **TODOS** en español. Comprobado analizando el código, no buscando texto.
+
+### ⚠️ Queda pendiente
+- Los 184 manejadores de errores demasiado amplios, sacar el acceso a la base de datos de la capa visual y partir los siete módulos de más de 778 líneas. Los tres piden revisión caso por caso, así que van a un lote propio.
+
+---
+
 ## [5.60.0] - 2026-09-05
 
 ### 🎯 Resumen

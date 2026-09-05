@@ -7,10 +7,11 @@ Funciones helper para aplicar marca corporativa de forma discreta.
 from pathlib import Path
 from typing import Optional
 
-from core.logging import get_logger
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap, QPixmapCache
 from PyQt6.QtWidgets import QApplication, QMessageBox, QWidget
+
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 

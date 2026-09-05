@@ -6,20 +6,19 @@ Gestiona el lifecycle de sesiones, repositorios y servicios.
 
 Ejemplo de uso:
     from infrastructure.container import Container
-    
+
     # Inicializar el contenedor con una SessionFactory
     container = Container()
     container.config.from_dict({"db_session_factory": SessionFactory})
-    
+
     # Obtener un repositorio
     profesor_repo = container.profesor_repository()
-    
+
     # Obtener la factoría de repositorios
     factory = container.repository_factory()
 """
 
 from dependency_injector import containers, providers
-from sqlalchemy.orm import Session
 
 from infrastructure.repositories import (
     SQLAlchemyAusenciaRepository,
@@ -49,7 +48,7 @@ class Container(containers.DeclarativeContainer):
     db_session = providers.Callable(config.db_session_factory)
     """
     Proveedor de sesiones de base de datos.
-    
+
     Forma de uso:
         container.config.from_dict({"db_session_factory": SessionFactory})
         session = container.db_session()

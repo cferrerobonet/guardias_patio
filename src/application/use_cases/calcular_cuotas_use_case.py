@@ -8,8 +8,6 @@ Este Use Case NO contiene lógica de negocio, solo coordina.
 import logging
 from typing import List
 
-from services.distribucion_cuotas_service import DistribucionCuotasService
-from infrastructure.database.models import Configuracion, Profesor
 from sqlalchemy.orm import Session
 
 from application.dtos.domain_services_dtos import (
@@ -17,6 +15,8 @@ from application.dtos.domain_services_dtos import (
     CalcularCuotasResponse,
     CuotaProfesorDTO,
 )
+from infrastructure.database.models import Configuracion, Profesor
+from services.distribucion_cuotas_service import DistribucionCuotasService
 
 logger = logging.getLogger(__name__)
 

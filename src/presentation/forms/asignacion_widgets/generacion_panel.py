@@ -8,8 +8,6 @@ Combina:
 
 from contextlib import contextmanager
 
-from sqlalchemy.exc import SQLAlchemyError
-
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -19,8 +17,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QTextEdit,
     QVBoxLayout,
-    QWidget,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 from application.dtos.domain_services_dtos import AnalisisEquidadRequest
 from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase

@@ -7,15 +7,15 @@ Endpoints para cálculo de cuotas de guardias.
 from dataclasses import asdict
 from typing import Dict, List, Union
 
-from application.use_cases.calcular_cuotas_use_case import (
-    CalcularCuotasRequest,
-    CalcularCuotasUseCase,
-)
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
+from application.use_cases.calcular_cuotas_use_case import (
+    CalcularCuotasRequest,
+    CalcularCuotasUseCase,
+)
 
 router = APIRouter(prefix="/cuotas", tags=["cuotas"])
 

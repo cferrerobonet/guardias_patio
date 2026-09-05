@@ -5,14 +5,14 @@ Crea o actualiza la configuración del curso escolar.
 Con invalidación de cache automática.
 """
 
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from application.dtos.configuracion_dto import ActualizarConfiguracionDTO, ConfiguracionDTO
 from core.logging import get_logger
 from core.observability import with_metrics
 from infrastructure.database.models import Configuracion
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
 from utils.repository_cache import invalidate_configuracion_cache
-
-from application.dtos.configuracion_dto import ActualizarConfiguracionDTO, ConfiguracionDTO
 
 logger = get_logger(__name__)
 

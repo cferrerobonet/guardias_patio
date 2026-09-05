@@ -986,7 +986,7 @@ class UserAuth:
         # Usar os.open() para crear/escribir con permisos seguros desde el inicio
         flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
         mode = 0o600  # Solo lectura/escritura para propietario
-        
+
         try:
             fd = os.open(self.users_file, flags, mode)
             with os.fdopen(fd, "w") as f:
@@ -1117,12 +1117,12 @@ class UserAuth:
         else:
             attempts = user.get("failed_login_attempts", 0) + 1
             user["failed_login_attempts"] = attempts
-            
+
             # Delay progresivo: 1s, 2s, 4s, 8s, 16s
             progresive_delays = [1, 2, 4, 8, 16]
             delay = progresive_delays[min(attempts - 1, len(progresive_delays) - 1)]
             time.sleep(min(delay, 2))  # Máximo 2 segundos para GUI responsiva
-            
+
             if attempts >= 5:
                 user["locked_until"] = (datetime.now() + timedelta(minutes=15)).isoformat()
                 logger.warning(f"Usuario {username} bloqueado por 15 minutos tras {attempts} intentos fallidos")

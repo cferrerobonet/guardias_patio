@@ -6,8 +6,7 @@ Permite eliminar todas las guardias del sistema.
 """
 
 from core.logging import get_logger
-from core.observability import with_metrics
-from core.observability import business_metrics
+from core.observability import business_metrics, with_metrics
 from domain.repositories import IGuardiaRepository
 
 logger = get_logger(__name__)

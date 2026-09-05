@@ -38,7 +38,7 @@ import logging.handlers
 import sys
 import time
 from contextlib import contextmanager
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 from core.paths import get_logs_directory
 
@@ -59,15 +59,18 @@ except ImportError:
 class LogConfig:
     """Configuración de logging."""
 
-    _instance = None
+    _instance: Optional["LogConfig"] = None
+    #: Declarado en la clase: si sólo se asigna dentro de __new__, mypy no puede
+    #: deducir su tipo al leerlo en __init__.
+    _initialized: bool = False
 
-    def __new__(cls):
+    def __new__(cls) -> "LogConfig":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if self._initialized:
             return
 
@@ -215,7 +218,7 @@ class StructlogCompatibleLogger:
     def __init__(self, logger: logging.Logger):
         self._logger = logger
 
-    def _format_message(self, msg: str, **kwargs) -> str:
+    def _format_message(self, msg: str, **kwargs: Any) -> str:
         """Formatea el mensaje incluyendo los kwargs."""
         if not kwargs:
             return msg
@@ -223,25 +226,25 @@ class StructlogCompatibleLogger:
         extras = " | ".join(f"{k}={v}" for k, v in kwargs.items())
         return f"{msg} | {extras}"
 
-    def debug(self, msg: str, *args, **kwargs) -> None:
+    def debug(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self._logger.debug(self._format_message(msg, **kwargs), *args)
 
-    def info(self, msg: str, *args, **kwargs) -> None:
+    def info(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self._logger.info(self._format_message(msg, **kwargs), *args)
 
-    def warning(self, msg: str, *args, **kwargs) -> None:
+    def warning(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self._logger.warning(self._format_message(msg, **kwargs), *args)
 
-    def error(self, msg: str, *args, **kwargs) -> None:
+    def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self._logger.error(self._format_message(msg, **kwargs), *args)
 
-    def critical(self, msg: str, *args, **kwargs) -> None:
+    def critical(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self._logger.critical(self._format_message(msg, **kwargs), *args)
 
-    def exception(self, msg: str, *args, **kwargs) -> None:
+    def exception(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self._logger.exception(self._format_message(msg, **kwargs), *args)
 
-    def bind(self, **kwargs):
+    def bind(self, **kwargs: Any) -> "StructlogCompatibleLogger":
         """Compatibilidad con structlog bind (no-op para logger estándar)."""
         return self
 
@@ -259,7 +262,7 @@ class StructlogCompatibleLogger:
 # ============================================================================
 
 
-def get_logger(name: str):
+def get_logger(name: str) -> Any:
     """
     Obtiene un logger para el módulo especificado.
 
@@ -307,7 +310,7 @@ def log_context(**context):
 
 
 @contextmanager
-def log_execution_time(logger, operation: str):
+def log_execution_time(logger: Any, operation: str) -> Any:
     """
     Context manager para medir y loggear tiempo de ejecución.
 
@@ -341,7 +344,7 @@ def log_function_call(
     level: str = "info",
     log_args: bool = True,
     log_result: bool = False,
-):
+) -> Callable[..., Any]:
     """
     Decorador para loggear llamadas a funciones automáticamente.
 
@@ -366,9 +369,9 @@ def log_function_call(
         log_method = getattr(func_logger, level)
 
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Preparar contexto
-            context = {
+            context: Dict[str, Any] = {
                 "function": func.__name__,
                 "module": func.__module__,
             }
@@ -422,7 +425,7 @@ def log_function_call(
     return decorator
 
 
-def log_exceptions(logger: Optional[Any] = None, reraise: bool = True):
+def log_exceptions(logger: Optional[Any] = None, reraise: bool = True) -> Callable[..., Any]:
     """
     Decorador para loggear excepciones automáticamente.
 
@@ -440,7 +443,7 @@ def log_exceptions(logger: Optional[Any] = None, reraise: bool = True):
         func_logger = logger or get_logger(func.__module__)
 
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
             except Exception as e:
@@ -483,7 +486,7 @@ def log_system_info(logger):
     )
 
 
-def log_startup(logger, app_name: str, app_version: str):
+def log_startup(logger: Any, app_name: str, app_version: str) -> None:
     """
     Loggea inicio de la aplicación.
 

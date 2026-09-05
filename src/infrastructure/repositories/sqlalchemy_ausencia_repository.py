@@ -5,11 +5,12 @@ SQLAlchemy Ausencia Repository Implementation
 from datetime import date
 from typing import Optional
 
+from sqlalchemy.orm import Session
+
 from domain.entities.ausencia_entity import AusenciaEntity
 from domain.repositories.ausencia_repository import IAusenciaRepository
 from infrastructure.database.models import Ausencia
 from infrastructure.mappers.ausencia_mapper import AusenciaMapper
-from sqlalchemy.orm import Session
 
 
 class SQLAlchemyAusenciaRepository(IAusenciaRepository):

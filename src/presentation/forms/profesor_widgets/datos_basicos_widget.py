@@ -9,10 +9,10 @@ Este widget encapsula los campos fundamentales del profesor:
 
 from typing import Tuple
 
-from presentation.theme import legacy_styles as styles
 from PyQt6.QtCore import QRegularExpression, pyqtSignal
 from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtWidgets import QCheckBox, QGroupBox, QLabel, QLineEdit, QVBoxLayout
+
 from utils.validators import validar_email, validar_nombre_completo
 
 

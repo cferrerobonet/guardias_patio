@@ -9,17 +9,12 @@ Características:
 - Diseño optimizado para aprovechamiento de espacio
 """
 
-import json
 from calendar import monthrange
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from typing import Dict, List, Tuple
 
-from core.logging import get_logger
-from infrastructure.database.models import Ausencia, Configuracion, Guardia, Zona
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
-from presentation.theme.tokens import FontSize
 from PyQt6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -33,18 +28,20 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from services.calculador_guardias import listar_dias_lectivos
-from utils.icons import icon_for_button
 
+from core.logging import get_logger
 from presentation.dialogs.dia_detalle_dialog import DiaDetalleDialog
 from presentation.forms.base_form import BaseForm
+from presentation.theme.tokens import FontSize
+from presentation.widgets._celda_dia import CeldaDia  # noqa: F401 (re-exportado)
 from presentation.widgets.vista_calendario_helpers import (
     cargar_datos_periodo,
     estilo_dia_miniatura,
     obtener_zonas_esperadas_por_recreo,
-    parse_recreos_config,
 )
-from presentation.widgets._celda_dia import CeldaDia  # noqa: F401 (re-exportado)
+from services.calculador_guardias import listar_dias_lectivos
+from utils.icons import icon_for_button
+
 
 class VistaCalendario(BaseForm):
     """Vista de calendario mejorada con múltiples vistas y controles."""

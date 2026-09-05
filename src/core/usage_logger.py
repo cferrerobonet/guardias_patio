@@ -9,7 +9,6 @@ Uso:
 """
 
 import logging
-from datetime import datetime, timezone
 from typing import Any
 
 from core.paths import get_logs_directory

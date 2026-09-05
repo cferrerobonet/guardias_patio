@@ -23,13 +23,14 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Dict, List, Optional
 
+from sqlalchemy.orm import joinedload
+
 from infrastructure.database.models import Configuracion, Profesor, Zona
+from infrastructure.repositories.repository_factory import RepositoryFactory
 from services.calculador_guardias import (
     _parse_recreos_config,
     listar_dias_lectivos,
 )
-from infrastructure.repositories.repository_factory import RepositoryFactory
-from sqlalchemy.orm import joinedload
 from utils import get_logger
 
 logger = get_logger(__name__)

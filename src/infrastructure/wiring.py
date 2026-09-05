@@ -3,7 +3,7 @@ Wiring automático del contenedor DI (ARQ-04 Phase 2)
 
 Este módulo configura e inyecta dependencias mediante dependency-injector.
 Proporciona funciones para:
-1. Configurar el container con una SessionFactory  
+1. Configurar el container con una SessionFactory
 2. Obtener servicios/repositorios previamente configurados
 3. Permitir acceso global al container sin imports circulares
 
@@ -13,10 +13,10 @@ Uso:
 
     # Después de login y auth
     engine, SessionFactory = initialize_user_database(username)
-    
+
     # Configurar container
     setup_container(SessionFactory)
-    
+
     # Acceder a servicios
     container = get_container()
     profesor_repo = container.profesor_repository()
@@ -42,27 +42,27 @@ _container_instance = None
 def setup_container(session_factory: Callable) -> None:
     """
     Configura el contenedor DI con una SessionFactory específica.
-    
+
     Debe llamarse DESPUÉS de initialize_user_database() en main.py.
-    
+
     Args:
         session_factory: Callable que devuelve una nueva sesión de SQLAlchemy
     """
     global _container_instance
-    
+
     try:
         from infrastructure.container import Container
-        
+
         # Crear instancia del container
         _container_instance = Container()
-        
+
         # Configurar el provider de sesión
         _container_instance.config.from_dict({
             "db_session_factory": session_factory
         })
-        
+
         logger.info("✅ Contenedor DI configurado exitosamente")
-        
+
     except ImportError as e:
         logger.error(f"⚠ dependency-injector no disponible. Wiring deshabilitado: {e}")
         _container_instance = None
@@ -71,18 +71,18 @@ def setup_container(session_factory: Callable) -> None:
 def get_container() -> Optional["Container"]:
     """
     Devuelve la instancia global del contenedor.
-    
+
     Returns:
         Container configurado, o None si no ha sido inicializado
     """
     global _container_instance
-    
+
     if _container_instance is None:
         logger.warning(
             "⚠ Contenedor no inicializado. Llama a setup_container() después de login."
         )
         return None
-    
+
     return _container_instance
 
 
