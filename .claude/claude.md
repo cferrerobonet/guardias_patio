@@ -23,7 +23,7 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 | Tema y tokens | `presentation/theme/tokens.py`, `theme/light.qss`, `themes/ccleaner_theme.py` (tres capas + inline) |
 | Modelos ORM | `infrastructure/database/models.py` |
 | Versión canónica | `src/config/settings.py` → `app_version` (pyproject/README están desincronizados) |
-| Build | macOS: `Makefile` (`make dmg`) + `scripts/build/build_dmg.sh` · Windows: `scripts/build_windows.ps1` (canónico). Ignorar `scripts/build/build_windows.*`, `create_dmg.sh`, `build_simple.sh` |
+| Build | Sin PC Windows: publicar etiqueta `vX.Y.Z` → `.github/workflows/compilar.yml` compila las dos y las adjunta al release. En local: macOS `make dmg`; Windows `scripts/build_windows.ps1` (`-Diagnostico` para consola) |
 | Código muerto (no tocar ni testear) | `forms/asignacion_guardias_form.py`, `forms/dashboard_form.py`, `forms/home_form.py`, `ui_styles.py` |
 | Auditoría vigente | `auditoria/00_INDICE.md` → `30_REGISTRO_HALLAZGOS.md` (estado) · `17_PLAN_DE_ATAQUE.md` (backlog) · `06_CRASH_WINDOWS_GENERACION.md` |
 
@@ -46,7 +46,7 @@ self.session = session_or_factory.session if isinstance(session_or_factory, Repo
 En funciones standalone, sin anotación `: Session` en el parámetro.
 
 ## Versionado, commits, changelog
-- SemVer en `app_version`: fix → patch · feat → minor · breaking → major. Bump manual.
+- SemVer en `app_version` **y en `pyproject.toml`** (un test vigila que coincidan): fix → patch · feat → minor · breaking → major.
 - Conventional Commits en español, minúscula tras los dos puntos: `tipo(scope): descripción`. Tipos: feat, fix, refactor, style, perf, test, chore, docs. Scopes: ui, api, domain, sync, db, algo, config, build.
 - `CHANGELOG.md` (Keep a Changelog, español): secciones `🎯 Resumen`, `✨ Added`, `Changed`, `Fixed`, `🧹 Housekeeping`.
 

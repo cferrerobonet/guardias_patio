@@ -5,6 +5,27 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.50.0] - 2026-09-05
+
+### 🎯 Resumen
+Ya se puede compilar para Windows sin tener un PC con Windows: los ordenadores de GitHub construyen las dos plataformas al publicar una etiqueta.
+
+### ✨ Added
+- `.github/workflows/compilar.yml`: ejecuta la suite en Linux y, si pasa, compila el instalador de Windows y el DMG de macOS. Al publicar una etiqueta `vX.Y.Z` adjunta ambos al release; también se puede lanzar a mano desde la pestaña Actions para descargarlos sin publicar nada. El repositorio es público, así que no consume minutos de pago.
+- `scripts/build/build_dmg.sh` acepta `SKIP_RELEASE=1` para compilar sin publicar, que es lo que necesita el flujo automático para adjuntar los dos instaladores a la vez.
+
+### Fixed
+- **Los ficheros `.spec` dejan de estar ignorados por git.** Son entrada del build, no un artefacto: sin ellos no se puede compilar desde un clon limpio, que es justo lo que hace un servidor de integración continua. Y `make clean` ya no los borra.
+- **El actualizador automático elige el instalador de su sistema.** Buscaba siempre un `.dmg`, así que en Windows el aviso de nueva versión no llevaba a ninguna descarga y esos equipos nunca se actualizaban.
+- `pyproject.toml` declaraba la versión 5.9.8 mientras la aplicación iba por la 5.49. Sincronizados, con un test que vigila que no vuelvan a separarse.
+
+### 🧹 Housekeeping
+- Eliminados cuatro scripts de compilación obsoletos: `scripts/build/build_windows.ps1`, `build_windows.bat`, `create_dmg.sh` y `build_simple.sh`. Tenían versiones fijas y referenciaban un `.spec` inexistente. Queda `scripts/build_windows.ps1` como único script de Windows.
+- `make windows` explica el flujo real en lugar de apuntar a documentación que no existe.
+- Afinada la comprobación de scripts de build: antes inspeccionaba todo el texto y confundía mensajes por pantalla con invocaciones reales.
+
+---
+
 ## [5.49.0] - 2026-09-05
 
 ### 🎯 Resumen

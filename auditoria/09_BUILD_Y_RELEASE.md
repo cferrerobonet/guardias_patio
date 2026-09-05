@@ -24,7 +24,7 @@ tipo: referencia
 | `scripts/build/create_dmg.sh`, `build_simple.sh` | macOS | Obsoletos | Versión fija 5.31.11; sin spec |
 | `installer_windows.iss` | Windows | Correcto | `PrivilegesRequired=admin`, sin `CloseApplications` |
 | `Output/GuardiasDePatio-5.42.1-Windows-Setup.exe` | Windows | Artefacto local | Generado 2026-05-19 |
-| `.github/` | CI | **No existe** | – |
+| `.github/workflows/compilar.yml` | CI | ✅ **v5.50.0** | Pruebas en Linux, instalador de Windows, DMG de macOS y publicación de ambos al etiquetar |
 
 ## 2. Hallazgos (BLD)
 

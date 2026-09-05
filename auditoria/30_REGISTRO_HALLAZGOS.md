@@ -83,11 +83,11 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 | ID | Sev. | Conf. | Título | Estado | Ficha |
 | --- | --- | --- | --- | --- | --- |
-| BLD-001 | P1 | alta | `.spec` ignorados por git y borrados por `make clean` | NUEVO | [[09_BUILD_Y_RELEASE]] |
-| BLD-002 | P1 | alta | Tres scripts Windows divergentes; Makefile/README apuntan a los obsoletos | NUEVO | 09 |
-| BLD-003 | P2 | alta | Cuatro versiones distintas en el repo | NUEVO | 09 |
-| BLD-004 | P2 | alta | Sin CI, sin firma/notarización | NUEVO | 09 |
-| BLD-005 | P2 | alta | Actualizador sólo `.dmg`; Windows sin actualizaciones | NUEVO | 09 |
+| BLD-001 | P1 | alta | `.spec` ignorados por git y borrados por `make clean` | **RESUELTO VERIFICADO v5.50.0** · los `.spec` se versionan y `make clean` ya no los borra | [[09_BUILD_Y_RELEASE]] |
+| BLD-002 | P1 | alta | Tres scripts Windows divergentes; Makefile/README apuntan a los obsoletos | **RESUELTO VERIFICADO v5.50.0** · eliminados los cuatro scripts obsoletos; queda `scripts/build_windows.ps1` como único de Windows | 09 |
+| BLD-003 | P2 | alta | Cuatro versiones distintas en el repo | **RESUELTO VERIFICADO v5.50.0** · `pyproject.toml` sincronizado y test que lo vigila | 09 |
+| BLD-004 | P2 | alta | Sin CI, sin firma/notarización | **RESUELTO PARCIAL v5.50.0** · flujo `.github/workflows/compilar.yml` con pruebas y compilación de Windows y macOS. Falta la firma y notarización | 09 |
+| BLD-005 | P2 | alta | Actualizador sólo `.dmg`; Windows sin actualizaciones | **RESUELTO VERIFICADO v5.50.0** · el actualizador elige el instalador de su sistema, así que Windows ya recibe actualizaciones | 09 |
 | BLD-006 | P3 | alta | Instalador con admin y sin cierre de instancias | NUEVO | 09 |
 | BLD-007 | P2 | alta | ~~Sin build de diagnóstico con consola~~ | **RESUELTO VERIFICADO v5.44.0** · `scripts/build_windows.ps1 -Diagnostico` | 09 |
 

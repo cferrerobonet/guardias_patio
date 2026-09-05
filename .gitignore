@@ -94,7 +94,11 @@ build/
 dist/
 *.dmg
 *.exe
+# Los .spec son entrada del build, no un artefacto: sin ellos no se puede
+# compilar desde un clon limpio ni desde integración continua.
 *.spec
+!Guardias de Patio.spec
+!GuardiasDePatio.spec
 checksums*.txt
 imagenes/*.iconset
 Output/  # Directorio de salida de Inno Setup

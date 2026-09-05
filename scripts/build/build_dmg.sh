@@ -115,7 +115,9 @@ echo ""
 # Publicar GitHub Release con el DMG como asset
 echo "${BLUE}🚀 Publicando GitHub Release v${VERSION}...${NC}"
 
-if ! command -v gh &> /dev/null; then
+if [ -n "${SKIP_RELEASE:-}" ]; then
+    echo "${YELLOW}⏭  SKIP_RELEASE activo: no se publica el release (lo hará quien invocó el build)${NC}"
+elif ! command -v gh &> /dev/null; then
     echo "${YELLOW}⚠️  GitHub CLI (gh) no encontrado. Instálalo con: brew install gh${NC}"
     echo "${YELLOW}   Luego sube el DMG manualmente: $DMG_NAME${NC}"
 else

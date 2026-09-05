@@ -61,7 +61,7 @@ release:
 
 clean:
 	@echo "🧹 Limpiando archivos de build..."
-	rm -rf build dist *.spec
+	rm -rf build dist
 	rm -rf imagenes/*.iconset
 	@echo "✅ Limpieza completada"
 
@@ -90,20 +90,14 @@ run:
 	/opt/homebrew/bin/python3.11 src/main.py
 
 windows:
-	@echo "🪟 Construcción para Windows"
+	@echo "🪟 Instalador de Windows"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
-	@echo "Para crear el instalador de Windows, necesitas:"
+	@echo "Sin PC con Windows: publica una etiqueta y GitHub lo compila."
+	@echo "  git tag v<versión> && git push --tags"
+	@echo "  O a mano en la pestaña Actions → Compilar."
 	@echo ""
-	@echo "1️⃣  Un PC con Windows (o VM/Wine)"
+	@echo "Desde un PC con Windows:"
+	@echo "  powershell -ExecutionPolicy Bypass -File scripts/build_windows.ps1"
+	@echo "  Añade -Diagnostico para compilar con consola y volcado de hilos."
 	@echo ""
-	@echo "2️⃣  Ejecutar uno de estos scripts:"
-	@echo "    • build_windows.bat  (simple - solo EXE)"
-	@echo "    • build_windows.ps1  (completo - EXE + Instalador)"
-	@echo ""
-	@echo "3️⃣  Opcionalmente, instalar Inno Setup:"
-	@echo "    https://jrsoftware.org/isdl.php"
-	@echo ""
-	@echo "📚 Documentación completa: BUILD_WINDOWS.md"
-	@echo ""
-

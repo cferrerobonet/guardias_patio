@@ -30,8 +30,8 @@ def test_sin_nombres_indefinidos():
     assert r.returncode == 0, r.stdout
 
 
-@pytest.mark.xfail(strict=True, reason="BLD-003: pyproject.toml 5.9.8 vs settings 5.42.x")
 def test_version_unica():
+    """BLD-003 resuelto en v5.50.0: el bump toca settings.py y pyproject.toml."""
     settings = (ROOT / "src" / "config" / "settings.py").read_text(encoding="utf-8")
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     v_settings = re.search(r'app_version:\s*str\s*=\s*"([^"]+)"', settings).group(1)
@@ -48,17 +48,24 @@ def test_formularios_muertos_no_estan_registrados():
         assert muerto not in ventana, f"{muerto} se considera código muerto (COD-004)"
 
 
-@pytest.mark.xfail(
-    strict=True, reason="BLD-002: scripts obsoletos referencian guardias_patio_windows.spec"
-)
-def test_scripts_de_build_no_referencian_specs_inexistentes():
+def test_los_scripts_de_build_invocan_specs_que_existen():
+    """BLD-002 resuelto en v5.50.0: se eliminaron los scripts obsoletos.
+
+    Solo se miran las invocaciones reales al compilador; antes se inspeccionaba
+    todo el texto y los mensajes por pantalla daban falsos positivos.
+    """
+    invocacion = re.compile(r"""pyinstaller[^\n]*?["']?([\w .\-]+\.spec)""", re.I)
     ofensores = []
     for script in (ROOT / "scripts").rglob("*"):
-        if script.suffix.lower() in (".ps1", ".bat", ".sh"):
-            texto = script.read_text(encoding="utf-8", errors="ignore")
-            for spec in re.findall(r"[\w \-]+\.spec", texto):
-                if not (ROOT / spec.strip()).exists() and "SPEC_FILE" not in texto:
-                    ofensores.append(f"{script.name}: {spec.strip()}")
+        if script.suffix.lower() not in (".ps1", ".bat", ".sh"):
+            continue
+        texto = script.read_text(encoding="utf-8", errors="ignore")
+        for spec in invocacion.findall(texto):
+            nombre = spec.strip()
+            if "$" in nombre or "%" in nombre:
+                continue  # se resuelve en tiempo de ejecución
+            if not (ROOT / nombre).exists():
+                ofensores.append(f"{script.name}: {nombre}")
     assert not ofensores, ofensores
 
 
