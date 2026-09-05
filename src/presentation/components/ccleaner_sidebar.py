@@ -173,11 +173,6 @@ class SidebarMenu(QWidget):
         menu_layout.setContentsMargins(0, 4, 0, 4)
         menu_layout.setSpacing(0)
 
-        # ========== INICIO ==========
-        self.add_menu_item(menu_layout, "inicio", "Estado del curso", "inicio", "clipboard-text")
-
-        menu_layout.addSpacing(4)
-
         # ========== GESTIÓN ==========
         self.add_category(menu_layout, "GESTIÓN")
         self.add_menu_item(menu_layout, "profesores", "Profesores", "profesores", "account-group")

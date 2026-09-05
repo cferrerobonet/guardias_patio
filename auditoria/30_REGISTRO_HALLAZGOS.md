@@ -52,7 +52,7 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 | ID | Sev. | Conf. | Título | Estado | Ficha |
 | --- | --- | --- | --- | --- | --- |
-| UXF-001 | P1 | alta | ~~Sin secuencia guiada ni panel de estado; la app abre en Profesores~~ | **RESUELTO VERIFICADO v5.56.0** · nueva vista «Estado del curso», primera del menú y pantalla de arranque: lista los cinco prerrequisitos con su estado y lleva de un clic a la pantalla que resuelve cada uno · `test_la_vista_de_inicio_lista_lo_que_falta`, `test_la_aplicacion_abre_en_el_estado_del_curso` | [[03_UX_CASOS_DE_USO_Y_CAMINOS_DORADOS]] |
+| UXF-001 | P1 | alta | Sin secuencia guiada ni panel de estado; la app abre en Profesores | **PARCIAL v5.57.0 · el panel de estado queda DESCARTADO por decisión de producto (CarlosFB, 2026-09-05).** Se construyó en v5.56.0 y se retiró: sólo tenía algo que decir en septiembre, al montar el curso, y el resto del año era una pantalla de paso. La guía de qué falta y cómo resolverlo vive donde surge la pregunta: el aviso visible del panel de generación, alimentado por `PreflightGeneracionUseCase`, que enumera los cinco requisitos con su detalle. La app vuelve a abrir en Profesores · `test_el_aviso_de_bloqueo_enumera_todo_lo_que_falta` | [[03_UX_CASOS_DE_USO_Y_CAMINOS_DORADOS]] |
 | UXF-002 | P1 | alta | ~~Guardarraíl "cuotas antes de generar" es un flag de UI~~ | **RESUELTO VERIFICADO v5.56.0** · `PreflightGeneracionUseCase` comprueba curso activo, fechas, recreos, zonas y profesores contra los datos; la interfaz ya no puede conceder el permiso por su cuenta y el estado se reevalúa al cambiar de curso o de vista · `test_la_interfaz_no_puede_conceder_permiso_para_generar` | 03 |
 | UXF-003 | P2 | alta | Generar requiere 2 modales previos y clic de cierre | NUEVO | 03 |
 | UXF-004 | P2 | alta | Cambio de curso: confirmación + toast sin refresco | NUEVO (dup. parcial UXA-007) · desde v5.56.0 el panel de generación sí revalida sus prerrequisitos al cambiar de curso | 03 |
@@ -178,7 +178,10 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 ## FUN · Mejoras funcionales (tipo `mejora`, sin severidad)
 
-FUN-001…FUN-014 en [[07_FUNCIONALIDAD_CALIDAD_ESCALABILIDAD]] §1. Estado: `PROPUESTA` pendiente de decisión de producto.
+FUN-001…FUN-014 en [[07_FUNCIONALIDAD_CALIDAD_ESCALABILIDAD]] §1. Estado: `PROPUESTA` pendiente de decisión de producto, salvo:
+
+- **FUN-001 (panel «Estado del curso»): `DESCARTADO` v5.57.0.** Implementado en v5.56.0 y retirado a petición de CarlosFB. Su parte de dominio (`PreflightGeneracionUseCase`) se conserva y es la que resuelve UXF-002 y UXF-008.
+- **Orden acordado para las mejoras de generación: FUN-004 → FUN-002 → FUN-003** (decisión de 2026-09-05).
 
 ## Positivos a preservar
 

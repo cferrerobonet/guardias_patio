@@ -101,7 +101,7 @@ Se cuenta cada clic de ratón o pulsación equivalente que el usuario debe hacer
 
 | ID | Sev. | Título | Evidencia |
 | --- | --- | --- | --- |
-| ~~UXF-001~~ ✅ **v5.56.0** | P1 | ~~No existe secuencia guiada ni panel de estado del curso; la app abre en Profesores~~ · resuelto con la vista «Estado del curso» | `ccleaner_main_window.py:118`, `ccleaner_sidebar.py:178-216`, `README.md:33-39` |
+| UXF-001 | P1 | No existe secuencia guiada ni panel de estado del curso · **panel DESCARTADO v5.57.0 por decisión de producto**: la guía de prerrequisitos se lee en el aviso de bloqueo del panel de generación, no en una pantalla propia | `ccleaner_main_window.py:118`, `ccleaner_sidebar.py:178-216`, `README.md:33-39` |
 | ~~UXF-002~~ ✅ **v5.56.0** | P1 | ~~El guardarraíl "cuotas antes de generar" es un flag de UI~~ · resuelto con `PreflightGeneracionUseCase` | `generacion_panel.py:156-163,190-205`, `asignacion_calculo_form.py:53-58,151-155` |
 | UXF-003 | P2 | Generar requiere 2 modales previos y 1 clic de cierre; resumen previo debería ser inline | `generacion_panel.py:263-292` |
 | UXF-004 | P2 | Cambio de curso: confirmación + toast pero sin refresco (ver UXA-007) | `selector_curso_widget.py:118-166` |

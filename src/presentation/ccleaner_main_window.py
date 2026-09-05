@@ -22,7 +22,6 @@ from core.usage_logger import usage_log
 from presentation.components.ccleaner_sidebar import SidebarMenu
 from presentation.forms.ajustes_form import AjustesForm
 from presentation.forms.asignacion_calculo_form import AsignacionCalculoForm
-from presentation.forms.estado_curso_form import EstadoCursoForm
 from presentation.forms.import_export_form import ImportExportForm
 from presentation.forms.perfiles_usuario_form import PerfilesUsuarioForm
 
@@ -131,7 +130,7 @@ class CCleanerMainWindow(QMainWindow):
 
         # Activar la primera sección (Dashboard)
         # Cambiar la sección activa inicial a "profesores" en lugar de "dashboard"
-        self.sidebar.set_active_section("inicio")
+        self.sidebar.set_active_section("profesores")
 
         # Auto-sync en background cada 30 minutos
         if self.sync_manager:
@@ -147,7 +146,6 @@ class CCleanerMainWindow(QMainWindow):
         session = self.session
         sync_manager = self.sync_manager
 
-        self._register("inicio", "Estado del Curso", self._crear_vista_inicio)
         self._register("profesores", "Gestión de Profesores", lambda: ProfesorForm(session))
         self._register("zonas", "Gestión de Zonas", lambda: ZonaForm(session))
         self._register("ajustes", "Ajustes del Curso Escolar", lambda: AjustesForm(session))
@@ -170,18 +168,7 @@ class CCleanerMainWindow(QMainWindow):
         self._register("estadisticas", "Estadísticas", lambda: PanelEstadisticas(session))
 
         # Pre-instanciar solo la sección inicial para que el stack no quede vacío
-        self._ensure_view("inicio")
-
-    def _crear_vista_inicio(self):
-        """Vista de estado del curso, que además navega a lo que falte (FUN-001)."""
-        vista = EstadoCursoForm(self.session)
-        vista.ir_a_seccion.connect(self._navegar_a)
-        return vista
-
-    def _navegar_a(self, section: str):
-        """Cambia de sección y deja el menú lateral marcando la nueva."""
-        self.sidebar.set_active_section(section)
-        self.on_section_changed(section)
+        self._ensure_view("profesores")
 
     def _register(self, section: str, title: str, factory):
         self._view_factories[section] = (title, factory)

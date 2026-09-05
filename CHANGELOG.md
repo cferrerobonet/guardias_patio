@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.57.0] - 2026-09-05
+
+### 🎯 Resumen
+Se retira la pantalla «Estado del curso» que estrenó la versión anterior. La comprobación de requisitos, que es lo que de verdad hacía falta, se queda donde importa.
+
+### Changed
+- **Fuera la pantalla «Estado del curso» y su entrada en el menú.** Sólo tenía algo que decir en septiembre, al montar el curso; el resto del año habría dicho «Todo listo» y habría sido una pantalla de paso antes de llegar a lo que uno venía a hacer.
+- **La aplicación vuelve a abrir en Profesores.**
+- **Lo que se conserva es la mitad útil:** la comprobación de requisitos sigue decidiendo si se puede generar, y el aviso del panel de generación sigue enumerando qué falta y qué hacer con cada cosa. La información está donde surge la pregunta, en vez de en una pantalla aparte que hay que ir a buscar.
+
+### 🧹 Housekeeping
+- `auditoria/`: FUN-001 pasa a descartado y UXF-001 a parcial, con el motivo anotado. El ratchet de estilos baja de 289 a 288.
+- 2.517 pruebas, ningún fallo.
+
+---
+
 ## [5.56.0] - 2026-09-05
 
 ### 🎯 Resumen

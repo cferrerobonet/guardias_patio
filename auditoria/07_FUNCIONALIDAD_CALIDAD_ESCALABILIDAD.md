@@ -17,7 +17,7 @@ Ordenadas por valor/esfuerzo. Sin severidad: son decisiones de producto.
 
 | ID | Mejora | Valor | Esfuerzo | Depende de |
 | --- | --- | --- | --- | --- |
-| FUN-001 | **Panel "Estado del curso"** como vista inicial: checklist de prerrequisitos calculada desde dominio, con enlaces; alimenta los botones deshabilitados de todas las vistas | Alto: resuelve UXF-001/002 y reduce soporte | M | – |
+| ~~FUN-001~~ **DESCARTADO v5.57.0** | ~~Panel "Estado del curso" como vista inicial~~ · Se implementó en v5.56.0 y se retiró por decisión de producto: sólo tenía algo que decir al montar el curso en septiembre; el resto del año era una pantalla de paso. **Lo que sí se conserva es la mitad valiosa**: el cálculo de prerrequisitos desde dominio (`PreflightGeneracionUseCase`), que alimenta el bloqueo del botón de generar y el aviso visible que enumera lo que falta | Alto | M | – |
 | FUN-002 | **Generación incremental**: regenerar sólo desde una fecha o un mes, congelando el pasado (guardias ya realizadas) y respetando sustituciones hechas | Alto: hoy "Generar" borra todo el curso | L | CRW-003, ESC-002 |
 | FUN-003 | **Edición manual en calendario**: mover/asignar una guardia con validación de restricciones (1/día, ausencias, turno) y recálculo de equidad al vuelo | Alto | L | ESC-001 |
 | FUN-004 | **Historial de generaciones y restauración**: snapshot (JSON ya existe en `logs/comparacion_cuotas_*.json`) + backups de `db_manager` expuestos en UI: "Restaurar a antes de la generación de las 10:32" | Alto: red de seguridad | M | – |

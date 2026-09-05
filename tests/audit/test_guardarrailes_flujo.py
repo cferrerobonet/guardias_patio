@@ -94,66 +94,44 @@ def test_cambio_de_curso_refresca_las_vistas_cargadas(qapp):
 
 
 # ---------------------------------------------------------------------------
-# UXF-001 / FUN-001: vista de estado del curso como punto de entrada
+# UXF-001: la guía de lo que falta vive en el panel de generación
+#
+# La vista «Estado del curso» se construyó en v5.56.0 y se retiró en v5.57.0 por
+# decisión de producto: sólo tenía algo que decir en septiembre, al montar el
+# curso, y el resto del año era una pantalla de paso. Lo que aporta valor —saber
+# qué falta y por qué no se puede generar— se lee en el propio panel de
+# generación, que es donde surge la pregunta.
 # ---------------------------------------------------------------------------
-def test_la_vista_de_inicio_lista_lo_que_falta(qapp, session):
-    """Con la base vacía, la vista enumera los cinco prerrequisitos pendientes."""
-    from presentation.forms.estado_curso_form import EstadoCursoForm
+def test_el_preflight_detalla_cada_requisito_para_poder_guiar(session):
+    """Cada requisito trae título, detalle y la sección donde se resuelve."""
+    from application.use_cases.preflight_generacion import PreflightGeneracionUseCase
 
-    vista = EstadoCursoForm(session)
-    QApplication.processEvents()
+    estado = PreflightGeneracionUseCase(session).execute()
 
-    assert len(vista._filas) == 5, "no se pintó un elemento por requisito"
-    assert "5" in vista.resumen.text()
-    assert not vista.boton_generar.isEnabled()
-    vista.close()
-
-
-def test_la_vista_de_inicio_se_desbloquea_cuando_todo_esta_listo(
-    qapp, session, curso_generable
-):
-    from presentation.forms.estado_curso_form import EstadoCursoForm
-
-    vista = EstadoCursoForm(session)
-    QApplication.processEvents()
-
-    assert vista.boton_generar.isEnabled()
-    assert "listo" in vista.resumen.text().lower()
-    vista.close()
+    assert len(estado.requisitos) == 5
+    for requisito in estado.requisitos:
+        assert requisito.titulo
+        assert requisito.detalle, f"{requisito.clave} no explica cómo resolverse"
+        assert requisito.seccion, f"{requisito.clave} no dice dónde se resuelve"
 
 
-def test_la_vista_de_inicio_pide_navegar_a_lo_que_falta(qapp, session):
-    """Cada requisito pendiente ofrece un botón que lleva a donde se resuelve."""
-    from PyQt6.QtWidgets import QPushButton
+def test_el_aviso_de_bloqueo_enumera_todo_lo_que_falta(panel_generacion):
+    """No basta con decir que no se puede: hay que decir qué falta y qué hacer."""
+    texto = panel_generacion.label_bloqueo.text().lower()
 
-    from presentation.forms.estado_curso_form import EstadoCursoForm
-
-    vista = EstadoCursoForm(session)
-    QApplication.processEvents()
-
-    destinos = []
-    vista.ir_a_seccion.connect(destinos.append)
-
-    for fila in vista._filas:
-        for boton in fila.findChildren(QPushButton):
-            boton.click()
-
-    assert "ajustes" in destinos
-    assert "zonas" in destinos
-    assert "profesores" in destinos
-    vista.close()
+    for esperado in ("curso", "fecha", "recreo", "zona", "profesor"):
+        assert esperado in texto, f"el aviso no menciona {esperado}: {texto}"
 
 
-def test_la_aplicacion_abre_en_el_estado_del_curso():
-    """UXF-001: la primera pantalla ya no es la rejilla de Profesores."""
+def test_la_aplicacion_abre_en_profesores(qapp):
+    """La pantalla de entrada vuelve a ser Profesores (decisión de producto)."""
     import inspect
 
     from presentation import ccleaner_main_window
 
     fuente = inspect.getsource(ccleaner_main_window.CCleanerMainWindow)
-    assert 'self._ensure_view("inicio")' in fuente
-    assert 'set_active_section("inicio")' in fuente
-    assert 'self._ensure_view("profesores")' not in fuente
+    assert 'self._ensure_view("profesores")' in fuente
+    assert '"inicio"' not in fuente
 
 
 # ---------------------------------------------------------------------------
