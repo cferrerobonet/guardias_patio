@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 from application.use_cases.perfil import (
     ActualizarLogoUseCase,
@@ -281,7 +282,7 @@ class PerfilesUsuarioForm(BaseForm):
                 # Acciones (vacío, se usan botones de arriba)
                 self.tabla.setItem(row, 5, QTableWidgetItem(""))
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.mostrar_error("Error al cargar perfiles", str(e))
 
     def _on_seleccion_cambiada(self):

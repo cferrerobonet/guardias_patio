@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
@@ -118,7 +119,7 @@ def obtener_resumen(
             "top_profesor": top_profesor_info,
         }
 
-    except (ValueError, TypeError, OSError) as e:
+    except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -159,5 +160,5 @@ def estadisticas_por_profesor(configuracion_id: int, db: Session = Depends(get_d
             "total_profesores": len(resultados),
         }
 
-    except (ValueError, TypeError, OSError) as e:
+    except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail=str(e))

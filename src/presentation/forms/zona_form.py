@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 from application.dtos.zona_dto import ActualizarZonaDTO, CrearZonaDTO
 from application.use_cases.zona import (
@@ -433,7 +434,7 @@ class ZonaForm(BaseForm):
             # Errores de lógica de negocio (zona duplicada, etc.)
             self.mostrar_error("Error de lógica de negocio", str(e))
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             # Otros errores inesperados
             self.manejar_excepcion(e, "guardar la zona")
 
@@ -481,7 +482,7 @@ class ZonaForm(BaseForm):
             self.submit_btn.setText("Guardar Cambios")
             self.cancelar_btn.setVisible(False)
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar datos de la zona")
 
     def editar_zona(self):
@@ -604,7 +605,7 @@ class ZonaForm(BaseForm):
             if self.table_manager:
                 self.table_manager.restore_selection()
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar las zonas")
 
     def eliminar_zona(self):
@@ -674,7 +675,7 @@ class ZonaForm(BaseForm):
                 errores.append(f"{nombre_zona}: {str(e)}")
             except BusinessLogicError as e:
                 errores.append(f"{nombre_zona}: {str(e)}")
-            except (ValueError, TypeError, OSError) as e:
+            except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
                 errores.append(f"{nombre_zona}: Error inesperado - {str(e)}")
 
         # Limpiar formulario si la zona eliminada estaba en modo edición

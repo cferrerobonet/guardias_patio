@@ -5,6 +5,7 @@ Estilo terminal negro consistente con otros widgets.
 """
 
 from PyQt6.QtWidgets import QGroupBox, QTextEdit, QVBoxLayout
+from sqlalchemy.exc import SQLAlchemyError
 
 from application.dtos.domain_services_dtos import AnalisisEquidadRequest
 from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
@@ -191,7 +192,7 @@ class ResultadosPanel(QGroupBox):
                     lineas.append(format_terminal_success("✅ Sin desbalances significativos"))
             else:
                 lineas.append(format_terminal_info("(análisis de equidad no disponible)"))
-        except (ValueError, TypeError, OSError):
+        except (SQLAlchemyError, ValueError, TypeError, OSError):
             lineas.append(format_terminal_info("(análisis de equidad no disponible)"))
 
         lineas.append("")

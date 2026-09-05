@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.64.0] - 2026-09-05
+
+### 🎯 Resumen
+Un error de la base de datos deja de tumbar la pantalla y de dejarla inservible después.
+
+### Fixed
+- **Los errores de base de datos escapaban sin control.** Treinta y nueve bloques que guardaban o consultaban datos capturaban una lista de errores que no incluía los de la propia base de datos. Cuando ocurría uno —disco lleno, fichero bloqueado, dato duplicado—, el error subía hasta el manejador global y aparecía como «Error inesperado». Ahora se capturan donde ocurren y se explican.
+- **Y dejaban la pantalla tocada.** Tras un error de base de datos hay que deshacer la operación a medias: si no, todo lo que se intente después en esa pantalla falla hasta cerrar la aplicación. Se mostraba el aviso, pero nadie deshacía nada. Ahora se hace automáticamente.
+
+### 🧹 Housekeeping
+- `auditoria/`: COD-002 parcial. De 111 capturas demasiado amplias quedan 72, todas en sitios donde el daño es menor (ficheros, análisis de texto, interfaz). Una comprobación automática impide que vuelva a colarse una en código que toca la base de datos.
+- 2.571 pruebas, ningún fallo.
+
+---
+
 ## [5.63.0] - 2026-09-05
 
 ### 🎯 Resumen

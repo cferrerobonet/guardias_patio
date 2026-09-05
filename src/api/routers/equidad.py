@@ -9,6 +9,7 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
@@ -77,5 +78,5 @@ def analizar_equidad(
             "recomendaciones": response.recomendaciones,
             "mensaje": response.mensaje,
         }
-    except (ValueError, TypeError, OSError) as e:
+    except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail=str(e))

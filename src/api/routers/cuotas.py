@@ -9,6 +9,7 @@ from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
@@ -70,5 +71,5 @@ def calcular_cuotas(
             "total_guardias": response.total_guardias,
             "mensaje": response.mensaje,
         }
-    except (ValueError, TypeError, OSError) as e:
+    except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         raise HTTPException(status_code=500, detail=str(e))

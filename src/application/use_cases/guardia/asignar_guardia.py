@@ -6,6 +6,7 @@ Caso de uso para asignar una guardia a un profesor en una zona específica.
 
 from typing import Optional, Union
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from application.dtos import CrearGuardiaDTO, GuardiaDTO
@@ -171,7 +172,7 @@ class AsignarGuardiaUseCase:
         except (NotFoundError, ValidationError, BusinessLogicError):
             self.session.rollback()
             raise
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.session.rollback()
             logger.error("Error al asignar guardia", error=str(e))
             raise ValidationError(f"Error al asignar guardia: {e}") from e

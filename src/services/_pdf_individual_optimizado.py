@@ -13,6 +13,7 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
 from infrastructure.database.models import Configuracion, Guardia, Profesor
@@ -582,7 +583,7 @@ def exportar_profesor_individual_optimizado(
         reportar_progreso(100, "PDF generado exitosamente")
         return True
 
-    except (ValueError, TypeError, OSError) as e:
+    except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         logger.error(f"Error al exportar profesor individual: {e}")
         if progress_callback:
             progress_callback(0, f"Error: {str(e)}")

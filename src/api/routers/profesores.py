@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
@@ -133,7 +134,7 @@ def obtener_profesor(profesor_id: int, db: Session = Depends(get_db)):
         raise
     except NotFoundError:
         raise _build_error("not_found", f"Profesor {profesor_id} no encontrado", 404)
-    except (ValueError, TypeError, OSError) as e:
+    except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         raise _build_error("internal_error", str(e), 500)
 
 
@@ -153,7 +154,7 @@ def crear_profesor(profesor: CrearProfesorDTO, db: Session = Depends(get_db)):
         )
     except (ValidationError, BusinessLogicError) as e:
         raise _build_error("validation_error", str(e), 422)
-    except (ValueError, TypeError, OSError) as e:
+    except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         raise _build_error("internal_error", str(e), 500)
 
 
@@ -181,7 +182,7 @@ def actualizar_profesor(
         raise _build_error("not_found", f"Profesor {profesor_id} no encontrado", 404)
     except (ValidationError, BusinessLogicError) as e:
         raise _build_error("validation_error", str(e), 422)
-    except (ValueError, TypeError, OSError) as e:
+    except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         raise _build_error("internal_error", str(e), 500)
 
 
@@ -192,5 +193,5 @@ def eliminar_profesor(profesor_id: int, db: Session = Depends(get_db)):
         EliminarProfesorUseCase(db).execute(profesor_id)
     except (BusinessLogicError, ValidationError) as e:
         raise _build_error("conflict", str(e), 409)
-    except (ValueError, TypeError, OSError) as e:
+    except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         raise _build_error("internal_error", str(e), 500)

@@ -8,6 +8,7 @@ Coordina la obtención de datos y presentación de resultados.
 import logging
 from typing import List
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from application.dtos.domain_services_dtos import (
@@ -110,7 +111,7 @@ class AnalisisEquidadUseCase:
                 mensaje=f"Análisis completado. Nivel de equidad: {metricas.nivel_equidad}",
             )
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             logger.error(f"Error en análisis de equidad: {e}", exc_info=True)
             return AnalisisEquidadResponse(
                 exitoso=False,

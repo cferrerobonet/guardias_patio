@@ -373,6 +373,26 @@ class BaseForm(QWidget):
 
         return msg_box.exec()
 
+    def _deshacer_si_la_sesion_quedo_rota(self, exception: Exception, operacion: str) -> None:
+        """Deshace la transacción cuando el fallo viene de la base de datos.
+
+        SQLAlchemy deja la sesión inutilizable tras un error: sin `rollback()`,
+        todas las operaciones siguientes de esa vista fallan hasta reiniciar la
+        aplicación. El aviso se mostraba, pero la sesión quedaba rota (COD-002).
+        """
+        from sqlalchemy.exc import SQLAlchemyError
+
+        if not isinstance(exception, SQLAlchemyError):
+            return
+        sesion = getattr(self, "session", None)
+        if sesion is None:
+            return
+        try:
+            sesion.rollback()
+            self.logger.info(f"Transacción deshecha tras el error en {operacion}")
+        except SQLAlchemyError as e:
+            self.logger.error(f"No se pudo deshacer la transacción: {e}")
+
     def manejar_excepcion(self, exception: Exception, operacion: str) -> None:
         """
         Maneja excepciones de forma estandarizada.
@@ -381,6 +401,8 @@ class BaseForm(QWidget):
             exception: La excepción capturada
             operacion: Descripción de la operación que falló
         """
+        self._deshacer_si_la_sesion_quedo_rota(exception, operacion)
+
         if isinstance(exception, ValidationError):
             self.mostrar_error(
                 "Error de Validación", f"Los datos ingresados no son válidos:\n\n{str(exception)}"

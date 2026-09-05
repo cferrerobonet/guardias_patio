@@ -14,6 +14,8 @@ import math
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from infrastructure.database.models import Configuracion, Profesor, Zona
 from services.gestor_cursos import GestorCursos
 from services.validators import TurnoValidator
@@ -140,7 +142,7 @@ def _parse_custom_no_lectivos(csv_text: Optional[str]) -> set:
         try:
             y, m, d = [int(x) for x in t.split("-")]
             fechas.add(date(y, m, d))
-        except (ValueError, TypeError, OSError):
+        except (SQLAlchemyError, ValueError, TypeError, OSError):
             continue
     return fechas
 

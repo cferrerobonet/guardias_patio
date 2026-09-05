@@ -20,6 +20,7 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
 from infrastructure.database.models import Guardia, Profesor
@@ -254,7 +255,7 @@ class ExportadorPDF:
             doc.build(elements)
             return True
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             logger.warning(f"Error al exportar PDF: {e}")
             return False
 
@@ -477,7 +478,7 @@ class ExportadorPDF:
 
             return exitos
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             logger.error(f"Error al exportar profesores seleccionados: {e}")
             if progress_callback:
                 progress_callback(0, f"Error: {str(e)}")

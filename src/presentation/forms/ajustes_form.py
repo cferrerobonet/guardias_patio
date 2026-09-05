@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
 from application.use_cases.configuracion import (
@@ -281,7 +282,7 @@ class AjustesForm(BaseForm):
             self.mostrar_exito("Configuración Guardada", mensaje_exito)
             self._marcar_guardado()
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "guardar configuración")
 
     def cargar_configuracion(self) -> None:
@@ -325,7 +326,7 @@ class AjustesForm(BaseForm):
         except NotFoundError:
             # No hay configuración, usar valores por defecto
             self.logger.info("No hay configuración guardada, usando valores por defecto")
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar configuración")
 
     def limpiar_formulario(self) -> None:

@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
 from application.use_cases.profesor import (
@@ -526,7 +527,7 @@ class ProfesorForm(BaseForm):
                 self._cerrar_formulario()
                 self.mostrar_exito("Profesor creado", "El profesor ha sido creado correctamente.")
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "guardar profesor")
 
     def cargar_profesores(self):
@@ -638,7 +639,7 @@ class ProfesorForm(BaseForm):
             self.submit_btn.setText("Guardar Cambios")
             self.cancelar_btn.setVisible(False)
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar datos del profesor")
 
     def editar_profesor(self):
@@ -699,7 +700,7 @@ class ProfesorForm(BaseForm):
                     }
                 )
 
-            except (ValueError, TypeError, OSError) as e:
+            except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
                 self.manejar_excepcion(e, "cargar datos del profesor")
                 return
 
@@ -718,7 +719,7 @@ class ProfesorForm(BaseForm):
             # Lo que se acaba de volcar en los campos no son cambios del usuario.
             self.descartar_cambios()
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "editar profesor")
 
     def eliminar_profesor(self):
@@ -807,7 +808,7 @@ class ProfesorForm(BaseForm):
                         "Error", "No se pudo eliminar ningún profesor:\n• " + "\n• ".join(errores)
                     )
 
-            except (ValueError, TypeError, OSError) as e:
+            except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
                 self.manejar_excepcion(e, "eliminar profesores")
 
     def _actualizar_matriz_restricciones_por_turno(self, turno: str):

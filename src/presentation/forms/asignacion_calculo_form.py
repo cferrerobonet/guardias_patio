@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 from application.use_cases.asignacion_guardias import (
     ObtenerEstadisticasUseCase,
@@ -172,7 +173,7 @@ class AsignacionCalculoForm(BaseForm):
 
         except BusinessLogicError as e:
             self.calculo_panel.mostrar_error(str(e))
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar estadísticas")
 
     def limpiar_formulario(self):

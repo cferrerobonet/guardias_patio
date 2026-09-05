@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 from application.dtos.domain_services_dtos import CalcularCuotasRequest
 from application.use_cases.calcular_cuotas_use_case import CalcularCuotasUseCase
@@ -199,7 +200,7 @@ class CuotasPanel(QGroupBox):
             else:
                 self._mostrar_error_terminal(response.mensaje)
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self._mostrar_error_terminal(f"Error al calcular cuotas: {str(e)}")
         finally:
             # Rehabilitar botón

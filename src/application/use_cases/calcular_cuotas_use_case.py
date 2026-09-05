@@ -8,6 +8,7 @@ Este Use Case NO contiene lógica de negocio, solo coordina.
 import logging
 from typing import List
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from application.dtos.domain_services_dtos import (
@@ -95,7 +96,7 @@ class CalcularCuotasUseCase:
                 mensaje=f"Cuotas calculadas correctamente para {len(cuotas)} profesores",
             )
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             logger.error(f"Error calculando cuotas: {e}", exc_info=True)
             return CalcularCuotasResponse(
                 exitoso=False,

@@ -13,6 +13,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db
@@ -141,7 +142,7 @@ def obtener_guardias(
         )
         return PaginatedGuardiasResponse(items=items, total=total, page=page, size=len(items), pages=pages)
 
-    except (ValueError, TypeError, OSError):
+    except (SQLAlchemyError, ValueError, TypeError, OSError):
         logger.exception("Error en listado de guardias")
         raise HTTPException(status_code=500, detail="Error al obtener guardias")
 
@@ -197,7 +198,7 @@ def contar_guardias(
         )
         return {"total": total}
 
-    except (ValueError, TypeError, OSError):
+    except (SQLAlchemyError, ValueError, TypeError, OSError):
         logger.exception("Error en conteo de guardias")
         raise HTTPException(status_code=500, detail="Error al contar guardias")
 
@@ -366,7 +367,7 @@ def asignar_guardia(guardia: CrearGuardiaDTO, db: Session = Depends(get_db)):
         )
     except (ValidationError, BusinessLogicError) as e:
         raise HTTPException(status_code=422, detail={"code": "validation_error", "message": str(e)})
-    except (ValueError, TypeError, OSError) as e:
+    except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         logger.exception("Error al asignar guardia")
         raise HTTPException(status_code=500, detail={"code": "internal_error", "message": str(e)})
 

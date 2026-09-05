@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 from cryptography.fernet import Fernet, InvalidToken
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
 from core.logging import get_logger
@@ -287,7 +288,7 @@ class ExportadorDatos:
                 "curso_actual": curso_actual,
                 "cursos": cursos_export,
             }
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             logger.warning(f"Error al exportar cursos escolares: {e}")
             return None
 

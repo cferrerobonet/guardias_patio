@@ -371,7 +371,7 @@ class GeneracionPanel(QGroupBox):
                 if self.sync_manager:
                     self._sincronizar()
 
-        except (ValueError, TypeError, OSError) as e:
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self._mostrar_error(f"Error al generar: {e}")
 
     def _enviar_notificaciones(self):
@@ -613,7 +613,7 @@ class GeneracionPanel(QGroupBox):
                     lineas.append(format_terminal_success("✅ Sin desbalances"))
             else:
                 lineas.append(format_terminal_info("(equidad no disponible)"))
-        except (ValueError, TypeError, OSError):
+        except (SQLAlchemyError, ValueError, TypeError, OSError):
             lineas.append(format_terminal_info("(equidad no disponible)"))
 
         lineas.append("")
