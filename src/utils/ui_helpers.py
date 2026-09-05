@@ -383,3 +383,124 @@ def show_confirmation(
     msg_box.setStyleSheet(MESSAGEBOX_STYLE)
 
     return msg_box.exec() == QMessageBox.StandardButton.Yes
+
+
+# ---------------------------------------------------------------------------
+# Nombres accesibles (UXA-005)
+# ---------------------------------------------------------------------------
+
+#: Controles que un lector de pantalla anuncia y que, por tanto, necesitan nombre.
+_TIPOS_INTERACTIVOS = (
+    "QLineEdit",
+    "QPlainTextEdit",
+    "QTextEdit",
+    "QComboBox",
+    "QCheckBox",
+    "QRadioButton",
+    "QSpinBox",
+    "QDoubleSpinBox",
+    "QDateEdit",
+    "QTimeEdit",
+    "QDateTimeEdit",
+    "QPushButton",
+    "QToolButton",
+    "QTableWidget",
+    "QTableView",
+    "QListWidget",
+    "QTreeWidget",
+)
+
+
+def _limpiar_etiqueta(texto: str) -> str:
+    """Deja el texto de una etiqueta en algo pronunciable."""
+    import re
+
+    texto = re.sub(r"<[^>]+>", " ", texto or "")          # marcado HTML
+    texto = re.sub(r"[\U0001f300-\U0001faff☀-➿]", " ", texto)  # emojis
+    texto = texto.replace("&", "")                          # acelerador de Qt
+    texto = re.sub(r"[\s:*]+$", "", texto.strip())          # dos puntos y asteriscos finales
+    return re.sub(r"\s{2,}", " ", texto).strip()
+
+
+def _nombre_desde_la_etiqueta_asociada(campo) -> str:
+    """Busca la etiqueta que acompaña al campo en su formulario."""
+    from PyQt6.QtWidgets import QFormLayout, QLabel
+
+    padre = campo.parentWidget()
+    while padre is not None:
+        distribucion = padre.layout()
+        if isinstance(distribucion, QFormLayout):
+            etiqueta = distribucion.labelForField(campo)
+            if isinstance(etiqueta, QLabel) and etiqueta.text():
+                return _limpiar_etiqueta(etiqueta.text())
+        padre = padre.parentWidget()
+
+    # Etiqueta con `buddy` explícito
+    ventana = campo.window()
+    if ventana is not None:
+        for etiqueta in ventana.findChildren(QLabel):
+            if etiqueta.buddy() is campo and etiqueta.text():
+                return _limpiar_etiqueta(etiqueta.text())
+    return ""
+
+
+def _nombre_desde_el_grupo(campo) -> str:
+    """Último recurso: el título del recuadro que lo contiene.
+
+    Sirve sobre todo para tablas y listas, que no llevan etiqueta propia pero sí
+    viven dentro de un grupo con título ("Zonas registradas") (UXA-008).
+    """
+    from PyQt6.QtWidgets import QGroupBox
+
+    padre = campo.parentWidget()
+    while padre is not None:
+        if isinstance(padre, QGroupBox) and padre.title():
+            return _limpiar_etiqueta(padre.title())
+        padre = padre.parentWidget()
+    return ""
+
+
+def _nombre_propio_del_control(campo) -> str:
+    """Nombre deducible del propio control, sin mirar alrededor."""
+    for atributo in ("placeholderText", "text", "toolTip"):
+        obtener = getattr(campo, atributo, None)
+        if obtener is None:
+            continue
+        try:
+            valor = _limpiar_etiqueta(obtener())
+        except TypeError:
+            continue
+        if valor:
+            return valor
+    return ""
+
+
+def asignar_nombres_accesibles(raiz: QWidget) -> int:
+    """Da nombre accesible a los controles que no lo tengan.
+
+    Un lector de pantalla anuncia el `accessibleName`; sin él dice sólo el tipo
+    de control ("cuadro de edición") y la pantalla resulta inoperable a ciegas
+    (UXA-005). El nombre se deduce, por este orden, de la etiqueta asociada en el
+    formulario, del texto de marcador de posición, del texto del propio control o
+    de su descripción emergente.
+
+    Devuelve cuántos controles ha nombrado. No pisa los nombres ya puestos a mano.
+    """
+    from PyQt6.QtWidgets import QWidget as _QWidget
+
+    nombrados = 0
+    for hijo in raiz.findChildren(_QWidget):
+        if type(hijo).__name__ not in _TIPOS_INTERACTIVOS:
+            continue
+        if hijo.accessibleName():
+            continue
+
+        nombre = (
+            _nombre_desde_la_etiqueta_asociada(hijo)
+            or _nombre_propio_del_control(hijo)
+            or _nombre_desde_el_grupo(hijo)
+        )
+        if nombre:
+            hijo.setAccessibleName(nombre)
+            nombrados += 1
+    return nombrados

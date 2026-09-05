@@ -9,7 +9,8 @@ Subidas registradas:
 Bajadas registradas (lote 8, v5.58.0):
 - `font_size_menor_12px` 89 → 0: el contrato de diseño fija 12 px como mínimo
   absoluto y había usos de hasta 7 px.
-- `hex_literales` 631 → 562.
+- `hex_literales` 631 → 526 (y `tokens.py` sale del recuento: es donde el color
+  debe vivir, contarlo allí penalizaba centralizarlo).
 - `setStyleSheet` sigue en 288: reducirlo es sacar los estilos en línea a la hoja
   central, vista por vista, y eso es el resto de VIS-001."""
 
@@ -22,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PRES = ROOT / "src" / "presentation"
 UMBRALES = {
     "setStyleSheet": 288,
-    "hex_literales": 562,
+    "hex_literales": 526,
     "font_size_menor_12px": 0,
     "lineas_con_emoji": 326,
     "setFixed": 21,
@@ -31,8 +32,23 @@ UMBRALES = {
 EMOJI = re.compile("[\U0001f300-\U0001faff☀-➿]")
 
 
+#: `tokens.py` queda fuera del recuento de colores: es el sitio donde los colores
+#: DEBEN estar. Contarlo ahí penalizaba justo el movimiento que se persigue —sacar
+#: el color de las vistas y centralizarlo— y convertía el ratchet en un incentivo
+#: al revés.
+FICHEROS_EXENTOS_DE_COLOR = {"tokens.py"}
+
+
 def _fuentes():
     return [p.read_text(encoding="utf-8", errors="ignore") for p in PRES.rglob("*.py")]
+
+
+def _fuentes_sin_tokens():
+    return [
+        p.read_text(encoding="utf-8", errors="ignore")
+        for p in PRES.rglob("*.py")
+        if p.name not in FICHEROS_EXENTOS_DE_COLOR
+    ]
 
 
 def _contar():
@@ -40,7 +56,9 @@ def _contar():
     todo = "\n".join(textos)
     return {
         "setStyleSheet": todo.count("setStyleSheet"),
-        "hex_literales": len(re.findall(r"#[0-9A-Fa-f]{6}\b", todo)),
+        "hex_literales": len(
+            re.findall(r"#[0-9A-Fa-f]{6}\b", "\n".join(_fuentes_sin_tokens()))
+        ),
         "font_size_menor_12px": sum(
             1 for m in re.findall(r"font-size: ?(\d+)px", todo) if int(m) < 12
         ),

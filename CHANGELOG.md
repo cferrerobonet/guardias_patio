@@ -5,6 +5,29 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.60.0] - 2026-09-05
+
+### 🎯 Resumen
+La aplicación pasa a poder usarse con el teclado y con un lector de pantalla.
+
+### Fixed
+- **Casi dos de cada tres controles no tenían nombre.** Un lector de pantalla los anunciaba como «cuadro de edición», sin decir de qué campo se trataba: 76 de 119 en las pantallas principales. Ahora el nombre se deduce solo de la etiqueta que acompaña al campo, del texto de ejemplo, del propio control o del recuadro que lo contiene. En Profesores, Zonas y Ajustes no queda ninguno sin nombre.
+- **Las veinte casillas de disponibilidad del profesor eran indistinguibles.** Todas tenían el mismo texto, una marca de verificación. Ahora cada una se llama «Recreo 2 del miércoles» y anuncia si está disponible o no.
+- **No se veía dónde estaba el foco.** Moverse con el tabulador era moverse a ciegas: Qt lo marca con un punteado casi invisible, y en los botones con estilo propio ni eso. Ahora hay un anillo de 2 px en todo control que pueda recibir el foco, con una variante clara para el menú lateral oscuro.
+- **Un error de validación no decía qué campo fallaba.** Avisaba con un mensaje y te dejaba buscando a ojo. Ahora marca el campo en rojo, le pone el motivo para el lector de pantalla y le lleva el foco.
+- **Las tablas de profesores y zonas se presentan** con nombre y con una frase que explica qué se puede hacer con ellas.
+- **La vista de calendario ya no exige 1400×900** al abrirse.
+
+### Changed
+- La suite de accesibilidad tenía un «si algo falla, sáltatelo» que llevaba tiempo ocultando una comprobación desactualizada. Retirado.
+
+### 🧹 Housekeeping
+- `auditoria/`: UXA-002, UXA-005, UXA-006 y UXA-012 resueltos; UXA-001 y UXA-008 parciales. El lote 11 queda parcial: **falta la parte que sólo puede hacer una persona**, recorrer la aplicación con NVDA o VoiceOver.
+- El recuento de colores sueltos deja de incluir `tokens.py`: penalizaba justo el movimiento que se persigue, que es centralizar el color ahí. Umbral real: 526.
+- 11 pruebas nuevas de introspección de accesibilidad. Total: 2.551.
+
+---
+
 ## [5.59.0] - 2026-09-05
 
 ### 🎯 Resumen

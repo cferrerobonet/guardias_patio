@@ -215,14 +215,23 @@ class DatosZonaWidget(QGroupBox):
         Returns:
             Tupla (es_valido, mensaje_error)
         """
+        valido, mensaje, _campo = self.validar_con_campo()
+        return valido, mensaje
+
+    def validar_con_campo(self):
+        """Igual que `validar`, pero indicando qué campo falla (UXA-006).
+
+        Returns:
+            Tupla (es_valido, mensaje_error, campo). `campo` es None si es válido.
+        """
         nombre = self.get_nombre()
 
         # Validar nombre (obligatorio)
         if not nombre:
-            return False, "El nombre de la zona es obligatorio"
+            return False, "El nombre de la zona es obligatorio", self.nombre_zona_input
 
         if len(nombre) < 2:
-            return False, "El nombre debe tener al menos 2 caracteres"
+            return False, "El nombre debe tener al menos 2 caracteres", self.nombre_zona_input
 
         # Validar fechas si ambas están activas
         fecha_inicio = self.get_fecha_inicio()
@@ -233,9 +242,10 @@ class DatosZonaWidget(QGroupBox):
                 return (
                     False,
                     "La fecha de inicio no puede ser posterior a la fecha de fin",
+                    self.fecha_inicio_input,
                 )
 
-        return True, ""
+        return True, "", None
 
     def enfocar_primer_campo(self):
         """Poner el foco en el primer campo del widget."""

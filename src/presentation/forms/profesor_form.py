@@ -101,6 +101,7 @@ class ProfesorForm(BaseForm):
         # Detectar ediciones sin guardar para el guard de navegación (UXA-004).
         # Va al final: rellenar los campos con datos no es una edición del usuario.
         self.vigilar_cambios()
+        self.nombrar_campos()
 
     def setup_ui(self):
         """Construir la interfaz del formulario con diseño responsivo."""
@@ -183,6 +184,11 @@ class ProfesorForm(BaseForm):
 
         # Tabla de profesores
         self.tabla_profesores = QTableWidget()
+        # Nombre y descripción para lectores de pantalla (UXA-008)
+        self.tabla_profesores.setAccessibleName("Listado de profesores")
+        self.tabla_profesores.setAccessibleDescription(
+            "Tabla de profesores del centro. Selecciona una fila para editarla o borrarla."
+        )
         self.tabla_profesores.setColumnCount(7)
         self.tabla_profesores.setHorizontalHeaderLabels(
             [

@@ -7,8 +7,6 @@ según lo implementado en A11Y-BASIC (v5.16.0).
 
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock
-
 import pytest
 
 pytestmark = pytest.mark.ui
@@ -161,25 +159,19 @@ class TestDeleteUserDialogA11Y:
 class TestAusenciasSustitucionesA11Y:
     """Verifica accesibilidad del widget unificado Ausencias/Sustituciones."""
 
-    def test_accessible_names_presentes(self, qtbot):
+    def test_accessible_names_presentes(self, qtbot, session):
+        """Con una sesión real: el `except Exception: skip` anterior tapaba
+        cualquier fallo, incluida la ausencia de los nombres (UXA-012)."""
         from presentation.widgets.ausencias_sustituciones import AusenciasSustitucionesWidget
 
-        session = MagicMock()
-        session.query.return_value.filter.return_value.all.return_value = []
-        session.query.return_value.filter.return_value.count.return_value = 0
-        session.query.return_value.all.return_value = []
+        widget = AusenciasSustitucionesWidget(session=session)
+        qtbot.addWidget(widget)
 
-        try:
-            widget = AusenciasSustitucionesWidget(session=session)
-            qtbot.addWidget(widget)
-
-            expected = [
-                "Profesor ausente",
-                "Buscar guardias afectadas",
-                "Guardar todas las sustituciones asignadas",
-                "Cancelar cambios y limpiar tabla",
-                "Eliminar todas las sustituciones del calendario actual",
-            ]
-            _check_accessible_names(widget, expected)
-        except Exception as e:
-            pytest.skip(f"Widget requiere servicios reales: {e}")
+        expected = [
+            "Profesor ausente",
+            "Buscar guardias del profesor en el período seleccionado",
+            "Guardar todas las sustituciones asignadas",
+            "Cancelar cambios y limpiar tabla",
+            "Eliminar todas las sustituciones del calendario actual",
+        ]
+        _check_accessible_names(widget, expected)

@@ -70,6 +70,7 @@ class AjustesForm(BaseForm):
 
         # Conectar señales de cambio DESPUÉS de cargar (para no marcar dirty en carga inicial)
         self._conectar_senales_cambio()
+        self.nombrar_campos()
 
     # ===== PROPIEDADES DE COMPATIBILIDAD PARA TESTS =====
     # Delegan a los widgets internos para mantener la API anterior

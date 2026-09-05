@@ -64,6 +64,8 @@ class BaseForm(QWidget):
         self._label_cambios: QLabel | None = None
         #: Mientras es True, rellenar campos no cuenta como edición del usuario.
         self._cargando = False
+        #: Campos marcados como erróneos, para poder limpiarlos después.
+        self._campos_con_error: list[QWidget] = []
 
     #: Señal de cada tipo de campo que indica que el usuario lo ha tocado.
     SENALES_DE_EDICION = (
@@ -100,6 +102,43 @@ class BaseForm(QWidget):
                 campo._vigilado_por_base_form = True
                 vigilados += 1
         return vigilados
+
+    def marcar_error_en_campo(self, campo: QWidget, mensaje: str) -> None:
+        """Señala qué campo concreto está mal y por qué (UXA-006).
+
+        Un aviso que sólo dice "El nombre es obligatorio" obliga a buscar el campo
+        a ojo. Aquí se marca el control, se le pone el motivo como descripción
+        accesible —que es lo que lee un lector de pantalla— y se le lleva el foco.
+        """
+        campo.setProperty("error", "true")
+        campo.setAccessibleDescription(mensaje)
+        # Repintar: Qt no reevalúa la hoja de estilos al cambiar una propiedad.
+        campo.style().unpolish(campo)
+        campo.style().polish(campo)
+        campo.setFocus()
+        self._campos_con_error.append(campo)
+
+    def limpiar_errores(self) -> None:
+        """Quita las marcas de error de los campos señalados antes."""
+        for campo in self._campos_con_error:
+            try:
+                campo.setProperty("error", "false")
+                campo.setAccessibleDescription("")
+                campo.style().unpolish(campo)
+                campo.style().polish(campo)
+            except RuntimeError:
+                pass  # el widget ya no existe
+        self._campos_con_error = []
+
+    def nombrar_campos(self) -> int:
+        """Da nombre accesible a los controles que no lo tengan (UXA-005).
+
+        Llamar al final de la construcción, cuando ya existen las etiquetas de las
+        que se deduce el nombre.
+        """
+        from utils.ui_helpers import asignar_nombres_accesibles
+
+        return asignar_nombres_accesibles(self)
 
     def _al_editar_campo(self, *_args) -> None:
         if not self._cargando:

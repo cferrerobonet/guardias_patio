@@ -46,6 +46,8 @@ class Colors:
     PRIMARY = "#0E5FA8"        # 6,5:1 sobre blanco
     PRIMARY_LIGHT = "#E6F2FA"  # fondo de selección y realces suaves
     PRIMARY_DARK = "#0C5291"   # 8,0:1 — hover, pressed y foco
+    FOCUS_RING = "#0E5FA8"     # anillo de foco: 2 px
+    FOCUS_HALO = "#BFD7F2"     # halo del anillo, para separarlo del fondo
 
     # Semánticos — texto sobre blanco
     SUCCESS = "#1E7E34"        # 5,1:1 AA

@@ -33,18 +33,18 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 | ID | Sev. | Conf. | Título | Estado | Ficha |
 | --- | --- | --- | --- | --- | --- |
-| UXA-001 | P1 | alta | Ventana y diálogos no caben en pantallas/escalados habituales | PERSISTE | `_work/paquete_ux_accesibilidad.md` |
-| UXA-002 | P1 | alta | Sin foco visible consistente | PERSISTE | ídem |
+| UXA-001 | P1 | alta | Ventana y diálogos no caben en pantallas/escalados habituales | **PARCIAL v5.60.0** · mínimo único de ventana 1024×700 (v5.58.0) y el calendario deja de exigir 1400×900 al abrirse. No queda ningún tamaño fijo por encima de 1024×700. Falta comprobarlo en una pantalla pequeña real y revisar el escalado al 125% | `_work/paquete_ux_accesibilidad.md` |
+| UXA-002 | P1 | alta | ~~Sin foco visible consistente~~ | **RESUELTO VERIFICADO v5.60.0** · anillo de foco de 2 px en color primario para todo control enfocable —botones, casillas, fechas, tablas, listas—, con variante clara en el menú lateral oscuro · `test_la_hoja_de_estilos_marca_el_foco_en_todo_control` | ídem |
 | UXA-003 | P1 | alta | Toasts no anunciables ni persistentes | PERSISTE | ídem |
 | UXA-004 | P1 | alta | ~~Contrato de cambios sin guardar no conectado~~ | **RESUELTO VERIFICADO v5.59.0** · `BaseForm.vigilar_cambios()` conecta las señales de edición de los diez tipos de campo; `cargando()` evita que rellenar por código cuente como edición; guard central único en la ventana (navegación, cierre y cambio de curso) con Guardar / Descartar / Seguir editando. Conectado en Profesor, Zona y Ajustes, que además unifica su mecanismo paralelo · `tests/audit/test_cambios_sin_guardar.py` (16 tests) | ídem |
-| UXA-005 | P1 | alta | Campos sin nombre/relación accesible | PERSISTE | ídem |
-| UXA-006 | P1 | alta | Validaciones no identifican el campo | PERSISTE | ídem |
+| UXA-005 | P1 | alta | ~~Campos sin nombre/relación accesible~~ | **RESUELTO VERIFICADO v5.60.0** · `asignar_nombres_accesibles()` deduce el nombre de la etiqueta del formulario, del marcador de posición, del propio control o del recuadro que lo contiene. De 76 controles sin nombre sobre 119 (63%) a **0 en Profesores, Zonas y Ajustes**. Las 20 casillas de la matriz de restricciones pasan a llamarse «Recreo N del lunes», con su estado · `test_ningun_control_se_queda_sin_nombre_accesible` | ídem |
+| UXA-006 | P1 | alta | ~~Validaciones no identifican el campo~~ | **RESUELTO VERIFICADO v5.60.0** (en Zonas) · `marcar_error_en_campo()` marca el control en rojo, le pone el motivo como descripción accesible y le lleva el foco tras cerrar el aviso; `limpiar_errores()` lo deshace al reintentar. Profesores y Ajustes usan validadores propios que aún no dicen qué campo falla · `test_un_error_de_validacion_marca_el_campo_y_le_lleva_el_foco` | ídem |
 | UXA-007 | P1 | alta | Cambio de curso no refresca vistas (`ContentWrapper` sin `content_widget`) | **RESUELTO VERIFICADO v5.49.0** · `ContentWrapper` conserva la vista y el refresco por cambio de curso funciona | ídem |
-| UXA-008 | P2 | alta | Tablas sin contrato accesible/adaptable | PERSISTE | ídem |
+| UXA-008 | P2 | alta | Tablas sin contrato accesible/adaptable | **PARCIAL v5.60.0** · las tablas de Profesores y Zonas tienen nombre y descripción accesibles, y hay regla de foco para tablas y celdas. Falta el contrato completo (QTableView + modelo, cabecera ordenable, estados vacío y de carga), que es el lote 12 · `test_las_tablas_principales_se_presentan` | ídem |
 | UXA-009 | P2 | alta | Gráficos QPainter sin semántica | PERSISTE | ídem |
 | UXA-010 | P2 | alta | Sistema visual fragmentado y contrastes AA fallidos | **PARCIAL v5.58.0** · el primario pasa de 4,51:1 a 6,52:1 y su variante oscura a 7,98:1; los verdes de acento a 5,1:1 y 7,2:1. Falta auditar el resto de combinaciones y el anillo de foco (lote 11) | ídem |
 | UXA-011 | P2 | media | Cargas de tablas bloquean el hilo GUI | PERSISTE (ESC-001) | ídem |
-| UXA-012 | P2 | alta | Suite a11y con skips amplios | PERSISTE | ídem |
+| UXA-012 | P2 | alta | ~~Suite a11y con skips amplios~~ | **RESUELTO VERIFICADO v5.60.0** · retirado el `except Exception: pytest.skip` de `test_a11y_regression.py`, que tapaba una expectativa desactualizada. Nueva suite `tests/audit/test_accesibilidad_formularios.py` con 11 tests de introspección por `accessibleName` | ídem |
 | UXA-013 | P2 | alta | Navegación sin título/estado accesible | PERSISTE | ídem |
 | UXA-014 | P3 | alta | Anti-patrones y tipografía microscópica | PERSISTE (VIS-003) | ídem |
 

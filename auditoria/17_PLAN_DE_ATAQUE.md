@@ -29,7 +29,7 @@ tipo: referencia
 | 8 bis | **Vaciar los estilos en línea** | VIS-001 (resto) | Sacar los 288 `setStyleSheet` a la hoja central y retirar las capas `legacy_styles` (25 ficheros) y `ccleaner_theme` (14). Es trabajo por vista, con revisión visual de cada una | P2 | alto | L | 8 | ratchet `setStyleSheet` bajando por lotes; capturas antes/después | pendiente |
 | 9 | **Componentes y feedback** | VIS-004, VIS-005, VIS-006, VIS-007, VIS-008, UXA-003, UXA-013 | `ViewHeader`, variantes de botón, iconos sin emoji, `ResultCard`, feedback único | P2 | medio | L | 8 | tests de componente; a11y | pendiente |
 | 10 | **Clics y caminos dorados** | UXF-003, UXF-006, UXF-010, UXF-011, UXF-009 | GP-1/2/3 dentro de presupuesto; atajos; recordar carpeta; deshacer en ausencias | P2 | bajo | M | 9 | tests de flujo con cuenta de clics | pendiente |
-| 11 | **Accesibilidad de formularios y tablas** | UXA-001, UXA-002, UXA-005, UXA-006, UXA-008, UXA-012 | FormField, foco visible, errores por campo, tablas con nombre | P1 | alto | L | 8 | introspección QAccessible; sesión NVDA/VoiceOver | pendiente |
+| 11 | **Accesibilidad de formularios y tablas** | ~~UXA-002~~, ~~UXA-005~~, ~~UXA-006~~, ~~UXA-012~~, UXA-001 (parcial), UXA-008 (parcial) | Nombres accesibles deducidos automáticamente (63% de controles mudos → 0); anillo de foco en todo control; el error marca el campo y le lleva el foco; tablas presentadas | P1 | alto | L | 8 | introspección por `accessibleName` en `test_accesibilidad_formularios.py` (11 tests) ✅. **Falta la sesión real con NVDA/VoiceOver** | **parcial v5.60.0** |
 | 12 | **Escalabilidad de datos** | ESC-001, ESC-005, UXA-011, UXA-009 | QTableView + modelo; caché por curso; gráficos accesibles | P2 | medio | L | 9 | benchmark 1.000 profesores; p95 < 100 ms | pendiente |
 | 13 | **Solver escalable** | ESC-002, FUN-013, FUN-014 | workers = CPUs, timeout configurable, descomposición, diagnóstico por slot | P2 | medio | L | 1 | `tests/compliance` + benchmark | pendiente |
 | 14 | **Calidad de código** | COD-001…008 | ruff limpio, jerarquía de excepciones, sin ORM en presentación, código muerto fuera, mypy en application | P2 | bajo | L (por lotes) | – | ruff/mypy/vulture/import-linter en CI | pendiente |
@@ -52,4 +52,9 @@ Tres frentes, independientes entre sí:
 
 1. **Lote 0** en la máquina Windows: compilar con `scripts/build_windows.ps1 -Diagnostico` y ejecutar el protocolo de [[06_CRASH_WINDOWS_GENERACION]] §5. **Es el único trabajo pendiente sobre el cierre en Windows: los nueve hallazgos CRW están resueltos.** Queda comprobar en la máquina real que el cierre ha desaparecido; si persistiera, habría que buscar una causa que la auditoría no vio.
 2. **Lote 8 bis** (vaciar los estilos en línea) — lo que queda de VIS-001. Es el trabajo caro del bloque visual: 288 `setStyleSheet` repartidos por las vistas, más dos capas antiguas que hay que retirar. No se puede hacer a ciegas: cada vista necesita mirarse antes y después, así que conviene por lotes pequeños.
-3. **Lote 11** (accesibilidad de formularios y tablas, UXA-001/002/005/006/008/012) — es P1 y el bloque más grande que queda de la auditoría: foco visible, campos con nombre accesible, errores por campo. Ahora que existe la vigilancia de campos de `BaseForm`, parte del recorrido por formularios ya está hecho.
+3. **Lote 14** (calidad de código, COD-001…008) — independiente de todo lo demás y se puede hacer por tandas: ruff limpio, jerarquía de excepciones, sin ORM en la capa de presentación, código muerto fuera. Incluye borrar `orquestador_asignacion_guardias.py`, que importa dos módulos que ya no existen.
+
+**Comprobaciones que sólo puede hacer una persona** (ningún lote las cubre):
+- El protocolo de Windows de [[06_CRASH_WINDOWS_GENERACION]] §5.
+- Abrir la aplicación en una pantalla pequeña y con escalado al 125% (UXA-001).
+- Una sesión real con NVDA o VoiceOver recorriendo Profesores y Zonas con el tabulador (UXA-002/005/006).

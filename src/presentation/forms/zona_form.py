@@ -76,6 +76,7 @@ class ZonaForm(BaseForm):
 
         # Detectar ediciones sin guardar para el guard de navegación (UXA-004)
         self.vigilar_cambios()
+        self.nombrar_campos()
 
     # ========== PROPIEDADES DE COMPATIBILIDAD ==========
 
@@ -191,6 +192,11 @@ class ZonaForm(BaseForm):
 
         # Tabla de zonas
         self.tabla_zonas = QTableWidget()
+        # Nombre y descripción para lectores de pantalla (UXA-008)
+        self.tabla_zonas.setAccessibleName("Listado de zonas de patio")
+        self.tabla_zonas.setAccessibleDescription(
+            "Tabla de zonas de patio. Selecciona una fila para editarla o borrarla."
+        )
         self.tabla_zonas.setColumnCount(5)
         self.tabla_zonas.setHorizontalHeaderLabels(
             ["ID", "Nombre", "Descripción", "Fecha Inicio", "Fecha Fin"]
@@ -343,10 +349,14 @@ class ZonaForm(BaseForm):
     def guardar_zona(self):
         """Guardar o actualizar una zona usando el Use Case correspondiente"""
         try:
-            # ✅ Validar widget
-            valido, error = self.datos_zona_widget.validar()
+            # ✅ Validar widget, señalando el campo que falla (UXA-006)
+            self.limpiar_errores()
+            valido, error, campo = self.datos_zona_widget.validar_con_campo()
             if not valido:
                 self.mostrar_advertencia("Validación", error)
+                # Después del aviso: si no, el foco se lo queda el diálogo.
+                if campo is not None:
+                    self.marcar_error_en_campo(campo, error)
                 return
 
             # ✅ Obtener datos del widget

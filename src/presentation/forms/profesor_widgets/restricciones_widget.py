@@ -35,6 +35,8 @@ from presentation.themes.ccleaner_theme import TEXT_SECONDARY
 logger = get_logger(__name__)
 
 _DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie"]
+#: Nombre completo del día, para lo que anuncia el lector de pantalla (UXA-005).
+_DIAS_COMPLETOS = ["lunes", "martes", "miércoles", "jueves", "viernes"]
 _COLOR_ON = "#4CAF50"
 _COLOR_OFF = "#E0E0E0"
 _COLOR_ON_TEXT = "white"
@@ -100,6 +102,14 @@ class SemanaRestriccionesWidget(QWidget):
                 btn.setCheckable(True)
                 btn.setChecked(True)
                 btn.setFixedSize(44, 32)
+                # Un botón cuyo único texto es la marca de verificación no dice
+                # nada por sí solo: sin nombre, el lector de pantalla anuncia
+                # veinte casillas idénticas.
+                btn.setAccessibleName(f"Recreo {recreo} del {_DIAS_COMPLETOS[col]}")
+                btn.setToolTip(
+                    f"Puede hacer guardia en el recreo {recreo} del {_DIAS_COMPLETOS[col]}"
+                )
+                self._actualizar_estado_accesible(btn, True)
                 self._aplicar_color(btn, True)
                 btn.toggled.connect(lambda checked, b=btn: self._on_toggle(b, checked))
                 self._celdas[(col, recreo)] = btn
@@ -108,6 +118,11 @@ class SemanaRestriccionesWidget(QWidget):
         grid_widget = QWidget()
         grid_widget.setLayout(grid)
         layout.addWidget(grid_widget)
+
+    @staticmethod
+    def _actualizar_estado_accesible(btn: QPushButton, activo: bool) -> None:
+        """El estado de la casilla también tiene que poder oírse."""
+        btn.setAccessibleDescription("Disponible" if activo else "No disponible")
 
     def _aplicar_color(self, btn: QPushButton, on: bool):
         color = _COLOR_ON if on else _COLOR_OFF
@@ -123,6 +138,7 @@ class SemanaRestriccionesWidget(QWidget):
             }}
         """)
         btn.setText("✓" if on else "")
+        self._actualizar_estado_accesible(btn, on)
 
     def _on_toggle(self, btn: QPushButton, checked: bool):
         self._aplicar_color(btn, checked)

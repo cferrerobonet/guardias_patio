@@ -73,7 +73,9 @@ class VistaCalendario(BaseForm):
         self._dias_lectivos_cache: dict = {}
 
         self.setWindowTitle("Calendario de Guardias")
-        self.resize(1400, 900)
+        # Tamaño de partida, no imposición: por debajo de esto la vista sigue
+        # siendo usable con desplazamiento (UXA-001, VIS-009).
+        self.resize(1200, 800)
         self.setup_ui()
 
     def showEvent(self, event):

@@ -67,7 +67,8 @@ QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
 }
 
 QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
-    border-color: @PRIMARY@;
+    border: 2px solid @FOCUS_RING@;
+    background-color: @BACKGROUND@;
 }
 
 /* ========== COMBOBOX ========== */
@@ -84,7 +85,7 @@ QComboBox:hover {
 }
 
 QComboBox:focus {
-    border-color: @PRIMARY@;
+    border: 2px solid @FOCUS_RING@;
 }
 
 QComboBox QAbstractItemView {
@@ -345,4 +346,51 @@ QFrame#separator {
 QLabel#unsavedChanges {
     color: #e67e22;
     font-weight: bold;
+}
+
+/* ========== FOCO VISIBLE (UXA-002) ==========
+   Sin esto, moverse con el tabulador es moverse a ciegas: Qt marca el foco con
+   un punteado apenas perceptible, y en los botones con estilo propio ni eso.
+   El anillo va en el color primario, con halo para separarlo del fondo. */
+
+QPushButton:focus,
+QToolButton:focus,
+QCheckBox:focus,
+QRadioButton:focus,
+QDateEdit:focus,
+QTimeEdit:focus,
+QDateTimeEdit:focus,
+QTabBar::tab:focus,
+QListWidget:focus,
+QTreeWidget:focus,
+QTableWidget:focus,
+QTableView:focus {
+    border: 2px solid @FOCUS_RING@;
+    outline: none;
+}
+
+/* El menú lateral es oscuro: ahí el anillo tiene que ser claro para verse. */
+QPushButton#menuButton:focus,
+QPushButton#menuButtonActive:focus {
+    border: 2px solid @FOCUS_HALO@;
+}
+
+/* La fila con foco dentro de una tabla también tiene que distinguirse. */
+QTableWidget::item:focus,
+QTableView::item:focus {
+    border: 2px solid @FOCUS_RING@;
+}
+
+/* Campo con error de validación (UXA-006): el borde rojo acompaña al mensaje,
+   para no obligar a buscar a ojo cuál de los campos es el que falla. */
+QLineEdit[error="true"],
+QPlainTextEdit[error="true"],
+QTextEdit[error="true"],
+QComboBox[error="true"],
+QSpinBox[error="true"],
+QDoubleSpinBox[error="true"],
+QDateEdit[error="true"],
+QTimeEdit[error="true"] {
+    border: 2px solid @ERROR@;
+    background-color: @ERROR_BG@;
 }
