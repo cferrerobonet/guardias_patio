@@ -213,6 +213,9 @@ vez la misma cuenta, habría que retomarla.
 ## 7. Decisiones
 
 > [!SUCCESS] Estado a 2026-09-05
+> Fases 1 y 2 implementadas y verificadas, y comprobado el arranque real contra el servidor:
+> descarga los datos de `Jefatura_FpBach` (2 cursos, 67 profesores, 4 zonas, 2.516 guardias),
+> reconstruye la base local y habilita la subida.
 > Fases 1 y 2 implementadas y verificadas. Los 15 hallazgos de esta auditoría quedan cerrados.
 > La cuenta `Jefatura_FpBach` ya está publicada en el servidor y sus datos (67 profesores,
 > 2.516 guardias) estaban allí desde el cierre de la aplicación del 4 de septiembre, así que
@@ -220,5 +223,5 @@ vez la misma cuenta, habría que retomarla.
 
 1. ~~¿Uno cada vez, o varios a la vez?~~ **Resuelto 2026-09-04: uno cada vez.** Fases 1 y 2; Fase 3 descartada.
 2. ~~¿Cuentas compartidas o individuales?~~ **Resuelto 2026-09-04: individuales**, una por persona, cada una con sus datos.
-   Queda por decidir la transición: hoy todo el mundo entra como `Jefatura_FpBach` y comparte un único conjunto de datos. Hay que definir quién se queda con ese conjunto y cómo arrancan las demás cuentas, y hacerlo **antes** de repartir credenciales nuevas, porque en cuanto alguien entre con un nombre distinto empezará con una carpeta vacía.
+   ~~Queda por decidir la transición.~~ **Resuelto 2026-09-05:** no hay migración. `Jefatura_FpBach` conserva los datos actuales, que ya están en el servidor, y las demás personas recibirán la versión nueva y empezarán de cero introduciendo sus propios datos. Cada una creará su cuenta, que quedará publicada en el servidor en ese momento, y su carpeta se creará con la primera subida.
 3. **Pendiente: ¿qué hacer si no hay servidor?** Bloquear el arranque, o permitir trabajo local declarado, visible y sin sincronización. Recomendado lo segundo, con aviso permanente en la ventana.
