@@ -5,6 +5,27 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.56.0] - 2026-09-05
+
+### 🎯 Resumen
+La aplicación abre en una pantalla que dice qué falta para poder generar las guardias, y el botón de generar deja de depender de haber pulsado un botón antes.
+
+### ✨ Added
+- **Nueva pantalla «Estado del curso», la primera del menú y la que se abre al arrancar.** Enumera los cinco requisitos —curso escolar activo, fechas, recreos, zonas y profesores—, marca cuáles están y cuáles no, y cada uno pendiente trae un botón que lleva directamente a la pantalla donde se resuelve. Antes la aplicación abría en la rejilla de Profesores, sin ninguna indicación de por dónde empezar.
+- **Se puede trabajar sin servidor.** Hasta ahora, si no configurabas el servidor en el primer arranque, la aplicación se cerraba: no había forma de preparar un curso en un portátil sin red. Ahora ofrece «Trabajar solo en este equipo», explicando lo que se pierde, y el menú lateral avisa de forma permanente con «⚠ Solo en este equipo».
+
+### Changed
+- **El permiso para generar lo dan los datos, no la interfaz.** El bloqueo «primero calcula las cuotas» era un interruptor de la pantalla: se perdía al cambiar de vista o de curso, y no comprobaba que existieran zonas, fechas ni profesores. Ahora se consulta al abrir, al cambiar de curso y al calcular cuotas, y comprueba los cinco requisitos de verdad.
+- **El motivo del bloqueo se lee en pantalla.** Estaba solo en el mensaje emergente que aparece al dejar el ratón sobre el botón; ahora hay un aviso visible que enumera lo que falta.
+- Generar el calendario baja de 6 a 5 clics, porque ya no hace falta pasar por «Calcular cuotas» antes.
+
+### 🧹 Housekeeping
+- `auditoria/`: UXF-001, UXF-002, UXF-005 y UXF-008 resueltos, y el lote 6 cerrado. `test_guardarrailes_flujo.py` pasa de 3 fallos esperados a 12 pruebas en verde.
+- El ratchet de estilos sube de 287 a 289 de forma deliberada y anotada: la pantalla nueva y el aviso de bloqueo son superficie que aún no tiene hoja de estilos central. Ambos entran en el inventario del lote 8.
+- 2.518 pruebas, ningún fallo.
+
+---
+
 ## [5.55.0] - 2026-09-05
 
 ### 🎯 Resumen

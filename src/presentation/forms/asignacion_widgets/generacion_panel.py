@@ -41,7 +41,10 @@ from presentation.theme.terminal_format import (
     wrap_terminal_html,
 )
 from presentation.theme.tokens import Spacing
+from utils import get_logger
 from utils.icons import icon_for_button
+
+_logger = get_logger(__name__)
 
 
 @contextmanager
@@ -120,6 +123,7 @@ class GeneracionPanel(QGroupBox):
         """)
         self._setup_ui()
         self._mostrar_mensaje_inicial()
+        self.comprobar_prerrequisitos()
 
     def _setup_ui(self):
         """Configura la UI del panel."""
@@ -188,6 +192,16 @@ class GeneracionPanel(QGroupBox):
 
         layout.addLayout(button_container)
 
+        # Motivo del bloqueo, visible sin pasar el ratón por encima (UXF-008)
+        self.label_bloqueo = QLabel("")
+        self.label_bloqueo.setWordWrap(True)
+        self.label_bloqueo.setStyleSheet(
+            "color: #92400e; background: #fef3c7; border: 1px solid #fcd34d;"
+            " border-radius: 4px; padding: 6px 8px;"
+        )
+        self.label_bloqueo.setVisible(False)
+        layout.addWidget(self.label_bloqueo)
+
         # Área de texto estilo terminal
         self.content_text = QTextEdit()
         self.content_text.setReadOnly(True)
@@ -219,24 +233,48 @@ class GeneracionPanel(QGroupBox):
         )
         self.content_text.setHtml(wrap_terminal_html(texto))
 
-    def habilitar_generacion(self, habilitar: bool = True):
-        """Habilita o deshabilita el botón de generar asignación.
+    def comprobar_prerrequisitos(self):
+        """Vuelve a preguntar al dominio si se puede generar y ajusta la interfaz.
 
-        Args:
-            habilitar: True para habilitar, False para deshabilitar.
+        Antes esto era un booleano de sesión que se perdía al cambiar de vista o de
+        curso y no comprobaba nada real (UXF-002).
         """
-        self.generar_button.setEnabled(habilitar)
-        if habilitar:
+        from application.use_cases.preflight_generacion import PreflightGeneracionUseCase
+
+        try:
+            estado = PreflightGeneracionUseCase(self.session).execute()
+        except SQLAlchemyError as e:
+            _logger.warning(f"No se pudo comprobar los prerrequisitos: {e}")
+            return None
+
+        self.generar_button.setEnabled(estado.listo)
+        if estado.listo:
             self.generar_button.setToolTip("Generar el calendario de guardias")
-            # Actualizar mensaje para indicar que puede generar
+            self.label_bloqueo.setVisible(False)
+        else:
+            self.generar_button.setToolTip(estado.motivo)
+            self.label_bloqueo.setText(
+                "No se puede generar todavía. " + estado.motivo + ".\n"
+                + "\n".join(f"• {r.titulo}: {r.detalle}" for r in estado.faltantes)
+            )
+            self.label_bloqueo.setVisible(True)
+        return estado
+
+    def habilitar_generacion(self, habilitar: bool = True):
+        """Reacciona al cálculo de cuotas.
+
+        El permiso para generar ya no lo concede la interfaz: lo decide el estado de
+        los datos. Este método sólo pinta el mensaje de "listo para generar" y vuelve
+        a comprobar los prerrequisitos.
+        """
+        estado = self.comprobar_prerrequisitos()
+        if habilitar and (estado is None or estado.listo):
             texto = format_terminal_info(
                 "Cuotas calculadas correctamente.\n\n"
                 "Pulsa 'Generar Asignación' para crear\n"
                 "   el calendario de guardias del curso."
             )
             self.content_text.setHtml(wrap_terminal_html(texto))
-        else:
-            self.generar_button.setToolTip("Primero debe calcular las cuotas")
 
     def _generar_guardias(self):
         """Genera el calendario de guardias."""
@@ -840,6 +878,7 @@ class GeneracionPanel(QGroupBox):
         """Recarga datos cuando cambia el curso."""
         from application.app_services import AppServices
 
+        self.comprobar_prerrequisitos()
         count = AppServices(self.session).contar_guardias()
         if count == 0:
             self._mostrar_mensaje_inicial()

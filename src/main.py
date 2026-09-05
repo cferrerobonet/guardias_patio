@@ -159,17 +159,35 @@ def main():
 
         config_dialog = InitialConfigDialog()
         if config_dialog.exec() != InitialConfigDialog.DialogCode.Accepted:
-            logger.info("Usuario canceló la configuración inicial. Saliendo...")
-            QMessageBox.critical(
-                None,
-                "Configuración Incompleta",
-                "No se puede iniciar la aplicación sin configurar SFTP.\n\n"
-                "El servidor SFTP es necesario para garantizar copias de seguridad "
-                "y sincronización de datos.",
+            # Antes esto cerraba la aplicación: sin servidor no se podía ni entrar,
+            # lo que impedía preparar un curso en un portátil sin red (UXF-005).
+            logger.info("Configuración inicial cancelada. Se ofrece el modo local.")
+            eleccion = QMessageBox(
+                QMessageBox.Icon.Warning,
+                "Sin servidor de sincronización",
+                "No has configurado el servidor.",
             )
-            return 0
+            eleccion.setInformativeText(
+                "Puedes trabajar solo en este equipo, pero ten en cuenta que:\n\n"
+                "• Los datos NO se copiarán al servidor.\n"
+                "• No podrás abrirlos desde otro ordenador.\n"
+                "• No habrá copia de seguridad fuera de este equipo.\n\n"
+                "Podrás configurarlo más tarde en Ajustes."
+            )
+            boton_local = eleccion.addButton(
+                "Trabajar solo en este equipo", QMessageBox.ButtonRole.AcceptRole
+            )
+            eleccion.addButton("Salir", QMessageBox.ButtonRole.RejectRole)
+            eleccion.setDefaultButton(boton_local)
+            eleccion.exec()
 
-        logger.info("✓ Configuración inicial completada")
+            if eleccion.clickedButton() is not boton_local:
+                logger.info("El usuario prefiere salir a trabajar sin servidor.")
+                return 0
+
+            logger.warning("Arrancando en modo local: esta sesión no sincroniza.")
+        else:
+            logger.info("✓ Configuración inicial completada")
 
     # ==========================================
     # Configurar traducción al español

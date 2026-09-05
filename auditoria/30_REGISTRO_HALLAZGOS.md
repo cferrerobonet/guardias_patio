@@ -52,14 +52,14 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 | ID | Sev. | Conf. | Título | Estado | Ficha |
 | --- | --- | --- | --- | --- | --- |
-| UXF-001 | P1 | alta | Sin secuencia guiada ni panel de estado; la app abre en Profesores | NUEVO | [[03_UX_CASOS_DE_USO_Y_CAMINOS_DORADOS]] |
-| UXF-002 | P1 | alta | Guardarraíl "cuotas antes de generar" es un flag de UI, no precondición de dominio | NUEVO | 03 |
+| UXF-001 | P1 | alta | ~~Sin secuencia guiada ni panel de estado; la app abre en Profesores~~ | **RESUELTO VERIFICADO v5.56.0** · nueva vista «Estado del curso», primera del menú y pantalla de arranque: lista los cinco prerrequisitos con su estado y lleva de un clic a la pantalla que resuelve cada uno · `test_la_vista_de_inicio_lista_lo_que_falta`, `test_la_aplicacion_abre_en_el_estado_del_curso` | [[03_UX_CASOS_DE_USO_Y_CAMINOS_DORADOS]] |
+| UXF-002 | P1 | alta | ~~Guardarraíl "cuotas antes de generar" es un flag de UI~~ | **RESUELTO VERIFICADO v5.56.0** · `PreflightGeneracionUseCase` comprueba curso activo, fechas, recreos, zonas y profesores contra los datos; la interfaz ya no puede conceder el permiso por su cuenta y el estado se reevalúa al cambiar de curso o de vista · `test_la_interfaz_no_puede_conceder_permiso_para_generar` | 03 |
 | UXF-003 | P2 | alta | Generar requiere 2 modales previos y clic de cierre | NUEVO | 03 |
-| UXF-004 | P2 | alta | Cambio de curso: confirmación + toast sin refresco | NUEVO (dup. parcial UXA-007) | 03 |
-| UXF-005 | P2 | alta | Primer arranque exige SFTP; sin modo local | NUEVO · decidido 2026-09-05: se añade modo local con aviso persistente (lote 6) | 03 |
+| UXF-004 | P2 | alta | Cambio de curso: confirmación + toast sin refresco | NUEVO (dup. parcial UXA-007) · desde v5.56.0 el panel de generación sí revalida sus prerrequisitos al cambiar de curso | 03 |
+| UXF-005 | P2 | alta | ~~Primer arranque exige SFTP; sin modo local~~ | **RESUELTO VERIFICADO v5.56.0** · cancelar la configuración inicial ofrece «Trabajar solo en este equipo» en vez de cerrar la aplicación, enumerando lo que se pierde; el indicador del menú lateral muestra «⚠ Solo en este equipo» de forma permanente · `test_sin_servidor_se_ofrece_el_modo_local_en_vez_de_cerrar` | 03 |
 | UXF-006 | P2 | alta | Limpiar guardias con la misma prominencia que Generar | NUEVO | 03 |
 | UXF-007 | P2 | alta | Sin protección de cambios sin guardar | DUPLICADO → UXA-004 | 03 |
-| UXF-008 | P3 | alta | Motivo de bloqueo sólo en tooltip | NUEVO | 03 |
+| UXF-008 | P3 | alta | ~~Motivo de bloqueo sólo en tooltip~~ | **RESUELTO VERIFICADO v5.56.0** · el panel de generación pinta una etiqueta visible con los requisitos que faltan y su detalle · `test_motivo_de_bloqueo_visible_sin_hover` | 03 |
 | UXF-009 | P2 | media | Ausencias sin deshacer ni vista previa | NUEVO | 03 |
 | UXF-010 | P2 | alta | Cinco exportaciones PDF con diálogo cada una y sin recordar carpeta | NUEVO | 03 |
 | UXF-011 | P3 | alta | Atajos de teclado casi inexistentes | NUEVO | 03 |

@@ -1,5 +1,11 @@
 """Ratchets de consistencia visual. Umbrales = valor medido en el commit auditado (2026-09-04).
-Sólo pueden bajar. Ver auditoria/04 y 05."""
+Sólo pueden bajar, salvo subida deliberada y anotada aquí. Ver auditoria/04 y 05.
+
+Subidas registradas:
+- 2026-09-05, v5.56.0: `setStyleSheet` 287 → 289. La vista de estado del curso y la
+  etiqueta de bloqueo del panel de generación son superficie nueva (UXF-001/008) y
+  todavía no hay hoja de estilos central donde declararlas. Ambas entran en el
+  inventario del lote 8, que baja este umbral de golpe al crear `app.qss`."""
 
 import re
 from pathlib import Path
@@ -9,7 +15,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 PRES = ROOT / "src" / "presentation"
 UMBRALES = {
-    "setStyleSheet": 287,
+    "setStyleSheet": 289,
     "hex_literales": 631,
     "font_size_menor_12px": 89,
     "lineas_con_emoji": 327,

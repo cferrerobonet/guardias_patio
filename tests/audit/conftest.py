@@ -12,7 +12,7 @@ import pytest
 from sqlalchemy import create_engine, event, pool
 from sqlalchemy.orm import sessionmaker
 
-from infrastructure.database.models import Base, Configuracion
+from infrastructure.database.models import Base, Configuracion, CursoEscolar
 
 
 def pytest_collection_modifyitems(items):
@@ -85,3 +85,24 @@ def configuracion_basica(session, zona_factory, profesor_factory):
     session.add(config)
     session.commit()
     return config
+
+
+@pytest.fixture
+def curso_generable(session, configuracion_basica):
+    """Escenario con TODOS los prerrequisitos de generación cubiertos.
+
+    `configuracion_basica` deja fechas, recreos, zonas y profesores, pero no un
+    curso escolar activo, que es el primer requisito del preflight.
+    """
+    curso = CursoEscolar(
+        anio_inicio=2025,
+        anio_fin=2026,
+        fecha_inicio=date(2025, 7, 1),
+        fecha_fin=date(2026, 6, 30),
+        nombre="Curso 2025/2026",
+        activo=True,
+        cerrado=False,
+    )
+    session.add(curso)
+    session.commit()
+    return curso

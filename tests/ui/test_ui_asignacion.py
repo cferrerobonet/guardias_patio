@@ -76,16 +76,22 @@ class TestAsignacionRenderizado:
 
 
 class TestGuardarrailDeGeneracion:
-    def test_generar_arranca_deshabilitado(self, form):
-        """Sin cuotas calculadas no se puede generar."""
-        assert not form.generacion_panel.generar_button.isEnabled()
-        assert "calcular las cuotas" in form.generacion_panel.generar_button.toolTip()
+    def test_generar_arranca_bloqueado_y_dice_por_que(self, form):
+        """Sin curso escolar activo no se puede generar, y se explica en pantalla."""
+        panel = form.generacion_panel
+        assert not panel.generar_button.isEnabled()
+        assert panel.generar_button.toolTip().strip()
+        assert panel.label_bloqueo.isVisibleTo(panel)
+        assert "curso" in panel.label_bloqueo.text().lower()
 
-    def test_calcular_cuotas_habilita_generar(self, form):
-        """La señal del panel de cálculo es la que abre la puerta a generar."""
+    def test_calcular_cuotas_no_salta_el_guardarrail(self, form):
+        """Calcular cuotas no habilita generar si los datos no están completos.
+
+        Era el fallo de UXF-002: bastaba con la señal de la interfaz.
+        """
         form.calculo_panel.cuotas_calculadas.emit({})
         QApplication.processEvents()
-        assert form.generacion_panel.generar_button.isEnabled()
+        assert not form.generacion_panel.generar_button.isEnabled()
 
     def test_boton_calcular_esta_conectado(self, qapp, session, configuracion):
         """El botón dispara `calcular_cuotas`.

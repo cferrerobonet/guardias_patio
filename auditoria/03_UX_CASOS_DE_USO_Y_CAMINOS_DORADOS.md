@@ -81,7 +81,7 @@ Se cuenta cada clic de ratón o pulsación equivalente que el usuario debe hacer
 
 | Camino | Pasos actuales | Clics hoy | Objetivo | Cómo llegar |
 | --- | --- | ---: | ---: | --- |
-| GP-1 Generar guardias (curso configurado) | Sidebar Cálculo (1) → Calcular cuotas (1) → Generar (1) → modal resumen *OK* o *Sí/No* (1) → esperar → *Cerrar* progreso (1) → Sidebar Calendario (1) | 6 | 3 | Cuotas se recalculan automáticamente si los datos cambiaron; resumen previo inline (no modal); el diálogo de progreso se cierra solo al acabar y muestra tarjeta de resultado con botón "Ver calendario" |
+| GP-1 Generar guardias (curso configurado) | Sidebar Cálculo (1) → Generar (1) → modal resumen *OK* o *Sí/No* (1) → esperar → *Cerrar* progreso (1) → Sidebar Calendario (1). Desde v5.56.0 ya no hace falta pulsar «Calcular cuotas» antes: el permiso lo dan los datos | 5 | 3 | Cuotas se recalculan automáticamente si los datos cambiaron; resumen previo inline (no modal); el diálogo de progreso se cierra solo al acabar y muestra tarjeta de resultado con botón "Ver calendario" |
 | GP-2 Registrar ausencia y cubrirla | Sidebar Ausencias (1) → combo profesor (2) → fecha inicio (2) → fecha fin (2) → Buscar (1) → Auto-asignar (1) → Guardar (1) → confirmación (1) | 11 | 6 | Fecha fin = inicio por defecto; buscar automático al cambiar filtros; auto-asignar como acción por defecto de Guardar; confirmación sustituida por toast con "Deshacer" |
 | GP-3 Exportar PDF del mes para todos | Sidebar Reportes (1) → tipo (2) → mes (2) → Exportar (1) → carpeta (2) → aceptar aviso (1) | 9 | 4 | Mes actual por defecto; recordar carpeta; abrir carpeta al terminar en vez de modal |
 | GP-4 Alta de profesor | Sidebar Profesores (1) → Nuevo (1) → nombre, horas, turno, tutor (≥4 campos) → Guardar (1) → *OK* modal (1) | 4 + campos | 3 + campos | Éxito por toast; foco vuelve a Nuevo para altas encadenadas; Ctrl+N/Ctrl+S |
@@ -101,14 +101,14 @@ Se cuenta cada clic de ratón o pulsación equivalente que el usuario debe hacer
 
 | ID | Sev. | Título | Evidencia |
 | --- | --- | --- | --- |
-| UXF-001 | P1 | No existe secuencia guiada ni panel de estado del curso; la app abre en Profesores | `ccleaner_main_window.py:118`, `ccleaner_sidebar.py:178-216`, `README.md:33-39` |
-| UXF-002 | P1 | El guardarraíl "cuotas antes de generar" es un flag de UI, no una precondición de dominio; se pierde al cambiar de vista o curso y no valida zonas/fechas | `generacion_panel.py:156-163,190-205`, `asignacion_calculo_form.py:53-58,151-155` |
+| ~~UXF-001~~ ✅ **v5.56.0** | P1 | ~~No existe secuencia guiada ni panel de estado del curso; la app abre en Profesores~~ · resuelto con la vista «Estado del curso» | `ccleaner_main_window.py:118`, `ccleaner_sidebar.py:178-216`, `README.md:33-39` |
+| ~~UXF-002~~ ✅ **v5.56.0** | P1 | ~~El guardarraíl "cuotas antes de generar" es un flag de UI~~ · resuelto con `PreflightGeneracionUseCase` | `generacion_panel.py:156-163,190-205`, `asignacion_calculo_form.py:53-58,151-155` |
 | UXF-003 | P2 | Generar requiere 2 modales previos y 1 clic de cierre; resumen previo debería ser inline | `generacion_panel.py:263-292` |
 | UXF-004 | P2 | Cambio de curso: confirmación + toast pero sin refresco (ver UXA-007) | `selector_curso_widget.py:118-166` |
-| UXF-005 | P2 | Primer arranque exige SFTP; sin servidor no se puede usar la app en local | `main.py:120-134`, `initial_config_dialog.py:641-665` |
+| ~~UXF-005~~ ✅ **v5.56.0** | P2 | ~~Primer arranque exige SFTP~~ · se ofrece trabajar solo en este equipo, con aviso permanente | `main.py:120-134`, `initial_config_dialog.py:641-665` |
 | UXF-006 | P2 | "Limpiar guardias" comparte fila, tamaño y prominencia con "Generar" | `generacion_panel.py:165-176` |
 | UXF-007 | P2 | Sin protección de cambios sin guardar (duplica UXA-004 a efectos de flujo) | `base_form.py:29-86` |
-| UXF-008 | P3 | Motivo de bloqueo sólo en tooltip | `generacion_panel.py:163,203` |
+| ~~UXF-008~~ ✅ **v5.56.0** | P3 | ~~Motivo de bloqueo sólo en tooltip~~ · etiqueta visible con los requisitos que faltan | `generacion_panel.py:163,203` |
 | UXF-009 | P2 | Ausencias: sin deshacer ni vista previa del impacto de la reasignación | `ausencias_sustituciones.py:426-497` |
 | UXF-010 | P2 | Cinco variantes de exportación PDF con diálogo de fichero cada una y sin recordar carpeta | `reportes_form.py:205-444` |
 | UXF-011 | P3 | Sólo un atajo global (Ctrl+B); sin Ctrl+N/Ctrl+S/Escape consistentes | `ccleaner_sidebar.py:62-65`, `profesor_form.py:351-360` |
