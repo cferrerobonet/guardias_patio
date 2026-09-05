@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.68.0] - 2026-09-05
+
+### 🎯 Resumen
+La configuración del servidor deja de darse por buena sin haberla probado.
+
+### Fixed
+- **Se guardaba una configuración que no funcionaba.** Bastaba con que los campos no estuvieran vacíos: si escribías mal la contraseña, la aplicación decía «configuración guardada correctamente» y te enterabas mucho después, con una sesión entera de trabajo que nunca había salido del equipo. Ahora, al guardar, se conecta de verdad al servidor; si no conecta, no se guarda y se explica por qué.
+- **Una contraseña rechazada reventaba el diálogo.** La prueba de conexión capturaba una lista de errores que no incluía los de la librería de conexión, así que el caso más común —usuario o contraseña mal— no mostraba «error de conexión»: cerraba la ventana con un fallo inesperado. Ahora se explica en una frase.
+- Cambiar cualquier dato después de probar obliga a probar de nuevo: antes se podía comprobar una configuración y guardar otra distinta.
+
+### 🧹 Housekeeping
+- `auditoria/`: SYNC-002 resuelto. Era el último hallazgo de prioridad alta que quedaba abierto por completo.
+- 2.589 pruebas, ningún fallo.
+
+---
+
 ## [5.67.0] - 2026-09-05
 
 ### 🎯 Resumen

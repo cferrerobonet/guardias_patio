@@ -15,7 +15,9 @@ from pathlib import Path
 
 import paramiko
 from dotenv import load_dotenv
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
+    QApplication,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -220,10 +222,24 @@ class InitialConfigDialog(QDialog):
         self.sftp_port_input.setText(os.getenv("SFTP_PORT", "22"))
         self.sftp_user_input.setText(os.getenv("SFTP_USERNAME", ""))
         self._sftp_password = os.getenv("SFTP_PASSWORD", "")
+        #: La conexión sólo se da por buena tras hablar con el servidor (SYNC-002).
+        #: Cualquier cambio en los datos vuelve a ponerlo en False.
+        self._sftp_probado_ok = False
         if self._sftp_password:
             self.sftp_password_input.setText("••••••••")
             self.sftp_password_input.setPlaceholderText("Contraseña configurada")
         self.sftp_basedir_input.setText(os.getenv("SFTP_BASE_DIR", "/aplicaciones/guardias_patio"))
+
+        # Tocar cualquier dato invalida la prueba anterior: si no, se podría probar
+        # con unos datos y guardar otros distintos (SYNC-002).
+        for campo in (
+            self.sftp_host_input,
+            self.sftp_port_input,
+            self.sftp_user_input,
+            self.sftp_password_input,
+            self.sftp_basedir_input,
+        ):
+            campo.textEdited.connect(self._invalidar_prueba_sftp)
 
         # SMTP
         self.smtp_server_input.setText(os.getenv("SMTP_SERVER", ""))
@@ -314,8 +330,17 @@ class InitialConfigDialog(QDialog):
         self._smtp_configured = False
         self._check_configuration()
 
-    def _test_sftp(self) -> None:
-        """Prueba la conexión SFTP."""
+    def _invalidar_prueba_sftp(self, *_args) -> None:
+        """Los datos han cambiado: hay que volver a probar antes de guardar."""
+        self._sftp_probado_ok = False
+
+    def _probar_conexion_sftp(self):
+        """Intenta conectar de verdad al servidor. Devuelve `(ok, mensaje)`.
+
+        Sin interfaz, para poder usarla tanto desde el botón «Probar» como antes
+        de guardar: dar por buena una configuración porque los campos no están
+        vacíos deja al usuario creyendo que sincroniza cuando no lo hace (SYNC-002).
+        """
         host = self.sftp_host_input.text().strip()
         port = self.sftp_port_input.text().strip()
         user = self.sftp_user_input.text().strip()
@@ -326,45 +351,57 @@ class InitialConfigDialog(QDialog):
             password = self._sftp_password
 
         if not all([host, port, user, password]):
-            QMessageBox.warning(
-                self,
-                "Campos Incompletos",
-                "Por favor, completa todos los campos SFTP antes de probar la conexión.",
-            )
-            return
+            return False, "Faltan datos: completa servidor, puerto, usuario y contraseña."
 
+        transport = None
         try:
-            # Intentar conectar
             transport = paramiko.Transport((host, int(port)))
             transport.connect(username=user, password=password)
             sftp = paramiko.SFTPClient.from_transport(transport)
 
-            # Verificar directorio base
+            # El directorio base tiene que existir o poder crearse
             basedir = self.sftp_basedir_input.text().strip()
-            try:
-                sftp.stat(basedir)
-            except FileNotFoundError:
-                # Intentar crear el directorio
-                sftp.mkdir(basedir)
+            if basedir:
+                try:
+                    sftp.stat(basedir)
+                except FileNotFoundError:
+                    sftp.mkdir(basedir)
 
             sftp.close()
-            transport.close()
+            return True, f"Conectado a {host} y carpeta de destino accesible."
 
+        except paramiko.AuthenticationException:
+            return False, "El servidor rechazó el usuario o la contraseña."
+        except Exception as e:  # noqa: BLE001 - paramiko no hereda de OSError
+            # `except (OSError, ValueError)` dejaba escapar SSHException, así que
+            # una contraseña mal escrita reventaba el diálogo en vez de avisar.
+            return False, f"{type(e).__name__}: {e}"
+        finally:
+            if transport is not None:
+                try:
+                    transport.close()
+                except Exception:  # noqa: BLE001
+                    pass
+
+    def _test_sftp(self) -> None:
+        """Prueba la conexión SFTP y deja constancia del resultado."""
+        ok, mensaje = self._probar_conexion_sftp()
+        self._sftp_probado_ok = ok
+
+        if ok:
             QMessageBox.information(
                 self,
                 "✅ Conexión Exitosa",
-                f"La conexión SFTP a {host} se estableció correctamente.\n\n"
-                "Ahora puedes guardar la configuración.",
+                f"{mensaje}\n\nAhora puedes guardar la configuración.",
             )
-
-        except (OSError, ValueError) as e:
+        else:
             QMessageBox.critical(
                 self,
                 "❌ Error de Conexión",
-                f"No se pudo conectar al servidor SFTP:\n\n{str(e)}\n\n"
+                f"No se pudo conectar al servidor SFTP:\n\n{mensaje}\n\n"
                 "Verifica los datos e inténtalo de nuevo.",
             )
-            logger.error(f"Error al probar SFTP: {e}")
+            logger.error(f"Error al probar SFTP: {mensaje}")
 
     def _test_smtp(self) -> None:
         """Prueba la conexión SMTP."""
@@ -436,6 +473,28 @@ class InitialConfigDialog(QDialog):
                 "Por favor, completa todos los campos SFTP antes de guardar.",
             )
             return
+
+        # No se guarda una configuración que no funciona: se comprueba contra el
+        # servidor antes (SYNC-002). Si ya se probó con estos mismos datos, no se
+        # repite la conexión.
+        if not self._sftp_probado_ok:
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            try:
+                ok, mensaje = self._probar_conexion_sftp()
+            finally:
+                QApplication.restoreOverrideCursor()
+
+            if not ok:
+                QMessageBox.critical(
+                    self,
+                    "❌ No se guardó la configuración",
+                    f"No se pudo conectar al servidor SFTP:\n\n{mensaje}\n\n"
+                    "La configuración no se guarda: si lo hiciera, la aplicación "
+                    "parecería estar sincronizando cuando no lo estaría.",
+                )
+                logger.error(f"Configuración SFTP rechazada, no conecta: {mensaje}")
+                return
+            self._sftp_probado_ok = True
 
         try:
             self._update_env_file(
