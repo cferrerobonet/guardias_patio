@@ -366,15 +366,19 @@ class ImportExportForm(BaseForm):
 
             # Importar con indicador de progreso
             def tarea_importacion(progress_callback):
-                factory = RepositoryFactory(self.session)
-                profesor_repo = factory.create_profesor_repository()
-                return importar_profesores(
-                    profesor_repo,
-                    archivo,
-                    skip_rows=skip,
-                    column_mapping=col_mapping,
-                    progress_callback=progress_callback,
-                )
+                # Corre en el WorkerThread: sesión propia, no la de la GUI (CRW-003).
+                from database.db_manager import get_db_session
+
+                with get_db_session() as sesion:
+                    factory = RepositoryFactory(sesion)
+                    profesor_repo = factory.create_profesor_repository()
+                    return importar_profesores(
+                        profesor_repo,
+                        archivo,
+                        skip_rows=skip,
+                        column_mapping=col_mapping,
+                        progress_callback=progress_callback,
+                    )
 
             resultados, cancelado = ejecutar_con_progreso(
                 self,  # parent

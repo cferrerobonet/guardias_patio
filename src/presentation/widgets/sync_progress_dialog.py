@@ -22,24 +22,39 @@ logger = logging.getLogger(__name__)
 
 
 class SyncWorker(QThread):
-    """Worker que ejecuta la sincronización SFTP en un hilo separado."""
+    """Worker que ejecuta la sincronización SFTP en un hilo separado.
+
+    Abre su propia sesión de base de datos: una `Session` de SQLAlchemy no es
+    thread-safe y compartir la de la GUI con este hilo era el escenario descrito
+    en CRW-003 (el auto-sync de 30 minutos coincidiendo con una generación).
+    """
 
     progress_updated = pyqtSignal(str, dict)  # (step, details)
     finished = pyqtSignal(bool)  # success
 
-    def __init__(self, sync_manager, session=None, parent=None):
+    def __init__(self, sync_manager, parent=None, session_factory=None):
         super().__init__(parent)
         self._sync_manager = sync_manager
-        self._session = session
+        self._session_factory = session_factory
+
+    def _abrir_sesion(self):
+        """Context manager con la sesión propia de este hilo."""
+        if self._session_factory is not None:
+            return self._session_factory()
+
+        from database.db_manager import get_db_session
+
+        return get_db_session()
 
     def run(self):
         def on_progress(step: str, details: dict):
             self.progress_updated.emit(step, details)
 
         try:
-            success = self._sync_manager.sync_on_shutdown(
-                session=self._session, progress_callback=on_progress
-            )
+            with self._abrir_sesion() as sesion_propia:
+                success = self._sync_manager.sync_on_shutdown(
+                    session=sesion_propia, progress_callback=on_progress
+                )
         except Exception as e:  # noqa: BLE001
             # Nada puede escapar de run(): iría al excepthook, que se ejecutaría en
             # este hilo. Paramiko lanza SSHException, que no es OSError (CRW-005).

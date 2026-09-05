@@ -35,18 +35,21 @@ class AsignacionCalculoForm(BaseForm):
     - Analizar resultados e incidencias
     """
 
-    def __init__(self, session, sync_manager=None):
+    def __init__(self, session, sync_manager=None, session_factory=None):
         """
         Inicializar el formulario de cálculo de distribución.
 
         Args:
             session: Sesión de SQLAlchemy para acceso a base de datos
             sync_manager: Gestor de sincronización con la nube (opcional)
+            session_factory: Fábrica de sesiones para el worker de generación,
+                que corre en otro hilo y necesita la suya (CRW-003)
         """
         super().__init__(session)
 
         # Guardar sync_manager
         self.sync_manager = sync_manager
+        self._session_factory = session_factory
 
         # Inicializar Use Cases
         self.obtener_estadisticas_uc = ObtenerEstadisticasUseCase(session)
@@ -134,7 +137,9 @@ class AsignacionCalculoForm(BaseForm):
 
         # Panel de generación y resultados
         self.generacion_panel = GeneracionPanel(
-            self.session, sync_manager=self.sync_manager
+            self.session,
+            sync_manager=self.sync_manager,
+            session_factory=self._session_factory,
         )
         right_layout.addWidget(self.generacion_panel, 1)
 

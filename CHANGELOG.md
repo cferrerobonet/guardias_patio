@@ -5,6 +5,26 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.55.0] - 2026-09-05
+
+### 🎯 Resumen
+Cada tarea de fondo trabaja ya con su propia conexión a la base de datos. Era el último de los nueve problemas detectados tras el cierre inesperado de la aplicación en Windows.
+
+### Fixed
+- **La base de datos deja de compartirse entre hilos.** Generar guardias, sincronizar con la nube, exportar PDFs e importar profesores se ejecutan en segundo plano para no congelar la ventana, pero todos usaban la misma conexión que la interfaz. Esa conexión no está preparada para que dos hilos la usen a la vez: si la sincronización automática caía en mitad de una generación, el resultado podía ir desde un "base de datos bloqueada" hasta el cierre de la aplicación. Ahora cada tarea abre la suya y la cierra al terminar (CRW-003).
+- **Afectaba a seis sitios, no a dos.** Además de la generación y la sincronización, las cuatro exportaciones de PDF y la importación de profesores hacían lo mismo.
+- **Tras generar, la pantalla de resultados releía datos viejos.** Como el cálculo ocurre ahora en otra conexión, la interfaz descarta lo que tenía en memoria antes de pintar.
+
+### Changed
+- La sincronización ya no admite que se le pase la conexión de la interfaz: la abre ella.
+- Una comprobación automática recorre el código de las pantallas y falla si alguna tarea de fondo vuelve a usar la conexión de la interfaz. Es el guardarraíl para que el problema no reaparezca en la próxima pantalla que exporte algo.
+
+### 🧹 Housekeeping
+- `auditoria/`: CRW-003 resuelto y lote 3 cerrado. **Los nueve hallazgos sobre el cierre en Windows están resueltos**; queda comprobarlo en un equipo Windows real.
+- Tres pruebas nuevas, incluida una que abre dos conexiones simultáneas sobre un fichero SQLite real y comprueba que no se bloquean. Total: 2.508 pruebas, ningún fallo.
+
+---
+
 ## [5.54.0] - 2026-09-05
 
 ### 🎯 Resumen

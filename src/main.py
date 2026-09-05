@@ -459,7 +459,7 @@ def main():
                 progress_dialog = SyncProgressDialog()
 
                 # Worker ejecuta la sync en hilo separado — no bloquea GUI
-                worker = SyncWorker(sync_manager, session=session)
+                worker = SyncWorker(sync_manager)  # abre su propia sesión (CRW-003)
 
                 def on_progress(step: str, details: dict):
                     if step == "exporting":

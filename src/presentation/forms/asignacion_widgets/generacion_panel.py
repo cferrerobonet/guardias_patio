@@ -6,6 +6,8 @@ Combina:
 - Análisis de incidencias y recomendaciones
 """
 
+from contextlib import contextmanager
+
 from sqlalchemy.exc import SQLAlchemyError
 
 from PyQt6.QtCore import pyqtSignal
@@ -42,6 +44,20 @@ from presentation.theme.tokens import Spacing
 from utils.icons import icon_for_button
 
 
+@contextmanager
+def sesion_de_trabajo():
+    """Abre una sesión propia sobre la base de datos del usuario activo.
+
+    Una `Session` de SQLAlchemy no es thread-safe: `check_same_thread=False` sólo
+    silencia la comprobación de sqlite3, no hace segura la sesión. Cada hilo abre
+    la suya (CRW-003).
+    """
+    from database.db_manager import get_db_session
+
+    with get_db_session() as sesion:
+        yield sesion
+
+
 class GeneracionPanel(QGroupBox):
     """Panel combinado para generación y resultados de guardias.
 
@@ -59,21 +75,25 @@ class GeneracionPanel(QGroupBox):
     guardias_generadas = pyqtSignal()
     guardias_limpiadas = pyqtSignal()
 
-    def __init__(self, session, sync_manager=None, parent=None):
+    def __init__(self, session, sync_manager=None, parent=None, session_factory=None):
         """Inicializa el panel de generación.
 
         Args:
-            session: Sesión de SQLAlchemy.
+            session: Sesión de SQLAlchemy del hilo GUI.
             sync_manager: Gestor de sincronización con la nube.
             parent: Widget padre opcional.
+            session_factory: Context manager que abre una sesión nueva. Lo usa el
+                worker de generación, que corre en otro hilo y no puede compartir
+                la sesión de la GUI (CRW-003). Por defecto, la del usuario activo.
         """
         super().__init__("Generación y Resultados", parent)
         self.session = session
         self.sync_manager = sync_manager
+        self._session_factory = session_factory or sesion_de_trabajo
         self._ultimo_resumen = None
 
-        # Use Cases
-        self.generar_guardias_uc = GenerarGuardiasUseCase(session)
+        # Use Cases. El de generación no se instancia aquí: lo crea el worker con
+        # su propia sesión (CRW-003); los demás corren en el hilo GUI.
         guardia_repo = SQLAlchemyGuardiaRepository(session)
         self.limpiar_guardias_uc = LimpiarGuardiasUseCase(guardia_repo)
         self.analisis_equidad_uc = AnalisisEquidadUseCase(session)
@@ -277,16 +297,18 @@ class GeneracionPanel(QGroupBox):
                     f"Se va a generar el calendario de guardias.\n\n{resumen_previo}",
                 )
 
-            # Función para ejecutar con progreso
+            # Función para ejecutar con progreso. OJO: corre en el WorkerThread,
+            # así que abre su propia sesión en vez de usar la de la GUI (CRW-003).
             def tarea_generacion(progress_callback, cancelacion=None):
                 def adapted_callback(mensaje: str, porcentaje: int):
                     progress_callback(porcentaje, 100, mensaje)
 
-                return self.generar_guardias_uc.execute(
-                    eliminar_existentes=eliminar_existentes,
-                    progress_callback=adapted_callback,
-                    cancelacion=cancelacion,
-                )
+                with self._session_factory() as sesion_worker:
+                    return GenerarGuardiasUseCase(sesion_worker).execute(
+                        eliminar_existentes=eliminar_existentes,
+                        progress_callback=adapted_callback,
+                        cancelacion=cancelacion,
+                    )
 
             # Ejecutar con indicador de progreso
             resumen = ejecutar_con_progreso(
@@ -297,6 +319,9 @@ class GeneracionPanel(QGroupBox):
             )
 
             if resumen:
+                # La generación ocurrió en otra sesión: la de la GUI conserva en su
+                # mapa de identidad las guardias anteriores hasta que se caduquen.
+                self.session.expire_all()
                 self._ultimo_resumen = resumen
                 self._mostrar_resultados(resumen)
                 self.btn_notificar.setVisible(True)
@@ -435,7 +460,7 @@ class GeneracionPanel(QGroupBox):
 
             logger.info("Sincronizando con la nube...")
             dialogo = SyncProgressDialog(self)
-            worker = SyncWorker(self.sync_manager, session=self.session)
+            worker = SyncWorker(self.sync_manager)  # abre su propia sesión (CRW-003)
             worker.finished.connect(lambda ok: self._fin_sincronizacion(dialogo, ok))
             worker.start()
             dialogo.exec()

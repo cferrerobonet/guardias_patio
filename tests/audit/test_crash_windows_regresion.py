@@ -7,8 +7,10 @@ Ver auditoria/06_CRASH_WINDOWS_GENERACION.md.
 
 import inspect
 import logging
+import re
 import threading
 import time
+from unittest import mock
 from pathlib import Path
 
 import pytest
@@ -297,4 +299,182 @@ def test_generar_guardias_deja_pasar_la_cancelacion():
     assert "except InterruptedError" in fuente
     assert fuente.index("except InterruptedError") < fuente.index("except Exception"), (
         "InterruptedError debe capturarse antes que Exception"
+    )
+
+
+# ---------------------------------------------------------------------------
+# CRW-003: cada hilo con su propia sesión de base de datos
+# ---------------------------------------------------------------------------
+def test_worker_no_reutiliza_sesion_gui(qapp, session, configuracion_basica):
+    """El worker de generación trabaja sobre una sesión propia, no la de la GUI."""
+    from contextlib import contextmanager
+
+    from presentation.forms.asignacion_calculo_form import AsignacionCalculoForm
+
+    sesion_del_worker = object()
+
+    @contextmanager
+    def factory():
+        yield sesion_del_worker
+
+    form = AsignacionCalculoForm(session, session_factory=factory)
+    panel = form.generacion_panel
+    sesiones_recibidas = []
+
+    def ejecutar_sincrono(parent, funcion, *args, **kwargs):
+        return funcion(lambda *a, **k: None)
+
+    class UseCaseEspia:
+        def __init__(self, sesion):
+            sesiones_recibidas.append(sesion)
+
+        def execute(self, **kwargs):
+            return None
+
+    with mock.patch(
+        "presentation.forms.asignacion_widgets.generacion_panel.GenerarGuardiasUseCase",
+        UseCaseEspia,
+    ):
+        with mock.patch(
+            "presentation.widgets.progress_indicators.ejecutar_con_progreso",
+            ejecutar_sincrono,
+        ):
+            panel._generar_guardias()
+
+    form.close()
+
+    assert sesiones_recibidas, "la tarea de generación no llegó a ejecutarse"
+    assert sesiones_recibidas[0] is sesion_del_worker
+    assert sesiones_recibidas[0] is not session, (
+        "el worker de generación está usando la sesión del hilo GUI"
+    )
+
+
+def test_ningun_syncworker_recibe_la_sesion_de_la_gui():
+    """CRW-003: ninguna llamada a SyncWorker le pasa la sesión de la GUI."""
+    ofensores = []
+    for f in (ROOT / "src").rglob("*.py"):
+        texto = f.read_text(encoding="utf-8", errors="ignore")
+        for llamada in re.finditer(r"SyncWorker\(([^)]*)\)", texto):
+            if "session" in llamada.group(1):
+                ofensores.append(f"{f.relative_to(ROOT)}: {llamada.group(0)}")
+    assert not ofensores, ofensores
+
+
+def test_syncworker_abre_su_propia_sesion(qapp):
+    """SyncWorker usa la sesión que abre él, no una recibida desde fuera."""
+    from contextlib import contextmanager
+
+    from presentation.widgets.sync_progress_dialog import SyncWorker
+
+    sesion_propia = object()
+    recibidas = []
+
+    @contextmanager
+    def factory():
+        yield sesion_propia
+
+    class SyncManagerFalso:
+        def sync_on_shutdown(self, session=None, progress_callback=None):
+            recibidas.append(session)
+            return True
+
+    worker = SyncWorker(SyncManagerFalso(), session_factory=factory)
+    worker.run()  # sin start(): interesa el cuerpo, no el hilo
+
+    assert recibidas == [sesion_propia]
+
+
+def test_dos_sesiones_sobre_la_misma_bd_en_fichero(db_fichero):
+    """La sesión de la GUI y la del worker conviven sobre el mismo fichero SQLite.
+
+    Es el escenario real de CRW-003 al revés: ya no comparten sesión, así que lo
+    que hay que demostrar es que dos conexiones simultáneas al mismo fichero (con
+    journal DELETE, como en producción) no se bloquean entre sí.
+    """
+    from sqlalchemy.orm import sessionmaker
+
+    from infrastructure.database.models import Profesor
+
+    factory = sessionmaker(bind=db_fichero, autoflush=False, expire_on_commit=False)
+
+    sesion_gui = factory()
+    sesion_gui.query(Profesor).all()  # la GUI deja su conexión viva, como en la app
+
+    errores = []
+
+    def escribe_desde_otro_hilo():
+        try:
+            sesion_worker = factory()
+            try:
+                sesion_worker.add(
+                    Profesor(
+                        nombre_completo="Worker, Test",
+                        horas_contrato=25.0,
+                        porcentaje_jornada=100.0,
+                        turno="mañana",
+                        tutor=False,
+                        activo=True,
+                    )
+                )
+                sesion_worker.commit()
+            finally:
+                sesion_worker.close()
+        except Exception as e:  # noqa: BLE001
+            errores.append(e)
+
+    hilo = threading.Thread(target=escribe_desde_otro_hilo)
+    hilo.start()
+    hilo.join(timeout=40)
+
+    assert not hilo.is_alive(), "el worker se quedó esperando el bloqueo de SQLite"
+    assert not errores, f"escribir desde otro hilo falló: {errores}"
+
+    # Y la GUI ve lo escrito en cuanto caduca su mapa de identidad.
+    sesion_gui.expire_all()
+    assert sesion_gui.query(Profesor).count() == 1
+    sesion_gui.close()
+
+
+def test_ninguna_tarea_en_hilo_usa_la_sesion_de_la_gui():
+    """CRW-003: las funciones que `ejecutar_con_progreso` corre en el WorkerThread
+    no pueden tocar `self.session`, que pertenece al hilo GUI.
+
+    Es el guardarraíl del hallazgo: sin él vuelve a colarse en la próxima vista que
+    exporte o importe algo con barra de progreso.
+    """
+    import ast
+
+    ofensores = []
+    for fichero in (ROOT / "src" / "presentation").rglob("*.py"):
+        arbol = ast.parse(fichero.read_text(encoding="utf-8", errors="ignore"))
+
+        # Nombres de las funciones que se pasan a ejecutar_con_progreso
+        lanzadas = set()
+        for nodo in ast.walk(arbol):
+            if (
+                isinstance(nodo, ast.Call)
+                and isinstance(nodo.func, ast.Name)
+                and nodo.func.id == "ejecutar_con_progreso"
+                and len(nodo.args) >= 2
+                and isinstance(nodo.args[1], ast.Name)
+            ):
+                lanzadas.add(nodo.args[1].id)
+
+        for nodo in ast.walk(arbol):
+            if not isinstance(nodo, ast.FunctionDef) or nodo.name not in lanzadas:
+                continue
+            for hijo in ast.walk(nodo):
+                if (
+                    isinstance(hijo, ast.Attribute)
+                    and hijo.attr == "session"
+                    and isinstance(hijo.value, ast.Name)
+                    and hijo.value.id == "self"
+                ):
+                    ofensores.append(
+                        f"{fichero.relative_to(ROOT)}:{hijo.lineno} en {nodo.name}()"
+                    )
+
+    assert not ofensores, (
+        "estas tareas corren en otro hilo y usan la sesión de la GUI: " + str(ofensores)
     )

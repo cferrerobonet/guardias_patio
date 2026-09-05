@@ -5,6 +5,7 @@ y sus dos paneles. Antes apuntaban a `AsignacionGuardiasForm`, un formulario que
 no está en ninguna vista (QA-003): la cobertura era ilusoria.
 """
 
+from contextlib import contextmanager
 from datetime import date, time
 from unittest.mock import Mock, patch
 
@@ -104,7 +105,7 @@ class TestGuardarrailDeGeneracion:
 
 
 class TestGeneracion:
-    def test_generar_con_caso_de_uso_simulado(self, form):
+    def test_generar_con_caso_de_uso_simulado(self, qapp, session, configuracion):
         """Generar pinta resultados y ofrece el envío de emails, sin tocar el solver."""
         resumen = Mock()
         resumen.guardias_generadas = 50
@@ -113,22 +114,31 @@ class TestGeneracion:
         resumen.resumen_por_profesor = {}
         resumen.mensaje = "OK"
 
-        panel = form.generacion_panel
-        with patch.object(panel, "generar_guardias_uc") as mock_uc:
-            mock_uc.execute.return_value = resumen
-            with patch(
-                "presentation.forms.asignacion_widgets.generacion_panel.ejecutar_con_progreso",
-                return_value=resumen,
-                create=True,
-            ):
-                with patch(
-                    "presentation.widgets.progress_indicators.ejecutar_con_progreso",
-                    return_value=resumen,
-                ):
-                    panel._generar_guardias()
-                    QApplication.processEvents()
+        @contextmanager
+        def factory():
+            yield session
 
-        assert panel.btn_notificar.isVisible() or panel.content_text.toPlainText().strip()
+        form = AsignacionCalculoForm(session, session_factory=factory)
+        panel = form.generacion_panel
+
+        def ejecutar_sincrono(parent, funcion, *args, **kwargs):
+            """Sustituye el diálogo de progreso: ejecuta la tarea aquí mismo."""
+            return funcion(lambda *a, **k: None)
+
+        with patch(
+            "presentation.forms.asignacion_widgets.generacion_panel.GenerarGuardiasUseCase"
+        ) as uc_cls:
+            uc_cls.return_value.execute.return_value = resumen
+            with patch(
+                "presentation.widgets.progress_indicators.ejecutar_con_progreso",
+                ejecutar_sincrono,
+            ):
+                panel._generar_guardias()
+                QApplication.processEvents()
+
+        uc_cls.return_value.execute.assert_called_once()
+        assert panel.content_text.toPlainText().strip()
+        form.close()
 
     def test_cambiar_algoritmo_no_rompe(self, form):
         combo = form.generacion_panel.algoritmo_combo

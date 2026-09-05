@@ -36,6 +36,18 @@ from presentation.widgets.toast_notification import ToastNotification
 logger = get_logger(__name__)
 
 
+def sesion_de_trabajo():
+    """Sesión propia para las tareas que corren en el WorkerThread.
+
+    Exportar un PDF supone cientos de consultas; hacerlas sobre la sesión de la GUI
+    desde otro hilo es el escenario de CRW-003 (una `Session` de SQLAlchemy no es
+    thread-safe). Se aísla en una función para poder sustituirla en los tests.
+    """
+    from database.db_manager import get_db_session
+
+    return get_db_session()
+
+
 class ReportesForm(BaseForm):
     """Formulario para generar reportes y calendarios PDF."""
 
@@ -227,9 +239,10 @@ class ReportesForm(BaseForm):
         ruta_salida = os.path.join(carpeta, nombre_archivo)
 
         def tarea_exportacion(progress_callback):
-            return ExportadorPDF.exportar_mes_consolidado(
-                self.session, mes, anio, ruta_salida, progress_callback=progress_callback
-            )
+            with sesion_de_trabajo() as sesion:  # hilo propio, sesión propia (CRW-003)
+                return ExportadorPDF.exportar_mes_consolidado(
+                    sesion, mes, anio, ruta_salida, progress_callback=progress_callback
+                )
 
         resultado = ejecutar_con_progreso(
             self,  # parent
@@ -259,9 +272,10 @@ class ReportesForm(BaseForm):
         profesor_ids = config["profesores_ids"]
 
         def tarea_exportacion(progress_callback):
-            return ExportadorPDF.exportar_profesores_seleccionados(
-                self.session, profesor_ids, mes, anio, carpeta, progress_callback=progress_callback
-            )
+            with sesion_de_trabajo() as sesion:  # hilo propio, sesión propia (CRW-003)
+                return ExportadorPDF.exportar_profesores_seleccionados(
+                    sesion, profesor_ids, mes, anio, carpeta, progress_callback=progress_callback
+                )
 
         resultado = ejecutar_con_progreso(
             self,
@@ -315,9 +329,10 @@ class ReportesForm(BaseForm):
             return
 
         def tarea_exportacion(progress_callback):
-            return ExportadorPDF.exportar_curso_completo(
-                self.session, anio_inicio, carpeta, progress_callback=progress_callback
-            )
+            with sesion_de_trabajo() as sesion:  # hilo propio, sesión propia (CRW-003)
+                return ExportadorPDF.exportar_curso_completo(
+                    sesion, anio_inicio, carpeta, progress_callback=progress_callback
+                )
 
         resultado = ejecutar_con_progreso(
             self,
@@ -373,13 +388,14 @@ class ReportesForm(BaseForm):
         profesor_ids = config["profesores_ids"]
 
         def tarea_exportacion(progress_callback):
-            return ExportadorPDF.exportar_curso_completo(
-                self.session,
-                anio_inicio,
-                carpeta,
-                profesor_ids=profesor_ids,
-                progress_callback=progress_callback,
-            )
+            with sesion_de_trabajo() as sesion:  # hilo propio, sesión propia (CRW-003)
+                return ExportadorPDF.exportar_curso_completo(
+                    sesion,
+                    anio_inicio,
+                    carpeta,
+                    profesor_ids=profesor_ids,
+                    progress_callback=progress_callback,
+                )
 
         resultado = ejecutar_con_progreso(
             self,
@@ -443,146 +459,150 @@ class ReportesForm(BaseForm):
 
         def tarea_exportacion(progress_callback):
             """Generar PDFs individuales para cada profesor."""
-            exitos = 0
-            emails_enviados = 0
-            profesores_sin_email = []
-            errores_email = []
-            total = len(profesor_ids)
+            # Corre en el WorkerThread: sesión propia, no la de la GUI (CRW-003).
+            with sesion_de_trabajo() as sesion:
+                exitos = 0
+                emails_enviados = 0
+                profesores_sin_email = []
+                errores_email = []
+                total = len(profesor_ids)
 
-            for idx, profesor_id in enumerate(profesor_ids):
-                # Obtener profesor
-                from application.app_services import AppServices
-                profesor = AppServices(self.session).profesores.get_by_id(profesor_id)
-                if not profesor:
-                    continue
+                for idx, profesor_id in enumerate(profesor_ids):
+                    # Obtener profesor
+                    from application.app_services import AppServices
+                    profesor = AppServices(sesion).profesores.get_by_id(profesor_id)
+                    if not profesor:
+                        continue
 
-                # Reportar progreso
-                porcentaje = int((idx / total) * 100) if total > 0 else 0
-                mensaje = f"Generando PDF para {profesor.nombre_completo}..."
-                if progress_callback:
-                    progress_callback(porcentaje, mensaje)
+                    # Reportar progreso
+                    porcentaje = int((idx / total) * 100) if total > 0 else 0
+                    mensaje = f"Generando PDF para {profesor.nombre_completo}..."
+                    if progress_callback:
+                        progress_callback(porcentaje, mensaje)
 
-                # Obtener rango de fechas de guardias del profesor
-                from application.app_services import AppServices
-                guardias = AppServices(self.session).guardias.find_by_profesor(profesor_id)
+                    # Obtener rango de fechas de guardias del profesor
+                    from application.app_services import AppServices
+                    guardias = AppServices(sesion).guardias.find_by_profesor(profesor_id)
 
-                if not guardias:
-                    continue  # Profesor sin guardias
+                    if not guardias:
+                        continue  # Profesor sin guardias
 
-                # Calcular rango real
-                fechas = [g.fecha for g in guardias]
-                fecha_inicio = min(fechas)
-                fecha_fin = max(fechas)
+                    # Calcular rango real
+                    fechas = [g.fecha for g in guardias]
+                    fecha_inicio = min(fechas)
+                    fecha_fin = max(fechas)
 
-                # Determinar curso escolar
-                anio_inicio = (
-                    fecha_inicio.year if fecha_inicio.month >= 9 else fecha_inicio.year - 1
-                )
-                curso_escolar = f"{anio_inicio}/{anio_inicio + 1}"
-
-                # Generar nombre de archivo
-                nombre_archivo = f"Calendario_{profesor.nombre_completo.replace(' ', '_')}.pdf"
-                ruta_salida = f"{carpeta}/{nombre_archivo}"
-
-                # Exportar PDF individual
-                try:
-                    resultado = ExportadorPDF.exportar_profesor_individual_optimizado(
-                        self.session,
-                        profesor_id,
-                        fecha_inicio,
-                        fecha_fin,
-                        ruta_salida,
-                        progress_callback=None,  # Ya manejamos el progreso aquí
+                    # Determinar curso escolar
+                    anio_inicio = (
+                        fecha_inicio.year if fecha_inicio.month >= 9 else fecha_inicio.year - 1
                     )
-                    if resultado:
-                        exitos += 1
+                    curso_escolar = f"{anio_inicio}/{anio_inicio + 1}"
 
-                        # Enviar email si está habilitado
-                        if enviar_email and email_service:
-                            if not profesor.email_corporativo:
-                                profesores_sin_email.append(profesor.nombre_completo)
-                                logger.warning(
-                                    f"Profesor {profesor.nombre_completo} "
-                                    f"no tiene email configurado"
-                                )
-                            else:
-                                if progress_callback:
-                                    progress_callback(
-                                        porcentaje,
-                                        f"Enviando email a {profesor.nombre_completo}...",
-                                    )
+                    # Generar nombre de archivo
+                    nombre_archivo = f"Calendario_{profesor.nombre_completo.replace(' ', '_')}.pdf"
+                    ruta_salida = f"{carpeta}/{nombre_archivo}"
 
-                                # Generar archivo .ics para adjuntar
-                                ics_path = None
-                                try:
-                                    from services.icalendar_service import ICalendarService
+                    # Exportar PDF individual
+                    try:
+                        resultado = ExportadorPDF.exportar_profesor_individual_optimizado(
+                            sesion,
+                            profesor_id,
+                            fecha_inicio,
+                            fecha_fin,
+                            ruta_salida,
+                            progress_callback=None,  # Ya manejamos el progreso aquí
+                        )
+                        if resultado:
+                            exitos += 1
 
-                                    ics_filename = ICalendarService.obtener_nombre_archivo_ics(
-                                        profesor.nombre_completo
-                                    )
-                                    ics_path = os.path.join(carpeta, ics_filename)
-
-                                    # Obtener configuración para nombre del centro
-                                    from application.app_services import AppServices
-                                    config_db = AppServices(self.session).configuracion_repo.get_first()
-                                    nombre_centro = "Centro Educativo"
-                                    if config_db and hasattr(config_db, "nombre_centro"):
-                                        nombre_centro = config_db.nombre_centro
-
-                                    # Generar archivo .ics
-                                    if ICalendarService.generar_icalendar_profesor(
-                                        session=self.session,
-                                        profesor_id=profesor.id,
-                                        ruta_salida=ics_path,
-                                        nombre_centro=nombre_centro,
-                                    ):
-                                        logger.info(f"Archivo iCalendar generado: {ics_path}")
-                                    else:
-                                        logger.warning(
-                                            f"No se pudo generar iCalendar para "
-                                            f"{profesor.nombre_completo}"
-                                        )
-                                        ics_path = None
-                                except (ValueError, TypeError, OSError) as e:
-                                    logger.warning(f"Error al generar iCalendar: {e}")
-                                    ics_path = None
-
-                                exito_email, mensaje_email = email_service.send_calendar_pdf(
-                                    to_email=str(profesor.email_corporativo),
-                                    profesor_nombre=profesor.nombre_completo,
-                                    pdf_path=ruta_salida,
-                                    curso_escolar=curso_escolar,
-                                    ics_path=ics_path,
-                                )
-
-                                if exito_email:
-                                    emails_enviados += 1
-                                    logger.info(
-                                        f"Email enviado a {profesor.email_corporativo}: "
-                                        f"{mensaje_email}"
+                            # Enviar email si está habilitado
+                            if enviar_email and email_service:
+                                if not profesor.email_corporativo:
+                                    profesores_sin_email.append(profesor.nombre_completo)
+                                    logger.warning(
+                                        f"Profesor {profesor.nombre_completo} "
+                                        f"no tiene email configurado"
                                     )
                                 else:
-                                    errores_email.append(
-                                        f"{profesor.nombre_completo}: {mensaje_email}"
+                                    if progress_callback:
+                                        progress_callback(
+                                            porcentaje,
+                                            f"Enviando email a {profesor.nombre_completo}...",
+                                        )
+
+                                    # Generar archivo .ics para adjuntar
+                                    ics_path = None
+                                    try:
+                                        from services.icalendar_service import ICalendarService
+
+                                        ics_filename = ICalendarService.obtener_nombre_archivo_ics(
+                                            profesor.nombre_completo
+                                        )
+                                        ics_path = os.path.join(carpeta, ics_filename)
+
+                                        # Obtener configuración para nombre del centro
+                                        from application.app_services import AppServices
+                                        config_db = (
+                                            AppServices(sesion).configuracion_repo.get_first()
+                                        )
+                                        nombre_centro = "Centro Educativo"
+                                        if config_db and hasattr(config_db, "nombre_centro"):
+                                            nombre_centro = config_db.nombre_centro
+
+                                        # Generar archivo .ics
+                                        if ICalendarService.generar_icalendar_profesor(
+                                            session=sesion,
+                                            profesor_id=profesor.id,
+                                            ruta_salida=ics_path,
+                                            nombre_centro=nombre_centro,
+                                        ):
+                                            logger.info(f"Archivo iCalendar generado: {ics_path}")
+                                        else:
+                                            logger.warning(
+                                                f"No se pudo generar iCalendar para "
+                                                f"{profesor.nombre_completo}"
+                                            )
+                                            ics_path = None
+                                    except (ValueError, TypeError, OSError) as e:
+                                        logger.warning(f"Error al generar iCalendar: {e}")
+                                        ics_path = None
+
+                                    exito_email, mensaje_email = email_service.send_calendar_pdf(
+                                        to_email=str(profesor.email_corporativo),
+                                        profesor_nombre=profesor.nombre_completo,
+                                        pdf_path=ruta_salida,
+                                        curso_escolar=curso_escolar,
+                                        ics_path=ics_path,
                                     )
-                                    logger.warning(
-                                        f"No se pudo enviar email a "
-                                        f"{profesor.email_corporativo}: {mensaje_email}"
-                                    )
 
-                except (ValueError, TypeError, OSError) as e:
-                    logger.error(f"Error al exportar PDF para profesor {profesor_id}: {e}")
+                                    if exito_email:
+                                        emails_enviados += 1
+                                        logger.info(
+                                            f"Email enviado a {profesor.email_corporativo}: "
+                                            f"{mensaje_email}"
+                                        )
+                                    else:
+                                        errores_email.append(
+                                            f"{profesor.nombre_completo}: {mensaje_email}"
+                                        )
+                                        logger.warning(
+                                            f"No se pudo enviar email a "
+                                            f"{profesor.email_corporativo}: {mensaje_email}"
+                                        )
 
-            # Progreso final
-            if progress_callback:
-                progress_callback(100, "Exportación completada")
+                    except (ValueError, TypeError, OSError) as e:
+                        logger.error(f"Error al exportar PDF para profesor {profesor_id}: {e}")
 
-            return {
-                "exitos": exitos,
-                "emails_enviados": emails_enviados,
-                "profesores_sin_email": profesores_sin_email,
-                "errores_email": errores_email,
-            }
+                # Progreso final
+                if progress_callback:
+                    progress_callback(100, "Exportación completada")
+
+                return {
+                    "exitos": exitos,
+                    "emails_enviados": emails_enviados,
+                    "profesores_sin_email": profesores_sin_email,
+                    "errores_email": errores_email,
+                }
 
         resultado = ejecutar_con_progreso(
             self,  # parent

@@ -316,7 +316,7 @@ class CCleanerMainWindow(QMainWindow):
             return
         from presentation.widgets.sync_progress_dialog import SyncWorker
 
-        self._sync_worker = SyncWorker(self.sync_manager, session=self.session)
+        self._sync_worker = SyncWorker(self.sync_manager)  # sesión propia (CRW-003)
         self.sidebar.set_sync_status("syncing", "↻ Sincronizando...")
         self._sync_worker.finished.connect(self._on_auto_sync_finished)
         self._sync_worker.start()
@@ -374,7 +374,7 @@ class CCleanerMainWindow(QMainWindow):
                 from presentation.widgets.sync_progress_dialog import SyncProgressDialog, SyncWorker
 
                 dlg = SyncProgressDialog(self)
-                worker = SyncWorker(self.sync_manager, session=self.session)
+                worker = SyncWorker(self.sync_manager)  # sesión propia (CRW-003)
                 worker.finished.connect(lambda _: dlg.accept())
                 worker.start()
                 dlg.exec()

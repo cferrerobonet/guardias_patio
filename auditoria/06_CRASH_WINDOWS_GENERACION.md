@@ -79,9 +79,11 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 - **Prueba:** `tests/audit/test_crash_windows_regresion.py::test_log_handler_no_toca_widgets_fuera_del_hilo_gui`.
 - **Esfuerzo:** S.
 
-### [CRW-003] Una única `Session` de SQLAlchemy compartida por GUI, worker de generación, worker de sync y cierre
+### ~~[CRW-003] Una única `Session` de SQLAlchemy compartida por GUI, worker de generación, worker de sync y cierre~~ ✅ RESUELTO v5.55.0
 
-- **Tipo:** bug · **Severidad:** P1 · **Confianza:** alta.
+- **Estado:** RESUELTO VERIFICADO v5.55.0 · **Tipo:** bug · **Severidad:** P1 · **Confianza:** alta.
+- **Solución aplicada:** `db_manager` ya ofrecía `get_db_session()`, un context manager sobre la fábrica del usuario activo; lo que faltaba era que los hilos lo usaran. Ahora: el worker de generación abre la suya (con `session_factory` inyectable para los tests), `SyncWorker` abre la suya y ha dejado de aceptar una sesión de fuera, y las otras cinco tareas que `ejecutar_con_progreso` lanzaba en el worker —cuatro exportaciones de PDF y la importación de profesores— hacen lo mismo. Tras generar, la sesión de la GUI hace `expire_all()` para no repintar con el mapa de identidad viejo. Un test recorre el AST de `src/presentation` y falla si alguna función lanzada al worker vuelve a tocar `self.session`.
+- **Pendiente:** las diez vistas siguen compartiendo una sesión **entre ellas**, lo cual es correcto porque todas viven en el hilo GUI. Devolver DTOs en vez de objetos ORM sigue siendo deseable, pero ya no es un riesgo de cierre.
 - **Ubicación:** `src/database/db_manager.py:344-350` (`check_same_thread: False`, `NullPool`), `:363` (`journal_mode=DELETE`), `src/presentation/forms/asignacion_widgets/generacion_panel.py:74-77` (use cases con `self.session`), `src/presentation/ccleaner_main_window.py:262-270` (`SyncWorker(self.sync_manager, session=self.session)` cada 30 min), `src/main.py:390-398` (sync final con la misma sesión), `src/presentation/widgets/sync_progress_dialog.py:34-47`.
 - **Evidencia:** `Session` no es thread-safe (documentación SQLAlchemy). `check_same_thread=False` desactiva la protección de sqlite3, no la hace segura. Si el auto-sync de 30 min coincide con una generación (CP-SAT puede tardar hasta 120 s), dos hilos ejecutan sentencias sobre la misma conexión. En Windows, con `journal_mode=DELETE` y bloqueo de fichero, el resultado puede ser `database is locked`, estado de sesión corrupto o un fallo nativo en `sqlite3.dll`.
 - **Recomendación:** `SessionFactory` inyectada; cada hilo abre su sesión (`with SessionFactory() as s:`) y devuelve DTOs; la GUI nunca comparte su sesión con un `QThread`. Mantener `expire_on_commit=False`. Considerar `journal_mode=WAL` cuando la BD no esté en OneDrive (detectar ruta) para lecturas concurrentes.
@@ -155,6 +157,6 @@ Mientras tanto, en el hilo GUI siguen vivos: `QTimer` de 1 s del diálogo (`_act
 2. ~~CRW-001 y CRW-004 (M+S): frontera solver↔Qt y cancelación cooperativa.~~ ✅ v5.52.0
 3. ~~CRW-002 (S).~~ ✅ v5.52.0 ~~CRW-008~~ ✅ v5.44.0.
 4. ~~CRW-007 y CRW-009 (S).~~ ✅ v5.53.0
-5. CRW-003 (L) por lotes: generación → sync → resto de vistas.
+5. ~~CRW-003 (L) por lotes: generación → sync → resto de vistas.~~ ✅ v5.55.0
 
 Cada lote se cierra con la suite `tests/audit` verde (retirando las marcas `xfail`) y una generación completa en Windows con `faulthandler` activo.
