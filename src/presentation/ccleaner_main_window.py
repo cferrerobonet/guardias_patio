@@ -143,6 +143,8 @@ class CCleanerMainWindow(QMainWindow):
         # Siempre: sin sync_manager el indicador debe avisar de que no hay servidor.
         self._update_sync_status_label()
 
+        self._configurar_atajos()
+
         # Verificar actualizaciones en background
         self._check_updates()
 
@@ -210,6 +212,47 @@ class CCleanerMainWindow(QMainWindow):
             self.content_stack.setCurrentWidget(self.widgets[section])
             self._seccion_actual = section
             usage_log("NAV", section=section)
+
+    #: Atajos globales de navegación, en el orden del menú lateral (UXF-011).
+    ATAJOS_DE_SECCION = (
+        ("Ctrl+1", "profesores"),
+        ("Ctrl+2", "zonas"),
+        ("Ctrl+3", "ajustes"),
+        ("Ctrl+4", "perfiles"),
+        ("Ctrl+5", "asignacion_calculo"),
+        ("Ctrl+6", "calendario"),
+        ("Ctrl+7", "ausencias_sustituciones"),
+        ("Ctrl+8", "importar"),
+        ("Ctrl+9", "reportes"),
+        ("Ctrl+0", "estadisticas"),
+    )
+
+    def _configurar_atajos(self) -> None:
+        """Atajos para moverse por la aplicación sin ratón.
+
+        Antes sólo existía Ctrl+B, que pliega el menú: llegar a cualquier pantalla
+        exigía ratón (UXF-011). El atajo se anuncia en la pista de cada botón del
+        menú, que si no nadie lo descubriría.
+        """
+        from PyQt6.QtGui import QKeySequence, QShortcut
+        from PyQt6.QtWidgets import QPushButton
+
+        for combinacion, seccion in self.ATAJOS_DE_SECCION:
+            atajo = QShortcut(QKeySequence(combinacion), self)
+            atajo.activated.connect(lambda s=seccion: self._navegar_con_atajo(s))
+
+        for boton in self.sidebar.findChildren(QPushButton):
+            seccion = boton.property("section")
+            for combinacion, destino in self.ATAJOS_DE_SECCION:
+                if seccion == destino:
+                    texto = boton.text().strip()
+                    boton.setToolTip(f"{texto} ({combinacion})")
+                    boton.setAccessibleName(f"Ir a {texto}")
+                    break
+
+    def _navegar_con_atajo(self, seccion: str) -> None:
+        self.sidebar.set_active_section(seccion)
+        self.on_section_changed(seccion)
 
     def vista_actual(self):
         """Widget de contenido de la sección visible, o None."""

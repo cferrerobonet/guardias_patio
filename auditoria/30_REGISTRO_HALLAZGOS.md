@@ -57,12 +57,12 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | UXF-003 | P2 | alta | Generar requiere 2 modales previos y clic de cierre | NUEVO | 03 |
 | UXF-004 | P2 | alta | ~~Cambio de curso: confirmación + toast sin refresco~~ | **RESUELTO VERIFICADO v5.59.0** · el refresco funciona desde v5.49.0, el panel de generación revalida sus prerrequisitos desde v5.56.0 y ahora, si hay cambios pendientes, se avisa y se ofrece guardarlos antes de descartarlos: pertenecen al curso anterior · `test_cambiar_de_curso_avisa_antes_de_descartar` | 03 |
 | UXF-005 | P2 | alta | ~~Primer arranque exige SFTP; sin modo local~~ | **RESUELTO VERIFICADO v5.56.0** · cancelar la configuración inicial ofrece «Trabajar solo en este equipo» en vez de cerrar la aplicación, enumerando lo que se pierde; el indicador del menú lateral muestra «⚠ Solo en este equipo» de forma permanente · `test_sin_servidor_se_ofrece_el_modo_local_en_vez_de_cerrar` | 03 |
-| UXF-006 | P2 | alta | Limpiar guardias con la misma prominencia que Generar | NUEVO | 03 |
+| UXF-006 | P2 | alta | ~~Limpiar guardias con la misma prominencia que Generar~~ | **RESUELTO v5.70.0** · Generar ocupa el triple de ancho y 36 px de alto como acción principal de la vista; Limpiar baja a 32 px, conserva el rojo de acción destructiva y explica en su pista qué borra · `test_generar_pesa_mas_que_limpiar` | 03 |
 | UXF-007 | P2 | alta | Sin protección de cambios sin guardar | DUPLICADO → UXA-004 | 03 |
 | UXF-008 | P3 | alta | ~~Motivo de bloqueo sólo en tooltip~~ | **RESUELTO VERIFICADO v5.56.0** · el panel de generación pinta una etiqueta visible con los requisitos que faltan y su detalle · `test_motivo_de_bloqueo_visible_sin_hover` | 03 |
 | UXF-009 | P2 | media | Ausencias sin deshacer ni vista previa | NUEVO | 03 |
-| UXF-010 | P2 | alta | Cinco exportaciones PDF con diálogo cada una y sin recordar carpeta | NUEVO | 03 |
-| UXF-011 | P3 | alta | Atajos de teclado casi inexistentes | NUEVO | 03 |
+| UXF-010 | P2 | alta | ~~Sin recordar la carpeta de exportación~~ | **RESUELTO v5.70.0** · `pedir_carpeta()` abre en la última carpeta usada y guarda la elegida, en los cuatro diálogos (PDFs, informes, iCal y exportación JSON). Si la carpeta ya no existe —un pendrive desconectado— vuelve a la de por omisión. Las cinco exportaciones comparten un único diálogo, así que sigue habiendo uno por operación: agruparlas es trabajo de rediseño | 03 |
+| UXF-011 | P3 | alta | ~~Atajos de teclado casi inexistentes~~ | **RESUELTO v5.70.0** · Ctrl+1…Ctrl+0 llevan a cada una de las diez secciones, y **el atajo se anuncia en la pista de cada botón del menú**, que si no nadie lo descubre. Profesores, Zonas y Ajustes ya tenían los suyos (Ctrl+S, F5, Esc…) · `test_cada_seccion_tiene_su_atajo` | 03 |
 
 ## VIS · Consistencia visual
 

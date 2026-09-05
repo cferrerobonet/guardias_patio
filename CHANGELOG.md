@@ -5,6 +5,24 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.70.0] - 2026-09-05
+
+### 🎯 Resumen
+Detalles que se notan al usar la aplicación a diario, sobre todo en septiembre.
+
+### Added
+- **La aplicación recuerda dónde guardaste lo último.** Al exportar PDFs, informes, calendarios iCal o la copia de datos, el diálogo se abre en la última carpeta que usaste en vez de empezar siempre en el mismo sitio. Si esa carpeta ya no existe —un pendrive desconectado—, vuelve a la de siempre sin protestar.
+- **Ctrl+1 a Ctrl+0 llevan a cada sección**, sin pasar por el ratón. El atajo aparece en el mensaje emergente de cada botón del menú: un atajo que no se ve no lo usa nadie.
+
+### Changed
+- **«Generar Asignación» y «Limpiar Guardias» ya no pesan lo mismo.** Tenían idéntico tamaño, siendo una la acción principal de la pantalla y la otra la que borra el trabajo del curso. Ahora Generar ocupa el triple y es más alto; Limpiar se queda en rojo, más discreta, y su mensaje emergente dice exactamente qué borra.
+
+### 🧹 Housekeeping
+- `auditoria/`: UXF-006, UXF-010 y UXF-011 resueltos. Del lote quedan bajar a tres clics la generación y el deshacer en ausencias.
+- 2.603 pruebas, ningún fallo.
+
+---
+
 ## [5.69.0] - 2026-09-05
 
 ### 🎯 Resumen

@@ -219,11 +219,10 @@ class InformesEstadisticosWidget(QGroupBox):
             return
 
         # Seleccionar carpeta de destino
-        from PyQt6.QtWidgets import QFileDialog
 
-        carpeta = QFileDialog.getExistingDirectory(
-            self, "Seleccionar Carpeta de Destino", "", QFileDialog.Option.ShowDirsOnly
-        )
+        from utils.ui_helpers import pedir_carpeta
+
+        carpeta = pedir_carpeta(self, "Seleccionar Carpeta de Destino")
 
         if not carpeta:
             return

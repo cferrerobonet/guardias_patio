@@ -5,6 +5,7 @@ Permite generar calendarios PDF e informes estadísticos.
 """
 
 import os
+from pathlib import Path
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -176,13 +177,10 @@ class ReportesForm(BaseForm):
                 carpeta = tempfile.mkdtemp()
                 logger.info(f"Usando carpeta temporal para envío de emails: {carpeta}")
             else:
-                # Diálogo para seleccionar carpeta de destino
-                carpeta = QFileDialog.getExistingDirectory(
-                    self,
-                    "Seleccionar carpeta para guardar PDFs",
-                    "",
-                    QFileDialog.Option.ShowDirsOnly,
-                )
+                # Diálogo para seleccionar carpeta, empezando por la última usada
+                from utils.ui_helpers import pedir_carpeta
+
+                carpeta = pedir_carpeta(self, "Seleccionar carpeta para guardar PDFs")
 
                 if not carpeta:
                     return  # Usuario canceló
@@ -717,14 +715,22 @@ class ReportesForm(BaseForm):
         from services.icalendar_service import ICalendarService
 
         nombre_archivo = ICalendarService.obtener_nombre_archivo_ics(profesor_nombre)
+        from utils.ui_helpers import recordar_carpeta, ultima_carpeta
+
+        # Propone la última carpeta usada, en vez de empezar siempre de cero
+        carpeta_previa = ultima_carpeta()
+        propuesta = (
+            str(Path(carpeta_previa) / nombre_archivo) if carpeta_previa else nombre_archivo
+        )
         ruta, _ = QFileDialog.getSaveFileName(
             self,
             "Guardar archivo iCal",
-            nombre_archivo,
+            propuesta,
             "iCalendar (*.ics)",
         )
         if not ruta:
             return
+        recordar_carpeta(ruta)
 
         try:
             config = self.session.query(Configuracion).first()

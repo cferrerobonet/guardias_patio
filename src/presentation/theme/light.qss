@@ -430,3 +430,10 @@ QPushButton#botonDialogo {
     padding: 5px 15px;
     font-size: 13px;
 }
+
+/* Acción principal de una vista: 36 px de alto, frente a los 32 del resto.
+   El contrato de diseño reserva esa altura sólo para el primario (UXF-006). */
+QPushButton#botonPrimarioDeVista {
+    min-height: 36px;
+    font-weight: 600;
+}

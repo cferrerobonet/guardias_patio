@@ -178,13 +178,17 @@ class GeneracionPanel(QGroupBox):
         self.generar_button.clicked.connect(self._generar_guardias)
         self.generar_button.setEnabled(False)  # Deshabilitado hasta calcular cuotas
         self.generar_button.setToolTip("Primero debe calcular las cuotas")
-        button_container.addWidget(self.generar_button, 1)
+        # Generar es la acción principal de la pantalla: ocupa el triple que la
+        # destructiva, que hasta ahora tenía el mismo peso visual (UXF-006).
+        self.generar_button.setObjectName("botonPrimarioDeVista")
+        button_container.addWidget(self.generar_button, 3)
 
         # Botón Limpiar
         self.limpiar_button = QPushButton("Limpiar Guardias")
         self.limpiar_button.setIcon(icon_for_button("delete"))
         self.limpiar_button.setProperty("danger", "true")
-        self.limpiar_button.setMinimumHeight(36)
+        self.limpiar_button.setMinimumHeight(32)
+        self.limpiar_button.setToolTip("Borra todas las guardias del curso")
         self.limpiar_button.clicked.connect(self._limpiar_guardias)
         button_container.addWidget(self.limpiar_button, 1)
 

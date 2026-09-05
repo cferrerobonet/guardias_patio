@@ -505,3 +505,51 @@ def asignar_nombres_accesibles(raiz: QWidget) -> int:
             hijo.setAccessibleName(nombre)
             nombrados += 1
     return nombrados
+
+
+# ---------------------------------------------------------------------------
+# Carpetas recordadas (UXF-010)
+# ---------------------------------------------------------------------------
+
+_ORGANIZACION = "EPLA"
+_APLICACION = "GuardiasDePatio"
+
+
+def ultima_carpeta(clave: str = "exportacion") -> str:
+    """Última carpeta que se usó para esa clase de guardado.
+
+    Antes cada diálogo abría en el directorio por omisión: en septiembre, con
+    cinco exportaciones seguidas, había que rebuscar la misma carpeta cada vez
+    (UXF-010).
+    """
+    from PyQt6.QtCore import QSettings
+
+    ajustes = QSettings(_ORGANIZACION, _APLICACION)
+    guardada = ajustes.value(f"carpetas/{clave}", "", type=str)
+    return guardada if guardada and Path(guardada).is_dir() else ""
+
+
+def recordar_carpeta(carpeta: str, clave: str = "exportacion") -> None:
+    """Guarda la carpeta elegida para proponerla la próxima vez."""
+    from PyQt6.QtCore import QSettings
+
+    if not carpeta:
+        return
+    ruta = Path(carpeta)
+    destino = ruta if ruta.is_dir() else ruta.parent
+    QSettings(_ORGANIZACION, _APLICACION).setValue(f"carpetas/{clave}", str(destino))
+
+
+def pedir_carpeta(
+    parent: Optional[QWidget],
+    titulo: str = "Seleccionar carpeta",
+    clave: str = "exportacion",
+) -> str:
+    """Pide una carpeta empezando por la última usada, y recuerda la elegida."""
+    from PyQt6.QtWidgets import QFileDialog
+
+    carpeta = QFileDialog.getExistingDirectory(
+        parent, titulo, ultima_carpeta(clave), QFileDialog.Option.ShowDirsOnly
+    )
+    recordar_carpeta(carpeta, clave)
+    return carpeta

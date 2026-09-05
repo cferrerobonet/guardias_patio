@@ -272,15 +272,23 @@ class ImportExportForm(BaseForm):
         """Exportar todos los datos a archivo JSON."""
         try:
             # Diálogo para seleccionar archivo de destino
+            from pathlib import Path
+
+            from utils.ui_helpers import recordar_carpeta, ultima_carpeta
+
+            nombre = "guardias_patio_export.json"
+            carpeta_previa = ultima_carpeta()
+            propuesta = str(Path(carpeta_previa) / nombre) if carpeta_previa else nombre
             archivo, _ = QFileDialog.getSaveFileName(
                 self,
                 "Exportar datos",
-                "guardias_patio_export.json",
+                propuesta,
                 "Archivos JSON (*.json)",
             )
 
             if not archivo:
                 return  # Usuario canceló
+            recordar_carpeta(archivo)
 
             # Exportar datos
             ExportadorDatos.exportar_todo(self.session, archivo)
