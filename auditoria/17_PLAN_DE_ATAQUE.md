@@ -2,7 +2,7 @@
 tags:
   - gestion-centro
   - auditoria
-fecha_actualizacion: 2026-09-04
+fecha_actualizacion: 2026-09-05
 estado: activo
 prioridad: 1-urgente
 tipo: referencia
@@ -39,15 +39,15 @@ tipo: referencia
 ## Decisiones requeridas de CarlosFB
 
 0. ~~**Sincronización:** ¿uno cada vez o edición simultánea?~~ **Resuelto: uno cada vez.** Bastan los lotes 0 bis y 0 ter; la fusión real queda descartada.
-1. ¿Modo local sin SFTP en el primer arranque (UXF-005)? Recomendado: sí, con aviso persistente.
-2. ¿Paleta: mantener azul #007ACC o adoptar el #0E5FA8 propuesto (más contraste)? Ambos válidos; elegir uno.
-3. ¿Fuente por SO (Segoe UI / SF Pro) o una fuente embebida (Inter)? Recomendado: por SO (sin licencias, render nativo).
-4. ¿Generación incremental (FUN-002) antes que edición manual (FUN-003)? Recomendado: incremental primero.
-5. ¿Cuenta Apple Developer para notarizar? Sin ella, documentar el paso "Abrir de todos modos".
+1. ~~¿Modo local sin SFTP en el primer arranque (UXF-005)?~~ **Resuelto 2026-09-05: sí**, con aviso persistente mientras la nube no esté configurada. UXF-005 pasa a formar parte del lote 6.
+2. ~~¿Paleta: #007ACC o #0E5FA8?~~ **Resuelto 2026-09-05: #0E5FA8** (6,5:1 con texto blanco frente a 4,5:1 del actual, que se queda justo en el mínimo AA y no deja margen para estados hover/pressed ni para el anillo de foco). Coincide con el contrato de [[05_CONTRATO_SISTEMA_DE_DISENO]], que no hay que retocar.
+3. ~~¿Fuente por SO o embebida?~~ **Resuelto 2026-09-05: por SO** — Segoe UI en Windows, SF Pro en macOS, sin licencias y con render nativo.
+4. ~~¿Generación incremental (FUN-002) antes que edición manual (FUN-003)?~~ **Resuelto 2026-09-05: incremental primero**, y antes que ninguna de las dos, FUN-004 (historial y restauración): es esfuerzo M, no depende de nada y ya cubre hoy el miedo real de que "Generar" borre el curso entero. Orden acordado: FUN-004 → FUN-002 → FUN-003.
+5. ~~¿Cuenta Apple Developer para notarizar?~~ **Resuelto 2026-09-05: hay cuenta, hoy inactiva.** La notarización del lote 15 queda condicionada a reactivar la suscripción; mientras tanto se documenta el paso "Abrir de todos modos" en las instrucciones de instalación de macOS.
 
 ## Próximo gate
 
 Dos frentes, independientes entre sí:
 
-1. **Lote 0** en la máquina Windows: ya se puede compilar la variante de diagnóstico con `scripts/build_windows.ps1 -Diagnostico` y la app deja rastro en `faulthandler.log`. Falta ejecutar el protocolo de [[06_CRASH_WINDOWS_GENERACION]] §5 y registrar el resultado. Es lo único que puede confirmar cuál de las causas CRW produce el cierre.
-2. **Lote 1** (frontera solver↔Qt, CRW-001/004/002), que ya tiene red de seguridad: la suite completa vuelve a ejecutarse de una pasada y `tests/audit` cubre cada hallazgo.
+1. **Lote 1** (frontera solver↔Qt, CRW-001/004/002/008) — **frente elegido para empezar**. Es el único P0 sin bloqueos, ya tiene red de seguridad (`tests/audit/test_crash_windows_regresion.py` en xfail cubre cada hallazgo y la suite entera corre de una pasada) y desbloquea los lotes 2 y 3, de los que cuelga todo el trabajo de flujo y accesibilidad. Además es la causa más probable del cierre en Windows, así que puede resolver el lote 0 sin necesitar el PC.
+2. **Lote 0** en la máquina Windows: ya se puede compilar la variante de diagnóstico con `scripts/build_windows.ps1 -Diagnostico` y la app deja rastro en `faulthandler.log`. Falta ejecutar el protocolo de [[06_CRASH_WINDOWS_GENERACION]] §5 y registrar el resultado. Sigue siendo lo único que confirma cuál de las causas CRW produce el cierre, pero espera a tener acceso al equipo.

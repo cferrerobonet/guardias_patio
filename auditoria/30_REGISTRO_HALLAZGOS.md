@@ -2,7 +2,7 @@
 tags:
   - gestion-centro
   - auditoria
-fecha_actualizacion: 2026-09-04
+fecha_actualizacion: 2026-09-05
 estado: activo
 prioridad: 1-urgente
 tipo: referencia
@@ -56,7 +56,7 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | UXF-002 | P1 | alta | Guardarraíl "cuotas antes de generar" es un flag de UI, no precondición de dominio | NUEVO | 03 |
 | UXF-003 | P2 | alta | Generar requiere 2 modales previos y clic de cierre | NUEVO | 03 |
 | UXF-004 | P2 | alta | Cambio de curso: confirmación + toast sin refresco | NUEVO (dup. parcial UXA-007) | 03 |
-| UXF-005 | P2 | alta | Primer arranque exige SFTP; sin modo local | NUEVO | 03 |
+| UXF-005 | P2 | alta | Primer arranque exige SFTP; sin modo local | NUEVO · decidido 2026-09-05: se añade modo local con aviso persistente (lote 6) | 03 |
 | UXF-006 | P2 | alta | Limpiar guardias con la misma prominencia que Generar | NUEVO | 03 |
 | UXF-007 | P2 | alta | Sin protección de cambios sin guardar | DUPLICADO → UXA-004 | 03 |
 | UXF-008 | P3 | alta | Motivo de bloqueo sólo en tooltip | NUEVO | 03 |

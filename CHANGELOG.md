@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.51.2] - 2026-09-05
+
+### 🎯 Resumen
+Cerradas las cinco decisiones que tenía pendientes CarlosFB y fijado el siguiente frente de trabajo.
+
+### Changed
+- `auditoria/17_PLAN_DE_ATAQUE.md`: resueltas las decisiones 1 a 5 — modo local sin servidor en el primer arranque, azul `#0E5FA8` como color principal, tipografía del sistema operativo, orden FUN-004 → FUN-002 → FUN-003 para las mejoras de generación, y notarización de macOS condicionada a reactivar la cuenta de Apple Developer.
+- El próximo gate pasa a ser el lote 1 (frontera entre el solucionador y la interfaz), que no depende de tener acceso a un PC con Windows.
+- `auditoria/30_REGISTRO_HALLAZGOS.md`: UXF-005 recoge la decisión de añadir modo local con aviso persistente.
+
+---
+
 ## [5.51.1] - 2026-09-05
 
 ### 🎯 Resumen
