@@ -351,7 +351,6 @@ class TestDialogoAcercaDe:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @pytest.mark.ui
-@pytest.mark.xfail(strict=False, reason="Flakey en suite completa por estado de importación")
 class TestDialogoDiagnosticoGuardias:
     """Tests para DialogoDiagnosticoGuardias."""
 

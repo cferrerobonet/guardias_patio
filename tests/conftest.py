@@ -5,9 +5,16 @@ Este módulo contiene fixtures comunes y configuración
 para todos los tests del proyecto.
 """
 
+import os
 import sys
 from pathlib import Path
 from typing import Generator
+
+# La API exige una clave para firmar los tokens y, sin ella, `api.auth` lanza al
+# importarse: dos módulos de tests fallaban en la fase de colección y tumbaban la
+# suite entera (QA-001). Se fija aquí, antes de importar nada, y sin pisar la del
+# entorno si ya viene puesta.
+os.environ.setdefault("GUARDIAS_API_SECRET_KEY", "clave-solo-para-tests")
 
 import pytest
 from PyQt6.QtWidgets import QApplication
@@ -571,13 +578,51 @@ def dialogos_modales(request):
         )
         return QDialog.DialogCode.Rejected
 
+    # Los métodos estáticos de conveniencia (information, question, warning...) no
+    # pasan por QMessageBox.exec: abren su propio bucle modal en C++ y cuelgan la
+    # suite igual que aquél. Se sustituyen por la respuesta por defecto de cada uno.
+    ESTATICOS_POR_DEFECTO = {
+        "information": QMessageBox.StandardButton.Ok,
+        "warning": QMessageBox.StandardButton.Ok,
+        "critical": QMessageBox.StandardButton.Ok,
+        "about": None,
+        "aboutQt": None,
+        "question": QMessageBox.StandardButton.No,
+    }
+    estaticos_originales = {
+        nombre: getattr(QMessageBox, nombre) for nombre in ESTATICOS_POR_DEFECTO
+    }
+
+    def _hacer_estatico(nombre, respuesta):
+        def _estatico(parent=None, title="", text="", *args, **kwargs):
+            mostrados.append(DialogoModalMostrado(f"QMessageBox.{nombre}", title, text))
+            if respuesta is None:
+                return None
+            # Si el llamante ofrece botones concretos, respetar el que pida por defecto.
+            if args and isinstance(args[0], QMessageBox.StandardButton):
+                botones = args[0]
+                for opcion in (
+                    QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.Cancel,
+                    QMessageBox.StandardButton.Ok,
+                ):
+                    if botones & opcion:
+                        return opcion
+            return respuesta
+
+        return staticmethod(_estatico)
+
     QMessageBox.exec = _exec_messagebox
     QDialog.exec = _exec_dialog
+    for nombre, respuesta in ESTATICOS_POR_DEFECTO.items():
+        setattr(QMessageBox, nombre, _hacer_estatico(nombre, respuesta))
     try:
         yield mostrados
     finally:
         QMessageBox.exec = exec_messagebox_original
         QDialog.exec = exec_dialog_original
+        for nombre, original in estaticos_originales.items():
+            setattr(QMessageBox, nombre, original)
 
 
 @pytest.fixture(autouse=True)

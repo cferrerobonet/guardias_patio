@@ -85,13 +85,21 @@ def test_swagger_ui_renderiza(browser, api_url):
     page = browser.new_page()
     page.goto(f"{api_url}/docs", wait_until="networkidle")
     assert "Guardias de Patio API" in page.title() or page.locator("h2.title").count() > 0
-    assert page.locator("text=/api/v1/guardias").first.is_visible()
+    # Por el atributo, no por el texto: `text=/api/v1/guardias` lo tomaba Playwright
+    # por una expresión regular (empieza y acaba por "/") y reventaba con "Invalid
+    # flags supplied"; y Swagger parte la ruta en varios nodos, así que un texto
+    # exacto tampoco casa.
+    page.wait_for_selector(".opblock-summary-path")
+    assert page.locator('[data-path="/api/v1/guardias"]').count() > 0
     page.close()
 
 
 def test_redoc_renderiza(browser, api_url):
     page = browser.new_page()
     page.goto(f"{api_url}/redoc", wait_until="networkidle")
+    # Redoc pinta después de networkidle: con la suite completa en marcha, sin esta
+    # espera el assert llegaba antes que el render.
+    page.wait_for_selector("text=Guardias de Patio API", timeout=15000)
     assert page.locator("text=Guardias de Patio API").first.is_visible()
     page.close()
 

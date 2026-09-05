@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
 )
 from utils.icons import icon_for_button
 
-from src.services.diagnosticador_guardias import DiagnosticoCompleto, ProblemaDetectado
+from services.diagnosticador_guardias import DiagnosticoCompleto, ProblemaDetectado
 
 
 class DialogoDiagnosticoGuardias(QDialog):

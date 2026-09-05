@@ -1,14 +1,18 @@
-"""Tests de UI para AsignacionGuardiasForm — cálculo y generación de guardias."""
+"""Tests de UI del cálculo y la generación de guardias.
+
+Cubren la superficie que la aplicación registra de verdad: `AsignacionCalculoForm`
+y sus dos paneles. Antes apuntaban a `AsignacionGuardiasForm`, un formulario que
+no está en ninguna vista (QA-003): la cobertura era ilusoria.
+"""
 
 from datetime import date, time
 from unittest.mock import Mock, patch
 
 import pytest
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
-from infrastructure.database.models import Configuracion, Guardia
-from presentation.forms.asignacion_guardias_form import AsignacionGuardiasForm
+from infrastructure.database.models import Configuracion, Guardia, Profesor, Zona
+from presentation.forms.asignacion_calculo_form import AsignacionCalculoForm
 
 
 @pytest.fixture
@@ -39,7 +43,7 @@ def configuracion(session, zona_factory, profesor_factory):
 
 @pytest.fixture
 def form(qapp, session, configuracion):
-    f = AsignacionGuardiasForm(session)
+    f = AsignacionCalculoForm(session)
     QApplication.processEvents()
     yield f
     f.close()
@@ -47,104 +51,126 @@ def form(qapp, session, configuracion):
 
 @pytest.fixture
 def form_sin_config(qapp, session):
-    f = AsignacionGuardiasForm(session)
+    f = AsignacionCalculoForm(session)
     QApplication.processEvents()
     yield f
     f.close()
 
 
 class TestAsignacionRenderizado:
-    def test_form_tiene_widget_estadisticas(self, form):
-        assert hasattr(form, "stats_text")
-        assert form.stats_text.isReadOnly()
+    def test_form_tiene_los_dos_paneles(self, form):
+        assert form.calculo_panel is not None
+        assert form.generacion_panel is not None
 
-    def test_form_tiene_boton_generar(self, form):
-        assert hasattr(form, "generar_button")
-        assert form.generar_button.isEnabled()
+    def test_paneles_muestran_texto_de_solo_lectura(self, form):
+        assert form.calculo_panel.content_text.isReadOnly()
+        assert form.generacion_panel.content_text.isReadOnly()
 
-    def test_stats_muestra_datos_con_configuracion(self, form):
-        texto = form.stats_text.toPlainText()
-        assert len(texto) > 0
+    def test_estadisticas_se_pintan_con_configuracion(self, form):
+        assert form.calculo_panel.content_text.toPlainText().strip()
 
-    def test_stats_muestra_error_sin_configuracion(self, form_sin_config):
-        texto = form_sin_config.stats_text.toPlainText()
-        assert len(texto) > 0  # Muestra algo (error o vacío), sin crash
-
-
-class TestAsignacionCalculo:
-    def test_calcular_distribucion_delega_a_cuotas_panel(self, qtbot, form):
-        """calcular_distribucion delega al cuotas_panel."""
-        with patch.object(form.cuotas_panel, "calcular_cuotas") as mock_calc:
-            form.calcular_distribucion()
-            mock_calc.assert_called_once()
-
-    def test_cuotas_text_es_readonly(self, form):
-        assert form.cuotas_text.isReadOnly()
+    def test_sin_configuracion_no_revienta(self, form_sin_config):
+        # Muestra el error o el mensaje inicial, pero pinta algo y no lanza.
+        assert form_sin_config.calculo_panel.content_text.toPlainText().strip()
 
 
-class TestAsignacionGeneracion:
-    def test_generar_sin_datos_boton_habilitado(self, form_sin_config):
-        """El botón de generar está habilitado incluso sin configuración."""
-        assert form_sin_config.generar_button.isEnabled()
+class TestGuardarrailDeGeneracion:
+    def test_generar_arranca_deshabilitado(self, form):
+        """Sin cuotas calculadas no se puede generar."""
+        assert not form.generacion_panel.generar_button.isEnabled()
+        assert "calcular las cuotas" in form.generacion_panel.generar_button.toolTip()
 
-    def test_generar_con_mock_algoritmo_exitoso(self, qtbot, form):
-        """Generar con algoritmo mockeado muestra resultado sin crash."""
-        mock_resumen = Mock()
-        mock_resumen.guardias_generadas = 50
-        mock_resumen.slots_esperados = 50
-        mock_resumen.cobertura_completa = True
-        mock_resumen.slots_sin_cubrir = 0
-        mock_resumen.resumen_por_profesor = {}
-        mock_resumen.mensaje = "OK"
+    def test_calcular_cuotas_habilita_generar(self, form):
+        """La señal del panel de cálculo es la que abre la puerta a generar."""
+        form.calculo_panel.cuotas_calculadas.emit({})
+        QApplication.processEvents()
+        assert form.generacion_panel.generar_button.isEnabled()
 
-        with patch.object(form, "generar_guardias_uc") as mock_uc:
-            mock_uc.execute.return_value = mock_resumen
+    def test_boton_calcular_esta_conectado(self, qapp, session, configuracion):
+        """El botón dispara `calcular_cuotas`.
+
+        Se parchea antes de construir el panel: Qt guarda el método ya enlazado al
+        conectar la señal, así que sustituirlo después no intercepta nada.
+        """
+        from presentation.forms.asignacion_widgets.calculo_panel import CalculoPanel
+
+        with patch.object(CalculoPanel, "calcular_cuotas") as mock_calc:
+            panel = CalculoPanel(session)
+            panel.calcular_button.click()
+            QApplication.processEvents()
+
+        mock_calc.assert_called_once()
+        panel.close()
+
+
+class TestGeneracion:
+    def test_generar_con_caso_de_uso_simulado(self, form):
+        """Generar pinta resultados y ofrece el envío de emails, sin tocar el solver."""
+        resumen = Mock()
+        resumen.guardias_generadas = 50
+        resumen.slots_esperados = 50
+        resumen.slots_sin_cubrir = 0
+        resumen.resumen_por_profesor = {}
+        resumen.mensaje = "OK"
+
+        panel = form.generacion_panel
+        with patch.object(panel, "generar_guardias_uc") as mock_uc:
+            mock_uc.execute.return_value = resumen
             with patch(
-                "utils.ui_helpers.show_question_with_cancel",
-                return_value=QMessageBox.StandardButton.No,
+                "presentation.forms.asignacion_widgets.generacion_panel.ejecutar_con_progreso",
+                return_value=resumen,
+                create=True,
             ):
-                with patch.object(form, "mostrar_exito"):
-                    form.generar_guardias()
+                with patch(
+                    "presentation.widgets.progress_indicators.ejecutar_con_progreso",
+                    return_value=resumen,
+                ):
+                    panel._generar_guardias()
                     QApplication.processEvents()
 
-    def test_cambiar_algoritmo_en_combo(self, form):
-        """Cambiar algoritmo en combo no provoca error."""
-        if hasattr(form, "algoritmo_combo"):
-            combo = form.algoritmo_combo
-            for i in range(combo.count()):
-                combo.setCurrentIndex(i)
-                QApplication.processEvents()
+        assert panel.btn_notificar.isVisible() or panel.content_text.toPlainText().strip()
+
+    def test_cambiar_algoritmo_no_rompe(self, form):
+        combo = form.generacion_panel.algoritmo_combo
+        assert combo.count() > 0
+        for i in range(combo.count()):
+            combo.setCurrentIndex(i)
+            QApplication.processEvents()
 
 
-class TestAsignacionLimpieza:
-    def test_limpiar_guardias_confirmado(self, qtbot, form, session, zona_factory, profesor_factory):
-        """Limpiar guardias con confirmación borra registros de BD."""
-        zona = session.query(__import__("infrastructure.database.models", fromlist=["Zona"]).Zona).first()
-        prof = session.query(__import__("infrastructure.database.models", fromlist=["Profesor"]).Profesor).first()
-        if zona and prof:
-            guardia = Guardia(
+class TestLimpieza:
+    def _crear_guardia(self, session):
+        zona = session.query(Zona).first()
+        prof = session.query(Profesor).first()
+        session.add(
+            Guardia(
                 profesor_id=prof.id,
                 zona_id=zona.id,
                 fecha=date(2025, 1, 10),
                 turno="mañana",
                 recreo=1,
             )
-            session.add(guardia)
-            session.commit()
+        )
+        session.commit()
 
-        with patch.object(form, "confirmar_accion", return_value=True):
-            with patch.object(form, "mostrar_exito"):
-                if hasattr(form, "limpiar_guardias"):
-                    form.limpiar_guardias()
-                    QApplication.processEvents()
+    def test_limpiar_confirmado_borra(self, form, session):
+        self._crear_guardia(session)
+        assert session.query(Guardia).count() == 1
 
-    def test_limpiar_guardias_cancelado_conserva_bd(self, qtbot, form, session):
-        """Cancelar limpieza no modifica la BD."""
+        with patch.object(QMessageBox, "exec", return_value=QMessageBox.StandardButton.Yes):
+            form.generacion_panel._limpiar_guardias()
+            QApplication.processEvents()
+
+        session.expire_all()
+        assert session.query(Guardia).count() == 0
+
+    def test_limpiar_cancelado_conserva(self, form, session):
+        self._crear_guardia(session)
         n_inicial = session.query(Guardia).count()
-        with patch.object(form, "confirmar_accion", return_value=False):
-            if hasattr(form, "limpiar_guardias"):
-                form.limpiar_guardias()
-                QApplication.processEvents()
+
+        with patch.object(QMessageBox, "exec", return_value=QMessageBox.StandardButton.No):
+            form.generacion_panel._limpiar_guardias()
+            QApplication.processEvents()
 
         session.expire_all()
         assert session.query(Guardia).count() == n_inicial

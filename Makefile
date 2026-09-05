@@ -1,4 +1,10 @@
-.PHONY: help install icon app dmg release clean test test-fast test-ui bench mutation windows
+.PHONY: help venv install icon app dmg release clean test test-fast test-ui test-audit coverage bench mutation windows
+
+# El entorno virtual vive FUERA del repositorio: está en iCloud, que duplica los
+# binarios y deja a Qt sin complementos válidos (QA-013 en la auditoría).
+VENV := $(HOME)/.venvs/guardias-patio
+PY := $(VENV)/bin/python
+PYTEST := $(PY) -m pytest
 
 help:
 	@echo "🛠️  Guardias de Patio - Comandos disponibles:"
@@ -17,18 +23,28 @@ help:
 	@echo ""
 	@echo "  General:"
 	@echo "  ────────────────────────────────────────"
-	@echo "  make clean       - Limpiar archivos de build"
+	@echo "  make venv        - Crear/actualizar el entorno virtual con todas las dependencias"
+	@echo "  make clean       - Limpiar archivos de build y bytecode"
 	@echo "  make test        - Ejecutar todos los tests"
 	@echo "  make test-fast   - Tests sin UI (~30s, paralelo con xdist)"
 	@echo "  make test-ui     - Solo tests de UI (PyQt6)"
+	@echo "  make test-audit  - Suite de auditoría (tests/audit)"
+	@echo "  make coverage    - Tests con informe de cobertura"
 	@echo "  make bench       - Benchmarks de rendimiento (pytest-benchmark)"
 	@echo "  make mutation    - Ejecutar mutation testing (mutmut)"
 	@echo "  make run         - Ejecutar aplicación"
 	@echo ""
 
+venv:
+	@echo "🐍 Preparando entorno en $(VENV) (fuera de iCloud)..."
+	@test -x "$(PY)" || python3.11 -m venv "$(VENV)"
+	$(PY) -m pip install --upgrade pip
+	$(PY) -m pip install -r requirements.txt
+	@echo "✅ Entorno listo. Para los E2E de la API: $(PY) -m playwright install chromium"
+
 install:
 	@echo "📦 Instalando dependencias de build..."
-	pip install pyinstaller
+	$(PY) -m pip install pyinstaller
 
 icon:
 	@echo "🎨 Creando icono..."
@@ -63,31 +79,43 @@ clean:
 	@echo "🧹 Limpiando archivos de build..."
 	rm -rf build dist
 	rm -rf imagenes/*.iconset
+	@echo "🧹 Limpiando bytecode (puede quedar de otra ruta o de otra versión de pytest)..."
+	find . -path ./.git -prune -o -name "__pycache__" -type d -print0 2>/dev/null | xargs -0 rm -rf
+	rm -rf .pytest_cache .ruff_cache htmlcov .coverage coverage.xml
 	@echo "✅ Limpieza completada"
 
 test:
 	@echo "🧪 Ejecutando todos los tests..."
-	pytest tests/ -v
+	$(PYTEST) tests/ -q
 
 test-fast:
 	@echo "⚡ Tests rápidos (sin UI, paralelo)..."
-	pytest tests/ -m "not ui and not slow and not benchmark" -n auto --tb=short -q
+	$(PYTEST) tests/ -m "not ui and not slow and not benchmark" -n auto --tb=short -q
 
 test-ui:
 	@echo "🖥️  Tests de UI (PyQt6)..."
-	pytest tests/ -m "ui" --tb=short -v
+	$(PYTEST) tests/ -m "ui" --tb=short -q
+
+test-audit:
+	@echo "🔍 Suite de auditoría..."
+	$(PYTEST) tests/audit -q
+
+coverage:
+	@echo "📈 Tests con informe de cobertura..."
+	$(PYTEST) tests/ --cov=src --cov-report=term-missing --cov-report=html --cov-branch -q
+	@echo "✅ Informe en htmlcov/index.html"
 
 bench:
 	@echo "📊 Ejecutando benchmarks de rendimiento..."
-	pytest tests/test_benchmark_cpsat.py --benchmark-only --benchmark-sort=mean -v
+	$(PYTEST) tests/test_benchmark_cpsat.py --benchmark-only --benchmark-sort=mean -v
 
 mutation:
 	@echo "🧬 Ejecutando mutation testing con mutmut..."
-	mutmut run --paths-to-mutate=src/domain
+	$(PY) -m mutmut run --paths-to-mutate=src/domain
 
 run:
 	@echo "🚀 Ejecutando aplicación..."
-	/opt/homebrew/bin/python3.11 src/main.py
+	$(PY) src/main.py
 
 windows:
 	@echo "🪟 Instalador de Windows"

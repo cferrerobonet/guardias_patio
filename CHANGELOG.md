@@ -5,6 +5,31 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.54.0] - 2026-09-05
+
+### 🎯 Resumen
+Las pruebas automáticas pasan enteras de una sola vez, sin fallos tolerados ni preparativos, y por fin comprueban las pantallas que la aplicación usa de verdad.
+
+### Fixed
+- **Dos pruebas que tapaban errores reales.** Una comprobación de la documentación de la API llevaba tiempo fallando y se daba por perdida: buscaba un texto que empieza y acaba por barra, y la herramienta lo tomaba por una expresión regular. Otra daba por pintada una página antes de que terminara de dibujarse.
+- **Siete pruebas marcadas como "inestables" escondían dos fallos de verdad.** Una prueba fabricaba módulos falsos que suplantaban a los reales durante el resto de la sesión, y un diálogo de la aplicación se los tragaba al importar. Además el registro de mensajes cambia de motor según cómo se arranque, así que comprobar avisos por nombre dependía del orden. Corregidos los dos; las marcas ya no hacen falta.
+- **Un diálogo con una ruta de importación inválida.** El diálogo de diagnóstico importaba por una ruta que solo existía dentro de las pruebas: en la aplicación empaquetada no habría abierto.
+
+### Changed
+- **`make venv` prepara el entorno completo**, y todas las órdenes del Makefile usan ese intérprete en vez del que hubiera suelto en el sistema. Nuevas órdenes: `make test-audit` y `make coverage`.
+- **La cobertura deja de calcularse en cada ejecución**: se pide con `make coverage`. La suite baja de más de un minuto a unos 50 segundos.
+- **Las pruebas de la pantalla de asignación miran la pantalla real.** Apuntaban a un formulario que ninguna vista registra: 561 líneas de cobertura ilusoria. Sustituidas por 11 pruebas sobre la pantalla viva, incluida la que comprueba que no se puede generar sin haber calculado las cuotas.
+- **La aplicación ya no necesita variables de entorno para probarse**: la clave de la API de pruebas se fija sola.
+- La guarda que impide que un diálogo bloquee las pruebas cubre ahora también los avisos rápidos (información, pregunta, advertencia), que abrían su propia ventana y colgaban la ejecución.
+- Una prueba que pasa pese a estar marcada como "se espera que falle" cuenta ahora como fallo, para que las marcas no se acumulen olvidadas.
+
+### 🧹 Housekeeping
+- Borradas 52 carpetas de código compilado antiguo, algunas de una ruta del proyecto que ya no existe; `make clean` las limpia a partir de ahora.
+- `auditoria/`: QA-002, QA-003, QA-009 y QA-010 resueltos; QA-001 y QA-005 parciales; lote 4 cerrado.
+- **2.503 pruebas, ningún fallo, 51 segundos.**
+
+---
+
 ## [5.53.0] - 2026-09-05
 
 ### 🎯 Resumen

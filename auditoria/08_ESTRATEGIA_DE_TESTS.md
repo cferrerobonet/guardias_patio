@@ -121,13 +121,13 @@ $PY -m pytest tests/e2e_playwright -q --no-cov
 
 | ID | Sev. | Hallazgo | Recomendación |
 | --- | --- | --- | --- |
-| QA-001 | P1 | Entorno de tests no reproducible: venvs rotos, deps ausentes (`hypothesis`, `PyJWT`, `slowapi`, `pytest-timeout`, `xdist`) y variable `GUARDIAS_API_SECRET_KEY` obligatoria no documentada | `requirements-dev.txt` + `make venv` que cree `.venv` con `python3.11` y lo use en todos los targets; `conftest` de API que fije un secreto de pruebas |
-| QA-002 | P2 | `pytest.ini` con cov obligatorio, `filterwarnings=error`, `timeout` sin plugin | cov sólo en `make coverage`; instalar `pytest-timeout`; warnings a error sólo en CI |
-| QA-003 | P2 | Tests del formulario muerto `AsignacionGuardiasForm` | Migrar a `AsignacionCalculoForm`/`GeneracionPanel` y borrar el formulario |
+| ~~QA-001~~ ✅ **v5.54.0** (parcial) | P1 | Entorno de tests no reproducible | `make venv` crea el entorno en `~/.venvs/guardias-patio` (fuera de iCloud) y todos los objetivos lo usan; `tests/conftest.py` fija `GUARDIAS_API_SECRET_KEY`. Las dependencias ya estaban todas en `requirements.txt`; separarlas de las de ejecución queda para el lote de build/CI |
+| ~~QA-002~~ ✅ **v5.54.0** | P2 | `pytest.ini` con cov obligatorio y `timeout` sin plugin | Cobertura fuera de `addopts`, en `make coverage`; `pytest-timeout` instalado; `xfail_strict = true`. `filterwarnings=error` se mantiene: no da problemas |
+| ~~QA-003~~ ✅ **v5.54.0** | P2 | Tests del formulario muerto `AsignacionGuardiasForm` | `tests/ui/test_ui_asignacion.py` reescrito contra `AsignacionCalculoForm`; borrado `tests/test_asignacion_guardias_form.py`. El formulario en sí es COD-004 |
 | QA-004 | P2 | Sin tests de hilos/cancelación/excepthook | `tests/audit/test_crash_windows_regresion.py` |
-| QA-005 | P2 | Fallo preexistente tolerado; skips amplios en a11y | Corregir o borrar el test; prohibir `except Exception: pytest.skip` |
+| ~~QA-005~~ ✅ **v5.54.0** (parcial) | P2 | Fallo preexistente tolerado; skips amplios en a11y | Los dos tests de Playwright corregidos: la suite pasa entera. Los skips de a11y siguen (UXA-012) |
 | QA-006 | P3 | Nada se prueba sobre SQLite en fichero ni migraciones reales | fixture `db_fichero` + test de `alembic upgrade head` sobre fichero |
 | QA-007 | P3 | Sin E2E de la superficie web | `tests/e2e_playwright` |
 | QA-008 | P1 | Tests que bloquean la suite para siempre: `test_toggle_editable` (SMTP y SFTP) llama a `_toggle_editable()`, que abre un `QMessageBox` modal y espera en `msg.exec()` (`smtp_widget.py:185-274`); hay más casos en `tests/test_import_export_form.py`. `pytest-timeout` no los interrumpe porque el manejador de señales de Python no se ejecuta mientras el bucle de eventos de Qt corre en C++ | Los tests que puedan abrir un modal deben parchearlo (`monkeypatch.setattr(QMessageBox, "exec", lambda self: QMessageBox.StandardButton.No)`) o llamar a la lógica sin el diálogo; en CI, ejecutar por fichero con límite de tiempo externo hasta corregirlos |
-| QA-009 | P3 | 7 marcas `xfail` obsoletas que ya pasan (`test_dialogs_basic.py` ×6, `test_gestor_ausencias.py` ×1) | Retirarlas; activar `xfail_strict = true` en `pytest.ini` para que no vuelvan a acumularse |
-| QA-010 | P3 | `tests/__pycache__` con bytecode de una ubicación anterior del proyecto y de otra versión de pytest | Borrar `__pycache__` y añadir la limpieza a `make clean` |
+| ~~QA-009~~ ✅ **v5.54.0** | P3 | 7 marcas `xfail` dependientes del orden de ejecución | No eran obsoletas: tapaban dos bugs reales (stubs de `sys.modules` bajo `src.services.*` y el backend de logging elegido en el primer import). Corregidos ambos, marcas retiradas y `xfail_strict = true` |
+| ~~QA-010~~ ✅ **v5.54.0** | P3 | `tests/__pycache__` con bytecode de otra ubicación y otra versión de pytest | Borradas las 52 carpetas y `make clean` las limpia |

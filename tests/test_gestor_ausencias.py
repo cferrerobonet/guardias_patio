@@ -143,23 +143,26 @@ def test_registrar_ausencia_profesor_no_existe(mock_session):
         )
 
 
-@pytest.mark.xfail(strict=False, reason="Flakey en suite completa por estado global de logging")
-def test_registrar_ausencia_tipo_no_estandar_warning(mock_session, profesor_fixture, caplog):
+def test_registrar_ausencia_tipo_no_estandar_warning(mock_session, profesor_fixture):
     """Test: warning si tipo de ausencia no es estándar."""
     # Arrange
     mock_session.query(Profesor).get.return_value = profesor_fixture
 
-    # Act
-    registrar_ausencia(
-        mock_session,
-        1,
-        date(2025, 10, 20),
-        date(2025, 10, 25),
-        "tipo_raro",  # No estándar
-    )
+    # Act. Se espía el logger del módulo en lugar de usar caplog: `get_logger`
+    # devuelve structlog o el logging estándar según la configuración vigente en el
+    # primer import, así que capturar por nombre dependía del orden de la suite.
+    with patch("services.gestor_ausencias.logger") as logger_espia:
+        registrar_ausencia(
+            mock_session,
+            1,
+            date(2025, 10, 20),
+            date(2025, 10, 25),
+            "tipo_raro",  # No estándar
+        )
 
     # Assert
-    assert "Tipo de ausencia no estándar" in caplog.text
+    avisos = " ".join(str(c) for c in logger_espia.warning.call_args_list)
+    assert "Tipo de ausencia no estándar" in avisos
 
 
 def test_registrar_ausencia_con_documento(mock_session, profesor_fixture):
