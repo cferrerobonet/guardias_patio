@@ -7,7 +7,7 @@ Genera todas las guardias del curso y las guarda en la base de datos.
 import json
 import json as _json
 import threading
-from datetime import datetime
+from datetime import date, datetime
 from typing import Callable, Optional
 
 from sqlalchemy.orm import Session
@@ -63,6 +63,7 @@ class GenerarGuardiasUseCase:
         eliminar_existentes: bool = True,
         progress_callback: Optional[Callable[[str, int], None]] = None,
         cancelacion: Optional[threading.Event] = None,
+        desde: Optional["date"] = None,
     ) -> ResumenGeneracionDTO:
         """
         Ejecutar la generación de guardias.
@@ -72,6 +73,8 @@ class GenerarGuardiasUseCase:
             progress_callback: Función opcional para reportar progreso
                               Recibe (mensaje: str, porcentaje: int)
             cancelacion: Evento que, al activarse, detiene la generación
+            desde: Si se indica, sólo se recalcula desde esa fecha; lo anterior y las
+                sustituciones posteriores se conservan (FUN-002)
 
         Returns:
             ResumenGeneracionDTO con el resultado de la generación
@@ -87,8 +90,17 @@ class GenerarGuardiasUseCase:
                 if progress_callback:
                     progress_callback("Eliminando guardias existentes...", 10)
 
-                self.session.query(Guardia).delete()
-                logger.info(f"Eliminadas {count_guardias} guardias existentes (pendiente commit)")
+                if desde is None:
+                    borradas = self.session.query(Guardia).delete()
+                else:
+                    # Incremental: sólo se borra lo recalculable. Lo anterior a la
+                    # fecha y las sustituciones se quedan como están (FUN-002).
+                    borradas = (
+                        self.session.query(Guardia)
+                        .filter(Guardia.fecha >= desde, Guardia.es_sustitucion.is_(False))
+                        .delete(synchronize_session=False)
+                    )
+                logger.info(f"Eliminadas {borradas} guardias existentes (pendiente commit)")
 
             # Obtener estadísticas
             if progress_callback:
@@ -131,7 +143,7 @@ class GenerarGuardiasUseCase:
             if algoritmo in ("cpsat", "optimo", "cp-sat"):
                 logger.info("✨ Usando algoritmo CP-SAT (optimización garantizada)")
                 calendario, resumen = generar_guardias_cpsat(
-                    self.session, adapter_callback, cancelacion=cancelacion
+                    self.session, adapter_callback, cancelacion=cancelacion, desde=desde
                 )
                 # Guardar en base de datos
                 if progress_callback:
@@ -155,7 +167,13 @@ class GenerarGuardiasUseCase:
             # sobrevivía si otro flujo hacía commit más tarde (CRW-009).
             self.session.add(GuardiaAuditLog(
                 accion="GENERADA_BULK",
-                detalle=_json.dumps({"total": len(calendario), "algoritmo": algoritmo}),
+                detalle=_json.dumps(
+                    {
+                        "total": len(calendario),
+                        "algoritmo": algoritmo,
+                        "desde": desde.isoformat() if desde else None,
+                    }
+                ),
             ))
             self.session.commit()
 

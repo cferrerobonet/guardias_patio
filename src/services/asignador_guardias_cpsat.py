@@ -54,12 +54,49 @@ logger = get_logger(__name__)
 # =============================================================================
 
 
+def _preparar_generacion_incremental(session, slots, desde: date):
+    """Reparte el trabajo entre lo que se conserva y lo que hay que recalcular.
+
+    Devuelve `(guardias_conservadas, ya_asignadas, slots_pendientes)`:
+
+    - **guardias_conservadas**: todo lo anterior a `desde`, más las sustituciones
+      posteriores. Una sustitución la ha puesto una persona por una ausencia
+      concreta; rehacerla sería tirar ese trabajo (decisión de producto, 2026-09-05).
+    - **ya_asignadas**: cuántas guardias tiene ya cada profesor entre las conservadas.
+      Sirve para descontarlas de su cuota y que el reparto siga siendo justo.
+    - **slots_pendientes**: los huecos desde `desde` que no cubre ninguna guardia
+      conservada.
+    """
+    conservadas = (
+        session.query(Guardia)
+        .filter((Guardia.fecha < desde) | (Guardia.es_sustitucion.is_(True)))
+        .all()
+    )
+    # Una sustitución anterior a `desde` ya entra por la primera condición.
+    conservadas = [g for g in conservadas if g.fecha < desde or g.es_sustitucion]
+
+    ya_asignadas: Dict[int, int] = defaultdict(int)
+    ocupados = set()
+    for guardia in conservadas:
+        ya_asignadas[guardia.profesor_id] += 1
+        ocupados.add((guardia.fecha, guardia.recreo, guardia.zona_id))
+
+    pendientes = [
+        slot
+        for slot in slots
+        if slot.fecha >= desde
+        and (slot.fecha, slot.recreo_id, slot.zona_id) not in ocupados
+    ]
+    return conservadas, dict(ya_asignadas), pendientes
+
+
 def generar_guardias_cpsat(
     session,
     progress_callback: Optional[Callable[[int, str], None]] = None,
     timeout_seconds: Optional[float] = None,
     use_hints: bool = True,
     cancelacion: Optional[threading.Event] = None,
+    desde: Optional[date] = None,
 ) -> Tuple[List[Guardia], Dict[int, int]]:
     """
     Genera el calendario de guardias usando CP-SAT de OR-Tools.
@@ -73,6 +110,9 @@ def generar_guardias_cpsat(
         timeout_seconds: Tiempo máximo de resolución. None = el de los ajustes
         use_hints: Si True, genera una solución greedy como hint inicial
         cancelacion: Evento que, al activarse, detiene la generación en la fase en curso
+        desde: Si se indica, sólo se recalcula a partir de esa fecha. Lo anterior se
+            conserva, y también las sustituciones posteriores, que son decisiones
+            tomadas a mano (FUN-002)
 
     Returns:
         Tupla (lista de guardias, diccionario profesor_id -> guardias_asignadas)
@@ -133,8 +173,25 @@ def generar_guardias_cpsat(
     if not slots:
         raise ValueError("No se pudieron generar slots")
 
+    # Generación incremental: se congela lo anterior a `desde` y se respetan las
+    # sustituciones posteriores, que son decisiones tomadas a mano (FUN-002).
+    guardias_conservadas: List[Guardia] = []
+    ya_asignadas: Dict[int, int] = {}
+    if desde is not None:
+        guardias_conservadas, ya_asignadas, slots = _preparar_generacion_incremental(
+            session, slots, desde
+        )
+        logger.info(
+            f"  ✓ Incremental desde {desde}: se conservan {len(guardias_conservadas)} guardias"
+        )
+
     logger.info(f"  ✓ {len(profesores)} profesores activos")
     logger.info(f"  ✓ {len(slots)} slots a cubrir")
+
+    if not slots:
+        logger.info("  ✓ No queda nada que recalcular en el rango pedido")
+        reportar(100, "Sin cambios: no hay slots que recalcular")
+        return list(guardias_conservadas), dict(ya_asignadas)
 
     # =========================================================================
     # FASE 2: PRE-CÁLCULO DE ELEGIBILIDAD
@@ -242,6 +299,15 @@ def generar_guardias_cpsat(
     cuotas_ideales: Dict[int, float] = {
         p_id: float(cuota) for p_id, cuota in cuotas_ideales_int.items()
     }
+    if ya_asignadas:
+        # Lo ya cubierto cuenta: quien hizo muchas guardias en el primer trimestre
+        # debe hacer menos en el resto, o el reparto dejaría de ser justo.
+        for p_id in list(cuotas_ideales):
+            cuotas_ideales[p_id] = max(0.0, cuotas_ideales[p_id] - ya_asignadas.get(p_id, 0))
+        logger.info(
+            f"  ✓ Cuotas ajustadas descontando {sum(ya_asignadas.values())} guardias ya hechas"
+        )
+
     logger.info(f"  ✓ Cuotas calculadas por turno (suma={sum(cuotas_ideales.values()):.0f})")
 
     # Variable auxiliar: número de guardias por profesor

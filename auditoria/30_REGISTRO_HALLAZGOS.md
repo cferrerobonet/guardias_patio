@@ -182,7 +182,8 @@ FUN-001…FUN-014 en [[07_FUNCIONALIDAD_CALIDAD_ESCALABILIDAD]] §1. Estado: `PR
 
 - **FUN-001 (panel «Estado del curso»): `DESCARTADO` v5.57.0.** Implementado en v5.56.0 y retirado a petición de CarlosFB. Su parte de dominio (`PreflightGeneracionUseCase`) se conserva y es la que resuelve UXF-002 y UXF-008.
 - **FUN-004 (historial y restauración): `RESUELTO` v5.63.0.** `backup_database()` y `restore_database()` llevaban tiempo escritas en `db_manager` sin que las llamara nadie. Ahora se hace copia antes de generar y de limpiar, `listar_backups()` las enumera y la vista de Importar/Exportar permite volver a un momento anterior · `tests/audit/test_historial_y_restauracion.py`.
-- **Orden acordado para las mejoras de generación: ~~FUN-004~~ → FUN-002 → FUN-003** (decisión de 2026-09-05).
+- **FUN-002 (generación incremental): `RESUELTO` v5.67.0.** Se puede recalcular sólo desde una fecha: lo anterior se congela y las sustituciones posteriores se respetan, porque son decisiones tomadas a mano. Las cuotas descuentan lo ya cubierto, así que el reparto sigue siendo justo sobre el curso completo. El diálogo propone **hoy** y sustituye a la pregunta anterior de sí/no, cuyo «no» añadía guardias encima de las existentes · `tests/audit/test_generacion_incremental.py`.
+- **Orden acordado para las mejoras de generación: ~~FUN-004~~ → ~~FUN-002~~ → FUN-003** (decisión de 2026-09-05).
 
 ## Positivos a preservar
 

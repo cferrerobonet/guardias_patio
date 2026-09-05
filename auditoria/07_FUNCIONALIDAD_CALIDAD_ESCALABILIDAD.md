@@ -18,7 +18,7 @@ Ordenadas por valor/esfuerzo. Sin severidad: son decisiones de producto.
 | ID | Mejora | Valor | Esfuerzo | Depende de |
 | --- | --- | --- | --- | --- |
 | ~~FUN-001~~ **DESCARTADO v5.57.0** | ~~Panel "Estado del curso" como vista inicial~~ · Se implementó en v5.56.0 y se retiró por decisión de producto: sólo tenía algo que decir al montar el curso en septiembre; el resto del año era una pantalla de paso. **Lo que sí se conserva es la mitad valiosa**: el cálculo de prerrequisitos desde dominio (`PreflightGeneracionUseCase`), que alimenta el bloqueo del botón de generar y el aviso visible que enumera lo que falta | Alto | M | – |
-| FUN-002 | **Generación incremental**: regenerar sólo desde una fecha o un mes, congelando el pasado (guardias ya realizadas) y respetando sustituciones hechas | Alto: hoy "Generar" borra todo el curso | L | CRW-003, ESC-002 |
+| ~~FUN-002~~ ✅ **v5.67.0** | ~~Generación incremental~~ · congela lo anterior a la fecha, respeta las sustituciones posteriores y descuenta de las cuotas lo ya cubierto | Alto | L | CRW-003, ESC-002 |
 | FUN-003 | **Edición manual en calendario**: mover/asignar una guardia con validación de restricciones (1/día, ausencias, turno) y recálculo de equidad al vuelo | Alto | L | ESC-001 |
 | ~~FUN-004~~ ✅ **v5.63.0** | ~~Historial de generaciones y restauración~~ · copia automática antes de generar y de limpiar; listado de copias y restauración desde Importar/Exportar. La API de `db_manager` ya existía y no la llamaba nadie | Alto: red de seguridad | M | – |
 | FUN-005 | **Plantilla de curso**: al crear curso, copiar zonas, profesores, ajustes y festivos del anterior con revisión | Alto en septiembre | M | – |

@@ -5,6 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.67.0] - 2026-09-05
+
+### 🎯 Resumen
+Ya no hace falta rehacer el curso entero para arreglar lo que queda: se puede recalcular solo de hoy en adelante.
+
+### ✨ Added
+- **Recalcular desde una fecha.** Si en enero entra un profesor nuevo o cambia algo, hasta ahora la única opción era rehacer el curso completo, y con él se perdían las sustituciones puestas a mano durante el primer trimestre. Ahora, al generar con guardias ya existentes, la aplicación pregunta si quieres recalcular **desde hoy** —lo propone por defecto— o rehacer todo el curso.
+- **Las sustituciones se respetan siempre.** Una sustitución la has puesto tú por una ausencia concreta: el recálculo la deja intacta y reparte el resto a su alrededor.
+- **El reparto sigue siendo justo.** Las guardias ya cubiertas se descuentan del cupo de cada profesor, así que quien cargó más en el primer trimestre hace menos en el resto. Sin esto, recalcular por tramos habría ido acumulando desigualdad.
+
+### Changed
+- La pregunta al generar sobre guardias existentes era de sí/no, y su «no» añadía guardias encima de las que ya había: un modo que dejaba el calendario incoherente. Se sustituye por la elección entre recalcular desde hoy o rehacer el curso.
+
+### 🧹 Housekeeping
+- `auditoria/`: FUN-002 resuelto. Del orden acordado para las mejoras de generación queda la edición manual en el calendario.
+- 2.582 pruebas, ningún fallo.
+
+---
+
 ## [5.66.0] - 2026-09-05
 
 ### 🎯 Resumen

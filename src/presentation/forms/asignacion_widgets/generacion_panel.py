@@ -279,7 +279,6 @@ class GeneracionPanel(QGroupBox):
         from PyQt6.QtWidgets import QMessageBox
 
         from presentation.widgets.progress_indicators import ejecutar_con_progreso
-        from utils.ui_helpers import show_question_with_cancel
 
         try:
             # Obtener algoritmo seleccionado y actualizar configuración
@@ -310,22 +309,11 @@ class GeneracionPanel(QGroupBox):
                 f"Tiempo estimado: {tiempo_est}"
             )
 
+            desde = None
             if count_guardias > 0:
-                respuesta = show_question_with_cancel(
-                    self,
-                    "⚠️ Guardias Existentes",
-                    f"Ya existen {count_guardias} guardias.\n\n"
-                    f"¿Deseas ELIMINAR todas antes de generar nuevas?\n\n"
-                    f"• SÍ: Eliminará todas y generará desde cero\n"
-                    f"• NO: Agregará nuevas a las existentes\n\n"
-                    f"─────────────────────────\n{resumen_previo}",
-                    default_button="Yes",
-                )
-
-                if respuesta == QMessageBox.StandardButton.Cancel:
+                desde, seguir = self._preguntar_alcance(count_guardias, resumen_previo)
+                if not seguir:
                     return
-
-                eliminar_existentes = respuesta == QMessageBox.StandardButton.Yes
             else:
                 QMessageBox.information(
                     self,
@@ -348,6 +336,7 @@ class GeneracionPanel(QGroupBox):
                         eliminar_existentes=eliminar_existentes,
                         progress_callback=adapted_callback,
                         cancelacion=cancelacion,
+                        desde=desde,
                     )
 
             # Ejecutar con indicador de progreso
@@ -481,6 +470,45 @@ class GeneracionPanel(QGroupBox):
 
             except SQLAlchemyError as e:
                 self._mostrar_error(f"Error al limpiar: {e}")
+
+    def _preguntar_alcance(self, count_guardias: int, resumen_previo: str):
+        """¿Rehacer el curso entero o sólo de hoy en adelante? (FUN-002)
+
+        Devuelve `(desde, seguir)`. `desde` es None cuando se rehace todo.
+
+        Sustituye a la pregunta anterior, de sí/no, cuyo «no» añadía guardias
+        encima de las existentes: un modo que dejaba el calendario incoherente.
+        """
+        from datetime import date
+
+        from PyQt6.QtWidgets import QMessageBox
+
+        hoy = date.today()
+        caja = QMessageBox(self)
+        caja.setIcon(QMessageBox.Icon.Question)
+        caja.setWindowTitle("Ya hay guardias generadas")
+        caja.setText(f"Ya existen {count_guardias} guardias en el curso.")
+        caja.setInformativeText(
+            f"¿Qué quieres recalcular?\n\n"
+            f"• Desde hoy ({hoy.strftime('%d/%m/%Y')}): se conserva lo anterior y también "
+            f"las sustituciones que hayas hecho a mano.\n"
+            f"• Todo el curso: se rehace desde el principio y se pierde lo ajustado.\n\n"
+            f"─────────────────────────\n{resumen_previo}"
+        )
+        boton_desde_hoy = caja.addButton(
+            f"Desde hoy ({hoy.strftime('%d/%m')})", QMessageBox.ButtonRole.AcceptRole
+        )
+        boton_todo = caja.addButton("Todo el curso", QMessageBox.ButtonRole.DestructiveRole)
+        boton_cancelar = caja.addButton("Cancelar", QMessageBox.ButtonRole.RejectRole)
+        caja.setDefaultButton(boton_desde_hoy)
+        caja.exec()
+
+        pulsado = caja.clickedButton()
+        if pulsado is boton_cancelar or pulsado is None:
+            return None, False
+        if pulsado is boton_todo:
+            return None, True
+        return hoy, True
 
     def _copia_de_seguridad(self, motivo: str) -> None:
         """Guarda el estado actual antes de una operación que destruye datos."""
