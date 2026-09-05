@@ -11,8 +11,10 @@ Bajadas registradas (lote 8, v5.58.0):
   absoluto y había usos de hasta 7 px.
 - `hex_literales` 631 → 526 (y `tokens.py` sale del recuento: es donde el color
   debe vivir, contarlo allí penalizaba centralizarlo).
-- `setStyleSheet` sigue en 288: reducirlo es sacar los estilos en línea a la hoja
-  central, vista por vista, y eso es el resto de VIS-001."""
+- `setStyleSheet` 288 → 260 (v5.65.0): las hojas repetidas literalmente pasan a
+  reglas semánticas de `light.qss` (`#tituloDialogo`, `[caja="aviso"]`…). El resto
+  son estilos únicos por widget: sacarlos exige mirar cada vista, y eso sigue
+  siendo el grueso de VIS-001."""
 
 import re
 from pathlib import Path
@@ -22,8 +24,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 PRES = ROOT / "src" / "presentation"
 UMBRALES = {
-    "setStyleSheet": 288,
-    "hex_literales": 526,
+    "setStyleSheet": 260,
+    "hex_literales": 471,
     "font_size_menor_12px": 0,
     "lineas_con_emoji": 326,
     "setFixed": 21,

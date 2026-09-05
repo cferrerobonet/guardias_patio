@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.65.0] - 2026-09-05
+
+### 🎯 Resumen
+La primera pantalla que ve quien instala la aplicación deja de verse sin estilos.
+
+### Fixed
+- **El diálogo de configuración inicial se abría sin ningún estilo.** La hoja de estilos se aplicaba más abajo en el arranque, después de mostrarlo: la primera ventana que ve alguien al instalar la aplicación era la única sin diseño. Ahora se aplica antes de mostrar nada.
+
+### Changed
+- Los estilos que estaban repetidos palabra por palabra en varios sitios —el título de los diálogos, los recuadros de aviso— se declaran una sola vez en la hoja central, y cada pantalla se limita a decir qué papel cumple cada elemento.
+
+### 🧹 Housekeeping
+- `auditoria/`: VIS-001 avanza. Estilos escritos dentro del código: de 288 a 260. Colores sueltos: de 526 a 471. El resto son estilos únicos de cada elemento y hay que revisarlos pantalla por pantalla.
+- 2.571 pruebas, ningún fallo.
+
+---
+
 ## [5.64.0] - 2026-09-05
 
 ### 🎯 Resumen

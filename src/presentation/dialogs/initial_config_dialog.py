@@ -134,14 +134,7 @@ class InitialConfigDialog(QDialog):
         status_layout = QHBoxLayout()
 
         self.smtp_status_label = QLabel("SMTP: No configurado")
-        self.smtp_status_label.setStyleSheet("""
-            QLabel {
-                padding: 8px;
-                background-color: #fef3c7;
-                border-left: 4px solid #f59e0b;
-                border-radius: 3px;
-            }
-        """)
+        self.smtp_status_label.setProperty("caja", "aviso")
 
         self.sftp_status_label = QLabel("SFTP: No configurado")
         self.sftp_status_label.setStyleSheet("""
@@ -266,14 +259,7 @@ class InitialConfigDialog(QDialog):
             """)
         elif sftp_complete:
             self.sftp_status_label.setText("SFTP: Datos completos - Guardar y probar")
-            self.sftp_status_label.setStyleSheet("""
-                QLabel {
-                    padding: 8px;
-                    background-color: #fef3c7;
-                    border-left: 4px solid #f59e0b;
-                    border-radius: 3px;
-                }
-            """)
+            self.sftp_status_label.setProperty("caja", "aviso")
         else:
             self.sftp_status_label.setText("SFTP: Configuración incompleta (OBLIGATORIO)")
             self.sftp_status_label.setStyleSheet("""
@@ -307,24 +293,10 @@ class InitialConfigDialog(QDialog):
             """)
         elif smtp_complete:
             self.smtp_status_label.setText("SMTP: Datos completos - Guardar y probar")
-            self.smtp_status_label.setStyleSheet("""
-                QLabel {
-                    padding: 8px;
-                    background-color: #fef3c7;
-                    border-left: 4px solid #f59e0b;
-                    border-radius: 3px;
-                }
-            """)
+            self.smtp_status_label.setProperty("caja", "aviso")
         else:
             self.smtp_status_label.setText("SMTP: No configurado (OPCIONAL)")
-            self.smtp_status_label.setStyleSheet("""
-                QLabel {
-                    padding: 8px;
-                    background-color: #fef3c7;
-                    border-left: 4px solid #f59e0b;
-                    border-radius: 3px;
-                }
-            """)
+            self.smtp_status_label.setProperty("caja", "aviso")
 
         # Habilitar botón de continuar solo si SFTP está configurado
         self.continue_btn.setEnabled(self._sftp_configured)

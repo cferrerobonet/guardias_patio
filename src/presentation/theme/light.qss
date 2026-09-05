@@ -394,3 +394,39 @@ QTimeEdit[error="true"] {
     border: 2px solid @ERROR@;
     background-color: @ERROR_BG@;
 }
+
+/* ========== PIEZAS REUTILIZADAS (VIS-001) ==========
+   Estilos que estaban repetidos literalmente en varios ficheros. Se declaran una
+   vez aquí y las vistas sólo marcan el papel de cada widget. */
+
+/* Título de un diálogo */
+QLabel#tituloDialogo {
+    font-size: 18px;
+    font-weight: bold;
+    color: @PRIMARY@;
+    padding: 20px;
+}
+
+/* Recuadro de aviso: algo que hay que leer antes de seguir */
+QLabel[caja="aviso"] {
+    padding: 8px;
+    background-color: @WARNING_BG_ALT@;
+    border-left: 4px solid @WARNING_BORDER@;
+    border-radius: 3px;
+}
+
+/* Recuadro informativo */
+QLabel[caja="info"] {
+    padding: 10px;
+    background-color: @INFO_BG@;
+    border-left: 4px solid @PRIMARY@;
+    border-radius: 3px;
+}
+
+/* Botón principal de un diálogo, con tamaño uniforme */
+QPushButton#botonDialogo {
+    min-width: 120px;
+    min-height: 35px;
+    padding: 5px 15px;
+    font-size: 13px;
+}

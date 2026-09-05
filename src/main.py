@@ -141,6 +141,20 @@ def main():
     # Aplicar branding corporativo a todos los QMessageBox
     apply_corporate_branding()
 
+    # Fuente y hoja de estilos ANTES de mostrar nada: el diálogo de configuración
+    # inicial se abría sin estilos, porque se aplicaban más abajo (VIS-001).
+    from presentation.theme.hoja_de_estilos import construir_hoja_de_estilos
+    from presentation.theme.tokens import cuerpo_del_sistema, familias_del_sistema
+
+    font = QFont()
+    font.setFamilies(familias_del_sistema())
+    font.setPointSize(cuerpo_del_sistema())
+    app.setFont(font)
+
+    hoja = construir_hoja_de_estilos()
+    if hoja:
+        app.setStyleSheet(hoja)
+
     # ==========================================
     # Validar Configuración Inicial (SFTP/SMTP)
     # ==========================================
@@ -208,21 +222,6 @@ def main():
         logger.info("✓ Traducción de Qt al español cargada")
     else:
         logger.warning("⚠ No se pudo cargar la traducción de Qt al español")
-
-    # Configurar fuente global con la pila propia de cada sistema (VIS-003)
-    from presentation.theme.tokens import cuerpo_del_sistema, familias_del_sistema
-
-    font = QFont()
-    font.setFamilies(familias_del_sistema())
-    font.setPointSize(cuerpo_del_sistema())
-    app.setFont(font)
-
-    # Aplicar stylesheet global a toda la aplicación, construida desde los tokens
-    from presentation.theme.hoja_de_estilos import construir_hoja_de_estilos
-
-    hoja = construir_hoja_de_estilos()
-    if hoja:
-        app.setStyleSheet(hoja)
 
     # ==========================================
     # Sistema de Login y Sincronización SFTP

@@ -43,14 +43,7 @@ class ResetPasswordDialog(QDialog):
 
         # Título
         title = QLabel(f"Cambiar Contraseña de: {self.username}")
-        title.setStyleSheet("""
-            QLabel {
-                font-size: 18px;
-                font-weight: bold;
-                color: #0E5FA8;
-                padding: 20px;
-            }
-        """)
+        title.setObjectName("tituloDialogo")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 

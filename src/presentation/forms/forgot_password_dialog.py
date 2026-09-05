@@ -43,14 +43,7 @@ class ForgotPasswordDialog(QDialog):
 
         # Título
         title = QLabel("Recuperación de Contraseña")
-        title.setStyleSheet("""
-            QLabel {
-                font-size: 18px;
-                font-weight: bold;
-                color: #0E5FA8;
-                padding: 20px;
-            }
-        """)
+        title.setObjectName("tituloDialogo")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
