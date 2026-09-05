@@ -51,7 +51,7 @@ class Settings(BaseSettings):
 
     # ========== APLICACIÓN ==========
     app_name: str = "Gestión de Guardias de Patio"
-    app_version: str = "5.65.0"
+    app_version: str = "5.66.0"
     app_author: str = "Carlos Ferrero Bonet"
     environment: Literal["development", "production", "testing"] = "production"
 
@@ -94,6 +94,14 @@ class Settings(BaseSettings):
     max_recreos_dia: int = 2
     max_guardias_por_profesor_dia: int = 1  # Requisito crítico
     max_intentos_asignacion: int = 1000
+
+    # Solver CP-SAT (ESC-002). Antes estaban fijos en el código: 8 hilos, que
+    # sobrecargan un equipo de 4 núcleos y desaprovechan uno de 16, y 120 s sin
+    # forma de cambiarlo.
+    #: Segundos máximos de búsqueda. Al agotarse se devuelve la mejor solución hallada.
+    solver_timeout_segundos: float = 120.0
+    #: Hilos de búsqueda. 0 = tantos como núcleos tenga el equipo.
+    solver_hilos: int = 0
 
     # ========== UI ==========
     # Mínimo real de la ventana. Antes había dos cifras distintas —1200x800 aquí y
@@ -229,6 +237,20 @@ def get_settings() -> Settings:
         >>> print(settings.app_name)
     """
     return Settings()
+
+
+def hilos_del_solver(ajustes: "Settings | None" = None) -> int:
+    """Hilos de búsqueda para CP-SAT: los configurados, o los núcleos del equipo.
+
+    Se acota a un máximo razonable: más hilos que núcleos no acelera, y en equipos
+    muy grandes cada hilo cuesta memoria (ESC-002).
+    """
+    import os
+
+    ajustes = ajustes or get_settings()
+    if ajustes.solver_hilos > 0:
+        return ajustes.solver_hilos
+    return max(1, min(os.cpu_count() or 8, 16))
 
 
 class SecretoDeApiNoConfigurado(RuntimeError):

@@ -43,7 +43,7 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | UXA-008 | P2 | alta | Tablas sin contrato accesible/adaptable | **PARCIAL v5.60.0** · las tablas de Profesores y Zonas tienen nombre y descripción accesibles, y hay regla de foco para tablas y celdas. Falta el contrato completo (QTableView + modelo, cabecera ordenable, estados vacío y de carga), que es el lote 12 · `test_las_tablas_principales_se_presentan` | ídem |
 | UXA-009 | P2 | alta | Gráficos QPainter sin semántica | PERSISTE | ídem |
 | UXA-010 | P2 | alta | Sistema visual fragmentado y contrastes AA fallidos | **PARCIAL v5.58.0** · el primario pasa de 4,51:1 a 6,52:1 y su variante oscura a 7,98:1; los verdes de acento a 5,1:1 y 7,2:1. Falta auditar el resto de combinaciones y el anillo de foco (lote 11) | ídem |
-| UXA-011 | P2 | media | Cargas de tablas bloquean el hilo GUI | PERSISTE (ESC-001) | ídem |
+| UXA-011 | P2 | media | Cargas de tablas bloquean el hilo GUI | **DESCARTADO v5.66.0** · mismo motivo que ESC-001: la carga más pesada medida es de 17 ms, por debajo del umbral de percepción. Cargar en segundo plano añadiría complejidad de hilos —justo lo que costó los lotes 1 a 3— sin beneficio | ídem |
 | UXA-012 | P2 | alta | ~~Suite a11y con skips amplios~~ | **RESUELTO VERIFICADO v5.60.0** · retirado el `except Exception: pytest.skip` de `test_a11y_regression.py`, que tapaba una expectativa desactualizada. Nueva suite `tests/audit/test_accesibilidad_formularios.py` con 11 tests de introspección por `accessibleName` | ídem |
 | UXA-013 | P2 | alta | Navegación sin título/estado accesible | PERSISTE | ídem |
 | UXA-014 | P3 | alta | Anti-patrones y tipografía microscópica | PERSISTE (VIS-003) | ídem |
@@ -149,8 +149,8 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 | ID | Sev. | Conf. | Título | Estado | Ficha |
 | --- | --- | --- | --- | --- | --- |
-| ESC-001 | P2 | alta | Tablas item-based sin modelo | NUEVO | 07 |
-| ESC-002 | P2 | media | Solver sin descomposición, workers y timeout fijos | NUEVO | 07 |
+| ESC-001 | P2 | alta | Tablas item-based sin modelo | **DESCARTADO v5.66.0 · medido, no hay problema.** Con los imports calientes: **17 ms** abrir el calendario con un curso entero (2.800 guardias) y **13 ms** la tabla de profesores con 200; con 1.000 profesores, 25 ms. El objetivo de la auditoría era p95 < 100 ms. Migrar las 12 tablas a `QTableView` + modelo es esfuerzo L y riesgo medio para no ganar nada medible. Se conserva como banco de pruebas `tests/audit/test_escalabilidad_vistas.py`, que avisa si algún día se vuelve lento | 07 |
+| ESC-002 | P2 | media | ~~Solver con workers y timeout fijos~~; sin descomposición | **RESUELTO PARCIAL v5.66.0** · los hilos de búsqueda salen del número de núcleos (8 fijos sobrecargan un equipo de 4 y desaprovechan uno de 16) y el tiempo máximo pasa a `settings.solver_timeout_segundos`; ambos se pueden fijar a mano. La descomposición del problema sigue pendiente y sólo tendría sentido si aparece un caso que no resuelva en 120 s | 07 |
 | ESC-003 | P2 | alta | Sync completa cada 30 min y al cerrar | NUEVO · desde v5.55.0 al menos corre en su propio hilo y con su propia sesión, así que ya no compite con la GUI. Sigue siendo una exportación completa cada vez: la sincronización incremental queda pendiente | 07 |
 | ESC-004 | P3 | alta | Sin ruta a multiusuario real | NUEVO | 07 |
 | ESC-005 | P2 | media | Caché por regex sin `curso_id` | NUEVO | 07 |

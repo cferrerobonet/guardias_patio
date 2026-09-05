@@ -57,7 +57,7 @@ logger = get_logger(__name__)
 def generar_guardias_cpsat(
     session,
     progress_callback: Optional[Callable[[int, str], None]] = None,
-    timeout_seconds: float = 120.0,
+    timeout_seconds: Optional[float] = None,
     use_hints: bool = True,
     cancelacion: Optional[threading.Event] = None,
 ) -> Tuple[List[Guardia], Dict[int, int]]:
@@ -70,13 +70,18 @@ def generar_guardias_cpsat(
     Args:
         session: Sesión de SQLAlchemy
         progress_callback: Callback para reportar progreso (porcentaje, mensaje)
-        timeout_seconds: Tiempo máximo de resolución (default: 120s)
+        timeout_seconds: Tiempo máximo de resolución. None = el de los ajustes
         use_hints: Si True, genera una solución greedy como hint inicial
         cancelacion: Evento que, al activarse, detiene la generación en la fase en curso
 
     Returns:
         Tupla (lista de guardias, diccionario profesor_id -> guardias_asignadas)
     """
+
+    if timeout_seconds is None:
+        from config.settings import get_settings
+
+        timeout_seconds = get_settings().solver_timeout_segundos
 
     def reportar(porcentaje: int, mensaje: str = ""):
         # La cancelación se comprueba en cada fase: así se sale limpiamente en vez de
@@ -512,9 +517,13 @@ def generar_guardias_cpsat(
     logger.info("-" * 80)
     reportar(35, "Resolviendo modelo...")
 
+    from config.settings import hilos_del_solver
+
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = timeout_seconds
-    solver.parameters.num_search_workers = 8  # Usar múltiples cores
+    # Tantos hilos como núcleos, no 8 fijos: 8 sobrecargan un equipo de 4 núcleos
+    # y desaprovechan uno de 16 (ESC-002).
+    solver.parameters.num_search_workers = hilos_del_solver()
     solver.parameters.linearization_level = 2
     solver.parameters.cp_model_presolve = True
 

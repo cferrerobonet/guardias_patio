@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.66.0] - 2026-09-05
+
+### 🎯 Resumen
+El cálculo se adapta al ordenador donde corre, y se comprueba con medidas que las tablas no van lentas.
+
+### Changed
+- **El cálculo usa tantos hilos como núcleos tenga el equipo.** Estaban fijos en ocho: en un portátil de cuatro núcleos se estorban entre ellos, y en uno de dieciséis se desaprovecha más de la mitad.
+- **El tiempo máximo de cálculo se puede cambiar.** Estaban fijos 120 segundos dentro del código.
+
+### 🧹 Housekeeping
+- **Medido antes de reformar.** La auditoría proponía rehacer las doce tablas de la aplicación por si iban lentas. Medido con un curso completo: 17 milisegundos abrir el calendario con 2.800 guardias, 13 la tabla de profesores, 25 con mil profesores —cinco veces el claustro real—. No había nada que arreglar, así que se descarta esa reforma y en su lugar queda un banco de pruebas que avisará si algún día se vuelve lento.
+- 2.573 pruebas, ningún fallo.
+
+---
+
 ## [5.65.0] - 2026-09-05
 
 ### 🎯 Resumen
