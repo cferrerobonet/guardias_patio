@@ -5,6 +5,30 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.62.0] - 2026-09-05
+
+### 🎯 Resumen
+Cerrados los agujeros de seguridad que quedaban y el instalador de Windows deja de exigir permisos de administrador.
+
+### Fixed
+- **El instalador de Windows ya no pide ser administrador.** En un centro educativo lo normal es no tener esos permisos, así que la instalación era imposible sin llamar a informática. Ahora se instala en el perfil del usuario, y quien sí tenga permisos puede elegir instalarla para todo el equipo. Además cierra la aplicación si está abierta, en vez de fallar al copiar los archivos.
+- **El fichero de contraseñas quedaba legible por cualquiera.** El archivo con las claves de servidor y de correo se creaba con los permisos por defecto: en un equipo compartido, otra cuenta podía abrirlo y leerlas. Ahora queda restringido a su dueño en los siete sitios donde se guarda.
+- **La API arrancaba sin clave de firma.** Si faltaba, levantaba igual y fallaba después, al firmar el primer acceso, con un error de biblioteca que no decía qué configurar. Ahora no arranca, y el mensaje explica qué hace falta y cómo generarlo. Tampoco acepta claves de juguete.
+- **Cuatro archivos temporales se creaban de forma insegura** durante la sincronización: se reservaba el nombre pero no el archivo, dejando un hueco por el que otro proceso podía colarse. Corregido.
+- **Las descargas de actualizaciones no comprobaban su destino.** Lo que se descarga es un instalador, así que ahora se verifica que la dirección sea segura y apunte a GitHub antes de bajar nada.
+
+### Added
+- **Firma y notarización de macOS preparadas.** En cuanto la cuenta de Apple Developer esté activa, basta con definir cuatro variables para que la aplicación se firme y notarice sola. Mientras tanto avisa por pantalla de que macOS pedirá «Abrir de todos modos».
+
+### 🧹 Housekeeping
+- `auditoria/`: SEC-002, SEC-003 y BLD-006 resueltos; SEC-001 y BLD-004 parciales. Análisis de seguridad: de 6 hallazgos medios a 0.
+- 10 pruebas nuevas. Una de ellas encontró un séptimo punto de guardado de contraseñas que se me había pasado. Total: 2.550.
+
+### ⚠️ Pendiente
+- Guardar las credenciales en el almacén de claves del sistema (lo que de verdad cierra SEC-001), reactivar la cuenta de Apple Developer, y probar el instalador en un Windows real.
+
+---
+
 ## [5.61.0] - 2026-09-05
 
 ### 🎯 Resumen

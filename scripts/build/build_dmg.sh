@@ -77,9 +77,28 @@ echo "  • Directorio temporal: $TMP_DMG_DIR"
 ditto --norsrc --noextattr --noqtn "$APP_PATH" "$TMP_DMG_DIR/${APP_NAME}.app"
 xattr -cr "$TMP_DMG_DIR/${APP_NAME}.app"
 
-# Firmar ad-hoc fuera de iCloud y verificar
-echo "${BLUE}🔏 Firmando bundle (ad-hoc)...${NC}"
-codesign -s - --force --deep "$TMP_DMG_DIR/${APP_NAME}.app"
+# Firmar fuera de iCloud y verificar.
+#
+# Con un certificado Developer ID la aplicación se abre sin advertencias. Sin él
+# se firma ad-hoc, que es lo mínimo para que macOS la ejecute, pero Gatekeeper
+# seguirá diciendo que el desarrollador no está identificado (BLD-004).
+#
+# Para firmar de verdad, exportar antes:
+#   APPLE_DEVELOPER_ID="Developer ID Application: Nombre (TEAMID)"
+# Y para notarizar además:
+#   APPLE_ID="correo@ejemplo.com"
+#   APPLE_TEAM_ID="TEAMID"
+#   APPLE_APP_PASSWORD="contraseña de aplicación"
+if [ -n "${APPLE_DEVELOPER_ID:-}" ]; then
+    echo "${BLUE}🔏 Firmando bundle con Developer ID...${NC}"
+    codesign --force --deep --options runtime --timestamp \
+        -s "$APPLE_DEVELOPER_ID" "$TMP_DMG_DIR/${APP_NAME}.app"
+else
+    echo "${BLUE}🔏 Firmando bundle (ad-hoc: sin certificado Developer ID)...${NC}"
+    echo "  ⚠️  macOS avisará de \"desarrollador no identificado\" al abrirla."
+    echo "     Quien la instale debe usar: clic derecho → Abrir → Abrir."
+    codesign -s - --force --deep "$TMP_DMG_DIR/${APP_NAME}.app"
+fi
 codesign --verify --deep --strict "$TMP_DMG_DIR/${APP_NAME}.app"
 echo "${GREEN}✓ Firma verificada${NC}"
 
@@ -93,6 +112,22 @@ hdiutil create \
     -ov \
     -format UDZO \
     "$DMG_NAME"
+
+# Notarizar y grapar el sello, si hay credenciales de Apple (BLD-004).
+if [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ] && [ -n "${APPLE_APP_PASSWORD:-}" ]; then
+    echo "${BLUE}📮 Enviando a notarizar (puede tardar unos minutos)...${NC}"
+    xcrun notarytool submit "$DMG_NAME" \
+        --apple-id "$APPLE_ID" \
+        --team-id "$APPLE_TEAM_ID" \
+        --password "$APPLE_APP_PASSWORD" \
+        --wait
+    echo "${BLUE}📎 Grapando el sello al DMG...${NC}"
+    xcrun stapler staple "$DMG_NAME"
+    echo "${GREEN}✓ DMG notarizado${NC}"
+else
+    echo "${BLUE}ℹ️  Sin credenciales de Apple: el DMG no se notariza.${NC}"
+    echo "   Requiere una cuenta de Apple Developer activa."
+fi
 
 # Limpiar
 rm -rf "$TMP_DMG_DIR"

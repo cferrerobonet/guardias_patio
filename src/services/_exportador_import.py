@@ -15,6 +15,7 @@ from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy.exc import SQLAlchemyError
 
 from core.logging import get_logger
+from core.paths import proteger_fichero_de_credenciales
 from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 
 logger = get_logger(__name__)
@@ -464,6 +465,7 @@ def _importar_smtp_config(smtp_data: dict[str, str]) -> bool:
 
         with open(env_path, "w") as f:
             f.writelines(env_lines)
+        proteger_fichero_de_credenciales(env_path)
 
         return True
 
@@ -513,6 +515,7 @@ def _importar_sftp_config(sftp_data: dict[str, str]) -> bool:
 
         with open(env_path, "w") as f:
             f.writelines(env_lines)
+        proteger_fichero_de_credenciales(env_path)
 
         return True
 

@@ -19,7 +19,15 @@ WizardStyle=modern
 OutputDir=Output
 OutputBaseFilename=GuardiasDePatio-{#MyAppVersion}-Windows-Setup
 ArchitecturesInstallIn64BitMode=x64compatible
-PrivilegesRequired=admin
+; Sin exigir administrador: en un centro educativo lo normal es no tener esos
+; permisos, y exigirlos impedía instalar. Con `lowest` la aplicación va al perfil
+; del usuario; quien tenga permisos puede elegir instalarla para todos (BLD-006).
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
+; Cerrar la aplicación si está abierta, en vez de fallar al copiar los ficheros.
+CloseApplications=yes
+CloseApplicationsFilter=*.exe,*.dll,*.pyd
+RestartApplications=no
 SetupIconFile=imagenes\logo.ico
 
 [Languages]

@@ -474,7 +474,7 @@ class RemoteAccounts:
     def fetch(self, username: str) -> Optional[dict]:
         """Devuelve la ficha de la cuenta, o None si no existe o no hay conexión."""
         remote_path = remote_account_path(username)
-        tmp_path = Path(tempfile.mktemp(suffix=".json"))
+        tmp_path = _ruta_temporal_segura(".json")
         try:
             if not self.backend.file_exists(remote_path):
                 return None
@@ -510,7 +510,7 @@ class RemoteAccounts:
     def publish(self, username: str, ficha: dict) -> bool:
         """Guarda la ficha de la cuenta en el servidor."""
         remote_path = remote_account_path(username)
-        tmp_path = Path(tempfile.mktemp(suffix=".json"))
+        tmp_path = _ruta_temporal_segura(".json")
         try:
             publicable = {
                 "username": username,
@@ -541,6 +541,18 @@ def _count_json_records(path: Path) -> int:
         return sum(len(data.get(k, [])) for k in keys)
     except (ValueError, KeyError):
         return 0
+
+
+def _ruta_temporal_segura(sufijo: str = ".json") -> Path:
+    """Devuelve la ruta de un temporal ya creado, sólo accesible por su dueño.
+
+    `tempfile.mktemp()` sólo inventaba un nombre: entre que lo devolvía y se
+    escribía en él, cualquiera podía dejar ahí un enlace simbólico apuntando a
+    otro sitio. `mkstemp()` crea el fichero en el mismo acto (SEC-003).
+    """
+    descriptor, ruta = tempfile.mkstemp(suffix=sufijo)
+    os.close(descriptor)
+    return Path(ruta)
 
 
 class SyncManager:
@@ -689,7 +701,7 @@ class SyncManager:
             logger.info("No hay datos en la nube para esta cuenta ni en este equipo")
             return True
 
-        tmp_path = Path(tempfile.mktemp(suffix=".json"))
+        tmp_path = _ruta_temporal_segura(".json")
         try:
             if not self.backend.download_file(remote_path, tmp_path):
                 self._bloquear_subida("No se pudieron descargar los datos de la nube")
@@ -773,7 +785,7 @@ class SyncManager:
             progress_callback("connecting", {"message": "Conectando al servidor"})
 
         # ¿Ha subido alguien algo mientras trabajábamos?
-        tmp_path = Path(tempfile.mktemp(suffix=".json"))
+        tmp_path = _ruta_temporal_segura(".json")
         try:
             if self.backend.file_exists(remote_path) and self.backend.download_file(
                 remote_path, tmp_path

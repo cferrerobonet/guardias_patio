@@ -34,7 +34,7 @@ tipo: referencia
 | 13 | **Solver escalable** | ESC-002, FUN-013, FUN-014 | workers = CPUs, timeout configurable, descomposición, diagnóstico por slot | P2 | medio | L | 1 | `tests/compliance` + benchmark | pendiente |
 | 14 | **Calidad de código** | ~~COD-004~~, ~~COD-006~~, COD-001/005/007 (parciales) | ruff 342 → 104 avisos y configuración modernizada; 2.130 líneas de código muerto fuera; una sola configuración de mypy y `domain` limpio; poda de los JSON de comparación | P2 | bajo | L (por lotes) | – | ratchets de ruff y mypy en `test_calidad_estatica.py` ✅ | **parcial v5.61.0** |
 | 14 bis | **Excepciones, ORM y módulos grandes** | COD-002, COD-003, COD-008 | Decidir qué captura cada uno de los 184 manejadores comodín; sacar el ORM de la capa de presentación; partir los siete módulos de más de 778 líneas. Ninguno es mecánico: los tres piden revisión caso por caso | P2 | medio | L | 14 | ratchets bajando por tandas | pendiente |
-| 15 | **CI y firma** | BLD-004, BLD-006, SEC-001, SEC-002, SEC-003 | workflow matriz; notarización; keyring; API fail-closed | P2 | medio | M | 5 | pipeline verde; artefactos publicados | pendiente |
+| 15 | **CI y firma** | ~~SEC-002~~, ~~SEC-003~~, ~~BLD-006~~, SEC-001 (parcial), BLD-004 (parcial) | La API no arranca sin secreto; bandit sin hallazgos medios; instalador sin exigir administrador y que cierra la app; `.env` en 0600; firma y notarización listas a falta de credenciales | P2 | medio | M | 5 | `tests/audit/test_seguridad.py` (10 tests) ✅ | **parcial v5.62.0** |
 | 16 | **Funcionalidad** | FUN-002, FUN-004, FUN-005, FUN-006, FUN-007, FUN-012 | Generación incremental, historial/restauración, plantilla de curso, emails en worker, dry-run import, deshacer | – | medio | XL | 3, 6 | por feature | decisión de producto |
 | 17 | **Multiusuario y consulta web** | ESC-004, FUN-009, FUN-010, FUN-011 | ADR; API como servicio; consulta web; tema oscuro; auto-update Windows | – | alto | XL | 15 | Playwright E2E | decisión de producto |
 
@@ -45,7 +45,7 @@ tipo: referencia
 2. ~~¿Paleta: #007ACC o #0E5FA8?~~ **Resuelto 2026-09-05: #0E5FA8** (6,5:1 con texto blanco frente a 4,5:1 del actual, que se queda justo en el mínimo AA y no deja margen para estados hover/pressed ni para el anillo de foco). Coincide con el contrato de [[05_CONTRATO_SISTEMA_DE_DISENO]], que no hay que retocar.
 3. ~~¿Fuente por SO o embebida?~~ **Resuelto 2026-09-05: por SO** — Segoe UI en Windows, SF Pro en macOS, sin licencias y con render nativo.
 4. ~~¿Generación incremental (FUN-002) antes que edición manual (FUN-003)?~~ **Resuelto 2026-09-05: incremental primero**, y antes que ninguna de las dos, FUN-004 (historial y restauración): es esfuerzo M, no depende de nada y ya cubre hoy el miedo real de que "Generar" borre el curso entero. Orden acordado: FUN-004 → FUN-002 → FUN-003.
-5. ~~¿Cuenta Apple Developer para notarizar?~~ **Resuelto 2026-09-05: hay cuenta, hoy inactiva.** La notarización del lote 15 queda condicionada a reactivar la suscripción; mientras tanto se documenta el paso "Abrir de todos modos" en las instrucciones de instalación de macOS.
+5. ~~¿Cuenta Apple Developer para notarizar?~~ **Resuelto 2026-09-05: hay cuenta, hoy inactiva.** Desde v5.62.0 el script de compilación firma y notariza en cuanto se definan `APPLE_DEVELOPER_ID`, `APPLE_ID`, `APPLE_TEAM_ID` y `APPLE_APP_PASSWORD`; sin ellas avisa por pantalla de que macOS pedirá "Abrir de todos modos". **Sólo falta reactivar la suscripción.**
 
 ## Próximo gate
 
@@ -53,8 +53,8 @@ Tres frentes, independientes entre sí:
 
 1. **Lote 0** en la máquina Windows: compilar con `scripts/build_windows.ps1 -Diagnostico` y ejecutar el protocolo de [[06_CRASH_WINDOWS_GENERACION]] §5. **Es el único trabajo pendiente sobre el cierre en Windows: los nueve hallazgos CRW están resueltos.** Queda comprobar en la máquina real que el cierre ha desaparecido; si persistiera, habría que buscar una causa que la auditoría no vio.
 2. **Lote 8 bis** (vaciar los estilos en línea) — lo que queda de VIS-001. Es el trabajo caro del bloque visual: 288 `setStyleSheet` repartidos por las vistas, más dos capas antiguas que hay que retirar. No se puede hacer a ciegas: cada vista necesita mirarse antes y después, así que conviene por lotes pequeños.
-3. **Lote 15** (CI y firma: BLD-004/006, SEC-001/002/003) — cerrar la compilación con firma y notarización, sacar las credenciales del `.env` en claro y que la API falle cerrada. Es el último lote con trabajo mecánico claro.
-4. **Lote 14 bis** (excepciones, ORM y módulos grandes) — lo que queda de calidad de código, todo de revisión caso por caso.
+3. **Lote 14 bis** (excepciones, ORM y módulos grandes) y **lote 8 bis** (estilos en línea) — lo que queda de deuda técnica, todo de revisión caso por caso.
+4. **Lotes 12, 13 y 16-17** — escalabilidad de datos y solver, y las mejoras funcionales, que siguen pendientes de decisión de producto salvo el orden ya acordado FUN-004 → FUN-002 → FUN-003.
 
 **Comprobaciones que sólo puede hacer una persona** (ningún lote las cubre):
 - El protocolo de Windows de [[06_CRASH_WINDOWS_GENERACION]] §5.

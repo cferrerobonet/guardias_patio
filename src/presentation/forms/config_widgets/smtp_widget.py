@@ -357,6 +357,9 @@ class SMTPConfigWidget(QGroupBox):
             # Guardar archivo .env
             with open(env_path, "w") as f:
                 f.writelines(env_lines)
+            from core.paths import proteger_fichero_de_credenciales
+
+            proteger_fichero_de_credenciales(env_path)
 
             self.logger.info("Configuración SMTP guardada correctamente")
 
@@ -409,6 +412,9 @@ class SMTPConfigWidget(QGroupBox):
             # Guardar archivo .env
             with open(env_path, "w") as f:
                 f.writelines(env_lines)
+            from core.paths import proteger_fichero_de_credenciales
+
+            proteger_fichero_de_credenciales(env_path)
 
             self.logger.info(f"Nombre del remitente SMTP guardado: {smtp_from_name}")
             return True

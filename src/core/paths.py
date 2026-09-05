@@ -23,6 +23,7 @@ Documentación completa: documentacion/SOLUCION_COMPILACION.md
 
 import os
 import platform
+import stat
 import sys
 from pathlib import Path
 
@@ -151,4 +152,22 @@ __all__ = [
     "get_user_data_directory",
     "get_resources_directory",
     "get_database_path",
+    "proteger_fichero_de_credenciales",
 ]
+
+
+def proteger_fichero_de_credenciales(ruta: Path) -> None:
+    """Deja el fichero accesible sólo por su dueño (SEC-001).
+
+    El `.env` guarda las contraseñas de SFTP y de correo en claro. Se creaba con
+    los permisos por defecto, así que en un equipo compartido cualquier otra
+    cuenta podía leerlo. Mientras las credenciales no pasen al almacén de claves
+    del sistema, al menos que el fichero no esté abierto de par en par.
+
+    En Windows los permisos POSIX no aplican; ahí la protección la da el propio
+    perfil de usuario, así que el fallo se ignora en silencio.
+    """
+    try:
+        os.chmod(ruta, stat.S_IRUSR | stat.S_IWUSR)  # 0600
+    except (OSError, NotImplementedError):
+        pass

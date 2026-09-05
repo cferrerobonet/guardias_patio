@@ -537,7 +537,19 @@ class SidebarMenu(QWidget):
                             pct = min(int(count * block_size * 100 / total), 100)
                             self.progreso_signal.emit(pct)
 
-                    urllib.request.urlretrieve(self._url, self._destino, _reporthook)
+                    # La URL viene de una respuesta remota: se comprueba antes de
+                    # bajar nada, porque lo que se descarga es un instalador (SEC-003).
+                    from utils.update_checker import url_de_confianza
+
+                    if not url_de_confianza(self._url):
+                        self.error_signal.emit(
+                            "La dirección de descarga no es de confianza; se cancela."
+                        )
+                        return
+                    # nosec B310 - validada justo encima con url_de_confianza()
+                    urllib.request.urlretrieve(  # nosec B310
+                        self._url, self._destino, _reporthook
+                    )
                     self.listo_signal.emit(str(self._destino))
                 except Exception as e:
                     self.error_signal.emit(str(e))

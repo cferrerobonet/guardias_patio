@@ -39,11 +39,17 @@ from api.routers import (
     profesores_router,
     zonas_router,
 )
-from config.settings import get_settings
+from config.settings import get_settings, validar_secreto_de_api
 from core.logging import get_logger
 from core.observability.health import get_health_checker
 
 logger = get_logger(__name__)
+
+# Fail-closed: sin secreto no se levanta la API (SEC-002). Va antes de construir
+# nada, para que el fallo diga qué configurar en vez de aparecer al firmar el
+# primer token.
+validar_secreto_de_api()
+
 _version = get_settings().app_version
 
 # Rate limiter — máximo 60 peticiones/minuto por IP

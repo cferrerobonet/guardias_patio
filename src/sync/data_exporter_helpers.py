@@ -179,6 +179,9 @@ def import_smtp_config(smtp_data: Dict[str, str]) -> bool:
 
         with open(env_path, "w") as f:
             f.writelines(env_lines)
+        from core.paths import proteger_fichero_de_credenciales
+
+        proteger_fichero_de_credenciales(env_path)
 
         logger.info("Configuración SMTP GLOBAL actualizada desde JSON")
         return True
@@ -273,6 +276,9 @@ def import_sftp_config(sftp_data: Dict[str, str]) -> bool:
 
         with open(env_path, "w") as f:
             f.writelines(env_lines)
+        from core.paths import proteger_fichero_de_credenciales
+
+        proteger_fichero_de_credenciales(env_path)
 
         logger.info("Configuración SFTP GLOBAL actualizada desde JSON")
         return True

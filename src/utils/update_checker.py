@@ -6,12 +6,31 @@ from typing import Callable
 
 RELEASES_URL = "https://api.github.com/repos/cferrerobonet/guardias_patio/releases/latest"
 
+#: Sólo se acepta descargar de aquí. `urlopen` admite también `file:` y esquemas
+#: propios, así que una respuesta manipulada podría hacer que la aplicación se
+#: bajara «la actualización» de cualquier sitio (SEC-003, B310).
+ESQUEMA_PERMITIDO = "https"
+HOSTS_PERMITIDOS = ("api.github.com", "github.com", "objects.githubusercontent.com")
+
+
+def url_de_confianza(url: str) -> bool:
+    """True si la URL es https y apunta a GitHub."""
+    from urllib.parse import urlparse
+
+    partes = urlparse(url or "")
+    if partes.scheme != ESQUEMA_PERMITIDO:
+        return False
+    return partes.hostname in HOSTS_PERMITIDOS
+
 
 def check_for_updates(current_version: str, callback: Callable[[str, str], None]) -> None:
     def _check():
         try:
+            if not url_de_confianza(RELEASES_URL):
+                return
             req = urllib.request.Request(RELEASES_URL, headers={"User-Agent": "guardias-patio"})
-            with urllib.request.urlopen(req, timeout=5) as r:
+            # nosec B310 - la URL se valida en url_de_confianza(): sólo https a GitHub
+            with urllib.request.urlopen(req, timeout=5) as r:  # nosec B310
                 data = json.loads(r.read())
                 latest = data["tag_name"].lstrip("v")
                 if _is_newer(latest, current_version):
@@ -39,7 +58,8 @@ def _find_download_url(assets: list) -> str:
         return ""
     for asset in assets:
         if asset.get("name", "").lower().endswith(extension):
-            return asset.get("browser_download_url", "")
+            url = asset.get("browser_download_url", "")
+            return url if url_de_confianza(url) else ""
     return ""
 
 

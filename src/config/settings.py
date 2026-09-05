@@ -51,7 +51,7 @@ class Settings(BaseSettings):
 
     # ========== APLICACIÓN ==========
     app_name: str = "Gestión de Guardias de Patio"
-    app_version: str = "5.61.0"
+    app_version: str = "5.62.0"
     app_author: str = "Carlos Ferrero Bonet"
     environment: Literal["development", "production", "testing"] = "production"
 
@@ -152,6 +152,9 @@ class Settings(BaseSettings):
     # Para desarrollo, generar valor seguro con:
     # python -c "import secrets; print(secrets.token_urlsafe(32))"
     api_secret_key: str = ""  # NO usar valores por defecto en producción
+    #: Longitud mínima aceptable del secreto. Un HS256 con una clave de cuatro
+    #: letras se firma igual, pero se adivina en segundos.
+    api_secret_key_min_len: int = 16
     api_token_expire_minutes: int = 60
     api_algorithm: str = "HS256"
 
@@ -226,6 +229,35 @@ def get_settings() -> Settings:
         >>> print(settings.app_name)
     """
     return Settings()
+
+
+class SecretoDeApiNoConfigurado(RuntimeError):
+    """La API no puede arrancar sin un secreto con el que firmar los tokens."""
+
+
+def validar_secreto_de_api(ajustes: "Settings | None" = None) -> None:
+    """Comprueba que hay un secreto utilizable, o impide arrancar (SEC-002).
+
+    Antes el secreto podía estar vacío: la API levantaba igual y reventaba más
+    tarde, al firmar el primer token, con un error de la librería de JWT que no
+    decía qué había que configurar.
+    """
+    ajustes = ajustes or get_settings()
+    secreto = (ajustes.api_secret_key or "").strip()
+
+    if not secreto:
+        raise SecretoDeApiNoConfigurado(
+            "Falta GUARDIAS_API_SECRET_KEY: la API no arranca sin un secreto con el "
+            "que firmar los tokens.\n"
+            "Genera uno con:  python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+        )
+
+    if len(secreto) < ajustes.api_secret_key_min_len:
+        raise SecretoDeApiNoConfigurado(
+            f"GUARDIAS_API_SECRET_KEY es demasiado corto ({len(secreto)} caracteres); "
+            f"el mínimo son {ajustes.api_secret_key_min_len}.\n"
+            "Genera uno con:  python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+        )
 
 
 # Instancia global para conveniencia

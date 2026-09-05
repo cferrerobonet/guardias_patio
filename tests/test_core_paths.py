@@ -168,6 +168,7 @@ class TestModuleExports:
             "get_user_data_directory",
             "get_resources_directory",
             "get_database_path",
+            "proteger_fichero_de_credenciales",
         ]
         assert paths.__all__ == expected
 

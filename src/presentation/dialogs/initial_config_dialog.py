@@ -611,6 +611,9 @@ class InitialConfigDialog(QDialog):
         # Guardar archivo
         with open(env_path, "w") as f:
             f.writelines(lines)
+        from core.paths import proteger_fichero_de_credenciales
+
+        proteger_fichero_de_credenciales(env_path)
 
         logger.info(f"Archivo .env actualizado con {len(variables)} variables")
 

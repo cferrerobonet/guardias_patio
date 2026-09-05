@@ -86,9 +86,9 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | BLD-001 | P1 | alta | `.spec` ignorados por git y borrados por `make clean` | **RESUELTO VERIFICADO v5.50.0** · los `.spec` se versionan y `make clean` ya no los borra | [[09_BUILD_Y_RELEASE]] |
 | BLD-002 | P1 | alta | Tres scripts Windows divergentes; Makefile/README apuntan a los obsoletos | **RESUELTO VERIFICADO v5.50.0** · eliminados los cuatro scripts obsoletos; queda `scripts/build_windows.ps1` como único de Windows | 09 |
 | BLD-003 | P2 | alta | Cuatro versiones distintas en el repo | **RESUELTO VERIFICADO v5.50.0** · `pyproject.toml` sincronizado y test que lo vigila | 09 |
-| BLD-004 | P2 | alta | Sin CI, sin firma/notarización | **RESUELTO PARCIAL v5.50.0** · flujo `.github/workflows/compilar.yml` con pruebas y compilación de Windows y macOS. Falta la firma y notarización | 09 |
+| BLD-004 | P2 | alta | Sin CI, sin firma/notarización | **PARCIAL v5.62.0** · el flujo de compilación existe desde v5.50.0. `build_dmg.sh` firma ahora con Developer ID y notariza **si se definen las variables** (`APPLE_DEVELOPER_ID`, `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD`); sin ellas sigue en ad-hoc y avisa por pantalla de que macOS pedirá «Abrir de todos modos». **No se puede completar hasta reactivar la cuenta de Apple Developer** (decisión de CarlosFB, 2026-09-05) | 09 |
 | BLD-005 | P2 | alta | Actualizador sólo `.dmg`; Windows sin actualizaciones | **RESUELTO VERIFICADO v5.50.0** · el actualizador elige el instalador de su sistema, así que Windows ya recibe actualizaciones | 09 |
-| BLD-006 | P3 | alta | Instalador con admin y sin cierre de instancias | NUEVO | 09 |
+| BLD-006 | P3 | alta | ~~Instalador con admin y sin cierre de instancias~~ | **RESUELTO v5.62.0** · `PrivilegesRequired=lowest` con `PrivilegesRequiredOverridesAllowed=dialog`: en un centro lo normal es no tener permisos de administrador, y exigirlos impedía instalar. `CloseApplications=yes` cierra la aplicación abierta en vez de fallar al copiar. **Sin probar en Windows real** · `test_el_instalador_no_exige_administrador` | 09 |
 | BLD-007 | P2 | alta | ~~Sin build de diagnóstico con consola~~ | **RESUELTO VERIFICADO v5.44.0** · `scripts/build_windows.ps1 -Diagnostico` | 09 |
 
 ## QA · Tests
@@ -161,9 +161,9 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 | ID | Sev. | Conf. | Título | Estado | Ficha |
 | --- | --- | --- | --- | --- | --- |
-| SEC-001 | P2 | alta | Credenciales en `.env` en texto plano | NUEVO | 07 |
-| SEC-002 | P3 | alta | `api_secret_key` vacío por defecto | NUEVO | 07 |
-| SEC-003 | P3 | media | Bandit 3 medios | NUEVO | 07 |
+| SEC-001 | P2 | alta | Credenciales en `.env` en texto plano | **PARCIAL v5.62.0** · el fichero se creaba con los permisos por defecto: en un equipo compartido, cualquier otra cuenta podía leer las contraseñas de SFTP y de correo. Ahora queda en 0600 tras cada escritura, en los **siete** puntos que lo guardan (uno lo encontró el propio test). **Falta lo principal: pasar las credenciales al almacén de claves del sistema**, que añade dependencia y necesita migración con vuelta atrás · `test_el_fichero_de_credenciales_queda_solo_para_su_dueno`, `test_todas_las_escrituras_del_env_protegen_el_fichero` | 07 |
+| SEC-002 | P3 | alta | ~~`api_secret_key` vacío por defecto~~ | **RESUELTO VERIFICADO v5.62.0** · `validar_secreto_de_api()` se ejecuta antes de construir la aplicación FastAPI: sin secreto, o con uno de menos de 16 caracteres, no arranca y el error dice qué configurar y cómo generarlo. Antes levantaba igual y reventaba al firmar el primer token con un error de la librería JWT · `tests/audit/test_seguridad.py` | 07 |
+| SEC-003 | P3 | media | ~~Bandit: hallazgos medios~~ | **RESUELTO VERIFICADO v5.62.0** · eran 6, ahora **0 medios y 0 altos**. Cuatro `tempfile.mktemp()` en `sync_manager` (devuelve un nombre sin crear el fichero: deja una ventana para un ataque por enlace simbólico) pasan a `mkstemp()`. Los dos `urlopen`/`urlretrieve` validan ahora que la dirección sea https y apunte a GitHub — importa porque lo que se descarga es un instalador — y quedan documentados con `# nosec` y su motivo · `test_bandit_sin_hallazgos_medios_ni_altos` | 07 |
 
 ## DEV · Eficiencia de agentes
 
