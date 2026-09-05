@@ -195,8 +195,33 @@ def main():
     # Sistema de Login y Sincronización SFTP
     # ==========================================
 
+    # ==========================================
+    # Conexión con el servidor, antes del login
+    # ==========================================
+    # La cuenta vive junto a los datos del usuario en el servidor, así que hace
+    # falta la conexión ya para poder validarla desde cualquier equipo.
+    backend = None
+    try:
+        backend = get_default_backend()
+        logger.info("✓ Servidor de sincronización disponible")
+    except SyncConfigurationError as e:
+        logger.error(f"Sin sincronización: {e}")
+        from utils.ui_helpers import get_corporate_icon
+
+        aviso = QMessageBox()
+        aviso.setIcon(QMessageBox.Icon.Warning)
+        aviso.setWindowTitle("Sin sincronización con la nube")
+        aviso.setWindowIcon(get_corporate_icon())
+        aviso.setText("Esta sesión NO se sincronizará con la nube.")
+        aviso.setInformativeText(
+            f"{e}\n\nPodrás entrar con las cuentas de este equipo, pero todo lo que "
+            "hagas se guardará únicamente aquí: no se subirá al servidor ni lo verás "
+            "desde otro ordenador.\n\nRevisa los datos de conexión en Ajustes."
+        )
+        aviso.exec()
+
     # Mostrar diálogo de login
-    login_dialog = LoginDialog()
+    login_dialog = LoginDialog(backend=backend)
     if login_dialog.exec() != LoginDialog.DialogCode.Accepted:
         logger.info("Usuario canceló el login. Saliendo de la aplicación.")
         return 0
@@ -256,7 +281,8 @@ def main():
     session_lock_manager = None
     disable_session_lock = os.getenv("DISABLE_SESSION_LOCK", "0") == "1"
     try:
-        backend = get_default_backend()
+        if backend is None:
+            raise SyncConfigurationError("No hay servidor de sincronización disponible")
         sync_manager = SyncManager(backend, username)
 
         # Sistema de bloqueo de sesión única

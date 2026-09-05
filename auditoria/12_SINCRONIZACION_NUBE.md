@@ -187,7 +187,7 @@ ellos: cambiar de equipo lleva los datos; una baja hecha en un equipo llega al o
 no mezclan entidades distintas; sin haber descargado no se sube; no se sobrescribe lo que subió
 otro equipo; un fichero corrupto no borra lo local; y se conservan versiones anteriores.
 
-### Fase 2 — Que la cuenta sea de verdad (requisito, no mejora)
+### Fase 2 — Que la cuenta sea de verdad ✅ implementada en v5.48.0
 
 Con varias cuentas en juego, esta fase deja de ser opcional: es lo único que separa los datos de
 una persona de los de otra. Guardar la ficha de la cuenta junto a los datos del usuario en el servidor, con la contraseña
@@ -211,6 +211,12 @@ vez la misma cuenta, habría que retomarla.
 - Identificadores que colisionan entre equipos: la fusión no mezcla entidades.
 
 ## 7. Decisiones
+
+> [!SUCCESS] Estado a 2026-09-05
+> Fases 1 y 2 implementadas y verificadas. Los 15 hallazgos de esta auditoría quedan cerrados.
+> La cuenta `Jefatura_FpBach` ya está publicada en el servidor y sus datos (67 profesores,
+> 2.516 guardias) estaban allí desde el cierre de la aplicación del 4 de septiembre, así que
+> al abrir se lee del servidor sin ningún paso manual.
 
 1. ~~¿Uno cada vez, o varios a la vez?~~ **Resuelto 2026-09-04: uno cada vez.** Fases 1 y 2; Fase 3 descartada.
 2. ~~¿Cuentas compartidas o individuales?~~ **Resuelto 2026-09-04: individuales**, una por persona, cada una con sus datos.

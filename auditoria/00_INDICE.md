@@ -57,17 +57,18 @@ Artefactos intermedios: `_work/paquete_ux_accesibilidad.md` (paquete Ola 4 de 20
 | QA · Tests y calidad de pruebas | 0 | 3 | 6 | 4 | 13 |
 | COD · Calidad de código | 0 | 0 | 4 | 4 | 8 |
 | ESC · Escalabilidad y arquitectura | 0 | 0 | 5 | 2 | 7 |
-| SYNC · Sincronización en la nube | 4 | 5 | 5 | 1 | 15 |
+| SYNC · Sincronización en la nube ✅ | 0 | 0 | 0 | 0 | 15 cerrados |
 | SEC · Seguridad y privacidad | 0 | 0 | 1 | 2 | 3 |
 | DEV · Eficiencia de agentes y tokens | 0 | 0 | 2 | 4 | 6 |
-| **Total** | **5** | **23** | **50** | **25** | **103** |
+| **Total** | **1** | **18** | **45** | **24** | **88 abiertos** (15 SYNC cerrados) |
 
 Mejoras funcionales propuestas (FUN-001…012) se listan en 07 y en el registro como tipo `mejora`, sin severidad.
 
 ## Estado global
 
 - **Veredicto:** `PARCIAL`. Hay evidencia estática reproducible y comandos ejecutados; faltan la reproducción del cierre en la máquina Windows y la validación manual con lector de pantalla.
-- **Bloqueantes de certificación:** SYNC-009 (sin aislamiento real entre cuentas), CRW-001/002/003/005, UXA-001…007, BLD-001/002, QA-001.
+- **Bloqueantes de certificación:** CRW-001/002/003/005, UXA-001…007, BLD-001/002, QA-001.
+- **Resueltos y verificados en v5.48.0:** SYNC-009 y SYNC-013. La cuenta vive en el servidor junto a los datos, así que el mismo usuario y contraseña funcionan desde cualquier equipo y nadie puede apropiarse de un nombre ajeno. Las credenciales dejan de viajar en el fichero de datos. **Los 15 hallazgos de sincronización quedan cerrados.**
 - **Resueltos y verificados en v5.47.0:** diez hallazgos de sincronización (SYNC-001/003/004/005/006/007/008/010/012/015). La nube pasa a ser la copia buena: al abrir se reconstruye la base local con lo que hay en el servidor, sin descarga previa no se permite subir, la subida es atómica y se conservan versiones anteriores. Quedan SYNC-009 y SYNC-013, de la Fase 2.
 - **Resueltos y verificados en v5.45.1:** QA-013 (el entorno virtual sale de iCloud Drive, que estaba corrompiendo las bibliotecas de Qt y abortaba la app al arrancar).
 - **Resueltos y verificados en v5.44.0:** QA-008 (la suite completa vuelve a ejecutarse de una pasada: 2.454 pasan en 47 s), CRW-006 (`faulthandler`), CRW-008 (nombres indefinidos), BLD-007 (build de diagnóstico).

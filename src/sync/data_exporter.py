@@ -68,8 +68,10 @@ class DataExporter:
                 "export_date": datetime.now().isoformat(),
                 "version": "1.0",
                 "sync_version": sync_version,
-                "smtp_config": export_smtp_config(),  # Config global SMTP
-                "sftp_config": export_sftp_config(),  # Config global SFTP
+                # Las credenciales de correo y de servidor NO viajan aquí. Iban
+                # cifradas con una clave propia de cada equipo, así que en otro
+                # ordenador no se podían descifrar, y además dejaban las
+                # contraseñas guardadas en el servidor. Se configuran en Ajustes.
                 "cursos_escolares": [],  # NUEVO: Cursos escolares
                 "profesores": [],
                 "zonas": [],
@@ -195,15 +197,14 @@ class DataExporter:
                 )
                 return False
 
-            # Importar configuración SMTP GLOBAL si existe en el JSON
-            if "smtp_config" in data and data["smtp_config"]:
-                import_smtp_config(data["smtp_config"])
-                logger.info("✓ Configuración SMTP global importada")
-
-            # Importar configuración SFTP GLOBAL si existe en el JSON
-            if "sftp_config" in data and data["sftp_config"]:
-                import_sftp_config(data["sftp_config"])
-                logger.info("✓ Configuración SFTP global importada")
+            # Los ficheros antiguos traen credenciales cifradas con la clave del
+            # equipo que las exportó, así que aquí no se pueden descifrar. Se
+            # ignoran a propósito: la configuración es de cada equipo.
+            if data.get("smtp_config") or data.get("sftp_config"):
+                logger.info(
+                    "El fichero trae credenciales de otro equipo; se ignoran "
+                    "(la configuración de correo y servidor es local)"
+                )
 
             # Limpiar datos existentes si se solicita
             if clear_existing:

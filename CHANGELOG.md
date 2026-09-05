@@ -5,6 +5,26 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.48.0] - 2026-09-05
+
+### 🎯 Resumen
+La cuenta pasa a vivir en el servidor junto a los datos. El mismo usuario y contraseña funcionan desde cualquier equipo, y nadie puede apropiarse del nombre de otro. Con esto se cierran los 15 hallazgos de la auditoría de sincronización.
+
+### ✨ Added
+- Cuentas en el servidor, en `users/<hash>/cuenta.json`. Al entrar manda el servidor; queda una copia local que permite trabajar sin conexión y que conserva el recuento de intentos fallidos.
+- Las cuentas que ya existían en un equipo se publican solas en el servidor la primera vez que se entra con ellas, así que nadie tiene que volver a registrarse.
+- El diálogo de acceso y el de registro reciben la conexión al servidor. El arranque crea esa conexión **antes** del login, que es lo que permite validar la cuenta desde cualquier equipo.
+
+### Fixed
+- **Registrar un nombre ya existente queda prohibido.** Antes la carpeta de datos dependía solo del nombre de usuario, así que cualquiera podía instalar la aplicación, registrar el nombre de otra persona con la contraseña que quisiera y quedarse con sus datos.
+- Las credenciales de correo y de servidor dejan de viajar en el fichero de datos. Iban cifradas con una clave propia de cada equipo, así que en otro ordenador no se podían descifrar y solo servían para dejar contraseñas guardadas en el servidor. Los ficheros antiguos que las traigan se ignoran.
+
+### 🧹 Housekeeping
+- Cinco escenarios nuevos de cuentas en `tests/audit/test_sincronizacion_nube.py`, incluidos entrar desde otro equipo, el rechazo de la apropiación de nombres y el acceso sin conexión. Suite completa: 2.472 tests.
+- Publicada en el servidor la cuenta `Jefatura_FpBach`. Sus datos ya estaban allí desde el cierre de la aplicación del 4 de septiembre a las 23:20, con 67 profesores y 2.516 guardias, así que al abrir se lee del servidor sin ningún paso manual. Comprobado además que esos datos reales se importan con el nuevo reemplazo sin perder un solo registro.
+
+---
+
 ## [5.47.0] - 2026-09-04
 
 ### 🎯 Resumen

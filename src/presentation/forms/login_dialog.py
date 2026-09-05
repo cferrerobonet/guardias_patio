@@ -27,9 +27,12 @@ from utils.ui_helpers import get_corporate_icon
 class RegisterDialog(QDialog):
     """Diálogo de registro de nuevo usuario con confirmación de contraseña."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, backend=None):
         super().__init__(parent)
-        self.user_auth = UserAuth()
+        # Con servidor, el nombre se reserva allí: no se puede registrar uno que
+        # ya exista, porque sus datos son de otra persona.
+        self.backend = backend
+        self.user_auth = UserAuth(backend=backend)
         self.registered_username = None
         self.setup_ui()
 
@@ -285,9 +288,12 @@ class RegisterDialog(QDialog):
 class LoginDialog(QDialog):
     """Diálogo de autenticación de usuario con selector de usuarios y logo."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, backend=None):
         super().__init__(parent)
-        self.user_auth = UserAuth()
+        # Si hay servidor, la cuenta se comprueba contra él, así que la misma
+        # cuenta funciona desde cualquier equipo.
+        self.backend = backend
+        self.user_auth = UserAuth(backend=backend)
         self.authenticated_user = None
         self.setup_ui()
         self.load_existing_users()
@@ -503,7 +509,7 @@ class LoginDialog(QDialog):
 
     def open_register_dialog(self):
         """Abre el diálogo de registro de nuevo usuario."""
-        register_dialog = RegisterDialog(self)
+        register_dialog = RegisterDialog(self, backend=self.backend)
 
         if register_dialog.exec() == QDialog.DialogCode.Accepted:
             # Usuario registrado exitosamente

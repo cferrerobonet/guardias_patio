@@ -444,6 +444,78 @@ class SFTPSyncBackend(SyncBackend):
             self.client = None
 
 
+def hash_username(username: str) -> str:
+    """
+    Identificador de carpeta para un usuario.
+
+    Es el mismo cálculo en todas partes: la carpeta del servidor, la base de datos
+    local y el fichero de bloqueo tienen que coincidir.
+    """
+    return hashlib.sha256(username.encode()).hexdigest()[:16]
+
+
+def remote_account_path(username: str) -> str:
+    """Ruta del fichero de cuenta dentro de la carpeta del usuario en el servidor."""
+    return f"users/{hash_username(username)}/cuenta.json"
+
+
+class RemoteAccounts:
+    """
+    Cuentas guardadas junto a los datos, en el servidor.
+
+    Es lo que permite entrar con el mismo usuario y contraseña desde cualquier
+    equipo, y lo que impide que alguien se apropie del nombre de otro: si la
+    cuenta ya existe en el servidor, no se puede volver a registrar.
+    """
+
+    def __init__(self, backend: "SyncBackend"):
+        self.backend = backend
+
+    def fetch(self, username: str) -> Optional[dict]:
+        """Devuelve la ficha de la cuenta, o None si no existe o no hay conexión."""
+        remote_path = remote_account_path(username)
+        tmp_path = Path(tempfile.mktemp(suffix=".json"))
+        try:
+            if not self.backend.file_exists(remote_path):
+                return None
+            if not self.backend.download_file(remote_path, tmp_path):
+                return None
+            return json.loads(tmp_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, RuntimeError) as e:
+            logger.warning(f"No se pudo leer la cuenta del servidor: {e}")
+            return None
+        finally:
+            if tmp_path.exists():
+                try:
+                    tmp_path.unlink()
+                except OSError:
+                    pass
+
+    def publish(self, username: str, ficha: dict) -> bool:
+        """Guarda la ficha de la cuenta en el servidor."""
+        remote_path = remote_account_path(username)
+        tmp_path = Path(tempfile.mktemp(suffix=".json"))
+        try:
+            publicable = {
+                "username": username,
+                "password_hash": ficha.get("password_hash"),
+                "email": ficha.get("email", ""),
+                "created_at": ficha.get("created_at"),
+                "updated_at": datetime.now().isoformat(),
+            }
+            tmp_path.write_text(json.dumps(publicable, indent=2), encoding="utf-8")
+            return self.backend.upload_file(tmp_path, remote_path)
+        except (OSError, ValueError, RuntimeError) as e:
+            logger.warning(f"No se pudo publicar la cuenta en el servidor: {e}")
+            return False
+        finally:
+            if tmp_path.exists():
+                try:
+                    tmp_path.unlink()
+                except OSError:
+                    pass
+
+
 def _count_json_records(path: Path) -> int:
     """Cuenta el total de registros en un JSON de exportación para comparar volumen de datos."""
     try:
@@ -479,7 +551,7 @@ class SyncManager:
 
     def _hash_username(self, username: str) -> str:
         """Genera un hash del nombre de usuario para nombres de archivo."""
-        return hashlib.sha256(username.encode()).hexdigest()[:16]
+        return hash_username(username)
 
     def get_remote_path(self, filename: str) -> str:
         """Obtiene la ruta remota para un archivo del usuario."""
@@ -793,14 +865,49 @@ class UserAuth:
     Migra automáticamente hashes SHA-256 legacy a bcrypt en login.
     """
 
-    def __init__(self, users_file: Path = None):
-        # Si no se especifica, usar el directorio de datos de la aplicación
+    def __init__(self, users_file: Path = None, backend: "SyncBackend" = None):
+        """
+        Args:
+            users_file: copia local de las cuentas. Sirve de caché para poder entrar
+                sin conexión y para guardar el bloqueo por intentos fallidos.
+            backend: si se pasa, manda el servidor. La cuenta vive junto a los datos
+                del usuario, así que la misma cuenta funciona desde cualquier equipo
+                y nadie puede apropiarse de un nombre ya registrado.
+        """
         if users_file is None:
             from core.paths import get_data_directory
 
             users_file = get_data_directory() / "users.json"
         self.users_file = users_file
         self.users = self._load_users()
+        self.remote = RemoteAccounts(backend) if backend is not None else None
+
+    def _traer_cuenta_del_servidor(self, username: str) -> Optional[dict]:
+        """
+        Copia la ficha del servidor a la caché local antes de comprobar la contraseña.
+
+        Así manda siempre el servidor, pero se conserva el recuento de intentos
+        fallidos, que es local, y queda una copia para entrar sin conexión.
+        """
+        if not self.remote:
+            return None
+        ficha = self.remote.fetch(username)
+        if not ficha or not ficha.get("password_hash"):
+            return None
+
+        local = self.users.get(username, {})
+        if local.get("password_hash") != ficha["password_hash"]:
+            local.update(
+                {
+                    "password_hash": ficha["password_hash"],
+                    "email": ficha.get("email", ""),
+                    "created_at": ficha.get("created_at"),
+                }
+            )
+            self.users[username] = local
+            self._save_users()
+            logger.info(f"Cuenta '{username}' actualizada desde el servidor")
+        return ficha
 
     def _load_users(self) -> dict:
         """Carga usuarios desde archivo."""
@@ -826,9 +933,18 @@ class UserAuth:
             logger.error(f"Error guardando users.json con permisos seguros: {e}")
 
     def register_user(self, username: str, password: str, email: str = "") -> bool:
-        """Registra un nuevo usuario."""
+        """
+        Registra un nuevo usuario.
+
+        Si hay servidor, el nombre se reserva allí: no se puede registrar uno que
+        ya exista, porque sus datos son de otra persona.
+        """
         if username in self.users:
             logger.warning(f"Usuario {username} ya existe")
+            return False
+
+        if self.remote is not None and self.remote.fetch(username) is not None:
+            logger.warning(f"El nombre '{username}' ya está registrado en el servidor")
             return False
 
         # Validar username: solo alfanuméricos, puntos, guiones, guiones bajos
@@ -847,6 +963,8 @@ class UserAuth:
         }
 
         self._save_users()
+        if self.remote is not None:
+            self.remote.publish(username, self.users[username])
         logger.info(f"Usuario registrado: {username}")
         return True
 
@@ -878,6 +996,9 @@ class UserAuth:
         Returns (ok, mensaje_error). Si ok=True, mensaje_error es vacío.
         """
         import time
+
+        # El servidor es la referencia; si no responde se usa la copia local.
+        ficha_remota = self._traer_cuenta_del_servidor(username)
 
         if username not in self.users:
             return False, "Usuario o contraseña incorrectos"
@@ -918,6 +1039,10 @@ class UserAuth:
             user["failed_login_attempts"] = 0
             user["locked_until"] = None
             self._save_users()
+            # Primera vez que esta cuenta se usa con servidor: se publica allí
+            # para que funcione desde cualquier equipo.
+            if self.remote is not None and ficha_remota is None:
+                self.remote.publish(username, user)
             return True, ""
         else:
             attempts = user.get("failed_login_attempts", 0) + 1

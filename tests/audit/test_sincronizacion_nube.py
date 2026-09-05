@@ -230,14 +230,10 @@ def test_la_subida_es_atomica():
 
 
 # ---------------------------------------------------------------------------
-# Pendiente: Fase 2, que la cuenta sea de verdad
+# Fase 2: la cuenta vive en el servidor
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=True,
-    reason="SYNC-013: el JSON incluye la configuración de correo y de servidor, cifrada "
-    "con una clave propia de cada equipo, así que ni sirve fuera ni debería estar ahí",
-)
 def test_el_fichero_sincronizado_no_lleva_credenciales(tmp_path):
+    """SYNC-013: las contraseñas de correo y servidor ya no viajan a la nube."""
     sesion = _base_de_datos()
     exportado = tmp_path / "datos.json"
     assert DataExporter.export_to_json(sesion, exportado)
@@ -247,14 +243,59 @@ def test_el_fichero_sincronizado_no_lleva_credenciales(tmp_path):
     assert not presentes, f"el fichero de datos incluye credenciales: {presentes}"
 
 
-def test_las_cuentas_no_salen_del_equipo():
-    """SYNC-009: por qué hoy no se puede entrar con la misma cuenta desde otro equipo."""
+def test_la_misma_cuenta_sirve_desde_otro_equipo(tmp_path, nube):
+    """SYNC-009: es lo que se pedía, mismo usuario y contraseña desde cualquier equipo."""
     from sync.sync_manager import UserAuth
 
-    assert "users.json" in inspect.getsource(UserAuth)
-    exportador = (ROOT / "src" / "sync" / "data_exporter.py").read_text(encoding="utf-8")
-    if "usuarios" not in exportador:
-        pytest.xfail(
-            "SYNC-009: users.json vive en cada equipo y no se sincroniza, así que la cuenta "
-            "no existe en los demás; y la carpeta remota depende solo del nombre de usuario"
-        )
+    en_el_portatil = UserAuth(users_file=tmp_path / "portatil.json", backend=nube)
+    assert en_el_portatil.register_user("jefatura", "Guardias2026!", "jefatura@epla.es")
+
+    # Otro equipo, que nunca ha visto esa cuenta.
+    en_el_sobremesa = UserAuth(users_file=tmp_path / "sobremesa.json", backend=nube)
+    assert en_el_sobremesa.users == {}
+
+    ok, mensaje = en_el_sobremesa.authenticate("jefatura", "Guardias2026!")
+    assert ok is True, mensaje
+
+    mal, _ = en_el_sobremesa.authenticate("jefatura", "otra-contraseña")
+    assert mal is False
+
+
+def test_nadie_puede_apropiarse_de_un_nombre_ya_registrado(tmp_path, nube):
+    """Antes bastaba con registrar el nombre de otro para quedarse con sus datos."""
+    from sync.sync_manager import UserAuth
+
+    legitimo = UserAuth(users_file=tmp_path / "legitimo.json", backend=nube)
+    assert legitimo.register_user("jefatura", "Guardias2026!")
+
+    intruso = UserAuth(users_file=tmp_path / "intruso.json", backend=nube)
+    assert intruso.register_user("jefatura", "LaMiaPropia1!") is False
+
+
+def test_una_cuenta_antigua_se_publica_al_entrar(tmp_path, nube):
+    """Las cuentas que ya existían en un equipo pasan al servidor en el primer acceso."""
+    from sync.sync_manager import RemoteAccounts, UserAuth
+
+    solo_local = UserAuth(users_file=tmp_path / "antiguo.json")
+    assert solo_local.register_user("veterano", "Guardias2026!")
+    assert RemoteAccounts(nube).fetch("veterano") is None
+
+    con_servidor = UserAuth(users_file=tmp_path / "antiguo.json", backend=nube)
+    ok, mensaje = con_servidor.authenticate("veterano", "Guardias2026!")
+    assert ok is True, mensaje
+    assert RemoteAccounts(nube).fetch("veterano") is not None
+
+    otro_equipo = UserAuth(users_file=tmp_path / "otro.json", backend=nube)
+    assert otro_equipo.authenticate("veterano", "Guardias2026!")[0] is True
+
+
+def test_sin_conexion_se_entra_con_la_copia_local(tmp_path, nube):
+    """Perder la red no debe dejar a nadie fuera de su propio equipo."""
+    from sync.sync_manager import UserAuth
+
+    equipo = UserAuth(users_file=tmp_path / "equipo.json", backend=nube)
+    assert equipo.register_user("jefatura", "Guardias2026!")
+
+    sin_red = UserAuth(users_file=tmp_path / "equipo.json", backend=None)
+    ok, mensaje = sin_red.authenticate("jefatura", "Guardias2026!")
+    assert ok is True, mensaje
