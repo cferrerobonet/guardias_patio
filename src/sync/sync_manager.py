@@ -574,6 +574,8 @@ class SyncManager:
         #: Hasta que la descarga de arranque salga bien, esta sesión no puede subir.
         self.puede_subir = False
         self.motivo_bloqueo: Optional[str] = None
+        #: Por qué no se pudo subir la última vez. None si la última subida fue bien.
+        self.motivo_ultimo_fallo: Optional[str] = None
 
         logger.info(f"SyncManager inicializado para usuario: {username}")
 
@@ -797,6 +799,9 @@ class SyncManager:
                         f"de la {self.version_descargada}. No se sobrescribe."
                     )
                     logger.error(f"⛔ {motivo}")
+                    # Se guarda el motivo para poder explicárselo a quien está
+                    # delante: hasta ahora sólo quedaba en el registro (SYNC-014).
+                    self.motivo_ultimo_fallo = motivo
                     self._guardar_metadata_local(self.version_descargada, pendiente_subida=True)
                     if progress_callback:
                         progress_callback("error", {"message": motivo})
@@ -816,6 +821,7 @@ class SyncManager:
                 {"message": "Subiendo a la nube", "file_size_kb": file_size_kb},
             )
 
+        self.motivo_ultimo_fallo = None
         self._rotar_versiones_remotas()
 
         try:

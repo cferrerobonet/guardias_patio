@@ -402,6 +402,38 @@ class CCleanerMainWindow(QMainWindow):
 
     def _on_auto_sync_finished(self, success: bool):
         self._update_sync_status_label(error=not success)
+        if not success:
+            self._avisar_de_que_no_se_esta_subiendo()
+
+    def _avisar_de_que_no_se_esta_subiendo(self) -> None:
+        """Explica una vez por sesión por qué la sincronización no sube (SYNC-014).
+
+        La sincronización automática sólo sube; si otro equipo ha publicado
+        cambios, la subida se rechaza para no pisarlos. Hasta ahora eso quedaba
+        en un «✕ Error de sync» diminuto del menú lateral y en el registro: quien
+        estaba delante seguía trabajando horas sin saber que nada salía del equipo.
+        """
+        if getattr(self, "_aviso_de_sync_mostrado", False):
+            return
+
+        motivo = getattr(self.sync_manager, "motivo_ultimo_fallo", None)
+        if not motivo:
+            return  # Un fallo puntual de red no merece interrumpir
+
+        self._aviso_de_sync_mostrado = True
+        caja = QMessageBox(self)
+        caja.setIcon(QMessageBox.Icon.Warning)
+        caja.setWindowTitle("Tus cambios no se están subiendo")
+        caja.setText("La copia de la nube ha cambiado desde que abriste la aplicación.")
+        caja.setInformativeText(
+            f"{motivo}\n\n"
+            "Tu trabajo está guardado en este equipo y queda pendiente de subir, "
+            "pero no se sube para no pisar lo que haya publicado otra persona.\n\n"
+            "Lo que conviene hacer: cerrar la aplicación y volver a abrirla. Al "
+            "arrancar se descarga la copia buena y se resuelve la situación."
+        )
+        caja.setStandardButtons(QMessageBox.StandardButton.Ok)
+        caja.exec()
 
     def _update_sync_status_label(self, error: bool = False):
         if not self.sync_manager:
@@ -410,7 +442,10 @@ class CCleanerMainWindow(QMainWindow):
             self.sidebar.set_sync_status("warning", "⚠ Solo en este equipo")
             return
         if error:
-            self.sidebar.set_sync_status("error", "✕ Error de sync")
+            if getattr(self.sync_manager, "motivo_ultimo_fallo", None):
+                self.sidebar.set_sync_status("error", "✕ Sin subir: la nube cambió")
+            else:
+                self.sidebar.set_sync_status("error", "✕ Error de sync")
             return
         last = self.sync_manager.get_last_sync_time()
         if last is None:

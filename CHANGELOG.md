@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.69.0] - 2026-09-05
+
+### 🎯 Resumen
+Si tus cambios dejan de subirse a la nube, ahora te enteras.
+
+### Fixed
+- **Se podía trabajar horas sin que nada saliera del equipo.** La aplicación sube los datos cada media hora. Si otro ordenador había publicado cambios entretanto, la subida se rechazaba —bien hecho, para no pisar el trabajo ajeno— pero eso solo quedaba escrito en el registro y en un «✕ Error de sync» minúsculo en el lateral. Ahora se explica en un aviso: qué ha pasado, que tu trabajo está guardado en el equipo y que basta con cerrar y volver a abrir para resolverlo.
+- El aviso aparece **una sola vez por sesión**: uno cada media hora acabaría cerrándose sin leer.
+- Un corte pasajero de red no interrumpe: para eso está el indicador del lateral, que ahora distingue entre «no hay conexión» y «la nube cambió».
+
+### 🧹 Housekeeping
+- `auditoria/`: SYNC-014 resuelto. Descargar en mitad de la sesión se descarta a propósito: cambiaría los datos bajo las pantallas abiertas, y el modelo acordado es que trabaje una persona cada vez y la copia buena se traiga al arrancar.
+- 2.594 pruebas, ningún fallo.
+
+---
+
 ## [5.68.0] - 2026-09-05
 
 ### 🎯 Resumen
