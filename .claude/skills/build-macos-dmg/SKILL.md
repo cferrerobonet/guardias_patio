@@ -5,6 +5,34 @@ description: Compilar Guardias de Patio para macOS (.app firmado ad-hoc y DMG) y
 
 # Build macOS: .app + DMG + release
 
+## Vía rápida: compilar en GitHub
+
+```bash
+gh workflow run compilar.yml -f publicar=false   # solo probar
+git tag vX.Y.Z && git push --tags                # compilar y publicar
+```
+
+Compila a la vez el DMG de macOS y el instalador de Windows. El paso de macOS
+usa `SKIP_RELEASE=1` para no publicar por su cuenta: de adjuntar los dos
+instaladores se encarga el paso final del flujo.
+
+## Dónde acaban los instaladores
+
+| Cómo se compila | Dónde queda | Cuánto dura |
+| --- | --- | --- |
+| Flujo de GitHub, a mano | Artefacto del run, pestaña Actions | 90 días |
+| Flujo de GitHub, al publicar etiqueta | Adjunto al release, junto al otro instalador | Permanente |
+| En local | `dist/` y `Output/` del proyecto | Hasta `make clean`; no se versionan |
+
+Descargar los de un run sin pasar por el navegador:
+
+```bash
+gh run download <id-del-run> --dir /tmp/instaladores
+```
+
+El resto describe la compilación en local.
+
+
 Scripts canónicos: `Makefile` (`make icon`, `make app`, `make dmg`, `make release`) y `scripts/build/build_dmg.sh`. Ignorar `scripts/build/create_dmg.sh` y `build_simple.sh` (obsoletos, versión fija).
 
 ## Requisitos

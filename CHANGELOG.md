@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.51.1] - 2026-09-05
+
+### 🎯 Resumen
+Los procedimientos guardados de compilación explican ya la vía de GitHub y dónde acaban los instaladores.
+
+### Changed
+- Los skills `build-windows-exe` y `build-macos-dmg` empiezan por la compilación en GitHub, que no necesita un PC con Windows, con el aviso de que publicar hace saltar el aviso de actualización a todos los usuarios. La compilación en local queda documentada después, porque sigue haciendo falta para *probar* el ejecutable de Windows.
+- Documentado en el skill de Windows por qué el script debe guardarse con marca de orden de bytes.
+- `auditoria/09_BUILD_Y_RELEASE.md`: tabla de dónde queda cada instalador y cuánto dura.
+
+---
+
 ## [5.51.0] - 2026-09-05
 
 ### 🎯 Resumen

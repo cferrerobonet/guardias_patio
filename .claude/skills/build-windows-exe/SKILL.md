@@ -5,7 +5,50 @@ description: Compilar Guardias de Patio para Windows (exe + instalador Inno Setu
 
 # Build Windows: exe + instalador
 
-Script canónico: `scripts/build_windows.ps1` (lee la versión de `src/config/settings.py`). Ignorar `scripts/build/build_windows.ps1` y `.bat` (obsoletos, referencian un spec inexistente).
+## Lo primero: no hace falta un PC con Windows
+
+El flujo `.github/workflows/compilar.yml` compila en un Windows real de GitHub.
+El repositorio es público, así que no consume minutos de pago.
+
+```bash
+# Compilar sin publicar nada, para probar los instaladores
+gh workflow run compilar.yml -f publicar=false
+
+# Compilar y adjuntar los dos instaladores al release
+git tag vX.Y.Z && git push --tags
+```
+
+> [!WARNING] Publicar avisa a todo el mundo
+> Adjuntar al release hace que a los usuarios les aparezca el aviso de nueva
+> versión. Para solo probar, usar la primera forma.
+
+## Dónde acaban los instaladores
+
+| Cómo se compila | Dónde queda | Cuánto dura |
+| --- | --- | --- |
+| Flujo de GitHub, a mano | Artefacto del run, pestaña Actions | 90 días |
+| Flujo de GitHub, al publicar etiqueta | Adjunto al release, junto al otro instalador | Permanente |
+| En local | `dist/` y `Output/` del proyecto | Hasta `make clean`; no se versionan |
+
+Descargar los de un run sin pasar por el navegador:
+
+```bash
+gh run download <id-del-run> --dir /tmp/instaladores
+```
+
+El resto de este documento describe la compilación **en un PC con Windows**, que
+sigue haciendo falta para *probar* el ejecutable y para perseguir el cierre
+durante el cálculo de guardias.
+
+
+Script canónico: `scripts/build_windows.ps1`, que lee la versión de `src/config/settings.py`. Los scripts obsoletos de `scripts/build/` se eliminaron en la versión 5.50.0.
+
+> [!IMPORTANT] El script debe guardarse en UTF-8 **con** marca de orden de bytes
+> Windows PowerShell 5.1 lee los ficheros sin marca con la codificación ANSI del
+> sistema. Entonces la «Ó» de «COMPILACIÓN» se convierte en dos caracteres, y el
+> segundo es una comilla tipográfica que PowerShell toma como delimitador de
+> cadena: el análisis se descuadra y falla con «missing the terminator», señalando
+> además una línea que no tiene nada que ver. Un test lo vigila.
 
 ## Requisitos en el PC Windows
 

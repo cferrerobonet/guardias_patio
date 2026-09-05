@@ -59,6 +59,16 @@ tag vX.Y.Z ──► CI
    └─ release GitHub con ambos assets + notas desde CHANGELOG
 ```
 
+## 5 bis. Dónde quedan los instaladores
+
+| Cómo se compila | Dónde queda | Cuánto dura |
+| --- | --- | --- |
+| Flujo de GitHub, a mano | Artefacto del run, en la pestaña Actions | 90 días |
+| Flujo de GitHub, al publicar etiqueta | Adjunto al release | Permanente |
+| En local | `dist/` y `Output/`, que no se versionan | Hasta `make clean` |
+
+Descargar los de un run: `gh run download <id> --dir <carpeta>`.
+
 ## 6. Actualizar sin perder datos (verificado v5.51.0)
 
 Instalar una versión nueva sustituye el programa, no los datos. Está comprobado con
