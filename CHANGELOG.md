@@ -5,6 +5,24 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.63.0] - 2026-09-05
+
+### 🎯 Resumen
+Generar guardias deja de ser una operación sin vuelta atrás, y se corrige un fallo por el que una pantalla podía mostrar datos calculados para otra.
+
+### ✨ Added
+- **Se puede volver a un estado anterior.** La aplicación guarda ahora una copia antes de generar y antes de limpiar las guardias, que son las dos operaciones que borran el trabajo del curso. En *Importar/Exportar* hay un listado de copias con su fecha y hora para volver a cualquiera de ellas. La maquinaria de copias existía desde hacía tiempo en el código, pero no la llamaba nadie.
+
+### Fixed
+- **Una pantalla podía recibir los datos calculados para otra.** La memoria temporal que evita repetir consultas identificaba cada cálculo por la dirección de memoria del objeto que lo pedía. Python reutiliza esas direcciones, así que dos consultas distintas podían acabar compartiendo identificador y, durante unos minutos, la segunda recibía el resultado de la primera. Ahora el identificador no depende de la memoria.
+- El prefijo que servía para separar unas memorias temporales de otras se aceptaba pero se perdía por el camino, así que no separaba nada.
+
+### 🧹 Housekeeping
+- `auditoria/`: ESC-007 y FUN-004 resueltos. Con FUN-004 hecho, el orden acordado sigue con la generación incremental.
+- 18 pruebas nuevas. Total: 2.568.
+
+---
+
 ## [5.62.0] - 2026-09-05
 
 ### 🎯 Resumen

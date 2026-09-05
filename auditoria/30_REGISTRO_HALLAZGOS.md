@@ -155,7 +155,7 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | ESC-004 | P3 | alta | Sin ruta a multiusuario real | NUEVO | 07 |
 | ESC-005 | P2 | media | Caché por regex sin `curso_id` | NUEVO | 07 |
 | ESC-006 | P3 | alta | Arranque secuencial en hilo GUI | NUEVO | 07 |
-| ESC-007 | P2 | alta | La clave de la caché de consultas se construye con `str(self)`, que incluye la dirección de memoria del objeto. Python reutiliza direcciones: 300 instancias creadas y destruidas en serie generan **una sola clave**. Un caso de uso nuevo puede recibir el resultado cacheado de otro anterior durante el TTL (3 min en profesores). Además `cache_key_prefix` se acepta pero nunca se usa | `utils/cache.py:59-87`, `utils/repository_cache.py:40-63,100-105`, `application/use_cases/profesor/listar_profesores.py:40-41` | NUEVO (verificado con demostración) | 07 |
+| ESC-007 | P2 | alta | ~~Clave de caché construida con la dirección de memoria; `cache_key_prefix` sin usar~~ | `utils/cache.py`, `utils/repository_cache.py` | **RESUELTO VERIFICADO v5.63.0** · `_representacion_estable()` sustituye la representación por defecto (`<Clase object at 0x…>`) por el nombre de la clase, así que la clave deja de depender de direcciones reutilizables; y el prefijo llega ya hasta la clave. Los argumentos normales y la exclusión de sesiones no cambian · `tests/audit/test_cache_claves.py` (11 tests) | 07 |
 
 ## SEC · Seguridad y privacidad
 
@@ -181,7 +181,8 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 FUN-001…FUN-014 en [[07_FUNCIONALIDAD_CALIDAD_ESCALABILIDAD]] §1. Estado: `PROPUESTA` pendiente de decisión de producto, salvo:
 
 - **FUN-001 (panel «Estado del curso»): `DESCARTADO` v5.57.0.** Implementado en v5.56.0 y retirado a petición de CarlosFB. Su parte de dominio (`PreflightGeneracionUseCase`) se conserva y es la que resuelve UXF-002 y UXF-008.
-- **Orden acordado para las mejoras de generación: FUN-004 → FUN-002 → FUN-003** (decisión de 2026-09-05).
+- **FUN-004 (historial y restauración): `RESUELTO` v5.63.0.** `backup_database()` y `restore_database()` llevaban tiempo escritas en `db_manager` sin que las llamara nadie. Ahora se hace copia antes de generar y de limpiar, `listar_backups()` las enumera y la vista de Importar/Exportar permite volver a un momento anterior · `tests/audit/test_historial_y_restauracion.py`.
+- **Orden acordado para las mejoras de generación: ~~FUN-004~~ → FUN-002 → FUN-003** (decisión de 2026-09-05).
 
 ## Positivos a preservar
 

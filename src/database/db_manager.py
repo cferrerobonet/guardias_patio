@@ -519,6 +519,52 @@ def backup_database(username: str, backup_dir: Optional[Path] = None) -> Optiona
         return None
 
 
+def listar_backups(username: str) -> list:
+    """Devuelve las copias de seguridad del usuario, de la más reciente a la más antigua.
+
+    Cada elemento es un diccionario con `ruta`, `momento` (datetime) y `tamano`
+    en bytes. Sirve para ofrecer «volver a antes de la generación de las 10:32»
+    (FUN-004).
+    """
+    from datetime import datetime
+
+    backup_dir = _get_user_backup_dir(username)
+    if not backup_dir.exists():
+        return []
+
+    copias = []
+    for fichero in backup_dir.glob("guardias_patio_backup_*.db"):
+        try:
+            estado = fichero.stat()
+        except OSError:
+            continue
+        copias.append(
+            {
+                "ruta": fichero,
+                "momento": datetime.fromtimestamp(estado.st_mtime),
+                "tamano": estado.st_size,
+            }
+        )
+
+    copias.sort(key=lambda c: c["momento"], reverse=True)
+    return copias
+
+
+def backup_antes_de(username: str, motivo: str) -> Optional[Path]:
+    """Copia de seguridad previa a una operación que destruye datos (FUN-004).
+
+    Generar borra todas las guardias del curso y «Limpiar» también. Hasta ahora no
+    había vuelta atrás: `backup_database()` existía desde hacía tiempo, pero no la
+    llamaba nadie desde la aplicación.
+    """
+    ruta = backup_database(username)
+    if ruta:
+        logger.info(f"Copia de seguridad antes de {motivo}: {ruta}")
+    else:
+        logger.warning(f"No se pudo crear la copia de seguridad antes de {motivo}")
+    return ruta
+
+
 def restore_database(username: str, backup_path: str | Path) -> bool:
     """
     Restaura la base de datos de un usuario desde un backup.

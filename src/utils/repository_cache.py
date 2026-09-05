@@ -52,7 +52,7 @@ def cache_repository_query(ttl: int = 300, cache_key_prefix: str = ""):
     """
 
     def decorator(func: Callable) -> Callable:
-        cached_func = cache_query(ttl=ttl)(func)
+        cached_func = cache_query(ttl=ttl, prefijo=cache_key_prefix)(func)
 
         @wraps(func)
         def wrapper(*args, **kwargs):

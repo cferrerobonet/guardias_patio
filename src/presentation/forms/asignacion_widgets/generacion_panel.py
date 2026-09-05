@@ -333,6 +333,10 @@ class GeneracionPanel(QGroupBox):
                     f"Se va a generar el calendario de guardias.\n\n{resumen_previo}",
                 )
 
+            # Antes de nada, copia de seguridad: generar borra las guardias del
+            # curso y hasta ahora no había vuelta atrás (FUN-004).
+            self._copia_de_seguridad("generar guardias")
+
             # Función para ejecutar con progreso. OJO: corre en el WorkerThread,
             # así que abre su propia sesión en vez de usar la de la GUI (CRW-003).
             def tarea_generacion(progress_callback, cancelacion=None):
@@ -466,6 +470,7 @@ class GeneracionPanel(QGroupBox):
 
         if msg.exec() == QMessageBox.StandardButton.Yes:
             try:
+                self._copia_de_seguridad("limpiar guardias")
                 self.limpiar_guardias_uc.execute()
                 self._mostrar_mensaje_inicial()
                 self._ultimo_resumen = None
@@ -476,6 +481,17 @@ class GeneracionPanel(QGroupBox):
 
             except SQLAlchemyError as e:
                 self._mostrar_error(f"Error al limpiar: {e}")
+
+    def _copia_de_seguridad(self, motivo: str) -> None:
+        """Guarda el estado actual antes de una operación que destruye datos."""
+        try:
+            from database.db_manager import backup_antes_de, get_current_user_id
+
+            usuario = get_current_user_id()
+            if usuario:
+                backup_antes_de(usuario, motivo)
+        except Exception as e:  # noqa: BLE001 - no impedir la operación por esto
+            _logger.warning(f"No se pudo crear la copia previa a {motivo}: {e}")
 
     def _sincronizar(self):
         """Sincroniza con la nube en un hilo aparte, con diálogo de progreso.

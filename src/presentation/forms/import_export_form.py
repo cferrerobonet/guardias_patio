@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QMessageBox,
     QPushButton,
@@ -119,6 +120,7 @@ class ImportExportForm(BaseForm):
         # Columna derecha: Importar profesores
         columna_der = QVBoxLayout()
         columna_der.addWidget(self._crear_seccion_importar_profesores())
+        columna_der.addWidget(self._crear_seccion_copias())
         columna_der.addStretch()
         layout_columnas.addLayout(columna_der, 1)
 
@@ -170,6 +172,101 @@ class ImportExportForm(BaseForm):
 
         grupo.setLayout(layout)
         return grupo
+
+    def _crear_seccion_copias(self) -> QGroupBox:
+        """Sección para volver a un estado anterior (FUN-004)."""
+        grupo = QGroupBox("VOLVER A UN ESTADO ANTERIOR")
+
+        layout = QVBoxLayout()
+        layout.setSpacing(10)
+        layout.setContentsMargins(15, 20, 15, 15)
+
+        info = QLabel(
+            "La aplicación guarda una copia antes de generar o limpiar las guardias. "
+            "Si algo sale mal, puedes volver a como estaba."
+        )
+        info.setWordWrap(True)
+        info.setStyleSheet(
+            f"""
+            color: {TEXT_SECONDARY};
+            font-size: 12px;
+            font-weight: normal;
+        """
+        )
+        layout.addWidget(info)
+
+        self.restaurar_btn = QPushButton("Ver copias de seguridad...")
+        self.restaurar_btn.setIcon(icon_for_button("restore"))
+        self.restaurar_btn.clicked.connect(self.restaurar_copia)
+        self.restaurar_btn.setMinimumHeight(40)
+        self.restaurar_btn.setAccessibleName("Ver y restaurar copias de seguridad")
+        layout.addWidget(self.restaurar_btn)
+
+        grupo.setLayout(layout)
+        return grupo
+
+    def restaurar_copia(self):
+        """Muestra las copias disponibles y restaura la elegida."""
+        from database.db_manager import get_current_user_id, listar_backups, restore_database
+
+        usuario = get_current_user_id()
+        copias = listar_backups(usuario) if usuario else []
+
+        if not copias:
+            self.mostrar_advertencia(
+                "Sin copias",
+                "Todavía no hay ninguna copia de seguridad.\n\n"
+                "Se crea una automáticamente antes de generar o limpiar las guardias.",
+            )
+            return
+
+        etiquetas = [
+            f"{c['momento'].strftime('%d/%m/%Y a las %H:%M')}  ({c['tamano'] // 1024} KB)"
+            for c in copias
+        ]
+        elegida, aceptado = QInputDialog.getItem(
+            self,
+            "Volver a un estado anterior",
+            "Elige el momento al que quieres volver:",
+            etiquetas,
+            0,
+            False,
+        )
+        if not aceptado:
+            return
+
+        copia = copias[etiquetas.index(elegida)]
+
+        confirmacion = QMessageBox(self)
+        confirmacion.setIcon(QMessageBox.Icon.Warning)
+        confirmacion.setWindowTitle("Confirmar restauración")
+        confirmacion.setText(f"Se volverá al estado del {elegida.split('  (')[0]}.")
+        confirmacion.setInformativeText(
+            "Todo lo hecho después de ese momento se perderá.\n\n"
+            "Se guarda una copia del estado actual antes de restaurar, por si acaso.\n"
+            "Al terminar hay que cerrar y volver a abrir la aplicación."
+        )
+        confirmacion.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        confirmacion.setDefaultButton(QMessageBox.StandardButton.No)
+        if confirmacion.exec() != QMessageBox.StandardButton.Yes:
+            return
+
+        if restore_database(usuario, copia["ruta"]):
+            self.resultado_text.setText(
+                f"✅ Restaurado el estado del {elegida.split('  (')[0]}.\n\n"
+                "Cierra y vuelve a abrir la aplicación para ver los datos restaurados."
+            )
+            self.mostrar_exito(
+                "Restaurado",
+                "Cierra y vuelve a abrir la aplicación para ver los datos restaurados.",
+            )
+        else:
+            self.mostrar_error(
+                "No se pudo restaurar",
+                "Revisa el registro de la aplicación para ver el motivo.",
+            )
 
     def exportar_datos(self):
         """Exportar todos los datos a archivo JSON."""

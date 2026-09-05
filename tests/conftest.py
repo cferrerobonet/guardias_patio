@@ -631,10 +631,12 @@ def _cache_limpio():
     Vacía la caché de consultas antes de cada test.
 
     Varios casos de uso cachean su resultado durante minutos en una caché global
-    del proceso. La clave se construye con `str(self)`, que incluye la dirección
-    de memoria del objeto, y Python reutiliza direcciones: instancias distintas
-    acaban compartiendo entrada. Sin esta limpieza, un test recibe el resultado
-    calculado por otro y la suite falla de forma intermitente (ESC-007).
+    del proceso, que sobrevive de un test al siguiente. Sin esta limpieza, un test
+    recibe el resultado calculado por otro.
+
+    La causa original —la clave incluía la dirección de memoria del objeto y
+    Python las reutiliza— se corrigió en v5.63.0 (ESC-007), pero la caché sigue
+    siendo global y aislar cada test sigue siendo lo correcto.
     """
     from utils.cache import clear_all_cache
 

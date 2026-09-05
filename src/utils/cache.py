@@ -56,7 +56,29 @@ _function_metrics: Dict[str, Dict[str, int]] = {}
 _cache_lock = threading.RLock()
 
 
-def _generate_cache_key(func: Callable, args: tuple, kwargs: dict) -> str:
+#: `<Clase object at 0x7f...>`: la representación por defecto de un objeto, que
+#: incluye su dirección de memoria.
+_REPR_POR_DEFECTO = re.compile(r"^<[\w.]+ object at 0x[0-9a-fA-F]+>$")
+
+
+def _representacion_estable(valor: object) -> str:
+    """Texto reproducible de un argumento, para usarlo en la clave de caché.
+
+    Un objeto sin `__str__` propio se representa con su dirección de memoria, y
+    Python reutiliza direcciones: instancias distintas creadas y destruidas en
+    serie acababan generando la misma clave, así que un caso de uso podía recibir
+    el resultado cacheado de otro (ESC-007). Para esos objetos se usa el nombre de
+    la clase, que sí es estable.
+    """
+    texto = str(valor)
+    if _REPR_POR_DEFECTO.match(texto):
+        return type(valor).__name__
+    return texto
+
+
+def _generate_cache_key(
+    func: Callable, args: tuple, kwargs: dict, prefijo: str = ""
+) -> str:
     """
     Genera una clave única para el caché basada en la función y sus argumentos.
 
@@ -64,6 +86,7 @@ def _generate_cache_key(func: Callable, args: tuple, kwargs: dict) -> str:
         func: Función a cachear
         args: Argumentos posicionales
         kwargs: Argumentos nombrados
+        prefijo: Espacio de nombres opcional, para separar cachés de distinto tipo
 
     Returns:
         Clave única para el caché
@@ -73,18 +96,18 @@ def _generate_cache_key(func: Callable, args: tuple, kwargs: dict) -> str:
 
     # Convertir argumentos a string (excluyendo objetos de sesión)
     args_str = ",".join(
-        str(arg)
+        _representacion_estable(arg)
         for arg in args
         if not hasattr(arg, "query")  # Excluir sesiones SQLAlchemy
     )
     kwargs_str = ",".join(
-        f"{k}={v}"
+        f"{k}={_representacion_estable(v)}"
         for k, v in sorted(kwargs.items())
         if not hasattr(v, "query")  # Excluir sesiones SQLAlchemy
     )
 
     cache_key = f"{func_name}({args_str},{kwargs_str})"
-    return cache_key
+    return f"{prefijo}:{cache_key}" if prefijo else cache_key
 
 
 def _evict_if_needed():
@@ -117,13 +140,15 @@ def _update_function_metrics(func_name: str, hit: bool):
         _function_metrics[func_name]["misses"] += 1
 
 
-def cache_query(ttl: float = 300, key_func: Optional[Callable] = None):
+def cache_query(ttl: float = 300, key_func: Optional[Callable] = None, prefijo: str = ""):
     """
     Decorador para cachear resultados de consultas a la base de datos.
 
     Args:
         ttl: Tiempo de vida del caché en segundos (default: 300 = 5 minutos)
         key_func: Función opcional para generar la clave de caché personalizada
+        prefijo: Espacio de nombres de la clave (ESC-007: antes se aceptaba en
+            `cache_repository_query` y no llegaba a usarse)
 
     Returns:
         Decorador que cachea la función
@@ -147,7 +172,7 @@ def cache_query(ttl: float = 300, key_func: Optional[Callable] = None):
             if key_func:
                 cache_key = key_func(*args, **kwargs)
             else:
-                cache_key = _generate_cache_key(func, args, kwargs)
+                cache_key = _generate_cache_key(func, args, kwargs, prefijo)
 
             func_name = func.__name__
 
