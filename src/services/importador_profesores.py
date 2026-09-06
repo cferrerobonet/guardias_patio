@@ -39,6 +39,109 @@ def normalizar_nombre(nombre: str) -> str:
     return " ".join(nombre.strip().upper().split())
 
 
+def leer_filas_de_profesores(
+    archivo_path: str,
+    skip_rows: int = 9,
+    column_mapping: Optional[dict] = None,
+) -> tuple:
+    """Lee el fichero y devuelve `(filas, error)` sin tocar la base de datos.
+
+    Cada fila es `{"fila": nº en el fichero, "nombre": ..., "email": ...}`.
+    Separarlo de la escritura es lo que permite enseñar un informe antes de
+    importar nada (FUN-007).
+    """
+    try:
+        df = pd.read_excel(archivo_path, skiprows=skip_rows)
+    except Exception as e:  # openpyxl y pandas lanzan de todo ante un fichero roto
+        return [], f"Error al procesar archivo: {e}"
+
+    if column_mapping:
+        col_nombre = column_mapping.get("nombre")
+        col_email = column_mapping.get("email")
+        if col_nombre and col_nombre in df.columns:
+            df = df.rename(columns={col_nombre: "nombre"})
+        if col_email and col_email in df.columns:
+            df = df.rename(columns={col_email: "email"})
+        if "nombre" not in df.columns:
+            return [], "La columna de nombre no se encontró en el archivo"
+        if "email" not in df.columns:
+            df["email"] = None
+    else:
+        columnas_esperadas = ["nombre", "tel_fijo", "tel_movil", "email"]
+        if len(df.columns) < 4:
+            return [], (
+                f"El archivo no tiene suficientes columnas "
+                f"(esperadas: 4, encontradas: {len(df.columns)})"
+            )
+        df.columns = columnas_esperadas + [f"extra_{i}" for i in range(len(df.columns) - 4)]
+
+    df = df[df["nombre"].notna()]
+    df = df[df["nombre"].astype(str).str.strip() != ""]
+
+    filas = []
+    for idx, row in df.iterrows():
+        nombre = str(row["nombre"]).strip()
+        if not nombre or nombre.lower() in ("nan", "none"):
+            continue
+        email = str(row["email"]).strip() if pd.notna(row["email"]) else None
+        if email and email.lower() in ("nan", "none", ""):
+            email = None
+        # +2: la cabecera y que las filas de una hoja de cálculo empiezan en 1.
+        filas.append({"fila": int(idx) + skip_rows + 2, "nombre": nombre, "email": email})
+    return filas, None
+
+
+def analizar_importacion(
+    profesor_repo_or_session,
+    archivo_path: str,
+    skip_rows: int = 9,
+    column_mapping: Optional[dict] = None,
+) -> dict:
+    """Dice qué pasaría al importar, sin escribir nada (FUN-007).
+
+    Devuelve `archivo`, `error` y `filas`, donde cada fila lleva un `estado`:
+    `nuevo`, `existente` o `repetido` —cuando el propio fichero trae el mismo
+    nombre dos veces, que hasta ahora se importaba en silencio como uno solo—.
+    """
+    profesor_repo = _resolver_repositorio(profesor_repo_or_session)
+    filas, error = leer_filas_de_profesores(archivo_path, skip_rows, column_mapping)
+
+    informe = {
+        "archivo": Path(archivo_path).name,
+        "error": error,
+        "filas": [],
+        "nuevos": 0,
+        "existentes": 0,
+        "repetidos": 0,
+    }
+    if error:
+        return informe
+
+    vistos = set()
+    for fila in filas:
+        clave = normalizar_nombre(fila["nombre"])
+        if clave in vistos:
+            estado = "repetido"
+        elif profesor_repo.find_by_nombre(fila["nombre"]):
+            estado = "existente"
+        else:
+            estado = "nuevo"
+        vistos.add(clave)
+        informe["filas"].append({**fila, "estado": estado})
+        contador = {"nuevo": "nuevos", "existente": "existentes", "repetido": "repetidos"}
+        informe[contador[estado]] += 1
+
+    return informe
+
+
+def _resolver_repositorio(profesor_repo_or_session):
+    if hasattr(profesor_repo_or_session, "create_profesor_repository"):
+        return profesor_repo_or_session.create_profesor_repository()
+    if hasattr(profesor_repo_or_session, "find_by_nombre"):
+        return profesor_repo_or_session
+    return RepositoryFactory(profesor_repo_or_session).create_profesor_repository()
+
+
 def importar_profesores_desde_excel(
     profesor_repo_or_session,
     archivo_path: str,

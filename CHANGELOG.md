@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.79.0] - 2026-09-06
+
+### 🎯 Resumen
+Importar profesores desde Excel enseña antes qué va a hacer.
+
+### ✨ Added
+- **Informe previo de importación.** Tras elegir el fichero y mapear las columnas aparece una tabla con cada fila: número de fila en la hoja, nombre, correo y qué pasará —se dará de alta, ya está, o está repetida dentro del propio fichero—. Hasta pulsar «Importar» no se escribe nada.
+- **Se detectan los nombres repetidos dentro del fichero.** Antes se importaba el primero y el segundo se contaba como «ya existente», sin distinguirlo de los que de verdad estaban en la base de datos.
+- **Un mapeo de columnas equivocado o un fichero ilegible se explican en el informe** en lugar de descubrirse a mitad de la escritura.
+- El número de fila del informe apunta a la fila real de la hoja de cálculo, para poder ir a corregirla.
+
+### 🧹 Housekeeping
+- La lectura del fichero queda separada de la escritura en la base de datos (`leer_filas_de_profesores`), que es lo que permite analizar sin tocar nada.
+
 ## [5.78.0] - 2026-09-06
 
 ### 🎯 Resumen

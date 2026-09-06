@@ -462,6 +462,22 @@ class ImportExportForm(BaseForm):
             col_mapping = dialogo.mapping
             skip = dialogo.skip_rows
 
+            # Informe previo: qué va a pasar con cada fila, antes de escribir nada
+            # (FUN-007). Se lee con la sesión de la vista porque no escribe.
+            from presentation.dialogs.informe_importacion_dialog import (
+                InformeImportacionDialog,
+            )
+            from services.importador_profesores import analizar_importacion
+
+            informe = analizar_importacion(
+                RepositoryFactory(self.session), archivo, skip_rows=skip,
+                column_mapping=col_mapping,
+            )
+            previo = InformeImportacionDialog(informe, parent=self)
+            if previo.exec() != InformeImportacionDialog.DialogCode.Accepted:
+                self.resultado_text.setText("Importación cancelada antes de empezar")
+                return
+
             # Importar con indicador de progreso
             def tarea_importacion(progress_callback):
                 # Corre en el WorkerThread: sesión propia, no la de la GUI (CRW-003).
