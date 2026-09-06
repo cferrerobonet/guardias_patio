@@ -123,12 +123,14 @@ def test_sin_llavero_no_se_toca_el_fichero(sin_llavero, tmp_path):
 
 
 def test_el_arranque_migra():
+    """Desde v5.96.0 la migración va dentro de la limpieza de rastros."""
     import inspect
 
     import main
+    from core.limpieza_de_rastros import revisar_y_limpiar
 
-    fuente = inspect.getsource(main)
-    assert "migrar_desde_env" in fuente
+    assert "revisar_y_limpiar" in inspect.getsource(main)
+    assert "migrar_desde_env" in inspect.getsource(revisar_y_limpiar)
 
 
 @pytest.mark.parametrize(

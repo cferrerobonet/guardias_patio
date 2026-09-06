@@ -167,11 +167,13 @@ def main():
     if env_path.exists():
         load_dotenv(dotenv_path=env_path, override=True)
 
-    # Las contraseñas que sigan en el fichero se llevan al llavero del sistema y
-    # la línea se deja vacía. Se hace una sola vez, en silencio (SEC-001).
-    from core.credenciales import migrar_desde_env
+    # Las contraseñas que sigan en el fichero se llevan al llavero del sistema, se
+    # restringen los permisos y se borran los rastros que dejaron las versiones
+    # anteriores: carpetas del esquema viejo y volcados con credenciales dentro.
+    # Sólo actúa si las contraseñas están ya a salvo en el llavero (SEC-001).
+    from core.limpieza_de_rastros import revisar_y_limpiar
 
-    migrar_desde_env(env_path)
+    revisar_y_limpiar(get_base_directory())
 
     # Verificar si es necesario configurar SFTP/SMTP
     if InitialConfigDialog.is_configuration_needed():

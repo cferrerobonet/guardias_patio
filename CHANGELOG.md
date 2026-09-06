@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.96.0] - 2026-09-06
+
+### 🎯 Resumen
+La aplicación borra sola lo que las versiones anteriores dejaron por el equipo.
+
+### ✨ Added
+- **Limpieza de rastros al arrancar.** Actualizar no quitaba nada de lo que ya estaba en disco: el `.env` con las contraseñas en claro y a veces legible por cualquier cuenta, las carpetas del esquema de datos antiguo, y los volcados de sincronización con un bloque de credenciales dentro —en base64 en las versiones más viejas, que no es cifrado—. Ahora, en macOS y en Windows, la aplicación lo busca y lo limpia al abrirse.
+- **Sólo actúa cuando es seguro**: si las contraseñas no están todavía en el llavero del sistema, no se toca nada. Sería cambiar un riesgo por una pérdida.
+- **Nunca borra datos**: una carpeta heredada cuya base de datos no esté vacía se conserva y se avisa en el registro; de su volcado, eso sí, se quitan las credenciales.
+- De los volcados se quitan únicamente los bloques de credenciales: los datos y el estado de sincronización quedan como estaban.
+
+### 🧹 Housekeeping
+- La migración de contraseñas al llavero pasa a formar parte de la limpieza, que es quien decide si el resto puede hacerse.
+- Un simulacro (`solo_mirar=True`) permite ver qué se tocaría sin cambiar nada.
+
 ## [5.95.0] - 2026-09-06
 
 ### 🎯 Resumen
