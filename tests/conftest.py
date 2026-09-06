@@ -643,3 +643,27 @@ def _cache_limpio():
     clear_all_cache()
     yield
     clear_all_cache()
+
+
+@pytest.fixture(autouse=True)
+def sin_smtp_de_verdad(request, monkeypatch):
+    """Impide que un test acabe hablando con el servidor de correo real.
+
+    Este equipo tiene credenciales SMTP válidas en `smtp_config.json`, así que
+    un test que no sustituya el servicio sale a internet y manda correo de
+    verdad —pasó al escribir los tests de FUN-006—. Aquí `smtplib.SMTP` falla
+    con un mensaje claro salvo que el test se marque `smtp_real`.
+    """
+    import smtplib
+
+    if request.node.get_closest_marker("smtp_real"):
+        return
+
+    def prohibido(*args, **kwargs):
+        raise AssertionError(
+            "Un test ha intentado abrir una conexión SMTP real. Sustituye "
+            "`smtplib.SMTP` o pasa un servicio falso."
+        )
+
+    monkeypatch.setattr(smtplib, "SMTP", prohibido)
+    monkeypatch.setattr(smtplib, "SMTP_SSL", prohibido)

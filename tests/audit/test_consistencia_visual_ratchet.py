@@ -32,7 +32,11 @@ UMBRALES = {
     "font_size_menor_12px": 0,
     "lineas_con_emoji": 315,
     "setFixed": 18,
-    "setMinimum": 140,
+    # 141 desde v5.78.0: el diálogo de envío de avisos parte la ventana en dos
+    # (destinatarios y vista previa) y por debajo de 900×560 no cabe ninguna de
+    # las dos mitades. Es la segunda vez que sube; si vuelve a hacerlo, mirar si
+    # los mínimos de los diálogos deberían salir de un sitio común.
+    "setMinimum": 141,
 }
 EMOJI = re.compile("[\U0001f300-\U0001faff☀-➿]")
 

@@ -5,6 +5,28 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.78.0] - 2026-09-06
+
+### 🎯 Resumen
+Los avisos de guardias se ven antes de mandarlos y se sabe a quién llegaron.
+
+### ✨ Added
+- **Vista previa del envío.** «Enviar emails a profesores» abre ahora una ventana con la lista de destinatarios y, al seleccionar a uno, el mensaje exacto que va a recibir.
+- **Resultado por destinatario.** Al terminar, cada fila dice si se envió o qué pasó. Antes había un resumen que recortaba los errores a los cinco primeros.
+- **Se explica quién queda fuera** y por qué: sin correo corporativo o sin guardias asignadas.
+- **El envío se puede cancelar** a mitad, y lo que quedó sin mandar se indica como tal.
+
+### Fixed
+- **El envío de avisos estaba roto.** Leía la zona de cada guardia como `zona.nombre`, pero el campo se llama `nombre_zona`: el primer profesor con guardias lanzaba `AttributeError` y no salía ni un correo.
+- **La ventana ya no se queda congelada** durante el envío: pasa a un hilo aparte con barra de progreso.
+- **Una sola conexión SMTP para todo el envío** en vez de una por profesor. Con un claustro grande, abrir y cerrar sesión sesenta veces era la mayor parte de la espera.
+- Un destinatario rechazado ya no interrumpe el resto del envío.
+
+### 🧹 Housekeeping
+- Redacción y envío quedan separados en `services/notificador_guardias.py`: lo primero sólo lee de la base de datos y se puede enseñar; lo segundo es lo único que habla con la red.
+- Retirado `EmailService.send_guardias_notification`, que ya no llamaba nadie.
+- **Los tests no pueden abrir conexiones SMTP reales.** Este equipo tiene credenciales válidas en `smtp_config.json`, y un test que no sustituyera el servicio salía a internet de verdad. Ahora `smtplib.SMTP` está cortado en la suite salvo que el test se marque `smtp_real`.
+
 ## [5.77.0] - 2026-09-06
 
 ### 🎯 Resumen
