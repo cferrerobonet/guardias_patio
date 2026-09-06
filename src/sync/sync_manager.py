@@ -798,6 +798,21 @@ class SyncManager:
 
         file_size_kb = local_json_path.stat().st_size // 1024 if local_json_path.exists() else 0
 
+        # Cada media hora se subía la base entera aunque nadie hubiera tocado
+        # nada, y crece con el curso. Si el contenido es el mismo que la última
+        # vez, no hay nada que subir (ESC-003).
+        huella = self.huella_del_contenido(local_json_path)
+        if (
+            huella is not None
+            and huella == self._leer_metadata_local().get("huella_subida")
+            and not self._leer_metadata_local().get("pendiente_subida", False)
+        ):
+            logger.info("✅ Nada que subir: los datos no han cambiado desde la última vez")
+            self.motivo_ultimo_fallo = None
+            if progress_callback:
+                progress_callback("complete", {"message": "Sin cambios que subir"})
+            return True
+
         if progress_callback:
             progress_callback("connecting", {"message": "Conectando al servidor"})
 
@@ -842,7 +857,9 @@ class SyncManager:
         try:
             if self.backend.upload_file(local_json_path, remote_path):
                 self.version_descargada = nueva_version
-                self._guardar_metadata_local(nueva_version, pendiente_subida=False)
+                self._guardar_metadata_local(
+                    nueva_version, pendiente_subida=False, huella=huella
+                )
                 logger.info(f"✅ Datos sincronizados (versión {nueva_version})")
                 if progress_callback:
                     progress_callback("complete", {"message": "Sincronización completada"})
@@ -856,6 +873,28 @@ class SyncManager:
                 progress_callback("error", {"message": f"Error al subir: {e}"})
             return False
 
+    #: Claves que cambian en cada exportación aunque los datos sean los mismos:
+    #: la fecha del volcado y el contador de versión. Si entrasen en la huella,
+    #: cada comprobación diría «hay cambios» y la subida sería siempre (ESC-003).
+    _CLAVES_VOLATILES = ("export_date", "sync_version")
+
+    @classmethod
+    def huella_del_contenido(cls, ruta: Path) -> Optional[str]:
+        """Resumen de los datos exportados, sin lo que cambia en cada volcado.
+
+        Sirve para no subir 30 minutos después exactamente lo mismo que ya está
+        en el servidor, que es el caso normal cuando nadie ha tocado nada.
+        """
+        try:
+            datos = json.loads(ruta.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            logger.warning(f"No se pudo calcular la huella de {ruta.name}: {e}")
+            return None
+        if isinstance(datos, dict):
+            datos = {k: v for k, v in datos.items() if k not in cls._CLAVES_VOLATILES}
+        texto = json.dumps(datos, sort_keys=True, ensure_ascii=False, default=str)
+        return hashlib.sha256(texto.encode("utf-8")).hexdigest()
+
     def _ruta_metadata_local(self) -> Path:
         return self.local_data_dir / "last_sync.json"
 
@@ -865,7 +904,9 @@ class SyncManager:
         except (OSError, ValueError):
             return {}
 
-    def _guardar_metadata_local(self, sync_version: int, pendiente_subida: bool) -> None:
+    def _guardar_metadata_local(
+        self, sync_version: int, pendiente_subida: bool, huella: Optional[str] = None
+    ) -> None:
         metadata = self._leer_metadata_local()
         metadata.update(
             {
@@ -876,6 +917,8 @@ class SyncManager:
                 "last_sync": datetime.now().isoformat(),
             }
         )
+        if huella is not None:
+            metadata["huella_subida"] = huella
         try:
             self._ruta_metadata_local().write_text(
                 json.dumps(metadata, indent=2), encoding="utf-8"

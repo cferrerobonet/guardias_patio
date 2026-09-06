@@ -5,6 +5,19 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.87.0] - 2026-09-06
+
+### 🎯 Resumen
+La sincronización deja de subir la base entera cuando no ha cambiado nada.
+
+### Changed
+- **Sólo se sube si los datos han cambiado.** Cada media hora, y al cerrar, se subía el volcado completo de la base aunque nadie hubiera tocado nada —y el fichero crece con el curso—. Ahora se compara una huella del contenido con la de la última subida y, si coincide, no se conecta siquiera.
+- La fecha del volcado y el contador de versión no cuentan como cambio: cambian en cada exportación, así que incluirlos habría hecho que la huella nunca coincidiera.
+- **Un envío que quedó pendiente sí se sube**, aunque la huella coincida: en ese caso el servidor no llegó a recibirlo.
+
+### 🧹 Housekeeping
+- Si no se puede calcular la huella —fichero ilegible o inexistente— se sube igualmente: perder datos es peor que subir de más.
+
 ## [5.86.0] - 2026-09-06
 
 ### 🎯 Resumen
