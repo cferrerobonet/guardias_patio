@@ -700,3 +700,20 @@ def sin_llavero_de_verdad(request, monkeypatch):
     from core import credenciales
 
     monkeypatch.setattr(credenciales, "_llavero", lambda _almacen=_LlaveroDeMentira(): _almacen)
+
+
+@pytest.fixture(autouse=True)
+def sin_env_de_verdad(request, monkeypatch, tmp_path):
+    """Impide que un test escriba en el `.env` real del equipo.
+
+    Pasó al escribir los tests de SEC-001: importar una configuración de prueba
+    reescribió el `.env` de desarrollo con «sftp.example.com», y la aplicación
+    dejó de poder conectar. Todo lo que guarde configuración va a una carpeta
+    temporal salvo que el test se marque `env_real`.
+    """
+    if request.node.get_closest_marker("env_real"):
+        return
+
+    from core import credenciales
+
+    monkeypatch.setattr(credenciales, "_ruta_del_env", lambda: tmp_path / ".env")

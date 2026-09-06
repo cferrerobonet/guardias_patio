@@ -149,6 +149,15 @@ def migrar_desde_env(ruta_env: Path) -> List[str]:
     return migradas
 
 
+def _ruta_del_env() -> Path:
+    """Dónde vive el `.env` de verdad. Es un punto único a propósito: la suite
+    de tests lo sustituye por una carpeta temporal, porque una tanda de tests
+    llegó a reescribir el `.env` de desarrollo con valores de prueba."""
+    from core.paths import get_base_directory
+
+    return get_base_directory() / ".env"
+
+
 def guardar_configuracion(variables: dict) -> None:
     """Punto único para guardar la configuración de servidor y correo.
 
@@ -157,7 +166,7 @@ def guardar_configuracion(variables: dict) -> None:
     usaban la ruta relativa `".env"`, que en la aplicación instalada apunta al
     directorio de trabajo y no a donde de verdad se lee la configuración.
     """
-    from core.paths import get_base_directory, proteger_fichero_de_credenciales
+    from core.paths import proteger_fichero_de_credenciales
 
     al_fichero = {}
     for clave, valor in variables.items():
@@ -171,7 +180,7 @@ def guardar_configuracion(variables: dict) -> None:
                     f"{clave} se guarda en el fichero: este equipo no tiene llavero"
                 )
 
-    ruta = get_base_directory() / ".env"
+    ruta = _ruta_del_env()
     ruta.parent.mkdir(parents=True, exist_ok=True)
     lineas = ruta.read_text(encoding="utf-8").splitlines(keepends=True) if ruta.exists() else []
 

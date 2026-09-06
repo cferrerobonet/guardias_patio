@@ -5,6 +5,11 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.96.1] - 2026-09-06
+
+### 🧹 Housekeeping
+- **Los tests no pueden escribir en el `.env` real.** Una tanda de tests de importación reescribió el fichero de configuración de desarrollo con valores de prueba (`sftp.example.com`, `/guardias`) y la aplicación dejó de poder conectar. Ahora todo lo que guarde configuración va a una carpeta temporal durante la suite, salvo que el test se marque `env_real`. Es la tercera barrera del día, tras las del SMTP y el llavero.
+
 ## [5.96.0] - 2026-09-06
 
 ### 🎯 Resumen
