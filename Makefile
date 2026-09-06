@@ -53,7 +53,7 @@ icon:
 
 app: icon
 	@echo "🔨 Construyendo aplicación..."
-	pyinstaller "Guardias de Patio.spec"
+	pyinstaller GuardiasDePatio.spec
 
 dmg: icon
 	@echo "📀 Creando DMG instalable y publicando release..."

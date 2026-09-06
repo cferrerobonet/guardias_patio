@@ -178,6 +178,43 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 
 | SEC-004 | P1 | alta | ~~Listados reales del claustro versionados en un repositorio público~~ | **RESUELTO v5.96.2** · `docs/examples/datos ejemplo/` llevaba desde 2025-11-15 dos PDF y cuatro Excel con nombres de profesores reales. Retirados de HEAD (los ficheros quedan fuera del repositorio) y `.gitignore` + test que impiden versionar datos u ofimática. **Siguen en el historial público**: hace falta reescribirlo o hacer el repositorio privado, decisión de CarlosFB · `tests/audit/test_sin_datos_reales_en_el_repositorio.py` | 30 |
 
+## Hallazgos del estudio ampliado (2026-09-06, [[21_PLAN_DE_AUDITORIA_AMPLIADO]])
+
+Dimensiones nuevas H–O. Los IDs siguen la numeración de cada familia; `SEC-004` está arriba, en su tabla.
+
+| ID | Sev. | Conf. | Hallazgo | Estado / evidencia | Doc |
+| --- | --- | --- | --- | --- | --- |
+| SEC-005 | P0 | alta | La contraseña SFTP real está en el historial público de git: en claro en `c50b3c3` (2025-10-26, dos guías de `documentacion/sftp/`), `562e80f` (2025-10-28, `GUIA_SINCRONIZACION_MULTIUSUARIO.md`), borradas en `d666658` (2026-04-16); y en base64 en `77aa578` (2025-11-02, volcado `data/0db13e2857239ed8/guardias_patio_data.json`, retirado en `9280f10`) | NUEVO · verificado con `git log -S` sin exponer el valor · **remedio**: rotar la contraseña (decisión de CarlosFB) y reescribir el historial o hacer privado el repositorio | 21 |
+| SEC-006 | P2 | alta | Clave de la API de Obsidian en texto plano y `NODE_TLS_REJECT_UNAUTHORIZED=0` en `~/.claude/settings.json`, apuntando a otra bóveda | NUEVO · ver [[22_RECURSOS_DE_IA]] §4 · remedio: `.mcp.json` por bóveda con `${OBSIDIAN_API_KEY}` | 22 |
+| SEC-007 | P1 | alta | CI sólo se dispara con etiquetas y no ejecuta ruff, mypy, bandit ni pip-audit: cualquier commit a `main` llega sin gate | NUEVO · `.github/workflows/compilar.yml` `on: push: tags` · remedio: flujo `comprobar.yml` en `push`/`pull_request` | 21 |
+| SEC-008 | P2 | alta | Un equipo nuevo sin `~/.ssh/known_hosts` no puede conectar (`RejectPolicy`) y la única pista (`ssh-keyscan`) está en el registro, no en pantalla | NUEVO · `src/sync/backends.py:255-262` · remedio: diálogo que muestre la huella del servidor y pida confirmarla una vez | 21 |
+| PRIV-001 | P1 | alta | `Ausencia.tipo` (`baja_medica`…), `motivo` y `documento_path` viajan en claro en el volcado al servidor del hosting; el tipo de ausencia es dato de salud | NUEVO · `src/sync/dtos.py:319-334` · remedio: no exportar `motivo`/`documento_path`; cifrar el volcado o generalizar `tipo` | 21 |
+| PRIV-002 | P2 | alta | Correos y nombres de profesores en `logger.info` (`email_service.py:231,238,410`, `icalendar_service.py:129`, `reportes_form.py:173`) | NUEVO · remedio: enmascarar (`a***@epla.es`) | 21 |
+| PRIV-003 | P2 | media | No hay exportación «todo lo de una persona» ni anonimización de cursos cerrados; borrar un profesor arrastra guardias y ausencias sin aviso de qué se pierde | NUEVO · `models.py` `ondelete=CASCADE` · remedio: diálogo que enumere lo que se borra y exportación previa | 21 |
+| SUP-001 | P1 | alta | `setuptools 82.0.1` con CVE PYSEC-2026-3447 (corregida en 83.0.0) | NUEVO · `pip-audit` · remedio: `pip install -U setuptools` y fijarlo | 21 |
+| SUP-002 | P2 | alta | 36 dependencias sin fijar (`>=`), sin fichero de bloqueo, ejecución y desarrollo mezclados en `requirements.txt` | NUEVO · remedio: `requirements.txt` fijado + `requirements-dev.txt` + `pip-compile` o `uv lock` | 21 |
+| SYNC-018 | P1 | alta | Caducidad del bloqueo (30 s) igual al intervalo de latido (30 s): un latido perdido por red basta para que otro equipo entre | NUEVO · `session_lock.py:41-42` · remedio: caducidad ≥ 3 latidos (90–120 s) | 21 |
+| SYNC-019 | P2 | alta | `release_lock()` no borra el bloqueo remoto (el backend no tiene `delete`): al cerrar, el siguiente equipo espera a que caduque | NUEVO · `session_lock.py:185-189` · remedio: `delete_file` en el backend o escribir el bloqueo como liberado | 21 |
+| SYNC-020 | P1 | alta | Lo descargado se valida por claves conocidas, no por integridad: un fichero truncado que conserve una sección pasa | NUEVO · `_es_fichero_de_datos_valido` · remedio: subir `huella.sha256` junto al volcado y comprobarla al bajar | 21 |
+| SYNC-021 | P2 | alta | La rotación de versiones remotas nunca ha producido `.1/.2/.3` en el servidor real (listado 2026-09-06): la copia de seguridad remota no existe | NUEVO · remedio: test contra backend local que verifique la rotación; revisar `move_file` en SFTP | 21 |
+| COD-009 | P2 | alta | 92 funciones con complejidad ciclomática ≥ C; las peores: `main()` E(36), `sync_on_shutdown` D(28), `import_from_json` D(26), `ProfesorMapper.to_entity` D(26), `revisar_y_limpiar` D(23) | NUEVO · `radon cc src -n C` · remedio: techo por función y partir las cinco de D/E | 21 |
+| COD-010 | P2 | alta | 7 `open()` sin `encoding=` en `session_lock.py` y `sync_manager.py`: en Windows (cp1252) los JSON de estado con acentos se corrompen | NUEVO · remedio: `encoding="utf-8"` y test | 21 |
+| COD-011 | P2 | media | 53 `datetime.now()` sin zona horaria frente a 18 con ella; comparar horas del equipo con las del servidor es frágil | NUEVO · remedio: un único helper `ahora()` con zona | 21 |
+| COD-012 | P3 | alta | Nombres de mes y día por `strftime("%B"/"%A")` con `setlocale` sólo en un sitio: en Windows sin `es_ES` salen en inglés en correos y páginas | NUEVO · `notificador_guardias.py:61`, `dia_detalle_dialog.py:93` · remedio: tablas propias como en `publicador_web` | 21 |
+| QA-014 | P2 | alta | 34 de los ficheros de `tests/audit` leen el código fuente como texto (`inspect.getsource`, `read_text`): guardarraíles útiles pero frágiles ante refactors y no prueban comportamiento | NUEVO · remedio: convertir los que se pueda en tests de comportamiento; mantener sólo los de política | 21 |
+| QA-015 | P2 | alta | Cobertura 70,5 % con agujeros donde más duele: `main.py` 10,7 %, PDF individual 16 %, PDF mensual 30 %, `services/assignment` 47 %, `sync/backends` 54 % | NUEVO · remedio: tests de PDF por contenido y de backends contra `LocalSyncBackend` | 21 |
+| QA-016 | P1 | alta | Tres tests de hoy tocaron cosas reales antes de tener barrera (SMTP de IONOS, Keychain, `.env`); las barreras existen ahora | RESUELTO v5.96.1 · regla «barrera antes que test» en el fichero de instrucciones | 21 |
+| BLD-008 | P1 | alta | Dos specs de PyInstaller; el build de macOS usaba el antiguo mientras los cambios (llavero) iban al nuevo: el DMG habría salido sin poder guardar contraseñas | **RESUELTO v5.97.0** · spec único, `Makefile` y `build_dmg.sh` actualizados · `tests/audit/test_un_solo_spec.py` | 23 |
+| DOC-001 | P2 | alta | `README.md` manda crear el `.venv` dentro del repositorio (iCloud), que es lo que corrompe Qt (QA-013) | **RESUELTO v5.97.0** · README corregido | 21 |
+| DOC-002 | P3 | alta | `docs/ADR.md` y `API_TECHNICAL.md` sin cambios desde 2026-04-20: no recogen llavero, incremental, permuta, web estática ni la decisión de no ir a multiusuario | NUEVO · remedio: cinco ADR cortos | 21 |
+| DOC-003 | P2 | alta | La skill `build-macos-dmg` afirmaba que el spec estaba ignorado y que `make clean` lo borraba; ninguna de las dos cosas era cierta | **RESUELTO v5.97.0** | 22 |
+| DEV-007 | P2 | alta | Hooks globales de `impeccable` ejecutando `node` tras cada edición y al terminar, en un proyecto donde nunca encuentran nada | **RESUELTO 2026-09-06** · retirados con copia | 22 |
+| DEV-008 | P3 | alta | 17 de 20 skills globales son de desarrollo web; ninguna aplica al escritorio PyQt6 | NUEVO · veredicto por skill en [[22_RECURSOS_DE_IA]] §1 · remedio: desinstalar 14 | 22 |
+| DEV-009 | P2 | alta | No existe ningún `.mcp.json` en la jerarquía de bóvedas pese a lo que dice el fichero de instrucciones raíz de las bóvedas; el único MCP apunta a TERRENO SIMERIA | NUEVO · remedio en [[22_RECURSOS_DE_IA]] §4 | 22 |
+| DEV-010 | P3 | media | `.claude/settings.local.json` versionado pese a su nombre | NUEVO · remedio: renombrar a `settings.json` e ignorar `settings.local.json` | 22 |
+| OBS-001 | P3 | media | `prometheus-client` y `psutil` en una aplicación de escritorio sin endpoint que los exponga | NUEVO · remedio: retirar o exponer en «Diagnóstico» | 21 |
+| OBS-002 | P2 | media | No hay «guardar informe de diagnóstico» para que un usuario envíe registros y versión sin buscar ficheros | NUEVO · remedio: botón en Acerca de que empaquete `logs/` y versión | 21 |
+
 ## FUN · Mejoras funcionales (tipo `mejora`, sin severidad)
 
 FUN-001…FUN-014 en [[07_FUNCIONALIDAD_CALIDAD_ESCALABILIDAD]] §1. Estado: `PROPUESTA` pendiente de decisión de producto, salvo:

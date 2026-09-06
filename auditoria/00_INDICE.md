@@ -2,7 +2,7 @@
 tags:
   - gestion-centro
   - auditoria
-fecha_actualizacion: 2026-09-04
+fecha_actualizacion: 2026-09-06
 estado: activo
 prioridad: 1-urgente
 tipo: indice
@@ -17,12 +17,12 @@ tipo: indice
 
 | Campo | Valor |
 | --- | --- |
-| Commit auditado | `742fe452fcdf646985011187eb9b4aea72cd9b0a` (`main`) |
-| Versión app | 5.42.3 (`src/config/settings.py`) |
-| Fecha / zona | 2026-09-04 · Europe/Madrid |
+| Commit auditado | `main` a 2026-09-06 (v5.97.0); el estudio ampliado está en [[20_ESTUDIO_APLICACION_Y_STACK]] |
+| Versión app | 5.97.0 (`src/config/settings.py`) |
+| Fecha / zona | 2026-09-06 · Europe/Madrid |
 | Modo | `AUDIT_ONLY` para el código de la app + entrega autorizada de tests, skills y documentación |
 | Intérprete válido | `/opt/homebrew/bin/python3.11` (Python 3.11.15, PyQt6 6.7.0, OR-Tools 9.14, pytest 8.4.2) |
-| Suite | 2.457 funciones de test en 117 ficheros (+ `tests/ui`, `tests/compliance`) |
+| Suite | 2.877 pasan, 10 saltados, 3 fallos conocidos · cobertura 70,5 % |
 
 ## Documentos
 
@@ -41,6 +41,10 @@ tipo: indice
 | 11 | [[11_EFICIENCIA_AGENTES_Y_TOKENS]] | Revisión de instrucciones, agentes y skills para sesiones más rápidas y baratas |
 | 12 | [[12_SINCRONIZACION_NUBE]] | Subida y descarga en la nube: por qué hoy se pierden datos y qué haría falta para que cualquier equipo maneje la misma información |
 | 17 | [[17_PLAN_DE_ATAQUE]] | Backlog único por lotes, orden, dependencias y gates |
+| 20 | [[20_ESTUDIO_APLICACION_Y_STACK]] | Foto medida de la aplicación (tamaños, stack, datos personales, seguridad, calidad, tests, sync) sobre la que se diseña el plan ampliado |
+| 21 | [[21_PLAN_DE_AUDITORIA_AMPLIADO]] | **Plan ejecutable por modelos más pequeños**: nueve dimensiones nuevas (seguridad, privacidad, dependencias, integridad, rendimiento, observabilidad, documentación, entorno, verificación humana) con comando, criterio y severidad por check |
+| 22 | [[22_RECURSOS_DE_IA]] | Veredicto sobre cada skill, hook, agente y MCP instalado; qué desinstalar, qué instalar y cuándo usar cada cosa |
+| 23 | [[23_LIMPIEZA]] | Qué se ha borrado, qué se ha movido, qué se conserva y qué sólo puede decidir CarlosFB |
 | 30 | [[30_REGISTRO_HALLAZGOS]] | Registro canónico de hallazgos con ID, severidad, estado y evidencia |
 
 Artefactos intermedios: `_work/paquete_ux_accesibilidad.md` (paquete Ola 4 de 2026-08-04, hallazgos UXA-001…014, integrados en el registro).
@@ -58,7 +62,12 @@ Artefactos intermedios: `_work/paquete_ux_accesibilidad.md` (paquete Ola 4 de 20
 | COD · Calidad de código | 0 | 0 | 4 | 4 | 8 |
 | ESC · Escalabilidad y arquitectura | 0 | 0 | 5 | 2 | 7 |
 | SYNC · Sincronización en la nube ✅ | 0 | 0 | 0 | 0 | 15 cerrados |
-| SEC · Seguridad y privacidad | 0 | 0 | 1 | 2 | 3 |
+| SEC · Seguridad | 1 | 1 | 4 | 0 | 8 (4 resueltos) |
+| PRIV · Privacidad y datos personales | 0 | 1 | 2 | 0 | 3 |
+| SUP · Dependencias y cadena de suministro | 0 | 1 | 1 | 0 | 2 |
+| SYNC · Integridad (segunda tanda) | 0 | 2 | 2 | 0 | 4 |
+| OBS · Observabilidad y soporte | 0 | 0 | 1 | 1 | 2 |
+| DOC · Documentación | 0 | 0 | 0 | 1 | 3 (2 resueltos) |
 | DEV · Eficiencia de agentes y tokens | 0 | 0 | 2 | 4 | 6 |
 | **Total** | **1** | **18** | **45** | **24** | **88 abiertos** (15 SYNC cerrados) |
 
@@ -76,7 +85,10 @@ Mejoras funcionales propuestas (FUN-001…012) se listan en 07 y en el registro 
 - **Resueltos y verificados en v5.44.0:** QA-008 (la suite completa vuelve a ejecutarse de una pasada: 2.454 pasan en 47 s), CRW-006 (`faulthandler`), CRW-008 (nombres indefinidos), BLD-007 (build de diagnóstico).
 - **Gates ejecutados en este commit:** colección pytest, ruff, bandit y suite completa por fichero (2.376 pasan, 0 fallan, 4 ficheros bloqueados). Detalle y método en [[01_BASELINE_Y_ADAPTADOR]].
 
-## Orden de lectura recomendado
+## Orden de lectura recomendado (para auditar con un modelo más pequeño)
+
+0. [[21_PLAN_DE_AUDITORIA_AMPLIADO]] §2 (reglas) → una dimensión → fichas en 30. Nada más.
+
 
 1. 06 (crash Windows) → 17 (lote 1).
 2. 03 + 05 (flujo y diseño) → lotes 2-4.

@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 # Variables
 APP_NAME="Guardias de Patio"
 VERSION=$(python3 -c "import sys; sys.path.insert(0,'src'); from config.settings import get_settings; print(get_settings().app_version)")
-SPEC_FILE="Guardias de Patio.spec"
+SPEC_FILE="GuardiasDePatio.spec"
 DMG_NAME="GuardiasPatio_v${VERSION}_macOS.dmg"
 
 echo "${BLUE}📋 Configuración:${NC}"

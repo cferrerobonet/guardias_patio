@@ -10,6 +10,29 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ### 🧹 Housekeeping
 - **Los tests no pueden escribir en el `.env` real.** Una tanda de tests de importación reescribió el fichero de configuración de desarrollo con valores de prueba (`sftp.example.com`, `/guardias`) y la aplicación dejó de poder conectar. Ahora todo lo que guarde configuración va a una carpeta temporal durante la suite, salvo que el test se marque `env_real`. Es la tercera barrera del día, tras las del SMTP y el llavero.
 
+## [5.97.0] - 2026-09-06
+
+### 🎯 Resumen
+Estudio completo de la aplicación, plan de auditoría ampliado y limpieza.
+
+### ✨ Added
+- **Plan de auditoría ampliado** (`auditoria/21`): nueve dimensiones que el plan anterior no tenía —seguridad, privacidad, dependencias, integridad de la sincronización, rendimiento, observabilidad, documentación, entorno de trabajo y verificación humana—, cada check con su comando, su criterio de paso y su severidad, pensado para ejecutarse con modelos más pequeños.
+- **Estudio medido de la aplicación** (`auditoria/20`): tamaños, stack, datos personales que maneja y por dónde viajan, seguridad, calidad y tests con números de hoy.
+- **Veredicto sobre los recursos de IA** (`auditoria/22`): 17 de las 20 skills instaladas son de desarrollo web y no aplican a PyQt6; qué conservar, qué desinstalar, qué instalar y cuándo usar cada cosa.
+- 30 hallazgos nuevos en el registro, con familias nuevas: `PRIV`, `SUP`, `OBS`.
+
+### Fixed
+- **El build de macOS usaba un spec antiguo.** Había dos ficheros de PyInstaller; `Makefile` y `build_dmg.sh` tiraban de `Guardias de Patio.spec` mientras los cambios —los almacenes del llavero— se hacían en `GuardiasDePatio.spec`. El DMG habría salido sin poder guardar contraseñas. Queda uno solo, con test.
+- `README.md` mandaba crear el entorno virtual dentro del repositorio, que está en iCloud: es justo lo que corrompe Qt.
+- La skill de compilación de macOS afirmaba que el spec estaba ignorado por git y que `make clean` lo borraba; ninguna de las dos cosas era cierta.
+
+### 🧹 Housekeeping
+- Retirados tres scripts que importaban módulos inexistentes desde 2025-12, dos ficheros de `.agents/` que sólo enlazaban a otro sitio y `.claude/agents.md`, cuyo contenido pasa al fichero de instrucciones.
+- Liberados 281 MB de artefactos y cachés no versionados; detalle y cómo repetirlo en `auditoria/23`.
+- Los hooks globales de `impeccable` —que ejecutaban `node` tras cada edición sin encontrar nunca nada en un proyecto PyQt— se han retirado, con copia.
+- Instaladas `pip-audit`, `vulture` y `radon`; la skill `/auditoria-desktop` incorpora los gates de las dimensiones nuevas.
+- Regla nueva en el fichero de instrucciones: **barrera antes que test**.
+
 ## [5.96.2] - 2026-09-06
 
 ### Fixed

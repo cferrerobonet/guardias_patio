@@ -28,8 +28,8 @@ echo ""
 
 # 4. Eliminar .spec obsoletos (mantener solo uno actualizado si existe)
 echo "4. Revisando archivos .spec..."
-if [ -f "Guardias de Patio.spec" ]; then
-    echo "   ℹ Manteniendo Guardias de Patio.spec"
+if [ -f "GuardiasDePatio.spec" ]; then
+    echo "   ℹ Manteniendo GuardiasDePatio.spec"
 fi
 echo ""
 

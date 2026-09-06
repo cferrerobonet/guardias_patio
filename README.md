@@ -26,8 +26,10 @@
 
 ```bash
 # Crear entorno virtual (Python 3.11+ requerido)
-python3.11 -m venv .venv
-source .venv/bin/activate
+# El entorno va FUERA de iCloud: dentro del repositorio, iCloud altera los binarios de Qt
+# y la aplicación aborta al arrancar.
+python3.11 -m venv ~/.venvs/guardias-patio
+source ~/.venvs/guardias-patio/bin/activate
 
 # Instalar dependencias
 pip install -r requirements.txt

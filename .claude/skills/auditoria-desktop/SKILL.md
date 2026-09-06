@@ -41,3 +41,21 @@ grep -rhoE 'font-size: ?[0-9]+px' src/presentation | grep -oE '[0-9]+' | awk '$1
 - Cambió estilo → ratchets y snapshots.
 - Cambió build → compilar en ambas plataformas y arrancar el artefacto.
 - Registrar commit, fecha y limitaciones en `01_BASELINE_Y_ADAPTADOR.md`.
+
+## Gates ampliados (desde v5.97.0, dimensiones H–O de `auditoria/21_PLAN_DE_AUDITORIA_AMPLIADO.md`)
+
+Ejecutar desde la raíz con `PY=~/.venvs/guardias-patio/bin/python` y `export QT_QPA_PLATFORM=offscreen`. Cada línea es un gate: si falla, ficha en `30_REGISTRO_HALLAZGOS.md` con la familia indicada.
+
+```bash
+$PY -m pytest tests/audit/test_credenciales_no_van_en_el_codigo.py tests/audit/test_sin_datos_reales_en_el_repositorio.py tests/audit/test_credenciales_en_el_llavero.py tests/audit/test_limpieza_de_rastros.py -q --no-cov   # H · SEC
+$PY -m bandit -r src -q -ll                                    # H · SEC: salida vacía
+$PY -m pip_audit --progress-spinner off                        # J · SUP: sin filas
+$PY -m pytest tests/audit/test_un_solo_spec.py tests/audit/test_publicacion_web.py -q --no-cov   # J/I
+grep -rnE "logger\.\w+\(.*(to_email|nombre_completo)" src     # I · PRIV: vacío o enmascarado
+grep -rnE "\bopen\([^)]*\)" src | grep -v encoding             # K · COD-010: vacío
+$PY -m radon cc src -s -n D                                    # E · COD-009: que no crezca
+$PY -m vulture src --min-confidence 80                         # E: ≤ 5 líneas
+grep -cE "ruff|bandit|pip_audit" .github/workflows/*.yml       # J · SEC-007: > 0 cuando se cierre el lote 19
+```
+
+Reglas de la sesión de auditoría: una dimensión por sesión; leer sólo `20`, `21` y `30`; **auditar no es arreglar**; barrera antes que test; nunca escribir la palabra prohibida por la bóveda.
