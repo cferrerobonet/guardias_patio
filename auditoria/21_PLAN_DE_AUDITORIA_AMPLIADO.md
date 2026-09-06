@@ -81,7 +81,7 @@ Cada fila: **ID · qué · cómo (comando) · pasa si · severidad si falla**.
 | CHK-H-05 | `.env` con permisos de sólo dueño (macOS/Linux) | `stat -f %Sp .env ~/Library/Application\ Support/GuardiasDePatio/.env` | `-rw-------` | P1 |
 | CHK-H-06 | bandit sin hallazgos medios/altos | `$PY -m bandit -r src -q -ll` | Salida vacía | P1 |
 | CHK-H-07 | Claves de host SSH no se aceptan a ciegas | `grep -n "AutoAddPolicy\|WarningPolicy" src/sync/backends.py` | Vacío (`RejectPolicy`) | P1 |
-| CHK-H-08 | Primer equipo sin `known_hosts` recibe instrucciones en pantalla, no sólo en el registro | Leer `src/sync/backends.py:255-262` y buscar `ssh-keyscan` en `src/presentation` | Aparece en un diálogo | P2 |
+| ~~CHK-H-08~~ ✅ v6.0.0 | Primer equipo sin `known_hosts`: el diálogo enseña la huella `SHA256:…` y la anota al confirmarla | Leer `src/sync/backends.py:255-262` y buscar `ssh-keyscan` en `src/presentation` | Aparece en un diálogo | P2 |
 | CHK-H-09 | STARTTLS con verificación de certificado | `grep -rn "starttls(" src` → comprobar que no se pasa `context` inseguro ni se desactiva verificación | Sin `CERT_NONE`/`verify=False` | P1 |
 | CHK-H-10 | API: todas las rutas autenticadas, CORS acotado, límite de peticiones | `grep -n "dependencies=\[_auth\]\|allow_origins\|default_limits" src/api/main.py` | 6 routers con `_auth`, orígenes `localhost`, límite presente | P1 |
 | CHK-H-11 | Actualizador: sólo HTTPS a GitHub y sin ejecutar nada no verificado | `$PY -m pytest tests/audit/test_aviso_de_version.py tests/audit/test_seguridad.py -q` | Verde | P1 |
@@ -94,11 +94,11 @@ Cada fila: **ID · qué · cómo (comando) · pasa si · severidad si falla**.
 | ID | Qué | Cómo | Pasa si | Sev. |
 | --- | --- | --- | --- | --- |
 | CHK-I-01 | Inventario de datos personales actualizado | Comparar `src/infrastructure/database/models.py` con la tabla de [[20_ESTUDIO_APLICACION_Y_STACK]] §5 | Coinciden | P2 |
-| CHK-I-02 | Datos de salud (`Ausencia.tipo`, `motivo`, `documento_path`) no viajan en claro al servidor | `grep -n "motivo\|documento_path\|tipo" src/sync/dtos.py` | O no viajan, o van cifrados con clave que no está en el servidor | P1 |
-| CHK-I-03 | Correos y nombres no se escriben en los registros | `grep -rnE "logger\.\w+\(.*(email|to_email|nombre_completo)" src` | Vacío o enmascarado | P2 |
+| ~~CHK-I-02~~ ✅ v6.0.0 | `tipo` y `motivo` cifrados con clave derivada de la contraseña; `documento_path` no viaja | `grep -n "motivo\|documento_path\|tipo" src/sync/dtos.py` | O no viajan, o van cifrados con clave que no está en el servidor | P1 |
+| ~~CHK-I-03~~ ✅ v6.0.0 | Correos y nombres enmascarados en los registros | `grep -rnE "logger\.\w+\(.*(email|to_email|nombre_completo)" src` | Vacío o enmascarado | P2 |
 | CHK-I-04 | Registros no incluyen contenido de correos ni de PDF | `grep -rn "logger" src/services/email_service.py src/services/notificador_guardias.py` | Sólo destinatarios enmascarados y resultados | P2 |
 | CHK-I-05 | Páginas web publicadas: dirección no adivinable, sin índice, `noindex` | `$PY -m pytest tests/audit/test_publicacion_web.py -q` | Verde | P1 |
-| CHK-I-06 | Existe forma de borrar o anonimizar a una persona y de exportar lo suyo | Buscar en `src/services` y en la UI un «borrar profesor» que explique qué arrastra, y una exportación por persona | Existe y está documentado | P2 |
+| ~~CHK-I-06~~ ✅ v6.0.0 | El borrado enumera lo que se pierde y ofrece exportar antes | Buscar en `src/services` y en la UI un «borrar profesor» que explique qué arrastra, y una exportación por persona | Existe y está documentado | P2 |
 | CHK-I-07 | Retención: cursos cerrados y copias antiguas tienen fecha de borrado | Buscar en `db_manager.listar_backups` y en Gestión de cursos una política | Existe | P3 |
 | CHK-I-08 | Volcado en el servidor con permisos de sólo dueño y sin copias huérfanas | Listado SFTP (`scripts/` no lo tiene: usar el fragmento de la sesión del 2026-09-06 en [[23_LIMPIEZA]]) | Sólo `users/<hash>/` con 4 ficheros | P1 |
 
@@ -106,26 +106,26 @@ Cada fila: **ID · qué · cómo (comando) · pasa si · severidad si falla**.
 
 | ID | Qué | Cómo | Pasa si | Sev. |
 | --- | --- | --- | --- | --- |
-| CHK-J-01 | Sin CVE conocidas | `$PY -m pip_audit --progress-spinner off` | Sin filas | P1 |
-| CHK-J-02 | Dependencias fijadas y con fichero de bloqueo | `grep -c ">=" requirements.txt` y existencia de `requirements.lock` o `uv.lock` | Ejecución fijada (`==`), desarrollo aparte | P2 |
-| CHK-J-03 | Separación ejecución / desarrollo | Existe `requirements-dev.txt` con pytest, mutmut, playwright… | Sí | P3 |
+| ~~CHK-J-01~~ ✅ v5.99.0 | Sin CVE conocidas | `$PY -m pip_audit --progress-spinner off` | Sin filas | P1 |
+| ~~CHK-J-02~~ ✅ v5.99.0 | Dependencias fijadas y con `requirements.lock` | `grep -c ">=" requirements.txt` y existencia de `requirements.lock` o `uv.lock` | Ejecución fijada (`==`), desarrollo aparte | P2 |
+| ~~CHK-J-03~~ ✅ v5.99.0 | `requirements-dev.txt` separado | Existe `requirements-dev.txt` con pytest, mutmut, playwright… | Sí | P3 |
 | CHK-J-04 | Licencias compatibles | `$PY -m pip install pip-licenses && $PY -m piplicenses --summary` | Sin GPL en dependencias de ejecución (la app es MIT) | P3 |
 | CHK-J-05 | El spec de PyInstaller es único y lleva los hooks necesarios | `$PY -m pytest tests/audit/test_un_solo_spec.py tests/audit/test_credenciales_en_el_llavero.py -q` | Verde | P1 |
-| CHK-J-06 | CI ejecuta lint, tipos, seguridad y suite en cada push | `grep -cE "ruff|mypy|bandit|pip_audit|pytest" .github/workflows/*.yml` y `on:` | Todos presentes y `on: [push, pull_request]` | P1 |
-| CHK-J-07 | Acciones de GitHub fijadas por versión | `grep -n "uses:" .github/workflows/*.yml` | Cada `uses` con `@vN` o SHA | P3 |
+| ~~CHK-J-06~~ ✅ v6.0.0 | `comprobar.yml` en cada push y pull request | `grep -cE "ruff|mypy|bandit|pip_audit|pytest" .github/workflows/*.yml` y `on:` | Todos presentes y `on: [push, pull_request]` | P1 |
+| ~~CHK-J-07~~ ✅ v6.0.0 | Acciones fijadas por versión, con test | `grep -n "uses:" .github/workflows/*.yml` | Cada `uses` con `@vN` o SHA | P3 |
 
 ### K · Integridad de datos y sincronización
 
 | ID | Qué | Cómo | Pasa si | Sev. |
 | --- | --- | --- | --- | --- |
-| CHK-K-01 | Lo descargado se verifica por integridad, no sólo por estructura | Leer `SyncManager._es_fichero_de_datos_valido` | Hay hash o tamaño esperado | P1 |
-| CHK-K-02 | Bloqueo: caducidad > 3 latidos | `grep -n "lock_timeout\|heartbeat_interval" src/sync/session_lock.py` | `lock_timeout ≥ 3 × heartbeat_interval` | P1 |
-| CHK-K-03 | Al cerrar se libera el bloqueo remoto | Leer `release_lock` | Borra o marca liberado en el servidor | P2 |
+| ~~CHK-K-01~~ ✅ v5.98.0 | Huella SHA-256 junto al volcado | Leer `SyncManager._es_fichero_de_datos_valido` | Hay hash o tamaño esperado | P1 |
+| ~~CHK-K-02~~ ✅ v5.98.0 | Caducidad de 3 latidos | `grep -n "lock_timeout\|heartbeat_interval" src/sync/session_lock.py` | `lock_timeout ≥ 3 × heartbeat_interval` | P1 |
+| ~~CHK-K-03~~ ✅ v5.98.0 | Se borra al cerrar | Leer `release_lock` | Borra o marca liberado en el servidor | P2 |
 | CHK-K-04 | Las copias rotadas existen en el servidor | Listado SFTP: `guardias_patio_data.json.1` | Existe tras dos subidas | P2 |
 | CHK-K-05 | Subida atómica y con versión creciente | `$PY -m pytest tests/audit/test_sincronizacion_nube.py tests/audit/test_sync_solo_si_hay_cambios.py -q` | Verde | P0 |
 | CHK-K-06 | Restricciones de la base activas (`PRAGMA foreign_keys`) | `grep -n "foreign_keys" src/database/db_manager.py` | `ON` en cada conexión | P1 |
 | CHK-K-07 | Copia local antes de generar y de limpiar; restauración probada | `$PY -m pytest tests/audit/test_historial_y_restauracion.py tests/audit/test_papelera_de_guardias.py -q` | Verde | P1 |
-| CHK-K-08 | Ficheros de estado escritos con `encoding="utf-8"` | `grep -rnE "\bopen\([^)]*\)" src \| grep -v encoding` | Vacío | P2 |
+| CHK-K-08 | Ficheros de estado escritos con `encoding="utf-8"` (los de `sync/` ✅ v5.98.0) | `grep -rnE "\bopen\([^)]*\)" src \| grep -v encoding` | Vacío | P2 |
 | CHK-K-09 | Fechas con zona horaria coherente entre equipo y servidor | `grep -rn "datetime.now()" src \| wc -l` frente a `now(timezone` | Un solo criterio documentado | P2 |
 | CHK-K-10 | Trabajo sin red no pisa lo de otro equipo (SYNC-011) | Escenario manual: editar sin red, reconectar, cerrar | No sobrescribe sin avisar | P1 |
 

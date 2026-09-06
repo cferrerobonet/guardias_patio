@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from sqlalchemy.orm import joinedload
 
+from core.privacidad import enmascarar_nombre
 from infrastructure.database.models import Configuracion, Guardia, Profesor
 from infrastructure.repositories.repository_factory import RepositoryFactory
 from utils import get_logger
@@ -126,7 +127,8 @@ class ICalendarService:
             )
 
             if not guardias:
-                logger.warning(f"No hay guardias para {profesor.nombre_completo}")
+                nombre = enmascarar_nombre(profesor.nombre_completo)
+                logger.warning(f"No hay guardias para {nombre}")
                 return False
 
             # Generar archivo iCalendar

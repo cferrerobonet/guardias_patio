@@ -21,6 +21,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 from sqlalchemy.exc import SQLAlchemyError
 
+from core.privacidad import enmascarar_nombre
 from infrastructure.database.models import Configuracion, Guardia, Profesor, Zona
 from services._asignador_tipos import ContextoAsignacion, ResultadoGeneracion, Slot  # noqa: F401
 from services._asignador_v4_fases import (  # noqa: F401
@@ -217,7 +218,9 @@ def generar_guardias_v4_hibrido(
     if profesores_urgentes:
         logger.info(f"  ⚡ {len(profesores_urgentes)} profesores con fecha_inicio (urgentes)")
         for p in profesores_urgentes[:5]:
-            logger.info(f"    - {p.nombre_completo}: inicio {p.fecha_inicio_guardias}")
+            logger.info(
+                f"    - {enmascarar_nombre(p.nombre_completo)}: inicio {p.fecha_inicio_guardias}"
+            )
 
     reportar(25, f"Fase 1: {len(profesores_ordenados)} profesores listos")
 

@@ -10,6 +10,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -22,6 +23,7 @@ from infrastructure.database.models import (
     Profesor,
     Zona,
 )
+from sync import cifrado
 from sync.data_exporter_helpers import (
     desencriptar_password,
     encriptar_password,
@@ -49,7 +51,9 @@ class DataExporter:
     """Exporta e importa datos de la base de datos a/desde JSON."""
 
     @staticmethod
-    def export_to_json(session: Session, output_path: Path, sync_version: int = 0) -> bool:
+    def export_to_json(
+        session: Session, output_path: Path, sync_version: int = 0, clave: Optional[bytes] = None
+    ) -> bool:
         """
         Exporta todos los datos de la base de datos a un archivo JSON.
 
@@ -113,7 +117,11 @@ class DataExporter:
             # Exportar Ausencias
             ausencias = session.query(Ausencia).all()
             for a in ausencias:
-                data["ausencias"].append(AusenciaSyncDTO.from_orm(a).to_dict())
+                dto = AusenciaSyncDTO.from_orm(a).to_dict()
+                # Datos de salud: cifrados con la clave de la cuenta (PRIV-001).
+                dto["tipo"] = cifrado.cifrar(dto["tipo"], clave)
+                dto["motivo"] = cifrado.cifrar(dto["motivo"], clave)
+                data["ausencias"].append(dto)
             logger.info(f"✓ {len(ausencias)} ausencias exportadas")
 
             # Guardar JSON
@@ -133,7 +141,12 @@ class DataExporter:
             return False
 
     @staticmethod
-    def import_from_json(session: Session, input_path: Path, clear_existing: bool = False) -> bool:
+    def import_from_json(
+        session: Session,
+        input_path: Path,
+        clear_existing: bool = False,
+        clave: Optional[bytes] = None,
+    ) -> bool:
         """
         Importa datos desde un archivo JSON a la base de datos.
 
@@ -403,9 +416,8 @@ class DataExporter:
                     existing.profesor_id = a_data["profesor_id"]
                     existing.fecha_inicio = parse_date(a_data["fecha_inicio"])
                     existing.fecha_fin = parse_date(a_data["fecha_fin"])
-                    existing.tipo = a_data["tipo"]
-                    existing.motivo = a_data.get("motivo")
-                    existing.documento_path = a_data.get("documento_path")
+                    existing.tipo = cifrado.descifrar(a_data["tipo"], clave)
+                    existing.motivo = cifrado.descifrar(a_data.get("motivo"), clave)
                     existing.activa = a_data.get("activa", True)
                     # Preservar timestamps
                     if a_data.get("created_at"):
@@ -419,9 +431,8 @@ class DataExporter:
                         profesor_id=a_data["profesor_id"],
                         fecha_inicio=parse_date(a_data["fecha_inicio"]),
                         fecha_fin=parse_date(a_data["fecha_fin"]),
-                        tipo=a_data["tipo"],
-                        motivo=a_data.get("motivo"),
-                        documento_path=a_data.get("documento_path"),
+                        tipo=cifrado.descifrar(a_data["tipo"], clave),
+                        motivo=cifrado.descifrar(a_data.get("motivo"), clave),
                         activa=a_data.get("activa", True),
                         created_at=(
                             datetime.fromisoformat(a_data["created_at"])

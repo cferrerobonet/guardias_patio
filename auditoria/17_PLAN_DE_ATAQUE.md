@@ -37,7 +37,7 @@ tipo: referencia
 | 15 | **CI y firma** | ~~SEC-002~~, ~~SEC-003~~, ~~BLD-006~~, SEC-001 (parcial), BLD-004 (parcial) | La API no arranca sin secreto; bandit sin hallazgos medios; instalador sin exigir administrador y que cierra la app; `.env` en 0600; firma y notarización listas a falta de credenciales | P2 | medio | M | 5 | `tests/audit/test_seguridad.py` (10 tests) ✅ | **parcial v5.62.0** |
 | 16 | **Funcionalidad** | FUN-002, FUN-004, FUN-005, FUN-006, FUN-007, FUN-012 | Generación incremental, historial/restauración, plantilla de curso, emails en worker, dry-run import, deshacer | – | medio | XL | 3, 6 | por feature | decisión de producto |
 | 17 | **Multiusuario y consulta web** | ESC-004, FUN-009, FUN-010, FUN-011 | ADR; API como servicio; consulta web; tema oscuro; auto-update Windows | – | alto | XL | 15 | Playwright E2E | decisión de producto |
-| 18 | **Seguridad y privacidad** | SEC-005, SEC-007, SEC-008, PRIV-001, PRIV-002, PRIV-003 | Contraseña rotada e historial limpio o repositorio privado (decisión); CI con gates en cada push; huella del servidor confirmable en pantalla; datos de salud fuera del volcado o cifrados; correos enmascarados en registros; borrado de persona con aviso y exportación | P0 | medio | M | – | checks H-01…14, I-01…08 de [[21_PLAN_DE_AUDITORIA_AMPLIADO]] | pendiente |
+| ~~18~~ | ~~**Seguridad y privacidad**~~ ✅ **v6.0.0** | SEC-005 (asumido), ~~SEC-007~~, ~~SEC-008~~, ~~PRIV-001~~, ~~PRIV-002~~, ~~PRIV-003~~ | Gate en cada push; huella del servidor confirmable en pantalla; datos de salud cifrados con clave derivada de la contraseña; correos y nombres enmascarados en los registros; borrado de persona con aviso detallado y copia previa. **SEC-005 no se cierra: CarlosFB decide no rotar las contraseñas** | P0 | medio | M | – | checks H-01…14, I-01…08 · `test_privacidad_de_los_datos.py`, `test_seguridad_del_servidor_y_ci.py`, `test_datos_de_una_persona.py` (29 tests) | **completado salvo SEC-005 (asumido)** |
 | ~~19~~ | ~~**Dependencias y cadena de suministro**~~ ✅ **v5.99.0** | ~~SUP-001~~, ~~SUP-002~~, ~~DEV-010~~ | `setuptools` 84 sin la CVE; ejecución fijada en `requirements.txt`, desarrollo en `requirements-dev.txt`, `requirements.lock` completo y `pyproject.toml` alineado; `settings.json` compartido y `local` ignorado | P1 | bajo | S | – | J-01…J-03 ✅, J-05 ✅ · `test_dependencias_fijadas.py` | **completado** — J-04 (licencias), J-06 y J-07 (CI en cada push) quedan en el lote 18 |
 | ~~20~~ | ~~**Integridad de la sincronización**~~ ✅ **v5.98.0** | ~~SYNC-018~~, ~~SYNC-019~~, ~~SYNC-020~~, ~~SYNC-021~~, ~~SYNC-011~~, ~~SYNC-022~~ | Caducidad de 3 latidos; el bloqueo se suelta al cerrar; huella SHA-256 junto al volcado; rotación probada contra un SFTP simulado estricto; sin red no se pisa (ya cubierto por 0 bis). De propina, SYNC-022: la metadata se pisaba tras subir y la subida «sin cambios» nunca se saltaba | P1 | medio | M | – | `test_integridad_sincronizacion.py` (16 tests) ✅ + K-01…K-05, K-08 (sync) | **completado** — falta ver `.1` en el listado real |
 | 21 | **Calidad medible** | COD-009, COD-010, COD-011, COD-012, QA-014, QA-015 | Techo de complejidad y partir las cinco funciones D/E; `encoding="utf-8"` en todo `open()`; helper `ahora()` con zona; meses y días sin `locale`; tests de texto fuente convertidos donde se pueda; cobertura de PDF y backends | P2 | medio | L | – | E y F ampliadas; ratchets nuevos | pendiente |
@@ -54,8 +54,15 @@ tipo: referencia
 
 ## Próximo gate
 
-> [!WARNING] Antes que nada
-> **Lote 18**: la contraseña SFTP lleva desde 2025-10 en el historial público. Rotarla es lo único que cierra eso, y sólo puede hacerlo CarlosFB. Todo lo demás de este plan puede esperar a eso.
+> [!WARNING] Riesgo asumido, no resuelto
+> **SEC-005**: la contraseña SFTP lleva desde 2025-10 en el historial público de un repositorio abierto. CarlosFB decidió el 2026-09-06 **no rotarla**, ni la SMTP. Queda asumido y anotado: cualquiera que lea el historial puede entrar al servidor. Desde v6.0.0 los datos de salud viajan cifrados, así que un acceso al volcado ya no los deja legibles, pero el resto —profesores, correos, guardias— sí. Reabrir si algún día se rotan o si el repositorio pasa a privado.
+
+Con los lotes 18, 19 y 20 cerrados, lo que queda por orden de valor:
+
+1. **Lote 0**, el protocolo de Windows: sigue siendo el único trabajo pendiente del cierre al generar, y sólo puede hacerse en la máquina real.
+2. **Lote 21** (calidad medible: complejidad, `encoding`, zonas horarias, cobertura de PDF y backends) y **lote 22** (ADR, informe de diagnóstico, skills, `.mcp.json`). Ambos mecánicos por tandas.
+3. **Lote 8 bis** (estilos en línea) y **lote 14 bis** (excepciones, ORM, módulos grandes): revisión caso por caso.
+4. **Lotes 12, 13, 16 y 17**: escalabilidad y funcionalidad, pendientes de decisión de producto salvo el orden ya acordado FUN-004 → FUN-002 → FUN-003.
 
 ### Orden anterior
 

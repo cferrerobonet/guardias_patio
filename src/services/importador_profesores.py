@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from core.logging import get_logger
+from core.privacidad import enmascarar_correo, enmascarar_nombre
 from domain.entities.profesor_entity import ProfesorEntity
 from infrastructure.repositories.repository_factory import RepositoryFactory
 
@@ -274,7 +275,7 @@ def importar_profesores_desde_excel(
                 profesor_existente = profesores_existentes[0] if profesores_existentes else None
 
                 if profesor_existente:
-                    logger.debug(f"Profesor ya existe: {nombre_completo}")
+                    logger.debug(f"Profesor ya existe: {enmascarar_nombre(nombre_completo)}")
                     resultados["existentes"] += 1
                     resultados["detalles"].append(
                         {"nombre": nombre_completo, "estado": "existente"}
@@ -302,7 +303,10 @@ def importar_profesores_desde_excel(
                         "estado": "importado",
                     }
                 )
-                logger.info(f"✅ Importado: {nombre_completo} ({email})")
+                logger.info(
+                    f"✅ Importado: {enmascarar_nombre(nombre_completo)} "
+                    f"({enmascarar_correo(email)})"
+                )
 
             except (ValueError, TypeError, OSError) as e:
                 logger.error(f"Error al procesar fila {idx}: {str(e)}")

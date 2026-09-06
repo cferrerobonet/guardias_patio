@@ -73,9 +73,10 @@ class SyncManager:
     #: Copias anteriores que se conservan en el servidor antes de reemplazar.
     VERSIONES_CONSERVADAS = 3
 
-    def __init__(self, backend: SyncBackend, username: str):
+    def __init__(self, backend: SyncBackend, username: str, clave_datos=None):
         self.backend = backend
         self.username = username
+        self.clave_datos = clave_datos  # cifra los datos de salud del volcado (PRIV-001)
         self.user_hash = self._hash_username(username)
         self.local_data_dir = get_user_data_directory() / self.user_hash
         self.local_data_dir.mkdir(parents=True, exist_ok=True)
@@ -233,7 +234,9 @@ class SyncManager:
                 from sync.data_exporter import DataExporter
 
                 logger.info("📥 Reconstruyendo la base local con los datos de la nube...")
-                if not DataExporter.import_from_json(session, tmp_path, clear_existing=True):
+                if not DataExporter.import_from_json(
+                    session, tmp_path, clear_existing=True, clave=self.clave_datos
+                ):
                     self._bloquear_subida("No se pudieron importar los datos descargados")
                     return False
 
@@ -283,7 +286,7 @@ class SyncManager:
                 progress_callback("exporting", {"message": "Exportando datos de la base de datos"})
 
             if not DataExporter.export_to_json(
-                session, local_json_path, sync_version=nueva_version
+                session, local_json_path, sync_version=nueva_version, clave=self.clave_datos
             ):
                 logger.error("❌ Error al exportar datos a JSON")
                 if progress_callback:

@@ -303,7 +303,6 @@ class AusenciaSyncDTO:
     fecha_fin: Optional[str]
     tipo: str
     motivo: Optional[str]
-    documento_path: Optional[str]
     activa: bool
     created_at: Optional[str]
     updated_at: Optional[str]
@@ -317,7 +316,6 @@ class AusenciaSyncDTO:
             fecha_fin=serialize_date(orm_obj.fecha_fin),
             tipo=orm_obj.tipo,
             motivo=orm_obj.motivo,
-            documento_path=orm_obj.documento_path,
             activa=orm_obj.activa,
             created_at=serialize_date(orm_obj.created_at) if orm_obj.created_at else None,
             updated_at=serialize_date(orm_obj.updated_at) if orm_obj.updated_at else None,
@@ -332,7 +330,6 @@ class AusenciaSyncDTO:
             fecha_fin=data.get("fecha_fin"),
             tipo=data["tipo"],
             motivo=data.get("motivo"),
-            documento_path=data.get("documento_path"),
             activa=data.get("activa", True),
             created_at=data.get("created_at"),
             updated_at=data.get("updated_at"),

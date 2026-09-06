@@ -13,6 +13,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Dict, List, Optional
 
+from core.privacidad import enmascarar_correo
+
 logger = logging.getLogger(__name__)
 
 
@@ -228,14 +230,14 @@ Sistema de Gestión de Guardias
             msg.attach(part2)
 
             # Enviar email
-            logger.info(f"Enviando código de recuperación a {to_email}")
+            logger.info(f"Enviando código de recuperación a {enmascarar_correo(to_email)}")
 
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()  # Seguridad TLS
                 server.login(self.smtp_user, self.smtp_password)
                 server.send_message(msg)
 
-            logger.info(f"Código de recuperación enviado exitosamente a {to_email}")
+            logger.info(f"Código de recuperación enviado a {enmascarar_correo(to_email)}")
             return True, f"Código enviado a {to_email}"
 
         except smtplib.SMTPAuthenticationError:
@@ -407,14 +409,14 @@ Sistema de Gestión de Guardias
                     logger.info(f"Archivo iCalendar adjunto: {ics_filename}")
 
             # Enviar email
-            logger.info(f"Enviando calendario PDF a {to_email}")
+            logger.info(f"Enviando calendario PDF a {enmascarar_correo(to_email)}")
 
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()  # Seguridad TLS
                 server.login(self.smtp_user, self.smtp_password)
                 server.send_message(msg)
 
-            logger.info(f"Calendario PDF enviado exitosamente a {to_email}")
+            logger.info(f"Calendario PDF enviado a {enmascarar_correo(to_email)}")
             return True, f"Calendario enviado a {to_email}"
 
         except smtplib.SMTPAuthenticationError:

@@ -6,6 +6,7 @@ Incluye una tabla con búsqueda y un formulario detallado con validaciones.
 """
 
 import json
+from pathlib import Path
 from typing import Optional
 
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -772,7 +773,16 @@ class ProfesorForm(BaseForm):
                 f"¿Eliminar <b>{len(profesores_a_eliminar)}</b> profesores?<br><br>• {nombres_html}"
             )
 
+        # Lo que cuelga de cada persona se borra con ella: hay que decirlo antes
+        # y ofrecer una copia (PRIV-003).
+        detalle = self._detalle_de_lo_que_se_borra(profesores_a_eliminar)
+        if detalle:
+            mensaje += f"<br><br>Se borrará también:<br>• {detalle}"
+        mensaje += "<br><br>Esta acción no se puede deshacer."
+
         if self.confirmar_accion("Confirmar eliminación", mensaje):
+            if detalle and not self._ofrecer_copia_antes_de_borrar(profesores_a_eliminar):
+                return
             try:
                 eliminados = 0
                 errores = []
@@ -816,6 +826,68 @@ class ProfesorForm(BaseForm):
 
             except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
                 self.manejar_excepcion(e, "eliminar profesores")
+
+    def _detalle_de_lo_que_se_borra(self, profesores) -> str:
+        """Enumera guardias, ausencias y registro que se irán con estas personas."""
+        from services.datos_de_una_persona import resumen_de_persona, texto_de_lo_que_se_pierde
+
+        piezas = []
+        for id_profesor, nombre in profesores:
+            try:
+                texto = texto_de_lo_que_se_pierde(resumen_de_persona(self.session, id_profesor))
+            except SQLAlchemyError as e:
+                self.logger.warning(f"No se pudo resumir lo que cuelga de un profesor: {e}")
+                continue
+            if texto:
+                piezas.append(f"{nombre}: {texto}" if len(profesores) > 1 else texto)
+        return "<br>• ".join(piezas)
+
+    def _ofrecer_copia_antes_de_borrar(self, profesores) -> bool:
+        """Propone guardar una copia de lo que se va a borrar.
+
+        Devuelve False sólo si la persona cancela: entonces no se borra nada.
+        """
+        from PyQt6.QtWidgets import QFileDialog, QMessageBox
+
+        from services.datos_de_una_persona import exportar_persona
+
+        aviso = QMessageBox(self)
+        aviso.setIcon(QMessageBox.Icon.Question)
+        aviso.setWindowTitle("¿Guardar una copia antes de borrar?")
+        aviso.setText(
+            "Puedes guardar en un archivo todo lo que la aplicación sabe de "
+            f"{'estas personas' if len(profesores) > 1 else 'esta persona'} antes de borrarlo."
+        )
+        exportar = aviso.addButton("Guardar copia y borrar", QMessageBox.ButtonRole.AcceptRole)
+        aviso.addButton("Borrar sin copia", QMessageBox.ButtonRole.DestructiveRole)
+        cancelar = aviso.addButton("Cancelar", QMessageBox.ButtonRole.RejectRole)
+        aviso.setDefaultButton(exportar)
+        aviso.exec()
+
+        pulsado = aviso.clickedButton()
+        if pulsado is cancelar:
+            return False
+        if pulsado is not exportar:
+            return True
+
+        carpeta = QFileDialog.getExistingDirectory(self, "¿Dónde guardo la copia?")
+        if not carpeta:
+            return False
+
+        guardados = 0
+        for id_profesor, nombre in profesores:
+            seguro = "".join(c if c.isalnum() else "_" for c in nombre).strip("_")
+            destino = Path(carpeta) / f"datos_{seguro}_{id_profesor}.json"
+            if exportar_persona(self.session, id_profesor, destino):
+                guardados += 1
+        if guardados < len(profesores):
+            self.mostrar_error(
+                "No se pudo guardar la copia",
+                "No se han borrado los datos: primero hay que poder guardar la copia.",
+            )
+            return False
+        self.mostrar_exito("Copia guardada", f"Se guardaron {guardados} archivo(s) en {carpeta}.")
+        return True
 
     def _actualizar_matriz_restricciones_por_turno(self, turno: str):
         """

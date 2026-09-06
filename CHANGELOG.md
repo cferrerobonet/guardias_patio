@@ -5,6 +5,30 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.0.0] - 2026-09-06
+
+### 🎯 Resumen
+Seguridad y privacidad (lote 18 de la auditoría): los datos de salud dejan de viajar legibles al servidor, los registros dejan de guardar correos y nombres, borrar a una persona avisa de lo que se lleva por delante, y cada cambio pasa por un gate antes de llegar a `main`.
+
+> [!DANGER] Hay que actualizar todos los equipos
+> Es un cambio mayor: el volcado que sube esta versión lleva cifradas las ausencias, y una versión 5.x no sabe leerlas. Si un equipo se queda atrás, al abrir no podrá aplicar los datos de la nube y no subirá nada hasta que se actualice. Al revés sí funciona: esta versión lee los volcados antiguos.
+
+> [!WARNING] Riesgo asumido
+> Las contraseñas SFTP y SMTP **no se han rotado**, por decisión de CarlosFB. La SFTP sigue en el historial público del repositorio desde 2025-10. El cifrado de los datos de salud reduce el daño de un acceso al volcado, pero no lo anula.
+
+### ✨ Added
+- **Los datos de salud viajan cifrados.** El tipo de ausencia y su motivo se cifran con una clave derivada de la contraseña de la cuenta, que el servidor del hosting no tiene ni puede deducir. La ruta del justificante ya no sale del equipo. Los volcados de versiones anteriores, en claro, se siguen leyendo (PRIV-001).
+- **Huella del servidor en pantalla.** Un equipo nuevo ya no se queda sin conectar: la aplicación enseña la huella `SHA256:…` del servidor y pide confirmarla una vez, como hace `ssh` la primera vez. Al confirmarla la anota en el fichero de servidores conocidos. Ninguna clave se acepta a ciegas (SEC-008).
+- **Antes de borrar a una persona se dice qué se pierde**, con el número de guardias, de ausencias —señalando cuántas son bajas médicas— y de apuntes del registro de actividad, y se ofrece guardar una copia con todo lo suyo antes de continuar (PRIV-003).
+- **Flujo «Comprobar» en cada push y pull request**: ruff, mypy sobre el dominio, bandit, pip-audit y la suite completa. Hasta ahora sólo se comprobaba al publicar una etiqueta, así que un cambio podía llegar a `main` sin pasar nada (SEC-007).
+
+### Fixed
+- **Los registros ya no guardan correos ni nombres completos.** Se enmascaran (`a***@epla.es`, `G. L., A.`) en los nueve puntos que quedaban, entre ellos el envío de calendarios y el código de recuperación. Los ficheros de `logs/` se conservan meses y se adjuntan a un informe de diagnóstico sin mirarlos (PRIV-002).
+
+### 🧹 Housekeeping
+- Módulos nuevos: `sync/cifrado.py`, `sync/huella_servidor.py`, `core/privacidad.py`, `services/datos_de_una_persona.py` y el diálogo de la huella.
+- 29 tests nuevos repartidos en tres ficheros de auditoría.
+
 ## [5.99.0] - 2026-09-06
 
 ### 🎯 Resumen

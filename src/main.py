@@ -241,11 +241,27 @@ def main():
     # La cuenta vive junto a los datos del usuario en el servidor, así que hace
     # falta la conexión ya para poder validarla desde cualquier equipo.
     backend = None
+    sin_sincronizacion = None
     try:
         backend = get_default_backend()
         logger.info("✓ Servidor de sincronización disponible")
     except SyncConfigurationError as e:
-        logger.error(f"Sin sincronización: {e}")
+        sin_sincronizacion = e
+        # Un equipo nuevo no tiene el servidor en `known_hosts` y la conexión se
+        # rechaza por seguridad. Antes de rendirse, enseñar la huella del servidor
+        # y dejar que quien está delante la confirme (SEC-008).
+        from presentation.dialogs.huella_servidor_dialog import confirmar_huella_si_hace_falta
+
+        if confirmar_huella_si_hace_falta():
+            try:
+                backend = get_default_backend()
+                sin_sincronizacion = None
+                logger.info("✓ Servidor disponible tras confirmar la huella")
+            except SyncConfigurationError as otro:
+                sin_sincronizacion = otro
+
+    if sin_sincronizacion is not None:
+        logger.error(f"Sin sincronización: {sin_sincronizacion}")
         from utils.ui_helpers import get_corporate_icon
 
         aviso = QMessageBox()
@@ -254,9 +270,9 @@ def main():
         aviso.setWindowIcon(get_corporate_icon())
         aviso.setText("Esta sesión NO se sincronizará con la nube.")
         aviso.setInformativeText(
-            f"{e}\n\nPodrás entrar con las cuentas de este equipo, pero todo lo que "
-            "hagas se guardará únicamente aquí: no se subirá al servidor ni lo verás "
-            "desde otro ordenador.\n\nRevisa los datos de conexión en Ajustes."
+            f"{sin_sincronizacion}\n\nPodrás entrar con las cuentas de este equipo, pero "
+            "todo lo que hagas se guardará únicamente aquí: no se subirá al servidor ni lo "
+            "verás desde otro ordenador.\n\nRevisa los datos de conexión en Ajustes."
         )
         aviso.exec()
 
@@ -334,7 +350,7 @@ def main():
     try:
         if backend is None:
             raise SyncConfigurationError("No hay servidor de sincronización disponible")
-        sync_manager = SyncManager(backend, username)
+        sync_manager = SyncManager(backend, username, clave_datos=login_dialog.clave_datos)
 
         # Sistema de bloqueo de sesión única
         from presentation.dialogs.session_locked_dialog import SessionLockedDialog

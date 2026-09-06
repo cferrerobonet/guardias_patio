@@ -461,7 +461,7 @@ class TestSyncManagerFlow:
 
         backend.download_file.side_effect = _download
 
-        def _export(_session, out_path, sync_version=0):
+        def _export(_session, out_path, sync_version=0, clave=None):
             out_path.write_text(json.dumps({"sync_version": sync_version}), encoding="utf-8")
             return True
 
@@ -504,7 +504,7 @@ class TestSyncManagerFlow:
         session = MagicMock()
         progress = []
 
-        def _export(_session, out_path, sync_version=0):
+        def _export(_session, out_path, sync_version=0, clave=None):
             out_path.write_text(json.dumps({"ok": True}), encoding="utf-8")
             return True
 
@@ -525,7 +525,7 @@ class TestSyncManagerFlow:
         backend.file_exists.return_value = False
         session = MagicMock()
 
-        def _export(_session, out_path, sync_version=0):
+        def _export(_session, out_path, sync_version=0, clave=None):
             out_path.write_text(json.dumps({"ok": True}), encoding="utf-8")
             return True
 

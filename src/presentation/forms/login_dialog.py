@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
 from config.settings import get_settings
 from core.observability import business_metrics
 from core.paths import get_resources_directory
+from sync.cifrado import derivar_clave
 from sync.sync_manager import UserAuth
 from utils.icon_manager import get_icon
 from utils.icons import icon_for_button
@@ -280,6 +281,8 @@ class LoginDialog(QDialog):
         self.backend = backend
         self.user_auth = UserAuth(backend=backend)
         self.authenticated_user = None
+        #: Clave con la que se cifran los datos de salud del volcado (PRIV-001).
+        self.clave_datos = None
         self.setup_ui()
         self.load_existing_users()
 
@@ -607,6 +610,7 @@ class LoginDialog(QDialog):
         auth_ok, auth_msg = self.user_auth.authenticate(username, password)
         if auth_ok:
             self.authenticated_user = username
+            self.clave_datos = derivar_clave(username, password)
             business_metrics.login_exitoso(username=username)
             self.accept()
         else:

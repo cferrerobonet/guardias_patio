@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from core.exceptions import DatabaseError, ProfesorNotFoundError
 from core.logging import get_logger, log_function_call
+from core.privacidad import enmascarar_correo, enmascarar_nombre
 from domain.entities import ProfesorEntity
 from domain.repositories import IProfesorRepository
 from infrastructure.database.models import Guardia, Profesor
@@ -83,7 +84,11 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
             self.session.flush()  # Para obtener el ID generado
             entity.id = model.id
 
-            logger.info("Profesor guardado", profesor_id=entity.id, nombre=entity.nombre_completo)
+            logger.info(
+                "Profesor guardado",
+                profesor_id=entity.id,
+                nombre=enmascarar_nombre(entity.nombre_completo),
+            )
             return entity
 
         except ProfesorNotFoundError:
@@ -130,7 +135,9 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
             )
             return self.mapper.to_entities(models)
         except SQLAlchemyError as e:
-            logger.error("Error al buscar por nombre", nombre=nombre, error=str(e))
+            logger.error(
+                "Error al buscar por nombre", nombre=enmascarar_nombre(nombre), error=str(e)
+            )
             raise DatabaseError(message="Error en búsqueda por nombre", original_error=e)
 
     def find_by_email(self, email: str) -> Optional[ProfesorEntity]:
@@ -139,7 +146,7 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
             model = self.session.query(Profesor).filter(Profesor.email_corporativo == email).first()
             return self.mapper.to_entity(model) if model else None
         except SQLAlchemyError as e:
-            logger.error("Error al buscar por email", email=email, error=str(e))
+            logger.error("Error al buscar por email", email=enmascarar_correo(email), error=str(e))
             raise DatabaseError(message="Error en búsqueda por email", original_error=e)
 
     def find_by_turno(self, turno: str) -> list[ProfesorEntity]:
