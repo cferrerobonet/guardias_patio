@@ -27,6 +27,7 @@ from presentation.theme import legacy_styles as styles
 from presentation.widgets.toast_notification import ToastNotification
 from services.gestor_cursos import GestorCursos
 from utils.icons import icon_for_button
+from utils.ui_helpers import dotar_de_contrato
 
 logger = get_logger(__name__)
 
@@ -132,6 +133,11 @@ class GestionCursosWidget(QWidget):
 
         # Tabla de cursos con scroll automático
         self.tabla_cursos = QTableWidget()
+        dotar_de_contrato(
+            self.tabla_cursos,
+            "Cursos escolares",
+            "Cursos dados de alta, con sus fechas, si están activos y cuántas guardias tienen",
+        )
         self.tabla_cursos.setColumnCount(11)
         self.tabla_cursos.setHorizontalHeaderLabels(
             [

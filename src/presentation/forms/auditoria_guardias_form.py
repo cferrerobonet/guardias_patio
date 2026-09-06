@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from infrastructure.database.models import GuardiaAuditLog, Profesor
+from utils.ui_helpers import dotar_de_contrato, llenando_tabla, pintar_tabla_vacia
 
 _ACCIONES = ["Todas", "CREADA", "MODIFICADA", "ELIMINADA", "SUSTITUIDA", "GENERADA_BULK"]
 
@@ -91,6 +92,13 @@ class AuditoriaGuardiasForm(QWidget):
 
         # Tabla
         self.tabla = QTableWidget()
+        dotar_de_contrato(
+            self.tabla,
+            "Historial de cambios en guardias",
+            "Cada cambio hecho sobre una guardia: cuándo, qué acción, sobre cuál "
+            "y quién lo hizo",
+            ordenable=True,
+        )
         self.tabla.setColumnCount(6)
         self.tabla.setHorizontalHeaderLabels(
             ["Fecha/Hora", "Acción", "Guardia ID", "Profesor", "Usuario", "Detalle"]
@@ -146,39 +154,45 @@ class AuditoriaGuardiasForm(QWidget):
                 if texto_prof in nombres_prof.get(r.profesor_id, "").lower()
             ]
 
-        self.tabla.setRowCount(len(registros))
-        for row, reg in enumerate(registros):
-            ts = reg.timestamp.strftime("%d/%m/%Y %H:%M:%S") if reg.timestamp else ""
-            etiqueta = _ETIQUETAS_ACCION.get(reg.accion, reg.accion)
-            nombre = nombres_prof.get(reg.profesor_id, "-") if reg.profesor_id else "-"
-            detalle = ""
-            if reg.detalle:
-                try:
-                    d = json.loads(reg.detalle)
-                    detalle = ", ".join(f"{k}: {v}" for k, v in d.items())
-                except (json.JSONDecodeError, AttributeError):
-                    detalle = reg.detalle
+        with llenando_tabla(self.tabla):
+            self.tabla.setRowCount(len(registros))
+            for row, reg in enumerate(registros):
+                ts = reg.timestamp.strftime("%d/%m/%Y %H:%M:%S") if reg.timestamp else ""
+                etiqueta = _ETIQUETAS_ACCION.get(reg.accion, reg.accion)
+                nombre = nombres_prof.get(reg.profesor_id, "-") if reg.profesor_id else "-"
+                detalle = ""
+                if reg.detalle:
+                    try:
+                        d = json.loads(reg.detalle)
+                        detalle = ", ".join(f"{k}: {v}" for k, v in d.items())
+                    except (json.JSONDecodeError, AttributeError):
+                        detalle = reg.detalle
 
-            items = [
-                QTableWidgetItem(ts),
-                QTableWidgetItem(etiqueta),
-                QTableWidgetItem(str(reg.guardia_id) if reg.guardia_id else "-"),
-                QTableWidgetItem(nombre),
-                QTableWidgetItem(reg.usuario or "-"),
-                QTableWidgetItem(detalle),
-            ]
-            color = _COLORES_ACCION.get(reg.accion)
-            for col, item in enumerate(items):
-                item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-                if color:
-                    from PyQt6.QtGui import QColor
-                    item.setBackground(QColor(color))
-                self.tabla.setItem(row, col, item)
-            # Guardar metadatos en la primera celda para el botón re-sustituir
-            self.tabla.item(row, 0).setData(
-                Qt.ItemDataRole.UserRole, (reg.guardia_id, reg.accion)
-            )
+                items = [
+                    QTableWidgetItem(ts),
+                    QTableWidgetItem(etiqueta),
+                    QTableWidgetItem(str(reg.guardia_id) if reg.guardia_id else "-"),
+                    QTableWidgetItem(nombre),
+                    QTableWidgetItem(reg.usuario or "-"),
+                    QTableWidgetItem(detalle),
+                ]
+                color = _COLORES_ACCION.get(reg.accion)
+                for col, item in enumerate(items):
+                    item.setTextAlignment(
+                        Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft
+                    )
+                    if color:
+                        from PyQt6.QtGui import QColor
+                        item.setBackground(QColor(color))
+                    self.tabla.setItem(row, col, item)
+                # Guardar metadatos en la primera celda para el botón re-sustituir
+                self.tabla.item(row, 0).setData(
+                    Qt.ItemDataRole.UserRole, (reg.guardia_id, reg.accion)
+                )
 
+        pintar_tabla_vacia(
+            self.tabla, "No hay cambios registrados con estos filtros"
+        )
         self.label_total.setText(f"{len(registros)} registros")
 
     def _actualizar_boton_resustituir(self):

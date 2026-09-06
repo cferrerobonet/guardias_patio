@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
 from presentation.widgets.toast_notification import ToastNotification
 from services.gestor_ausencias import GestorAusencias
 from utils.icons import icon_for_button
-from utils.ui_helpers import get_corporate_icon
+from utils.ui_helpers import dotar_de_contrato, get_corporate_icon
 
 
 class DialogoReasignacion(QDialog):
@@ -64,6 +64,11 @@ class DialogoReasignacion(QDialog):
     def _crear_tabla(self) -> QTableWidget:
         """Crear tabla de guardias."""
         tabla = QTableWidget()
+        dotar_de_contrato(
+            tabla,
+            "Guardias que hay que reasignar",
+            "Guardias del profesor ausente que necesitan otro profesor",
+        )
         tabla.setColumnCount(6)
         tabla.setHorizontalHeaderLabels(
             ["ID", "Fecha", "Turno", "Recreo", "Zona", "Profesor Actual"]

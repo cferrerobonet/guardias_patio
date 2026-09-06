@@ -45,6 +45,18 @@ def form_con_registros(qapp, session, profesor_factory, zona_factory):
     f.close()
 
 
+def _esta_vacia(tabla) -> bool:
+    """Sin resultados: o ninguna fila, o la única fila es el mensaje de vacío."""
+    if tabla.rowCount() == 0:
+        return True
+    celda = tabla.item(0, 0)
+    return (
+        tabla.rowCount() == 1
+        and celda is not None
+        and tabla.columnSpan(0, 0) == tabla.columnCount()
+    )
+
+
 class TestAuditoriaRenderizado:
     def test_form_se_crea_sin_crash(self, form):
         assert form is not None
@@ -63,7 +75,9 @@ class TestAuditoriaRenderizado:
         assert hasattr(form, "input_profesor")
 
     def test_bd_vacia_no_crashea(self, form):
-        assert form.tabla.rowCount() == 0
+        # Desde v5.84.0 la tabla vacía escribe una fila que lo explica: en
+        # blanco no se distinguía de «aún no ha cargado» (UXA-008).
+        assert _esta_vacia(form.tabla)
         assert "0 registros" in form.label_total.text()
 
 
@@ -93,7 +107,7 @@ class TestAuditoriaConDatos:
         form_con_registros.input_profesor.setText("XYZ_no_existe")
         form_con_registros.cargar_datos()
         QApplication.processEvents()
-        assert form_con_registros.tabla.rowCount() == 0
+        assert _esta_vacia(form_con_registros.tabla)
 
     def test_limpiar_filtros_restaura_todos(self, qtbot, form_con_registros):
         """Después de filtrar, limpiar restaura todos los registros."""
@@ -114,4 +128,4 @@ class TestAuditoriaConDatos:
         form_con_registros.fecha_hasta.setDate(QDate(hoy.year, hoy.month, hoy.day))
         form_con_registros.cargar_datos()
         QApplication.processEvents()
-        assert form_con_registros.tabla.rowCount() == 0
+        assert _esta_vacia(form_con_registros.tabla)

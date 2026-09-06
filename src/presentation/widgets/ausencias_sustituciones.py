@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 from presentation.forms.base_form import BaseForm
 from presentation.themes.tema_aplicacion import TEXT_SECONDARY, get_table_style
 from utils.icons import icon_for_button
+from utils.ui_helpers import dotar_de_contrato, llenando_tabla, pintar_tabla_vacia
 
 _DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
@@ -144,6 +145,11 @@ class AusenciasSustitucionesWidget(BaseForm):
         lay.addLayout(cabecera)
 
         self.tabla_guardias = QTableWidget()
+        dotar_de_contrato(
+            self.tabla_guardias,
+            "Guardias a sustituir",
+            "Guardias afectadas por la ausencia, con el profesor que falta y quién le sustituye",
+        )
         self.tabla_guardias.setColumnCount(8)
         self.tabla_guardias.setHorizontalHeaderLabels(
             ["Fecha", "Día", "Turno", "Recreo", "Zona", "Prof. ausente", "Sustituto", "●"]
@@ -268,6 +274,12 @@ class AusenciasSustitucionesWidget(BaseForm):
         lay.addLayout(filtros)
 
         self.tabla_historial = QTableWidget()
+        dotar_de_contrato(
+            self.tabla_historial,
+            "Historial de sustituciones",
+            "Sustituciones ya hechas, con el profesor original y el que la cubrió",
+            ordenable=True,
+        )
         self.tabla_historial.setColumnCount(6)
         self.tabla_historial.setHorizontalHeaderLabels(
             ["Fecha", "Turno", "Recreo", "Zona", "Profesor original", "Profesor sustituto"]
@@ -557,26 +569,30 @@ class AusenciasSustitucionesWidget(BaseForm):
                 p = prof_cache[pid]
                 return p.nombre_completo if p else "—"
 
-            self.tabla_historial.setRowCount(0)
-            for i, g in enumerate(guardias):
-                self.tabla_historial.insertRow(i)
-                zona_nombre = g.zona.nombre_zona if g.zona else "N/A"
-                for j, texto in enumerate(
-                    [
-                        g.fecha.strftime("%d/%m/%Y"),
-                        g.turno.capitalize(),
-                        str(g.recreo),
-                        zona_nombre,
-                        _nombre(g.profesor_sustituido_id),
-                        _nombre(g.profesor_id),
-                    ]
-                ):
-                    item = QTableWidgetItem(texto)
-                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                    if j == 0:
-                        # El id viaja en la primera celda: es lo que permite deshacer
-                        item.setData(Qt.ItemDataRole.UserRole, g.id)
-                    self.tabla_historial.setItem(i, j, item)
+            with llenando_tabla(self.tabla_historial):
+                self.tabla_historial.setRowCount(0)
+                for i, g in enumerate(guardias):
+                    self.tabla_historial.insertRow(i)
+                    zona_nombre = g.zona.nombre_zona if g.zona else "N/A"
+                    for j, texto in enumerate(
+                        [
+                            g.fecha.strftime("%d/%m/%Y"),
+                            g.turno.capitalize(),
+                            str(g.recreo),
+                            zona_nombre,
+                            _nombre(g.profesor_sustituido_id),
+                            _nombre(g.profesor_id),
+                        ]
+                    ):
+                        item = QTableWidgetItem(texto)
+                        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                        if j == 0:
+                            # El id viaja en la primera celda: es lo que permite deshacer
+                            item.setData(Qt.ItemDataRole.UserRole, g.id)
+                        self.tabla_historial.setItem(i, j, item)
+            pintar_tabla_vacia(
+                self.tabla_historial, "Todavía no se ha hecho ninguna sustitución"
+            )
         except Exception as e:
             self.manejar_excepcion(e, "cargar historial")
 

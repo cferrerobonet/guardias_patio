@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.84.0] - 2026-09-06
+
+### 🎯 Resumen
+Las trece tablas de la aplicación dicen qué contienen.
+
+### ✨ Added
+- **Todas las tablas se presentan.** Cursos, estadísticas por profesor y por zona, mapa de calor, guardias a sustituir, historial de sustituciones, historial de cambios, reasignación y vista previa de importación tienen ya nombre y descripción accesibles: antes, para un lector de pantalla, eran «tabla» y nada más.
+- **Los dos historiales se ordenan por la cabecera**, que es lo que se pide de un registro: por fecha, por acción, por profesor.
+- **«Vacía» deja de parecer «aún no ha cargado».** Cuando un historial no tiene filas se escribe una que lo explica, en vez de dejar la tabla en blanco.
+- Colores de fila alternos en todas ellas, que hasta ahora sólo tenían Profesores y Zonas.
+
+### 🧹 Housekeeping
+- `llenando_tabla()` suspende la ordenación mientras se escriben las filas. Qt recoloca la tabla a cada celda que se pone, así que llenar una tabla ordenable sin esta guarda cruza los datos entre filas.
+- Un test impide que se cree una tabla nueva sin decir qué contiene.
+
 ## [5.83.0] - 2026-09-06
 
 ### 🎯 Resumen

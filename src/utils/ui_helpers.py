@@ -4,6 +4,7 @@ Utilidades para la interfaz de usuario.
 Funciones helper para aplicar marca corporativa de forma discreta.
 """
 
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -553,3 +554,71 @@ def pedir_carpeta(
     )
     recordar_carpeta(carpeta, clave)
     return carpeta
+
+
+def dotar_de_contrato(
+    tabla,
+    nombre: str,
+    descripcion: str = "",
+    ordenable: bool = False,
+) -> None:
+    """Da a una tabla lo mínimo para poder usarla sin ver la pantalla (UXA-008).
+
+    Un `QTableWidget` recién creado no dice qué contiene: un lector de pantalla
+    anuncia «tabla» y poco más. Aquí se le pone nombre y descripción, se permite
+    ordenar por la cabecera y se alternan los colores de fila, que es lo que
+    tenían ya Profesores y Zonas y no el resto.
+    """
+    tabla.setAccessibleName(nombre)
+    if descripcion:
+        tabla.setAccessibleDescription(descripcion)
+    if ordenable:
+        # Ojo: Qt reordena a cada `setItem`, así que llenar la tabla con el orden
+        # activo baraja las filas a medio escribirlas. Quien la llene tiene que
+        # hacerlo dentro de `llenando_tabla()`.
+        tabla.setSortingEnabled(True)
+    tabla.setAlternatingRowColors(True)
+    cabecera = tabla.horizontalHeader()
+    if cabecera is not None:
+        cabecera.setAccessibleName(f"Cabecera de {nombre.lower()}")
+
+
+def pintar_tabla_vacia(tabla, mensaje: str) -> bool:
+    """Si la tabla no tiene filas, escribe una que explique por qué (UXA-008).
+
+    Una tabla vacía y una tabla que aún no ha cargado se ven igual: en blanco.
+    Devuelve True si ha tenido que escribir el mensaje.
+    """
+    from PyQt6.QtCore import Qt
+    from PyQt6.QtGui import QColor
+    from PyQt6.QtWidgets import QTableWidgetItem
+
+    if tabla.rowCount() > 0:
+        return False
+
+    columnas = max(1, tabla.columnCount())
+    tabla.setRowCount(1)
+    celda = QTableWidgetItem(mensaje)
+    celda.setFlags(Qt.ItemFlag.ItemIsEnabled)
+    celda.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+    celda.setForeground(QColor("#6B7280"))
+    tabla.setItem(0, 0, celda)
+    if columnas > 1:
+        tabla.setSpan(0, 0, 1, columnas)
+    return True
+
+
+@contextmanager
+def llenando_tabla(tabla):
+    """Suspende la ordenación mientras se escriben las filas (UXA-008).
+
+    Con el orden activo, Qt recoloca la tabla cada vez que se pone una celda: la
+    fila que se estaba rellenando se mueve y las celdas siguientes acaban en
+    otra. Al salir se restaura el estado anterior y se reordena una sola vez.
+    """
+    estaba = tabla.isSortingEnabled()
+    tabla.setSortingEnabled(False)
+    try:
+        yield tabla
+    finally:
+        tabla.setSortingEnabled(estaba)

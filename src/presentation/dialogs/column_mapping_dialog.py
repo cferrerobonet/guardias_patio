@@ -15,6 +15,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from utils.ui_helpers import dotar_de_contrato
+
 try:
     from PyQt6.QtCore import QSettings
 except ImportError:
@@ -102,6 +104,11 @@ class ColumnMappingDialog(QDialog):
         prev_group = QGroupBox("Previsualización (primeras 5 filas)")
         prev_layout = QVBoxLayout(prev_group)
         self.tabla_preview = QTableWidget()
+        dotar_de_contrato(
+            self.tabla_preview,
+            "Vista previa del fichero",
+            "Primeras filas del fichero tal como se han leído, para comprobar el mapeo de columnas",
+        )
         self.tabla_preview.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabla_preview.setMaximumHeight(160)
         self._refresh_preview()

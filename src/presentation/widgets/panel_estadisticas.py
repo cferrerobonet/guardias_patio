@@ -33,6 +33,7 @@ from presentation.themes.tema_aplicacion import (
 )
 from presentation.widgets.bar_chart_widget import BarChartWidget, PieChartWidget
 from utils.icons import icon_for_button
+from utils.ui_helpers import dotar_de_contrato
 
 MplCanvas = BarChartWidget
 
@@ -132,6 +133,11 @@ class PanelEstadisticas(BaseForm):
         layout = QVBoxLayout()
 
         self.tabla_profesores = QTableWidget()
+        dotar_de_contrato(
+            self.tabla_profesores,
+            "Reparto por profesor",
+            "Guardias asignadas a cada profesor frente a la cuota que le corresponde",
+        )
         self.tabla_profesores.setColumnCount(10)
         self.tabla_profesores.setHorizontalHeaderLabels(
             [
@@ -188,6 +194,11 @@ class PanelEstadisticas(BaseForm):
         layout = QVBoxLayout()
 
         self.tabla_zonas = QTableWidget()
+        dotar_de_contrato(
+            self.tabla_zonas,
+            "Reparto por zona",
+            "Guardias de cada zona, cuántos profesores distintos pasan por ella y su cobertura",
+        )
         self.tabla_zonas.setColumnCount(4)
         self.tabla_zonas.setHorizontalHeaderLabels(
             ["Zona", "Total Guardias", "Profesores Diferentes", "% Cobertura"]
@@ -239,6 +250,12 @@ class PanelEstadisticas(BaseForm):
         layout.addWidget(leyenda)
 
         self.tabla_heatmap = QTableWidget()
+        dotar_de_contrato(
+            self.tabla_heatmap,
+            "Mapa de calor de guardias",
+            "Cuántas guardias hay cada día de la semana en cada recreo",
+            ordenable=False,
+        )
         self.tabla_heatmap.setStyleSheet(get_table_style())
         self.tabla_heatmap.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.tabla_heatmap.verticalHeader().setVisible(False)
