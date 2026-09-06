@@ -193,7 +193,7 @@ class CeldaDia(QGroupBox):
         if puntos:
             label_puntos = QLabel(puntos)
             label_puntos.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label_puntos.setStyleSheet("font-size: 12px;")
+            label_puntos.setProperty("texto", "pequeno")
             layout.addWidget(label_puntos)
 
         layout.addStretch()
@@ -280,13 +280,13 @@ class CeldaDia(QGroupBox):
         h_layout.addWidget(zona_label)
 
         nombre_label = QLabel(nombre_mostrar)
-        nombre_label.setStyleSheet("font-size: 12px; color: #333;")
+        nombre_label.setProperty("texto", "secundario")
         h_layout.addWidget(nombre_label, 1)
 
         if es_sustitucion:
             sust_label = QLabel("S")
             sust_label.setToolTip("Sustitución")
-            sust_label.setStyleSheet("font-size: 12px;")
+            sust_label.setProperty("texto", "pequeno")
             h_layout.addWidget(sust_label)
 
         if es_sustitucion:

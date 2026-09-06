@@ -166,7 +166,7 @@ class VistaCalendario(BaseForm):
 
         # Grupo: Selector de vista
         label_vista = QLabel("Vista:")
-        label_vista.setStyleSheet("font-weight: bold; font-size: 12px;")
+        label_vista.setProperty("texto", "fuerte")
         barra_layout.addWidget(label_vista)
 
         self.combo_vista = QComboBox()

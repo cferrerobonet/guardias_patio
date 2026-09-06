@@ -84,7 +84,7 @@ class SemanaRestriccionesWidget(QWidget):
         for col, dia in enumerate(_DIAS):
             lbl = QLabel(dia)
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setStyleSheet("font-weight: bold; font-size: 12px;")
+            lbl.setProperty("texto", "fuerte")
             grid.addWidget(lbl, 0, col + 1)
 
         # Filas de recreos

@@ -53,7 +53,7 @@ class SessionLockedDialog(QDialog):
         )
         main_message.setWordWrap(True)
         main_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        main_message.setStyleSheet("font-size: 12px; color: #333;")
+        main_message.setProperty("texto", "secundario")
         layout.addWidget(main_message)
 
         # Información de la sesión activa

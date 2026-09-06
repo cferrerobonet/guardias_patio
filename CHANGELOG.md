@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.74.0] - 2026-09-06
+
+### 🎯 Resumen
+Los errores del servidor de sincronización dejan de escaparse sin explicación.
+
+### Fixed
+- **Los fallos de conexión con el servidor no se capturaban bien.** Las operaciones de subida, descarga, renombrado y cierre esperaban una familia de errores que no incluye la más habitual de la librería de conexión: un saludo del servidor mal leído o una clave de equipo cambiada se escapaban y acababan como «error inesperado» en vez de decir qué había pasado. Ahora se recogen donde ocurren.
+- **El mismo fallo estaba en dos sitios.** Se corrigió en la ventana de configuración inicial en la versión anterior; resultó estar también en la pantalla de Ajustes, que es por donde se cambia la configuración una vez instalada la aplicación.
+- Al comprobar la carpeta del servidor se capturaba cualquier cosa para «crearla si no existe». Ahora solo se captura eso: un fallo de conexión ya no acaba intentando crear una carpeta.
+
+### 🧹 Housekeeping
+- Estilos escritos dentro del código: de 260 a 249. Los textos auxiliares pequeños pasan a cuatro papeles con nombre en vez de repetir la misma combinación de tamaño y color en cada pantalla. Colores sueltos: de 471 a 467.
+- 2.627 pruebas, ningún fallo.
+
+---
+
 ## [5.73.0] - 2026-09-05
 
 ### 🎯 Resumen

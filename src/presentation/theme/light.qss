@@ -477,3 +477,28 @@ QLabel#tituloDePanel {
     border-radius: 4px;
     margin-bottom: 6px;
 }
+
+/* ========== TEXTO AUXILIAR (VIS-001) ==========
+   Cuatro papeles para el texto pequeño que acompaña a los controles. Estaban
+   escritos widget a widget, con la misma combinación repetida en decenas de
+   sitios y con pequeñas variaciones sin intención. */
+
+QLabel[texto="pequeno"] {
+    font-size: 12px;
+}
+
+QLabel[texto="secundario"] {
+    font-size: 12px;
+    color: @TEXT_SECONDARY@;
+}
+
+QLabel[texto="error"] {
+    font-size: 12px;
+    color: @ERROR@;
+}
+
+QLabel[texto="fuerte"] {
+    font-size: 12px;
+    font-weight: 600;
+    color: @TEXT_PRIMARY@;
+}

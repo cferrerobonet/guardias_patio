@@ -391,7 +391,7 @@ class PerfilesUsuarioForm(BaseForm):
 
             # Mensaje final
             final = QLabel("<p><b>Esta acción NO se puede deshacer.</b></p>")
-            final.setStyleSheet("color: #d32f2f;")
+            final.setProperty("texto", "error")
             layout.addWidget(final)
 
             # Espaciador

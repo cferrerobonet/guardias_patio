@@ -24,8 +24,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 PRES = ROOT / "src" / "presentation"
 UMBRALES = {
-    "setStyleSheet": 260,
-    "hex_literales": 471,
+    "setStyleSheet": 249,
+    "hex_literales": 467,
     "font_size_menor_12px": 0,
     "lineas_con_emoji": 316,
     "setFixed": 18,

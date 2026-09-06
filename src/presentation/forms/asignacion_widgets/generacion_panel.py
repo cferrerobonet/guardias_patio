@@ -135,7 +135,7 @@ class GeneracionPanel(QGroupBox):
         algoritmo_container.setSpacing(Spacing.SM)
 
         algoritmo_label = QLabel("Algoritmo:")
-        algoritmo_label.setStyleSheet("font-weight: bold; color: #374151;")
+        algoritmo_label.setProperty("texto", "fuerte")
         algoritmo_container.addWidget(algoritmo_label)
 
         self.algoritmo_combo = QComboBox()

@@ -423,8 +423,10 @@ class SFTPConfigWidget(QGroupBox):
             try:
                 files = sftp.listdir(sftp_basedir)
                 file_count = len(files)
-            except (OSError, ValueError):
-                # Si no existe el directorio, intentar crearlo
+            except OSError:
+                # Sólo el caso «la carpeta no existe»: paramiko lo señala con
+                # OSError. Un fallo de transporte debe seguir subiendo al
+                # manejador de fuera, no acabar intentando crear la carpeta.
                 sftp.mkdir(sftp_basedir)
                 file_count = 0
 
@@ -453,13 +455,17 @@ class SFTPConfigWidget(QGroupBox):
             )
             self.logger.error("Error de autenticación SFTP")
 
-        except (OSError, ValueError) as e:
+        except Exception as e:  # noqa: BLE001
+            # `except (OSError, ValueError)` dejaba escapar SSHException, que no
+            # hereda de OSError: un banner mal leído o una clave de host cambiada
+            # reventaban el diálogo en vez de dar un error legible. Es el mismo
+            # fallo que se corrigió en el diálogo de configuración inicial (COD-002).
             self._show_error(
                 "❌ Error de Conexión",
-                f"No se pudo conectar al servidor SFTP:\n\n{str(e)}\n\n"
+                f"No se pudo conectar al servidor SFTP:\n\n{type(e).__name__}: {e}\n\n"
                 "Verifica el servidor, puerto y credenciales.",
             )
-            self.logger.error(f"Error al probar SFTP: {str(e)}")
+            self.logger.error(f"Error al probar SFTP: {type(e).__name__}: {e}")
 
     def _show_success(
         self,

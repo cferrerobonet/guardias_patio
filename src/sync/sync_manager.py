@@ -157,9 +157,24 @@ class LocalSyncBackend(SyncBackend):
             destino.parent.mkdir(parents=True, exist_ok=True)
             os.replace(origen, destino)
             return True
-        except (ValueError, OSError) as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"No se pudo renombrar {remote_src} → {remote_dst}: {e}")
             return False
+
+
+try:
+    from paramiko import SSHException as _SSHException
+except ImportError:  # paramiko es opcional: sin él no hay backend SFTP
+
+    class _SSHException(Exception):  # type: ignore[no-redef]
+        """Sustituto cuando paramiko no está instalado."""
+
+
+#: Lo que puede fallar al hablar con el servidor. `SSHException` **no** hereda de
+#: `OSError`, así que los manejadores que sólo listaban `(OSError, ValueError)`
+#: dejaban escapar el error más típico —banner ilegible, clave de host cambiada—
+#: y el fallo acababa en el manejador global en vez de dar un mensaje útil (COD-002).
+ERRORES_DE_TRANSPORTE = (_SSHException, OSError, ValueError)
 
 
 class SFTPSyncBackend(SyncBackend):
@@ -246,7 +261,7 @@ class SFTPSyncBackend(SyncBackend):
         except ImportError:
             logger.error("Paramiko no instalado. Ejecutar: pip install paramiko")
             return False
-        except (OSError, ValueError) as e:
+        except ERRORES_DE_TRANSPORTE as e:
             logger.error(f"Error conectando SFTP: {e}")
             if "paramiko" in str(type(e).__module__):
                 logger.error("El servidor no está en known_hosts. Agregarlo con:")
@@ -341,7 +356,7 @@ class SFTPSyncBackend(SyncBackend):
         except ValueError as e:
             logger.error(f"Seguridad: {e}")
             return False
-        except (OSError, ValueError) as e:
+        except ERRORES_DE_TRANSPORTE as e:
             logger.error(f"Error subiendo vía SFTP: {e}")
             return False
 
@@ -360,7 +375,7 @@ class SFTPSyncBackend(SyncBackend):
                     pass
                 self.sftp.rename(origen, destino)
             return True
-        except (ValueError, OSError) as e:
+        except ERRORES_DE_TRANSPORTE as e:
             logger.warning(f"No se pudo renombrar {remote_src} → {remote_dst}: {e}")
             return False
 
@@ -381,7 +396,7 @@ class SFTPSyncBackend(SyncBackend):
             return False
         except FileNotFoundError:
             return False
-        except (OSError, ValueError) as e:
+        except ERRORES_DE_TRANSPORTE as e:
             logger.error(f"Error descargando vía SFTP: {e}")
             return False
 
@@ -430,7 +445,7 @@ class SFTPSyncBackend(SyncBackend):
         try:
             if hasattr(self, "sftp") and self.sftp is not None:
                 self.sftp.close()
-        except (OSError, ValueError) as e:
+        except ERRORES_DE_TRANSPORTE as e:
             logger.debug(f"Error cerrando sftp: {e}")
         finally:
             self.sftp = None

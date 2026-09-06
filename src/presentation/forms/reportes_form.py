@@ -669,7 +669,7 @@ class ReportesForm(BaseForm):
             "Google Calendar, Outlook y Apple Calendar."
         )
         desc.setWordWrap(True)
-        desc.setStyleSheet("color: #555; font-size: 12px;")
+        desc.setProperty("texto", "secundario")
         layout.addWidget(desc)
 
         # Selector de profesor

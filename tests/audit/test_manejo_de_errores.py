@@ -84,3 +84,86 @@ def test_los_bloques_que_tocan_la_base_de_datos_capturan_sus_errores():
         "estos bloques tocan la base de datos y dejan escapar SQLAlchemyError: "
         + str(ofensores)
     )
+
+
+# ---------------------------------------------------------------------------
+# COD-002 (segunda tanda): los errores del servidor SFTP
+# ---------------------------------------------------------------------------
+def test_la_tupla_de_transporte_cubre_los_errores_de_ssh():
+    """`SSHException` no hereda de `OSError`: un banner ilegible o una clave de
+    host cambiada escapaban del manejador y acababan en el aviso genérico."""
+    import paramiko
+
+    from sync.sync_manager import ERRORES_DE_TRANSPORTE
+
+    assert issubclass(paramiko.SSHException, ERRORES_DE_TRANSPORTE)
+    assert issubclass(paramiko.AuthenticationException, ERRORES_DE_TRANSPORTE)
+    assert issubclass(OSError, ERRORES_DE_TRANSPORTE)
+
+
+def test_la_tupla_funciona_aunque_falte_paramiko():
+    """paramiko es opcional: sin él, el módulo tiene que seguir importándose."""
+    import inspect
+
+    from sync import sync_manager
+
+    fuente = inspect.getsource(sync_manager)
+    assert "except ImportError:" in fuente.split("ERRORES_DE_TRANSPORTE")[0]
+
+
+def test_las_operaciones_sftp_usan_esa_tupla():
+    """Si alguien añade otra operación, que no vuelva a la tupla arbitraria."""
+    import ast
+    import inspect
+
+    from sync import sync_manager
+
+    arbol = ast.parse(inspect.getsource(sync_manager))
+    ofensores = []
+    for nodo in ast.walk(arbol):
+        if not isinstance(nodo, ast.ClassDef) or nodo.name != "SFTPSyncBackend":
+            continue
+        for sub in ast.walk(nodo):
+            if not isinstance(sub, ast.Try):
+                continue
+            cuerpo = ast.dump(ast.Module(body=sub.body, type_ignores=[]))
+            if not any(x in cuerpo for x in ("'put'", "'get'", "'rename'", "'listdir'")):
+                continue
+            for manejador in sub.handlers:
+                if isinstance(manejador.type, ast.Tuple):
+                    nombres = {n.id for n in manejador.type.elts if isinstance(n, ast.Name)}
+                    if nombres and "SSHException" not in str(nombres):
+                        ofensores.append(f"línea {manejador.lineno}: {sorted(nombres)}")
+
+    assert not ofensores, f"operaciones SFTP con manejador incompleto: {ofensores}"
+
+
+def test_probar_la_conexion_desde_ajustes_no_revienta_con_ssh():
+    """Mismo fallo que en el diálogo inicial, en el widget de Ajustes.
+
+    El método que prueba la conexión no puede quedarse con una tupla que deje
+    escapar `SSHException`: hay que capturar todo y explicarlo.
+    """
+    import ast
+    import inspect
+
+    from presentation.forms.config_widgets import sftp_widget
+
+    arbol = ast.parse(inspect.getsource(sftp_widget))
+    metodos = [
+        n
+        for n in ast.walk(arbol)
+        if isinstance(n, ast.FunctionDef) and "test" in n.name and "connection" in n.name
+    ]
+    assert metodos, "no se encontró el método que prueba la conexión"
+
+    for metodo in metodos:
+        for sub in ast.walk(metodo):
+            if not isinstance(sub, ast.Try):
+                continue
+            for manejador in sub.handlers:
+                if isinstance(manejador.type, ast.Tuple):
+                    nombres = {n.id for n in manejador.type.elts if isinstance(n, ast.Name)}
+                    assert nombres != {"OSError", "ValueError"}, (
+                        f"{metodo.name} deja escapar SSHException"
+                    )
