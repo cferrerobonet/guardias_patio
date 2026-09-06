@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.80.0] - 2026-09-06
+
+### 🎯 Resumen
+Cuando un hueco de guardia se queda sin nadie, ahora se dice por qué.
+
+### ✨ Added
+- **Diagnóstico de huecos sin cubrir.** Si ningún profesor puede cubrir un recreo, el registro de la generación dice, para ese hueco, cuántos profesores dejó fuera cada regla —turno incompatible, ausencia, fuera de su periodo de guardias, recreo no permitido— y qué cambio mínimo lo desbloquea.
+- Aparece en el panel de progreso de la generación, no sólo en el fichero de registro.
+
+### 🧹 Housekeeping
+- Antes sólo se registraba el número de huecos, que no da ninguna pista sobre cómo arreglarlos.
+
 ## [5.79.0] - 2026-09-06
 
 ### 🎯 Resumen

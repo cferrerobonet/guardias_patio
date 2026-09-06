@@ -221,8 +221,11 @@ def generar_guardias_cpsat(
     # Verificar que todos los slots tienen al menos un profesor
     slots_sin_cobertura = [i for i in range(len(slots)) if not slot_profs[i]]
     if slots_sin_cobertura:
-        logger.error(f"  ⚠️ {len(slots_sin_cobertura)} slots sin profesores elegibles")
-        # Podríamos lanzar error o continuar con cobertura parcial
+        # Decir cuántos huecos hay no ayuda a arreglarlos: hace falta saber qué
+        # regla dejó fuera a cada profesor y qué cambio mínimo lo desbloquea (FUN-013).
+        from services.diagnostico_cobertura import diagnosticar, registrar
+
+        registrar(diagnosticar(profesores, [slots[i] for i in slots_sin_cobertura], session))
 
     # =========================================================================
     # FASE 3: CREAR MODELO CP-SAT
