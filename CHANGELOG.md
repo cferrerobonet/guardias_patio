@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.88.0] - 2026-09-06
+
+### 🎯 Resumen
+El arranque deja de ser una pantalla en negro.
+
+### ✨ Added
+- **Pantalla de arranque con los pasos a la vista.** Entre el login y la ventana principal se migran datos, se comprueba que la cuenta no esté abierta en otro equipo y se descarga todo de la nube. Hasta ahora, mientras eso pasaba, no había nada en pantalla: ni ventana ni aviso, y con la red lenta parecía que la aplicación se había colgado. Ahora se ve el logo y qué paso está en marcha.
+
+### Fixed
+- Dos mensajes normales del arranque se registraban como `ERROR` y ensuciaban el fichero de registro, justo el que hay que revisar para dar por buena una instalación.
+
+### 🧹 Housekeeping
+- Los pasos siguen ejecutándose donde estaban: llevarlos a un hilo aparte obligaría a sacar de ahí los diálogos que algunos de ellos abren, que es exactamente el tipo de cambio que costó el cierre en Windows.
+
 ## [5.87.0] - 2026-09-06
 
 ### 🎯 Resumen

@@ -51,8 +51,8 @@ from PyQt6.QtCore import QLibraryInfo, QLocale, Qt, QTranslator
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
-from presentation.ventana_principal import VentanaPrincipal
 from presentation.forms.login_dialog import LoginDialog
+from presentation.ventana_principal import VentanaPrincipal
 from sync import SyncConfigurationError, SyncManager, get_default_backend
 from utils.corporate_branding import apply_corporate_branding
 
@@ -261,6 +261,18 @@ def main():
     username = login_dialog.authenticated_user
     logger.info(f"Usuario autenticado: {username}")
 
+    # Entre aquí y la ventana principal hay pasos que hablan con la red y pueden
+    # tardar. Sin esto la pantalla se queda vacía y parece que no arranca (ESC-006).
+    from presentation.widgets.pantalla_de_arranque import abrir_pantalla_de_arranque
+
+    arranque = abrir_pantalla_de_arranque()
+
+    def paso(mensaje: str) -> None:
+        if arranque is not None:
+            arranque.paso(mensaje)
+
+    paso("Preparando la base de datos…")
+
     # Inicializar base de datos específica del usuario
     from database.db_manager import initialize_user_database
 
@@ -295,7 +307,7 @@ def main():
         return 1
 
     # 🔄 Ejecutar migración automática al sistema Multi-Curso si es necesario
-    logger.error("🔧 INICIANDO: Migración Multi-Curso")
+    paso("Comprobando el formato de los datos…")
     try:
         from services.migrar_a_multi_curso import ejecutar_migracion_si_necesario
 
@@ -307,7 +319,6 @@ def main():
         logger.error(f"⚠ Error en migración Multi-Curso: {e}")
         # Continuar de todos modos - la migración no es crítica para funcionar
 
-    logger.error("🔧 INICIANDO: Sistema de sincronización")
     # Inicializar sistema de sincronización
     sync_manager = None
     session_lock_manager = None
@@ -324,6 +335,7 @@ def main():
         if disable_session_lock:
             logger.warning("⚠ Bloqueo de sesión desactivado por entorno (DISABLE_SESSION_LOCK=1)")
         else:
+            paso("Comprobando que la cuenta no esté abierta en otro equipo…")
             session_lock = SessionLock(backend, username, sync_manager.user_hash)
 
             # Intentar adquirir el bloqueo de sesión
@@ -374,7 +386,7 @@ def main():
             session_lock_manager = SessionLockManager(session_lock)
 
         # Sincronizar datos al iniciar (descargar desde la nube e importar a DB)
-        logger.info("Iniciando sincronización al arranque...")
+        paso("Trayendo los datos de la nube…")
         if sync_manager.sync_on_startup(session=session):
             logger.info("✓ Sincronización inicial completada")
         else:
@@ -434,9 +446,11 @@ def main():
 
     try:
         # Crear ventana principal
-        logger.info("Creando ventana principal...")
+        paso("Abriendo la ventana…")
         window = VentanaPrincipal(session, sync_manager=sync_manager)  # noqa: F841
         logger.info("Ventana principal creada exitosamente")
+        if arranque is not None:
+            arranque.terminar(window)
 
         # La ventana ya se muestra maximizada desde su __init__
         # No necesitamos hacer nada más aquí
