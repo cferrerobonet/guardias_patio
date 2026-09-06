@@ -77,7 +77,7 @@ class TestSessionLockAcquire:
                 "ip_address": "192.168.0.99",
                 "pid": 9999,
                 "started_at": (datetime.now() - timedelta(hours=1)).isoformat(),
-                "last_heartbeat": (datetime.now() - timedelta(seconds=60)).isoformat(),
+                "last_heartbeat": (datetime.now() - timedelta(minutes=10)).isoformat(),
             }
             old_lock = SessionLock(backend, "testuser", "abc123hash")
             remote_path = old_lock._get_remote_lock_path()

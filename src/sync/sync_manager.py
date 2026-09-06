@@ -21,6 +21,7 @@ from core.paths import get_user_data_directory
 # Los backends viven en `backends.py` desde v5.90.0: este módulo pasaba de las
 # 1.200 líneas mezclando cómo se sube un fichero con qué se sube y cuándo. Se
 # reexportan porque medio programa los importa desde aquí.
+from sync import integridad
 from sync.backends import (
     ERRORES_DE_TRANSPORTE,
     LocalSyncBackend,
@@ -223,6 +224,10 @@ class SyncManager:
                 return False
 
             version_remota = self._leer_version(tmp_path)
+            problema = integridad.comprobar_descarga(self, tmp_path, version_remota)
+            if problema:  # SYNC-020: un fichero dañado no se acepta
+                self._bloquear_subida(problema)
+                return False
 
             if session is not None:
                 from sync.data_exporter import DataExporter
@@ -350,6 +355,7 @@ class SyncManager:
 
         try:
             if self.backend.upload_file(local_json_path, remote_path):
+                integridad.publicar_huella(self, local_json_path, nueva_version)
                 self.version_descargada = nueva_version
                 self._guardar_metadata_local(
                     nueva_version, pendiente_subida=False, huella=huella
@@ -421,15 +427,14 @@ class SyncManager:
             logger.warning(f"No se pudo guardar el estado de sincronización: {e}")
 
     def _save_sync_metadata(self):
-        """Guarda metadata de sincronización."""
-        metadata = {
-            "username": self.username,
-            "user_hash": self.user_hash,
-            "last_sync": datetime.now().isoformat(),
-        }
+        """Guarda metadata de sincronización y sube una copia informativa."""
+        metadata = self._leer_metadata_local()  # completar, no pisar (SYNC-022)
+        metadata.update(
+            username=self.username, user_hash=self.user_hash, last_sync=datetime.now().isoformat()
+        )
 
-        metadata_path = self.local_data_dir / "last_sync.json"
-        with open(metadata_path, "w") as f:
+        metadata_path = self._ruta_metadata_local()
+        with open(metadata_path, "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=2)
 
         # También subir metadata a la nube
@@ -452,7 +457,7 @@ class SyncManager:
         metadata_path = self.local_data_dir / "last_sync.json"
         try:
             if metadata_path.exists():
-                with open(metadata_path) as f:
+                with open(metadata_path, encoding="utf-8") as f:
                     data = json.load(f)
                 raw = data.get("last_sync")
                 if raw:
@@ -547,7 +552,7 @@ class UserAuth:
     def _load_users(self) -> dict:
         """Carga usuarios desde archivo."""
         if self.users_file.exists():
-            with open(self.users_file) as f:
+            with open(self.users_file, encoding="utf-8") as f:
                 return json.load(f)
         return {}
 
@@ -559,7 +564,7 @@ class UserAuth:
 
         try:
             fd = os.open(self.users_file, flags, mode)
-            with os.fdopen(fd, "w") as f:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump(self.users, f, indent=2)
             # Asegurar permisos incluso si el archivo existía
             os.chmod(self.users_file, 0o600)

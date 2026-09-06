@@ -39,7 +39,10 @@ class SessionLock:
         self.user_hash = user_hash
         self.lock_filename = "session.lock"
         self.heartbeat_interval = 30  # segundos
-        self.lock_timeout = 30  # segundos
+        # La caducidad tiene que dar margen a perder latidos por la red: con la
+        # misma duración que el intervalo, un latido que llegase tarde bastaba
+        # para que otro equipo entrase (SYNC-018).
+        self.lock_timeout = 3 * self.heartbeat_interval  # segundos
 
         # Información de esta sesión
         self.session_info = {
@@ -88,14 +91,14 @@ class SessionLock:
         if self.backend.file_exists(remote_path):
             # Descargar archivo de bloqueo
             if self.backend.download_file(remote_path, local_path):
-                with open(local_path, "r") as f:
-                    existing_lock = json.load(f)
+                existing_lock = self._leer_bloqueo(local_path)
 
                 # Verificar si el bloqueo está expirado
-                last_heartbeat = datetime.fromisoformat(existing_lock.get("last_heartbeat", ""))
-                time_since_heartbeat = (datetime.now() - last_heartbeat).total_seconds()
+                time_since_heartbeat = self._segundos_desde_el_ultimo_latido(existing_lock)
 
-                if time_since_heartbeat < self.lock_timeout:
+                if existing_lock.get("released"):
+                    logger.info("El bloqueo anterior se liberó al cerrar. Adquiriendo...")
+                elif time_since_heartbeat < self.lock_timeout:
                     # Bloqueo activo válido
                     logger.warning(
                         f"❌ Sesión bloqueada. Usuario '{self.username}' ya está activo en:\n"
@@ -108,8 +111,8 @@ class SessionLock:
                 else:
                     # Bloqueo expirado, puede adquirirse
                     logger.info(
-                        f"⚠️  Bloqueo anterior expirado (sin heartbeat por {int(time_since_heartbeat)}s). "
-                        f"Adquiriendo nuevo bloqueo..."
+                        f"⚠️  Bloqueo anterior expirado (sin heartbeat por "
+                        f"{time_since_heartbeat:.0f}s). Adquiriendo nuevo bloqueo..."
                     )
 
         # Crear nuevo bloqueo
@@ -118,8 +121,7 @@ class SessionLock:
         self.session_info["last_heartbeat"] = datetime.now().isoformat()
 
         # Guardar localmente
-        with open(local_path, "w") as f:
-            json.dump(self.session_info, f, indent=2)
+        self._escribir_bloqueo(local_path)
 
         # Subir al servidor
         if self.backend.upload_file(local_path, remote_path):
@@ -155,8 +157,7 @@ class SessionLock:
         self.session_info["last_heartbeat"] = datetime.now().isoformat()
 
         # Guardar localmente
-        with open(local_path, "w") as f:
-            json.dump(self.session_info, f, indent=2)
+        self._escribir_bloqueo(local_path)
 
         # Subir al servidor
         if self.backend.upload_file(local_path, remote_path):
@@ -173,23 +174,59 @@ class SessionLock:
         Returns:
             True si se liberó correctamente
         """
-        self._get_remote_lock_path()
+        remote_path = self._get_remote_lock_path()
         local_path = self._get_local_lock_path()
+        tenia_bloqueo = local_path.exists()
+
+        # Soltar el bloqueo en el servidor. Antes sólo se borraba el local y el
+        # siguiente equipo esperaba a que caducase (SYNC-019). Si el backend no
+        # sabe borrar, se deja el fichero marcado como liberado, que vale igual.
+        if tenia_bloqueo:
+            try:
+                if self.backend.delete_file(remote_path):
+                    logger.info("🔓 Bloqueo remoto borrado")
+                else:
+                    self.session_info["released"] = True
+                    self.session_info["last_heartbeat"] = datetime.now().isoformat()
+                    self._escribir_bloqueo(local_path)
+                    if self.backend.upload_file(local_path, remote_path):
+                        logger.info("🔓 Bloqueo remoto marcado como liberado")
+                    else:
+                        logger.warning(
+                            f"No se pudo liberar el bloqueo remoto; caducará en "
+                            f"{self.lock_timeout}s"
+                        )
+            except Exception as e:
+                logger.warning(f"No se pudo liberar el bloqueo remoto ({e}); caducará solo")
 
         # Eliminar archivo local
         if local_path.exists():
             local_path.unlink()
             logger.info("🔓 Archivo de bloqueo local eliminado")
 
-        # Intentar eliminar del servidor
-        # Nota: La interfaz actual de SyncBackend no tiene método delete()
-        # Por ahora, solo eliminamos local y dejamos que expire en el servidor
-        logger.info(
-            f"✅ Bloqueo de sesión liberado para '{self.username}'\n"
-            f"   El bloqueo remoto expirará en {self.lock_timeout}s"
-        )
+        logger.info(f"✅ Bloqueo de sesión liberado para '{self.username}'")
 
         return True
+
+    def _leer_bloqueo(self, local_path: Path) -> Dict:
+        try:
+            with open(local_path, "r", encoding="utf-8") as f:
+                datos = json.load(f)
+        except (OSError, ValueError):
+            return {}
+        return datos if isinstance(datos, dict) else {}
+
+    def _escribir_bloqueo(self, local_path: Path) -> None:
+        with open(local_path, "w", encoding="utf-8") as f:
+            json.dump(self.session_info, f, indent=2)
+
+    def _segundos_desde_el_ultimo_latido(self, bloqueo: Dict) -> float:
+        """Un bloqueo ilegible o sin fecha cuenta como caducado, no como activo."""
+        try:
+            ultimo = datetime.fromisoformat(str(bloqueo.get("last_heartbeat", "")))
+        except ValueError:
+            return float("inf")
+        return (datetime.now() - ultimo).total_seconds()
 
     def get_lock_info(self) -> Optional[Dict]:
         """
@@ -206,8 +243,7 @@ class SessionLock:
 
         # Descargar y leer
         if self.backend.download_file(remote_path, local_path):
-            with open(local_path, "r") as f:
-                return json.load(f)
+            return self._leer_bloqueo(local_path) or None
 
         return None
 

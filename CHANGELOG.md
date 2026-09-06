@@ -5,10 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
-## [5.96.1] - 2026-09-06
+## [5.98.0] - 2026-09-06
+
+### 🎯 Resumen
+Integridad de la sincronización (lote 20 de la auditoría): el bloqueo de sesión aguanta latidos perdidos y se suelta al cerrar, el volcado viaja con su huella y la subida «sin cambios» por fin se salta.
+
+### ✨ Added
+- **Huella del volcado en el servidor.** Junto a `guardias_patio_data.json` sube un `.sha256` con la versión y el resumen del fichero. Al abrir en otro equipo, si el fichero no coincide con su huella se avisa y no se toca la base local; hasta ahora un fichero truncado que conservase una sección válida pasaba por bueno (SYNC-020). Las subidas anteriores, sin huella, se siguen aceptando.
+- Los backends saben borrar (`delete_file`), tanto el SFTP como el de carpeta local.
+- `src/sync/integridad.py`: la huella vive en su módulo para que `sync_manager.py` siga por debajo de su techo de líneas.
+
+### Fixed
+- **Un latido perdido dejaba entrar a otro equipo.** El bloqueo caducaba a los 30 s y el latido era cada 30 s: cualquier retraso de red abría la puerta. Ahora caduca a los 90 s, que es lo que ya prometía el diálogo de «sesión abierta en otro equipo» (SYNC-018). Un bloqueo ilegible cuenta como caducado en vez de impedir el arranque.
+- **Al cerrar, el siguiente equipo tenía que esperar.** El bloqueo remoto no se borraba; ahora se borra, y si el servidor no lo permite se deja marcado como liberado (SYNC-019).
+- **La subida «sin cambios» nunca se saltaba.** Tras subir, la metadata local se reescribía con tres claves y se perdía la huella del contenido, así que cada media hora volvía a subir y rotar la base entera aunque nadie hubiera tocado nada (SYNC-022). Es la causa más probable de que el servidor no mostrase copias `.1`. Un test de la suite sólo pasaba gracias a este fallo y se ha corregido.
+- Los ficheros de estado de la sincronización se escriben siempre en UTF-8 (parte de COD-010).
 
 ### 🧹 Housekeeping
-- **Los tests no pueden escribir en el `.env` real.** Una tanda de tests de importación reescribió el fichero de configuración de desarrollo con valores de prueba (`sftp.example.com`, `/guardias`) y la aplicación dejó de poder conectar. Ahora todo lo que guarde configuración va a una carpeta temporal durante la suite, salvo que el test se marque `env_real`. Es la tercera barrera del día, tras las del SMTP y el llavero.
+- Rotación de copias probada contra un servidor SFTP simulado con semántica estricta (sin `posix-rename`, renombrado que falla si el destino existe): quedan `.1` y `.2` y ningún temporal (SYNC-021). SYNC-011 se cierra: lo cubrían ya los cambios de v5.47.0.
+- `tests/audit/test_integridad_sincronizacion.py`, 16 tests nuevos.
 
 ## [5.97.0] - 2026-09-06
 
@@ -39,6 +54,11 @@ Estudio completo de la aplicación, plan de auditoría ampliado y limpieza.
 - **La aplicación volvía a pedir la configuración del servidor en cada arranque** desde la v5.95.0. Al llevar las contraseñas al llavero, el fichero se queda con la línea vacía, y la comprobación de arranque seguía mirando sólo el fichero. Ahora pregunta al llavero.
 - **El diálogo de configuración inicial salía con los campos unos encima de otros** y los botones pisándose. Estaba fijado a 720 píxeles de alto con un contenido que, con la hoja de estilos aplicada, necesita más de 900; sin área de desplazamiento, Qt no recorta sino que superpone. Roto desde la v5.74.0, cuando el diálogo empezó a recibir la hoja de estilos; no se veía porque el diálogo no volvía a salir. Cada pestaña se desplaza ahora, y el mínimo del diálogo cabe en la pantalla de 1024×700 que promete la aplicación.
 - **Retirados del repositorio los listados del claustro** que estaban en `docs/examples/` desde 2025-11-15 (dos PDF y cuatro Excel con nombres reales, en un repositorio público). Un test impide que vuelva a entrar ningún fichero de datos ni documento de oficina.
+
+## [5.96.1] - 2026-09-06
+
+### 🧹 Housekeeping
+- **Los tests no pueden escribir en el `.env` real.** Una tanda de tests de importación reescribió el fichero de configuración de desarrollo con valores de prueba (`sftp.example.com`, `/guardias`) y la aplicación dejó de poder conectar. Ahora todo lo que guarde configuración va a una carpeta temporal durante la suite, salvo que el test se marque `env_real`. Es la tercera barrera del día, tras las del SMTP y el llavero.
 
 ## [5.96.0] - 2026-09-06
 

@@ -143,6 +143,10 @@ def test_la_version_crece_en_cada_subida(equipo):
 
     portatil.sync_on_shutdown(session=bd)
     assert portatil.version_descargada == 1
+    # Sin cambios no se sube (ESC-003); hasta v5.97.0 este test pasaba porque la
+    # huella se perdía al guardar la metadata (SYNC-022).
+    bd.add(Zona(nombre_zona="Gimnasio"))
+    bd.commit()
     portatil.sync_on_shutdown(session=bd)
     assert portatil.version_descargada == 2
 

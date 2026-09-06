@@ -71,6 +71,15 @@ class SyncBackend(ABC):
         """
         return False
 
+    def delete_file(self, remote_path: str) -> bool:
+        """
+        Borra un fichero del servidor. Se usa para soltar el bloqueo de sesión al
+        cerrar, de modo que el siguiente equipo no tenga que esperar a que caduque.
+
+        Los backends que no sepan borrar devuelven False y quien llama decide.
+        """
+        return False
+
 
 class LocalSyncBackend(SyncBackend):
     """
@@ -151,6 +160,17 @@ class LocalSyncBackend(SyncBackend):
             return True
         except (OSError, ValueError) as e:
             logger.warning(f"No se pudo renombrar {remote_src} → {remote_dst}: {e}")
+            return False
+
+    def delete_file(self, remote_path: str) -> bool:
+        try:
+            ruta = self._safe_path(remote_path)
+            if not ruta.exists():
+                return True
+            ruta.unlink()
+            return True
+        except (OSError, ValueError) as e:
+            logger.warning(f"No se pudo borrar {remote_path}: {e}")
             return False
 
 
@@ -369,6 +389,20 @@ class SFTPSyncBackend(SyncBackend):
             return True
         except ERRORES_DE_TRANSPORTE as e:
             logger.warning(f"No se pudo renombrar {remote_src} → {remote_dst}: {e}")
+            return False
+
+    def delete_file(self, remote_path: str) -> bool:
+        try:
+            ruta = f"{self.base_dir}/{self._sanitize_path(remote_path)}"
+            if not self._ensure_connected():
+                return False
+            try:
+                self.sftp.remove(ruta)
+            except FileNotFoundError:
+                pass
+            return True
+        except ERRORES_DE_TRANSPORTE as e:
+            logger.warning(f"No se pudo borrar {remote_path}: {e}")
             return False
 
     def download_file(self, remote_path: str, local_path: Path) -> bool:
