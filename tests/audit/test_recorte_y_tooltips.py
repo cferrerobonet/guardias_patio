@@ -121,3 +121,64 @@ def test_los_botones_del_menu_lateral_llevan_ayuda_al_plegarse(qapp, session):
 
     fuente = inspect.getsource(SidebarMenu.toggle_collapse)
     assert "setToolTip" in fuente
+
+
+# ---------------------------------------------------------------------------
+# El panel de edición de profesor cabía por los pelos (CarlosFB, 2026-09-06)
+# ---------------------------------------------------------------------------
+
+
+def test_las_fechas_y_la_zona_van_en_la_misma_fila(qapp):
+    """En columna ocupaban el doble de alto y empujaban los botones fuera."""
+    import inspect
+
+    from presentation.forms.profesor_widgets.restricciones_widget import RestriccionesWidget
+
+    fuente = inspect.getsource(RestriccionesWidget._setup_ui)
+    assert "fila_superior" in fuente
+    assert fuente.index("_crear_seccion_fechas") < fuente.index("_crear_seccion_zona_preferida")
+
+
+def test_el_panel_de_restricciones_no_crece(qapp):
+    """Techo de alto: era 438 px antes de juntar las dos secciones."""
+    from presentation.forms.profesor_widgets.restricciones_widget import RestriccionesWidget
+
+    panel = RestriccionesWidget()
+    assert panel.sizeHint().height() <= 400
+
+
+def test_la_rejilla_ocupa_todo_el_ancho(qapp):
+    """Con tamaño fijo dejaba libre un tercio del panel."""
+    from presentation.forms.profesor_widgets.restricciones_widget import (
+        SemanaRestriccionesWidget,
+    )
+
+    rejilla = SemanaRestriccionesWidget([1, 2, 3, 4])
+    rejilla.resize(820, 300)
+    rejilla.show()
+    qapp.processEvents()
+
+    ultima = rejilla._celdas[(4, 1)]
+    assert ultima.geometry().right() >= rejilla.width() - 20
+    rejilla.close()
+
+
+def test_las_etiquetas_de_recreo_siguen_a_la_izquierda(qapp):
+    from presentation.forms.profesor_widgets.restricciones_widget import (
+        SemanaRestriccionesWidget,
+    )
+
+    rejilla = SemanaRestriccionesWidget([1, 2, 3, 4])
+    rejilla.resize(820, 300)
+    rejilla.show()
+    qapp.processEvents()
+
+    from PyQt6.QtWidgets import QLabel
+
+    primera_casilla = rejilla._celdas[(0, 1)]
+    etiquetas = [
+        w for w in rejilla.findChildren(QLabel) if w.text() in ("R1", "R2", "R3", "R4")
+    ]
+    assert etiquetas, "no se encuentran las etiquetas R1…R4"
+    assert all(e.x() < primera_casilla.x() for e in etiquetas)
+    rejilla.close()

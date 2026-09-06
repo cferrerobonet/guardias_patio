@@ -35,13 +35,17 @@ UMBRALES = {
     "font_size_menor_12px": 0,
     "qfont_menor_9pt": 0,
     "lineas_con_emoji": 315,
-    "setFixed": 18,
+    # 17 desde v5.95.0: las casillas de la matriz de disponibilidad dejan de
+    # tener tamaño fijo para poder estirarse. Un tamaño fijo es peor que un
+    # mínimo cuando la pantalla escala (UXA-001), así que el cambio va en la
+    # dirección buena aunque suba el contador de al lado.
+    "setFixed": 17,
     # 142 desde v5.79.0. Sube una por el diálogo de envío de avisos (v5.78.0),
     # que parte la ventana en destinatarios y vista previa, y otra por el informe
     # previo de importación, que necesita una tabla de cuatro columnas legible.
     # Ya van tres subidas seguidas por diálogos nuevos: el mínimo de un diálogo
     # con tabla debería salir de un sitio común en vez de repetirse en cada uno.
-    "setMinimum": 142,
+    "setMinimum": 143,
 }
 EMOJI = re.compile("[\U0001f300-\U0001faff☀-➿]")
 

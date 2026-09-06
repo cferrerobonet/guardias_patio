@@ -18,6 +18,13 @@ except ImportError:
     pass
 
 
+def _contrasena_sftp() -> str:
+    """La contraseña del servidor, del llavero del sistema si está ahí."""
+    from core.credenciales import obtener
+
+    return obtener("SFTP_PASSWORD")
+
+
 def _usuario_sftp() -> str:
     """Usuario del servidor, con el nombre de variable que escribe la aplicación.
 
@@ -40,7 +47,8 @@ SFTP_CONFIG = {
     "host": os.getenv("SFTP_HOST", ""),
     "port": int(os.getenv("SFTP_PORT", "22")),
     "username": _usuario_sftp(),
-    "password": os.getenv("SFTP_PASSWORD", ""),
+    # Del llavero del sistema; el `.env` solo como respaldo (SEC-001).
+    "password": _contrasena_sftp(),
     "base_dir": os.getenv("SFTP_BASE_DIR", "/aplicaciones/guardias_patio"),
 }
 

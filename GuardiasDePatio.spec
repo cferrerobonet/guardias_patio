@@ -8,6 +8,10 @@ datas = [('imagenes', 'imagenes'), ('alembic', 'alembic'), ('alembic.ini', '.')]
 binaries = []
 hiddenimports = ['logging.config', 'logging.handlers', 'dependency_injector.errors', 'ortools.sat.python.cp_model_helper', 'matplotlib', 'matplotlib.backends.backend_qtagg', 'reportlab']
 datas += collect_data_files('ortools')
+# El llavero elige su almacén en tiempo de ejecución, así que PyInstaller no
+# ve esos imports por sí solo y la aplicación empaquetada se quedaría sin
+# dónde guardar las contraseñas (SEC-001).
+hiddenimports += collect_submodules('keyring.backends')
 binaries += collect_dynamic_libs('ortools')
 hiddenimports += collect_submodules('ortools')
 tmp_ret = collect_all('dependency_injector')

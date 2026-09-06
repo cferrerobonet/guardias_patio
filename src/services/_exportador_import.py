@@ -15,7 +15,6 @@ from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy.exc import SQLAlchemyError
 
 from core.logging import get_logger
-from core.paths import proteger_fichero_de_credenciales
 from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 
 logger = get_logger(__name__)
@@ -437,35 +436,20 @@ def _importar_smtp_config(smtp_data: dict[str, str]) -> bool:
 
         smtp_password = _desencriptar_password(smtp_password_encrypted)
 
-        env_path = ".env"
-        env_lines = []
+        # Escritor único: la contraseña va al llavero del sistema y el
+        # resto al `.env` de la carpeta de datos. Aquí se escribía en la
+        # ruta relativa ".env", que no es la que se lee (SEC-001).
+        from core.credenciales import guardar_configuracion
 
-        if os.path.exists(env_path):
-            with open(env_path, "r") as f:
-                env_lines = f.readlines()
-
-        smtp_vars = {
-            "SMTP_SERVER": smtp_server,
-            "SMTP_PORT": smtp_port,
-            "SMTP_USER": smtp_user,
-            "SMTP_PASSWORD": smtp_password,
-            "SMTP_FROM_NAME": smtp_from_name,
-        }
-
-        updated_vars = set()
-        for i, line in enumerate(env_lines):
-            for var_name, var_value in smtp_vars.items():
-                if line.startswith(f"{var_name}="):
-                    env_lines[i] = f"{var_name}={var_value}\n"
-                    updated_vars.add(var_name)
-
-        for var_name, var_value in smtp_vars.items():
-            if var_name not in updated_vars:
-                env_lines.append(f"{var_name}={var_value}\n")
-
-        with open(env_path, "w") as f:
-            f.writelines(env_lines)
-        proteger_fichero_de_credenciales(env_path)
+        guardar_configuracion(
+            {
+                "SMTP_SERVER": smtp_server,
+                "SMTP_PORT": smtp_port,
+                "SMTP_USER": smtp_user,
+                "SMTP_PASSWORD": smtp_password,
+                "SMTP_FROM_NAME": smtp_from_name,
+            }
+        )
 
         return True
 
@@ -487,35 +471,20 @@ def _importar_sftp_config(sftp_data: dict[str, str]) -> bool:
 
         sftp_password = _desencriptar_password(sftp_password_encrypted)
 
-        env_path = ".env"
-        env_lines = []
+        # Escritor único: la contraseña va al llavero del sistema y el
+        # resto al `.env` de la carpeta de datos. Aquí se escribía en la
+        # ruta relativa ".env", que no es la que se lee (SEC-001).
+        from core.credenciales import guardar_configuracion
 
-        if os.path.exists(env_path):
-            with open(env_path, "r") as f:
-                env_lines = f.readlines()
-
-        sftp_vars = {
-            "SFTP_HOST": sftp_host,
-            "SFTP_PORT": sftp_port,
-            "SFTP_BASE_DIR": sftp_basedir,
-            "SFTP_USERNAME": sftp_user,
-            "SFTP_PASSWORD": sftp_password,
-        }
-
-        updated_vars = set()
-        for i, line in enumerate(env_lines):
-            for var_name, var_value in sftp_vars.items():
-                if line.startswith(f"{var_name}="):
-                    env_lines[i] = f"{var_name}={var_value}\n"
-                    updated_vars.add(var_name)
-
-        for var_name, var_value in sftp_vars.items():
-            if var_name not in updated_vars:
-                env_lines.append(f"{var_name}={var_value}\n")
-
-        with open(env_path, "w") as f:
-            f.writelines(env_lines)
-        proteger_fichero_de_credenciales(env_path)
+        guardar_configuracion(
+            {
+                "SFTP_HOST": sftp_host,
+                "SFTP_PORT": sftp_port,
+                "SFTP_BASE_DIR": sftp_basedir,
+                "SFTP_USERNAME": sftp_user,
+                "SFTP_PASSWORD": sftp_password,
+            }
+        )
 
         return True
 

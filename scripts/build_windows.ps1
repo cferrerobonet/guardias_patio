@@ -132,6 +132,7 @@ $PyInstallerArgs = @(
     "--exclude-module", "email_validator",
     "--collect-all", "dependency_injector",
     "--collect-all", "ortools",
+    "--collect-all", "keyring",
     "--collect-binaries", "ortools",
     "--collect-data", "ortools",
     "--collect-submodules", "ortools",

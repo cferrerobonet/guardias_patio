@@ -320,15 +320,12 @@ class SFTPConfigWidget(QGroupBox):
                 self.logger.warning("Configuración SFTP incompleta, no se guarda")
                 return False
 
-            # Leer el archivo .env actual
-            env_path = ".env"
-            env_lines = []
+            # Un único escritor: las contraseñas van al llavero y el resto
+            # al `.env` de la carpeta de datos. Aquí se usaba la ruta
+            # relativa ".env", que en la aplicación instalada apunta al
+            # directorio de trabajo y no a donde se lee (SEC-001).
+            from core.credenciales import guardar_configuracion
 
-            if os.path.exists(env_path):
-                with open(env_path, "r") as f:
-                    env_lines = f.readlines()
-
-            # Actualizar o agregar variables SFTP
             sftp_vars = {
                 "SFTP_HOST": sftp_host,
                 "SFTP_PORT": sftp_port,
@@ -336,25 +333,7 @@ class SFTPConfigWidget(QGroupBox):
                 "SFTP_USERNAME": sftp_user,
                 "SFTP_PASSWORD": password_to_save,
             }
-
-            updated_vars = set()
-            for i, line in enumerate(env_lines):
-                for var_name, var_value in sftp_vars.items():
-                    if line.startswith(f"{var_name}="):
-                        env_lines[i] = f"{var_name}={var_value}\n"
-                        updated_vars.add(var_name)
-
-            # Agregar variables que no existían
-            for var_name, var_value in sftp_vars.items():
-                if var_name not in updated_vars:
-                    env_lines.append(f"{var_name}={var_value}\n")
-
-            # Guardar archivo .env
-            with open(env_path, "w") as f:
-                f.writelines(env_lines)
-            from core.paths import proteger_fichero_de_credenciales
-
-            proteger_fichero_de_credenciales(env_path)
+            guardar_configuracion(sftp_vars)
 
             self.logger.info("Configuración SFTP guardada correctamente")
 

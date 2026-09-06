@@ -582,44 +582,10 @@ class InitialConfigDialog(QDialog):
             self.accept()
 
     def _update_env_file(self, variables: dict) -> None:
-        """
-        Actualiza el archivo .env con las variables proporcionadas.
+        """Guarda la configuración: contraseñas al llavero, el resto al `.env`."""
+        from core.credenciales import guardar_configuracion
 
-        Args:
-            variables: Diccionario con las variables a actualizar
-        """
-        env_path = self._get_env_path()
-        env_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Leer archivo existente o crear uno nuevo
-        if env_path.exists():
-            with open(env_path, "r") as f:
-                lines = f.readlines()
-        else:
-            lines = []
-
-        # Actualizar variables
-        updated_vars = set()
-        for i, line in enumerate(lines):
-            for var_name, var_value in variables.items():
-                if line.startswith(f"{var_name}="):
-                    lines[i] = f"{var_name}={var_value}\n"
-                    updated_vars.add(var_name)
-                    break
-
-        # Agregar variables nuevas
-        for var_name, var_value in variables.items():
-            if var_name not in updated_vars:
-                lines.append(f"{var_name}={var_value}\n")
-
-        # Guardar archivo
-        with open(env_path, "w") as f:
-            f.writelines(lines)
-        from core.paths import proteger_fichero_de_credenciales
-
-        proteger_fichero_de_credenciales(env_path)
-
-        logger.info(f"Archivo .env actualizado con {len(variables)} variables")
+        guardar_configuracion(variables)
 
     @staticmethod
     def _get_env_path() -> Path:

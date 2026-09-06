@@ -314,41 +314,21 @@ class SMTPConfigWidget(QGroupBox):
             if not smtp_from_name:
                 smtp_from_name = "Guardias de Patio"
 
-            # Leer archivo .env actual
-            env_path = ".env"
-            env_lines = []
+            # Un único escritor: la contraseña va al llavero y el resto al
+            # `.env` de la carpeta de datos. Aquí se usaba la ruta relativa
+            # ".env", que en la aplicación instalada apunta al directorio de
+            # trabajo y no a donde se lee (SEC-001).
+            from core.credenciales import guardar_configuracion
 
-            if os.path.exists(env_path):
-                with open(env_path, "r") as f:
-                    env_lines = f.readlines()
-
-            # Actualizar o agregar variables SMTP
-            smtp_vars = {
-                "SMTP_SERVER": smtp_server,
-                "SMTP_PORT": smtp_port,
-                "SMTP_USER": smtp_user,
-                "SMTP_PASSWORD": password_to_save,
-                "SMTP_FROM_NAME": smtp_from_name,
-            }
-
-            updated_vars = set()
-            for i, line in enumerate(env_lines):
-                for var_name, var_value in smtp_vars.items():
-                    if line.startswith(f"{var_name}="):
-                        env_lines[i] = f"{var_name}={var_value}\n"
-                        updated_vars.add(var_name)
-
-            # Agregar variables que no existían
-            for var_name, var_value in smtp_vars.items():
-                if var_name not in updated_vars:
-                    env_lines.append(f"{var_name}={var_value}\n")
-
-            # Guardar archivo .env
-            with open(env_path, "w") as f:
-                f.writelines(env_lines)
-            from core.paths import proteger_fichero_de_credenciales
-
-            proteger_fichero_de_credenciales(env_path)
+            guardar_configuracion(
+                {
+                    "SMTP_SERVER": smtp_server,
+                    "SMTP_PORT": smtp_port,
+                    "SMTP_USER": smtp_user,
+                    "SMTP_PASSWORD": password_to_save,
+                    "SMTP_FROM_NAME": smtp_from_name,
+                }
+            )
 
             self.logger.info("Configuración SMTP guardada correctamente")
 
@@ -378,32 +358,9 @@ class SMTPConfigWidget(QGroupBox):
             if not smtp_from_name:
                 smtp_from_name = "Guardias de Patio"
 
-            # Leer archivo .env actual
-            env_path = ".env"
-            env_lines = []
+            from core.credenciales import guardar_configuracion
 
-            if os.path.exists(env_path):
-                with open(env_path, "r") as f:
-                    env_lines = f.readlines()
-
-            # Buscar y actualizar SMTP_FROM_NAME
-            from_name_found = False
-            for i, line in enumerate(env_lines):
-                if line.startswith("SMTP_FROM_NAME="):
-                    env_lines[i] = f"SMTP_FROM_NAME={smtp_from_name}\n"
-                    from_name_found = True
-                    break
-
-            # Si no existe, agregarlo
-            if not from_name_found:
-                env_lines.append(f"SMTP_FROM_NAME={smtp_from_name}\n")
-
-            # Guardar archivo .env
-            with open(env_path, "w") as f:
-                f.writelines(env_lines)
-            from core.paths import proteger_fichero_de_credenciales
-
-            proteger_fichero_de_credenciales(env_path)
+            guardar_configuracion({"SMTP_FROM_NAME": smtp_from_name})
 
             self.logger.info(f"Nombre del remitente SMTP guardado: {smtp_from_name}")
             return True

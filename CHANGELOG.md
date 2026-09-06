@@ -5,6 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.95.0] - 2026-09-06
+
+### 🎯 Resumen
+Las contraseñas dejan el fichero de texto y pasan al llavero del sistema.
+
+### ✨ Added
+- **Las contraseñas de servidor y de correo se guardan en el llavero del sistema**: Keychain en macOS, Administrador de credenciales en Windows. El `.env` se queda solo con lo que no es secreto —servidor, puerto, usuario y carpeta—. La primera vez que abras la aplicación, las que hubiera en el fichero se mueven solas y su línea se deja vacía.
+- Si el equipo no tiene llavero (un Linux sin escritorio, por ejemplo) se sigue usando el fichero, porque quedarse sin sincronizar sería peor, y queda avisado en el registro.
+
+### Fixed
+- **Guardar la configuración desde Ajustes escribía en el sitio equivocado.** Los widgets de SFTP y SMTP usaban la ruta relativa `.env`, que en la aplicación instalada apunta al directorio de trabajo y no a la carpeta de datos donde después se lee. Ahora hay un único escritor.
+- **El panel de edición de profesor no cabía**: los botones de Actualizar y Cancelar salían cortados. El periodo de guardias y la zona preferida pasan a ir uno al lado del otro, lo que ahorra 50 píxeles de alto.
+- **La matriz de disponibilidad ocupaba un tercio del panel** y dejaba un hueco a la derecha. Ahora las casillas se estiran a todo el ancho, con las etiquetas R1…R4 donde estaban.
+
+### 🧹 Housekeeping
+- El empaquetado se lleva los almacenes del llavero: los elige en tiempo de ejecución y PyInstaller no los ve por sí solo.
+- **Los tests no pueden escribir en el llavero real.** Pasó al escribirlos: la suite dejó contraseñas de prueba en el Keychain, y como la aplicación mira primero el llavero habrían suplantado a las de verdad.
+- Las casillas de la matriz dejan de tener tamaño fijo: un mínimo se comporta mejor cuando la pantalla escala.
+
 ## [5.94.0] - 2026-09-06
 
 ### 🎯 Resumen

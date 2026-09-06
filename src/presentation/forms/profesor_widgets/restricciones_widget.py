@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -76,9 +77,16 @@ class SemanaRestriccionesWidget(QWidget):
         tpl_layout.addStretch()
         layout.addLayout(tpl_layout)
 
-        # Rejilla
+        # Rejilla. Las casillas se estiran para llenar el ancho disponible: con
+        # tamaño fijo ocupaban un tercio del panel y dejaban un hueco grande a la
+        # derecha (petición de CarlosFB, 2026-09-06). La columna de las etiquetas
+        # R1…R4 se queda estrecha y a la izquierda.
         grid = QGridLayout()
         grid.setSpacing(4)
+        grid.setColumnStretch(0, 0)
+        grid.setColumnMinimumWidth(0, 40)
+        for columna in range(1, 6):
+            grid.setColumnStretch(columna, 1)
 
         # Cabecera días
         for col, dia in enumerate(_DIAS):
@@ -97,7 +105,10 @@ class SemanaRestriccionesWidget(QWidget):
                 btn = QPushButton("✓")
                 btn.setCheckable(True)
                 btn.setChecked(True)
-                btn.setFixedSize(44, 32)
+                btn.setMinimumHeight(32)
+                btn.setSizePolicy(
+                    QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+                )
                 # Un botón cuyo único texto es la marca de verificación no dice
                 # nada por sí solo: sin nombre, el lector de pantalla anuncia
                 # veinte casillas idénticas.
@@ -203,11 +214,14 @@ class RestriccionesWidget(QGroupBox):
         main_layout = QVBoxLayout()
         main_layout.setSpacing(8)  # Reducido de 12 a 8
 
-        # Sección de fechas
-        main_layout.addLayout(self._crear_seccion_fechas())
-
-        # Sección de zona preferida
-        main_layout.addLayout(self._crear_seccion_zona_preferida())
+        # Periodo de guardias y zona preferida, uno al lado del otro: en columna
+        # ocupaban el doble de alto y empujaban los botones de guardar fuera de
+        # la ventana (petición de CarlosFB, 2026-09-06).
+        fila_superior = QHBoxLayout()
+        fila_superior.setSpacing(24)
+        fila_superior.addLayout(self._crear_seccion_fechas())
+        fila_superior.addLayout(self._crear_seccion_zona_preferida(), 1)
+        main_layout.addLayout(fila_superior)
 
         # Separador
         main_layout.addWidget(self._crear_separador())
@@ -308,6 +322,9 @@ class RestriccionesWidget(QGroupBox):
         )
         self.zona_preferida_combo.setAccessibleName("Zona preferida del profesor para guardias")
         layout.addWidget(self.zona_preferida_combo)
+        # Sin esto el desplegable se centraría verticalmente respecto a las dos
+        # filas de fechas y su etiqueta no quedaría a la misma altura.
+        layout.addStretch()
 
         return layout
 

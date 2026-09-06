@@ -47,7 +47,9 @@ class TestDataExporterSMTPConfig:
         assert ok is False
 
     def test_import_smtp_config_creates_env(self, tmp_path, monkeypatch):
-        monkeypatch.chdir(tmp_path)
+        # Desde v5.95.0 se escribe en el `.env` de la carpeta de datos, no en el
+        # del directorio de trabajo, y la contraseña va al llavero (SEC-001).
+        monkeypatch.setattr("core.paths.get_base_directory", lambda: tmp_path)
         payload = {
             "smtp_server": "smtp.example.com",
             "smtp_port": "587",
@@ -59,10 +61,14 @@ class TestDataExporterSMTPConfig:
         assert ok is True
         content = (tmp_path / ".env").read_text(encoding="utf-8")
         assert "SMTP_SERVER=smtp.example.com" in content
-        assert "SMTP_PASSWORD=secret" in content
+        # La contraseña ya no se escribe en el fichero: está en el llavero.
+        assert "secret" not in content
+        from core.credenciales import leer
+
+        assert leer("SMTP_PASSWORD") == "secret"
 
     def test_import_smtp_config_updates_existing_env(self, tmp_path, monkeypatch):
-        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr("core.paths.get_base_directory", lambda: tmp_path)
         env_file = tmp_path / ".env"
         env_file.write_text("SMTP_SERVER=old\nSMTP_PORT=25\nOTHER_VAR=1\n", encoding="utf-8")
 
@@ -113,7 +119,7 @@ class TestDataExporterSFTPConfig:
         assert ok is False
 
     def test_import_sftp_config_creates_env(self, tmp_path, monkeypatch):
-        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr("core.paths.get_base_directory", lambda: tmp_path)
         payload = {
             "sftp_host": "sftp.example.com",
             "sftp_port": "22",
@@ -125,7 +131,11 @@ class TestDataExporterSFTPConfig:
         assert ok is True
         content = (tmp_path / ".env").read_text(encoding="utf-8")
         assert "SFTP_HOST=sftp.example.com" in content
-        assert "SFTP_PASSWORD=secret" in content
+        # La contraseña ya no se escribe en el fichero: está en el llavero.
+        assert "SFTP_PASSWORD=\n" in content
+        from core.credenciales import leer
+
+        assert leer("SFTP_PASSWORD") == "secret"
 
 
 class TestDataExporterDecryptFallbacks:

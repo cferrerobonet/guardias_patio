@@ -167,6 +167,12 @@ def main():
     if env_path.exists():
         load_dotenv(dotenv_path=env_path, override=True)
 
+    # Las contraseñas que sigan en el fichero se llevan al llavero del sistema y
+    # la línea se deja vacía. Se hace una sola vez, en silencio (SEC-001).
+    from core.credenciales import migrar_desde_env
+
+    migrar_desde_env(env_path)
+
     # Verificar si es necesario configurar SFTP/SMTP
     if InitialConfigDialog.is_configuration_needed():
         logger.info("Configuración inicial requerida. Mostrando diálogo...")

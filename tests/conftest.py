@@ -667,3 +667,36 @@ def sin_smtp_de_verdad(request, monkeypatch):
 
     monkeypatch.setattr(smtplib, "SMTP", prohibido)
     monkeypatch.setattr(smtplib, "SMTP_SSL", prohibido)
+
+
+class _LlaveroDeMentira:
+    """Almacén en memoria que sustituye al llavero del sistema en los tests."""
+
+    def __init__(self):
+        self._datos: dict = {}
+
+    def set_password(self, servicio, nombre, valor):
+        self._datos[(servicio, nombre)] = valor
+
+    def get_password(self, servicio, nombre):
+        return self._datos.get((servicio, nombre))
+
+    def delete_password(self, servicio, nombre):
+        self._datos.pop((servicio, nombre), None)
+
+
+@pytest.fixture(autouse=True)
+def sin_llavero_de_verdad(request, monkeypatch):
+    """Impide que un test escriba en el llavero real del equipo.
+
+    Pasó al escribir los tests de SEC-001: la suite dejó contraseñas de prueba
+    en el Keychain de macOS, y como la aplicación mira primero el llavero,
+    habrían suplantado a las de verdad y la sincronización habría dejado de
+    funcionar. Marcar el test con `llavero_real` desactiva la guarda.
+    """
+    if request.node.get_closest_marker("llavero_real"):
+        return
+
+    from core import credenciales
+
+    monkeypatch.setattr(credenciales, "_llavero", lambda _almacen=_LlaveroDeMentira(): _almacen)

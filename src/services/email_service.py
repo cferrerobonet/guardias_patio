@@ -457,7 +457,10 @@ def get_email_service() -> Optional[EmailService]:
     load_dotenv()
 
     smtp_user = os.getenv("SMTP_USER")
-    smtp_password = os.getenv("SMTP_PASSWORD")
+    from core.credenciales import obtener
+
+    # Del llavero del sistema, con el `.env` de respaldo (SEC-001).
+    smtp_password = obtener("SMTP_PASSWORD") or None
     smtp_server = os.getenv("SMTP_SERVER", EmailService.DEFAULT_SMTP_SERVER)
     smtp_port = int(os.getenv("SMTP_PORT", str(EmailService.DEFAULT_SMTP_PORT)))
     smtp_from_name = os.getenv("SMTP_FROM_NAME", "Guardias de Patio")
