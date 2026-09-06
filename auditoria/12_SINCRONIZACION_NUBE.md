@@ -45,7 +45,7 @@ Comprobado: la carpeta `0db13e2857239ed8` que aparece en el servidor es exactame
 ### Los tres momentos de sincronización
 
 1. **Al abrir** (`sync_manager.py:419-513`): si el remoto es más reciente que el local según fecha de modificación, se descarga a un temporal, se compara el número de registros y, si el remoto no tiene menos, sustituye al local y se importa a la base de datos con `clear_existing=False`.
-2. **Cada 30 minutos** (`ccleaner_main_window.py:262-270`): lanza `SyncWorker`, que llama a `sync_on_shutdown`. **Solo sube. Nunca descarga.**
+2. **Cada 30 minutos** (`ventana_principal.py:262-270`): lanza `SyncWorker`, que llama a `sync_on_shutdown`. **Solo sube. Nunca descarga.**
 3. **Al cerrar** (`main.py:378-415`): exporta toda la base de datos a JSON y lo sube reemplazando el remoto.
 
 ### Control de concurrencia
@@ -135,7 +135,7 @@ Protege de dos sesiones simultáneas conectadas, no de una sesión aislada que l
 
 ### [SYNC-014] La sincronización automática solo sube · P2
 
-- **Ubicación:** `presentation/ccleaner_main_window.py:262-270`, que llama a `sync_on_shutdown`.
+- **Ubicación:** `presentation/ventana_principal.py:262-270`, que llama a `sync_on_shutdown`.
 - **Qué pasa:** cada 30 minutos se reemplaza el fichero del servidor con el estado local, sin haber comprobado antes si alguien cambió algo. Una sesión larga machaca repetidamente el trabajo ajeno.
 
 ### [SYNC-015] La decisión de descargar depende de los relojes · P3

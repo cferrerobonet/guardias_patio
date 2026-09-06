@@ -235,7 +235,7 @@ class ZonaForm(BaseForm):
         left_section.addWidget(self.tabla_zonas)
 
         # Label informativo de multiselección
-        from presentation.themes.ccleaner_theme import (
+        from presentation.themes.tema_aplicacion import (
             CONTENT_BG_ALT,
             FONT_SIZE_SMALL,
             PRIMARY_BLUE,

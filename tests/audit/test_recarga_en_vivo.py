@@ -9,7 +9,7 @@ import pytest
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtWidgets import QLabel
 
-from presentation.ccleaner_main_window import CCleanerMainWindow, ContentWrapper
+from presentation.ventana_principal import VentanaPrincipal, ContentWrapper
 
 pytestmark = pytest.mark.ui
 
@@ -36,8 +36,8 @@ class _VistaFalsa(QObject):
 
 @pytest.fixture
 def ventana(qapp, session, monkeypatch):
-    monkeypatch.setattr(CCleanerMainWindow, "setup_ui", lambda self: None)
-    v = CCleanerMainWindow(session)
+    monkeypatch.setattr(VentanaPrincipal, "setup_ui", lambda self: None)
+    v = VentanaPrincipal(session)
     v.widgets = {}
     v._view_factories = {}
     yield v

@@ -1,7 +1,7 @@
 """
-Punto de entrada para la aplicación con diseño CCleaner
+Punto de entrada de la aplicación de escritorio
 ========================================================
-Ejecutar: python src/main_ccleaner.py
+Ejecutar: python src/main.py
 """
 
 import faulthandler
@@ -51,7 +51,7 @@ from PyQt6.QtCore import QLibraryInfo, QLocale, Qt, QTranslator
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
-from presentation.ccleaner_main_window import CCleanerMainWindow
+from presentation.ventana_principal import VentanaPrincipal
 from presentation.forms.login_dialog import LoginDialog
 from sync import SyncConfigurationError, SyncManager, get_default_backend
 from utils.corporate_branding import apply_corporate_branding
@@ -435,7 +435,7 @@ def main():
     try:
         # Crear ventana principal
         logger.info("Creando ventana principal...")
-        window = CCleanerMainWindow(session, sync_manager=sync_manager)  # noqa: F841
+        window = VentanaPrincipal(session, sync_manager=sync_manager)  # noqa: F841
         logger.info("Ventana principal creada exitosamente")
 
         # La ventana ya se muestra maximizada desde su __init__

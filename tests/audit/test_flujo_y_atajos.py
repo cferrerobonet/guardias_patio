@@ -110,9 +110,9 @@ def test_generar_pesa_mas_que_limpiar(qapp, session):
 # UXF-011: moverse sin ratón
 # ---------------------------------------------------------------------------
 def test_cada_seccion_tiene_su_atajo(qapp, session):
-    from presentation.ccleaner_main_window import CCleanerMainWindow
+    from presentation.ventana_principal import VentanaPrincipal
 
-    ventana = CCleanerMainWindow(session, sync_manager=None)
+    ventana = VentanaPrincipal(session, sync_manager=None)
     try:
         secciones_con_atajo = {s for _, s in ventana.ATAJOS_DE_SECCION}
         secciones_del_menu = {
@@ -128,9 +128,9 @@ def test_cada_seccion_tiene_su_atajo(qapp, session):
 
 
 def test_el_atajo_navega_de_verdad(qapp, session):
-    from presentation.ccleaner_main_window import CCleanerMainWindow
+    from presentation.ventana_principal import VentanaPrincipal
 
-    ventana = CCleanerMainWindow(session, sync_manager=None)
+    ventana = VentanaPrincipal(session, sync_manager=None)
     try:
         ventana._navegar_con_atajo("zonas")
         assert ventana._seccion_actual == "zonas"
@@ -140,9 +140,9 @@ def test_el_atajo_navega_de_verdad(qapp, session):
 
 def test_el_atajo_se_anuncia_en_el_boton(qapp, session):
     """Un atajo que no se ve no lo usa nadie."""
-    from presentation.ccleaner_main_window import CCleanerMainWindow
+    from presentation.ventana_principal import VentanaPrincipal
 
-    ventana = CCleanerMainWindow(session, sync_manager=None)
+    ventana = VentanaPrincipal(session, sync_manager=None)
     try:
         botones = {
             b.property("section"): b

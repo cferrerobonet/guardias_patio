@@ -74,7 +74,7 @@ SHADOW_LARGE = "0 4px 8px rgba(0, 0, 0, 0.12)"
 
 
 def get_sidebar_style() -> str:
-    """Estilo para el sidebar oscuro estilo CCleaner - limpio y moderno"""
+    """Estilo del menú lateral oscuro."""
     return f"""
         QWidget#sidebar {{
             background-color: {SIDEBAR_BG};

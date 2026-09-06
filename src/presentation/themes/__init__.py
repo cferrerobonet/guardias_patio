@@ -5,8 +5,8 @@ Contiene paletas de colores, tipografía y estilos CSS para
 diferentes sistemas de diseño.
 """
 
-# Importar desde el tema CCleaner
-from presentation.themes.ccleaner_theme import (
+# Importar desde el tema de la aplicación
+from presentation.themes.tema_aplicacion import (
     CONTENT_BG,
     ERROR_RED,
     PRIMARY_BLUE,

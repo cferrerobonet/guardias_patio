@@ -77,7 +77,7 @@
 
 | Grupo | Superficies | Evidencia/resultado |
 | --- | --- | --- |
-| Navegación principal | Profesores, Zonas, Ajustes, Perfiles, Cálculo/Asignación, Calendario, Ausencias/Sustituciones, Importar/Exportar, Reportes, Estadísticas | 10 factories en `src/presentation/ccleaner_main_window.py:139-166`; HALLAZGO UXA-007/013. |
+| Navegación principal | Profesores, Zonas, Ajustes, Perfiles, Cálculo/Asignación, Calendario, Ausencias/Sustituciones, Importar/Exportar, Reportes, Estadísticas | 10 factories en `src/presentation/ventana_principal.py:139-166`; HALLAZGO UXA-007/013. |
 | Formularios | 128 construcciones: 61 line edits, 22 combos, 15 checks, 14 fechas, 9 textos, 4 horas y 3 spinboxes | 39 ficheros; HALLAZGO UXA-005/006/012. |
 | Diálogos/overlays | 21 clases QDialog, QMessageBox generalizado y toast | HALLAZGO UXA-003/001/010. |
 | Tablas/listados | 12 QTableWidget, 69 columnas estáticas más heatmap/preview dinámicos | HALLAZGO UXA-008/011. |
@@ -120,7 +120,7 @@
 - **Estado respecto a auditoría anterior:** NUEVO. **Categoría/tipo:** Adaptabilidad / bug. **Severidad/prioridad/confianza:** P1 / alta / alta.
 - **Estándar/requisito:** EN 301 549 11.1.4.4 y 11.1.4.10; WCAG 1.4.4/1.4.10 como criterio de comprobación; Impeccable Adaptivity.
 - **Superficie/roles:** todos los usuarios; ventana principal, login, configuración inicial, calendarios y diálogos.
-- **Ubicación exacta:** `src/presentation/ccleaner_main_window.py:84-93`; `src/presentation/forms/login_dialog.py:299-315`; `src/presentation/dialogs/initial_config_dialog.py:54-58`; `src/presentation/widgets/dialogo_reasignacion.py:43-47`.
+- **Ubicación exacta:** `src/presentation/ventana_principal.py:84-93`; `src/presentation/forms/login_dialog.py:299-315`; `src/presentation/dialogs/initial_config_dialog.py:54-58`; `src/presentation/widgets/dialogo_reasignacion.py:43-47`.
 - **Evidencia/resultado actual:** la ventana exige 1400×900 y se maximiza; LoginDialog fija 720×480; configuración inicial exige 700×720. En 1366×768 o escalado 150–200 % el marco o acciones pueden quedar fuera del área útil.
 - **Reproducción:** iniciar con área lógica ≤1366×768; abrir login/config inicial; aumentar escala del SO a 150/200 %; comprobar acceso por teclado a todos los controles.
 - **Esperado/impacto/frecuencia:** ninguna tarea debe requerir más que el área disponible; impacto de bloqueo o scroll bidimensional continuo; probable en portátiles y baja visión.
@@ -136,8 +136,8 @@
 - **Estado/categoría/tipo:** NUEVO / Accesibilidad / bug. **Severidad/prioridad/confianza:** P1 / alta / alta.
 - **Requisito:** WCAG 2.4.7 AA, 1.4.11; EN 301 549 11.2.4.7 y 11.5.2.13.
 - **Superficie:** global, especialmente sidebar, diálogos y acciones destructivas.
-- **Ubicación:** `src/presentation/themes/ccleaner_theme.py:450-594,692-732`; `src/presentation/theme/light.qss:6-95`; `src/presentation/components/ccleaner_sidebar.py:304-349`.
-- **Evidencia/actual:** 0 selectores `QPushButton:focus` en presentación; botones redefinen borde/fondo y los inputs solo cambian un borde de 1 px; `outline: none` aparece en el helper de inputs (`src/presentation/themes/ccleaner_theme.py:345-348`). El foco nativo puede quedar oculto por QSS.
+- **Ubicación:** `src/presentation/themes/tema_aplicacion.py:450-594,692-732`; `src/presentation/theme/light.qss:6-95`; `src/presentation/components/menu_lateral.py:304-349`.
+- **Evidencia/actual:** 0 selectores `QPushButton:focus` en presentación; botones redefinen borde/fondo y los inputs solo cambian un borde de 1 px; `outline: none` aparece en el helper de inputs (`src/presentation/themes/tema_aplicacion.py:345-348`). El foco nativo puede quedar oculto por QSS.
 - **Reproducción:** navegar solo con Tab/Shift+Tab en sidebar, Profesor, Zona y un QMessageBox; observar cada foco con ratón apartado.
 - **Esperado/impacto/frecuencia:** indicador visible en todos los controles; usuarios de teclado pueden perder posición y ejecutar una acción equivocada; continuo.
 - **Causa/patrón:** sistema visual define default/hover/pressed/disabled, pero omite focus; estilos locales multiplican la omisión.
@@ -168,7 +168,7 @@
 - **Estado/categoría/tipo:** NUEVO / UX-recuperación / bug. **Severidad/prioridad/confianza:** P1 / alta / alta.
 - **Requisito:** prevención de pérdida de trabajo; EN 301 549 11.3.3.4 cuando la operación afecte datos; Impeccable Harden.
 - **Superficie:** Profesor, Zona, Ajustes y cualquier BaseForm editable.
-- **Ubicación:** API muerta en `src/presentation/forms/base_form.py:29-86`; navegación sin guard en `src/presentation/ccleaner_main_window.py:185-190`; cierre que limpia en `src/presentation/forms/profesor_form.py:345-349,391-395`.
+- **Ubicación:** API muerta en `src/presentation/forms/base_form.py:29-86`; navegación sin guard en `src/presentation/ventana_principal.py:185-190`; cierre que limpia en `src/presentation/forms/profesor_form.py:345-349,391-395`.
 - **Evidencia/actual:** `rg` solo encuentra definiciones de `_mark_dirty`, `_mark_clean`, `tiene_cambios` y `registrar_label_cambios`; ningún consumidor. Cambiar de sección o cerrar/cancelar limpia sin aviso.
 - **Reproducción:** editar varios campos de Profesor/Zona sin guardar; pulsar otra sección, X del panel o Esc; regresar.
 - **Esperado/impacto/frecuencia:** advertir con Guardar/Descartar/Cancelar o preservar borrador; pérdida silenciosa de trabajo, probable.
@@ -216,7 +216,7 @@
 - **Estado/categoría/tipo:** NUEVO / Estado y feedback / bug. **Severidad/prioridad/confianza:** P1 / inmediata / alta.
 - **Requisito:** consistencia/feedback veraz; Impeccable Harden; no adjudicado como norma WCAG específica.
 - **Superficie:** todas las vistas ya cargadas tras cambiar curso.
-- **Ubicación:** `ContentWrapper` no guarda `content_widget` (`src/presentation/ccleaner_main_window.py:45-68`); handler salta wrappers sin ese atributo pero registra éxito (`src/presentation/ccleaner_main_window.py:238-257`); promesa al usuario `src/presentation/widgets/selector_curso_widget.py:118-166`.
+- **Ubicación:** `ContentWrapper` no guarda `content_widget` (`src/presentation/ventana_principal.py:45-68`); handler salta wrappers sin ese atributo pero registra éxito (`src/presentation/ventana_principal.py:238-257`); promesa al usuario `src/presentation/widgets/selector_curso_widget.py:118-166`.
 - **Evidencia/actual:** `hasattr(wrapped, "content_widget")` siempre es falso para wrappers creados por `_ensure_view`; ninguna vista cargada se refresca, aunque el toast anuncia nuevo curso y el log dice todas refrescadas.
 - **Reproducción:** abrir dos vistas, cambiar curso, inspeccionar datos sin reiniciar o probar con spies en `cargar_datos/refrescar`.
 - **Esperado/impacto/frecuencia:** todas las vistas visibles/cargadas se invalidan y muestran el curso seleccionado; riesgo de actuar sobre datos visualmente obsoletos; cada cambio de curso.
@@ -264,7 +264,7 @@
 - **Estado/categoría/tipo:** NUEVO / Theming / deuda con bug de contraste. **Severidad/prioridad/confianza:** P2 global; la instancia warning se cubre como prioridad alta / alta.
 - **Requisito:** WCAG 1.4.3/1.4.11; EN 301 549 11.1.4.3; Impeccable product register.
 - **Superficie:** global, botones Editar/Importar/Modificar y toast.
-- **Ubicación:** tokens `src/presentation/theme/tokens.py:6-75`; QSS app `src/main.py:168-179`; QSS ventana `src/presentation/ccleaner_main_window.py:84-93`; warning `src/presentation/themes/ccleaner_theme.py:25-30,586-594`; uso `src/presentation/forms/profesor_form.py:244-257`.
+- **Ubicación:** tokens `src/presentation/theme/tokens.py:6-75`; QSS app `src/main.py:168-179`; QSS ventana `src/presentation/ventana_principal.py:84-93`; warning `src/presentation/themes/tema_aplicacion.py:25-30,586-594`; uso `src/presentation/forms/profesor_form.py:244-257`.
 - **Evidencia/actual:** light.qss + get_complete_stylesheet + 287 estilos inline; 718 hex/168 colores. Blanco/#FFC107 = 1,63:1 en botones warning activos. Toast error/info también fallan. No se detectó tema oscuro/alto contraste.
 - **Reproducción:** abrir botones warning y toasts; calcular pares finales tras cascada; activar dark/high-contrast del SO.
 - **Esperado/impacto/frecuencia:** una fuente semántica de verdad y ≥4,5:1 en texto normal; baja visión no distingue etiquetas; frecuente.
@@ -312,7 +312,7 @@
 - **Estado/categoría/tipo:** NUEVO / Arquitectura de información + navegación / deuda. **Severidad/prioridad/confianza:** P2 / media / alta.
 - **Requisito:** WCAG 2.4.6, 4.1.2; EN 301 549 11.4.1.2 y 11.5.2.5/15.
 - **Superficie:** MainWindow/Sidebar.
-- **Ubicación:** `ContentWrapper` recibe `title` pero no lo renderiza ni lo guarda (`src/presentation/ccleaner_main_window.py:45-68`); activo se expresa como propiedad visual (`src/presentation/components/ccleaner_sidebar.py:304-366`); colapso borra texto y deja tooltip (`src/presentation/components/ccleaner_sidebar.py:570-591`).
+- **Ubicación:** `ContentWrapper` recibe `title` pero no lo renderiza ni lo guarda (`src/presentation/ventana_principal.py:45-68`); activo se expresa como propiedad visual (`src/presentation/components/menu_lateral.py:304-366`); colapso borra texto y deja tooltip (`src/presentation/components/menu_lateral.py:570-591`).
 - **Evidencia/actual:** no hay encabezado uniforme; botón activo no es checkable/selected accesible; al colapsar se ejecuta `setText("")` sin `accessibleName`; cambiar stack no enfoca/anuncia título.
 - **Reproducción:** colapsar Ctrl+B y recorrer sidebar con lector; cambiar sección; escuchar nombre/estado/contexto.
 - **Esperado/impacto/frecuencia:** nombre estable, current/selected anunciado, título de vista y foco predecible; desorientación moderada continua.
@@ -328,7 +328,7 @@
 - **Estado/categoría/tipo:** NUEVO / Polish / mejora. **Severidad/prioridad/confianza:** P3 / baja / alta.
 - **Requisito:** prohibiciones Impeccable: side-stripe accents, hero metrics y texto desbordado; product register: densidad legible.
 - **Superficie:** info boxes, métricas, calendario y gráficos.
-- **Ubicación:** side stripes `src/presentation/themes/ccleaner_theme.py:629-664`; metric cards `src/presentation/widgets/panel_estadisticas.py:87-117`; fuentes 7–9 `src/presentation/widgets/_celda_dia.py:117-159,270-381` y `src/presentation/widgets/bar_chart_widget.py:91-123,139-198`.
+- **Ubicación:** side stripes `src/presentation/themes/tema_aplicacion.py:629-664`; metric cards `src/presentation/widgets/panel_estadisticas.py:87-117`; fuentes 7–9 `src/presentation/widgets/_celda_dia.py:117-159,270-381` y `src/presentation/widgets/bar_chart_widget.py:91-123,139-198`.
 - **Evidencia/actual:** 56 ocurrencias de 7–10 px; tarjeta de métrica repetida; bordes laterales de 4 px; calendario concentra mucha información en texto minúsculo.
 - **Reproducción:** abrir calendario/estadísticas a DPI alto y comparar legibilidad/jerarquía.
 - **Esperado/impacto/frecuencia:** densidad sin sacrificar lectura; impacto de polish y fatiga, no bloqueo aislado.
@@ -353,8 +353,8 @@
 - Uso mayoritario de widgets Qt estándar, que ya exponen roles/acciones de plataforma.
 - Orden de tabulación y foco en error bien implementados en autenticación/perfiles (`src/presentation/dialogs/dialogo_crear_perfil.py:126-163`; `src/presentation/forms/change_password_dialog.py:89-139`).
 - Botones destructivos de varios flujos usan default seguro `No/Cancel` (`src/presentation/widgets/selector_curso_widget.py:118-149`; `src/presentation/forms/base_form.py:194-212`).
-- `ContentWrapper` introduce scroll en ambos ejes como red de seguridad (`src/presentation/ccleaner_main_window.py:52-68`).
-- Carga perezosa de las 10 vistas reduce el arranque (`src/presentation/ccleaner_main_window.py:139-177`).
+- `ContentWrapper` introduce scroll en ambos ejes como red de seguridad (`src/presentation/ventana_principal.py:52-68`).
+- Carga perezosa de las 10 vistas reduce el arranque (`src/presentation/ventana_principal.py:139-177`).
 - Hay workers con progreso/cancelación para sincronización y tareas largas (`src/presentation/widgets/progress_worker.py:16-113`; `src/presentation/widgets/sync_progress_dialog.py:24-49`).
 - Profesor desactiva sorting durante carga y lo restaura al final, evitando trabajo repetido (`src/presentation/forms/profesor_table_helpers.py:13-72`).
 - Perfiles ofrece el mejor patrón de tabla nombrada y solo lectura (`src/presentation/forms/perfiles_usuario_form.py:210-235`).

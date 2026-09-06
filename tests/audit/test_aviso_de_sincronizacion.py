@@ -27,9 +27,9 @@ class _SyncFalso:
 
 @pytest.fixture
 def ventana(qapp, session):
-    from presentation.ccleaner_main_window import CCleanerMainWindow
+    from presentation.ventana_principal import VentanaPrincipal
 
-    v = CCleanerMainWindow(session, sync_manager=None)
+    v = VentanaPrincipal(session, sync_manager=None)
     yield v
     v.close()
 

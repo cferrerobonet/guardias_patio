@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
 )
 
 from presentation.forms.base_form import BaseForm
-from presentation.themes.ccleaner_theme import TEXT_SECONDARY, get_table_style
+from presentation.themes.tema_aplicacion import TEXT_SECONDARY, get_table_style
 from utils.icons import icon_for_button
 
 _DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]

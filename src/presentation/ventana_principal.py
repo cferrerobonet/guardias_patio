@@ -1,5 +1,5 @@
 """
-Ventana Principal Estilo CCleaner
+Ventana principal de Guardias de Patio
 ==================================
 Layout profesional con sidebar oscuro y contenido blanco.
 """
@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
 
 from core.logging import get_logger
 from core.usage_logger import usage_log
-from presentation.components.ccleaner_sidebar import SidebarMenu
+from presentation.components.menu_lateral import SidebarMenu
 from presentation.forms.ajustes_form import AjustesForm
 from presentation.forms.asignacion_calculo_form import AsignacionCalculoForm
 from presentation.forms.import_export_form import ImportExportForm
@@ -30,7 +30,7 @@ from presentation.forms.perfiles_usuario_form import PerfilesUsuarioForm
 from presentation.forms.profesor_form import ProfesorForm
 from presentation.forms.reportes_form import ReportesForm
 from presentation.forms.zona_form import ZonaForm
-from presentation.themes.ccleaner_theme import (
+from presentation.themes.tema_aplicacion import (
     CONTENT_BG,
     get_complete_stylesheet,
 )
@@ -85,8 +85,8 @@ class ContentWrapper(QWidget):
         layout.addWidget(scroll)
 
 
-class CCleanerMainWindow(QMainWindow):
-    """Ventana principal con diseño estilo CCleaner"""
+class VentanaPrincipal(QMainWindow):
+    """Ventana principal: menú lateral, cabecera de vista y área de contenido."""
 
     _nueva_version_signal = pyqtSignal(str, str, str)
 

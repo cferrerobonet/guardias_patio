@@ -131,9 +131,9 @@ src/infrastructure/repositories/sqlalchemy_guardia_repository.py
 src/infrastructure/repositories/sqlalchemy_profesor_repository.py
 src/infrastructure/repositories/sqlalchemy_zona_repository.py
 src/presentation/__init__.py
-src/presentation/ccleaner_main_window.py
+src/presentation/ventana_principal.py
 src/presentation/components/__init__.py
-src/presentation/components/ccleaner_sidebar.py
+src/presentation/components/menu_lateral.py
 src/presentation/dialogs/__init__.py
 src/presentation/dialogs/_initial_config_tabs.py
 src/presentation/dialogs/column_mapping_dialog.py
@@ -197,7 +197,7 @@ src/presentation/theme/legacy_styles.py
 src/presentation/theme/terminal_format.py
 src/presentation/theme/tokens.py
 src/presentation/themes/__init__.py
-src/presentation/themes/ccleaner_theme.py
+src/presentation/themes/tema_aplicacion.py
 src/presentation/widgets/__init__.py
 src/presentation/widgets/_celda_dia.py
 src/presentation/widgets/ausencias_sustituciones.py

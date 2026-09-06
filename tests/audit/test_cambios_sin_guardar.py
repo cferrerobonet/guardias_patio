@@ -75,9 +75,9 @@ def test_la_senal_avisa_del_cambio_de_estado(formulario):
 # ---------------------------------------------------------------------------
 @pytest.fixture
 def ventana(qapp, session):
-    from presentation.ccleaner_main_window import CCleanerMainWindow
+    from presentation.ventana_principal import VentanaPrincipal
 
-    w = CCleanerMainWindow(session, sync_manager=None)
+    w = VentanaPrincipal(session, sync_manager=None)
     QApplication.processEvents()
     yield w
     w.close()

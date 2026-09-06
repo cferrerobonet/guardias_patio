@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from presentation.themes.ccleaner_theme import ERROR_RED, TEXT_SECONDARY
+from presentation.themes.tema_aplicacion import ERROR_RED, TEXT_SECONDARY
 from utils.icons import icon_for_button
 
 

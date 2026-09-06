@@ -1,6 +1,6 @@
 """
 Tests para módulos de presentación y servicios con 0% de coverage:
-- ccleaner_main_window.py
+- ventana_principal.py
 - app_initializer.py
 - pyqt_stubs.py
 - _pdf_individual_optimizado.py (funciones auxiliares)
@@ -141,7 +141,7 @@ class TestContentWrapper:
     def test_constructor(self, qtbot):
         from PyQt6.QtWidgets import QLabel
 
-        from presentation.ccleaner_main_window import ContentWrapper
+        from presentation.ventana_principal import ContentWrapper
 
         inner = QLabel("test")
         widget = ContentWrapper("Mi Sección", inner)
@@ -150,16 +150,16 @@ class TestContentWrapper:
 
 
 # ===========================================================================
-# CCleanerMainWindow
+# VentanaPrincipal
 # ===========================================================================
 
 
 @pytest.mark.ui
-class TestCCleanerMainWindow:
+class TestVentanaPrincipal:
     def test_constructor(self, qtbot, session):
-        from presentation.ccleaner_main_window import CCleanerMainWindow
+        from presentation.ventana_principal import VentanaPrincipal
 
-        window = CCleanerMainWindow(session)
+        window = VentanaPrincipal(session)
         qtbot.addWidget(window)
         assert window is not None
         assert window.isMaximized()
@@ -168,9 +168,9 @@ class TestCCleanerMainWindow:
     def test_add_view(self, qtbot, session):
         from PyQt6.QtWidgets import QLabel
 
-        from presentation.ccleaner_main_window import CCleanerMainWindow
+        from presentation.ventana_principal import VentanaPrincipal
 
-        window = CCleanerMainWindow(session)
+        window = VentanaPrincipal(session)
         qtbot.addWidget(window)
         content = QLabel("Contenido")
         window.add_view("test_section", "Título Test", content)  # No debe lanzar

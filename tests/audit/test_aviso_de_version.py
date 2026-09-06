@@ -124,15 +124,15 @@ def test_en_windows_se_usa_startfile(monkeypatch):
 
 def test_el_instalador_no_se_abre_con_open_a_secas():
     """Regresión: era la línea que dejaba a Windows sin poder actualizarse."""
-    from presentation.components import ccleaner_sidebar
+    from presentation.components import menu_lateral
 
-    fuente = inspect.getsource(ccleaner_sidebar.SidebarMenu._descargar_e_instalar)
+    fuente = inspect.getsource(menu_lateral.SidebarMenu._descargar_e_instalar)
     assert '["open"' not in fuente
     assert "abrir_instalador" in fuente
 
 
 def test_pulsar_el_aviso_pregunta_antes_de_descargar():
-    from presentation.components import ccleaner_sidebar
+    from presentation.components import menu_lateral
 
-    fuente = inspect.getsource(ccleaner_sidebar.SidebarMenu._on_update_banner_clicked)
+    fuente = inspect.getsource(menu_lateral.SidebarMenu._on_update_banner_clicked)
     assert fuente.index("_confirmar_actualizacion") < fuente.index("_descargar_e_instalar")

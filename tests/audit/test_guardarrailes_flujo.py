@@ -87,7 +87,7 @@ def test_cambio_de_curso_refresca_las_vistas_cargadas(qapp):
     """UXA-007 resuelto en v5.49.0: el envoltorio conserva la vista para poder recargarla."""
     from PyQt6.QtWidgets import QLabel
 
-    from presentation.ccleaner_main_window import ContentWrapper
+    from presentation.ventana_principal import ContentWrapper
 
     w = ContentWrapper("Título", QLabel("contenido"))
     assert isinstance(w.content_widget, QLabel)
@@ -127,9 +127,9 @@ def test_la_aplicacion_abre_en_profesores(qapp):
     """La pantalla de entrada vuelve a ser Profesores (decisión de producto)."""
     import inspect
 
-    from presentation import ccleaner_main_window
+    from presentation import ventana_principal
 
-    fuente = inspect.getsource(ccleaner_main_window.CCleanerMainWindow)
+    fuente = inspect.getsource(ventana_principal.VentanaPrincipal)
     assert 'self._ensure_view("profesores")' in fuente
     assert '"inicio"' not in fuente
 
@@ -157,10 +157,10 @@ def test_el_indicador_avisa_de_forma_permanente_de_que_no_hay_servidor():
     """UXF-005: el aviso no puede ser sólo un diálogo que se cierra y se olvida."""
     import inspect
 
-    from presentation import ccleaner_main_window
+    from presentation import ventana_principal
 
     fuente = inspect.getsource(
-        ccleaner_main_window.CCleanerMainWindow._update_sync_status_label
+        ventana_principal.VentanaPrincipal._update_sync_status_label
     )
     assert "Solo en este equipo" in fuente
     assert fuente.index("if not self.sync_manager") < fuente.index("Solo en este equipo")

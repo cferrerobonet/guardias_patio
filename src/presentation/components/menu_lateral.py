@@ -1,5 +1,5 @@
 """
-Sidebar estilo CCleaner
+Menú lateral de navegación
 =======================
 Menú lateral oscuro con diseño profesional.
 """
@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
 
 from core.logging import get_logger
 from core.paths import get_data_directory
-from presentation.themes.ccleaner_theme import (
+from presentation.themes.tema_aplicacion import (
     SIDEBAR_BG,
     get_sidebar_style,
 )
@@ -29,7 +29,7 @@ _SIDEBAR_COLLAPSED = 56
 
 
 class SidebarMenu(QWidget):
-    """Menú lateral estilo CCleaner con categorías"""
+    """Menú lateral de navegación, con las secciones agrupadas por categorías."""
 
     section_changed = pyqtSignal(str)
 

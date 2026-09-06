@@ -1,7 +1,7 @@
 """
 Tests para login_dialog.py, perfiles_usuario_form.py, delete_user_dialog.py,
 forgot_password_dialog.py, reset_password_dialog.py, ajustes_form.py,
-ccleaner_sidebar.py y otros módulos de presentación con 0% de coverage.
+menu_lateral.py y otros módulos de presentación con 0% de coverage.
 """
 
 import sys
@@ -141,14 +141,14 @@ class TestPerfilesUsuarioForm:
 
 
 # ===========================================================================
-# CcleanerSidebar
+# Menú lateral
 # ===========================================================================
 
 
 @pytest.mark.ui
-class TestCcleanerSidebar:
+class TestMenuLateral:
     def test_constructor(self, qtbot):
-        from presentation.components.ccleaner_sidebar import SidebarMenu
+        from presentation.components.menu_lateral import SidebarMenu
 
         sidebar = SidebarMenu()
         qtbot.addWidget(sidebar)

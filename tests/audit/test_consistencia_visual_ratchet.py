@@ -165,8 +165,8 @@ def test_un_unico_minimo_de_ventana():
     import sys
 
     sys.path.insert(0, str(ROOT / "src"))
-    from presentation import ccleaner_main_window
+    from presentation import ventana_principal
 
-    fuente = inspect.getsource(ccleaner_main_window.CCleanerMainWindow.setup_ui)
+    fuente = inspect.getsource(ventana_principal.VentanaPrincipal.setup_ui)
     assert "setMinimumSize(1400, 900)" not in fuente
     assert "window_min_width" in fuente

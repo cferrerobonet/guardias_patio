@@ -41,7 +41,7 @@ def test_version_unica():
 
 def test_formularios_muertos_no_estan_registrados():
     """COD-004: si alguien registra un formulario muerto, debe hacerlo a propósito."""
-    ventana = (ROOT / "src" / "presentation" / "ccleaner_main_window.py").read_text(
+    ventana = (ROOT / "src" / "presentation" / "ventana_principal.py").read_text(
         encoding="utf-8"
     )
     for muerto in ("AsignacionGuardiasForm", "DashboardForm", "HomeForm"):

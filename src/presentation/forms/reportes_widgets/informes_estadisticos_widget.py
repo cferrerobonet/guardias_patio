@@ -24,7 +24,7 @@ from PyQt6.QtWidgets import (
 )
 
 from presentation.theme.tokens import Spacing
-from presentation.themes.ccleaner_theme import TEXT_SECONDARY
+from presentation.themes.tema_aplicacion import TEXT_SECONDARY
 from utils.icons import icon_for_button
 
 

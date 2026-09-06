@@ -25,7 +25,7 @@ from PyQt6.QtWidgets import (
 from application.use_cases.asignacion_guardias import ObtenerEstadisticasPanelUseCase
 from infrastructure.database.models import Guardia, Profesor
 from presentation.forms.base_form import BaseForm
-from presentation.themes.ccleaner_theme import (
+from presentation.themes.tema_aplicacion import (
     CONTENT_BG_ALT,
     PRIMARY_BLUE,
     TEXT_PRIMARY,

@@ -22,7 +22,7 @@ pytestmark = pytest.mark.ui
 # VIS-006 / UXA-013: una cabecera, y que se anuncie
 # ---------------------------------------------------------------------------
 def test_el_envoltorio_pinta_el_titulo_que_recibe(qapp):
-    from presentation.ccleaner_main_window import ContentWrapper
+    from presentation.ventana_principal import ContentWrapper
 
     envoltorio = ContentWrapper("Gestión de Profesores", QLabel("contenido"))
     try:
@@ -34,7 +34,7 @@ def test_el_envoltorio_pinta_el_titulo_que_recibe(qapp):
 
 def test_la_vista_se_anuncia_al_entrar(qapp):
     """Sin nombre accesible, cambiar de sección no dice nada (UXA-013)."""
-    from presentation.ccleaner_main_window import ContentWrapper
+    from presentation.ventana_principal import ContentWrapper
 
     contenido = QLabel("contenido")
     envoltorio = ContentWrapper("Calendario de Guardias", contenido)

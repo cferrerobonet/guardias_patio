@@ -5,6 +5,16 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.83.0] - 2026-09-06
+
+### 🎯 Resumen
+La aplicación deja de llamarse por el programa en cuyo aspecto se inspiró.
+
+### 🧹 Housekeeping
+- **Tres módulos renombrados** por lo que hacen: la ventana principal, el menú lateral y el tema de la aplicación. La clase de la ventana pasa a llamarse `VentanaPrincipal`.
+- Cero menciones al nombre ajeno en todo el código y los tests. Un test lo vigila para que no vuelva.
+- El mapa de ficheros del proyecto y los documentos de auditoría apuntan ya a las rutas nuevas.
+
 ## [5.82.0] - 2026-09-06
 
 ### 🎯 Resumen

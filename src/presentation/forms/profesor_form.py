@@ -43,7 +43,7 @@ from presentation.forms.profesor_widgets import (
     HorarioWidget,
     RestriccionesWidget,
 )
-from presentation.themes.ccleaner_theme import (
+from presentation.themes.tema_aplicacion import (
     CONTENT_BG_ALT,
     FONT_SIZE_SMALL,
     PRIMARY_BLUE,

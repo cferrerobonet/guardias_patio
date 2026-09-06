@@ -27,7 +27,7 @@ from presentation.forms.reportes_widgets import (
     CalendariosPdfWidget,
     InformesEstadisticosWidget,
 )
-from presentation.themes.ccleaner_theme import TEXT_SECONDARY
+from presentation.themes.tema_aplicacion import TEXT_SECONDARY
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
 from presentation.widgets.toast_notification import ToastNotification
 from services.exportador_pdf import ExportadorPDF

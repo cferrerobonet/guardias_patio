@@ -38,12 +38,12 @@ tipo: referencia
 | CU-13 | Analizar estadísticas y equidad | CU-08 | Tablas, gráficos, heatmap | `PanelEstadisticas` |
 | CU-14 | Auditar cambios de guardias | CU-08 | Registro filtrable | `AuditoriaGuardiasForm` |
 | CU-15 | Cambiar de curso | ≥2 cursos | Todas las vistas con datos del curso | `SelectorCursoWidget` |
-| CU-16 | Cerrar la app con sincronización | Sesión abierta | JSON subido, bloqueo liberado | `CCleanerMainWindow.closeEvent`, `main.py` |
+| CU-16 | Cerrar la app con sincronización | Sesión abierta | JSON subido, bloqueo liberado | `VentanaPrincipal.closeEvent`, `main.py` |
 | CU-17 | Actualizar la app | Release publicada | Nueva versión instalada | `update_checker`, banner sidebar |
 
 ## 3. Secuencia obligatoria y guardarraíles
 
-La app **no** hace visible la secuencia. El README la describe (`README.md:33-39`), pero la ventana abre en *Profesores* (`src/presentation/ccleaner_main_window.py:118`) y la sidebar ordena Profesores → Zonas → Ajustes → Perfiles → Cálculo → Calendario → Ausencias → Importar → Reportes → Estadísticas (`src/presentation/components/ccleaner_sidebar.py:178-216`). Un usuario nuevo empieza por profesores sin haber creado zonas ni configurado el curso.
+La app **no** hace visible la secuencia. El README la describe (`README.md:33-39`), pero la ventana abre en *Profesores* (`src/presentation/ventana_principal.py:118`) y la sidebar ordena Profesores → Zonas → Ajustes → Perfiles → Cálculo → Calendario → Ausencias → Importar → Reportes → Estadísticas (`src/presentation/components/menu_lateral.py:178-216`). Un usuario nuevo empieza por profesores sin haber creado zonas ni configurado el curso.
 
 ### Matriz de prerrequisitos
 
@@ -101,7 +101,7 @@ Se cuenta cada clic de ratón o pulsación equivalente que el usuario debe hacer
 
 | ID | Sev. | Título | Evidencia |
 | --- | --- | --- | --- |
-| UXF-001 | P1 | No existe secuencia guiada ni panel de estado del curso · **panel DESCARTADO v5.57.0 por decisión de producto**: la guía de prerrequisitos se lee en el aviso de bloqueo del panel de generación, no en una pantalla propia | `ccleaner_main_window.py:118`, `ccleaner_sidebar.py:178-216`, `README.md:33-39` |
+| UXF-001 | P1 | No existe secuencia guiada ni panel de estado del curso · **panel DESCARTADO v5.57.0 por decisión de producto**: la guía de prerrequisitos se lee en el aviso de bloqueo del panel de generación, no en una pantalla propia | `ventana_principal.py:118`, `menu_lateral.py:178-216`, `README.md:33-39` |
 | ~~UXF-002~~ ✅ **v5.56.0** | P1 | ~~El guardarraíl "cuotas antes de generar" es un flag de UI~~ · resuelto con `PreflightGeneracionUseCase` | `generacion_panel.py:156-163,190-205`, `asignacion_calculo_form.py:53-58,151-155` |
 | ~~UXF-003~~ ✅ **v5.71.0** (resumen en la vista y progreso que se cierra solo) | P2 | Generar requiere 2 modales previos y 1 clic de cierre; resumen previo debería ser inline | `generacion_panel.py:263-292` |
 | UXF-004 | P2 | Cambio de curso: confirmación + toast pero sin refresco (ver UXA-007) | `selector_curso_widget.py:118-166` |
@@ -111,7 +111,7 @@ Se cuenta cada clic de ratón o pulsación equivalente que el usuario debe hacer
 | ~~UXF-008~~ ✅ **v5.56.0** | P3 | ~~Motivo de bloqueo sólo en tooltip~~ · etiqueta visible con los requisitos que faltan | `generacion_panel.py:163,203` |
 | ~~UXF-009~~ ✅ **v5.71.0** (deshacer sustituciones desde el historial) | P2 | Ausencias: sin deshacer ni vista previa del impacto de la reasignación | `ausencias_sustituciones.py:426-497` |
 | ~~UXF-010~~ ✅ **v5.71.0** (recuerda la última carpeta) | P2 | Cinco variantes de exportación PDF con diálogo de fichero cada una y sin recordar carpeta | `reportes_form.py:205-444` |
-| ~~UXF-011~~ ✅ **v5.71.0** (Ctrl+1…Ctrl+0, anunciados en el menú) | P3 | Sólo un atajo global (Ctrl+B); sin Ctrl+N/Ctrl+S/Escape consistentes | `ccleaner_sidebar.py:62-65`, `profesor_form.py:351-360` |
+| ~~UXF-011~~ ✅ **v5.71.0** (Ctrl+1…Ctrl+0, anunciados en el menú) | P3 | Sólo un atajo global (Ctrl+B); sin Ctrl+N/Ctrl+S/Escape consistentes | `menu_lateral.py:62-65`, `profesor_form.py:351-360` |
 
 ## 6. Estados de cada vista (contrato)
 

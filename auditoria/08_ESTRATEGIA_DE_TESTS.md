@@ -35,7 +35,7 @@ tipo: referencia
 | Integración infraestructura | repos SQLAlchemy, migraciones Alembic, backups, exportadores | pytest + **SQLite en fichero** (`tests/audit/conftest.py::db_fichero`) | fichero en `tmp_path` con los mismos PRAGMAs que producción | < 60 s |
 | Compliance solver | restricciones duras y métricas blandas por escenario | `tests/compliance` (existente) | memoria | < 120 s |
 | UI de componentes | formularios, tablas, diálogos, estados vacío/error/bloqueado | pytest-qt | memoria | < 90 s |
-| UI de flujo (caminos dorados) | GP-1…GP-6 sobre la ventana real (`CCleanerMainWindow`) con BD en fichero; cuenta de clics como aserción | pytest-qt | fichero | < 120 s |
+| UI de flujo (caminos dorados) | GP-1…GP-6 sobre la ventana real (`VentanaPrincipal`) con BD en fichero; cuenta de clics como aserción | pytest-qt | fichero | < 120 s |
 | Hilos y cierre | afinidad de hilo, cancelación, excepthook, sesión por hilo | pytest-qt + `threading` | fichero | < 30 s |
 | Ratchets estáticos | hex fuera de tokens, font-size < 12, `accessibleName` en tablas, F821, imports prohibidos | pytest + ruff | – | < 10 s |
 | E2E web | FastAPI: `/docs`, login, endpoints, contratos | **Playwright** (Python) + `pytest-playwright` | fichero | < 60 s |

@@ -23,7 +23,7 @@ from presentation.dialogs.column_mapping_dialog import ColumnMappingDialog
 from presentation.forms.base_form import BaseForm
 from presentation.forms.import_export_widgets import JsonOperationsWidget
 from presentation.theme.tokens import Spacing
-from presentation.themes.ccleaner_theme import TEXT_SECONDARY
+from presentation.themes.tema_aplicacion import TEXT_SECONDARY
 from presentation.widgets.progress_indicators import ejecutar_con_progreso
 from services.exportador import ExportadorDatos
 from services.importador_profesores import importar_profesores

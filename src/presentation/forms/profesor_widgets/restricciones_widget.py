@@ -27,7 +27,7 @@ from PyQt6.QtWidgets import (
 
 from core.logging import get_logger
 from presentation.theme import legacy_styles as styles
-from presentation.themes.ccleaner_theme import TEXT_SECONDARY
+from presentation.themes.tema_aplicacion import TEXT_SECONDARY
 
 logger = get_logger(__name__)
 
