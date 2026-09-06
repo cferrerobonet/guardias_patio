@@ -68,17 +68,18 @@ class TestProgressDialog:
 
 @pytest.mark.ui
 class TestProgressLogHandler:
-    @pytest.mark.xfail(reason="Bug en código fuente: doble __init__ en ProgressLogHandler")
     def test_constructor(self, qtbot):
+        """El handler sólo recibe el diálogo: el `worker` que se le pasaba aquí
+        nunca ha estado en su firma, y por eso los dos tests estaban en xfail
+        atribuyéndolo a un «doble __init__» que no existe —son dos clases
+        distintas, `_PuenteLog` y `ProgressLogHandler`—."""
         from presentation.widgets.progress_indicators import ProgressDialog, ProgressLogHandler
 
         dlg = ProgressDialog()
         qtbot.addWidget(dlg)
-        worker = MagicMock()
-        handler = ProgressLogHandler(dlg, worker)
-        assert handler is not None
+        handler = ProgressLogHandler(dlg)
+        assert handler.progress_dialog is dlg
 
-    @pytest.mark.xfail(reason="Bug en código fuente: doble __init__ en ProgressLogHandler")
     def test_emit(self, qtbot):
         import logging
 
@@ -86,8 +87,7 @@ class TestProgressLogHandler:
 
         dlg = ProgressDialog()
         qtbot.addWidget(dlg)
-        worker = MagicMock()
-        handler = ProgressLogHandler(dlg, worker)
+        handler = ProgressLogHandler(dlg)
         record = logging.LogRecord(
             name="test",
             level=logging.INFO,

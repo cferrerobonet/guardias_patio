@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.92.0] - 2026-09-06
+
+### 🎯 Resumen
+Dos tests que llevaban tiempo desactivados culpando a un fallo que no existía.
+
+### Fixed
+- **Los dos tests de `ProgressLogHandler` estaban marcados como fallo conocido** por un «doble `__init__`» que no existe: son dos clases distintas. Lo que fallaba era el propio test, que llamaba al constructor con un argumento que nunca ha estado en su firma. Corregidos y activos.
+
+### 🧹 Housekeeping
+- Cerrados los hallazgos de tests que quedaban con la suite escrita pero sin marcar: hilos y cancelación, base de datos sobre fichero con migraciones reales, y el recorrido de la API con navegador.
+- El `downgrade` de Alembic se queda como fallo conocido a propósito: arreglarlo exigiría poner nombre a las restricciones de migraciones ya aplicadas, que son ficheros que no se tocan.
+
 ## [5.91.0] - 2026-09-06
 
 ### 🎯 Resumen
