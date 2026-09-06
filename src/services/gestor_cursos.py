@@ -20,6 +20,22 @@ from infrastructure.repositories.repository_factory import RepositoryFactory
 logger = get_logger(__name__)
 
 
+def _vaciar_las_caches(motivo: str) -> None:
+    """Tira lo cacheado al cambiar de curso (ESC-005).
+
+    Se hace aquí y no sólo en la ventana porque a `activar_curso` se llega desde
+    tres sitios —el selector, la gestión de cursos y la creación— y sólo uno de
+    ellos avisaba a la interfaz. Un resultado cacheado del curso anterior es un
+    dato equivocado, no un dato viejo.
+    """
+    try:
+        from utils.cache import clear_all_cache
+
+        clear_all_cache()
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"No se pudo vaciar la caché al {motivo}: {e}")
+
+
 class GestorCursos:
     """Gestor para operaciones con cursos escolares."""
 
@@ -114,6 +130,7 @@ class GestorCursos:
         result = self.curso_repo.save(entity)
         self._sincronizar_configuracion_con(entity)
         self.session.commit()
+        _vaciar_las_caches("activar curso")
         logger.info(f"Curso activado: {entity.nombre} (ID: {curso_id})")
         return result
 

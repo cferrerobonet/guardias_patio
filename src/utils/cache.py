@@ -324,6 +324,24 @@ def invalidate_by_function(func_name: str) -> int:
     return invalidate_cache(func_name)
 
 
+#: Otras cachés del programa que deben vaciarse a la vez que ésta. Existe porque
+#: `application/use_cases/configuracion/cache_service.py` guarda por su cuenta la
+#: configuración, las zonas y los profesores durante cinco minutos: al cambiar de
+#: curso o al importar datos se vaciaba ésta y aquélla no, y las vistas seguían
+#: viendo la configuración del curso anterior (ESC-005).
+_LIMPIEZAS_REGISTRADAS: list = []
+
+
+def registrar_limpieza(funcion: Callable) -> None:
+    """Apunta otra caché para que `clear_all_cache()` la vacíe también.
+
+    Se registra desde fuera y no se importa desde aquí para no invertir la
+    dependencia: `utils` no debe conocer la capa de aplicación.
+    """
+    if funcion not in _LIMPIEZAS_REGISTRADAS:
+        _LIMPIEZAS_REGISTRADAS.append(funcion)
+
+
 def clear_all_cache():
     """
     Limpia completamente el caché y las estadísticas.
@@ -342,6 +360,14 @@ def clear_all_cache():
         count = len(_cache_store)
         _cache_store.clear()
         _cache_stats["invalidations"] += count
+
+    for limpiar in list(_LIMPIEZAS_REGISTRADAS):
+        try:
+            limpiar()
+        except Exception as e:  # noqa: BLE001
+            # Una caché que no sepa vaciarse no puede impedir que se vacíen las demás.
+            logger.warning(f"Una caché registrada no se pudo vaciar: {e}")
+
     logger.info(f"Cache limpiado completamente ({count} entradas)")
 
 

@@ -5,6 +5,19 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.86.0] - 2026-09-06
+
+### 🎯 Resumen
+Al cambiar de curso ya no queda nada cacheado del anterior.
+
+### Fixed
+- **Media aplicación seguía viendo el curso anterior durante cinco minutos.** Había dos cachés: la general, que la ventana vaciaba al recargar, y otras tres —configuración, zonas y profesores— que no vaciaba nadie. La generación podía trabajar con las fechas del curso viejo. Ahora vaciar la general vacía también aquéllas.
+- **Vaciar sólo desde la ventana no bastaba.** Se activa un curso desde el selector, desde Gestión de cursos y al crearlo, y sólo el primero avisaba a la interfaz. La limpieza se hace ahora en el propio servicio, así que da igual por dónde se entre.
+
+### 🧹 Housekeeping
+- El enganche entre cachés es un registro: `utils` no importa la capa de aplicación, es ésta la que se apunta. Un test lo vigila.
+- Una caché que falle al vaciarse no impide que se vacíen las demás.
+
 ## [5.85.0] - 2026-09-06
 
 ### 🎯 Resumen

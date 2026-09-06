@@ -37,6 +37,13 @@ else:
 _lock = threading.Lock()
 
 
+def _registrar_para_limpieza_global() -> None:
+    """Engancha estas cachés a `clear_all_cache()`, que es lo que llama la ventana."""
+    from utils.cache import registrar_limpieza
+
+    registrar_limpieza(invalidar_cache)
+
+
 def cache_configuracion(session) -> Optional[object]:
     """
     Devuelve la Configuracion del curso, cacheada hasta 5 min.
@@ -124,3 +131,9 @@ def invalidar_profesores() -> None:
     with _lock:
         _cache_profesores.clear()
     logger.debug("Caché de profesores invalidada")
+
+
+# Estas tres cachés son independientes de `utils.cache`, así que vaciar aquélla
+# no las tocaba: al cambiar de curso o importar datos, las vistas seguían viendo
+# la configuración y las zonas del curso anterior durante cinco minutos (ESC-005).
+_registrar_para_limpieza_global()
