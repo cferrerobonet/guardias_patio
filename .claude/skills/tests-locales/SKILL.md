@@ -14,8 +14,7 @@ Ejecución y Depuración → "Tests: fichero abierto", "Tests: suite completa", 
 ```bash
 PY=~/.venvs/guardias-patio/bin/python    # fuera de iCloud: dentro del repo se corrompe
 export QT_QPA_PLATFORM=offscreen
-$PY -m pip install -r requirements.txt
-$PY -m pip install hypothesis pytest-xdist pytest-timeout PyJWT slowapi playwright pytest-playwright
+$PY -m pip install -r requirements-dev.txt   # ejecución + tests + lint + pyinstaller, todo fijado
 export GUARDIAS_API_SECRET_KEY=secreto-de-pruebas   # los tests de API fallan al importar sin secreto
 $PY -m playwright install chromium       # sólo para tests/e2e_playwright
 ```
@@ -24,7 +23,7 @@ $PY -m playwright install chromium       # sólo para tests/e2e_playwright
 
 ```bash
 python3.11 -m venv ~/.venvs/guardias-patio
-~/.venvs/guardias-patio/bin/python -m pip install -r requirements.txt pyinstaller ruff mypy
+~/.venvs/guardias-patio/bin/python -m pip install -r requirements-dev.txt
 ```
 
 ## Comandos

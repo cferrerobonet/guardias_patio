@@ -69,7 +69,7 @@ Al completar un ítem de un documento de auditoría o guion: tacharlo (`~~texto~
 El intérprete vive en `~/.venvs/guardias-patio`, **fuera de iCloud**: dentro del repositorio iCloud duplica y altera los binarios (402 copias " 2" en `.venv`), Qt deja de reconocer sus complementos y la app aborta al crear la `QApplication`. El `.venv` del repo está corrupto y se puede borrar. Recrear con:
 ```bash
 python3.11 -m venv ~/.venvs/guardias-patio
-~/.venvs/guardias-patio/bin/python -m pip install -r requirements.txt pyinstaller ruff mypy
+~/.venvs/guardias-patio/bin/python -m pip install -r requirements-dev.txt
 ```
 
 ## VS Code

@@ -68,6 +68,8 @@ data/
 
 # Archivos de sincronización y sesión
 session.lock
+# Permisos y ajustes propios del asistente de cada equipo; los compartidos van en .claude/settings.json
+.claude/settings.local.json
 last_sync.json
 **/last_sync.json  # En cualquier subdirectorio
 guardias_patio_data.json

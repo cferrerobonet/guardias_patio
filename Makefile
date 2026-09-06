@@ -38,8 +38,8 @@ help:
 venv:
 	@echo "🐍 Preparando entorno en $(VENV) (fuera de iCloud)..."
 	@test -x "$(PY)" || python3.11 -m venv "$(VENV)"
-	$(PY) -m pip install --upgrade pip
-	$(PY) -m pip install -r requirements.txt
+	$(PY) -m pip install --upgrade pip setuptools
+	$(PY) -m pip install -r requirements-dev.txt
 	@echo "✅ Entorno listo. Para los E2E de la API: $(PY) -m playwright install chromium"
 
 install:

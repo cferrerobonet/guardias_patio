@@ -38,7 +38,7 @@ Scripts canónicos: `Makefile` (`make icon`, `make app`, `make dmg`, `make relea
 ## Requisitos
 
 - macOS 12+, Xcode Command Line Tools (`xcode-select --install`).
-- Python 3.11 de Homebrew: `/opt/homebrew/bin/python3.11` con `pip install -r requirements.txt pyinstaller`.
+- Python 3.11 de Homebrew: `/opt/homebrew/bin/python3.11` con `pip install -r requirements-dev.txt`.
 - `gh` autenticado para publicar.
 - El spec es `GuardiasDePatio.spec`, en la raíz y **versionado** (desde v5.97.0 es el único: el antiguo `Guardias de Patio.spec` se retiró porque el build de macOS lo usaba mientras los cambios se hacían en el nuevo). Lleva los almacenes del llavero (`collect_submodules('keyring.backends')`); sin ellos la app empaquetada no puede guardar contraseñas.
 

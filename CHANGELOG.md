@@ -5,6 +5,24 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.99.0] - 2026-09-06
+
+### 🎯 Resumen
+Cadena de suministro (lote 19 de la auditoría): dependencias fijadas, desarrollo separado de ejecución, `setuptools` sin la vulnerabilidad conocida.
+
+### ✨ Added
+- **`requirements-dev.txt`** con las herramientas de tests, calidad y empaquetado, todas fijadas; `requirements.txt` se queda con las 29 dependencias que necesita la aplicación para funcionar, también fijadas con `==` (SUP-002). Antes eran 36 líneas con `>=` mezclando ambas cosas.
+- **`requirements.lock`**: la resolución completa del entorno que pasa la suite, para poder reproducirlo.
+- `pyproject.toml` declara las mismas versiones y un extra `dev`; un test vigila que ambos ficheros digan lo mismo.
+
+### Fixed
+- **`setuptools` 82.0.1 tenía PYSEC-2026-3447.** Actualizado a 84.0.0, fijado, exigido ≥ 83 por el `build-system`, y `make venv`, el flujo de GitHub y `build_windows.ps1` lo actualizan antes de instalar nada (SUP-001). `pip-audit` no devuelve filas.
+
+### 🧹 Housekeeping
+- `.claude/settings.local.json` pasa a `settings.json`: es la lista de permisos compartida, y el `local` de cada equipo queda ignorado por git (DEV-010).
+- `make venv`, el flujo de compilación, el README, el fichero de instrucciones y las skills instalan desde `requirements-dev.txt`.
+- `tests/audit/test_dependencias_fijadas.py`, 7 tests nuevos.
+
 ## [5.98.0] - 2026-09-06
 
 ### 🎯 Resumen

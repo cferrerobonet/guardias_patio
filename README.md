@@ -31,7 +31,7 @@
 python3.11 -m venv ~/.venvs/guardias-patio
 source ~/.venvs/guardias-patio/bin/activate
 
-# Instalar dependencias
+# Instalar dependencias (requirements-dev.txt para tests, lint y compilación)
 pip install -r requirements.txt
 
 # Ejecutar

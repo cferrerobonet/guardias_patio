@@ -80,7 +80,7 @@ Write-Step "PASO 1: Preparar entorno"
 Write-Info "Python seleccionado: $PythonPath"
 Write-Info "Versión de app: $ResolvedVersion"
 
-& $PythonPath -m pip install --upgrade pip | Out-Null
+& $PythonPath -m pip install --upgrade pip setuptools | Out-Null
 & $PythonPath -m pip install -r "requirements.txt"
 if ($LASTEXITCODE -ne 0) {
     Write-ErrorMsg "Falló instalación de requirements.txt"

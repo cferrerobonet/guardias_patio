@@ -169,7 +169,7 @@ Cada fila: **ID · qué · cómo (comando) · pasa si · severidad si falla**.
 | CHK-O-03 | MCP de Obsidian apunta a **esta** bóveda y sin clave en claro | Ver [[22_RECURSOS_DE_IA]] §4 | `.mcp.json` por bóveda, clave por variable de entorno | P2 |
 | CHK-O-04 | Skills instaladas: cada una tiene un uso declarado en [[22_RECURSOS_DE_IA]] | Leer la tabla | Todas clasificadas | P3 |
 | CHK-O-05 | Barreras de la suite presentes | `grep -c "autouse=True" tests/conftest.py` | ≥ 4 | P1 |
-| CHK-O-06 | Lista de permisos cubre lecturas y tests sin pedir confirmación | Leer `.claude/settings.local.json` | Sí | P3 |
+| CHK-O-06 | Lista de permisos cubre lecturas y tests sin pedir confirmación | Leer `.claude/settings.json` (el `local` es de cada equipo desde v5.99.0) | Sí | P3 |
 
 ### P · Verificaciones que sólo puede hacer una persona
 

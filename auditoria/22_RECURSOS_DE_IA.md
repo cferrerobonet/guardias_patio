@@ -57,7 +57,7 @@ Faltaba, y se propone crear en el siguiente lote: `/seguridad-y-privacidad` (los
 
 - `~/.claude/settings.json` define un único MCP de Obsidian que apunta a la bóveda **TERRENO SIMERIA**, con la clave de la API en texto plano y `NODE_TLS_REJECT_UNAUTHORIZED=0`. El fichero de instrucciones raíz de las bóvedas dice que cada bóveda tiene su `.mcp.json`; **no existe ninguno** en la jerarquía. Consecuencia: desde este proyecto el asistente sólo puede escribir en la bóveda equivocada.
 - Propuesta (decisión de CarlosFB, no se ha tocado): un `.mcp.json` en `02 EPLA/` apuntando a esa bóveda, con la clave leída de una variable de entorno (`${OBSIDIAN_API_KEY}`) y sin desactivar TLS; retirar el servidor del fichero global.
-- `.claude/settings.local.json` del proyecto está **versionado**. Sólo contiene la lista de permisos, que es útil compartir; el nombre `local` sugiere lo contrario. Renombrar a `settings.json` y añadir `settings.local.json` al `.gitignore`.
+- ~~`.claude/settings.local.json` del proyecto está **versionado**.~~ ✅ RESUELTO v5.99.0: ahora es `settings.json` y el `local` está ignorado. Sólo contiene la lista de permisos, que es útil compartir; el nombre `local` sugiere lo contrario. Renombrar a `settings.json` y añadir `settings.local.json` al `.gitignore`.
 
 ## 5. Herramientas de análisis: instaladas hoy y recomendadas
 
