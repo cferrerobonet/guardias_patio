@@ -476,24 +476,52 @@ class SidebarMenu(QWidget):
             }}
         """)
 
-    def show_update_banner(self, nueva_version: str, download_url: str = "") -> None:
+    def show_update_banner(
+        self, nueva_version: str, download_url: str = "", notas: str = ""
+    ) -> None:
         if not hasattr(self, "_update_banner"):
             return
         self._update_nueva_version = nueva_version
         self._update_download_url = download_url
+        self._update_notas = notas
         self._update_banner.setText(f"🆕 v{nueva_version} disponible")
         self._update_banner.show()
 
     def _on_update_banner_clicked(self) -> None:
         url = getattr(self, "_update_download_url", "")
+        if not self._confirmar_actualizacion():
+            return
         if url:
             self._descargar_e_instalar(url)
         else:
             import webbrowser
             webbrowser.open("https://github.com/cferrerobonet/guardias_patio/releases/latest")
 
+    def _confirmar_actualizacion(self) -> bool:
+        """Enseña qué trae la versión nueva antes de bajar nada (FUN-011).
+
+        Pulsar el aviso empezaba la descarga sin decir qué cambiaba.
+        """
+        from PyQt6.QtWidgets import QMessageBox
+
+        version = getattr(self, "_update_nueva_version", "")
+        notas = (getattr(self, "_update_notas", "") or "").strip()
+
+        caja = QMessageBox(self)
+        caja.setIcon(QMessageBox.Icon.Question)
+        caja.setWindowTitle(f"Guardias de Patio {version}")
+        caja.setText(f"Hay una versión nueva: {version}. ¿Descargarla e instalarla?")
+        if notas:
+            caja.setDetailedText(notas)
+        else:
+            caja.setInformativeText("Esta versión no trae notas publicadas.")
+        caja.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        caja.setDefaultButton(QMessageBox.StandardButton.Yes)
+        return caja.exec() == QMessageBox.StandardButton.Yes
+
     def _descargar_e_instalar(self, url: str) -> None:
-        import subprocess
         import tempfile
         import urllib.request
         from pathlib import Path
@@ -501,6 +529,8 @@ class SidebarMenu(QWidget):
         from PyQt6.QtCore import QThread
         from PyQt6.QtCore import pyqtSignal as Signal
         from PyQt6.QtWidgets import QMessageBox, QProgressDialog
+
+        from utils.update_checker import abrir_instalador
 
         version = getattr(self, "_update_nueva_version", "")
         nombre = url.split("/")[-1]
@@ -556,7 +586,9 @@ class SidebarMenu(QWidget):
 
         hilo = _Descargador(url, destino)
         hilo.progreso_signal.connect(lambda v: progreso.setValue(v) if not cancelado[0] else hilo.terminate())
-        hilo.listo_signal.connect(lambda path: (progreso.close(), subprocess.run(["open", path])))
+        hilo.listo_signal.connect(
+            lambda path: (progreso.close(), abrir_instalador(path))
+        )
         hilo.error_signal.connect(lambda err: (
             progreso.close(),
             QMessageBox.critical(self, "Error de descarga", f"No se pudo descargar la actualización:\n{err}"),

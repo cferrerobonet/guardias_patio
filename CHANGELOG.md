@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.81.0] - 2026-09-06
+
+### 🎯 Resumen
+El aviso de versión nueva dice qué cambia y en Windows llega a instalarse.
+
+### ✨ Added
+- **Notas de versión en el aviso.** Al pulsar «vX disponible» se pregunta antes de bajar nada y se enseña qué trae la versión, no sólo su número.
+
+### Fixed
+- **En Windows la actualización no llegaba a instalarse.** El instalador descargado se abría con `open`, que sólo existe en macOS: la barra de progreso terminaba y no pasaba nada más. Ahora cada sistema lo abre como sabe.
+
 ## [5.80.0] - 2026-09-06
 
 ### 🎯 Resumen

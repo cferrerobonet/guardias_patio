@@ -23,7 +23,12 @@ def url_de_confianza(url: str) -> bool:
     return partes.hostname in HOSTS_PERMITIDOS
 
 
-def check_for_updates(current_version: str, callback: Callable[[str, str], None]) -> None:
+def check_for_updates(current_version: str, callback: Callable[[str, str, str], None]) -> None:
+    """Avisa de una versión nueva con `(version, url_de_descarga, notas)`.
+
+    Las notas son el cuerpo del release: sin ellas el aviso pide instalar algo
+    sin decir qué cambia (FUN-011).
+    """
     def _check():
         try:
             if not url_de_confianza(RELEASES_URL):
@@ -35,7 +40,7 @@ def check_for_updates(current_version: str, callback: Callable[[str, str], None]
                 latest = data["tag_name"].lstrip("v")
                 if _is_newer(latest, current_version):
                     download_url = _find_download_url(data.get("assets", []))
-                    callback(latest, download_url)
+                    callback(latest, download_url, (data.get("body") or "").strip())
         except Exception:
             pass
 
@@ -72,3 +77,21 @@ def _is_newer(latest: str, current: str) -> bool:
         return tuple(int(x) for x in latest.split(".")) > tuple(int(x) for x in current.split("."))
     except ValueError:
         return False
+
+
+def abrir_instalador(ruta: str) -> None:
+    """Lanza el instalador descargado con lo que entiende cada sistema.
+
+    Se usaba `open` siempre, que sólo existe en macOS: en Windows la descarga
+    terminaba y no pasaba nada, así que nadie llegaba a actualizarse.
+    """
+    import os
+    import subprocess
+
+    sistema = platform.system()
+    if sistema == "Windows":
+        os.startfile(ruta)  # noqa: S606  # nosec B606 - ruta creada por nosotros
+    elif sistema == "Darwin":
+        subprocess.run(["/usr/bin/open", ruta], check=False)  # nosec B603
+    else:
+        subprocess.run(["/usr/bin/xdg-open", ruta], check=False)  # nosec B603

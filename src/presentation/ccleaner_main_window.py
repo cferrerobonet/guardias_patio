@@ -88,7 +88,7 @@ class ContentWrapper(QWidget):
 class CCleanerMainWindow(QMainWindow):
     """Ventana principal con diseño estilo CCleaner"""
 
-    _nueva_version_signal = pyqtSignal(str, str)
+    _nueva_version_signal = pyqtSignal(str, str, str)
 
     def __init__(self, session, sync_manager=None):
         super().__init__()
@@ -563,6 +563,6 @@ class CCleanerMainWindow(QMainWindow):
         self._nueva_version_signal.connect(self._on_nueva_version)
         check_for_updates(get_settings().app_version, self._nueva_version_signal.emit)
 
-    def _on_nueva_version(self, version: str, download_url: str) -> None:
+    def _on_nueva_version(self, version: str, download_url: str, notas: str = "") -> None:
         if hasattr(self, "sidebar"):
-            self.sidebar.show_update_banner(version, download_url)
+            self.sidebar.show_update_banner(version, download_url, notas)
