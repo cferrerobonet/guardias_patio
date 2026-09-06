@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.93.1] - 2026-09-06
+
+### Fixed
+- **La última fila de cada vista quedaba pegada al borde inferior y se veía cortada**: los botones de Nuevo, Editar y Eliminar en Profesores, la leyenda en el Calendario. Ni el envoltorio de vista ni las vistas dejaban aire por debajo. Corregido en el envoltorio, así que vale para las diez pantallas.
+- **Las ayudas emergentes no se leían**: texto casi negro sobre fondo oscuro, sobre todo encima del menú lateral. Una ayuda emergente también es un `QWidget`, así que recibía el color de texto de la regla global pero no el fondo, que lo ponía el sistema. Ahora fija los dos, con contraste holgado.
+
+### 🧹 Housekeeping
+- La regla de la ayuda emergente va en las dos hojas de estilo: la de la aplicación y la de la ventana, que pisa a la primera.
+
 ## [5.93.0] - 2026-09-06
 
 ### 🎯 Resumen

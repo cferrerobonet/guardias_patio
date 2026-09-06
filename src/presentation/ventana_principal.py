@@ -54,10 +54,16 @@ class ContentWrapper(QWidget):
         self.title = title
         self.setup_ui(title, content_widget)
 
+    #: Aire por debajo del contenido. Las vistas llevan margen inferior 0 y el
+    #: envoltorio tampoco tenía, así que la última fila —los botones de Nuevo,
+    #: Editar y Eliminar, o la leyenda del calendario— quedaba pegada al borde de
+    #: la ventana y se veía cortada. Al ponerlo aquí vale para las diez vistas.
+    MARGEN_INFERIOR = 12
+
     def setup_ui(self, title: str, content_widget: QWidget):
         """Configurar el layout alineado con el sidebar"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(0, 0, 0, self.MARGEN_INFERIOR)
         layout.setSpacing(0)
 
         # Cabecera con el título de la vista. El título se pasaba al envoltorio y

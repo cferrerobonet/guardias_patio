@@ -5,6 +5,19 @@ QWidget {
     color: @TEXT_PRIMARY@;
 }
 
+/* Las ayudas emergentes son QWidget, así que la regla de arriba les daba el
+   texto casi negro... pero no el fondo, que lo pone el sistema. Sobre el menú
+   lateral oscuro salía negro sobre gris oscuro y no había quien lo leyera.
+   Aquí se fijan las dos cosas. */
+QToolTip {
+    background-color: @TEXT_PRIMARY@;
+    color: @TEXT_ON_PRIMARY@;
+    border: 1px solid @BORDER_DARK@;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 13px;
+}
+
 /* ========== BOTONES GENERALES ========== */
 QPushButton {
     background-color: @PRIMARY@;

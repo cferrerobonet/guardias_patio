@@ -457,6 +457,20 @@ def get_complete_stylesheet() -> str:
             color: {TEXT_PRIMARY};
         }}
 
+        /* Una ayuda emergente también es un QWidget, así que la regla de arriba
+           le daba el texto casi negro; el fondo, en cambio, lo ponía el sistema.
+           Encima del menú lateral oscuro salía negro sobre gris oscuro. Hay que
+           fijarlo aquí además de en `light.qss`, porque esta hoja se aplica a la
+           ventana y pisa a la de la aplicación. */
+        QToolTip {{
+            background-color: {TEXT_PRIMARY};
+            color: white;
+            border: 1px solid {Colors.BORDER_DARK};
+            border-radius: {RADIUS_MEDIUM}px;
+            padding: 6px 8px;
+            font-size: 13px;
+        }}
+
         /* ========== BOTONES GENERALES (sin objectName) ========== */
         QPushButton {{
             background-color: {PRIMARY_BLUE};
