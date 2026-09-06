@@ -7,15 +7,25 @@
 # Las rutas van siempre con barra normal: `src\main.py` sólo funcionaba en Windows
 # y dejó sin DMG a las versiones 5.97.0, 5.98.0 y 5.99.0.
 import sys
+from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_all, collect_data_files
 from PyInstaller.utils.hooks import collect_dynamic_libs, collect_submodules
+
+sys.path.insert(0, str(Path(SPECPATH) / "scripts" / "build"))
+from nombres_ascii import copia_con_nombres_ascii  # noqa: E402
 
 ES_MACOS = sys.platform == "darwin"
 NOMBRE = "Guardias de Patio" if ES_MACOS else "GuardiasDePatio"
 ICONO = "imagenes/icono.icns" if ES_MACOS else "imagenes/logo.ico"
 
-datas = [('imagenes', 'imagenes'), ('alembic', 'alembic'), ('alembic.ini', '.')]
+# Las migraciones se empaquetan con el nombre sin acentos: uno solo con «ñ» rompía
+# el sello de la firma al copiar la aplicación y macOS la daba por dañada (BLD-010).
+datas = [
+    ('imagenes', 'imagenes'),
+    (copia_con_nombres_ascii('alembic'), 'alembic'),
+    ('alembic.ini', '.'),
+]
 binaries = []
 hiddenimports = ['logging.config', 'logging.handlers', 'dependency_injector.errors', 'ortools.sat.python.cp_model_helper', 'matplotlib', 'matplotlib.backends.backend_qtagg', 'reportlab']
 datas += collect_data_files('ortools')

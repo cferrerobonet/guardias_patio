@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.0.2] - 2026-09-06
+
+### 🎯 Resumen
+macOS decía que la aplicación estaba dañada nada más instalarla. No lo estaba.
+
+### Fixed
+- **«Guardias de Patio.app está dañado y no se puede abrir».** Una migración de la base de datos llevaba una «ñ» en el nombre del archivo. macOS escribe ese nombre de una forma dentro del DMG y de otra al copiar la aplicación a la carpeta Aplicaciones, así que la firma dejaba de cuadrar y el sistema daba la aplicación por corrupta. Ahora los archivos se empaquetan con el nombre sin acentos. Los del repositorio no se tocan, y la base de datos no se entera: cada migración se identifica por un código que va dentro del archivo, no por cómo se llame.
+
+### 🧹 Housekeeping
+- El DMG incluye un archivo de instrucciones para el otro aviso que da macOS, el de las aplicaciones sin certificado de pago de Apple, con el paso a seguir la primera vez en cada ordenador.
+- `scripts/build/nombres_ascii.py` y siete tests que impiden que vuelva a colarse un nombre con acentos en el paquete.
+
 ## [6.0.1] - 2026-09-06
 
 ### 🎯 Resumen
