@@ -184,11 +184,10 @@ TECHO_TUPLAS_COMODIN = 125
 #: `except Exception` a secas. Igual: sólo puede bajar.
 TECHO_EXCEPTION_PELADO = 83
 
-COMODINES = (
-    {"ValueError", "TypeError", "OSError"},
-    {"ValueError", "TypeError"},
-    {"OSError", "ValueError"},
-)
+#: Sólo cuenta la tupla de tres familias sin relación entre sí. `(OSError,
+#: ValueError)` alrededor de una escritura de fichero es precisa, no un comodín:
+#: meterla aquí penalizaba escribir bien el manejo de errores.
+COMODINES = ({"ValueError", "TypeError", "OSError"},)
 
 
 def _contar_capturas():

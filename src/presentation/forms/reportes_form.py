@@ -685,12 +685,36 @@ class ReportesForm(BaseForm):
         # Botón exportar
         btn = QPushButton("Exportar archivo .ics")
         btn.setIcon(icon_for_button("calendar"))
-        btn.setMinimumHeight(36)
         btn.clicked.connect(self._exportar_ical)
         layout.addWidget(btn)
+
+        # Publicación web (FUN-009)
+        separador = QLabel(
+            "También puedes generar una página por profesor para subir al servidor "
+            "del centro. Cada uno recibe una dirección propia con su calendario y "
+            "un enlace para suscribirse desde el móvil."
+        )
+        separador.setWordWrap(True)
+        separador.setProperty("texto", "secundario")
+        layout.addSpacing(16)
+        layout.addWidget(separador)
+
+        self.btn_publicar_web = QPushButton("Generar calendarios para la web…")
+        self.btn_publicar_web.setIcon(icon_for_button("open"))
+        self.btn_publicar_web.clicked.connect(self._publicar_en_la_web)
+        layout.addWidget(self.btn_publicar_web)
+
+        for boton in (btn, self.btn_publicar_web):
+            boton.setMinimumHeight(36)
         layout.addStretch()
 
         return tab
+
+    def _publicar_en_la_web(self):
+        """Genera una página y un calendario por profesor en la carpeta elegida."""
+        from presentation.forms.reportes_widgets.publicacion_web import publicar_desde
+
+        publicar_desde(self)
 
     def _cargar_profesores_ical(self):
         self._ical_combo.clear()

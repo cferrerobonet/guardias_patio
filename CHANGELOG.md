@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.93.0] - 2026-09-06
+
+### 🎯 Resumen
+Cada profesor puede consultar sus guardias desde el móvil.
+
+### ✨ Added
+- **Calendarios web por profesor.** En Informes → iCal, «Generar calendarios para la web…» crea en la carpeta que elijas una página y un fichero de calendario por cada profesor con guardias. Se sube la carpeta al servidor del centro y ya está: no hace falta servidor de aplicaciones, ni base de datos compartida, ni contraseñas.
+- **Cada uno tiene su propia dirección**, con un identificador largo que no se puede adivinar. La dirección **no cambia** al volver a publicar, así que quien se suscriba al calendario una vez lo tiene para todo el curso.
+- La página lleva un botón «Añadir a mi calendario» que funciona con Google Calendar, Apple Calendar y Outlook.
+- Al terminar se muestra la lista de profesor, correo y fichero, que es lo que hace falta para avisar a cada uno.
+- Las páginas piden a los buscadores que no las indexen, y **no se genera ningún índice**: una página que listara todas las direcciones anularía el motivo de que sean secretas.
+
+### 🧹 Housekeeping
+- La clave de la que salen las direcciones se guarda junto a los datos del usuario, con permisos de solo lectura para su dueño.
+- Esto protege de que alguien adivine la dirección de otro, no de que alguien reenvíe la suya. Para un horario de guardias es suficiente.
+
 ## [5.92.0] - 2026-09-06
 
 ### 🎯 Resumen
