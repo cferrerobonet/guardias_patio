@@ -176,6 +176,8 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | DEV-005 | P3 | alta | Permisos mínimos → prompts | NUEVO | 11 |
 | DEV-006 | P3 | alta | Agente portable de 41 KB leído entero | NUEVO | 11 |
 
+| SEC-004 | P1 | alta | ~~Listados reales del claustro versionados en un repositorio público~~ | **RESUELTO v5.96.2** · `docs/examples/datos ejemplo/` llevaba desde 2025-11-15 dos PDF y cuatro Excel con nombres de profesores reales. Retirados de HEAD (los ficheros quedan fuera del repositorio) y `.gitignore` + test que impiden versionar datos u ofimática. **Siguen en el historial público**: hace falta reescribirlo o hacer el repositorio privado, decisión de CarlosFB · `tests/audit/test_sin_datos_reales_en_el_repositorio.py` | 30 |
+
 ## FUN · Mejoras funcionales (tipo `mejora`, sin severidad)
 
 FUN-001…FUN-014 en [[07_FUNCIONALIDAD_CALIDAD_ESCALABILIDAD]] §1. Estado: `PROPUESTA` pendiente de decisión de producto, salvo:

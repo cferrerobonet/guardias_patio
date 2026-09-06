@@ -10,6 +10,13 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ### 🧹 Housekeeping
 - **Los tests no pueden escribir en el `.env` real.** Una tanda de tests de importación reescribió el fichero de configuración de desarrollo con valores de prueba (`sftp.example.com`, `/guardias`) y la aplicación dejó de poder conectar. Ahora todo lo que guarde configuración va a una carpeta temporal durante la suite, salvo que el test se marque `env_real`. Es la tercera barrera del día, tras las del SMTP y el llavero.
 
+## [5.96.2] - 2026-09-06
+
+### Fixed
+- **La aplicación volvía a pedir la configuración del servidor en cada arranque** desde la v5.95.0. Al llevar las contraseñas al llavero, el fichero se queda con la línea vacía, y la comprobación de arranque seguía mirando sólo el fichero. Ahora pregunta al llavero.
+- **El diálogo de configuración inicial salía con los campos unos encima de otros** y los botones pisándose. Estaba fijado a 720 píxeles de alto con un contenido que, con la hoja de estilos aplicada, necesita más de 900; sin área de desplazamiento, Qt no recorta sino que superpone. Roto desde la v5.74.0, cuando el diálogo empezó a recibir la hoja de estilos; no se veía porque el diálogo no volvía a salir. Cada pestaña se desplaza ahora, y el mínimo del diálogo cabe en la pantalla de 1024×700 que promete la aplicación.
+- **Retirados del repositorio los listados del claustro** que estaban en `docs/examples/` desde 2025-11-15 (dos PDF y cuatro Excel con nombres reales, en un repositorio público). Un test impide que vuelva a entrar ningún fichero de datos ni documento de oficina.
+
 ## [5.96.0] - 2026-09-06
 
 ### 🎯 Resumen

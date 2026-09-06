@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -58,7 +59,13 @@ class InitialConfigDialog(QDialog):
         self.setWindowTitle("Configuración Inicial - Guardias de Patio")
         self.setModal(True)
         self.setMinimumWidth(700)
-        self.setMinimumHeight(720)
+        # 720 era más que la pantalla mínima que promete la aplicación (700 de
+        # alto, UXA-001) y, aun así, menor que lo que pide el contenido con la
+        # hoja de estilos aplicada: Qt aplastaba las filas y los campos se
+        # pisaban. Ahora el mínimo cabe en cualquier pantalla y cada pestaña se
+        # desplaza si no hay sitio.
+        self.setMinimumHeight(600)
+        self.resize(760, 900)
 
         # Estado interno
         self._smtp_configured = False
@@ -69,6 +76,15 @@ class InitialConfigDialog(QDialog):
         self._setup_ui()
         self._load_existing_config()
         self._check_configuration()
+
+    @staticmethod
+    def _desplazable(contenido: QWidget) -> QScrollArea:
+        area = QScrollArea()
+        area.setWidgetResizable(True)
+        area.setFrameShape(QScrollArea.Shape.NoFrame)
+        area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        area.setWidget(contenido)
+        return area
 
     def _setup_ui(self) -> None:
         """Configura la interfaz del diálogo."""
@@ -123,13 +139,14 @@ class InitialConfigDialog(QDialog):
             }
         """)
 
-        # Tab SFTP (CRÍTICO)
+        # Cada pestaña va dentro de un área desplazable: sin ella, cuando la
+        # ventana no alcanza la altura del contenido, Qt no recorta sino que
+        # superpone las filas y los campos quedan unos encima de otros.
         self.sftp_tab = self._create_sftp_tab()
-        self.tabs.addTab(self.sftp_tab, "SFTP (Obligatorio)")
+        self.tabs.addTab(self._desplazable(self.sftp_tab), "SFTP (Obligatorio)")
 
-        # Tab SMTP (OPCIONAL)
         self.smtp_tab = self._create_smtp_tab()
-        self.tabs.addTab(self.smtp_tab, "SMTP (Opcional)")
+        self.tabs.addTab(self._desplazable(self.smtp_tab), "SMTP (Opcional)")
 
         layout.addWidget(self.tabs)
 
@@ -625,13 +642,17 @@ class InitialConfigDialog(QDialog):
         else:
             load_dotenv()
 
-        # SFTP es obligatorio
+        # SFTP es obligatorio. La contraseña vive en el llavero desde v5.95.0: si
+        # sólo se mirase el fichero, la aplicación pediría la configuración en
+        # cada arranque a quien ya la tiene guardada.
+        from core.credenciales import obtener
+
         sftp_complete = all(
             [
                 os.getenv("SFTP_HOST"),
                 os.getenv("SFTP_PORT"),
-                os.getenv("SFTP_USERNAME"),
-                os.getenv("SFTP_PASSWORD"),
+                os.getenv("SFTP_USERNAME") or os.getenv("SFTP_USER"),
+                obtener("SFTP_PASSWORD"),
             ]
         )
 
