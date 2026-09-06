@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.90.0] - 2026-09-06
+
+### 🎯 Resumen
+El módulo de sincronización pasa de 1.227 líneas a 721.
+
+### 🧹 Housekeeping
+- **`sync_manager.py` mezclaba tres cosas distintas.** Cómo se sube un fichero —por SFTP, o a una carpeta local cuando se prueba— se va a `sync/backends.py`; la ficha de cuenta que vive en el servidor, a `sync/cuentas.py`. En `sync_manager.py` queda lo que de verdad es suyo: qué se sube y cuándo.
+- Todo se sigue importando desde donde estaba: medio programa los pedía a `sync_manager` y eso no cambia.
+- **De los siete módulos que pasaban de 778 líneas quedan seis**, y son vistas. Partir una vista por tamaño reparte el mismo código entre dos ficheros que sólo se usan juntos, así que se deja: sólo compensa cuando hay una costura real como ésta.
+- **Techo a las capturas de excepción demasiado amplias.** Las que tenían consecuencias se atacaron una a una en versiones anteriores; las 125 tuplas comodín y los 83 `except Exception` que quedan están en lectura de ficheros, parseo e interfaz. Ahora hay un test que impide que crezcan sin que nadie lo note.
+
 ## [5.89.0] - 2026-09-06
 
 ### 🎯 Resumen

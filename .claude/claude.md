@@ -19,7 +19,7 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 | Progreso / hilos | `widgets/progress_indicators.py` (`ejecutar_con_progreso`, `ProgressDialog`), `progress_worker.py` (`WorkerThread`), `progress_handlers.py` |
 | Caso de uso generación | `application/use_cases/asignacion_guardias/generar_guardias.py` → `services/asignador_guardias_cpsat.py` (+ `_asignador_cpsat_helpers.py`) o `services/asignador_guardias_v4_hibrido.py` |
 | Sesión BD y PRAGMAs | `database/db_manager.py` (`initialize_user_database`, NullPool, `check_same_thread=False`, journal DELETE) |
-| Sync SFTP y bloqueo | `sync/sync_manager.py`, `sync/session_lock.py`, `widgets/sync_progress_dialog.py` (`SyncWorker`) |
+| Sync SFTP y bloqueo | `sync/sync_manager.py` (qué se sube y cuándo), `sync/backends.py` (SFTP y carpeta local), `sync/cuentas.py` (ficha remota), `sync/session_lock.py`, `widgets/sync_progress_dialog.py` (`SyncWorker`) |
 | Tema y tokens | `presentation/theme/tokens.py`, `theme/light.qss`, `themes/tema_aplicacion.py` (tres capas + inline) |
 | Modelos ORM | `infrastructure/database/models.py` |
 | Versión canónica | `src/config/settings.py` → `app_version` (pyproject/README están desincronizados) |

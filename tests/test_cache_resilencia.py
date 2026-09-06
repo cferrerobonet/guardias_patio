@@ -1,4 +1,8 @@
-"""Tests para cache_service y retry SFTP en sync_manager."""
+"""Tests para cache_service y retry SFTP.
+
+El reintento vive en `sync/backends.py` desde v5.90.0, cuando se separó
+el transporte de la lógica de qué subir y cuándo (COD-008).
+"""
 
 import sys
 import threading
@@ -189,12 +193,12 @@ class TestInvalidarCache:
 
 class TestSFTPRetry:
     def test_sftp_importa_tenacity_cuando_disponible(self):
-        from sync.sync_manager import _TENACITY_AVAILABLE
+        from sync.backends import _TENACITY_AVAILABLE
         assert _TENACITY_AVAILABLE is True
 
     def test_connect_llama_connect_with_retry_si_tenacity(self):
         """_connect() delega en _connect_with_retry() cuando tenacity está disponible."""
-        from sync.sync_manager import SFTPSyncBackend, _TENACITY_AVAILABLE
+        from sync.backends import _TENACITY_AVAILABLE, SFTPSyncBackend
 
         if not _TENACITY_AVAILABLE:
             pytest.skip("tenacity no disponible")
@@ -211,7 +215,7 @@ class TestSFTPRetry:
 
             with patch.object(backend, "_connect_with_retry", return_value=True) as mock_retry:
                 with patch.object(backend, "_connect_once", return_value=True):
-                    from sync.sync_manager import _TENACITY_AVAILABLE as TA
+                    from sync.backends import _TENACITY_AVAILABLE as TA
                     if TA:
                         backend._connect_with_retry()
                     mock_retry.assert_called_once()

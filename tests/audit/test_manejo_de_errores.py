@@ -105,9 +105,11 @@ def test_la_tupla_funciona_aunque_falte_paramiko():
     """paramiko es opcional: sin él, el módulo tiene que seguir importándose."""
     import inspect
 
-    from sync import sync_manager
+    # La tupla vive en `sync.backends` desde v5.90.0, junto a los backends que
+    # son quienes hablan con paramiko.
+    from sync import backends
 
-    fuente = inspect.getsource(sync_manager)
+    fuente = inspect.getsource(backends)
     assert "except ImportError:" in fuente.split("ERRORES_DE_TRANSPORTE")[0]
 
 
@@ -116,9 +118,9 @@ def test_las_operaciones_sftp_usan_esa_tupla():
     import ast
     import inspect
 
-    from sync import sync_manager
+    from sync import backends
 
-    arbol = ast.parse(inspect.getsource(sync_manager))
+    arbol = ast.parse(inspect.getsource(backends))
     ofensores = []
     for nodo in ast.walk(arbol):
         if not isinstance(nodo, ast.ClassDef) or nodo.name != "SFTPSyncBackend":
@@ -167,3 +169,58 @@ def test_probar_la_conexion_desde_ajustes_no_revienta_con_ssh():
                     assert nombres != {"OSError", "ValueError"}, (
                         f"{metodo.name} deja escapar SSHException"
                     )
+
+
+# ---------------------------------------------------------------------------
+# COD-002 (ratchet): las capturas comodín que quedan no pueden crecer
+# ---------------------------------------------------------------------------
+
+#: Capturas de tupla comodín `(ValueError, TypeError, OSError)` y variantes. Las
+#: que tenían consecuencias se atacaron una a una en v5.64.0 y v5.74.0; las que
+#: quedan están en lectura de ficheros, parseo y código de interfaz, donde no hay
+#: un tipo conocido que se escape. Este techo sólo puede bajar.
+TECHO_TUPLAS_COMODIN = 125
+
+#: `except Exception` a secas. Igual: sólo puede bajar.
+TECHO_EXCEPTION_PELADO = 83
+
+COMODINES = (
+    {"ValueError", "TypeError", "OSError"},
+    {"ValueError", "TypeError"},
+    {"OSError", "ValueError"},
+)
+
+
+def _contar_capturas():
+    tuplas = pelados = 0
+    for fichero in (ROOT / "src").rglob("*.py"):
+        if "egg-info" in str(fichero) or "__pycache__" in fichero.parts:
+            continue
+        try:
+            arbol = ast.parse(fichero.read_text(encoding="utf-8", errors="ignore"))
+        except SyntaxError:
+            continue
+        for nodo in ast.walk(arbol):
+            if not isinstance(nodo, ast.ExceptHandler):
+                continue
+            if isinstance(nodo.type, ast.Name) and nodo.type.id == "Exception":
+                pelados += 1
+            elif isinstance(nodo.type, ast.Tuple):
+                nombres = {n.id for n in nodo.type.elts if isinstance(n, ast.Name)}
+                if nombres in COMODINES:
+                    tuplas += 1
+    return tuplas, pelados
+
+
+def test_no_crecen_las_capturas_comodin():
+    tuplas, _ = _contar_capturas()
+    assert tuplas <= TECHO_TUPLAS_COMODIN, (
+        f"{tuplas} capturas comodín: si has reducido deuda, baja el techo; nunca lo subas"
+    )
+
+
+def test_no_crecen_los_except_exception():
+    _, pelados = _contar_capturas()
+    assert pelados <= TECHO_EXCEPTION_PELADO, (
+        f"{pelados} `except Exception`: si has reducido deuda, baja el techo; nunca lo subas"
+    )
