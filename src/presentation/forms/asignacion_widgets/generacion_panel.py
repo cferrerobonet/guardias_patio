@@ -39,6 +39,7 @@ from presentation.theme.terminal_format import (
     wrap_terminal_html,
 )
 from presentation.theme.tokens import Spacing
+from services import papelera_guardias
 from utils import get_logger
 from utils.icons import icon_for_button
 
@@ -121,6 +122,7 @@ class GeneracionPanel(QGroupBox):
         """)
         self._setup_ui()
         self._mostrar_mensaje_inicial()
+        self.actualizar_boton_de_deshacer()
         self.comprobar_prerrequisitos()
 
     def _setup_ui(self):
@@ -187,10 +189,19 @@ class GeneracionPanel(QGroupBox):
         self.limpiar_button = QPushButton("Limpiar Guardias")
         self.limpiar_button.setIcon(icon_for_button("delete"))
         self.limpiar_button.setProperty("danger", "true")
-        self.limpiar_button.setMinimumHeight(32)
         self.limpiar_button.setToolTip("Borra todas las guardias del curso")
         self.limpiar_button.clicked.connect(self._limpiar_guardias)
         button_container.addWidget(self.limpiar_button, 1)
+
+        # Deshacer la limpieza (FUN-012): sólo aparece cuando hay papelera reciente.
+        self.deshacer_limpieza_button = QPushButton("Deshacer la limpieza")
+        self.deshacer_limpieza_button.setIcon(icon_for_button("refresh"))
+        self.deshacer_limpieza_button.clicked.connect(self._deshacer_la_limpieza)
+        self.deshacer_limpieza_button.setVisible(False)
+        button_container.addWidget(self.deshacer_limpieza_button, 1)
+
+        for boton in (self.limpiar_button, self.deshacer_limpieza_button):
+            boton.setMinimumHeight(32)
 
         layout.addLayout(button_container)
 
@@ -463,16 +474,20 @@ class GeneracionPanel(QGroupBox):
         msg = QMessageBox(self)
         msg.setWindowTitle("Confirmar Eliminación")
         msg.setText(f"¿Eliminar las {count} guardias existentes?")
-        msg.setInformativeText("Esta acción no se puede deshacer.")
+        msg.setInformativeText(
+            f"Podrás recuperarlas con «Deshacer la limpieza» durante las próximas "
+            f"{papelera_guardias.HORAS_DE_VIDA} horas."
+        )
         msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg.setDefaultButton(QMessageBox.StandardButton.No)
 
         if msg.exec() == QMessageBox.StandardButton.Yes:
             try:
                 self._copia_de_seguridad("limpiar guardias")
-                self.limpiar_guardias_uc.execute()
+                papelera_guardias.limpiar_guardias(self.session)
                 self._mostrar_mensaje_inicial()
                 self._ultimo_resumen = None
+                self.actualizar_boton_de_deshacer()
                 self.guardias_limpiadas.emit()
 
                 if self.sync_manager:
@@ -480,6 +495,51 @@ class GeneracionPanel(QGroupBox):
 
             except SQLAlchemyError as e:
                 self._mostrar_error(f"Error al limpiar: {e}")
+
+    def actualizar_boton_de_deshacer(self) -> None:
+        """Muestra «Deshacer la limpieza» mientras la papelera siga a tiempo."""
+        try:
+            pendiente = papelera_guardias.hay_algo_que_deshacer(self.session)
+        except SQLAlchemyError:
+            pendiente = None
+        self.deshacer_limpieza_button.setVisible(pendiente is not None)
+        if pendiente:
+            self.deshacer_limpieza_button.setToolTip(
+                f"Devuelve las {pendiente['cuantas']} guardias que se borraron"
+            )
+
+    def _deshacer_la_limpieza(self) -> None:
+        from PyQt6.QtWidgets import QMessageBox
+
+        from presentation.widgets.toast_notification import ToastNotification
+
+        pendiente = papelera_guardias.hay_algo_que_deshacer(self.session)
+        if not pendiente:
+            self.actualizar_boton_de_deshacer()
+            return
+
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Question)
+        msg.setWindowTitle("Deshacer la limpieza")
+        msg.setText(f"¿Devolver las {pendiente['cuantas']} guardias borradas?")
+        msg.setInformativeText(
+            "Se saltarán las de profesores o zonas que ya no existan, y las que "
+            "ocupen un hueco que se haya vuelto a llenar."
+        )
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg.setDefaultButton(QMessageBox.StandardButton.Yes)
+        if msg.exec() != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            devueltas = papelera_guardias.deshacer_la_limpieza(self.session)
+        except SQLAlchemyError as e:
+            self._mostrar_error(f"Error al deshacer la limpieza: {e}")
+            return
+
+        self.actualizar_boton_de_deshacer()
+        self.guardias_limpiadas.emit()
+        ToastNotification(self.window(), f"{devueltas} guardias devueltas", "success")
 
     def _preguntar_alcance(self, count_guardias: int, resumen_previo: str):
         """¿Rehacer el curso entero o sólo de hoy en adelante? (FUN-002)

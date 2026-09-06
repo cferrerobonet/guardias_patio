@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.77.0] - 2026-09-06
+
+### 🎯 Resumen
+«Limpiar guardias» deja de ser un punto sin retorno.
+
+### ✨ Added
+- **Papelera de guardias.** Al limpiar, las guardias borradas se guardan aparte y un botón «Deshacer la limpieza» las devuelve durante las 24 horas siguientes. Sigue haciéndose la copia de la base de datos, pero ya no hay que recurrir a ella para el caso normal: la copia arrastra todo lo demás y esto sólo toca las guardias.
+- El aviso de confirmación ya no dice «esta acción no se puede deshacer», porque ahora sí se puede: dice cuánto tiempo hay.
+- Al devolverlas se saltan las guardias de profesores o zonas que hayan desaparecido y las que ocupen un hueco vuelto a llenar; se informa de cuántas han vuelto.
+- El botón aparece también al abrir la aplicación si la papelera sigue vigente.
+
+### 🧹 Housekeeping
+- Las guardias se borran una a una en vez de con un `DELETE` masivo: el masivo dejaba a la sesión creyendo que seguían ahí y chocaba contra las que después ocupaban sus números.
+- Al devolver una guardia no se reutiliza su identificador anterior, que puede haber quedado ocupado mientras esperaba en la papelera.
+
 ## [5.76.0] - 2026-09-06
 
 ### 🎯 Resumen

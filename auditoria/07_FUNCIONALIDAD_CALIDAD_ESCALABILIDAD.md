@@ -29,7 +29,7 @@ Ordenadas por valor/esfuerzo. Sin severidad: son decisiones de producto.
 | FUN-009 | **Consulta web de solo lectura** para el profesorado (calendario propio, iCal suscribible) sobre la API FastAPI existente | Alto a medio plazo | L | ESC-004, SEC-002 |
 | FUN-010 | **Tema oscuro y alto contraste** generados desde tokens | Medio | S tras VIS-001 | VIS-001 |
 | FUN-011 | **Actualización automática en Windows** (asset `.exe` en release + descarga en banner) y notas de versión in-app | Medio | S | BLD-005 |
-| FUN-012 | **Deshacer** en sustituciones/reasignaciones y en "Limpiar guardias" (papelera 24 h) | Medio | M | FUN-004 |
+| ~~FUN-012~~ ✅ **v5.77.0** | ~~Deshacer en sustituciones/reasignaciones y en "Limpiar guardias" (papelera 24 h)~~ · el deshacer de sustituciones ya estaba (v5.63.0); ahora limpiar guarda las guardias en una papelera junto a la base de datos del usuario y un botón las devuelve durante 24 h | Medio | M | FUN-004 |
 | FUN-013 | Diagnóstico accionable de slots sin cubrir: por slot, qué restricción excluyó a cada profesor y qué cambio mínimo lo resolvería | Alto para equidad | M | – |
 | FUN-014 | Reparto de guardias con pesos por zona (dificultad) y preferencia de recreo, configurable | Medio | M | ESC-002 |
 

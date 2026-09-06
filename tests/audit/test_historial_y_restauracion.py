@@ -31,7 +31,9 @@ def test_limpiar_tambien_hace_copia():
 
     fuente = inspect.getsource(GeneracionPanel._limpiar_guardias)
     assert "_copia_de_seguridad" in fuente
-    assert fuente.index("_copia_de_seguridad") < fuente.index("limpiar_guardias_uc.execute")
+    assert fuente.index("_copia_de_seguridad") < fuente.index(
+        "papelera_guardias.limpiar_guardias"
+    )
 
 
 def test_la_copia_no_impide_la_operacion_si_falla(qapp, session, monkeypatch):
