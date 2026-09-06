@@ -704,7 +704,10 @@ class VistaCalendario(BaseForm):
             zonas_esperadas_por_recreo=obtener_zonas_esperadas_por_recreo(self.session, fecha),
             es_dia_lectivo=self._es_dia_lectivo(fecha),
             parent=self,
+            session=self.session,
         )
+        # Tras una permuta hay que repintar: han cambiado dos días, no sólo éste.
+        dialog.permuta_realizada.connect(self._recargar_tras_permuta)
         dialog.exec()
 
     def _seleccionar_mes(self, mes: int):
@@ -799,6 +802,10 @@ class VistaCalendario(BaseForm):
         self.btn_compacto.setChecked(self.modo_compacto)
         self.btn_compacto.setText("Detalle" if self.modo_compacto else "Compacto")
         self.actualizar_calendario()
+
+    def _recargar_tras_permuta(self) -> None:
+        """Repinta el calendario: una permuta cambia dos días, no sólo el abierto."""
+        self.refrescar()
 
     def refrescar(self):
         """Refrescar el calendario."""

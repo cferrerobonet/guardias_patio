@@ -9,7 +9,7 @@ import locale
 from datetime import date
 from typing import Dict, List, Tuple
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QDialog,
@@ -37,6 +37,9 @@ except locale.Error:
 
 
 class DiaDetalleDialog(QDialog):
+
+    #: Se ha intercambiado una guardia: quien escuche debe repintar el calendario.
+    permuta_realizada = pyqtSignal()
     """Ventana modal con detalles completos del día seleccionado."""
 
     def __init__(
@@ -48,6 +51,7 @@ class DiaDetalleDialog(QDialog):
         zonas_esperadas_por_recreo: Dict[Tuple[str, int], List[Zona]] = None,
         es_dia_lectivo: bool = True,
         parent=None,
+        session=None,
     ):
         """
         Inicializar diálogo de detalle del día.
@@ -64,6 +68,8 @@ class DiaDetalleDialog(QDialog):
         super().__init__(parent)
         self.fecha = fecha
         self.guardias = guardias
+        #: Con sesión, cada guardia ofrece permutarse con otro profesor (FUN-003b).
+        self.session = session
         self.ausencias = ausencias
         self.sustituciones = sustituciones
         self.zonas_esperadas_por_recreo = zonas_esperadas_por_recreo or {}
@@ -401,6 +407,16 @@ class DiaDetalleDialog(QDialog):
         )
         layout.addWidget(label_turno)
 
+        if self.session is not None:
+            boton = QPushButton("Permutar…")
+            boton.setProperty("secondary", "true")
+            boton.setAccessibleName(
+                f"Permutar la guardia de {guardia.profesor.nombre_completo} con otro profesor"
+            )
+            boton.setToolTip("Intercambiar esta guardia con la de otro profesor")
+            boton.clicked.connect(lambda _=False, g=guardia: self._permutar(g))
+            layout.addWidget(boton)
+
         widget.setStyleSheet("""
             QWidget {
                 background-color: white;
@@ -414,6 +430,19 @@ class DiaDetalleDialog(QDialog):
         """)
 
         return widget
+
+    def _permutar(self, guardia: Guardia) -> None:
+        """Intercambia esta guardia con la de otro profesor (FUN-003b).
+
+        No es una sustitución: nadie falta. Cada uno cede una y coge otra, así que
+        los totales del curso no cambian y el reparto sigue siendo equitativo.
+        """
+        from presentation.dialogs.permutar_guardia_dialog import PermutarGuardiaDialog
+
+        dialogo = PermutarGuardiaDialog(self.session, guardia, parent=self)
+        if dialogo.exec() == QDialog.DialogCode.Accepted:
+            self.permuta_realizada.emit()
+            self.accept()
 
     def _crear_seccion_ausencias(self) -> QGroupBox:
         """Crear sección con lista de ausencias."""

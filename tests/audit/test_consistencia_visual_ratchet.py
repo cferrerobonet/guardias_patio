@@ -2,6 +2,9 @@
 Sólo pueden bajar, salvo subida deliberada y anotada aquí. Ver auditoria/04 y 05.
 
 Subidas registradas:
+- 2026-09-06, v5.75.0: `setMinimum` 139 → 140. El diálogo de permutar guardias
+  necesita un ancho mínimo para que quepan los dos desplegables; es superficie
+  nueva, no deuda que crece.
 - 2026-09-05, v5.56.0: `setStyleSheet` 287 → 289 (vista de estado del curso y aviso
   de bloqueo del panel de generación).
 - 2026-09-05, v5.57.0: vuelve a 288 al retirarse la vista de estado del curso.
@@ -29,7 +32,7 @@ UMBRALES = {
     "font_size_menor_12px": 0,
     "lineas_con_emoji": 316,
     "setFixed": 18,
-    "setMinimum": 139,
+    "setMinimum": 140,
 }
 EMOJI = re.compile("[\U0001f300-\U0001faff☀-➿]")
 

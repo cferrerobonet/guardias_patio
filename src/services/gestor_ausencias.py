@@ -408,6 +408,99 @@ def reasignar_guardia(
     return guardia
 
 
+def permutar_guardias(session, guardia_a_id: int, guardia_b_id: int) -> tuple:
+    """Intercambia el profesor de dos guardias (FUN-003b).
+
+    Es un trato entre dos personas, no una baja: cada una cede una guardia y coge
+    la de la otra, así que **los totales del curso no cambian** y el reparto sigue
+    siendo equitativo. Por eso no se marca como sustitución ni se toca ninguna
+    cuota.
+
+    Se comprueba lo mismo que al reasignar por ausencia: que nadie acabe con dos
+    guardias el mismo día y que nadie esté ausente el día que le toca.
+
+    Returns:
+        Las dos guardias ya intercambiadas.
+
+    Raises:
+        ValueError: si alguna guardia no existe, si son la misma, si pertenecen al
+            mismo profesor o si el intercambio dejaría un calendario inválido.
+    """
+    if guardia_a_id == guardia_b_id:
+        raise ValueError("Hay que elegir dos guardias distintas")
+
+    guardia_a = session.query(Guardia).get(guardia_a_id)
+    guardia_b = session.query(Guardia).get(guardia_b_id)
+    if not guardia_a or not guardia_b:
+        raise ValueError("Alguna de las dos guardias ya no existe")
+
+    profesor_a_id = guardia_a.profesor_id
+    profesor_b_id = guardia_b.profesor_id
+    if profesor_a_id == profesor_b_id:
+        raise ValueError("Las dos guardias son del mismo profesor: no hay nada que permutar")
+
+    nombre_a = guardia_a.profesor.nombre_completo if guardia_a.profesor else "?"
+    nombre_b = guardia_b.profesor.nombre_completo if guardia_b.profesor else "?"
+
+    checker = AusenciaChecker(session)
+    for profesor_id, nombre, destino in (
+        (profesor_b_id, nombre_b, guardia_a),
+        (profesor_a_id, nombre_a, guardia_b),
+    ):
+        if checker.profesor_ausente(profesor_id, destino.fecha):
+            raise ValueError(f"{nombre} está ausente el {destino.fecha:%d/%m/%Y}")
+
+        # ¿Se quedaría con dos guardias el mismo día? La que cede no cuenta.
+        otras = (
+            session.query(Guardia)
+            .filter(
+                Guardia.profesor_id == profesor_id,
+                Guardia.fecha == destino.fecha,
+                Guardia.id.notin_([guardia_a_id, guardia_b_id]),
+            )
+            .count()
+        )
+        if otras > 0:
+            raise ValueError(
+                f"{nombre} ya tiene otra guardia el {destino.fecha:%d/%m/%Y}"
+            )
+
+    guardia_a.profesor_id = profesor_b_id
+    guardia_b.profesor_id = profesor_a_id
+
+    detalle = json.dumps(
+        {
+            "permutada_con": guardia_b_id,
+            "de": str(nombre_a),
+            "a": str(nombre_b),
+        }
+    )
+    session.add(
+        GuardiaAuditLog(
+            guardia_id=guardia_a_id,
+            accion="PERMUTADA",
+            profesor_id=profesor_b_id,
+            detalle=detalle,
+        )
+    )
+    session.add(
+        GuardiaAuditLog(
+            guardia_id=guardia_b_id,
+            accion="PERMUTADA",
+            profesor_id=profesor_a_id,
+            detalle=json.dumps(
+                {"permutada_con": guardia_a_id, "de": str(nombre_b), "a": str(nombre_a)}
+            ),
+        )
+    )
+    session.commit()
+
+    logger.info(
+        f"Permuta: {nombre_a} ({guardia_a.fecha}) ↔ {nombre_b} ({guardia_b.fecha})"
+    )
+    return guardia_a, guardia_b
+
+
 def deshacer_sustitucion(session, guardia_id: int) -> Guardia:
     """Devuelve una guardia sustituida a su profesor original (UXF-009).
 

@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.75.0] - 2026-09-06
+
+### 🎯 Resumen
+Dos profesores pueden intercambiarse una guardia entre ellos.
+
+### ✨ Added
+- **Permutar una guardia.** En el calendario, al abrir un día, cada guardia ofrece «Permutar…»: se elige con qué profesor y con cuál de sus guardias futuras se intercambia. No es una sustitución —ahí alguien falta— sino un trato entre dos personas.
+- **El reparto no se descompensa.** Es un intercambio uno por uno: cada profesor cede una guardia y coge otra, así que el número total de guardias de cada uno en el curso no cambia y no hay que recalcular nada.
+- **Se comprueba antes de hacerlo:** que ninguno de los dos acabe con dos guardias el mismo día, y que ninguno esté ausente el día que le toca. Si algo no cuadra, se explica y no se cambia nada; nunca queda a medias.
+- El intercambio queda registrado en el historial de las dos guardias.
+
+### 🧹 Housekeeping
+- Al abrir un día, solo se ofrecen guardias futuras del otro profesor: intercambiar una que ya ha pasado no tiene sentido.
+- 2.639 pruebas, ningún fallo.
+
+---
+
 ## [5.74.0] - 2026-09-06
 
 ### 🎯 Resumen
