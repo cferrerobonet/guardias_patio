@@ -642,12 +642,9 @@ class AusenciasSustitucionesWidget(BaseForm):
         ):
             return
         try:
-            from infrastructure.database.models import Guardia
+            from services.gestor_ausencias import limpiar_todas_las_sustituciones
 
-            self.session.query(Guardia).filter(
-                Guardia.es_sustitucion == True  # noqa: E712
-            ).update({"es_sustitucion": False, "profesor_sustituido_id": None})
-            self.session.commit()
+            limpiar_todas_las_sustituciones(self.session)
             self.cargar_historial()
             self.sustitucion_guardada.emit()
             self.mostrar_exito("Historial limpiado", "Todas las sustituciones han sido eliminadas.")

@@ -568,9 +568,7 @@ class GestionCursosWidget(QWidget):
             respuesta2 = msg_box2.exec()
 
             if respuesta2 == QMessageBox.StandardButton.Yes:
-                # Eliminar curso a través del repositorio (sin acceso directo a ORM)
-                _svc.cursos.delete(curso_id)
-                self.session.commit()
+                GestorCursos.from_session(self.session).eliminar_curso(curso_id)
 
                 ToastNotification(self.window(), f"Curso eliminado: {curso.nombre}", "success")
                 self._cargar_cursos()

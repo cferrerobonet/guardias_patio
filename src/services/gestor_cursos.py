@@ -311,6 +311,18 @@ class GestorCursos:
         )
         return anteriores[0].id if anteriores else None
 
+    def eliminar_curso(self, curso_id: int) -> bool:
+        """Borra un curso y confirma la transacción (COD-003).
+
+        La vista llamaba al repositorio y hacía ella el `commit`, que es
+        justamente lo que no debe decidir una pantalla.
+        """
+        borrado = self.curso_repo.delete(curso_id)
+        self.session.commit()
+        if borrado:
+            logger.info(f"Curso eliminado (ID: {curso_id})")
+        return borrado
+
     def listar_todos_cursos(self, incluir_cerrados: bool = True) -> list[CursoEscolarEntity]:
         todos = self.curso_repo.get_all()
         if not incluir_cerrados:

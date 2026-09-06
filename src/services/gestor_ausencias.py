@@ -501,6 +501,29 @@ def permutar_guardias(session, guardia_a_id: int, guardia_b_id: int) -> tuple:
     return guardia_a, guardia_b
 
 
+def limpiar_todas_las_sustituciones(session) -> int:
+    """Devuelve a su profesor original todas las guardias sustituidas (COD-003).
+
+    Estaba escrito en la vista del historial, que hacía el `UPDATE` masivo y el
+    `commit` por su cuenta: la única escritura directa contra la base de datos
+    que quedaba en la capa de presentación.
+
+    Devuelve cuántas guardias se han devuelto.
+    """
+    afectadas = (
+        session.query(Guardia)
+        .filter(Guardia.es_sustitucion.is_(True))
+        .update(
+            {"es_sustitucion": False, "profesor_sustituido_id": None},
+            synchronize_session=False,
+        )
+    )
+    session.commit()
+    session.expire_all()
+    logger.info(f"Historial de sustituciones limpiado: {afectadas} guardias devueltas")
+    return afectadas
+
+
 def deshacer_sustitucion(session, guardia_id: int) -> Guardia:
     """Devuelve una guardia sustituida a su profesor original (UXF-009).
 

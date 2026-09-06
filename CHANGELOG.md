@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.91.0] - 2026-09-06
+
+### 🎯 Resumen
+Ninguna pantalla escribe ya directamente en la base de datos.
+
+### 🧹 Housekeeping
+- **«Limpiar historial» hacía su propio `UPDATE` masivo** sobre todas las guardias sustituidas y confirmaba la transacción desde la vista. Pasa a `gestor_ausencias.limpiar_todas_las_sustituciones()`, junto a deshacer una sustitución y permutar una guardia, que es donde vive el resto de esa lógica.
+- **Eliminar un curso** llamaba al repositorio desde la vista y hacía ella el `commit`. Ahora lo hace `GestorCursos.eliminar_curso()`.
+- Un test impide que vuelva a aparecer un `commit`, `add` o `delete` sobre la sesión en la capa de presentación.
+- Las catorce consultas de sólo lectura que quedan en las vistas se dejan como están —son listados para pintar y sacarlas a un servicio añadiría una capa que no decide nada—, con un techo que no puede subir.
+
 ## [5.90.0] - 2026-09-06
 
 ### 🎯 Resumen
