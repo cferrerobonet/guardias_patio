@@ -200,24 +200,7 @@ class ChangePasswordDialog(QDialog):
             msg.setStandardButtons(QMessageBox.StandardButton.Ok)
             ok_button = msg.button(QMessageBox.StandardButton.Ok)
             ok_button.setText("Entendido")
-            ok_button.setStyleSheet("""
-                QPushButton {
-                    min-width: 120px;
-                    min-height: 35px;
-                    padding: 5px 15px;
-                    font-size: 13px;
-                    background-color: #166529;
-                    color: white;
-                    border: 2px solid #047857;
-                    border-radius: 4px;
-                }
-                QPushButton:hover {
-                    background-color: #047857;
-                }
-                QPushButton:pressed {
-                    background-color: #065f46;
-                }
-            """)
+            ok_button.setObjectName("botonConfirmarVerde")
 
             msg.exec()
 

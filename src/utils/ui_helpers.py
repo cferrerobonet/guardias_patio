@@ -622,3 +622,18 @@ def llenando_tabla(tabla):
         yield tabla
     finally:
         tabla.setSortingEnabled(estaba)
+
+
+def aplicar_caja(etiqueta, papel: str) -> None:
+    """Cambia el papel de un recuadro de estado y lo repinta.
+
+    Cambiar una propiedad no repinta nada por su cuenta: Qt sólo evalúa los
+    selectores por propiedad al aplicar la hoja de estilos. Sin este repolish,
+    los avisos de la configuración inicial se quedaban con el color del primer
+    pintado por mucho que cambiara el texto.
+    """
+    etiqueta.setProperty("caja", papel)
+    estilo = etiqueta.style()
+    if estilo is not None:
+        estilo.unpolish(etiqueta)
+        estilo.polish(etiqueta)

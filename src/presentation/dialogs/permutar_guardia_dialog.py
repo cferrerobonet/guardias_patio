@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
 
 from infrastructure.database.models import Guardia, Profesor
 from utils import get_logger
+from utils.ui_helpers import aplicar_caja
 
 logger = get_logger(__name__)
 
@@ -72,7 +73,7 @@ class PermutarGuardiaDialog(QDialog):
 
         self.aviso = QLabel("")
         self.aviso.setWordWrap(True)
-        self.aviso.setProperty("caja", "info")
+        aplicar_caja(self.aviso, "info")
         self.aviso.setText(
             "Es un intercambio: cada uno hace una guardia distinta, pero el número "
             "total de guardias de cada profesor en el curso no cambia."
@@ -135,19 +136,19 @@ class PermutarGuardiaDialog(QDialog):
                 "Ese profesor no tiene ninguna guardia futura que ofrecer a cambio. "
                 "Elige otro."
             )
-            self.aviso.setProperty("caja", "aviso")
+            aplicar_caja(self.aviso, "aviso")
         else:
             self.aviso.setText(
                 "Es un intercambio: cada uno hace una guardia distinta, pero el número "
                 "total de guardias de cada profesor en el curso no cambia."
             )
-            self.aviso.setProperty("caja", "info")
+            aplicar_caja(self.aviso, "info")
         self.aviso.style().unpolish(self.aviso)
         self.aviso.style().polish(self.aviso)
 
     def _bloquear(self, motivo: str) -> None:
         self.aviso.setText(motivo)
-        self.aviso.setProperty("caja", "aviso")
+        aplicar_caja(self.aviso, "aviso")
         self.botones.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
     # -- acción --------------------------------------------------------------

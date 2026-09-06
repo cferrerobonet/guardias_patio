@@ -420,6 +420,23 @@ QLabel[caja="aviso"] {
     border-radius: 3px;
 }
 
+/* Recuadro de error y de resultado correcto: mismo papel, distinto desenlace */
+QLabel[caja="error"] {
+    padding: 8px;
+    background-color: @ERROR_BG@;
+    border-left: 4px solid @ERROR@;
+    color: @ERROR_ON_BG@;
+    border-radius: 3px;
+}
+
+QLabel[caja="exito"] {
+    padding: 8px;
+    background-color: @SUCCESS_BG@;
+    border-left: 4px solid @SUCCESS@;
+    color: @SUCCESS_DARK@;
+    border-radius: 3px;
+}
+
 /* Recuadro informativo */
 QLabel[caja="info"] {
     padding: 10px;
@@ -501,4 +518,42 @@ QLabel[texto="fuerte"] {
     font-size: 12px;
     font-weight: 600;
     color: @TEXT_PRIMARY@;
+}
+
+/* ========== PIEZAS QUE ESTABAN REPETIDAS (lote 8 bis) ==========
+   De los 174 estilos en línea de la aplicación, 157 son distintos entre sí: son
+   ajustes de un widget concreto y sacarlos aquí sólo movería el problema. Los
+   que sí aparecían dos o tres veces literalmente son éstos. */
+
+/* Caja informativa azul bajo un formulario (SFTP, SMTP) */
+QLabel#cajaInformativa {
+    padding: 10px;
+    background-color: @INFO_BG@;
+    border-left: 4px solid @PRIMARY@;
+    color: @PRIMARY_DARK@;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+/* Botón de confirmación verde de los diálogos de configuración */
+QPushButton#botonConfirmarVerde {
+    min-width: 120px;
+    min-height: 35px;
+    padding: 5px 15px;
+    font-size: 13px;
+    background-color: @SUCCESS_DARK@;
+    color: @TEXT_ON_PRIMARY@;
+    border: 2px solid @SUCCESS@;
+    border-radius: 4px;
+}
+
+QPushButton#botonConfirmarVerde:hover {
+    background-color: @SUCCESS@;
+}
+
+/* Área desplazable con marco, en las pantallas de exportación */
+QScrollArea#areaConMarco {
+    border: 1px solid @BORDER_DARK@;
+    border-radius: 4px;
+    background-color: @BACKGROUND@;
 }

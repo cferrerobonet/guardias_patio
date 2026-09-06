@@ -225,15 +225,7 @@ class PdfExportWidget(QGroupBox):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setMaximumHeight(200)
-        scroll_area.setStyleSheet(
-            """
-            QScrollArea {
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                background-color: white;
-            }
-        """
-        )
+        scroll_area.setObjectName("areaConMarco")
 
         scroll_widget = QWidget()
         self.profesores_checks_layout = QVBoxLayout(scroll_widget)

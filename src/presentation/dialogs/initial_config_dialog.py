@@ -34,6 +34,7 @@ from core.paths import get_base_directory
 from presentation.dialogs._initial_config_tabs import create_sftp_tab, create_smtp_tab
 from utils import get_logger
 from utils.icons import icon_for_button
+from utils.ui_helpers import aplicar_caja
 
 logger = get_logger(__name__)
 
@@ -136,17 +137,10 @@ class InitialConfigDialog(QDialog):
         status_layout = QHBoxLayout()
 
         self.smtp_status_label = QLabel("SMTP: No configurado")
-        self.smtp_status_label.setProperty("caja", "aviso")
+        aplicar_caja(self.smtp_status_label, "aviso")
 
         self.sftp_status_label = QLabel("SFTP: No configurado")
-        self.sftp_status_label.setStyleSheet("""
-            QLabel {
-                padding: 8px;
-                background-color: #fee2e2;
-                border-left: 4px solid #dc2626;
-                border-radius: 3px;
-            }
-        """)
+        aplicar_caja(self.sftp_status_label, "error")
 
         status_layout.addWidget(self.smtp_status_label)
         status_layout.addWidget(self.sftp_status_label)
@@ -265,27 +259,13 @@ class InitialConfigDialog(QDialog):
 
         if sftp_complete and self._sftp_configured:
             self.sftp_status_label.setText("SFTP: Configurado correctamente")
-            self.sftp_status_label.setStyleSheet("""
-                QLabel {
-                    padding: 8px;
-                    background-color: #d1fae5;
-                    border-left: 4px solid #1E7E34;
-                    border-radius: 3px;
-                }
-            """)
+            aplicar_caja(self.sftp_status_label, "exito")
         elif sftp_complete:
             self.sftp_status_label.setText("SFTP: Datos completos - Guardar y probar")
-            self.sftp_status_label.setProperty("caja", "aviso")
+            aplicar_caja(self.sftp_status_label, "aviso")
         else:
             self.sftp_status_label.setText("SFTP: Configuración incompleta (OBLIGATORIO)")
-            self.sftp_status_label.setStyleSheet("""
-                QLabel {
-                    padding: 8px;
-                    background-color: #fee2e2;
-                    border-left: 4px solid #dc2626;
-                    border-radius: 3px;
-                }
-            """)
+            aplicar_caja(self.sftp_status_label, "error")
 
         # SMTP (opcional)
         smtp_complete = all(
@@ -299,20 +279,13 @@ class InitialConfigDialog(QDialog):
 
         if smtp_complete and self._smtp_configured:
             self.smtp_status_label.setText("SMTP: Configurado correctamente")
-            self.smtp_status_label.setStyleSheet("""
-                QLabel {
-                    padding: 8px;
-                    background-color: #d1fae5;
-                    border-left: 4px solid #1E7E34;
-                    border-radius: 3px;
-                }
-            """)
+            aplicar_caja(self.smtp_status_label, "exito")
         elif smtp_complete:
             self.smtp_status_label.setText("SMTP: Datos completos - Guardar y probar")
-            self.smtp_status_label.setProperty("caja", "aviso")
+            aplicar_caja(self.smtp_status_label, "aviso")
         else:
             self.smtp_status_label.setText("SMTP: No configurado (OPCIONAL)")
-            self.smtp_status_label.setProperty("caja", "aviso")
+            aplicar_caja(self.smtp_status_label, "aviso")
 
         # Habilitar botón de continuar solo si SFTP está configurado
         self.continue_btn.setEnabled(self._sftp_configured)

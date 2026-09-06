@@ -155,18 +155,7 @@ class SMTPConfigWidget(QGroupBox):
 
         # Nota informativa
         info_label = QLabel("Para Gmail, usa una App Password en lugar de tu contraseña normal.")
-        info_label.setStyleSheet(
-            """
-            QLabel {
-                padding: 10px;
-                background-color: #eff6ff;
-                border-left: 4px solid #0E5FA8;
-                color: #1e40af;
-                font-size: 12px;
-                margin-top: 10px;
-            }
-        """
-        )
+        info_label.setObjectName("cajaInformativa")
         info_label.setWordWrap(True)
         layout.addWidget(info_label)
 
@@ -676,20 +665,7 @@ Sistema de Gestión de Guardias de Patio
         success_msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         ok_button = success_msg.button(QMessageBox.StandardButton.Ok)
         ok_button.setText("Entendido")
-        ok_button.setStyleSheet("""
-            QPushButton {
-                min-width: 120px;
-                min-height: 35px;
-                padding: 5px 15px;
-                font-size: 13px;
-                background-color: #166529;
-                color: white;
-                border: 2px solid #047857;
-                border-radius: 4px;
-            }
-            QPushButton:hover { background-color: #047857; }
-            QPushButton:pressed { background-color: #065f46; }
-        """)
+        ok_button.setObjectName("botonConfirmarVerde")
         success_msg.exec()
 
     def get_config_dict(self) -> dict:

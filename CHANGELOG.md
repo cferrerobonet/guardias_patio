@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.89.0] - 2026-09-06
+
+### 🎯 Resumen
+Los recuadros de estado cambian de color cuando cambia el estado.
+
+### Fixed
+- **Los avisos de la configuración inicial se quedaban del color del primer pintado.** Decían «SFTP: Configurado correctamente» sobre el fondo rojo de «no configurado». Cambiar una propiedad de estilo en caliente no repinta nada por su cuenta: Qt sólo evalúa esos selectores al aplicar la hoja. Lo mismo pasaba en el diálogo de permutar guardias.
+
+### 🧹 Housekeeping
+- Extraídos a la hoja de estilos los bloques que estaban escritos dos o tres veces literalmente: la caja informativa de SFTP y SMTP, las cajas de error y de resultado correcto, el botón verde de confirmación y el área desplazable con marco. De 249 estilos en línea a 238.
+- **El resto no se toca, y consta medido**: de los estilos que quedan, prácticamente todos aparecen una sola vez —son el ajuste de un widget concreto—, así que llevarlos a la hoja crearía un rol por widget, que es el mismo problema con otro nombre. Un test avisa si vuelve a haber duplicación que compense.
+
 ## [5.88.0] - 2026-09-06
 
 ### 🎯 Resumen

@@ -27,7 +27,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 PRES = ROOT / "src" / "presentation"
 UMBRALES = {
-    "setStyleSheet": 249,
+    # 238 desde v5.89.0: extraídos a la hoja los estilos que estaban escritos
+    # dos o tres veces. Los ~157 que quedan son distintos entre sí —ajustes de
+    # un widget concreto—, así que sacarlos crearía un rol por widget.
+    "setStyleSheet": 238,
     "hex_literales": 467,
     "font_size_menor_12px": 0,
     "qfont_menor_9pt": 0,
