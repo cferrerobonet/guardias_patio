@@ -32,6 +32,20 @@ def test_el_flujo_se_dispara_en_push_y_en_pull_request(comprobar):
     assert "main" in disparadores["push"]["branches"]
 
 
+def test_el_gate_de_ruff_no_falla_por_la_deuda_que_ya_tiene_ratchet(comprobar):
+    """Gatear `ruff check src` a secas rompía en el primer push: quedan 96 `E501`,
+    que bajan por su propio ratchet en `test_calidad_estatica.py`. El gate cubre
+    todas las demás reglas, que están limpias."""
+    pasos = [p for t in comprobar["jobs"].values() for p in t["steps"]]
+    ruff = [p["run"] for p in pasos if p.get("name") == "ruff"][0]
+    assert "--ignore E501" in ruff
+    bloqueantes = [
+        linea.strip() for linea in ruff.splitlines()
+        if linea.strip().startswith("ruff") and "|| true" not in linea
+    ]
+    assert bloqueantes == ["ruff check src --ignore E501"], bloqueantes
+
+
 def test_el_flujo_ejecuta_lint_tipos_seguridad_y_suite(comprobar):
     texto = " ".join(
         paso.get("run", "")

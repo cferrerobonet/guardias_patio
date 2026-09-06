@@ -30,8 +30,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools
           pip install -r requirements-dev.txt
+      # El largo de línea tiene su propio ratchet en `tests/audit/test_calidad_estatica.py`,
+      # que sí baja con el tiempo. Aquí se gatea todo lo demás, que está limpio: así un
+      # aviso nuevo de cualquier otra regla no llega a `main`.
       - name: ruff
-        run: ruff check src --statistics
+        run: |
+          ruff check src --ignore E501
+          ruff check src --statistics || true
       - name: mypy (domain)
         working-directory: src
         run: mypy domain --no-error-summary

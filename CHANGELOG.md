@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.0.1] - 2026-09-06
+
+### 🎯 Resumen
+La compilación de macOS volvía a funcionar: llevaba tres versiones sin generar el DMG.
+
+### Fixed
+- **El DMG de macOS no se generaba desde la v5.97.0.** Al unificar los dos ficheros de PyInstaller en uno quedó el de Windows, con las rutas escritas al estilo de Windows (`src\main.py`) y sin la sección que crea el `.app`. En macOS el compilador ni siquiera encontraba el programa principal, así que las versiones 5.97.0, 5.98.0 y 5.99.0 se publicaron sólo con el instalador de Windows. Ahora el fichero se adapta a cada sistema: nombre, icono y empaquetado. Verificado compilando el DMG.
+- **El gate de comprobación fallaba en su primera ejecución.** Exigía que `ruff` no encontrara nada, y quedan 96 avisos de línea larga que bajan por su propio contador en la suite. El gate cubre ahora todas las demás reglas, que están limpias, y sigue mostrando el recuento de las largas sin bloquear por ellas.
+
+### 🧹 Housekeeping
+- Cuatro tests nuevos que fijan que el fichero de compilación sirve en los dos sistemas, y uno que impide volver a gatear `ruff` de forma que rompa por la deuda que ya tiene contador.
+
 ## [6.0.0] - 2026-09-06
 
 ### 🎯 Resumen

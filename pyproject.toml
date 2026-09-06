@@ -1,6 +1,6 @@
 [project]
 name = "guardias-de-patio"
-version = "6.0.0"
+version = "6.0.1"
 description = "Sistema de gestión de guardias de patio para centros educativos"
 requires-python = ">=3.11"
 dependencies = [
