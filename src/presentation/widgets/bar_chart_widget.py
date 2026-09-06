@@ -14,7 +14,30 @@ BAR_GAP = 4            # px de separación entre barras
 PAD_LEFT = 210         # espacio para etiquetas de nombre
 PAD_RIGHT = 55         # espacio para valor numérico
 PAD_TOP_TITLE = 32
-PAD_BOT = 12
+PAD_BOT = 16
+
+#: Cuerpos de los rótulos de los gráficos, en puntos. El mínimo era de 7 pt
+#: —unos 9 px— en la leyenda, los valores y la escala: ilegible, y además fuera
+#: del alcance del ratchet visual, que sólo mira los `font-size` de las hojas de
+#: estilo (UXA-014). 9 pt equivale a los 12 px que se exigen en el resto.
+TIPO_MINIMA = 9
+TIPO_NORMAL = 10
+TIPO_TITULO = 11
+
+
+def _fuente(puntos: int, negrita: bool = False) -> QFont:
+    """Fuente del gráfico con la familia del sistema, no «Arial» a secas.
+
+    Arial no existe en muchos Linux y en Windows no es la familia de interfaz:
+    el texto de los gráficos se pintaba con una tipografía distinta a la del
+    resto de la aplicación.
+    """
+    from presentation.theme.tokens import familias_del_sistema
+
+    fuente = QFont(familias_del_sistema()[0], puntos)
+    if negrita:
+        fuente.setWeight(QFont.Weight.Bold)
+    return fuente
 
 
 def _color_por_valor(valor, media, max_val):
@@ -32,6 +55,31 @@ def _color_por_valor(valor, media, max_val):
         return QColor("#EF4444")   # rojo — muy alto
 
 
+#: Cuántas series se leen en voz alta antes de resumir. Más allá, un lector de
+#: pantalla dictaría una lista interminable y sería peor que no tener nada.
+MAXIMO_LEIDO = 12
+
+
+def describir_serie(titulo: str, pares, tipo: str) -> str:
+    """Pone en palabras lo que el gráfico dibuja (UXA-009).
+
+    Un `QPainter` no deja nada que un lector de pantalla pueda anunciar: el
+    gráfico era un rectángulo mudo. Esta descripción es la que se cuelga del
+    widget como texto accesible y como ayuda emergente.
+    """
+    if not pares:
+        return f"{tipo} «{titulo}»: sin datos" if titulo else f"{tipo} sin datos"
+
+    def _numero(valor):
+        return f"{valor:.0f}" if float(valor) == int(valor) else f"{valor:.1f}"
+
+    partes = [f"{etiqueta}: {_numero(valor)}" for etiqueta, valor in pares[:MAXIMO_LEIDO]]
+    if len(pares) > MAXIMO_LEIDO:
+        partes.append(f"y {len(pares) - MAXIMO_LEIDO} más")
+    cabecera = f"{tipo} «{titulo}»" if titulo else tipo
+    return f"{cabecera}, {len(pares)} series. " + "; ".join(partes)
+
+
 class BarChartWidget(QWidget):
     """Gráfico de barras horizontales con QPainter, altura dinámica."""
 
@@ -47,14 +95,25 @@ class BarChartWidget(QWidget):
         self._titulo = titulo
         self._horizontal = horizontal
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
         self._actualizar_altura_minima()
+        self._publicar_descripcion()
 
     def set_datos(self, datos: list[tuple[str, float, str]], titulo: str = ""):
         self._datos = datos
         if titulo:
             self._titulo = titulo
         self._actualizar_altura_minima()
+        self._publicar_descripcion()
         self.update()
+
+    def _publicar_descripcion(self) -> None:
+        texto = describir_serie(
+            self._titulo, [(d[0], d[1]) for d in self._datos], "Gráfico de barras"
+        )
+        self.setAccessibleName(self._titulo or "Gráfico de barras")
+        self.setAccessibleDescription(texto)
+        self.setToolTip(texto)
 
     def _actualizar_altura_minima(self):
         n = len(self._datos)
@@ -89,7 +148,7 @@ class BarChartWidget(QWidget):
         bar_w = max(4, chart_w / n - 4)
 
         if self._titulo:
-            p.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+            p.setFont(_fuente(TIPO_NORMAL, negrita=True))
             p.setPen(QColor("#374151"))
             p.drawText(QRect(0, 4, w, 22), Qt.AlignmentFlag.AlignCenter, self._titulo)
 
@@ -99,7 +158,7 @@ class BarChartWidget(QWidget):
             p.drawLine(pad_left, y, w - pad_right, y)
             val = max_val * i / 4
             p.setPen(QColor("#9CA3AF"))
-            p.setFont(QFont("Arial", 7))
+            p.setFont(_fuente(TIPO_MINIMA))
             p.drawText(QRect(0, y - 8, pad_left - 2, 16),
                        Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, str(int(val)))
             p.setPen(QPen(QColor("#E5E7EB"), 1))
@@ -111,11 +170,15 @@ class BarChartWidget(QWidget):
             y = pad_top + chart_h - bar_h_px
             color = _color_por_valor(valor, media, max_val)
             p.fillRect(int(x), y, int(bar_w), bar_h_px, color)
-            p.setFont(QFont("Arial", 7))
+            p.setFont(_fuente(TIPO_MINIMA))
             p.setPen(QColor("#374151"))
-            p.drawText(QRect(int(x), y - 14, int(bar_w), 14), Qt.AlignmentFlag.AlignCenter, str(int(valor)))
+            p.drawText(
+                QRect(int(x), y - 16, int(bar_w), 16),
+                Qt.AlignmentFlag.AlignCenter,
+                str(int(valor)),
+            )
             label_short = label[:10] if len(label) > 10 else label
-            p.setFont(QFont("Arial", 7))
+            p.setFont(_fuente(TIPO_MINIMA))
             p.setPen(QColor("#6B7280"))
             p.save()
             p.translate(int(x + bar_w / 2), h - pad_bot + 4)
@@ -137,7 +200,7 @@ class BarChartWidget(QWidget):
         media = sum(v for _, v, _ in self._datos) / n
 
         if self._titulo:
-            p.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+            p.setFont(_fuente(TIPO_NORMAL, negrita=True))
             p.setPen(QColor("#374151"))
             p.drawText(QRect(0, 6, w, 22), Qt.AlignmentFlag.AlignCenter, self._titulo)
 
@@ -145,9 +208,12 @@ class BarChartWidget(QWidget):
         media_x = PAD_LEFT + int((media / max_val) * chart_w)
         p.setPen(QPen(QColor("#9CA3AF"), 1, Qt.PenStyle.DashLine))
         p.drawLine(media_x, title_h, media_x, h - PAD_BOT)
-        p.setFont(QFont("Arial", 7))
+        p.setFont(_fuente(TIPO_MINIMA))
         p.setPen(QColor("#9CA3AF"))
-        p.drawText(media_x - 20, title_h - 2, 40, 12, Qt.AlignmentFlag.AlignCenter, f"μ={int(media)}")
+        p.drawText(
+            media_x - 22, title_h - 3, 44, 14,
+            Qt.AlignmentFlag.AlignCenter, f"μ={int(media)}",
+        )
 
         for i, (label, valor, _) in enumerate(self._datos):
             y = title_h + i * (BAR_HEIGHT + BAR_GAP)
@@ -165,13 +231,13 @@ class BarChartWidget(QWidget):
             apellidos = label.split(",")[0].strip()
             if len(apellidos) > 26:
                 apellidos = apellidos[:24] + "…"
-            p.setFont(QFont("Arial", 8))
+            p.setFont(_fuente(TIPO_MINIMA))
             p.setPen(QColor("#111827"))
             p.drawText(QRect(4, y, PAD_LEFT - 8, BAR_HEIGHT),
                        Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, apellidos)
 
             # Valor numérico a la derecha
-            p.setFont(QFont("Arial", 8, QFont.Weight.Bold))
+            p.setFont(_fuente(TIPO_MINIMA, negrita=True))
             p.setPen(QColor("#374151"))
             p.drawText(QRect(PAD_LEFT + bar_w_px + 4, y, PAD_RIGHT - 4, BAR_HEIGHT),
                        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, str(int(valor)))
@@ -189,13 +255,13 @@ class BarChartWidget(QWidget):
             ("#EF4444", "+40%"),
         ]
         lx = PAD_LEFT
-        p.setFont(QFont("Arial", 7))
+        p.setFont(_fuente(TIPO_MINIMA))
         for color_hex, text in items:
-            p.fillRect(lx, legend_y, 10, 10, QColor(color_hex))
+            p.fillRect(lx, legend_y, 12, 12, QColor(color_hex))
             p.setPen(QColor("#6B7280"))
-            p.drawText(lx + 13, legend_y, 55, 10,
+            p.drawText(lx + 16, legend_y - 1, 62, 14,
                        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, text)
-            lx += 72
+            lx += 84
 
 
 class PieChartWidget(QWidget):
@@ -219,6 +285,8 @@ class PieChartWidget(QWidget):
         self._donut = donut
         self.setMinimumHeight(320)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+        self._publicar_descripcion()
 
     def set_datos(self, datos: list[tuple[str, float]], titulo: str = ""):
         self._datos = datos
@@ -226,7 +294,22 @@ class PieChartWidget(QWidget):
             self._titulo = titulo
         n = len(datos)
         self.setMinimumHeight(max(320, 280 + n * 22))
+        self._publicar_descripcion()
         self.update()
+
+    def _publicar_descripcion(self) -> None:
+        tipo = "Gráfico de sectores"
+        texto = describir_serie(self._titulo, list(self._datos), tipo)
+        total = sum(valor for _, valor in self._datos)
+        if total:
+            reparto = "; ".join(
+                f"{etiqueta}: {100 * valor / total:.0f}%"
+                for etiqueta, valor in self._datos[:MAXIMO_LEIDO]
+            )
+            texto = f"{texto}. Reparto: {reparto}"
+        self.setAccessibleName(self._titulo or tipo)
+        self.setAccessibleDescription(texto)
+        self.setToolTip(texto)
 
     def paintEvent(self, event):
         if not self._datos:
@@ -243,7 +326,7 @@ class PieChartWidget(QWidget):
         pad = 12
 
         if self._titulo:
-            p.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+            p.setFont(_fuente(TIPO_NORMAL, negrita=True))
             p.setPen(QColor("#374151"))
             p.drawText(QRect(0, 4, w, 22), Qt.AlignmentFlag.AlignCenter, self._titulo)
 
@@ -271,9 +354,9 @@ class PieChartWidget(QWidget):
                 label_r = r * 0.68
                 lx = int(cx + label_r * math.cos(mid_angle))
                 ly = int(cy - label_r * math.sin(mid_angle))
-                p.setFont(QFont("Arial", 8, QFont.Weight.Bold))
+                p.setFont(_fuente(TIPO_MINIMA, negrita=True))
                 p.setPen(QColor("white"))
-                p.drawText(QRect(lx - 18, ly - 8, 36, 16), Qt.AlignmentFlag.AlignCenter,
+                p.drawText(QRect(lx - 22, ly - 9, 44, 18), Qt.AlignmentFlag.AlignCenter,
                            f"{pct:.0f}%")
             start_angle -= span
 
@@ -283,13 +366,13 @@ class PieChartWidget(QWidget):
             p.setPen(Qt.PenStyle.NoPen)
             p.drawEllipse(cx - inner_r, cy - inner_r, inner_r * 2, inner_r * 2)
             # Total en el centro
-            p.setFont(QFont("Arial", 11, QFont.Weight.Bold))
+            p.setFont(_fuente(TIPO_TITULO, negrita=True))
             p.setPen(QColor("#374151"))
             p.drawText(QRect(cx - inner_r, cy - 14, inner_r * 2, 28),
                        Qt.AlignmentFlag.AlignCenter, str(int(total)))
-            p.setFont(QFont("Arial", 7))
+            p.setFont(_fuente(TIPO_MINIMA))
             p.setPen(QColor("#9CA3AF"))
-            p.drawText(QRect(cx - inner_r, cy + 10, inner_r * 2, 14),
+            p.drawText(QRect(cx - inner_r, cy + 12, inner_r * 2, 16),
                        Qt.AlignmentFlag.AlignCenter, "guardias")
 
         # Leyenda
@@ -299,7 +382,7 @@ class PieChartWidget(QWidget):
             color = QColor(self.COLORS[i % len(self.COLORS)])
             p.fillRect(pad, row_y + 4, 14, 14, color)
             pct = f"{valor / total * 100:.1f}%"
-            p.setFont(QFont("Arial", 9))
+            p.setFont(_fuente(TIPO_MINIMA))
             p.setPen(QColor("#374151"))
             p.drawText(pad + 20, row_y, w - pad - 20, 22,
                        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,

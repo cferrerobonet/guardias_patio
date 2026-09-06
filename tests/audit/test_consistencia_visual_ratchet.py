@@ -30,6 +30,7 @@ UMBRALES = {
     "setStyleSheet": 249,
     "hex_literales": 467,
     "font_size_menor_12px": 0,
+    "qfont_menor_9pt": 0,
     "lineas_con_emoji": 315,
     "setFixed": 18,
     # 142 desde v5.79.0. Sube una por el diálogo de envío de avisos (v5.78.0),
@@ -71,6 +72,12 @@ def _contar():
         ),
         "font_size_menor_12px": sum(
             1 for m in re.findall(r"font-size: ?(\d+)px", todo) if int(m) < 12
+        ),
+        # Los gráficos no usan hojas de estilo: pintan con QFont, y por ahí se
+        # colaban rótulos de 7 pt —unos 9 px— que el contador de arriba no veía
+        # (UXA-014). 9 pt es el equivalente al mínimo de 12 px.
+        "qfont_menor_9pt": sum(
+            1 for m in re.findall(r"QFont\([^)]*?,\s*(\d+)", todo) if int(m) < 9
         ),
         "lineas_con_emoji": sum(1 for line in todo.splitlines() if EMOJI.search(line)),
         "setFixed": len(re.findall(r"setFixed(?:Size|Width|Height)\(", todo)),

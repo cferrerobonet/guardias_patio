@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.82.0] - 2026-09-06
+
+### 🎯 Resumen
+Los gráficos se pueden leer: con lector de pantalla, y con la vista.
+
+### ✨ Added
+- **Los gráficos dicen lo que dibujan.** El de barras y el de sectores llevan ahora nombre y descripción accesibles con las series y sus valores —y los porcentajes, en el de sectores—, así que un lector de pantalla los anuncia en vez de encontrarse un hueco. La misma descripción aparece como ayuda emergente al pasar el ratón.
+- Se llega a los gráficos con el tabulador.
+- Si hay muchas series se leen las doce primeras y se dice cuántas quedan: dictar doscientos nombres uno a uno sería peor que no decir nada.
+
+### Fixed
+- **Rótulos de 7 puntos en los gráficos** —unos 9 píxeles— en la leyenda, la escala y los valores sobre las barras. Suben al mínimo legible y las cajas que los contienen crecen con ellos.
+- **Los gráficos se pintaban con «Arial»**, que no existe en muchos Linux y en Windows no es la tipografía de la interfaz: usan la familia del sistema, como el resto de la aplicación.
+
+### 🧹 Housekeeping
+- El ratchet visual vigila también los cuerpos de `QFont`. Sólo miraba los `font-size` de las hojas de estilo, y los gráficos no usan hojas de estilo: por ahí llevaba tiempo colándose la tipografía pequeña.
+
 ## [5.81.0] - 2026-09-06
 
 ### 🎯 Resumen
