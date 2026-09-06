@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.94.0] - 2026-09-06
+
+### 🎯 Resumen
+Fuera del código el servidor y el usuario del centro.
+
+### Fixed
+- **El servidor y el usuario reales estaban escritos en `config/sftp_config.py`** como valores por defecto. Este repositorio es público y esos valores se compilan dentro de cada instalador, así que estaban a la vista. No es la contraseña, pero es la mitad del par. Ya no hay valores por defecto: si falta la configuración, la aplicación la pide en vez de intentar conectarse a un servidor concreto.
+- **El usuario que se tecleaba en la configuración se ignoraba.** El módulo leía la variable `SFTP_USER` mientras que el diálogo inicial y Ajustes guardan `SFTP_USERNAME`, así que en un equipo configurado desde la propia aplicación se acababa usando el usuario escrito en el código. Ahora se lee el nombre correcto, aceptando el antiguo para los equipos que tengan las dos claves.
+- Cuando falta algún dato de conexión se dice **cuál** falta, en vez de hablar siempre de la contraseña.
+- El ejemplo del campo «servidor» en Ajustes mostraba la dirección real del centro.
+
+### 🧹 Housekeeping
+- Un test recorre el código buscando rastros de la instalación del centro y comprueba que el empaquetado no incluya `.env` ni los JSON de configuración.
+
 ## [5.93.1] - 2026-09-06
 
 ### Fixed

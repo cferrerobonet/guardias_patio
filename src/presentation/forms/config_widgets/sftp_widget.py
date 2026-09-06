@@ -62,7 +62,7 @@ class SFTPConfigWidget(QGroupBox):
         host_row = QHBoxLayout()
         self.sftp_host_input = QLineEdit()
         self.sftp_host_input.setAccessibleName("Campo servidor SFTP")
-        self.sftp_host_input.setPlaceholderText("ejemplo: home491590459.1and1-data.host")
+        self.sftp_host_input.setPlaceholderText("ejemplo: sftp.tuservidor.com")
         self.sftp_host_input.setReadOnly(True)
         host_row.addWidget(self.sftp_host_input)
 
