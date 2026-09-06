@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.85.0] - 2026-09-06
+
+### 🎯 Resumen
+Todas las combinaciones de color están medidas, no comprobadas a ojo.
+
+### Fixed
+- **El recuadro de los campos de texto era casi invisible**: 1,3:1 sobre blanco, cuando el mínimo para un borde que delimita dónde se escribe es 3:1. Los campos, los desplegables y los botones secundarios pasan a un gris que da 3,6:1. Los separadores decorativos se quedan como estaban, que ahí no molestan.
+- **El rojo del aviso de borrar usuario** se quedaba en 3,95:1 sobre su fondo rosa: sólo pasaba por ser texto grande. Ahora usa un rojo oscuro que da 6,7:1.
+
+### 🧹 Housekeeping
+- Nuevo test que mide con la fórmula de WCAG las 34 parejas de color y fondo que usa la aplicación. Hasta ahora cada token se validaba por separado cuando se tocaba, y nadie miraba el conjunto.
+- Dos tokens nuevos: `ERROR_ON_BG` para texto dentro de una caja de error y `BORDER_CONTROL` para el recuadro de los controles.
+- El gris de «deshabilitado» queda fuera de la comprobación a propósito —WCAG exime a los controles inactivos— y así consta en el test.
+
 ## [5.84.0] - 2026-09-06
 
 ### 🎯 Resumen

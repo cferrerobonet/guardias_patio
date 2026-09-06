@@ -57,7 +57,10 @@ class Colors:
     WARNING_BG = "#FFF3CD"     # fondo badge/info-box ámbar
     WARNING_BG_ALT = "#FEF3C7" # variante amber
     WARNING_BORDER = "#F59E0B"
-    ERROR = "#DC3545"          # 4.5:1 AA
+    ERROR = "#DC3545"          # 4.5:1 AA sobre blanco
+    # Sobre el fondo rosa del aviso, el rojo de arriba se queda en 3,7:1 y no
+    # llega a AA: dentro de la caja de error hay que usar este (UXA-010).
+    ERROR_ON_BG = "#9B1C1C"    # 6,7:1 sobre ERROR_BG
     ERROR_BG = "#FEE2E2"
     ERROR_BORDER = "#FCA5A5"
     INFO = "#0C6674"           # 6.6:1 AA
@@ -77,8 +80,11 @@ class Colors:
     # Superficies
     BACKGROUND = "#FFFFFF"
     SURFACE = "#F8F9FA"
-    BORDER = "#E1E4E8"
+    BORDER = "#E1E4E8"         # separadores decorativos
     BORDER_DARK = "#D1D5DB"
+    # El borde de un campo de texto delimita dónde se escribe: con 1,3:1 sobre
+    # blanco era casi invisible. WCAG pide 3:1 para estos bordes (UXA-010).
+    BORDER_CONTROL = "#7C8794"  # 3,6:1 sobre blanco
 
     # Texto
     TEXT_PRIMARY = "#1F2937"

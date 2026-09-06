@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from database.db_manager import delete_user_database
+from presentation.theme.tokens import Colors
 from sync.backend_factory import get_default_backend
 from sync.sync_manager import UserAuth
 from utils.icons import icon_for_button
@@ -42,14 +43,16 @@ class DeleteUserDialog(QDialog):
 
         # Advertencia
         warning = QLabel("ADVERTENCIA")
-        warning.setStyleSheet("""
-            QLabel {
+        warning.setStyleSheet(f"""
+            QLabel {{
                 font-size: 20px;
                 font-weight: bold;
-                color: #DC2626;
+                /* Sobre el rosa del aviso, el rojo normal se queda en 3,95:1;
+                   éste da 6,7:1 y no depende de que el texto sea grande (UXA-010). */
+                color: {Colors.ERROR_ON_BG};
                 padding: 20px;
-                background-color: #FEE2E2;
-            }
+                background-color: {Colors.ERROR_BG};
+            }}
         """)
         warning.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(warning)

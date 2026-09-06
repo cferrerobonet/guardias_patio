@@ -36,7 +36,7 @@ QPushButton#secondaryButton,
 QPushButton[secondary="true"] {
     background-color: transparent;
     color: @TEXT_PRIMARY@;
-    border: 1px solid @BORDER_DARK@;
+    border: 1px solid @BORDER_CONTROL@;
 }
 
 QPushButton#secondaryButton:hover,
@@ -66,7 +66,7 @@ QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
     background-color: @BACKGROUND@;
     color: @TEXT_PRIMARY@;
     padding: 8px 12px;
-    border: 1px solid @BORDER_DARK@;
+    border: 1px solid @BORDER_CONTROL@;
     border-radius: 4px;
     min-height: 28px;
 }
@@ -81,7 +81,7 @@ QComboBox {
     background-color: @BACKGROUND@;
     color: @TEXT_PRIMARY@;
     padding: 8px 12px;
-    border: 1px solid @BORDER_DARK@;
+    border: 1px solid @BORDER_CONTROL@;
     border-radius: 4px;
 }
 
