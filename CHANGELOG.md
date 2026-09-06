@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [5.76.0] - 2026-09-06
+
+### 🎯 Resumen
+Crear el curso del año que viene deja de empezar con la pantalla en blanco.
+
+### ✨ Added
+- **Plantilla de curso.** Al crear un curso nuevo se puede traer el claustro del anterior con sus horas, turno, tutoría, zona preferida y restricciones de días y recreos. La casilla existía desde hacía tiempo pero estaba deshabilitada; ahora funciona y viene marcada.
+- **Los días no lectivos marcados a mano se trasladan** al curso nuevo desplazándolos un año. Las fechas fijas (Navidad, Fallas) caen donde deben; las que dependen del día de la semana hay que repasarlas en Ajustes. Las que se salen del curso se descartan.
+- El diálogo dice qué se va a heredar antes de crear el curso, y al terminar informa de cuántos profesores y cuántas fechas han llegado.
+- El diálogo aclara que las zonas, los recreos y los ajustes de reparto son comunes a toda la aplicación: el curso nuevo ya los tiene sin copiar nada.
+
+### Fixed
+- **Al activar un curso, la configuración se queda con las fechas del anterior.** Se generaba el curso 2026/2027 sobre el rango de 2025/2026. Ahora activar un curso mueve `fecha_inicio_curso`, `fecha_fin_curso`, `anio_inicio_curso` y `curso_activo_id`; de paso, la columna «días lectivos» de Gestión de cursos deja de calcularse por aproximación.
+- **Al copiar el claustro se perdían los profesores sin correo.** Se buscaban duplicados por el correo corporativo: con el campo vacío todos coincidían entre sí y solo se copiaba el primero. Sin correo, ahora el criterio es el nombre.
+
 ## [5.75.0] - 2026-09-06
 
 ### 🎯 Resumen

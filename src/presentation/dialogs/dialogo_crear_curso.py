@@ -88,15 +88,31 @@ class DialogoCrearCurso(QDialog):
         )
         opciones_layout.addWidget(self.check_activar)
 
-        self.check_copiar_profesores = QCheckBox("Copiar profesores del curso anterior")
-        self.check_copiar_profesores.setChecked(False)
-        self.check_copiar_profesores.setEnabled(False)  # Deshabilitado temporalmente
+        self.check_copiar_profesores = QCheckBox("Copiar el claustro del curso anterior")
+        self.check_copiar_profesores.setChecked(True)
         self.check_copiar_profesores.setToolTip(
-            "⚠️ Función deshabilitada temporalmente.\n"
-            "Los profesores aún no tienen relación con cursos específicos.\n"
-            "Debes agregar/gestionar los profesores manualmente para cada curso."
+            "Trae los profesores del último curso con sus horas, turno, zona preferida\n"
+            "y restricciones de días y recreos. Después podrás dar de baja a quien no siga."
         )
         opciones_layout.addWidget(self.check_copiar_profesores)
+
+        self.check_trasladar_festivos = QCheckBox(
+            "Trasladar los días no lectivos del curso anterior"
+        )
+        self.check_trasladar_festivos.setChecked(True)
+        self.check_trasladar_festivos.setToolTip(
+            "Desplaza un año las fechas que marcaste a mano. Las de fecha fija caen\n"
+            "donde deben; las que dependían del día de la semana hay que revisarlas\n"
+            "en Ajustes."
+        )
+        opciones_layout.addWidget(self.check_trasladar_festivos)
+
+        nota = QLabel(
+            "Las zonas, los recreos y los ajustes de reparto son comunes a toda la "
+            "aplicación: el curso nuevo los hereda sin copiar nada."
+        )
+        nota.setWordWrap(True)
+        opciones_layout.addWidget(nota)
 
         grupo_opciones.setLayout(opciones_layout)
         layout.addWidget(grupo_opciones)
@@ -144,7 +160,11 @@ class DialogoCrearCurso(QDialog):
 
             mensaje = f"¿Crear el curso {anio_inicio}/{anio_inicio + 1}?\n\n"
             if activar:
-                mensaje += "✓ Se activará automáticamente\n"
+                mensaje += "· Se activará automáticamente\n"
+            if self.check_copiar_profesores.isChecked():
+                mensaje += "· Se copiará el claustro del curso anterior\n"
+            if self.check_trasladar_festivos.isChecked():
+                mensaje += "· Se trasladarán los días no lectivos marcados a mano\n"
 
             msg_box.setText(mensaje)
             msg_box.setStandardButtons(
@@ -163,24 +183,32 @@ class DialogoCrearCurso(QDialog):
 
             # Crear curso SIN activar para evitar problemas de transacción
             # Lo activaremos después si es necesario
-            curso = GestorCursos.from_session(self.session).crear_nuevo_curso(
+            gestor = GestorCursos.from_session(self.session)
+            curso = gestor.crear_nuevo_curso(
                 anio_inicio=anio_inicio,
                 activar=False,  # SIEMPRE False primero
-                copiar_profesores=False,  # Deshabilitado
+                copiar_profesores=False,  # se hace abajo, para poder informar del resultado
             )
 
             logger.info(f"Curso creado exitosamente: {curso.nombre} (ID: {curso.id})")
             self.curso_creado_id = curso.id
 
+            resumen = gestor.preparar_curso_nuevo(
+                curso.id,
+                copiar_profesores=self.check_copiar_profesores.isChecked(),
+                trasladar_no_lectivos=self.check_trasladar_festivos.isChecked(),
+            )
+
             # Si se solicitó activar, hacerlo en un paso separado
             if activar:
                 logger.info(f"Activando curso {curso.id}...")
-                GestorCursos.from_session(self.session).activar_curso(curso.id)
+                gestor.activar_curso(curso.id)
                 logger.info("Curso activado correctamente")
 
             texto = f"Curso {curso.nombre} creado"
             if activar:
                 texto += " y activado"
+            texto += self._resumen_de_lo_heredado(resumen)
             from presentation.widgets.toast_notification import ToastNotification
             ToastNotification(self.window(), texto, "success")
             self.accept()
@@ -203,6 +231,18 @@ class DialogoCrearCurso(QDialog):
             msg_error.setText(f"No se pudo crear el curso:\n{type(e).__name__}: {e}")
             msg_error.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg_error.exec()
+
+    @staticmethod
+    def _resumen_de_lo_heredado(resumen: dict) -> str:
+        """Frase con lo que se ha traído del curso anterior, para el aviso final."""
+        partes = []
+        if resumen.get("profesores"):
+            partes.append(f"{resumen['profesores']} profesores")
+        if resumen.get("trasladados"):
+            partes.append(f"{resumen['trasladados']} días no lectivos")
+        if not partes:
+            return ""
+        return " con " + " y ".join(partes) + " del curso anterior"
 
     def obtener_curso_creado_id(self) -> Optional[int]:
         """

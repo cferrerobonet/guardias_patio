@@ -30,7 +30,7 @@ UMBRALES = {
     "setStyleSheet": 249,
     "hex_literales": 467,
     "font_size_menor_12px": 0,
-    "lineas_con_emoji": 316,
+    "lineas_con_emoji": 315,
     "setFixed": 18,
     "setMinimum": 140,
 }

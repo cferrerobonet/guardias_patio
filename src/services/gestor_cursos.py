@@ -14,7 +14,7 @@ from typing import Optional
 
 from core.logging import get_logger
 from domain.entities.curso_escolar_entity import CursoEscolarEntity
-from infrastructure.database.models import Profesor
+from infrastructure.database.models import Configuracion, Profesor
 from infrastructure.repositories.repository_factory import RepositoryFactory
 
 logger = get_logger(__name__)
@@ -53,6 +53,7 @@ class GestorCursos:
         nombre: Optional[str] = None,
         activar: bool = False,
         copiar_profesores: bool = False,
+        trasladar_no_lectivos: bool = False,
     ) -> CursoEscolarEntity:
         if anio_fin is None:
             anio_fin = anio_inicio + 1
@@ -84,17 +85,14 @@ class GestorCursos:
 
         logger.info(f"Curso creado: {nombre} (ID: {nuevo_entity.id}, {fecha_inicio} - {fecha_fin})")
 
-        if copiar_profesores:
-            todos = self.curso_repo.get_all()
-            anteriores = sorted(
-                [c for c in todos if c.anio_inicio < anio_inicio],
-                key=lambda c: c.anio_inicio,
-                reverse=True,
+        if copiar_profesores or trasladar_no_lectivos:
+            resumen = self.preparar_curso_nuevo(
+                nuevo_entity.id,
+                copiar_profesores=copiar_profesores,
+                trasladar_no_lectivos=trasladar_no_lectivos,
             )
-            if anteriores:
-                self.copiar_profesores_curso_anterior(nuevo_entity.id, anteriores[0].id)
-            else:
-                logger.warning("No se encontró curso anterior para copiar profesores")
+            if not resumen["hubo_anterior"]:
+                logger.warning("No se encontró curso anterior del que partir")
 
         if activar:
             self.activar_curso(nuevo_entity.id)
@@ -114,9 +112,28 @@ class GestorCursos:
         self.curso_repo.deactivate_all()
         entity.activo = True
         result = self.curso_repo.save(entity)
+        self._sincronizar_configuracion_con(entity)
         self.session.commit()
         logger.info(f"Curso activado: {entity.nombre} (ID: {curso_id})")
         return result
+
+    def _sincronizar_configuracion_con(self, curso) -> None:
+        """Apunta la configuración global al curso indicado y copia su rango de fechas.
+
+        Sin esto, al cambiar de curso la generación seguiría usando las fechas del
+        anterior y ``curso_activo_id`` nunca llegaría a apuntar a ningún curso.
+        """
+        config = self.session.query(Configuracion).first()
+        if config is None:
+            return
+        config.curso_activo_id = curso.id
+        config.anio_inicio_curso = curso.anio_inicio
+        config.fecha_inicio_curso = curso.fecha_inicio
+        config.fecha_fin_curso = curso.fecha_fin
+        logger.info(
+            f"Configuración sincronizada con {curso.nombre}: "
+            f"{curso.fecha_inicio} - {curso.fecha_fin}"
+        )
 
     def cerrar_curso(self, curso_id: int) -> CursoEscolarEntity:
         entity = self.curso_repo.get_by_id(curso_id)
@@ -172,11 +189,14 @@ class GestorCursos:
 
         contador = 0
         for prof_viejo in profesores_antiguos:
-            existe = (
-                self.session.query(Profesor)
-                .filter_by(email_corporativo=prof_viejo.email_corporativo, curso_id=curso_nuevo_id)
-                .first()
-            )
+            # Sin correo, filtrar por él agruparía a todos los que no lo tienen en uno
+            # solo y sólo se copiaría el primero: el nombre es el segundo criterio.
+            criterio = {"curso_id": curso_nuevo_id}
+            if prof_viejo.email_corporativo:
+                criterio["email_corporativo"] = prof_viejo.email_corporativo
+            else:
+                criterio["nombre_completo"] = prof_viejo.nombre_completo
+            existe = self.session.query(Profesor).filter_by(**criterio).first()
             if not existe:
                 nuevo_prof = Profesor(
                     nombre_completo=prof_viejo.nombre_completo,
@@ -200,6 +220,80 @@ class GestorCursos:
         logger.info(f"Copiados {contador} profesores de {curso_anterior.nombre} a {curso_nuevo.nombre}")
         return contador
 
+    def trasladar_dias_no_lectivos(self, curso_nuevo_id: int, curso_anterior_id: int) -> dict:
+        """Lleva los días no lectivos personalizados de un curso al siguiente.
+
+        Los desplaza tantos años como separen a los dos cursos y descarta los que
+        se salgan del rango del curso nuevo. Las fechas fijas (Navidad, Fallas)
+        caen donde deben; las que dependen del día de la semana hay que revisarlas.
+        """
+        curso_nuevo = self.curso_repo.get_by_id(curso_nuevo_id)
+        curso_anterior = self.curso_repo.get_by_id(curso_anterior_id)
+        if not curso_nuevo or not curso_anterior:
+            raise ValueError("No se encontraron los dos cursos para trasladar los días no lectivos")
+
+        config = self.session.query(Configuracion).first()
+        if config is None:
+            return {"trasladados": 0, "descartados": 0}
+
+        desplazamiento = curso_nuevo.anio_inicio - curso_anterior.anio_inicio
+        trasladadas: list[date] = []
+        descartados = 0
+        for original in _leer_dias_no_lectivos(config.dias_no_lectivos_personalizados):
+            movida = _desplazar_anios(original, desplazamiento)
+            if movida is None or not (curso_nuevo.fecha_inicio <= movida <= curso_nuevo.fecha_fin):
+                descartados += 1
+                continue
+            trasladadas.append(movida)
+
+        config.dias_no_lectivos_personalizados = ",".join(
+            f.isoformat() for f in sorted(set(trasladadas))
+        )
+        self.session.commit()
+        logger.info(
+            f"Trasladados {len(trasladadas)} días no lectivos a {curso_nuevo.nombre} "
+            f"({descartados} descartados por quedar fuera del curso)"
+        )
+        return {"trasladados": len(trasladadas), "descartados": descartados}
+
+    def preparar_curso_nuevo(
+        self,
+        curso_nuevo_id: int,
+        curso_anterior_id: Optional[int] = None,
+        copiar_profesores: bool = True,
+        trasladar_no_lectivos: bool = True,
+    ) -> dict:
+        """Deja un curso recién creado listo para trabajar a partir del anterior.
+
+        Las zonas, los recreos y los ajustes de reparto son únicos para toda la
+        aplicación, así que ya están disponibles sin copiar nada. Lo que sí hay
+        que arrastrar es el claustro y el calendario de días no lectivos.
+        """
+        curso_anterior_id = curso_anterior_id or self._id_del_curso_anterior_a(curso_nuevo_id)
+        resumen = {"profesores": 0, "trasladados": 0, "descartados": 0, "hubo_anterior": False}
+        if curso_anterior_id is None:
+            return resumen
+
+        resumen["hubo_anterior"] = True
+        if copiar_profesores:
+            resumen["profesores"] = self.copiar_profesores_curso_anterior(
+                curso_nuevo_id, curso_anterior_id
+            )
+        if trasladar_no_lectivos:
+            resumen.update(self.trasladar_dias_no_lectivos(curso_nuevo_id, curso_anterior_id))
+        return resumen
+
+    def _id_del_curso_anterior_a(self, curso_id: int) -> Optional[int]:
+        curso = self.curso_repo.get_by_id(curso_id)
+        if not curso:
+            return None
+        anteriores = sorted(
+            [c for c in self.curso_repo.get_all() if c.anio_inicio < curso.anio_inicio],
+            key=lambda c: c.anio_inicio,
+            reverse=True,
+        )
+        return anteriores[0].id if anteriores else None
+
     def listar_todos_cursos(self, incluir_cerrados: bool = True) -> list[CursoEscolarEntity]:
         todos = self.curso_repo.get_all()
         if not incluir_cerrados:
@@ -212,3 +306,21 @@ class GestorCursos:
         return self.curso_repo.find_by_year(anio_inicio)
 
 
+def _leer_dias_no_lectivos(texto: Optional[str]) -> list[date]:
+    fechas: list[date] = []
+    for token in (texto or "").split(","):
+        limpio = token.strip()
+        if not limpio:
+            continue
+        try:
+            fechas.append(date.fromisoformat(limpio))
+        except ValueError:
+            continue
+    return fechas
+
+
+def _desplazar_anios(fecha: date, anios: int) -> Optional[date]:
+    try:
+        return fecha.replace(year=fecha.year + anios)
+    except ValueError:
+        return None

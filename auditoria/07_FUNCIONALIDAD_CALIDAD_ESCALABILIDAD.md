@@ -22,7 +22,7 @@ Ordenadas por valor/esfuerzo. Sin severidad: son decisiones de producto.
 | FUN-003 | **Edición manual en calendario**: mover/asignar una guardia con validación de restricciones | Alto | L | ESC-001 |
 | ~~FUN-003b~~ ✅ **v5.75.0** | ~~Permutar una guardia entre dos profesores~~ · intercambio 1 a 1 desde el detalle del día; los totales no varían, así que el reparto sigue siendo equitativo. Cubre el caso concreto que se pedía sin abrir la edición libre | Alto | M | – |
 | ~~FUN-004~~ ✅ **v5.63.0** | ~~Historial de generaciones y restauración~~ · copia automática antes de generar y de limpiar; listado de copias y restauración desde Importar/Exportar. La API de `db_manager` ya existía y no la llamaba nadie | Alto: red de seguridad | M | – |
-| FUN-005 | **Plantilla de curso**: al crear curso, copiar zonas, profesores, ajustes y festivos del anterior con revisión | Alto en septiembre | M | – |
+| ~~FUN-005~~ ✅ **v5.76.0** | ~~Plantilla de curso~~ · al crear curso se hereda el claustro del anterior y los días no lectivos marcados a mano, desplazados un año. Zonas, recreos y ajustes de reparto no se copian porque son únicos para toda la aplicación. De paso: activar un curso ya mueve las fechas de la configuración | Alto en septiembre | M | – |
 | FUN-006 | **Emails en worker con vista previa** y resultado por destinatario; plantilla editable; adjuntar PDF individual e iCal | Medio | M | CRW-003 |
 | FUN-007 | **Importación con validación previa (dry-run)**: informe de filas nuevas/actualizadas/erróneas antes de escribir; mapeo de columnas recordado | Medio | S | – |
 | FUN-008 | **Búsqueda y filtros persistentes** en tablas (profesor, zona, turno, estado) con chips | Medio | S | ESC-001 |
