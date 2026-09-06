@@ -133,3 +133,17 @@ docs/Configuración inicial*.pdf
 # ❌ htmlcov/, coverage.xml     - Reportes de cobertura (se regeneran)
 # ❌ __pycache__/, *.pyc        - Archivos compilados (se regeneran)
 # ============================================================================
+
+# Datos reales del centro: nunca al repositorio (es público). El volcado de
+# sincronización lleva nombres y correos del claustro, y las versiones antiguas
+# llevaban además las credenciales.
+guardias_patio_data.json
+guardias_patio_data.json.*
+last_sync.json
+session.lock
+cuenta.json
+docs/examples/
+*.xlsx
+*.xls
+docs/**/*.pdf
+
