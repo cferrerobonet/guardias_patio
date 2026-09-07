@@ -3,6 +3,7 @@ Diálogo de Login para Sistema Multi-Usuario
 """
 
 from PyQt6.QtCore import Qt
+from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtGui import QPixmap, QRegularExpressionValidator
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -274,6 +275,10 @@ class RegisterDialog(QDialog):
 class LoginDialog(QDialog):
     """Diálogo de autenticación de usuario con selector de usuarios y logo."""
 
+    #: La comprobación de versión llega desde un hilo suelto: la señal la lleva
+    #: al hilo de la interfaz, que es el único que puede tocar widgets (CRW-005).
+    nueva_version_detectada = Signal(str, str, str)
+
     def __init__(self, parent=None, backend=None):
         super().__init__(parent)
         # Si hay servidor, la cuenta se comprueba contra él, así que la misma
@@ -285,6 +290,7 @@ class LoginDialog(QDialog):
         self.clave_datos = None
         self.setup_ui()
         self.load_existing_users()
+        self._comprobar_si_hay_version_nueva()
 
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
@@ -366,6 +372,18 @@ class LoginDialog(QDialog):
         )
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         brand_layout.addWidget(version_label)
+
+        # Aviso de versión nueva, junto a la versión y oculto mientras no la haya.
+        # Antes sólo se avisaba con la sesión abierta, y quien no puede entrar
+        # —porque su versión no conecta con el servidor— es justo quien más
+        # necesita actualizarse (SYNC-024).
+        self.boton_actualizar = QPushButton("🆕 Actualizar")
+        self.boton_actualizar.setObjectName("botonActualizar")  # estilo en light.qss
+        self.boton_actualizar.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.boton_actualizar.hide()
+        self.boton_actualizar.clicked.connect(self._ofrecer_actualizacion)
+        brand_layout.addSpacing(6)
+        brand_layout.addWidget(self.boton_actualizar)
 
         credits = QLabel("© 2026 · Carlos Ferrero Bonet")
         credits.setStyleSheet(
@@ -482,6 +500,34 @@ class LoginDialog(QDialog):
         self.setTabOrder(self.password_input, self.login_btn)
         self.setTabOrder(self.login_btn, self.register_btn)
         self.setTabOrder(self.register_btn, self.delete_user_btn)
+
+    def _comprobar_si_hay_version_nueva(self) -> None:
+        """Pregunta por la última versión sin bloquear la pantalla."""
+        from config.settings import get_settings
+        from utils.update_checker import check_for_updates
+
+        self._version_nueva = ""
+        self._url_de_descarga = ""
+        self._notas_de_version = ""
+        self.nueva_version_detectada.connect(self._mostrar_aviso_de_version)
+        check_for_updates(get_settings().app_version, self.nueva_version_detectada.emit)
+
+    def _mostrar_aviso_de_version(self, version: str, url: str = "", notas: str = "") -> None:
+        self._version_nueva = version
+        self._url_de_descarga = url
+        self._notas_de_version = notas
+        self.boton_actualizar.setText(f"🆕 v{version} · Actualizar")
+        self.boton_actualizar.show()
+
+    def _ofrecer_actualizacion(self) -> None:
+        from presentation.dialogs import actualizacion
+
+        actualizacion.ofrecer(
+            self,
+            getattr(self, "_version_nueva", ""),
+            getattr(self, "_url_de_descarga", ""),
+            getattr(self, "_notas_de_version", ""),
+        )
 
     def load_existing_users(self):
         """Carga la lista de usuarios existentes en el ComboBox."""

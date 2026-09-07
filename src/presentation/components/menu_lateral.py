@@ -488,112 +488,14 @@ class SidebarMenu(QWidget):
         self._update_banner.show()
 
     def _on_update_banner_clicked(self) -> None:
-        url = getattr(self, "_update_download_url", "")
-        if not self._confirmar_actualizacion():
-            return
-        if url:
-            self._descargar_e_instalar(url)
-        else:
-            import webbrowser
-            webbrowser.open("https://github.com/cferrerobonet/guardias_patio/releases/latest")
+        from presentation.dialogs import actualizacion
 
-    def _confirmar_actualizacion(self) -> bool:
-        """Enseña qué trae la versión nueva antes de bajar nada (FUN-011).
-
-        Pulsar el aviso empezaba la descarga sin decir qué cambiaba.
-        """
-        from PyQt6.QtWidgets import QMessageBox
-
-        version = getattr(self, "_update_nueva_version", "")
-        notas = (getattr(self, "_update_notas", "") or "").strip()
-
-        caja = QMessageBox(self)
-        caja.setIcon(QMessageBox.Icon.Question)
-        caja.setWindowTitle(f"Guardias de Patio {version}")
-        caja.setText(f"Hay una versión nueva: {version}. ¿Descargarla e instalarla?")
-        if notas:
-            caja.setDetailedText(notas)
-        else:
-            caja.setInformativeText("Esta versión no trae notas publicadas.")
-        caja.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        actualizacion.ofrecer(
+            self,
+            getattr(self, "_update_nueva_version", ""),
+            getattr(self, "_update_download_url", ""),
+            getattr(self, "_update_notas", ""),
         )
-        caja.setDefaultButton(QMessageBox.StandardButton.Yes)
-        return caja.exec() == QMessageBox.StandardButton.Yes
-
-    def _descargar_e_instalar(self, url: str) -> None:
-        import tempfile
-        import urllib.request
-        from pathlib import Path
-
-        from PyQt6.QtCore import QThread
-        from PyQt6.QtCore import pyqtSignal as Signal
-        from PyQt6.QtWidgets import QMessageBox, QProgressDialog
-
-        from utils.update_checker import abrir_instalador
-
-        version = getattr(self, "_update_nueva_version", "")
-        nombre = url.split("/")[-1]
-        destino = Path(tempfile.gettempdir()) / nombre
-
-        progreso = QProgressDialog(
-            f"Descargando Guardias de Patio v{version}…", "Cancelar", 0, 100, self
-        )
-        progreso.setWindowTitle("Actualización")
-        progreso.setMinimumDuration(0)
-        progreso.setValue(0)
-
-        cancelado = [False]
-
-        def _on_cancel():
-            cancelado[0] = True
-
-        progreso.canceled.connect(_on_cancel)
-
-        class _Descargador(QThread):
-            progreso_signal = Signal(int)
-            error_signal = Signal(str)
-            listo_signal = Signal(str)
-
-            def __init__(self, url, destino):
-                super().__init__()
-                self._url = url
-                self._destino = destino
-
-            def run(self):
-                try:
-                    def _reporthook(count, block_size, total):
-                        if total > 0:
-                            pct = min(int(count * block_size * 100 / total), 100)
-                            self.progreso_signal.emit(pct)
-
-                    # La URL viene de una respuesta remota: se comprueba antes de
-                    # bajar nada, porque lo que se descarga es un instalador (SEC-003).
-                    from utils.update_checker import url_de_confianza
-
-                    if not url_de_confianza(self._url):
-                        self.error_signal.emit(
-                            "La dirección de descarga no es de confianza; se cancela."
-                        )
-                        return
-                    # nosec B310 - validada justo encima con url_de_confianza()
-                    urllib.request.urlretrieve(  # nosec B310
-                        self._url, self._destino, _reporthook
-                    )
-                    self.listo_signal.emit(str(self._destino))
-                except Exception as e:
-                    self.error_signal.emit(str(e))
-
-        hilo = _Descargador(url, destino)
-        hilo.progreso_signal.connect(lambda v: progreso.setValue(v) if not cancelado[0] else hilo.terminate())
-        hilo.listo_signal.connect(
-            lambda path: (progreso.close(), abrir_instalador(path))
-        )
-        hilo.error_signal.connect(lambda err: (
-            progreso.close(),
-            QMessageBox.critical(self, "Error de descarga", f"No se pudo descargar la actualización:\n{err}"),
-        ))
-        hilo.start()
 
     def _show_about_dialog(self):
         """Mostrar el diálogo Acerca de"""

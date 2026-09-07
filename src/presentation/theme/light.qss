@@ -570,3 +570,18 @@ QScrollArea#areaConMarco {
     border-radius: 4px;
     background-color: @BACKGROUND@;
 }
+
+/* Aviso de versión nueva en la pantalla de login, junto al número de versión */
+QPushButton#botonActualizar {
+    color: @WARNING@;
+    background-color: @WARNING_BG_ALT@;
+    border: 1px solid @WARNING_BORDER@;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+QPushButton#botonActualizar:hover {
+    background-color: @WARNING_BG@;
+}

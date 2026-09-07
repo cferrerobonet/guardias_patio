@@ -124,15 +124,54 @@ def test_en_windows_se_usa_startfile(monkeypatch):
 
 def test_el_instalador_no_se_abre_con_open_a_secas():
     """Regresión: era la línea que dejaba a Windows sin poder actualizarse."""
-    from presentation.components import menu_lateral
+    from presentation.dialogs import actualizacion
 
-    fuente = inspect.getsource(menu_lateral.SidebarMenu._descargar_e_instalar)
+    fuente = inspect.getsource(actualizacion.descargar_e_instalar)
     assert '["open"' not in fuente
     assert "abrir_instalador" in fuente
 
 
 def test_pulsar_el_aviso_pregunta_antes_de_descargar():
-    from presentation.components import menu_lateral
+    from presentation.dialogs import actualizacion
 
-    fuente = inspect.getsource(menu_lateral.SidebarMenu._on_update_banner_clicked)
-    assert fuente.index("_confirmar_actualizacion") < fuente.index("_descargar_e_instalar")
+    fuente = inspect.getsource(actualizacion.ofrecer)
+    assert fuente.index("confirmar(") < fuente.index("descargar_e_instalar(")
+
+
+def test_el_menu_lateral_y_el_login_ofrecen_lo_mismo():
+    """Una sola copia del flujo: el menú lateral tenía la suya y el login habría
+    acabado con otra."""
+    from presentation.components import menu_lateral
+    from presentation.forms import login_dialog
+
+    for fuente in (
+        inspect.getsource(menu_lateral.SidebarMenu._on_update_banner_clicked),
+        inspect.getsource(login_dialog.LoginDialog._ofrecer_actualizacion),
+    ):
+        assert "actualizacion.ofrecer(" in fuente
+
+
+def test_el_login_avisa_de_la_version_nueva_junto_a_la_version(qtbot):
+    """Quien no puede entrar porque su versión falla es quien más necesita
+    actualizarse, y sólo se avisaba con la sesión ya abierta (SYNC-024)."""
+    from presentation.forms.login_dialog import LoginDialog
+
+    dlg = LoginDialog()
+    qtbot.addWidget(dlg)
+
+    assert dlg.boton_actualizar.isHidden()
+
+    dlg._mostrar_aviso_de_version("9.9.9", "https://github.com/x/y/z.dmg", "notas")
+
+    assert not dlg.boton_actualizar.isHidden()
+    assert "9.9.9" in dlg.boton_actualizar.text()
+    assert dlg._url_de_descarga.endswith(".dmg")
+
+
+def test_el_login_pregunta_por_la_version_sin_bloquear_la_pantalla():
+    from presentation.forms import login_dialog
+
+    fuente = inspect.getsource(login_dialog.LoginDialog._comprobar_si_hay_version_nueva)
+    # El callback llega desde un hilo suelto: tiene que entrar por una señal,
+    # nunca tocar el widget directamente (CRW-005).
+    assert "nueva_version_detectada.emit" in fuente

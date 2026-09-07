@@ -703,6 +703,47 @@ def sin_llavero_de_verdad(request, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def sin_red_de_verdad(request, monkeypatch):
+    """Impide que un test salga a internet por la puerta de `urllib`.
+
+    El aviso de actualización arranca solo al abrir el login y la ventana
+    principal, en un hilo suelto: cualquier test que construya una de las dos
+    preguntaría a `api.github.com` sin pedirlo, y pulsar el aviso se bajaría un
+    instalador de verdad. Un test que sustituya `urlopen` por su cuenta lo hace
+    después que esta guarda, así que sigue mandando el suyo. Marcar el test con
+    `red_real` la desactiva.
+    """
+    if request.node.get_closest_marker("red_real"):
+        return
+
+    import urllib.request
+
+    def prohibido(*args, **kwargs):
+        raise AssertionError(
+            "Un test ha intentado salir a internet. Sustituye `urlopen` o pasa "
+            "una respuesta falsa."
+        )
+
+    monkeypatch.setattr(urllib.request, "urlopen", prohibido)
+    monkeypatch.setattr(urllib.request, "urlretrieve", prohibido)
+
+    # La comprobación de versión vive en un hilo demonio. Si se queda corriendo
+    # cuando el test termina, la guarda ya se ha retirado y ese hilo sí saldría a
+    # internet: aquí se ejecuta en el sitio, contra la guarda.
+    from utils import update_checker
+
+    class _HiloEnElSitio:
+        def __init__(self, target=None, daemon=None, **kwargs):
+            self._target = target
+
+        def start(self):
+            if self._target:
+                self._target()
+
+    monkeypatch.setattr(update_checker, "Thread", _HiloEnElSitio)
+
+
+@pytest.fixture(autouse=True)
 def sin_env_de_verdad(request, monkeypatch, tmp_path):
     """Impide que un test escriba en el `.env` real del equipo.
 

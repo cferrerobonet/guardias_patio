@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.1.0] - 2026-09-07
+
+### 🎯 Resumen
+El aviso de versión nueva estaba sólo dentro de la aplicación, con la sesión ya abierta. Ahora está también en la pantalla de inicio de sesión, junto al número de versión.
+
+### ✨ Added
+- **Aviso de actualización en la pantalla de login.** Debajo de la versión aparece «🆕 v6.1.0 · Actualizar» cuando hay una más reciente. Al pulsarlo se ven las novedades antes de decidir, y si se acepta se descarga el instalador de este sistema y se abre solo. Si para ese sistema no hay instalador publicado, se abre la página de descargas. Quien no consigue entrar —porque su versión no conecta con el servidor— es justo quien más necesita actualizarse, y hasta ahora tenía que entrar para enterarse.
+
+### 🧹 Housekeeping
+- El flujo de actualización (preguntar, descargar, instalar) pasa a un único sitio compartido por el menú lateral y el login, en lugar de duplicarlo.
+- Guarda nueva en los tests: ninguno puede salir a internet sin pedirlo explícitamente. El aviso de versión arranca solo al abrir el login y la ventana principal, así que cualquier test que construya una de las dos habría preguntado a GitHub de verdad.
+
 ## [6.0.6] - 2026-09-07
 
 ### 🎯 Resumen
