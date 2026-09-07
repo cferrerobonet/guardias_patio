@@ -378,6 +378,16 @@ def main():
                 if session_lock.acquire_lock():
                     logger.info(f"✅ Bloqueo de sesión adquirido (intento {attempt + 1})")
                     break
+                elif session_lock.motivo_del_fallo == "sin_servidor":
+                    # No es que la cuenta esté abierta en otro sitio: es que el
+                    # servidor no responde. Anunciarlo como «no se ha podido
+                    # comprobar» y no abrir dejaba el equipo inutilizable sin
+                    # decir por qué (SYNC-024). Se entra sin nube, y como no hay
+                    # gestor de sincronización no se sube nada: sin riesgo para
+                    # el trabajo de quien sí esté dentro.
+                    raise SyncConfigurationError(
+                        "No se ha podido dejar la marca de sesión en el servidor."
+                    )
                 else:
                     # Mostrar diálogo informativo
                     lock_info = session_lock.get_lock_info()

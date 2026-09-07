@@ -217,7 +217,16 @@ class SFTPSyncBackend(SyncBackend):
         self._username = username
         self._password = password
 
-        self._connect()
+        if not self._connect():
+            # Devolver un backend que no conecta dejaba a la aplicación creyendo
+            # que tenía nube: no se ofrecía confirmar la huella del servidor
+            # (SEC-008), no se avisaba de que no habría sincronización y el fallo
+            # aparecía mucho después, al no poder dejar la marca de sesión, con
+            # un mensaje que además decía otra cosa (SYNC-024).
+            raise ConnectionError(
+                f"No se pudo conectar con {host}:{port}. Comprueba la conexión, "
+                "los datos del servidor y que el servidor esté entre los conocidos."
+            )
 
     def _connect(self) -> bool:
         """Establece la conexión SFTP con circuit breaker y reintentos exponenciales."""

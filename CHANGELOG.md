@@ -5,6 +5,19 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.0.5] - 2026-09-07
+
+### 🎯 Resumen
+En un Mac la aplicación no abría: decía «no se ha podido comprobar si la cuenta está abierta en otro equipo» y se cerraba. La cuenta no estaba abierta en ningún sitio; lo que fallaba era la conexión con el servidor, y el aviso contaba otra cosa.
+
+### Fixed
+- **«No se ha podido comprobar si la cuenta está abierta en otro equipo».** Al entrar se deja una marca en el servidor para que la misma cuenta no se use en dos sitios a la vez. Si esa marca no se podía **escribir**, la aplicación lo trataba como si no hubiera podido **leerla** y se cerraba sin más. Ahora distingue las dos cosas: si la cuenta está abierta en otro equipo se sigue avisando y sin entrar, y si lo que pasa es que el servidor no responde se entra en modo local, avisando de que esta sesión no sincroniza. En modo local no se sube nada, así que el trabajo de quien sí esté dentro no corre ningún riesgo.
+- **Un servidor que no conecta ya no se da por bueno.** La conexión se creaba ignorando si había funcionado, así que la aplicación creía tener nube: no ofrecía confirmar la huella del servidor —lo que hace falta la primera vez en cada ordenador— ni avisaba de nada, y el fallo aparecía mucho más tarde y disfrazado. Ahora se comprueba al conectar y se sigue el camino de siempre: confirmar la huella o avisar de que no habrá sincronización.
+
+### 🧹 Housekeeping
+- Cuatro tests nuevos: los dos motivos por los que puede fallar la marca de sesión, el backend que no conecta y un guardarraíl para que el arranque no vuelva a confundir «no responde» con «está ocupada».
+- Borrar un usuario ya no revienta si no hay servidor: se borra lo de este equipo.
+
 ## [6.0.4] - 2026-09-07
 
 ### 🎯 Resumen

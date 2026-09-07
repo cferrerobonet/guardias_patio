@@ -344,3 +344,41 @@ def test_las_rutas_remotas_no_se_manipulan_con_pathlib_path():
     fuente = (SRC / "sync" / "backends.py").read_text(encoding="utf-8")
     cuerpo = fuente[fuente.index("class SFTPSyncBackend") :]
     assert re.search(r"\bPath\((?:full_path|remote_dir)", cuerpo) is None
+
+
+# ---------------------------------------------------------------------------
+# SYNC-024 · un servidor que no responde no es «la cuenta está abierta»
+# ---------------------------------------------------------------------------
+def test_el_bloqueo_distingue_la_cuenta_ocupada_del_servidor_mudo(bloqueo, nube, tmp_path):
+    ocupado = bloqueo("ocupado")
+    _subir_bloqueo(nube, tmp_path, ocupado)
+    assert ocupado.acquire_lock() is False
+    assert ocupado.motivo_del_fallo == "ocupado"
+
+    mudo = bloqueo("mudo", LocalSyncBackend(tmp_path / "otra_nube"))
+    with patch.object(LocalSyncBackend, "upload_file", return_value=False):
+        assert mudo.acquire_lock() is False
+    assert mudo.motivo_del_fallo == "sin_servidor"
+
+
+def test_adquirir_el_bloqueo_limpia_el_motivo_del_fallo_anterior(bloqueo):
+    candado = bloqueo("limpio")
+    candado.motivo_del_fallo = "sin_servidor"
+    assert candado.acquire_lock() is True
+    assert candado.motivo_del_fallo is None
+
+
+def test_un_backend_sftp_que_no_conecta_no_se_devuelve_como_bueno():
+    """Un backend nacido sin conexión hacía creer a la aplicación que tenía nube:
+    ni se ofrecía confirmar la huella ni se avisaba, y el fallo salía mucho
+    después al no poder dejar la marca de sesión (SYNC-024)."""
+    with patch.object(SFTPSyncBackend, "_connect", return_value=False):
+        with pytest.raises(ConnectionError):
+            SFTPSyncBackend(host="h", port=22, username="u", password="p")
+
+
+def test_sin_servidor_el_arranque_no_se_planta_en_no_puedo_comprobar():
+    fuente = (SRC / "main.py").read_text(encoding="utf-8")
+    inicio = fuente.index("session_lock.acquire_lock()")
+    fin = fuente.index("No se ha podido comprobar si la cuenta")
+    assert 'motivo_del_fallo == "sin_servidor"' in fuente[inicio:fin]

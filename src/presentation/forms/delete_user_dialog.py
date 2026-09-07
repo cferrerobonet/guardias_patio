@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
 
 from database.db_manager import delete_user_database
 from presentation.theme.tokens import Colors
-from sync.backend_factory import get_default_backend
+from sync.backend_factory import SyncConfigurationError, get_default_backend
 from sync.sync_manager import UserAuth
 from utils.icons import icon_for_button
 from utils.ui_helpers import get_corporate_icon
@@ -202,14 +202,23 @@ class DeleteUserDialog(QDialog):
             # 1. Eliminar archivos en la nube
             from sync.sync_manager import SyncManager
 
-            backend = get_default_backend()
-            sync_manager = SyncManager(backend, username)
+            try:
+                backend = get_default_backend()
+                sync_manager = SyncManager(backend, username)
+            except SyncConfigurationError:
+                # Sin servidor se borra igual lo de este equipo: quedarse a medias
+                # por no poder tocar la nube sería peor.
+                backend = sync_manager = None
             # 1. Eliminar archivos en la nube
             try:
                 # Intentar eliminar archivos remotos
-                remote_data_file = f"users/{sync_manager.user_hash}/guardias_patio_data.json"
+                remote_data_file = (
+                    f"users/{sync_manager.user_hash}/guardias_patio_data.json"
+                    if sync_manager
+                    else ""
+                )
 
-                if backend.file_exists(remote_data_file):
+                if backend is not None and backend.file_exists(remote_data_file):
                     # No hay método delete en backend, pero podemos intentar subir un archivo vacío
                     # o simplemente dejarlo (se puede limpiar manualmente)
                     pass

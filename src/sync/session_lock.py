@@ -44,6 +44,13 @@ class SessionLock:
         # para que otro equipo entrase (SYNC-018).
         self.lock_timeout = 3 * self.heartbeat_interval  # segundos
 
+        #: Por qué falló el último `acquire_lock()`: `"ocupado"` si la cuenta está
+        #: abierta en otro equipo, `"sin_servidor"` si no se pudo dejar la marca.
+        #: Sin distinguirlos, no poder hablar con el servidor se anunciaba como
+        #: «no se ha podido comprobar si la cuenta está abierta» y la aplicación
+        #: no abría (SYNC-024).
+        self.motivo_del_fallo: Optional[str] = None
+
         # Información de esta sesión
         self.session_info = {
             "username": username,
@@ -83,6 +90,7 @@ class SessionLock:
         """
         import os
 
+        self.motivo_del_fallo = None
         remote_path = self._get_remote_lock_path()
         local_path = self._get_local_lock_path()
         local_path.parent.mkdir(parents=True, exist_ok=True)
@@ -107,6 +115,7 @@ class SessionLock:
                         f"   Desde: {existing_lock.get('started_at')}\n"
                         f"   Último heartbeat: {existing_lock.get('last_heartbeat')}"
                     )
+                    self.motivo_del_fallo = "ocupado"
                     return False
                 else:
                     # Bloqueo expirado, puede adquirirse
@@ -135,8 +144,9 @@ class SessionLock:
             logger.warning(
                 f"⚠️  No se pudo subir el archivo de bloqueo al servidor.\n"
                 f"   Ruta remota: {remote_path}\n"
-                f"   La aplicación continuará pero puede haber sesiones concurrentes."
+                f"   No hay constancia de esta sesión: se trabajará sin nube."
             )
+            self.motivo_del_fallo = "sin_servidor"
             return False
 
     def update_heartbeat(self) -> bool:
