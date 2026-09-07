@@ -5,6 +5,19 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.0.3] - 2026-09-06
+
+### 🎯 Resumen
+La aplicación instalada decía que no había servidor configurado y se quedaba bloqueada en ese aviso. Tres fallos que sólo se daban en la versión instalada, nunca al ejecutarla desde el código.
+
+### Fixed
+- **«No hay servidor de sincronización configurado», teniéndolo configurado.** Los datos del servidor se leían una sola vez, al arrancar el programa, y en ese momento la aplicación instalada todavía no sabe dónde está su archivo de configuración: lo buscaba junto al programa en lugar de en la carpeta del usuario. Se quedaba con los datos vacíos para toda la sesión, avisaba de que no iba a sincronizar y no subía nada al servidor. Ahora los lee cuando los necesita y en el sitio correcto.
+- **La aplicación se quedaba bloqueada en ese aviso.** La pantalla de bienvenida se dibuja siempre por encima de todo, así que el aviso quedaba detrás y su botón Aceptar no recibía el clic. No se podía ni aceptar ni seguir. Ahora la pantalla de bienvenida se retira antes de cualquier aviso.
+- **La aplicación instalada salía sin estilos.** La hoja de estilos no se estaba copiando dentro del paquete. Ya va incluida, y un test recorre el código para que no vuelva a quedarse fuera ningún archivo que no sea de programa.
+
+### 🧹 Housekeeping
+- Ocho tests nuevos que cubren estos tres fallos, que la suite no veía porque al ejecutar desde el código todo está en su sitio.
+
 ## [6.0.2] - 2026-09-06
 
 ### 🎯 Resumen

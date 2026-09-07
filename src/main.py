@@ -291,6 +291,16 @@ def main():
 
     arranque = abrir_pantalla_de_arranque()
 
+    def ocultar_arranque() -> None:
+        """Quita la pantalla de arranque antes de un aviso.
+
+        Va siempre por encima de todo, así que un `QMessageBox` sin padre queda
+        detrás y sus botones no reciben el clic: la aplicación se quedaba
+        bloqueada en el aviso, sin poder aceptarlo ni seguir (UXF-012).
+        """
+        if arranque is not None:
+            arranque.hide()
+
     def paso(mensaje: str) -> None:
         if arranque is not None:
             arranque.paso(mensaje)
@@ -373,6 +383,7 @@ def main():
                     lock_info = session_lock.get_lock_info()
                     if lock_info:
                         locked_dialog = SessionLockedDialog(lock_info)
+                        ocultar_arranque()
                         result = locked_dialog.exec()
 
                         if result == SessionLockedDialog.DialogCode.Rejected:
@@ -418,6 +429,7 @@ def main():
             # copia que puede estar vieja. Se avisa y se prohíbe subir al cerrar.
             motivo = sync_manager.motivo_bloqueo or "no se pudieron descargar los datos"
             logger.warning(f"⚠ Sincronización inicial fallida: {motivo}")
+            ocultar_arranque()
             aviso = QMessageBox()
             aviso.setIcon(QMessageBox.Icon.Warning)
             aviso.setWindowTitle("Sin datos actualizados")
@@ -434,6 +446,7 @@ def main():
         # trabajo se queda en este equipo y no llegará a los demás.
         sync_manager = None
         logger.error(f"Sin sincronización: {e}")
+        ocultar_arranque()
         from utils.ui_helpers import get_corporate_icon
 
         msg = QMessageBox()
@@ -453,6 +466,7 @@ def main():
     except Exception as e:
         sync_manager = None
         logger.exception(f"Error al inicializar sincronización: {e}")
+        ocultar_arranque()
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Icon.Warning)
         msg.setWindowTitle("Sin sincronización con la nube")

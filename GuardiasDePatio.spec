@@ -25,6 +25,9 @@ datas = [
     ('imagenes', 'imagenes'),
     (copia_con_nombres_ascii('alembic'), 'alembic'),
     ('alembic.ini', '.'),
+    # Sin esto la aplicación arrancaba sin estilos: PyInstaller sólo empaqueta
+    # los `.py`, y el tema se construye a partir de esta hoja (VIS-001).
+    ('src/presentation/theme/light.qss', 'presentation/theme'),
 ]
 binaries = []
 hiddenimports = ['logging.config', 'logging.handlers', 'dependency_injector.errors', 'ortools.sat.python.cp_model_helper', 'matplotlib', 'matplotlib.backends.backend_qtagg', 'reportlab']
