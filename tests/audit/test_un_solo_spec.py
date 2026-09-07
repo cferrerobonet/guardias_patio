@@ -61,3 +61,19 @@ def test_cada_plataforma_usa_su_icono():
     assert (RAIZ / "imagenes" / "logo.ico").exists()
     # El .icns no se versiona: lo genera `make icon` antes de compilar.
     assert "icon" in (RAIZ / "Makefile").read_text(encoding="utf-8")
+
+
+def test_el_flujo_publica_tambien_la_version_portable():
+    """BLD-013 · en un centro casi nadie es administrador: hace falta una vía sin instalador."""
+    flujo = (RAIZ / ".github/workflows/compilar.yml").read_text(encoding="utf-8")
+    assert "Windows-Portable.zip" in flujo
+    assert "dist/GuardiasDePatio/*" in flujo, "el zip sale de la carpeta que ya genera PyInstaller"
+    assert "-name '*.zip'" in flujo, "sin esto el zip se queda en los artefactos y no llega al release"
+
+
+def test_el_actualizador_no_confunde_el_portable_con_el_instalador():
+    """El aviso de nueva versión filtra por extensión: el `.zip` no puede colarse."""
+    checker = (RAIZ / "src/utils/update_checker.py").read_text(encoding="utf-8")
+    assert '"Darwin": ".dmg"' in checker
+    assert '"Windows": ".exe"' in checker
+    assert ".zip" not in checker

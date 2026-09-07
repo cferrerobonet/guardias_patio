@@ -81,10 +81,24 @@ jobs:
       - name: Comprobar que el ejecutable existe
         shell: bash
         run: test -f "dist/GuardiasDePatio/GuardiasDePatio.exe"
+      # La carpeta que ya genera PyInstaller vale tal cual como versión portable:
+      # se descomprime y se ejecuta, sin instalador, sin permisos de administrador
+      # y sin tocar el registro. Es la vía para el equipo donde el instalador se
+      # atasca, que en un centro es casi siempre por no ser administrador (BLD-013).
+      - name: Empaquetar la versión portable
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.numero }}"
+          New-Item -ItemType Directory -Force -Path Output | Out-Null
+          Compress-Archive -Path "dist/GuardiasDePatio/*" `
+            -DestinationPath "Output/GuardiasDePatio-$version-Windows-Portable.zip" `
+            -CompressionLevel Optimal
       - uses: actions/upload-artifact@v4
         with:
           name: GuardiasDePatio-Windows
-          path: Output/*.exe
+          path: |
+            Output/*.exe
+            Output/*.zip
           if-no-files-found: error
 
   macos:
@@ -132,7 +146,7 @@ jobs:
           if [ "${GITHUB_REF_TYPE}" != "tag" ]; then
             etiqueta=$(git describe --tags --abbrev=0)
           fi
-          archivos=$(find instaladores -type f \( -name '*.dmg' -o -name '*.exe' \))
+          archivos=$(find instaladores -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.zip' \))
           echo "Adjuntando a $etiqueta:"; echo "$archivos"
           if gh release view "$etiqueta" >/dev/null 2>&1; then
             gh release upload "$etiqueta" $archivos --clobber

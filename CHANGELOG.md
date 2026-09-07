@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.2.0] - 2026-09-07
+
+### 🎯 Resumen
+Una segunda forma de instalar para el equipo donde el instalador se atasca: una carpeta comprimida que se descomprime y se ejecuta, sin instalador, sin permisos de administrador y sin tocar el registro de Windows.
+
+### ✨ Added
+- **Versión portable de Windows en el release.** Junto al instalador se publica `GuardiasDePatio-{versión}-Windows-Portable.zip`. Se descomprime donde se quiera y se ejecuta el `.exe` de dentro. En un centro lo normal es no ser administrador, y ésa es una de las razones por las que la misma versión entra en un equipo y no en otro. No sale de una compilación aparte: es la carpeta que PyInstaller ya generaba y que hasta ahora se tiraba, así que no alarga el proceso ni puede divergir del instalador.
+
+### 🧹 Housekeeping
+- Dos tests que vigilan el flujo de publicación: que el `.zip` se genere y llegue al release, y que el aviso de nueva versión siga filtrando por extensión, para que a nadie se le ofrezca el portable como si fuera el instalador.
+- **Limitación conocida:** quien use el portable recibe el aviso de nueva versión con el instalador, no con un `.zip` nuevo. Actualizar el portable es descomprimir encima.
+
 ## [6.1.1] - 2026-09-07
 
 ### 🎯 Resumen
