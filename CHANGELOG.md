@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.1.1] - 2026-09-07
+
+### 🎯 Resumen
+Dos motivos por los que la misma versión se instala bien en un equipo y mal en otro: el ejecutable iba comprimido con UPX, que los antivirus confunden con la ofuscación del malware, y las funcionalidades cuya dependencia no viajaba dentro del paquete se caían **en silencio**, sin que el usuario ni el registro dijeran nada.
+
+### ✨ Added
+- **Comprobación de arranque.** Antes de abrir ninguna ventana se verifica que están de verdad las siete piezas que se resuelven en tiempo de ejecución y que PyInstaller no ve: el llavero del sistema, la hoja de estilos, el motor de asignación (resolviendo un modelo trivial, que es la única forma de saber que sus librerías nativas cargaron), las gráficas, los informes PDF, las migraciones de la base de datos y las imágenes. El resultado de las siete queda en el registro, pasen o no, así que el log que manda un usuario dice de un vistazo qué se cargó en **su** equipo. Si falta algo, la aplicación instalada lo dice por pantalla en lugar de arrancar aparentando normalidad. Ninguna comprobación puede impedir el arranque: si revienta, se cuenta como fallo y la aplicación sigue.
+
+### Fixed
+- **El ejecutable ya no se comprime con UPX.** La compresión es una firma heurística clásica de los antivirus, porque es la misma técnica con la que el malware se ofusca: en unos equipos la instalación se bloqueaba y en otros no, con el mismo instalador. En un empaquetado por carpeta el ahorro de tamaño no compensa que la instalación falle justo donde no se puede depurar.
+
+### 🧹 Housekeeping
+- Siete tests nuevos en `test_arranque_de_la_app_instalada.py`: que el spec no vuelva a activar UPX, que las siete comprobaciones pasen enteras en desarrollo, que una comprobación rota no tumbe el arranque, que el motivo del fallo llegue con el nombre de la funcionalidad, que el aviso no moleste al trabajar desde el código fuente y que nadie quite la llamada del arranque.
+- `GUARDIAS_AUTODIAGNOSTICO=1` fuerza el aviso sin tener que compilar la aplicación.
+
 ## [6.1.0] - 2026-09-07
 
 ### 🎯 Resumen

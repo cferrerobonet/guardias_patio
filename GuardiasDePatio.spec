@@ -59,6 +59,11 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
+# UPX comprime el ejecutable y las librerías, y ese empaquetado es una firma
+# heurística clásica de los antivirus: es la misma técnica con la que el malware
+# se ofusca. En un build `onedir` el ahorro de tamaño no compensa que la
+# instalación se bloquee en el equipo del usuario, que es donde no podemos
+# depurar (BLD-011).
 exe = EXE(
     pyz,
     a.scripts,
@@ -68,7 +73,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -82,7 +87,7 @@ coll = COLLECT(
     a.binaries,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name=NOMBRE,
 )

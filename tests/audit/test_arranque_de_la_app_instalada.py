@@ -11,6 +11,7 @@ Tres fallos que la suite no veía porque en desarrollo todo está en su sitio:
 
 import importlib
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -130,3 +131,81 @@ def test_ningun_otro_recurso_del_codigo_se_queda_fuera():
     spec = (RAIZ / "GuardiasDePatio.spec").read_text(encoding="utf-8")
     sin_empaquetar = [f for f in fuera if Path(f).name not in spec]
     assert sin_empaquetar == [], sin_empaquetar
+
+
+# ---------------------------------------------------------------------------
+# BLD-011 · el empaquetado que se bloquea en el equipo del usuario
+# BLD-012 · las funcionalidades que se caen en silencio
+# ---------------------------------------------------------------------------
+
+
+def test_el_spec_no_comprime_con_upx():
+    """UPX es firma heurística de antivirus y el bloqueo pasa donde no depuramos."""
+    spec = (RAIZ / "GuardiasDePatio.spec").read_text(encoding="utf-8")
+    assert "upx=True" not in spec
+    assert spec.count("upx=False") == 2, "el EXE y el COLLECT llevan cada uno el suyo"
+
+
+def test_el_autodiagnostico_pasa_entero_en_desarrollo():
+    """En desarrollo todo está en su sitio: cualquier fallo aquí es del módulo."""
+    from core.autodiagnostico import revisar_entorno
+
+    assert revisar_entorno() == []
+
+
+def test_una_comprobacion_rota_no_tumba_el_arranque(monkeypatch):
+    """La comprobación existe para avisar, nunca para impedir que la app abra."""
+    from core import autodiagnostico
+
+    def explota():
+        raise RuntimeError("sin librería nativa")
+
+    monkeypatch.setattr(
+        autodiagnostico, "COMPROBACIONES", (("Motor de asignación", explota),)
+    )
+    assert autodiagnostico.revisar_entorno() == [
+        "Motor de asignación: RuntimeError: sin librería nativa"
+    ]
+
+
+def test_el_motivo_del_fallo_viaja_con_el_nombre_de_la_funcionalidad(monkeypatch):
+    """El usuario tiene que leer qué ha perdido, no un rastro de excepción."""
+    from core import autodiagnostico
+
+    monkeypatch.setattr(
+        autodiagnostico,
+        "COMPROBACIONES",
+        (("Llavero del sistema", lambda: "no hay almacén de credenciales"),),
+    )
+    assert autodiagnostico.revisar_entorno() == [
+        "Llavero del sistema: no hay almacén de credenciales"
+    ]
+
+
+def test_el_aviso_no_molesta_en_desarrollo(monkeypatch):
+    """Empaquetada avisa; desde el código fuente sería ruido en cada arranque."""
+    from core.autodiagnostico import debe_avisar_al_usuario
+
+    monkeypatch.delenv("GUARDIAS_AUTODIAGNOSTICO", raising=False)
+    monkeypatch.delattr(sys, "frozen", raising=False)
+    assert debe_avisar_al_usuario() is False
+
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    assert debe_avisar_al_usuario() is True
+
+
+def test_la_variable_de_entorno_permite_probar_el_aviso(monkeypatch):
+    """Sin ella no habría forma de ver el aviso sin compilar la aplicación."""
+    from core.autodiagnostico import debe_avisar_al_usuario
+
+    monkeypatch.delattr(sys, "frozen", raising=False)
+    monkeypatch.setenv("GUARDIAS_AUTODIAGNOSTICO", "1")
+    assert debe_avisar_al_usuario() is True
+
+
+def test_el_arranque_revisa_el_entorno_antes_de_abrir_ventanas():
+    """Si alguien quita la llamada, los fallos vuelven a ser invisibles."""
+    main = (RAIZ / "src" / "main.py").read_text(encoding="utf-8")
+    assert "revisar_entorno()" in main
+    assert "debe_avisar_al_usuario()" in main
+    assert main.index("revisar_entorno()") < main.index("QApplication(sys.argv)")

@@ -124,6 +124,13 @@ def main():
     sys.excepthook = exception_hook
     logger.info("✓ Manejador global de excepciones instalado")
 
+    # Lo que PyInstaller no empaqueta no rompe el arranque: desactiva una
+    # funcionalidad en silencio y sólo se ve en el equipo del usuario. Se
+    # comprueba antes de nada y queda en el registro, pasen o no (BLD-012).
+    from core.autodiagnostico import debe_avisar_al_usuario, revisar_entorno
+
+    fallos_de_entorno = revisar_entorno()
+
     # UX-04: DPI awareness — PassThrough evita escalado redondeado en pantallas HiDPI
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
@@ -154,6 +161,18 @@ def main():
     hoja = construir_hoja_de_estilos()
     if hoja:
         app.setStyleSheet(hoja)
+
+    # El aviso va después de la hoja de estilos para que se vea con el tema, y
+    # sólo en la aplicación empaquetada: en desarrollo todo está en su sitio.
+    if fallos_de_entorno and debe_avisar_al_usuario():
+        QMessageBox.warning(
+            None,
+            "Funcionalidades no disponibles",
+            "La aplicación ha arrancado, pero estas partes no están disponibles "
+            "en este equipo:\n\n• "
+            + "\n• ".join(fallos_de_entorno)
+            + f"\n\nEl detalle está en el registro:\n{log_file}",
+        )
 
     # ==========================================
     # Validar Configuración Inicial (SFTP/SMTP)
