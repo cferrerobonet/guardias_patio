@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.0.6] - 2026-09-07
+
+### 🎯 Resumen
+Menos espera en la pantalla de arranque cuando el equipo no llega al servidor.
+
+### Changed
+- **La primera conexión con el servidor espera 10 segundos, no 30.** Un equipo sin acceso al servidor se quedaba medio minuto en «Comprobando que la cuenta no esté abierta en otro equipo…» antes de decir nada. Las reconexiones de mitad de sesión mantienen el margen de siempre, que ahí no hay nadie esperando delante.
+
 ## [6.0.5] - 2026-09-07
 
 ### 🎯 Resumen

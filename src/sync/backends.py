@@ -207,6 +207,7 @@ class SFTPSyncBackend(SyncBackend):
         username: str,
         password: str,
         base_dir: str = "/guardias_patio",
+        timeout_inicial: int = 10,
     ):
         self.sftp = None
         self.client = None
@@ -217,7 +218,12 @@ class SFTPSyncBackend(SyncBackend):
         self._username = username
         self._password = password
 
-        if not self._connect():
+        # La primera conexión ocurre con alguien mirando la pantalla de arranque,
+        # así que se le da menos margen que a las reconexiones de mitad de sesión:
+        # con los 30 s de éstas, un equipo sin acceso al servidor se quedaba medio
+        # minuto en «Comprobando que la cuenta no esté abierta en otro equipo…»
+        # antes de decir nada (SYNC-024).
+        if not self._connect_once(timeout=timeout_inicial):
             # Devolver un backend que no conecta dejaba a la aplicación creyendo
             # que tenía nube: no se ofrecía confirmar la huella del servidor
             # (SEC-008), no se avisaba de que no habría sincronización y el fallo
@@ -242,7 +248,7 @@ class SFTPSyncBackend(SyncBackend):
             return self._connect_with_retry()
         return self._connect_once()
 
-    def _connect_once(self) -> bool:
+    def _connect_once(self, timeout: int = 30) -> bool:
         """Lógica de conexión SFTP sin retry."""
         try:
             import paramiko
@@ -267,9 +273,9 @@ class SFTPSyncBackend(SyncBackend):
                 port=self._port,
                 username=self._username,
                 password=self._password,
-                timeout=30,
-                banner_timeout=30,
-                auth_timeout=30,
+                timeout=timeout,
+                banner_timeout=max(timeout, 15),
+                auth_timeout=max(timeout, 15),
             )
             transport = self.client.get_transport()
             if transport is not None:

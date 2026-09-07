@@ -372,9 +372,25 @@ def test_un_backend_sftp_que_no_conecta_no_se_devuelve_como_bueno():
     """Un backend nacido sin conexión hacía creer a la aplicación que tenía nube:
     ni se ofrecía confirmar la huella ni se avisaba, y el fallo salía mucho
     después al no poder dejar la marca de sesión (SYNC-024)."""
-    with patch.object(SFTPSyncBackend, "_connect", return_value=False):
+    with patch.object(SFTPSyncBackend, "_connect_once", return_value=False):
         with pytest.raises(ConnectionError):
             SFTPSyncBackend(host="h", port=22, username="u", password="p")
+
+
+def test_la_primera_conexion_no_hace_esperar_media_sesion(tmp_path):
+    """Con los 30 s de las reconexiones, un equipo sin acceso al servidor se
+    quedaba medio minuto en la pantalla de arranque sin decir nada."""
+    intentos = []
+
+    def _apuntar(self, timeout=30):
+        intentos.append(timeout)
+        return False
+
+    with patch.object(SFTPSyncBackend, "_connect_once", _apuntar):
+        with pytest.raises(ConnectionError):
+            SFTPSyncBackend(host="h", port=22, username="u", password="p")
+
+    assert intentos == [10]
 
 
 def test_sin_servidor_el_arranque_no_se_planta_en_no_puedo_comprobar():
