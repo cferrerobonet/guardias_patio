@@ -10,7 +10,7 @@ import os
 import shutil
 from abc import ABC, abstractmethod
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Optional
 
 try:
@@ -349,7 +349,7 @@ class SFTPSyncBackend(SyncBackend):
 
             full_path = f"{self.base_dir}/{remote_path}"
             # Crear directorios remotos si no existen
-            self._mkdir_p(str(Path(full_path).parent))
+            self._mkdir_p(str(PurePosixPath(full_path).parent))
             # Subir a un temporal y renombrar. El renombrado en SFTP es atómico,
             # así que un corte de conexión nunca deja el fichero bueno a medias.
             temporal = f"{full_path}.tmp"
@@ -457,13 +457,22 @@ class SFTPSyncBackend(SyncBackend):
             return None
 
     def _mkdir_p(self, remote_dir: str):
-        """Crea directorios remotos recursivamente."""
-        if remote_dir == "/":
+        """Crea directorios remotos recursivamente.
+
+        Las rutas del servidor son POSIX siempre, así que se recorren con
+        `PurePosixPath`. Con `Path`, en Windows salían con barras invertidas
+        (`\\aplicaciones\\guardias_patio`): el servidor no encontraba ninguna,
+        el padre de `\\` es `\\` y la recursión no terminaba nunca. Reventaba
+        con `RecursionError` al subir el bloqueo de sesión, así que desde
+        Windows no se ha subido nada nunca (SYNC-023).
+        """
+        padre = str(PurePosixPath(remote_dir).parent)
+        if remote_dir in ("/", "", ".") or padre == remote_dir:
             return
         try:
             self.sftp.stat(remote_dir)
         except FileNotFoundError:
-            self._mkdir_p(str(Path(remote_dir).parent))
+            self._mkdir_p(padre)
             self.sftp.mkdir(remote_dir)
 
     def close(self):

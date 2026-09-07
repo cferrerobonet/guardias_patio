@@ -309,3 +309,38 @@ def test_los_ficheros_de_estado_de_sync_se_escriben_en_utf8(modulo):
         and "encoding=" not in linea
     ]
     assert sin_codificacion == [], sin_codificacion
+
+
+# ---------------------------------------------------------------------------
+# SYNC-023 · las rutas del servidor son POSIX también en Windows
+# ---------------------------------------------------------------------------
+def test_los_directorios_remotos_se_crean_con_barras_normales(sftp_falso):
+    sftp_falso._mkdir_p(f"{sftp_falso.base_dir}/users/abc/copias")
+
+    creadas = sftp_falso.sftp.carpetas - {sftp_falso.base_dir}
+    assert creadas == {
+        f"{sftp_falso.base_dir}/users",
+        f"{sftp_falso.base_dir}/users/abc",
+        f"{sftp_falso.base_dir}/users/abc/copias",
+    }
+    assert not any("\\" in carpeta for carpeta in sftp_falso.sftp.carpetas)
+
+
+def test_crear_directorios_remotos_termina_aunque_el_servidor_no_encuentre_nada(sftp_falso):
+    """En Windows `Path` daba `\\aplicaciones`, el servidor no encontraba ninguna
+    carpeta y el padre de `\\` es `\\`: la recursión no terminaba y la subida del
+    bloqueo de sesión moría con `RecursionError` (SYNC-023)."""
+
+    def nunca_existe(ruta):
+        raise FileNotFoundError(ruta)
+
+    sftp_falso.sftp.stat = nunca_existe
+    sftp_falso._mkdir_p("/aplicaciones/guardias_patio/users/abc")
+
+    assert "/aplicaciones" in sftp_falso.sftp.carpetas
+
+
+def test_las_rutas_remotas_no_se_manipulan_con_pathlib_path():
+    fuente = (SRC / "sync" / "backends.py").read_text(encoding="utf-8")
+    cuerpo = fuente[fuente.index("class SFTPSyncBackend") :]
+    assert re.search(r"\bPath\((?:full_path|remote_dir)", cuerpo) is None

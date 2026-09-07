@@ -2,7 +2,7 @@
 tags:
   - gestion-centro
   - auditoria
-fecha_actualizacion: 2026-09-06
+fecha_actualizacion: 2026-09-07
 estado: activo
 prioridad: 1-urgente
 tipo: referencia
@@ -135,6 +135,7 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | SYNC-015 | P3 | alta | La decisión de descargar depende de comparar relojes de equipos distintos | `sync/sync_manager.py:440-447` | **RESUELTO VERIFICADO v5.47.0** · se decide por número de versión, no por fechas | 12 |
 | SYNC-016 | P0 | alta | Un nombre de usuario es público: bastaba con conocerlo y registrarlo con cualquier contraseña para descargarse y manipular los datos de esa persona. Afectaba a las cuentas antiguas, con datos en el servidor pero sin ficha de contraseña publicada | `sync/sync_manager.py` (`_comprobar_nombre_disponible`) | **RESUELTO VERIFICADO v5.49.0** · no se puede registrar un nombre que ya tenga datos en el servidor; se indica cómo activarlo desde el equipo de origen | [[12_SINCRONIZACION_NUBE]] |
 | SYNC-017 | P2 | alta | Una cuenta con datos solo en local no creaba su carpeta en el servidor hasta cerrar la aplicación | `sync/sync_manager.py` (`sync_on_startup`) | **RESUELTO VERIFICADO v5.49.0** · si la nube está vacía y el equipo tiene datos, se suben al abrir | 12 |
+| ~~SYNC-023~~ | P0 | alta | ~~En Windows las carpetas del servidor se creaban con `pathlib.Path`, que allí devuelve barras invertidas (`\aplicaciones\guardias_patio`): el servidor no encontraba ninguna, el padre de `\` es `\` y `_mkdir_p` no terminaba nunca. `RecursionError` al subir el bloqueo de sesión, aviso «no se sincronizará» al arrancar y ninguna subida desde Windows~~ | `sync/backends.py` (`_mkdir_p`, `upload_file`) | ✅ **RESUELTO v6.0.4** · rutas remotas con `PurePosixPath` y corte cuando el padre coincide con la ruta · `test_los_directorios_remotos_se_crean_con_barras_normales`, `test_crear_directorios_remotos_termina_aunque_el_servidor_no_encuentre_nada`, `test_las_rutas_remotas_no_se_manipulan_con_pathlib_path`. Detectado en un PC Windows el 2026-09-07 | 12 |
 | UXA-015 | P1 | alta | Los datos recargados no se veían: había que cerrar y volver a abrir la aplicación. El envoltorio de cada vista no conservaba el widget y las señales de importación no las escuchaba nadie | `presentation/ventana_principal.py` | **RESUELTO VERIFICADO v5.49.0** · recarga central que vacía la caché y repinta las vistas abiertas | 12 |
 
 ## COD · Calidad de código

@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.0.4] - 2026-09-07
+
+### 🎯 Resumen
+En Windows, al entrar salía el aviso «Esta sesión NO se sincronizará con la nube» con un error incomprensible, y la aplicación seguía abriéndose sin nube. Desde Windows nunca se ha llegado a subir nada al servidor.
+
+### Fixed
+- **«maximum recursion depth exceeded» al arrancar en Windows.** Las carpetas del servidor se creaban usando el formato de rutas del ordenador que ejecuta la aplicación. En macOS coincide con el del servidor, pero Windows escribe las rutas con barras invertidas (`\carpeta\subcarpeta`): el servidor no reconocía ninguna carpeta, la aplicación intentaba crear la carpeta superior una y otra vez y acababa reventando. El fallo saltaba al reservar la sesión, así que ni se bloqueaba la cuenta ni se subía nada, y la sesión entera trabajaba sólo en local. Las rutas del servidor ya no dependen del sistema desde el que se entra.
+
+### 🧹 Housekeeping
+- Tres tests nuevos: los nombres de las carpetas remotas, que la creación termine aunque el servidor no encuentre nada, y un guardarraíl para que las rutas del servidor no vuelvan a construirse con el formato del sistema local.
+
 ## [6.0.3] - 2026-09-06
 
 ### 🎯 Resumen
