@@ -14,7 +14,7 @@ from pathlib import Path
 
 from PyQt6.QtCore import QThread
 from PyQt6.QtCore import pyqtSignal as Signal
-from PyQt6.QtWidgets import QMessageBox, QProgressDialog
+from PyQt6.QtWidgets import QApplication, QMessageBox, QProgressDialog
 
 from utils.update_checker import abrir_instalador, url_de_confianza
 
@@ -91,7 +91,7 @@ def descargar_e_instalar(parent, url: str, version: str = "") -> None:
     hilo.progreso_signal.connect(
         lambda v: progreso.setValue(v) if not cancelado[0] else hilo.terminate()
     )
-    hilo.listo_signal.connect(lambda ruta: (progreso.close(), abrir_instalador(ruta)))
+    hilo.listo_signal.connect(lambda ruta: (progreso.close(), instalar_y_salir(parent, ruta)))
     hilo.error_signal.connect(
         lambda err: (
             progreso.close(),
@@ -101,6 +101,34 @@ def descargar_e_instalar(parent, url: str, version: str = "") -> None:
         )
     )
     hilo.start()
+
+
+def instalar_y_salir(parent, ruta: str) -> None:
+    """Lanza el instalador y cierra la aplicación.
+
+    Mientras la aplicación corre, su ejecutable está en uso y el instalador no
+    puede reemplazarlo: en Windows se quedaba en «DeleteFile falló; código 5» y
+    la instalación se abortaba a medias. Se cierra todo antes de que el
+    instalador llegue a copiar nada.
+    """
+    app = QApplication.instance()
+    if app is not None:
+        app.closeAllWindows()
+        # Si algo se niega a cerrarse (cambios sin sincronizar, por ejemplo) no
+        # se lanza el instalador: fallaría igual y dejaría la copia a medias.
+        if any(v.isVisible() for v in app.topLevelWidgets()):
+            QMessageBox.information(
+                parent,
+                "Actualización pendiente",
+                "Cierra Guardias de Patio y vuelve a pulsar Actualizar para instalar "
+                "la versión nueva.",
+            )
+            return
+
+    abrir_instalador(ruta)
+
+    if app is not None:
+        app.quit()
 
 
 def ofrecer(parent, version: str, url: str = "", notas: str = "") -> None:

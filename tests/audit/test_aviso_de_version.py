@@ -5,6 +5,7 @@ descarga sin decir qué cambiaba, y al terminar abría el instalador con `open`,
 que sólo existe en macOS —en Windows la descarga acababa y no pasaba nada—.
 """
 
+import importlib
 import inspect
 import json
 import platform
@@ -128,7 +129,49 @@ def test_el_instalador_no_se_abre_con_open_a_secas():
 
     fuente = inspect.getsource(actualizacion.descargar_e_instalar)
     assert '["open"' not in fuente
-    assert "abrir_instalador" in fuente
+    assert "instalar_y_salir" in fuente
+
+    lanzamiento = inspect.getsource(actualizacion.instalar_y_salir)
+    assert "abrir_instalador" in lanzamiento
+
+
+def test_la_aplicacion_se_cierra_antes_de_instalar():
+    """El instalador no puede reemplazar el ejecutable mientras la app corre:
+    en Windows terminaba en «DeleteFile falló; código 5»."""
+    from presentation.dialogs import actualizacion
+
+    fuente = inspect.getsource(actualizacion.instalar_y_salir)
+    assert fuente.index("closeAllWindows") < fuente.index("abrir_instalador(")
+    assert "quit()" in fuente
+
+
+def test_si_algo_se_niega_a_cerrarse_no_se_instala():
+    """Con una ventana abierta la copia fallaría igual y dejaría la instalación
+    a medias: mejor no lanzar el instalador."""
+    from PyQt6.QtCore import Qt
+    from PyQt6.QtWidgets import QApplication, QWidget
+
+    from presentation.dialogs import actualizacion
+
+    class _VentanaTerca(QWidget):
+        def closeEvent(self, evento):  # noqa: N802 - firma de Qt
+            evento.ignore()
+
+    app = QApplication.instance() or QApplication([])
+    testigo = _VentanaTerca()
+    testigo.show()
+
+    lanzados = []
+    actualizacion.abrir_instalador = lambda ruta: lanzados.append(ruta)
+    try:
+        actualizacion.instalar_y_salir(None, "C:/temp/instalador.exe")
+    finally:
+        testigo.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
+        testigo.hide()
+        importlib.reload(actualizacion)
+
+    assert lanzados == [], "no se puede instalar con la aplicación aún abierta"
+    assert app is not None
 
 
 def test_pulsar_el_aviso_pregunta_antes_de_descargar():

@@ -585,3 +585,14 @@ QPushButton#botonActualizar {
 QPushButton#botonActualizar:hover {
     background-color: @WARNING_BG@;
 }
+
+/* Cierre del login: la ventana no tiene barra de título. */
+QPushButton#botonCerrarLogin {
+    background: transparent;
+    border: none;
+    border-radius: 14px;
+}
+
+QPushButton#botonCerrarLogin:hover {
+    background-color: @BORDER@;
+}

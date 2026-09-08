@@ -45,3 +45,50 @@ Name: "{autodesktop}\Guardias de Patio"; Filename: "{app}\{#MyAppExeName}"; Task
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Abrir Guardias de Patio"; Flags: nowait postinstall skipifsilent
+
+[Code]
+{ Desinstalar la versión anterior antes de copiar la nueva. Sustituir ficheros
+  sobre una instalación en uso dejaba «DeleteFile falló; código 5» y la
+  instalación a medias. Los datos del usuario viven en %APPDATA%\GuardiasDePatio,
+  fuera del programa, así que desinstalar no se lleva nada por delante. }
+
+function DesinstaladorAnterior(): String;
+var
+  Clave: String;
+  Valor: String;
+begin
+  Result := '';
+  Clave := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\' +
+           ExpandConstant('{#SetupSetting("AppId")}') + '_is1';
+  if RegQueryStringValue(HKCU, Clave, 'UninstallString', Valor) then
+    Result := Valor
+  else if RegQueryStringValue(HKLM, Clave, 'UninstallString', Valor) then
+    Result := Valor;
+  Result := RemoveQuotes(Result);
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Desinstalador: String;
+  Codigo: Integer;
+  Espera: Integer;
+begin
+  Result := '';
+  Desinstalador := DesinstaladorAnterior();
+  if (Desinstalador = '') or (not FileExists(Desinstalador)) then
+    exit;
+
+  if not Exec(Desinstalador, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '',
+              SW_HIDE, ewWaitUntilTerminated, Codigo) then
+    exit;
+
+  { El desinstalador se copia a sí mismo al temporal y vuelve enseguida: hay que
+    esperar a que el de verdad termine antes de escribir en la carpeta. }
+  Espera := 0;
+  while FileExists(Desinstalador) and (Espera < 60) do
+  begin
+    Sleep(500);
+    Espera := Espera + 1;
+  end;
+end;
+

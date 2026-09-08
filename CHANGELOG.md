@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.3.0] - 2026-09-08
+
+### 🎯 Resumen
+Actualizar desde dentro de la aplicación fallaba justo al copiar los ficheros: el instalador no puede reemplazar un programa que está abierto. Ahora la aplicación se cierra antes y la instalación empieza limpia. De paso, la ventana de inicio de sesión pierde la barra de título del sistema.
+
+### ✨ Added
+- **La aplicación se cierra antes de instalar la actualización.** Al terminar la descarga se cierran todas las ventanas y sólo entonces se lanza el instalador. Si algo se niega a cerrarse —cambios sin sincronizar, por ejemplo— no se lanza nada y se avisa: instalar a medias es peor que no instalar.
+- **El instalador desinstala primero la versión anterior.** Sustituir ficheros sobre una instalación previa dejaba «Ocurrió un error al intentar reemplazar el archivo existente: DeleteFile falló; código 5». Los datos viven en la carpeta del usuario del sistema, fuera del programa, así que desinstalar no se lleva nada por delante.
+
+### Changed
+- **La ventana de inicio de sesión ya no tiene barra de título.** La ventana se identifica sola con el panel de marca. Se cierra con la ✕ de la esquina o con Esc, y se mueve arrastrándola desde cualquier punto.
+
+### 🧹 Housekeeping
+- Tres tests que fijan el flujo: que se cierre antes de instalar, que con una ventana abierta no se lance el instalador y que el estilo del botón de cierre viva en la hoja de estilos.
+
 ## [6.2.0] - 2026-09-07
 
 ### 🎯 Resumen

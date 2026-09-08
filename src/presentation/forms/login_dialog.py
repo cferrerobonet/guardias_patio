@@ -299,12 +299,10 @@ class LoginDialog(QDialog):
         self.setModal(True)
         self.setFixedSize(720, 480)
 
-        self.setWindowFlags(
-            Qt.WindowType.Dialog
-            | Qt.WindowType.CustomizeWindowHint
-            | Qt.WindowType.WindowTitleHint
-            | Qt.WindowType.WindowCloseButtonHint
-        )
+        # Sin barra de título: la ventana ya se identifica con el panel de marca.
+        # Al quitarla hay que devolver a mano lo que daba: cerrar y arrastrar.
+        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
+        self._origen_arrastre = None
 
         root_layout = QHBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -495,11 +493,39 @@ class LoginDialog(QDialog):
 
         root_layout.addWidget(form_panel)
 
+        # Botón de cierre flotante sobre la esquina: el diálogo es de tamaño fijo,
+        # así que basta con colocarlo una vez.
+        self.close_btn = QPushButton(self)
+        self.close_btn.setObjectName("botonCerrarLogin")  # estilo en light.qss
+        self.close_btn.setIcon(get_icon("close", "#6B7280", 16))
+        self.close_btn.setToolTip("Cerrar")
+        self.close_btn.setAccessibleName("Cerrar la ventana de inicio de sesión")
+        self.close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.close_btn.clicked.connect(self.reject)
+        self.close_btn.setGeometry(self.width() - 40, 12, 28, 28)
+
         # TabOrder
         self.setTabOrder(self.username_combo, self.password_input)
         self.setTabOrder(self.password_input, self.login_btn)
         self.setTabOrder(self.login_btn, self.register_btn)
         self.setTabOrder(self.register_btn, self.delete_user_btn)
+
+    def mousePressEvent(self, event):
+        """Permite arrastrar la ventana, que ya no tiene barra de título."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._origen_arrastre = (
+                event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            )
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._origen_arrastre is not None and event.buttons() & Qt.MouseButton.LeftButton:
+            self.move(event.globalPosition().toPoint() - self._origen_arrastre)
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._origen_arrastre = None
+        super().mouseReleaseEvent(event)
 
     def _comprobar_si_hay_version_nueva(self) -> None:
         """Pregunta por la última versión sin bloquear la pantalla."""
