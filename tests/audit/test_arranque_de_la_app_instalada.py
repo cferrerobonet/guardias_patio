@@ -203,9 +203,21 @@ def test_la_variable_de_entorno_permite_probar_el_aviso(monkeypatch):
     assert debe_avisar_al_usuario() is True
 
 
-def test_el_arranque_revisa_el_entorno_antes_de_abrir_ventanas():
+def test_el_arranque_revisa_el_entorno():
     """Si alguien quita la llamada, los fallos vuelven a ser invisibles."""
     main = (RAIZ / "src" / "main.py").read_text(encoding="utf-8")
     assert "revisar_entorno()" in main
     assert "debe_avisar_al_usuario()" in main
-    assert main.index("revisar_entorno()") < main.index("QApplication(sys.argv)")
+
+
+def test_la_revision_no_bloquea_el_arranque():
+    """Comprobar el entorno importa el backend de gráficas y resuelve un modelo
+    del solucionador: ocho segundos largos antes de la primera ventana. Hacerlo
+    por delante dejaba la aplicación sin pintar nada y, si una de esas librerías
+    nativas se caía, parecía que no abría (BLD-014)."""
+    main = (RAIZ / "src" / "main.py").read_text(encoding="utf-8")
+
+    assert "class _RevisionDeEntorno(QThread)" in main, "la revisión va en su propio hilo"
+    assert main.index("QApplication(sys.argv)") < main.index("revision.start()"), (
+        "la aplicación se crea antes de revisar el entorno"
+    )

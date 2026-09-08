@@ -12,6 +12,7 @@ Actualizar desde dentro de la aplicación fallaba justo al copiar los ficheros: 
 
 ### ✨ Added
 - **La aplicación se cierra antes de instalar la actualización.** Al terminar la descarga se cierran todas las ventanas y sólo entonces se lanza el instalador. Si algo se niega a cerrarse —cambios sin sincronizar, por ejemplo— no se lanza nada y se avisa: instalar a medias es peor que no instalar.
+- **El arranque ya no espera a la comprobación de entorno.** Verificar que el paquete trae todo se llevaba más de ocho segundos —importar el backend de gráficas y resolver un modelo del solucionador es lo caro— y ocurría antes de crear la ventana: la pantalla se quedaba en blanco y, si una de esas librerías nativas fallaba, la aplicación moría sin haber pintado nada, con lo que parecía que no abría. Ahora la comprobación va en segundo plano, con la aplicación ya en marcha, y el aviso llega cuando termina.
 - **El instalador desinstala primero la versión anterior.** Sustituir ficheros sobre una instalación previa dejaba «Ocurrió un error al intentar reemplazar el archivo existente: DeleteFile falló; código 5». Los datos viven en la carpeta del usuario del sistema, fuera del programa, así que desinstalar no se lleva nada por delante.
 
 ### Changed

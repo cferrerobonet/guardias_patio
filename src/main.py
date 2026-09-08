@@ -47,10 +47,11 @@ logging.basicConfig(
     handlers=_handlers,
 )
 
-from PyQt6.QtCore import QLibraryInfo, QLocale, Qt, QTranslator
+from PyQt6.QtCore import QLibraryInfo, QLocale, Qt, QThread, QTranslator, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
+from core.autodiagnostico import debe_avisar_al_usuario, revisar_entorno
 from presentation.forms.login_dialog import LoginDialog
 from presentation.ventana_principal import VentanaPrincipal
 from sync import SyncConfigurationError, SyncManager, get_default_backend
@@ -59,6 +60,33 @@ from utils.corporate_branding import apply_corporate_branding
 # Configurar logging
 logger = logging.getLogger(__name__)
 logger.info(f"=== INICIO DE APLICACIÓN === Log: {log_file}")
+
+
+class _RevisionDeEntorno(QThread):
+    """Comprueba en segundo plano que el paquete trae todo lo que necesita."""
+
+    terminada = pyqtSignal(list)
+
+    def run(self):
+        # `revisar_entorno` recoge el fallo de cada comprobación por su cuenta, así
+        # que aquí no hay nada que capturar: una excepción escapando de `run()`
+        # cierra la aplicación entera (CRW-005).
+        self.terminada.emit(revisar_entorno())
+
+
+def _avisar_de_fallos(fallos: list, ruta_del_registro) -> None:
+    """Avisa de lo que no está disponible, sólo en la aplicación empaquetada."""
+    if not fallos or not debe_avisar_al_usuario():
+        return
+
+    QMessageBox.warning(
+        None,
+        "Funcionalidades no disponibles",
+        "La aplicación ha arrancado, pero estas partes no están disponibles "
+        "en este equipo:\n\n• "
+        + "\n• ".join(fallos)
+        + f"\n\nEl detalle está en el registro:\n{ruta_del_registro}",
+    )
 
 
 def main():
@@ -124,13 +152,6 @@ def main():
     sys.excepthook = exception_hook
     logger.info("✓ Manejador global de excepciones instalado")
 
-    # Lo que PyInstaller no empaqueta no rompe el arranque: desactiva una
-    # funcionalidad en silencio y sólo se ve en el equipo del usuario. Se
-    # comprueba antes de nada y queda en el registro, pasen o no (BLD-012).
-    from core.autodiagnostico import debe_avisar_al_usuario, revisar_entorno
-
-    fallos_de_entorno = revisar_entorno()
-
     # UX-04: DPI awareness — PassThrough evita escalado redondeado en pantallas HiDPI
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
@@ -162,17 +183,18 @@ def main():
     if hoja:
         app.setStyleSheet(hoja)
 
-    # El aviso va después de la hoja de estilos para que se vea con el tema, y
-    # sólo en la aplicación empaquetada: en desarrollo todo está en su sitio.
-    if fallos_de_entorno and debe_avisar_al_usuario():
-        QMessageBox.warning(
-            None,
-            "Funcionalidades no disponibles",
-            "La aplicación ha arrancado, pero estas partes no están disponibles "
-            "en este equipo:\n\n• "
-            + "\n• ".join(fallos_de_entorno)
-            + f"\n\nEl detalle está en el registro:\n{log_file}",
-        )
+    # Lo que PyInstaller no empaqueta no rompe el arranque: desactiva una
+    # funcionalidad en silencio y sólo se ve en el equipo del usuario (BLD-012).
+    # Va en segundo plano y con la aplicación ya creada: hacerlo antes retrasaba
+    # más de ocho segundos la primera ventana —importar el backend de gráficas y
+    # resolver un modelo del solucionador es lo caro— y si una de esas librerías
+    # nativas se cae, se llevaba por delante un arranque que aún no había pintado
+    # nada, así que la aplicación parecía no abrirse (BLD-014).
+    revision = _RevisionDeEntorno()
+    revision.terminada.connect(lambda fallos: _avisar_de_fallos(fallos, log_file))
+    app.aboutToQuit.connect(lambda: revision.wait(3000))
+    app._revision_de_entorno = revision  # que no lo recoja el recolector de basura
+    revision.start()
 
     # ==========================================
     # Validar Configuración Inicial (SFTP/SMTP)
