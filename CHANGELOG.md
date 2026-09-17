@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.3.1] - 2026-09-17
+
+### 🎯 Resumen
+Dos motivos por los que en Windows la aplicación parecía no abrirse. El primero es de compilación: el exe de Windows no salía del spec del repositorio, así que ninguno de los arreglos hechos ahí desde v6.1.1 (sin UPX, con la hoja de estilos) llegó nunca a los usuarios de Windows. El segundo es de arranque: entre el doble clic y la ventana de entrada no se pintaba nada mientras se cargaban las vistas y se intentaba, hasta tres veces, conectar con el servidor.
+
+### Fixed
+- **El instalador y el portable de Windows salen ahora de `GuardiasDePatio.spec`.** El script de Windows pasaba a PyInstaller una lista de argumentos sueltos y el punto de entrada; PyInstaller generaba entonces su propio spec **encima** del del repositorio y compilaba ése. El log del build en GitHub lo decía desde el principio: «wrote …GuardiasDePatio.spec». En la práctica el exe de Windows iba sin la hoja de estilos y sin la garantía de `upx=False`, es decir, sin lo que v6.1.1 anunció como resuelto. La variante de diagnóstico (consola visible) sale del mismo spec con `GUARDIAS_BUILD_DIAGNOSTICO=1`; el instalador y el `.zip` portable se siguen publicando los dos.
+- **Hay algo en pantalla desde el primer segundo.** La pantalla de arranque se abre nada más crear la aplicación, antes de cargar las vistas y de hablar con el servidor, y va diciendo por dónde va: «Cargando la aplicación», «Comprobando la configuración», «Conectando con el servidor». Hasta ahora se abría después del login, y antes de él podían pasar los imports de las vistas (OR-Tools, pandas, SQLAlchemy), la lectura del llavero y hasta tres intentos de conexión de diez segundos: en un centro con el puerto 22 cortado, medio minuto sin nada en pantalla. Se oculta antes de cada diálogo para que ninguno quede detrás.
+- **Importar la pantalla de arranque ya no arrastra las vistas.** El paquete de widgets cargaba al importarse un widget que tira de los formularios y, con ellos, del motor de asignación y de la base de datos: más de dos segundos en desarrollo con la caché caliente, y muchos más en un equipo lento con antivirus. Ahora cada widget se carga cuando alguien lo pide; hasta la pantalla de arranque se tarda 0,3 s.
+
+### 🧹 Housekeeping
+- Seis tests nuevos: que el script de Windows compile desde el spec y no pase argumentos sueltos, que la variante de diagnóstico salga del mismo spec, que la pantalla se abra antes de cargar las vistas y de conectar, que el módulo de arranque no importe nada pesado, que la pantalla se importe en un proceso limpio sin cargar OR-Tools ni SQLAlchemy, y que el paquete de widgets siga dando sus nombres públicos.
+- La skill de compilación de Windows explica cómo distinguir, por el registro, un proceso que no llega a arrancar (directiva, antivirus, SmartScreen) de uno que espera al servidor.
+
 ## [6.3.0] - 2026-09-08
 
 ### 🎯 Resumen

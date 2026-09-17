@@ -84,7 +84,16 @@ def test_la_pantalla_de_arranque_se_quita_antes_de_cada_aviso():
     # Cada aviso posterior a la pantalla de arranque la esconde primero.
     inicio = fuente.index("arranque = abrir_pantalla_de_arranque()")
     tramo = fuente[inicio:]
-    avisos = list(re.finditer(r"\b(msg|aviso|locked_dialog)\.exec\(\)", tramo))
+    # También el diálogo de configuración, el de «trabajar sin servidor», la
+    # pregunta por la huella y el propio login: desde v6.3.1 la pantalla se abre
+    # antes que todos ellos (BLD-017).
+    avisos = list(
+        re.finditer(
+            r"\b(msg|aviso|eleccion|config_dialog|login_dialog|locked_dialog)\.exec\(\)"
+            r"|confirmar_huella_si_hace_falta\(\)",
+            tramo,
+        )
+    )
     assert avisos, "no se han encontrado avisos tras la pantalla de arranque"
     for aviso in avisos:
         anterior = tramo[max(0, aviso.start() - 2000):aviso.start()]
@@ -221,3 +230,62 @@ def test_la_revision_no_bloquea_el_arranque():
     assert main.index("QApplication(sys.argv)") < main.index("revision.start()"), (
         "la aplicación se crea antes de revisar el entorno"
     )
+
+
+# ---------------------------------------------------------------------------
+# BLD-017 · algo en pantalla desde el primer segundo
+# ---------------------------------------------------------------------------
+def _main() -> str:
+    return (SRC / "main.py").read_text(encoding="utf-8")
+
+
+def test_la_pantalla_de_arranque_se_abre_antes_de_cargar_las_vistas_y_de_conectar():
+    """Entre el doble clic y el login había: los imports de las vistas, el llavero y
+    hasta tres conexiones de diez segundos con el servidor. Con el puerto 22
+    cortado era medio minuto sin nada en pantalla: parecía que no abría."""
+    main = _main()
+    apertura = main.index("arranque = abrir_pantalla_de_arranque()")
+    assert apertura < main.index("from presentation.forms.login_dialog import LoginDialog")
+    assert apertura < main.index("from presentation.ventana_principal import VentanaPrincipal")
+    assert apertura < main.index("is_configuration_needed()")
+    assert apertura < main.index("get_default_backend()")
+    assert main.index("QApplication(sys.argv)") < apertura
+
+
+def test_las_vistas_no_se_importan_al_cargar_el_modulo():
+    """Los imports del arranque tienen que ser ligeros: lo pesado, tras la pantalla."""
+    main = _main()
+    cabecera = main[: main.index("def main():")]
+    for pesado in ("presentation.forms", "presentation.ventana_principal", "from sync import"):
+        assert pesado not in cabecera, f"{pesado} se importa antes de pintar nada"
+
+
+def test_la_pantalla_de_arranque_se_importa_sin_arrastrar_las_vistas():
+    """`presentation.widgets` cargaba al importarse un widget que tira de los
+    formularios y, con ellos, de OR-Tools, pandas y SQLAlchemy: un segundo largo
+    en desarrollo y muchos más en un equipo lento con antivirus."""
+    import os
+    import subprocess
+
+    codigo = (
+        "import sys\n"
+        "import presentation.widgets.pantalla_de_arranque\n"
+        "cargados = [m for m in ('ortools', 'pandas', 'sqlalchemy', 'presentation.forms')"
+        " if m in sys.modules]\n"
+        "print(','.join(cargados))\n"
+    )
+    entorno = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
+    resultado = subprocess.run(
+        [sys.executable, "-c", codigo], cwd=SRC, env=entorno, capture_output=True, text=True
+    )
+    assert resultado.returncode == 0, resultado.stderr
+    assert resultado.stdout.strip() == "", f"arrastra: {resultado.stdout.strip()}"
+
+
+def test_el_paquete_de_widgets_sigue_dando_sus_nombres_publicos():
+    import presentation.widgets as widgets
+
+    for nombre in widgets.__all__:
+        assert getattr(widgets, nombre).__name__ == nombre
+    with pytest.raises(AttributeError):
+        widgets.NoExiste

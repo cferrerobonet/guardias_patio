@@ -52,10 +52,12 @@ from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
 from core.autodiagnostico import debe_avisar_al_usuario, revisar_entorno
-from presentation.forms.login_dialog import LoginDialog
-from presentation.ventana_principal import VentanaPrincipal
-from sync import SyncConfigurationError, SyncManager, get_default_backend
 from utils.corporate_branding import apply_corporate_branding
+
+# Las vistas, el login y la sincronización se importan dentro de `main()`, con la
+# pantalla de arranque ya a la vista: importarlas aquí arrastra OR-Tools, pandas y
+# SQLAlchemy antes de que exista la `QApplication`, y en un equipo lento con
+# antivirus eso son muchos segundos sin nada en pantalla (BLD-017).
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -183,6 +185,40 @@ def main():
     if hoja:
         app.setStyleSheet(hoja)
 
+    # Lo primero que se pinta, antes de cargar las vistas y de hablar con el
+    # servidor. Hasta aquí la pantalla de arranque se abría después del login, y
+    # entre el doble clic y la ventana de entrada podían pasar: los imports de
+    # las vistas (OR-Tools, pandas, SQLAlchemy), la lectura del llavero y hasta
+    # tres intentos de conexión con el servidor de diez segundos cada uno. En un
+    # centro con el puerto 22 cortado eso era medio minuto sin nada en pantalla,
+    # y parecía que la aplicación no abría (BLD-017).
+    from presentation.widgets.pantalla_de_arranque import abrir_pantalla_de_arranque
+
+    arranque = abrir_pantalla_de_arranque()
+
+    def ocultar_arranque() -> None:
+        """Quita la pantalla de arranque antes de un aviso o de una ventana.
+
+        Va siempre por encima de todo, así que un `QMessageBox` sin padre queda
+        detrás y sus botones no reciben el clic: la aplicación se quedaba
+        bloqueada en el aviso, sin poder aceptarlo ni seguir (UXF-012).
+        """
+        if arranque is not None:
+            arranque.hide()
+
+    def paso(mensaje: str) -> None:
+        """Anuncia el paso en marcha; vuelve a enseñar la pantalla si un diálogo la quitó."""
+        if arranque is not None:
+            if not arranque.isVisible():
+                arranque.show()
+            arranque.paso(mensaje)
+
+    paso("Cargando la aplicación…")
+
+    from presentation.forms.login_dialog import LoginDialog
+    from presentation.ventana_principal import VentanaPrincipal
+    from sync import SyncConfigurationError, SyncManager, get_default_backend
+
     # Lo que PyInstaller no empaqueta no rompe el arranque: desactiva una
     # funcionalidad en silencio y sólo se ve en el equipo del usuario (BLD-012).
     # Va en segundo plano y con la aplicación ya creada: hacerlo antes retrasaba
@@ -191,7 +227,13 @@ def main():
     # nativas se cae, se llevaba por delante un arranque que aún no había pintado
     # nada, así que la aplicación parecía no abrirse (BLD-014).
     revision = _RevisionDeEntorno()
-    revision.terminada.connect(lambda fallos: _avisar_de_fallos(fallos, log_file))
+
+    def avisar_de_fallos(fallos: list) -> None:
+        if fallos:
+            ocultar_arranque()  # el aviso no puede quedar detrás de la pantalla (UXF-012)
+        _avisar_de_fallos(fallos, log_file)
+
+    revision.terminada.connect(avisar_de_fallos)
     app.aboutToQuit.connect(lambda: revision.wait(3000))
     app._revision_de_entorno = revision  # que no lo recoja el recolector de basura
     revision.start()
@@ -199,6 +241,8 @@ def main():
     # ==========================================
     # Validar Configuración Inicial (SFTP/SMTP)
     # ==========================================
+
+    paso("Comprobando la configuración…")
 
     from core.paths import get_base_directory
     from presentation.dialogs.initial_config_dialog import InitialConfigDialog
@@ -220,6 +264,7 @@ def main():
     if InitialConfigDialog.is_configuration_needed():
         logger.info("Configuración inicial requerida. Mostrando diálogo...")
 
+        ocultar_arranque()
         config_dialog = InitialConfigDialog()
         if config_dialog.exec() != InitialConfigDialog.DialogCode.Accepted:
             # Antes esto cerraba la aplicación: sin servidor no se podía ni entrar,
@@ -281,6 +326,7 @@ def main():
     # ==========================================
     # La cuenta vive junto a los datos del usuario en el servidor, así que hace
     # falta la conexión ya para poder validarla desde cualquier equipo.
+    paso("Conectando con el servidor…")
     backend = None
     sin_sincronizacion = None
     try:
@@ -293,8 +339,10 @@ def main():
         # y dejar que quien está delante la confirme (SEC-008).
         from presentation.dialogs.huella_servidor_dialog import confirmar_huella_si_hace_falta
 
+        ocultar_arranque()  # la pregunta por la huella no puede quedar detrás
         if confirmar_huella_si_hace_falta():
             try:
+                paso("Conectando con el servidor…")
                 backend = get_default_backend()
                 sin_sincronizacion = None
                 logger.info("✓ Servidor disponible tras confirmar la huella")
@@ -305,6 +353,7 @@ def main():
         logger.error(f"Sin sincronización: {sin_sincronizacion}")
         from utils.ui_helpers import get_corporate_icon
 
+        ocultar_arranque()
         aviso = QMessageBox()
         aviso.setIcon(QMessageBox.Icon.Warning)
         aviso.setWindowTitle("Sin sincronización con la nube")
@@ -318,6 +367,7 @@ def main():
         aviso.exec()
 
     # Mostrar diálogo de login
+    ocultar_arranque()
     login_dialog = LoginDialog(backend=backend)
     if login_dialog.exec() != LoginDialog.DialogCode.Accepted:
         logger.info("Usuario canceló el login. Saliendo de la aplicación.")
@@ -328,24 +378,6 @@ def main():
 
     # Entre aquí y la ventana principal hay pasos que hablan con la red y pueden
     # tardar. Sin esto la pantalla se queda vacía y parece que no arranca (ESC-006).
-    from presentation.widgets.pantalla_de_arranque import abrir_pantalla_de_arranque
-
-    arranque = abrir_pantalla_de_arranque()
-
-    def ocultar_arranque() -> None:
-        """Quita la pantalla de arranque antes de un aviso.
-
-        Va siempre por encima de todo, así que un `QMessageBox` sin padre queda
-        detrás y sus botones no reciben el clic: la aplicación se quedaba
-        bloqueada en el aviso, sin poder aceptarlo ni seguir (UXF-012).
-        """
-        if arranque is not None:
-            arranque.hide()
-
-    def paso(mensaje: str) -> None:
-        if arranque is not None:
-            arranque.paso(mensaje)
-
     paso("Preparando la base de datos…")
 
     # Inicializar base de datos específica del usuario

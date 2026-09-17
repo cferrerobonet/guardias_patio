@@ -6,6 +6,7 @@
 #   • el `BUNDLE`, que sólo existe en macOS y es quien crea el `.app`.
 # Las rutas van siempre con barra normal: `src\main.py` sólo funcionaba en Windows
 # y dejó sin DMG a las versiones 5.97.0, 5.98.0 y 5.99.0.
+import os
 import sys
 from pathlib import Path
 
@@ -18,6 +19,15 @@ from nombres_ascii import copia_con_nombres_ascii  # noqa: E402
 ES_MACOS = sys.platform == "darwin"
 NOMBRE = "Guardias de Patio" if ES_MACOS else "GuardiasDePatio"
 ICONO = "imagenes/icono.icns" if ES_MACOS else "imagenes/logo.ico"
+
+# La variante de diagnóstico de Windows sale de este mismo spec: consola visible
+# para ver la traza de un cierre y otro nombre para que no se confunda con la
+# de verdad. Hasta v6.3.0 `build_windows.ps1` no pasaba por aquí: llamaba a
+# PyInstaller con argumentos sueltos, PyInstaller escribía su propio spec encima
+# de éste y el exe de Windows salía sin nada de lo que se arregla aquí (BLD-016).
+DIAGNOSTICO = os.getenv("GUARDIAS_BUILD_DIAGNOSTICO") == "1"
+if DIAGNOSTICO and not ES_MACOS:
+    NOMBRE += "-debug"
 
 # Las migraciones se empaquetan con el nombre sin acentos: uno solo con «ñ» rompía
 # el sello de la firma al copiar la aplicación y macOS la daba por dañada (BLD-010).
@@ -74,7 +84,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=False,
+    console=DIAGNOSTICO,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

@@ -113,43 +113,23 @@ New-Item -ItemType Directory -Path $OutputPath -Force | Out-Null
 
 Write-Step "PASO 3: Compilar ejecutable con PyInstaller"
 
+# Se compila desde GuardiasDePatio.spec, el mismo que usa macOS (BLD-008). Hasta
+# v6.3.0 este script pasaba a PyInstaller una lista de argumentos sueltos y el
+# punto de entrada: PyInstaller generaba entonces su propio spec ENCIMA del del
+# repositorio y el exe de Windows salía sin nada de lo que se arregla en el spec
+# (sin la hoja de estilos, sin `upx=False`, con los almacenes del llavero y las
+# migraciones a medias). El spec lleva `keyring.backends` y lo demás (BLD-016).
 $AppName = if ($Diagnostico) { "GuardiasDePatio-debug" } else { "GuardiasDePatio" }
-$ModoVentana = if ($Diagnostico) { "--console" } else { "--windowed" }
 if ($Diagnostico) {
     Write-Info "Modo diagnostico: consola visible, nombre $AppName, sin instalador"
     $env:PYTHONFAULTHANDLER = "1"
+    $env:GUARDIAS_BUILD_DIAGNOSTICO = "1"
+} else {
+    Remove-Item Env:GUARDIAS_BUILD_DIAGNOSTICO -ErrorAction SilentlyContinue
 }
 
-$PyInstallerArgs = @(
-    $ModoVentana,
-    "--noconfirm",
-    "--clean",
-    "--icon=imagenes/logo.ico",
-    "--add-data", "imagenes;imagenes",
-    "--add-data", "alembic;alembic",
-    "--add-data", "alembic.ini;.",
-    "--exclude-module", "tkinter",
-    "--exclude-module", "email_validator",
-    "--collect-all", "dependency_injector",
-    "--collect-all", "ortools",
-    "--collect-all", "keyring",
-    "--collect-binaries", "ortools",
-    "--collect-data", "ortools",
-    "--collect-submodules", "ortools",
-    "--hidden-import=logging.config",
-    "--hidden-import=logging.handlers",
-    "--hidden-import=dependency_injector.errors",
-    "--hidden-import=ortools.sat.python.cp_model_helper",
-    "--hidden-import=matplotlib",
-    "--hidden-import=matplotlib.backends.backend_qtagg",
-    "--hidden-import=reportlab",
-    "--distpath", $DistPath,
-    "--workpath", $BuildPath,
-    "--name", $AppName,
-    "src/main.py"
-)
-
-& $PythonPath -m PyInstaller @PyInstallerArgs
+$SpecPath = Join-Path $WorkspacePath "GuardiasDePatio.spec"
+& $PythonPath -m PyInstaller --noconfirm --clean --distpath $DistPath --workpath $BuildPath $SpecPath
 $ExeGenerado = Join-Path $DistPath "$AppName\$AppName.exe"
 if (-not (Test-Path $ExeGenerado)) {
     Write-ErrorMsg "PyInstaller fallo: no se genero $ExeGenerado"

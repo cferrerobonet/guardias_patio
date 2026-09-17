@@ -90,18 +90,27 @@ powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1 -Diagnostico
 
 Compila con consola visible, activa `PYTHONFAULTHANDLER`, nombra el artefacto `GuardiasDePatio-debug` y no genera instalador. La aplicación además escribe `%APPDATA%\GuardiasDePatio\logs\faulthandler.log` con la pila de todos los hilos si se produce un fallo nativo.
 
-Equivalente manual, si hiciera falta ajustar algo:
+Las dos variantes salen del **mismo** `GuardiasDePatio.spec` (BLD-016): la de diagnóstico es el spec con `GUARDIAS_BUILD_DIAGNOSTICO=1` en el entorno, que pone `console=True` y añade `-debug` al nombre. Equivalente manual, si hiciera falta ajustar algo:
 
 ```powershell
 $env:PYTHONFAULTHANDLER = "1"
-python -m PyInstaller --noconfirm --clean --console --name GuardiasDePatio-debug `
-  --icon=imagenes/logo.ico --add-data "imagenes;imagenes" --add-data "alembic;alembic" --add-data "alembic.ini;." `
-  --collect-all ortools --collect-all dependency_injector `
-  --hidden-import=logging.config --hidden-import=logging.handlers --hidden-import=ortools.sat.python.cp_model_helper `
-  --hidden-import=matplotlib --hidden-import=matplotlib.backends.backend_qtagg --hidden-import=reportlab `
-  --exclude-module tkinter --exclude-module email_validator src\main.py
+$env:GUARDIAS_BUILD_DIAGNOSTICO = "1"
+python -m PyInstaller --noconfirm --clean GuardiasDePatio.spec
 .\dist\GuardiasDePatio-debug\GuardiasDePatio-debug.exe 2>&1 | Tee-Object -FilePath crash.txt
 ```
+
+> [!WARNING] Nunca pasar `src\main.py` ni argumentos `--add-data`/`--collect-all` a PyInstaller
+> Con argumentos sueltos PyInstaller **genera su propio spec encima** de `GuardiasDePatio.spec` y el exe sale sin lo que se arregla ahí (hoja de estilos, `upx=False`, migraciones sin acentos). Así se compilaron las versiones 6.1.1 a 6.3.0 en GitHub: el log decía «wrote …GuardiasDePatio.spec». Un test lo vigila.
+
+## Si al hacer doble clic no aparece nada
+
+Primero mirar si existe un `app_*.log` nuevo en `%APPDATA%\GuardiasDePatio\logs`. Se crea antes de cargar Qt, así que separa dos casos que se ven igual:
+
+| Hay `app_*.log` nuevo | Qué significa | Qué hacer |
+| --- | --- | --- |
+| No | El proceso no llega a ejecutar Python: bloqueo por directiva (AppLocker/SRP contra `%LOCALAPPDATA%\Programs` o la carpeta del portable), antivirus, o SmartScreen sin aceptar | Visor de eventos → Windows → Aplicación (evento 1000 o 8004 AppLocker); probar el portable en otra carpeta; «Más información → Ejecutar de todas formas» |
+| Sí, acaba en «Conectando con el servidor…» | El puerto 22 está cortado; hasta v6.3.0 no se pintaba nada durante los ~35 s de espera | Esperar el aviso «Sin sincronización» o revisar el cortafuegos del centro |
+| Sí, con traza | Fallo de Python o nativo (`faulthandler.log`) | Build de diagnóstico y protocolo de `auditoria/06` |
 
 Después de reproducir el cierre: adjuntar `crash.txt`, las últimas 200 líneas de `%APPDATA%\GuardiasDePatio\logs\app_*.log` y el evento 1000 del Visor de eventos (módulo y código de excepción). Protocolo completo en `auditoria/06_CRASH_WINDOWS_GENERACION.md` §5.
 
@@ -125,4 +134,7 @@ gh release upload v<versión> Output\GuardiasDePatio-<versión>-Windows-Setup.ex
 | `ModuleNotFoundError: ortools...` al arrancar | faltó `--collect-all ortools` | usar el script canónico |
 | Ventana sin controles nativos | `showFullScreen` | ya corregido (5.42.1) |
 | El exe cierra sin mensaje | fallo nativo; ver `auditoria/06` | build de diagnóstico |
+| Doble clic y nada, sin `app_*.log` nuevo | el proceso no arranca: directiva, antivirus o SmartScreen | ver «Si al hacer doble clic no aparece nada» |
+| El portable avisa «Windows protegió su PC» | marca de la web en el zip descargado; el exe no va firmado | «Más información → Ejecutar de todas formas», o desbloquear el zip antes de descomprimir |
+| La app sale sin tema, o en GitHub el log dice «wrote …GuardiasDePatio.spec» | PyInstaller recibió argumentos sueltos y regeneró el spec | compilar siempre `GuardiasDePatio.spec` (BLD-016) |
 | `ISCC.exe` no encontrado | Inno Setup no instalado | instalar o `-SkipInstaller` |

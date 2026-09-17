@@ -159,6 +159,7 @@ def test_nadie_escribe_ya_en_un_env_relativo():
 def test_el_empaquetado_se_lleva_los_almacenes_del_llavero():
     """El llavero elige su almacén al arrancar: PyInstaller no lo ve solo."""
     spec = (RAIZ / "GuardiasDePatio.spec").read_text(encoding="utf-8")
-    windows = (RAIZ / "scripts" / "build_windows.ps1").read_text(encoding="utf-8")
+    windows = (RAIZ / "scripts" / "build_windows.ps1").read_text(encoding="utf-8-sig")
     assert "keyring.backends" in spec
-    assert "keyring" in windows
+    # Windows compila desde el spec (BLD-016); antes llevaba su propia lista.
+    assert "GuardiasDePatio.spec" in windows

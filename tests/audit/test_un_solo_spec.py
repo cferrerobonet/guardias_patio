@@ -77,3 +77,34 @@ def test_el_actualizador_no_confunde_el_portable_con_el_instalador():
     assert '"Darwin": ".dmg"' in checker
     assert '"Windows": ".exe"' in checker
     assert ".zip" not in checker
+
+
+# ---------------------------------------------------------------------------
+# BLD-016 — el build de Windows también tiene que salir de ese spec
+# ---------------------------------------------------------------------------
+def _guion_de_windows() -> str:
+    return (RAIZ / "scripts/build_windows.ps1").read_text(encoding="utf-8-sig")
+
+
+def test_el_build_de_windows_usa_ese_spec():
+    """Hasta v6.3.0 el script pasaba argumentos sueltos y `src/main.py`: PyInstaller
+    escribía su propio spec encima de éste y el exe salía sin la hoja de estilos
+    ni `upx=False`. El log del build de GitHub lo decía: «wrote …GuardiasDePatio.spec»."""
+    guion = _guion_de_windows()
+    assert SPEC in guion, "build_windows.ps1 no compila desde el spec"
+    for argumento in ("--windowed", "--add-data", "--collect-all", "src/main.py", 'src\\main.py'):
+        assert argumento not in guion, (
+            f"{argumento!r} en build_windows.ps1: con argumentos sueltos PyInstaller "
+            "regenera el spec y lo del repositorio no llega al exe"
+        )
+
+
+def test_la_variante_de_diagnostico_sale_del_mismo_spec():
+    """Con consola y otro nombre, pero con las mismas piezas que la de verdad."""
+    fuente = _fuente_spec()
+    assert 'os.getenv("GUARDIAS_BUILD_DIAGNOSTICO")' in fuente
+    assert "console=DIAGNOSTICO" in fuente
+    assert 'NOMBRE += "-debug"' in fuente
+    guion = _guion_de_windows()
+    assert 'GUARDIAS_BUILD_DIAGNOSTICO = "1"' in guion
+    assert "GuardiasDePatio-debug" in guion
