@@ -1,6 +1,6 @@
 [project]
 name = "guardias-de-patio"
-version = "6.3.1"
+version = "6.3.2"
 description = "Sistema de gestión de guardias de patio para centros educativos"
 requires-python = ">=3.11"
 dependencies = [
@@ -29,6 +29,7 @@ dependencies = [
     "pybreaker==1.4.1",
     "bcrypt==5.0.0",
     "cryptography==50.0.1",
+    "certifi==2026.7.22",
     "ortools==9.15.6755",
     "dependency-injector==4.49.1",
     "prometheus-client==0.26.0",

@@ -218,3 +218,67 @@ def test_el_login_pregunta_por_la_version_sin_bloquear_la_pantalla():
     # El callback llega desde un hilo suelto: tiene que entrar por una señal,
     # nunca tocar el widget directamente (CRW-005).
     assert "nueva_version_detectada.emit" in fuente
+
+
+# ---------------------------------------------------------------------------
+# BLD-018 — el aviso no llegaba desde la app instalada en macOS
+# ---------------------------------------------------------------------------
+# El OpenSSL empaquetado busca los certificados raíz en la carpeta del Python
+# de compilación (`/Library/Frameworks/Python.framework/…/etc/openssl`), que no
+# existe en el Mac del usuario: «CERTIFICATE_VERIFY_FAILED», tragado en
+# silencio. La verificación tiene que hacerse con el `cacert.pem` de certifi,
+# que ya viaja dentro del paquete.
+
+
+def test_la_comprobacion_verifica_con_los_certificados_de_certifi(monkeypatch):
+    import ssl
+
+    recibido = {}
+    monkeypatch.setattr(
+        ssl, "create_default_context", lambda cafile=None: recibido.setdefault("cafile", cafile)
+    )
+
+    update_checker.contexto_ssl()
+
+    import certifi
+
+    assert recibido["cafile"] == certifi.where()
+
+
+def test_la_peticion_a_github_lleva_ese_contexto(monkeypatch):
+    centinela = object()
+    monkeypatch.setattr(update_checker, "contexto_ssl", lambda: centinela)
+    llamadas = []
+
+    def _urlopen(*a, **k):
+        llamadas.append(k)
+        return _RespuestaFalsa(RELEASE)
+
+    monkeypatch.setattr(update_checker.urllib.request, "urlopen", _urlopen)
+    monkeypatch.setattr(update_checker, "Thread", _HiloInmediato)
+
+    update_checker.check_for_updates("1.0.0", lambda *args: None)
+
+    assert llamadas[0]["context"] is centinela
+
+
+def test_un_fallo_al_comprobar_queda_en_el_log(monkeypatch, caplog):
+    def _urlopen(*a, **k):
+        raise OSError("CERTIFICATE_VERIFY_FAILED")
+
+    monkeypatch.setattr(update_checker.urllib.request, "urlopen", _urlopen)
+    monkeypatch.setattr(update_checker, "Thread", _HiloInmediato)
+
+    with caplog.at_level("WARNING", logger=update_checker.__name__):
+        update_checker.check_for_updates("1.0.0", lambda *args: None)
+
+    assert "CERTIFICATE_VERIFY_FAILED" in caplog.text
+
+
+def test_la_descarga_del_instalador_usa_el_mismo_contexto():
+    from presentation.dialogs import actualizacion
+
+    fuente = inspect.getsource(actualizacion._Descargador.run)
+    assert "contexto_ssl()" in fuente
+    # `urlretrieve` no admite contexto: fallaría igual que la comprobación.
+    assert "urlretrieve(" not in fuente

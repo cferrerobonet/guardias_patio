@@ -46,6 +46,14 @@ datas += collect_data_files('ortools')
 # ve esos imports por sí solo y la aplicación empaquetada se quedaría sin
 # dónde guardar las contraseñas (SEC-001).
 hiddenimports += collect_submodules('keyring.backends')
+# Los widgets se cargan con `importlib` cuando alguien los pide (BLD-017), así
+# que PyInstaller tampoco los ve: el portable de v6.3.1 moría al abrir la ventana
+# con «No module named presentation.widgets.ausencias_sustituciones» (BLD-019).
+hiddenimports += [
+    f"presentation.widgets.{f.stem}"
+    for f in sorted((Path(SPECPATH) / "src" / "presentation" / "widgets").glob("*.py"))
+    if f.stem != "__init__"
+]
 binaries += collect_dynamic_libs('ortools')
 hiddenimports += collect_submodules('ortools')
 tmp_ret = collect_all('dependency_injector')

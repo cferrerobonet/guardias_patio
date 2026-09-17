@@ -1,8 +1,12 @@
 import json
+import logging
 import platform
+import ssl
 import urllib.request
 from threading import Thread
 from typing import Callable
+
+logger = logging.getLogger(__name__)
 
 RELEASES_URL = "https://api.github.com/repos/cferrerobonet/guardias_patio/releases/latest"
 
@@ -23,26 +27,45 @@ def url_de_confianza(url: str) -> bool:
     return partes.hostname in HOSTS_PERMITIDOS
 
 
+def contexto_ssl() -> ssl.SSLContext:
+    """Contexto TLS que verifica con los certificados raíz de `certifi`.
+
+    El OpenSSL que viaja en el DMG busca los certificados en la carpeta del
+    Python con el que se compiló (`/Library/Frameworks/Python.framework/…`),
+    que no existe en el Mac del usuario: la petición a GitHub moría con
+    «CERTIFICATE_VERIFY_FAILED», se tragaba en silencio y nadie se enteraba de
+    que había versión nueva. `certifi` ya va dentro del paquete (BLD-018).
+    """
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:  # sin certifi, lo que sepa el sistema
+        return ssl.create_default_context()
+
+
 def check_for_updates(current_version: str, callback: Callable[[str, str, str], None]) -> None:
     """Avisa de una versión nueva con `(version, url_de_descarga, notas)`.
 
     Las notas son el cuerpo del release: sin ellas el aviso pide instalar algo
     sin decir qué cambia (FUN-011).
     """
+
     def _check():
         try:
             if not url_de_confianza(RELEASES_URL):
                 return
             req = urllib.request.Request(RELEASES_URL, headers={"User-Agent": "guardias-patio"})
             # nosec B310 - la URL se valida en url_de_confianza(): sólo https a GitHub
-            with urllib.request.urlopen(req, timeout=5) as r:  # nosec B310
+            with urllib.request.urlopen(req, timeout=5, context=contexto_ssl()) as r:  # nosec B310
                 data = json.loads(r.read())
                 latest = data["tag_name"].lstrip("v")
                 if _is_newer(latest, current_version):
                     download_url = _find_download_url(data.get("assets", []))
                     callback(latest, download_url, (data.get("body") or "").strip())
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001 - nunca debe tumbar la interfaz
+            # Antes se tragaba sin más y un fallo de certificado era invisible.
+            logger.warning("No se pudo comprobar si hay versión nueva: %s", e)
 
     Thread(target=_check, daemon=True).start()
 

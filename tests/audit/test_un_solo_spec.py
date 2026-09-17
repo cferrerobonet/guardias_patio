@@ -108,3 +108,13 @@ def test_la_variante_de_diagnostico_sale_del_mismo_spec():
     guion = _guion_de_windows()
     assert 'GUARDIAS_BUILD_DIAGNOSTICO = "1"' in guion
     assert "GuardiasDePatio-debug" in guion
+
+
+def test_el_spec_lleva_los_widgets_de_carga_perezosa():
+    """BLD-019 — v6.3.1 moría en Windows: los widgets se cargan con `importlib` y
+    PyInstaller no los ve, así que ni el instalador ni el portable los llevaban."""
+    spec = _fuente_spec()
+    assert 'f"presentation.widgets.{f.stem}"' in spec
+    assert '"src" / "presentation" / "widgets"' in spec
+    widgets = RAIZ / "src" / "presentation" / "widgets"
+    assert [f.stem for f in widgets.glob("*.py") if f.stem != "__init__"], "no hay widgets"

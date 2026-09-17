@@ -5,6 +5,19 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.3.2] - 2026-09-17
+
+### 🎯 Resumen
+Dos fallos de la aplicación empaquetada que en desarrollo no se veían. En Windows, v6.3.1 no llegaba a abrir la ventana principal: los widgets que desde esa versión se cargan de forma perezosa no iban dentro del exe. En macOS, la aplicación instalada nunca avisaba de que había versión nueva: la petición a GitHub moría por un fallo de certificado que se tragaba en silencio.
+
+### Fixed
+- **Windows vuelve a abrir (instalador y portable).** Al pasar el login, «No module named presentation.widgets.ausencias_sustituciones». Los widgets se cargan con `importlib` cuando alguien los pide (v6.3.1, para que la pantalla de arranque se importe en décimas de segundo), y PyInstaller no ve esos imports, así que no los empaquetaba. El spec los declara ahora como imports ocultos, leídos de la carpeta para que no falte ninguno cuando se añada otro.
+- **La aplicación instalada en macOS avisa de la versión nueva.** El OpenSSL que viaja en el DMG busca los certificados raíz en la carpeta del Python con el que se compiló (`/Library/Frameworks/Python.framework/…/etc/openssl`), que no existe en el Mac del usuario: la comprobación fallaba con «CERTIFICATE_VERIFY_FAILED» y el código lo tragaba sin dejar rastro. La comprobación y la descarga del instalador verifican ahora con los certificados de `certifi`, que ya iban dentro del paquete, y un fallo al comprobar queda en el log.
+
+### 🧹 Housekeeping
+- Cinco tests nuevos: que el spec lleve los widgets de carga perezosa, que el contexto TLS use los certificados de `certifi`, que la petición a GitHub lo lleve, que la descarga use el mismo contexto y que un fallo al comprobar quede en el log.
+- `certifi` pasa a ser dependencia explícita (antes llegaba sólo a través de `httpx`).
+
 ## [6.3.1] - 2026-09-17
 
 ### 🎯 Resumen

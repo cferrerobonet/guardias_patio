@@ -16,7 +16,7 @@ from PyQt6.QtCore import QThread
 from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtWidgets import QApplication, QMessageBox, QProgressDialog
 
-from utils.update_checker import abrir_instalador, url_de_confianza
+from utils.update_checker import abrir_instalador, contexto_ssl, url_de_confianza
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +62,20 @@ class _Descargador(QThread):
             if not url_de_confianza(self._url):
                 self.error_signal.emit("La dirección de descarga no es de confianza; se cancela.")
                 return
+            # `urlretrieve` no admite contexto TLS y fallaría igual que la
+            # comprobación de versión en un Mac sin los certificados del
+            # Python de compilación (BLD-018).
             # nosec B310 - validada justo encima con url_de_confianza()
-            urllib.request.urlretrieve(self._url, self._destino, _reporthook)  # nosec B310
+            with urllib.request.urlopen(self._url, context=contexto_ssl()) as r:  # nosec B310
+                total = int(r.headers.get("Content-Length") or 0)
+                bloque = 64 * 1024
+                with open(self._destino, "wb") as f:
+                    for n in range(1, 10**9):
+                        trozo = r.read(bloque)
+                        if not trozo:
+                            break
+                        f.write(trozo)
+                        _reporthook(n, bloque, total)
             self.listo_signal.emit(str(self._destino))
         except Exception as e:  # noqa: BLE001 - nada puede escapar de run() (CRW-005)
             self.error_signal.emit(str(e))
