@@ -103,6 +103,9 @@ class ProfesorForm(BaseForm):
         # Detectar ediciones sin guardar para el guard de navegación (UXA-004).
         # Va al final: rellenar los campos con datos no es una edición del usuario.
         self.vigilar_cambios()
+        # La rejilla de recreos son botones, que `vigilar_cambios` no ve: tocar
+        # sólo la rejilla no avisaba al salir de la vista y se perdía (2026-09-29).
+        self.restricciones_widget.semana_widget.changed.connect(self._al_editar_campo)
         self.nombrar_campos()
 
     def setup_ui(self):
@@ -462,6 +465,11 @@ class ProfesorForm(BaseForm):
                 # GUARDAR configuración por defecto según turno
                 turno = datos_horario["turno"]
                 recreos_dict = self.restricciones_widget._obtener_recreos_por_defecto(turno)
+                # Los días también vuelven a los del turno: si no, quitar la
+                # personalización dejaba vetados los días que se habían quitado.
+                datos_restricciones["dias_permitidos"] = sorted(
+                    dia for dia, recreos in recreos_dict.items() if recreos
+                ) or None
 
             # Guardar profesor
             if self.profesor_editando_id:
@@ -601,13 +609,7 @@ class ProfesorForm(BaseForm):
             # Usar Use Case para obtener el profesor
             profesor_dto = self.obtener_use_case.execute(id_profesor)
 
-            # Obtener recreos_permitidos en formato JSON raw desde el DTO ya cargado
-            recreos_raw = None
-            try:
-                if profesor_dto.recreos_permitidos is not None:
-                    recreos_raw = json.dumps(profesor_dto.recreos_permitidos)
-            except (TypeError, ValueError):
-                recreos_raw = None
+            recreos_raw = self._recreos_guardados(id_profesor)
 
             # Limpiar formulario
             self._limpiar_formulario()
@@ -648,6 +650,25 @@ class ProfesorForm(BaseForm):
 
         except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar datos del profesor")
+
+    def _recreos_guardados(self, id_profesor: int):
+        """Matriz de recreos por día tal como está en la base de datos.
+
+        El DTO de `ObtenerProfesorUseCase` pasa por la entidad de dominio, que
+        junta los recreos de todos los días en una sola lista: al reabrir la
+        ficha se perdía qué recreo era de qué día, la rejilla enseñaba otra cosa
+        y el siguiente guardado pisaba la personalización (2026-09-29).
+        """
+        from application.use_cases.profesor.parsers import parse_json_field
+        from infrastructure.database.models import Profesor
+
+        fila = (
+            self.session.query(Profesor.recreos_permitidos)
+            .filter(Profesor.id == id_profesor)
+            .first()
+        )
+        valor = parse_json_field(fila[0] if fila else None, None)
+        return valor if isinstance(valor, (dict, list)) else None
 
     def editar_profesor(self):
         """Cargar profesor seleccionado en formulario para edición."""
@@ -700,9 +721,7 @@ class ProfesorForm(BaseForm):
                         "fecha_inicio": profesor_dto.fecha_inicio_guardias,
                         "fecha_fin": profesor_dto.fecha_fin_guardias,
                         "zona_preferida_id": profesor_dto.zona_preferida_id,
-                        "recreos_permitidos": json.dumps(profesor_dto.recreos_permitidos)
-                        if profesor_dto.recreos_permitidos is not None
-                        else None,
+                        "recreos_permitidos": self._recreos_guardados(id_profesor),
                         "turno": profesor_dto.turno,
                     }
                 )

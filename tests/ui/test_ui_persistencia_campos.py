@@ -445,6 +445,141 @@ class TestProfesorCamposRestriccionesPersis:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# ProfesorForm — recreos personalizados por día (fallo del 2026-09-29)
+# ──────────────────────────────────────────────────────────────────────────────
+
+#: Lunes sólo R1; el resto R1 y R2. La unión de recreos (R1, R2) es la del turno
+#: de mañana: justo el caso en que la personalización «no se guardaba».
+_MATRIZ_LUNES_SOLO_R1 = {"0": [1], "1": [1, 2], "2": [1, 2], "3": [1, 2], "4": [1, 2]}
+
+
+def _profesor_con_matriz(profesor_factory, matriz, dias=None):
+    return profesor_factory(
+        "PORDIA, Test",
+        turno="mañana",
+        horas_contrato=20.0,
+        recreos_permitidos=json.dumps(matriz),
+        dias_semana_permitidos=json.dumps(dias if dias is not None else [0, 1, 2, 3, 4]),
+    )
+
+
+def _abrir_form(session):
+    form = ProfesorForm(session)
+    form.show()
+    QApplication.processEvents()
+    _abrir_edicion(form, 0)
+    return form
+
+
+class TestProfesorRecreosPorDiaPersis:
+    """Personalizar los recreos desde la rejilla y que siga ahí al volver."""
+
+    def test_al_reabrir_la_rejilla_muestra_lo_guardado_dia_a_dia(
+        self, qapp, session, profesor_factory
+    ):
+        _profesor_con_matriz(profesor_factory, _MATRIZ_LUNES_SOLO_R1)
+        form = _abrir_form(session)
+
+        widget = form.restricciones_widget
+        celdas = widget.semana_widget._celdas
+        assert widget.usar_restricciones_checkbox.isChecked()
+        assert celdas[(0, 1)].isChecked()
+        assert not celdas[(0, 2)].isChecked(), "el lunes R2 estaba quitado"
+        assert celdas[(1, 2)].isChecked()
+        form.close()
+
+    def test_guardar_otro_campo_no_pisa_los_recreos_por_dia(
+        self, qapp, session, profesor_factory
+    ):
+        prof_id = _profesor_con_matriz(profesor_factory, _MATRIZ_LUNES_SOLO_R1).id
+        form = _abrir_form(session)
+
+        form.datos_basicos_widget.email_input.setText("pordia@epla.es")
+        _guardar(form)
+        session.expire_all()
+
+        guardado = json.loads(session.get(Profesor, prof_id).recreos_permitidos)
+        assert guardado == _MATRIZ_LUNES_SOLO_R1
+        form.close()
+
+    def test_personalizar_desde_la_rejilla_sobrevive_a_reabrir_y_volver_a_guardar(
+        self, qapp, session, profesor_factory
+    ):
+        prof = profesor_factory("REJILLA, Test", turno="mañana", horas_contrato=20.0)
+        prof_id = prof.id
+        form = _abrir_form(session)
+
+        widget = form.restricciones_widget
+        widget.usar_restricciones_checkbox.click()
+        QApplication.processEvents()
+        widget.semana_widget._celdas[(0, 2)].click()  # lunes, R2: fuera
+        QApplication.processEvents()
+        _guardar(form)
+
+        _abrir_edicion(form, 0)
+        widget = form.restricciones_widget
+        assert widget.usar_restricciones_checkbox.isChecked()
+        assert not widget.semana_widget._celdas[(0, 2)].isChecked()
+
+        _guardar(form)
+        session.expire_all()
+        guardado = json.loads(session.get(Profesor, prof_id).recreos_permitidos)
+        assert guardado["0"] == [1]
+        assert guardado["1"] == [1, 2]
+        form.close()
+
+    def test_tocar_una_casilla_cuenta_como_cambio_sin_guardar(
+        self, qapp, session, profesor_factory
+    ):
+        """Sin esto, salir de la vista tras tocar sólo la rejilla no avisaba."""
+        _profesor_con_matriz(profesor_factory, _MATRIZ_LUNES_SOLO_R1)
+        form = _abrir_form(session)
+        assert not form.tiene_cambios()
+
+        form.restricciones_widget.semana_widget._celdas[(2, 1)].click()
+        QApplication.processEvents()
+
+        assert form.tiene_cambios()
+        form.close()
+
+    def test_aplicar_una_plantilla_cuenta_como_cambio_sin_guardar(
+        self, qapp, session, profesor_factory
+    ):
+        _profesor_con_matriz(profesor_factory, _MATRIZ_LUNES_SOLO_R1)
+        form = _abrir_form(session)
+        assert not form.tiene_cambios()
+
+        plantilla = next(
+            b
+            for b in form.restricciones_widget.semana_widget.findChildren(QPushButton)
+            if b.text() == "Siempre"
+        )
+        plantilla.click()
+        QApplication.processEvents()
+
+        assert form.tiene_cambios()
+        form.close()
+
+    def test_quitar_la_personalizacion_devuelve_los_dias_del_turno(
+        self, qapp, session, profesor_factory
+    ):
+        """Sin lunes personalizado y luego desmarcado: el lunes tiene que volver."""
+        matriz = {"1": [1, 2], "2": [1, 2], "3": [1, 2], "4": [1, 2]}
+        prof_id = _profesor_con_matriz(profesor_factory, matriz, dias=[1, 2, 3, 4]).id
+        form = _abrir_form(session)
+
+        form.restricciones_widget.usar_restricciones_checkbox.click()
+        QApplication.processEvents()
+        _guardar(form)
+        session.expire_all()
+
+        prof_bd = session.get(Profesor, prof_id)
+        assert json.loads(prof_bd.dias_semana_permitidos) == [0, 1, 2, 3, 4]
+        assert json.loads(prof_bd.recreos_permitidos)["0"] == [1, 2]
+        form.close()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # ZonaForm — campos
 # ──────────────────────────────────────────────────────────────────────────────
 

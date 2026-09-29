@@ -2,7 +2,7 @@
 tags:
   - gestion-centro
   - auditoria
-fecha_actualizacion: 2026-09-07
+fecha_actualizacion: 2026-09-29
 estado: activo
 prioridad: 1-urgente
 tipo: referencia
@@ -231,6 +231,12 @@ Dimensiones nuevas H–O. Los IDs siguen la numeración de cada familia; `SEC-00
 | ~~DEV-010~~ | P3 | media | ~~`.claude/settings.local.json` versionado pese a su nombre~~ | ✅ **RESUELTO v5.99.0** · renombrado a `settings.json` (compartido) y `settings.local.json` en `.gitignore` | 22 |
 | OBS-001 | P3 | media | `prometheus-client` y `psutil` en una aplicación de escritorio sin endpoint que los exponga | NUEVO · remedio: retirar o exponer en «Diagnóstico» | 21 |
 | OBS-002 | P2 | media | No hay «guardar informe de diagnóstico» para que un usuario envíe registros y versión sin buscar ficheros | NUEVO · remedio: botón en Acerca de que empaquete `logs/` y versión | 21 |
+
+## FAL · Fallos reportados en uso
+
+| ID | Sev. | Conf. | Título | Ubicación | Estado | Ficha |
+| --- | --- | --- | --- | --- | --- | --- |
+| FAL-001 | P1 | alta | «Cuando personalizo los recreos de un profesor desde la rejilla, a veces no guarda los cambios» (CarlosFB, 2026-09-29). Sí se guardaba, pero **al reabrir la ficha se leía mal y el siguiente guardado lo pisaba**: `ObtenerProfesorUseCase` pasa por la entidad, y `ProfesorMapper.to_entity` (`profesor_mapper.py:118-124`) junta los recreos de todos los días en una lista. El formulario aplicaba esa lista a los cinco días; si la unión coincidía con el turno (p. ej. lunes sólo R1 en un profesor de mañana), la casilla «Personalizar» salía desmarcada, la rejilla enseñaba el turno por defecto y al guardar otra cosa se escribía el turno por defecto encima. De ahí el «a veces». Dos causas más en el mismo camino: las casillas de la rejilla son botones y `vigilar_cambios` no los vigila, así que tocar sólo la rejilla y salir de la vista no avisaba; y quitar la personalización no devolvía `dias_semana_permitidos`, que el algoritmo v4 sigue usando. La sincronización se revisó y no interviene: exporta e importa la columna tal cual | `profesor_form.py`, `profesor_mapper.py` | **RESUELTO (pendiente de versión)** · el formulario lee la matriz por día de la base (`_recreos_guardados`), conecta `semana_widget.changed` al detector de cambios y, sin personalización, guarda los días del turno. El mapper no se toca: la entidad de dominio sigue siendo una lista · `tests/ui/test_ui_persistencia_campos.py::TestProfesorRecreosPorDiaPersis` (6 tests) | — |
 
 ## FUN · Mejoras funcionales (tipo `mejora`, sin severidad)
 
