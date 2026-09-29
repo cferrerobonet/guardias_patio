@@ -168,6 +168,15 @@ def main():
     signal.signal(signal.SIGTERM, lambda s, f: app.quit())
     signal.signal(signal.SIGINT, lambda s, f: app.quit())
 
+    # Si la aplicación se va sin error visible, el registro tiene que decir por
+    # qué puerta: el cierre de la última ventana o una petición de salir (BLD-020).
+    app.lastWindowClosed.connect(lambda: logger.info("Qt: se ha cerrado la última ventana"))
+    app.aboutToQuit.connect(lambda: logger.info("Qt: la aplicación va a salir"))
+
+    from core.prueba_de_arranque import vigilar_si_se_pide
+
+    vigilar_si_se_pide(app)
+
     # Aplicar branding corporativo a todos los QMessageBox
     apply_corporate_branding()
 
@@ -674,4 +683,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    codigo_de_salida = main()
+    logger.info(f"=== FIN DE APLICACIÓN === código {codigo_de_salida}")
+    sys.exit(codigo_de_salida)
