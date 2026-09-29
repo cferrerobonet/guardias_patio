@@ -105,7 +105,8 @@ def unificar(
         detalle = ", ".join(
             f"{'.'.join(map(str, versiones[o])) or '?'} {o}" for o in dict.fromkeys(origenes)
         )
-        avisar(f"[runtime_msvc] {nombre}: {'.'.join(map(str, versiones[elegido]))} ← {detalle}")
+        # Sólo ASCII: la consola de Windows compila en cp1252 y una flecha la tumbaba.
+        avisar(f"[runtime_msvc] {nombre}: {'.'.join(map(str, versiones[elegido]))} <- {detalle}")
 
     msvcp = mejor.get("msvcp140.dll")
     if msvcp is not None:
