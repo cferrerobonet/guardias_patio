@@ -14,7 +14,9 @@ param(
     [Parameter(Mandatory = $true)][string]$Exe,
     [ValidateSet("login", "ventana")][string]$Modo = "ventana",
     [int]$Segundos = 240,
-    [string]$Copia = ""
+    [string]$Copia = "",
+    # Exige ademas que haya conectado con el servidor y traido los datos.
+    [switch]$ConServidor = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -61,6 +63,10 @@ if ($null -eq $registro) {
         Where-Object { $_ -notmatch " - DEBUG - " } |
         Select-Object -Last 150 | ForEach-Object { Write-Host $_ }
     $llego = [bool](Select-String -Path $registro.FullName -SimpleMatch $Marca -Quiet)
+    if ($llego -and $ConServidor) {
+        $llego = [bool](Select-String -Path $registro.FullName -Pattern "Sincronizaci.n inicial completada" -Quiet)
+        if (-not $llego) { Write-Host "[ERROR] Ha llegado a la ventana, pero sin traer los datos del servidor" }
+    }
 }
 
 $falta = Join-Path $Logs "faulthandler.log"
