@@ -41,6 +41,11 @@ jobs:
       - name: Compilar exe e instalador
         shell: pwsh
         run: ./scripts/build_windows.ps1
+      - name: Runtime de C++ empaquetado
+        shell: pwsh
+        run: |
+          Get-ChildItem dist/GuardiasDePatio -Recurse -Include "msvcp140*.dll","vcruntime140*.dll","concrt140.dll" |
+            ForEach-Object { "{0,-16} {1}" -f $_.VersionInfo.FileVersion, $_.FullName.Substring((Get-Location).Path.Length) }
       - name: Arrancar el exe compilado (perfil nuevo)
         shell: pwsh
         run: ./scripts/prueba_arranque_windows.ps1 -Exe dist/GuardiasDePatio/GuardiasDePatio.exe -Modo ventana -Copia registros/1-compilado
@@ -54,6 +59,29 @@ jobs:
       - name: Arrancar el programa instalado (segundo arranque)
         shell: pwsh
         run: ./scripts/prueba_arranque_windows.ps1 -Exe "$env:LOCALAPPDATA\Programs\Guardias de Patio\GuardiasDePatio.exe" -Modo ventana -Copia registros/2-instalado
+      # El camino del usuario de verdad: servidor configurado, contraseña en el
+      # Administrador de credenciales, huella conocida, cuenta y datos en la nube.
+      # El servidor es falso y local; nunca las credenciales reales.
+      - name: Servidor SFTP falso y configuración de prueba
+        shell: pwsh
+        run: |
+          $raiz = Join-Path $env:RUNNER_TEMP "sftp"
+          Start-Process -FilePath python -WindowStyle Hidden `
+            -ArgumentList "scripts/servidor_sftp_de_prueba.py","--raiz",$raiz,"--puerto","2222","--usuario","prueba","--contrasena","secreta-de-prueba","--known-hosts","$env:USERPROFILE\.ssh\known_hosts" `
+            -RedirectStandardOutput "$env:RUNNER_TEMP\sftp.log" -RedirectStandardError "$env:RUNNER_TEMP\sftp.err"
+          python -c "import keyring; keyring.set_password('GuardiasDePatio', 'SFTP_PASSWORD', 'secreta-de-prueba'); print('Llavero:', type(keyring.get_keyring()).__name__)"
+          Set-Content -Path "$env:APPDATA\GuardiasDePatio\.env" -Encoding utf8 `
+            -Value "SFTP_HOST=127.0.0.1","SFTP_PORT=2222","SFTP_USERNAME=prueba","SFTP_BASE_DIR=/guardias"
+          Start-Sleep -Seconds 5
+          Get-Content "$env:RUNNER_TEMP\sftp.log", "$env:RUNNER_TEMP\sftp.err" -ErrorAction SilentlyContinue
+      - name: Arrancar el programa instalado con servidor (dos veces)
+        shell: pwsh
+        run: |
+          ./scripts/prueba_arranque_windows.ps1 -Exe "$env:LOCALAPPDATA\Programs\Guardias de Patio\GuardiasDePatio.exe" -Modo ventana -Copia registros/3-con-servidor
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          ./scripts/prueba_arranque_windows.ps1 -Exe "$env:LOCALAPPDATA\Programs\Guardias de Patio\GuardiasDePatio.exe" -Modo ventana -Copia registros/4-con-servidor-otra-vez
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem -Recurse (Join-Path $env:RUNNER_TEMP "sftp") | Select-Object -ExpandProperty FullName
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -15,7 +15,11 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-if config.config_file_name is not None:
+# Sólo desde la línea de órdenes: dentro de la aplicación, `fileConfig` quitaba el
+# registro de la app, silenciaba todos sus loggers y dejaba la raíz escribiendo en
+# un `sys.stderr` que en el exe de Windows no existe. Desde el login no quedaba
+# nada en `app_*.log` (BLD-020).
+if config.config_file_name is not None and config.attributes.get("configure_logger", True):
     fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
