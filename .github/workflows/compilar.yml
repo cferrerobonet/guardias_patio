@@ -81,6 +81,12 @@ jobs:
       - name: Comprobar que el ejecutable existe
         shell: bash
         run: test -f "dist/GuardiasDePatio/GuardiasDePatio.exe"
+      # Que exista no basta: v6.3.2 se publicó con un exe que se cerraba solo a los
+      # dos segundos de abrir. Se arranca en modo prueba, sin servidor,
+      # y no se publica nada si no llega a la ventana principal (BLD-020).
+      - name: Arrancar el exe hasta la ventana principal
+        shell: pwsh
+        run: ./scripts/prueba_arranque_windows.ps1 -Exe dist/GuardiasDePatio/GuardiasDePatio.exe -Modo ventana
       # La carpeta que ya genera PyInstaller vale tal cual como versión portable:
       # se descomprime y se ejecuta, sin instalador, sin permisos de administrador
       # y sin tocar el registro. Es la vía para el equipo donde el instalador se

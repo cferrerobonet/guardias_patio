@@ -138,6 +138,8 @@ def _run_alembic_migrations(engine, db_path: Path) -> bool:
         # Configurar Alembic
         alembic_cfg = Config(str(alembic_ini_path))
         alembic_cfg.set_main_option("sqlalchemy.url", str(engine.url))
+        # El registro ya lo ha montado la aplicación: que `env.py` no lo sustituya (BLD-020).
+        alembic_cfg.attributes["configure_logger"] = False
 
         command.upgrade(alembic_cfg, "head")
         logger.info("✓ Migraciones de Alembic aplicadas/verificadas correctamente")

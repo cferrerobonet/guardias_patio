@@ -1,0 +1,88 @@
+# Prueba de humo del arranque en un Windows real, sin publicar nada (BLD-020).
+#
+# Compila el exe con el mismo spec y el mismo script que el release, lo arranca
+# en modo prueba (sin servidor: nunca con credenciales reales) y comprueba que
+# llega a la ventana principal. Después instala con el instalador, como haría el
+# usuario, y repite con el programa instalado. Los registros quedan como artefacto.
+#
+#   • A mano, desde la pestaña Actions.
+#   • Solo, al subir una rama `diag/…`, para perseguir un fallo de arranque.
+name: Arranque en Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["diag/**"]
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  arranque:
+    name: Prueba de humo del exe
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          architecture: x64
+          cache: pip
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip setuptools
+          pip install -r requirements.txt pyinstaller
+      - name: Instalar Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Compilar exe e instalador
+        shell: pwsh
+        run: ./scripts/build_windows.ps1
+      - name: Runtime de C++ empaquetado
+        shell: pwsh
+        run: |
+          Get-ChildItem dist/GuardiasDePatio -Recurse -Include "msvcp140*.dll","vcruntime140*.dll","concrt140.dll" |
+            ForEach-Object { "{0,-16} {1}" -f $_.VersionInfo.FileVersion, $_.FullName.Substring((Get-Location).Path.Length) }
+      - name: Arrancar el exe compilado (perfil nuevo)
+        shell: pwsh
+        run: ./scripts/prueba_arranque_windows.ps1 -Exe dist/GuardiasDePatio/GuardiasDePatio.exe -Modo ventana -Copia registros/1-compilado
+      - name: Instalar como el usuario
+        shell: pwsh
+        run: |
+          $instalador = Get-ChildItem Output -Filter "*-Windows-Setup.exe" | Select-Object -First 1
+          $p = Start-Process -FilePath $instalador.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/CURRENTUSER" -PassThru -Wait
+          Write-Host "Instalador: codigo $($p.ExitCode)"
+          Get-ChildItem "$env:LOCALAPPDATA\Programs\Guardias de Patio" -Filter "*.exe"
+      - name: Arrancar el programa instalado (segundo arranque)
+        shell: pwsh
+        run: ./scripts/prueba_arranque_windows.ps1 -Exe "$env:LOCALAPPDATA\Programs\Guardias de Patio\GuardiasDePatio.exe" -Modo ventana -Copia registros/2-instalado
+      # El camino del usuario de verdad: servidor configurado, contraseña en el
+      # Administrador de credenciales, huella conocida, cuenta y datos en la nube.
+      # El servidor es falso y local; nunca las credenciales reales.
+      - name: Servidor SFTP falso y programa instalado contra él (dos veces)
+        shell: pwsh
+        run: |
+          $raiz = Join-Path $env:RUNNER_TEMP "sftp"
+          Start-Process -FilePath python -WindowStyle Hidden `
+            -ArgumentList "scripts/servidor_sftp_de_prueba.py","--raiz",$raiz,"--puerto","2222","--usuario","prueba","--contrasena","secreta-de-prueba","--known-hosts","$env:USERPROFILE\.ssh\known_hosts" `
+            -RedirectStandardOutput "$env:RUNNER_TEMP\sftp.log" -RedirectStandardError "$env:RUNNER_TEMP\sftp.err"
+          python -c "import keyring; keyring.set_password('GuardiasDePatio', 'SFTP_PASSWORD', 'secreta-de-prueba'); print('Llavero:', type(keyring.get_keyring()).__name__)"
+          Set-Content -Path "$env:APPDATA\GuardiasDePatio\.env" -Encoding utf8 `
+            -Value "SFTP_HOST=127.0.0.1","SFTP_PORT=2222","SFTP_USERNAME=prueba","SFTP_BASE_DIR=/guardias"
+          Start-Sleep -Seconds 5
+          Get-Content "$env:RUNNER_TEMP\sftp.log", "$env:RUNNER_TEMP\sftp.err" -ErrorAction SilentlyContinue
+          # En el mismo paso: al terminar cada paso el runner mata lo que se lanzó en él.
+          ./scripts/prueba_arranque_windows.ps1 -Exe "$env:LOCALAPPDATA\Programs\Guardias de Patio\GuardiasDePatio.exe" -Modo ventana -ConServidor -Copia registros/3-con-servidor
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          ./scripts/prueba_arranque_windows.ps1 -Exe "$env:LOCALAPPDATA\Programs\Guardias de Patio\GuardiasDePatio.exe" -Modo ventana -ConServidor -Copia registros/4-con-servidor-otra-vez
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem -Recurse (Join-Path $env:RUNNER_TEMP "sftp") | Select-Object -ExpandProperty FullName
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: registros-arranque-windows
+          path: registros/
+          if-no-files-found: warn

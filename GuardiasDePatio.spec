@@ -75,6 +75,16 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+
+# PyQt6 trae un MSVCP140.dll de 2020 que, cargado el primero, es el que usa
+# también OR-Tools, compilado para uno de 2024: el primer `Solve` moría con
+# «access violation» y la aplicación instalada se cerraba sola a los dos segundos
+# de abrir. Todas las copias del runtime pasan a ser la más reciente (BLD-020).
+if not ES_MACOS:
+    from runtime_msvc import unificar  # noqa: E402
+
+    a.binaries = unificar(a.binaries)
+
 pyz = PYZ(a.pure)
 
 # UPX comprime el ejecutable y las librerías, y ese empaquetado es una firma
