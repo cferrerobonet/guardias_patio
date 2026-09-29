@@ -36,6 +36,13 @@ Descargar los de un run sin pasar por el navegador:
 gh run download <id-del-run> --dir /tmp/instaladores
 ```
 
+Para saber si el exe **arranca** sin tener Windows: subir una rama `diag/…` (o lanzar
+«Arranque en Windows» a mano). `.github/workflows/arranque-windows.yml` compila, arranca
+el exe con `GUARDIAS_PRUEBA_DE_ARRANQUE=ventana` (acepta los avisos solo y cierra al ver
+la ventana principal), instala con el instalador y repite, y al final contra un SFTP falso
+local. Los registros quedan como artefacto: `gh run download <id>`. `compilar.yml` hace
+la misma prueba antes de publicar y no adjunta nada si falla (BLD-020).
+
 El resto de este documento describe la compilación **en un PC con Windows**, que
 sigue haciendo falta para *probar* el ejecutable y para perseguir el cierre
 durante el cálculo de guardias.
@@ -134,6 +141,7 @@ gh release upload v<versión> Output\GuardiasDePatio-<versión>-Windows-Setup.ex
 | `ModuleNotFoundError: ortools...` al arrancar | faltó `--collect-all ortools` | usar el script canónico |
 | Ventana sin controles nativos | `showFullScreen` | ya corregido (5.42.1) |
 | El exe cierra sin mensaje | fallo nativo; ver `auditoria/06` | build de diagnóstico |
+| Se cierra a los 2 s, con la pantalla de arranque; evento 1000 en `PyQt6\Qt6\bin\MSVCP140.dll`, `0xc0000005` | el runtime de C++ 14.26 de PyQt6 con OR-Tools compilado para 14.40+ | el spec lo sustituye por el más reciente (`scripts/build/runtime_msvc.py`, BLD-020); mirar las líneas `[runtime_msvc]` del log de PyInstaller |
 | Doble clic y nada, sin `app_*.log` nuevo | el proceso no arranca: directiva, antivirus o SmartScreen | ver «Si al hacer doble clic no aparece nada» |
 | El portable avisa «Windows protegió su PC» | marca de la web en el zip descargado; el exe no va firmado | «Más información → Ejecutar de todas formas», o desbloquear el zip antes de descomprimir |
 | La app sale sin tema, o en GitHub el log dice «wrote …GuardiasDePatio.spec» | PyInstaller recibió argumentos sueltos y regeneró el spec | compilar siempre `GuardiasDePatio.spec` (BLD-016) |

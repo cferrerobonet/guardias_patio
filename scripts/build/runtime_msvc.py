@@ -9,9 +9,9 @@ cuyo `std::mutex` necesita el runtime 14.40 o superior: con el viejo, el primer
 Python, sin aviso, sin nada en pantalla.
 
 Desde v6.1.1 la comprobación de arranque resuelve un modelo trivial (BLD-012),
-así que la aplicación instalada se cerraba sola a los dos segundos de abrir, con
-la pantalla de arranque todavía a la vista. Antes pasaba lo mismo, pero al
-generar las guardias (auditoría 06).
+así que la aplicación instalada (comprobado en v6.3.2) se cerraba sola a los
+dos segundos de abrir, con la pantalla de arranque todavía a la vista. Es
+también, con toda probabilidad, el cierre al generar guardias de la auditoría 06.
 
 Aquí se sustituye cada copia del runtime que PyInstaller ha recogido por la de
 versión más alta entre todas ellas y la del sistema del equipo que compila. El

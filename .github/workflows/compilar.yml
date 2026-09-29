@@ -81,8 +81,8 @@ jobs:
       - name: Comprobar que el ejecutable existe
         shell: bash
         run: test -f "dist/GuardiasDePatio/GuardiasDePatio.exe"
-      # Que exista no basta: v6.1.1 a v6.3.2 se publicaron con un exe que se cerraba
-      # solo a los dos segundos de abrir. Se arranca en modo prueba, sin servidor,
+      # Que exista no basta: v6.3.2 se publicó con un exe que se cerraba solo a los
+      # dos segundos de abrir. Se arranca en modo prueba, sin servidor,
       # y no se publica nada si no llega a la ventana principal (BLD-020).
       - name: Arrancar el exe hasta la ventana principal
         shell: pwsh

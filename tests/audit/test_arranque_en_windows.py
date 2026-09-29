@@ -72,7 +72,10 @@ def test_un_runtime_anterior_a_14_40_no_llega_a_empaquetarse(tmp_path):
     binarios = [(f"{QT_BIN}/MSVCP140.dll", "C:/pyqt/MSVCP140.dll", "BINARY")]
     with pytest.raises(SystemExit, match="14.40"):
         unificar(
-            binarios, tmp_path, _versiones({"C:/pyqt/MSVCP140.dll": (14, 26)}), avisar=lambda _m: None
+            binarios,
+            tmp_path,
+            _versiones({"C:/pyqt/MSVCP140.dll": (14, 26)}),
+            avisar=lambda _m: None,
         )
 
 
