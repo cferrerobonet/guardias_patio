@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.3.3] - 2026-09-29
+
+### 🎯 Resumen
+Dos fallos reportados en uso. En Windows la aplicación instalada se cerraba sola a los dos segundos, con la pantalla de arranque aún a la vista: no era la sincronización ni Qt, sino una versión antigua de la librería de C++ de Microsoft que PyQt6 lleva dentro y que el motor de asignación (OR-Tools) no soporta. En la ficha de un profesor, los recreos personalizados por día se perdían al volver a abrirla y guardar.
+
+### Fixed
+- **Windows vuelve a arrancar (BLD-020).** El exe salía con una violación de acceso en `MSVCP140.dll` 14.26 (la de PyQt6, de 2020) al resolver el modelo de prueba de la comprobación de arranque: Qt la carga primero y Windows se la entrega a OR-Tools, compilado para 14.40 o posterior. El spec sustituye ahora cada copia del runtime por la más reciente disponible (14.51 en GitHub) y se niega a compilar por debajo de 14.40. En macOS no pasaba porque no existe ese runtime. Con toda probabilidad es también el cierre al generar guardias que se veía en Windows.
+- **Los recreos personalizados de un profesor ya no se pierden (FAL-001).** Sí se guardaban, pero al reabrir la ficha se leían a través de una lista que juntaba los de todos los días y se aplicaban igual a los cinco: un profesor con el lunes sólo en R1 salía como no personalizado y el siguiente guardado escribía el turno por defecto encima. La ficha lee ahora la matriz por día de la base de datos.
+- **Tocar sólo la rejilla de recreos avisa de cambios sin guardar**, y quitar la personalización devuelve también los días del turno por defecto (seguían vetados para el algoritmo híbrido).
+- **El log vuelve a registrar lo que pasa después del login.** La configuración de registro de Alembic, al migrar, quitaba el fichero de log de la aplicación y silenciaba sus mensajes en todas las plataformas.
+
+### 🧹 Housekeeping
+- Prueba de humo del exe en el Windows de GitHub (`GUARDIAS_PRUEBA_DE_ARRANQUE`, `scripts/prueba_arranque_windows.ps1`, workflow `arranque-windows.yml`): exe compilado, programa instalado y dos arranques contra un servidor SFTP falso. `compilar.yml` no publica el release si el exe no llega a la ventana principal.
+- La salida de la aplicación deja en el log el motivo (última ventana cerrada o `quit`) y el código.
+- Tests nuevos: `test_arranque_en_windows.py` (16) y `TestProfesorRecreosPorDiaPersis` (6).
+
 ## [6.3.2] - 2026-09-17
 
 ### 🎯 Resumen
@@ -194,7 +210,7 @@ Cadena de suministro (lote 19 de la auditoría): dependencias fijadas, desarroll
 - **`setuptools` 82.0.1 tenía PYSEC-2026-3447.** Actualizado a 84.0.0, fijado, exigido ≥ 83 por el `build-system`, y `make venv`, el flujo de GitHub y `build_windows.ps1` lo actualizan antes de instalar nada (SUP-001). `pip-audit` no devuelve filas.
 
 ### 🧹 Housekeeping
-- `.claude/settings.local.json` pasa a `settings.json`: es la lista de permisos compartida, y el `local` de cada equipo queda ignorado por git (DEV-010).
+- El `settings.local.json` de la carpeta de configuración del asistente pasa a `settings.json`: es la lista de permisos compartida, y el `local` de cada equipo queda ignorado por git (DEV-010).
 - `make venv`, el flujo de compilación, el README, el fichero de instrucciones y las skills instalan desde `requirements-dev.txt`.
 - `tests/audit/test_dependencias_fijadas.py`, 7 tests nuevos.
 
@@ -235,7 +251,7 @@ Estudio completo de la aplicación, plan de auditoría ampliado y limpieza.
 - La skill de compilación de macOS afirmaba que el spec estaba ignorado por git y que `make clean` lo borraba; ninguna de las dos cosas era cierta.
 
 ### 🧹 Housekeeping
-- Retirados tres scripts que importaban módulos inexistentes desde 2025-12, dos ficheros de `.agents/` que sólo enlazaban a otro sitio y `.claude/agents.md`, cuyo contenido pasa al fichero de instrucciones.
+- Retirados tres scripts que importaban módulos inexistentes desde 2025-12, dos ficheros de `.agents/` que sólo enlazaban a otro sitio y el `agents.md` de la carpeta de configuración del asistente, cuyo contenido pasa al fichero de instrucciones.
 - Liberados 281 MB de artefactos y cachés no versionados; detalle y cómo repetirlo en `auditoria/23`.
 - Los hooks globales de `impeccable` —que ejecutaban `node` tras cada edición sin encontrar nunca nada en un proyecto PyQt— se han retirado, con copia.
 - Instaladas `pip-audit`, `vulture` y `radon`; la skill `/auditoria-desktop` incorpora los gates de las dimensiones nuevas.
@@ -1235,7 +1251,7 @@ Auditoría integral de la aplicación de escritorio (UX, caminos dorados, guarda
 - `pytest.ini`: marker `audit`. `requirements.txt`: `pytest-timeout`, `playwright`, `pytest-playwright`.
 
 ### Changed
-- Fichero de instrucciones del asistente (`.claude/`): reescrito con mapa rápido, comandos que funcionan y skills; `.agents/rules` y `.agents/workflows` pasan a enlazarlo para no duplicar contexto.
+- Fichero de instrucciones del asistente (en su carpeta de configuración): reescrito con mapa rápido, comandos que funcionan y skills; `.agents/rules` y `.agents/workflows` pasan a enlazarlo para no duplicar contexto.
 
 ### 🧹 Housekeeping
 - Baseline de la suite medido ejecutando cada fichero por separado: **2.376 tests pasan, 0 fallan**, 12 omitidos, 5 `xfail`, 7 `xpassed`. El único fallo inicial era por falta de `tenacity` en el intérprete.
@@ -1867,7 +1883,7 @@ Reubicación del avatar al header del sidebar, eliminación del ítem INICIO del
 ### Changed
 - `ccleaner_sidebar.py`: avatar con iniciales movido arriba del logo en la zona del header (visible siempre); eliminado del bloque inferior de info; ítem "Inicio" eliminado del menú lateral; el nombre de usuario se oculta al colapsar, el avatar permanece visible
 - `ccleaner_main_window.py`: eliminado registro de `HomeForm` y sección "inicio"; arranque vuelve a "profesores"
-- `.claude/agents.md` (nuevo): regla documentada — no corregir fallos preexistentes
+- `agents.md` de la carpeta de configuración del asistente (nuevo): regla documentada — no corregir fallos preexistentes
 
 ### 🧹 Housekeeping
 - `home_form.py` queda en disco pero ya no está conectado a la navegación
