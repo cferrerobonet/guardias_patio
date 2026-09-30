@@ -87,6 +87,7 @@ class ProfesorSyncDTO:
     fecha_fin_guardias: Optional[str]
     dias_semana_permitidos: Optional[str]
     recreos_permitidos: Optional[str]
+    guardias_voluntarias: int = 0
 
     @classmethod
     def from_orm(cls, orm_obj: Any) -> "ProfesorSyncDTO":
@@ -109,6 +110,7 @@ class ProfesorSyncDTO:
             else None,
             dias_semana_permitidos=orm_obj.dias_semana_permitidos,
             recreos_permitidos=orm_obj.recreos_permitidos,
+            guardias_voluntarias=int(getattr(orm_obj, "guardias_voluntarias", 0) or 0),
         )
 
     @classmethod
@@ -130,6 +132,7 @@ class ProfesorSyncDTO:
             fecha_fin_guardias=data.get("fecha_fin_guardias"),
             dias_semana_permitidos=data.get("dias_semana_permitidos"),
             recreos_permitidos=data.get("recreos_permitidos"),
+            guardias_voluntarias=int(data.get("guardias_voluntarias") or 0),
         )
 
     def to_dict(self) -> dict:
@@ -194,6 +197,7 @@ class ConfiguracionSyncDTO:
     ajuste_tutores: float
     ajuste_no_tutores: float
     algoritmo_asignacion: Optional[str]
+    fecha_inicio_reparto_oficial: Optional[str] = None
 
     @classmethod
     def from_orm(cls, orm_obj: Any) -> "ConfiguracionSyncDTO":
@@ -222,6 +226,9 @@ class ConfiguracionSyncDTO:
             if orm_obj.ajuste_no_tutores
             else 1.0,
             algoritmo_asignacion=orm_obj.algoritmo_asignacion,
+            fecha_inicio_reparto_oficial=serialize_date(orm_obj.fecha_inicio_reparto_oficial)
+            if getattr(orm_obj, "fecha_inicio_reparto_oficial", None)
+            else None,
         )
 
     @classmethod
@@ -241,6 +248,7 @@ class ConfiguracionSyncDTO:
             ajuste_tutores=float(data.get("ajuste_tutores", 1.0)),
             ajuste_no_tutores=float(data.get("ajuste_no_tutores", 1.0)),
             algoritmo_asignacion=data.get("algoritmo_asignacion"),
+            fecha_inicio_reparto_oficial=data.get("fecha_inicio_reparto_oficial"),
         )
 
     def to_dict(self) -> dict:

@@ -47,7 +47,7 @@ from services._asignador_v4_helpers import (  # noqa: F401
 from services.calculador_guardias import (
     _parse_recreos_config,
     calcular_guardias_por_profesor,
-    listar_dias_lectivos,
+    listar_dias_reparto,
 )
 from utils import get_logger
 
@@ -137,7 +137,7 @@ def generar_guardias_v4_hibrido(
         # Mensaje más descriptivo indicando las posibles causas
         zonas = session.query(Zona).all()
         recreos = _parse_recreos_config(config) or _generar_recreos_fallback(config)
-        dias = listar_dias_lectivos(config)
+        dias = listar_dias_reparto(config)
         raise ValueError(
             f"No se pudieron generar slots: "
             f"{len(dias)} días, {len(zonas)} zonas, {len(recreos)} recreos. "
@@ -181,7 +181,7 @@ def generar_guardias_v4_hibrido(
     logger.info(f"  ✓ Cuota total: {sum(ctx.cuotas_ideales.values())} guardias")
 
     # FASE 0.5: Ventanas de bloque por profesor para consecutividad
-    dias_lectivos_ord = listar_dias_lectivos(config)
+    dias_lectivos_ord = listar_dias_reparto(config)
     ctx.dia_a_ordinal = {d: i for i, d in enumerate(dias_lectivos_ord)}
     ctx.ventanas_bloque = calcular_ventanas_bloque(profesores, ctx.cuotas_ideales, dias_lectivos_ord)
     logger.info(f"  ✓ Ventanas de bloque: {len(ctx.ventanas_bloque)} profesores")
@@ -204,7 +204,7 @@ def generar_guardias_v4_hibrido(
     ]
 
     # Función auxiliar para urgencia (evitar problema de scope con session)
-    dias_totales = len(listar_dias_lectivos(config))
+    dias_totales = len(listar_dias_reparto(config))
 
     def clave_prioridad(p: Profesor) -> Tuple[float, int, int]:
         urgencia = _calcular_urgencia(p, config, dias_totales)

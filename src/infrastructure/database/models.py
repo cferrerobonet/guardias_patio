@@ -98,6 +98,8 @@ class Profesor(Base):
     activo = Column(Boolean, default=True, nullable=False)  # Profesor activo en el sistema
     fecha_inicio_guardias = Column(Date, nullable=True)
     fecha_fin_guardias = Column(Date, nullable=True)  # Fecha límite para terminar guardias
+    # Guardias voluntarias hechas antes del reparto oficial (cuentan como hechas)
+    guardias_voluntarias = Column(Integer, nullable=False, default=0, server_default="0")
     zona_preferida_id = Column(Integer, ForeignKey("zonas.id"), nullable=True)  # Zona preferida
     curso_id = Column(Integer, ForeignKey("cursos_escolares.id"), nullable=True)  # Curso al que pertenece
     dias_semana_permitidos = Column(Text, nullable=True)  # JSON: [0..6]
@@ -152,6 +154,8 @@ class Configuracion(Base):
     anio_inicio_curso = Column(Integer, nullable=False)  # Año de inicio del curso (ej: 2025)
     fecha_inicio_curso = Column(Date, nullable=False)
     fecha_fin_curso = Column(Date, nullable=False)
+    # Inicio del reparto oficial de guardias (None = igual que fecha_inicio_curso)
+    fecha_inicio_reparto_oficial = Column(Date, nullable=True)
     hora_recreo1_manana = Column(Time, nullable=False)
     hora_recreo2_manana = Column(Time, nullable=False)
     hora_recreo1_tarde = Column(Time, nullable=True)

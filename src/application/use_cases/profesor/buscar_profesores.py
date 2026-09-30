@@ -74,6 +74,7 @@ class BuscarProfesoresUseCase:
             tutor=profesor.tutor,
             fecha_inicio_guardias=profesor.fecha_inicio_guardias,
             fecha_fin_guardias=profesor.fecha_fin_guardias,
+            guardias_voluntarias=profesor.guardias_voluntarias or 0,
             zona_preferida_id=profesor.zona_preferida_id,
             dias_semana_permitidos=parse_dias_semana(profesor.dias_semana_permitidos),
             recreos_permitidos=parse_recreos(profesor.recreos_permitidos),

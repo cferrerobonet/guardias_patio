@@ -58,6 +58,7 @@ class ObtenerConfiguracionUseCase:
             anio_inicio_curso=config.anio_inicio_curso,
             fecha_inicio_curso=config.fecha_inicio_curso,
             fecha_fin_curso=config.fecha_fin_curso,
+            fecha_inicio_reparto_oficial=getattr(config, "fecha_inicio_reparto_oficial", None),
             hora_recreo1_manana=config.hora_recreo1_manana,
             hora_recreo2_manana=config.hora_recreo2_manana,
             hora_recreo1_tarde=config.hora_recreo1_tarde,

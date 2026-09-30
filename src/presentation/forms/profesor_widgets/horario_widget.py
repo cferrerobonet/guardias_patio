@@ -5,6 +5,7 @@ Este widget encapsula los campos de horario y turno:
 - Horas de contrato
 - Turno (Mañana/Tarde/Mixto)
 - Horas específicas de mañana y tarde (para turno mixto)
+- Guardias voluntarias hechas antes del reparto oficial
 """
 
 from typing import Optional, Tuple
@@ -16,7 +17,10 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QSizePolicy,
+    QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
 
 from utils.validators import validar_horas_contrato
@@ -29,11 +33,13 @@ class HorarioWidget(QGroupBox):
     Señales:
         horario_changed: Se emite cuando cambian los datos de horario
         turno_changed: Se emite cuando cambia el turno seleccionado
+        voluntarias_changed: Se emite cuando cambian las guardias voluntarias hechas
     """
 
     # Señales
     horario_changed = pyqtSignal()
     turno_changed = pyqtSignal(str)  # Emite el turno seleccionado
+    voluntarias_changed = pyqtSignal(int)
 
     def __init__(self, parent=None):
         """
@@ -51,7 +57,10 @@ class HorarioWidget(QGroupBox):
         layout = QVBoxLayout()
         layout.setSpacing(4)  # Reducido de 6 a 4
 
-        # Primera fila: Horas y Turno
+        # Primera fila: Horas, Turno y Voluntarias; con la línea de ayuda debajo y sin
+        # espacio entre ambas, para que el conjunto mida lo mismo que antes
+        bloque_fila1 = QVBoxLayout()
+        bloque_fila1.setSpacing(0)
         layout_fila1 = QHBoxLayout()
         layout_fila1.setSpacing(15)
 
@@ -78,10 +87,48 @@ class HorarioWidget(QGroupBox):
         self.turno_input.setMaximumWidth(120)
         layout_fila1.addWidget(self.turno_input)
 
-        layout_fila1.addStretch()
-        layout.addLayout(layout_fila1)
+        layout_fila1.addSpacing(10)
 
-        layout.addSpacing(15)
+        # Ocupa el hueco que ya quedaba a la derecha del turno. Con la política
+        # «Ignored» no cuenta para el ancho del recuadro: el panel no se ensancha.
+        contenedor_voluntarias = QWidget()
+        politica_voluntarias = contenedor_voluntarias.sizePolicy()
+        politica_voluntarias.setHorizontalPolicy(QSizePolicy.Policy.Ignored)
+        contenedor_voluntarias.setSizePolicy(politica_voluntarias)
+        grupo_voluntarias = QHBoxLayout(contenedor_voluntarias)
+        grupo_voluntarias.setContentsMargins(0, 0, 0, 0)
+        grupo_voluntarias.setSpacing(6)
+        label_voluntarias = QLabel("Guardias voluntarias hechas:")
+        label_voluntarias.setObjectName("fieldLabel")
+        grupo_voluntarias.addWidget(label_voluntarias)
+
+        self.voluntarias_input = QSpinBox()
+        self.voluntarias_input.setRange(0, 500)
+        self.voluntarias_input.setValue(0)
+        self.voluntarias_input.setMaximumWidth(60)
+        self.voluntarias_input.setAccessibleName("Guardias voluntarias hechas")
+        self.voluntarias_input.setToolTip(
+            "Guardias hechas de forma voluntaria antes del inicio del reparto oficial.\n"
+            "Cuentan como hechas: se descuentan de la parte del curso que le toca."
+        )
+        grupo_voluntarias.addWidget(self.voluntarias_input)
+        grupo_voluntarias.addStretch()
+        layout_fila1.addWidget(contenedor_voluntarias, 1)
+
+        bloque_fila1.addLayout(layout_fila1)
+
+        # Línea de ayuda de la cuota oficial. Ocupa el hueco de 15 px que separaba
+        # las dos filas y lo conserva aunque esté oculta: la altura no cambia.
+        self.ayuda_cuota_label = QLabel("")
+        self.ayuda_cuota_label.setObjectName("secondary")
+        self.ayuda_cuota_label.setContentsMargins(0, 1, 0, 0)
+        self.ayuda_cuota_label.setMaximumHeight(15)
+        politica = self.ayuda_cuota_label.sizePolicy()
+        politica.setRetainSizeWhenHidden(True)
+        self.ayuda_cuota_label.setSizePolicy(politica)
+        self.ayuda_cuota_label.setVisible(False)
+        bloque_fila1.addWidget(self.ayuda_cuota_label)
+        layout.addLayout(bloque_fila1)
 
         # Segunda fila: Campos mixto (ocultos por defecto)
         layout_mixto = QHBoxLayout()
@@ -121,6 +168,24 @@ class HorarioWidget(QGroupBox):
         self.turno_input.currentTextChanged.connect(self._on_turno_changed)
         self.horas_manana_input.textChanged.connect(self.horario_changed.emit)
         self.horas_tarde_input.textChanged.connect(self.horario_changed.emit)
+        self.voluntarias_input.valueChanged.connect(self._on_voluntarias_changed)
+
+    def _on_voluntarias_changed(self, valor: int):
+        self.horario_changed.emit()
+        self.voluntarias_changed.emit(valor)
+
+    def get_guardias_voluntarias(self) -> int:
+        """Guardias voluntarias hechas antes del reparto oficial."""
+        return self.voluntarias_input.value()
+
+    def set_guardias_voluntarias(self, valor: Optional[int]):
+        """Establecer las guardias voluntarias hechas (None = 0)."""
+        self.voluntarias_input.setValue(int(valor or 0))
+
+    def set_ayuda_cuota(self, texto: Optional[str]):
+        """Muestra la línea de ayuda de la cuota oficial; None o vacío la oculta."""
+        self.ayuda_cuota_label.setText(texto or "")
+        self.ayuda_cuota_label.setVisible(bool(texto))
 
     def _toggle_mixto_fields(self, visible: bool):
         """
@@ -261,13 +326,15 @@ class HorarioWidget(QGroupBox):
         Obtener todos los datos del widget.
 
         Returns:
-            Diccionario con horas_contrato, turno, horas_manana, horas_tarde
+            Diccionario con horas_contrato, turno, horas_manana, horas_tarde,
+            guardias_voluntarias
         """
         return {
             "horas_contrato": self.get_horas_contrato(),
             "turno": self.get_turno(),
             "horas_manana": self.get_horas_manana(),
             "horas_tarde": self.get_horas_tarde(),
+            "guardias_voluntarias": self.get_guardias_voluntarias(),
         }
 
     def set_datos(self, datos: dict):
@@ -285,6 +352,8 @@ class HorarioWidget(QGroupBox):
             self.set_horas_manana(datos["horas_manana"])
         if "horas_tarde" in datos:
             self.set_horas_tarde(datos["horas_tarde"])
+        if "guardias_voluntarias" in datos:
+            self.set_guardias_voluntarias(datos["guardias_voluntarias"])
 
     def limpiar(self):
         """Limpiar todos los campos del widget."""
@@ -292,6 +361,8 @@ class HorarioWidget(QGroupBox):
         self.turno_input.setCurrentIndex(0)
         self.horas_manana_input.clear()
         self.horas_tarde_input.clear()
+        self.voluntarias_input.setValue(0)
+        self.set_ayuda_cuota(None)
 
     def validar(self) -> Tuple[bool, str]:
         """

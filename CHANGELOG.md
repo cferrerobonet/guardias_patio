@@ -5,6 +5,28 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.4.0] - 2026-09-30
+
+### 🎯 Resumen
+Guardias voluntarias antes del reparto oficial. Durante las primeras semanas algunos profesores hacen guardias voluntarias antes de que empiece el reparto oficial. Ahora esas guardias cuentan como hechas: cada profesor hace su parte del total del curso, y a los voluntarios se les descuentan las que ya hicieron sin cargar a nadie más de lo que le toca.
+
+### ✨ Added
+- **«Guardias voluntarias hechas» en la ficha del profesor**, en la misma fila que las horas y el turno. Debajo, una línea que dice al momento su cuota oficial: «le tocan N en el curso − M ya hechas».
+- **Columna «Volunt.»** en el listado de profesores, detrás de «Tutor».
+- **«Inicio del reparto oficial de guardias»** en Ajustes → Fechas del curso, con la casilla «Igual que el inicio de curso». Las ranuras y la generación empiezan en esa fecha; el calendario escolar no cambia.
+
+### Changed
+- **Cálculo de cuotas:** se reparte el total del curso (ranuras oficiales más voluntarias hechas) con los mismos factores de siempre, por turno, y a cada profesor se le restan sus voluntarias. La suma de cuotas sigue siendo igual a las ranuras oficiales. Si alguien hizo más voluntarias de las que le tocan, su cuota queda en 0, se recalcula el resto y se avisa.
+- Los mixtos reparten sus voluntarias entre mañana y tarde en la misma proporción que su cuota de cada turno.
+- Sin voluntarias y con el reparto oficial en el inicio de curso, las cuotas son exactamente las de antes.
+- Las estadísticas del cálculo cuentan los «días de reparto».
+
+### 🧹 Housekeeping
+- Migración `7c4e2a91b0d3` (`profesores.guardias_voluntarias`, `configuracion.fecha_inicio_reparto_oficial`) y su equivalente en el respaldo de migraciones directas.
+- Los dos campos viajan en la sincronización y en la exportación JSON. Si falta la clave, se leen como 0 y «igual que el inicio de curso».
+- Al copiar profesores a un curso nuevo, las voluntarias empiezan en 0.
+- Tests nuevos: `test_guardias_voluntarias.py` (33) y `ui/test_ui_guardias_voluntarias.py` (17).
+
 ## [6.3.3] - 2026-09-29
 
 ### 🎯 Resumen

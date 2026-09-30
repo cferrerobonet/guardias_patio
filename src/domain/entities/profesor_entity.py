@@ -34,6 +34,7 @@ class ProfesorEntity:
         es_tutor: Indica si es tutor
         fecha_inicio_guardias: Fecha desde la que puede hacer guardias
         fecha_fin_guardias: Fecha hasta la que puede hacer guardias
+        guardias_voluntarias: Guardias voluntarias hechas antes del reparto oficial
         zona_preferida: Zona preferida para guardias (Value Object)
         dias_semana_permitidos: Lista de días permitidos (0=Lunes, 6=Domingo)
         recreos_permitidos: Lista de números de recreo permitidos
@@ -63,6 +64,7 @@ class ProfesorEntity:
     # Disponibilidad temporal
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
+    guardias_voluntarias: int = 0
 
     # Preferencias
     zona_preferida: ZonaPreferida = field(default_factory=ZonaPreferida.sin_preferencia)

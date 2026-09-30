@@ -207,6 +207,16 @@ def _apply_direct_migrations(engine):
                     conn.commit()
                     logger.info("✓ Columna profesores.curso_id añadida")
 
+                # profesores.guardias_voluntarias
+                if 'guardias_voluntarias' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.guardias_voluntarias...")
+                    conn.execute(text(
+                        "ALTER TABLE profesores "
+                        "ADD COLUMN guardias_voluntarias INTEGER DEFAULT 0 NOT NULL"
+                    ))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.guardias_voluntarias añadida")
+
             # ========== TABLA CONFIGURACION ==========
             if 'configuracion' in existing_tables:
                 config_columns = [col['name'] for col in inspector.get_columns('configuracion')]
@@ -247,6 +257,15 @@ def _apply_direct_migrations(engine):
                     conn.execute(text("ALTER TABLE configuracion ADD COLUMN recreos_config TEXT"))
                     conn.commit()
                     logger.info("✓ Columna configuracion.recreos_config añadida")
+
+                # configuracion.fecha_inicio_reparto_oficial
+                if 'fecha_inicio_reparto_oficial' not in config_columns:
+                    logger.info("Añadiendo columna configuracion.fecha_inicio_reparto_oficial...")
+                    conn.execute(text(
+                        "ALTER TABLE configuracion ADD COLUMN fecha_inicio_reparto_oficial DATE"
+                    ))
+                    conn.commit()
+                    logger.info("✓ Columna configuracion.fecha_inicio_reparto_oficial añadida")
 
             # ========== TABLA CURSOS_ESCOLARES ==========
             if 'cursos_escolares' not in existing_tables:

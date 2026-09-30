@@ -306,6 +306,7 @@ class DataExporter:
                     existing.activo = p_data.get("activo", True)  # Campo añadido
                     existing.fecha_inicio_guardias = parse_date(p_data.get("fecha_inicio_guardias"))
                     existing.fecha_fin_guardias = parse_date(p_data.get("fecha_fin_guardias"))
+                    existing.guardias_voluntarias = int(p_data.get("guardias_voluntarias") or 0)
                     existing.dias_semana_permitidos = p_data.get(
                         "dias_semana_permitidos"
                     )  # Campo añadido
@@ -325,6 +326,7 @@ class DataExporter:
                         activo=p_data.get("activo", True),  # Campo añadido
                         fecha_inicio_guardias=parse_date(p_data.get("fecha_inicio_guardias")),
                         fecha_fin_guardias=parse_date(p_data.get("fecha_fin_guardias")),
+                        guardias_voluntarias=int(p_data.get("guardias_voluntarias") or 0),
                         dias_semana_permitidos=p_data.get(
                             "dias_semana_permitidos"
                         ),  # Campo añadido
@@ -343,6 +345,9 @@ class DataExporter:
                     # Actualizar
                     existing.fecha_inicio_curso = parse_date(c_data["fecha_inicio_curso"])
                     existing.fecha_fin_curso = parse_date(c_data["fecha_fin_curso"])
+                    existing.fecha_inicio_reparto_oficial = parse_date(
+                        c_data.get("fecha_inicio_reparto_oficial")
+                    )
                     existing.hora_recreo1_manana = parse_time(c_data.get("hora_recreo1_manana"))
                     existing.hora_recreo2_manana = parse_time(c_data.get("hora_recreo2_manana"))
                     existing.hora_recreo1_tarde = parse_time(c_data.get("hora_recreo1_tarde"))
@@ -366,6 +371,9 @@ class DataExporter:
                         anio_inicio_curso=c_data.get("anio_inicio_curso"),
                         fecha_inicio_curso=parse_date(c_data["fecha_inicio_curso"]),
                         fecha_fin_curso=parse_date(c_data["fecha_fin_curso"]),
+                        fecha_inicio_reparto_oficial=parse_date(
+                            c_data.get("fecha_inicio_reparto_oficial")
+                        ),
                         hora_recreo1_manana=parse_time(c_data.get("hora_recreo1_manana")),
                         hora_recreo2_manana=parse_time(c_data.get("hora_recreo2_manana")),
                         hora_recreo1_tarde=parse_time(c_data.get("hora_recreo1_tarde")),

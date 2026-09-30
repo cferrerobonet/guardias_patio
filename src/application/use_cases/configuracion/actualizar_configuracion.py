@@ -59,6 +59,8 @@ class ActualizarConfiguracionUseCase:
                     config.fecha_inicio_curso = dto.fecha_inicio_curso
                 if dto.fecha_fin_curso is not None:
                     config.fecha_fin_curso = dto.fecha_fin_curso
+                if "fecha_inicio_reparto_oficial" in dto.model_fields_set:
+                    config.fecha_inicio_reparto_oficial = dto.fecha_inicio_reparto_oficial
                 if dto.hora_recreo1_manana is not None:
                     config.hora_recreo1_manana = dto.hora_recreo1_manana
                 if dto.hora_recreo2_manana is not None:
@@ -94,6 +96,7 @@ class ActualizarConfiguracionUseCase:
                     anio_inicio_curso=anio,
                     fecha_inicio_curso=dto.fecha_inicio_curso,
                     fecha_fin_curso=dto.fecha_fin_curso,
+                    fecha_inicio_reparto_oficial=dto.fecha_inicio_reparto_oficial,
                     hora_recreo1_manana=dto.hora_recreo1_manana,
                     hora_recreo2_manana=dto.hora_recreo2_manana,
                     hora_recreo1_tarde=dto.hora_recreo1_tarde,
@@ -128,6 +131,7 @@ class ActualizarConfiguracionUseCase:
                 anio_inicio_curso=config.anio_inicio_curso,
                 fecha_inicio_curso=config.fecha_inicio_curso,
                 fecha_fin_curso=config.fecha_fin_curso,
+                fecha_inicio_reparto_oficial=getattr(config, "fecha_inicio_reparto_oficial", None),
                 hora_recreo1_manana=config.hora_recreo1_manana,
                 hora_recreo2_manana=config.hora_recreo2_manana,
                 hora_recreo1_tarde=config.hora_recreo1_tarde,

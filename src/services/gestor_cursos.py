@@ -147,6 +147,10 @@ class GestorCursos:
         config.anio_inicio_curso = curso.anio_inicio
         config.fecha_inicio_curso = curso.fecha_inicio
         config.fecha_fin_curso = curso.fecha_fin
+        # Un inicio de reparto oficial de otro curso no vale para éste
+        oficial = getattr(config, "fecha_inicio_reparto_oficial", None)
+        if oficial and not (curso.fecha_inicio <= oficial <= curso.fecha_fin):
+            config.fecha_inicio_reparto_oficial = None
         logger.info(
             f"Configuración sincronizada con {curso.nombre}: "
             f"{curso.fecha_inicio} - {curso.fecha_fin}"

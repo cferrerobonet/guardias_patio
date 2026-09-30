@@ -139,6 +139,7 @@ class ProfesorMapper:
             activo=getattr(model, "activo", True),  # Manejar modelos antiguos sin el campo
             fecha_inicio_guardias=model.fecha_inicio_guardias,
             fecha_fin_guardias=model.fecha_fin_guardias,
+            guardias_voluntarias=getattr(model, "guardias_voluntarias", 0) or 0,
             zona_preferida=zona_preferida,
             dias_semana_permitidos=dias_permitidos,
             recreos_permitidos=recreos_permitidos,
@@ -183,6 +184,7 @@ class ProfesorMapper:
         model.activo = getattr(entity, "activo", True)  # Manejar entidades antiguas sin el campo
         model.fecha_inicio_guardias = entity.fecha_inicio_guardias
         model.fecha_fin_guardias = entity.fecha_fin_guardias
+        model.guardias_voluntarias = int(getattr(entity, "guardias_voluntarias", 0) or 0)
 
         # Zona preferida - guardar ID en BD
         if entity.zona_preferida and entity.zona_preferida.tiene_preferencia:

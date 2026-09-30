@@ -97,7 +97,7 @@ class TestDistribucionExtra:
         d = DistribucionCuotasService(s)
         d._calcular_total_slots = lambda _c: 12
         d._calcular_factores_participacion = lambda _p, _c: {1: 1.0}
-        d.calcular_cuota_profesor = lambda *_a, **_k: 4
+        d.calcular_cuotas = lambda *_a, **_k: {1: 4}
         info = d.obtener_info_cuota(prof)
         assert info.cuota == 4
         assert len(info.observaciones) == 2
@@ -107,7 +107,7 @@ class TestDistribucionExtra:
         d = DistribucionCuotasService(s)
         cfg = SimpleNamespace()
         monkeypatch.setattr(
-            "services.distribucion_cuotas_service.listar_dias_lectivos", lambda _c: []
+            "services.distribucion_cuotas_service.listar_dias_reparto", lambda _c: []
         )
         monkeypatch.setattr(
             "services.distribucion_cuotas_service._parse_recreos_config", lambda _c: []
@@ -121,7 +121,7 @@ class TestDistribucionExtra:
         d = DistribucionCuotasService(s)
         cfg = SimpleNamespace()
         monkeypatch.setattr(
-            "services.distribucion_cuotas_service.listar_dias_lectivos",
+            "services.distribucion_cuotas_service.listar_dias_reparto",
             lambda _c: [date(2024, 9, 2), date(2024, 9, 3)],
         )
         monkeypatch.setattr(
@@ -135,7 +135,8 @@ class TestDistribucionExtra:
         d = DistribucionCuotasService(s)
         cfg = SimpleNamespace()
         monkeypatch.setattr(
-            "services.distribucion_cuotas_service.listar_dias_lectivos", lambda _c: [date(2024, 9, 2)]
+            "services.distribucion_cuotas_service.listar_dias_reparto",
+            lambda _c: [date(2024, 9, 2)],
         )
         monkeypatch.setattr(
             "services.distribucion_cuotas_service._parse_recreos_config",

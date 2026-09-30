@@ -23,7 +23,7 @@ from infrastructure.database.models import (
 )
 from services.calculador_guardias import (
     _parse_recreos_config,
-    listar_dias_lectivos,
+    listar_dias_reparto,
 )
 from utils import get_logger
 
@@ -99,8 +99,8 @@ def _generar_recreos_fallback(config: Configuracion) -> List[dict]:
 
 
 def _generar_slots(config: Configuracion, session) -> List[Slot]:
-    """Genera todos los slots a cubrir."""
-    dias_lectivos = listar_dias_lectivos(config)
+    """Genera todos los slots a cubrir (sólo días lectivos del reparto oficial)."""
+    dias_lectivos = listar_dias_reparto(config)
     zonas = session.query(Zona).all()
     recreos = _parse_recreos_config(config)
 

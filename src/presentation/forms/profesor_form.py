@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -36,6 +36,10 @@ from application.use_cases.profesor import (
 from core.logging import get_logger
 from presentation.forms.base_form import BaseForm
 from presentation.forms.profesor_table_helpers import (
+    COL_FIN_GUARDIAS,
+    COL_INICIO_GUARDIAS,
+    COL_VOLUNTARIAS,
+    COLUMNAS_PROFESORES,
     cargar_tabla_profesores,
     filtrar_tabla_profesores,
 )
@@ -77,6 +81,8 @@ class ProfesorForm(BaseForm):
 
         # Variable para trackear modo edición
         self.profesor_editando_id: Optional[int] = None
+        # Profesor cuya cuota oficial explica la línea de ayuda (edición o vista previa)
+        self._profesor_ayuda_id: Optional[int] = None
 
         # Inicializar Use Cases
         self.crear_use_case = CrearProfesorUseCase(session)
@@ -197,18 +203,11 @@ class ProfesorForm(BaseForm):
         self.tabla_profesores.setAccessibleDescription(
             "Tabla de profesores del centro. Selecciona una fila para editarla o borrarla."
         )
-        self.tabla_profesores.setColumnCount(7)
-        self.tabla_profesores.setHorizontalHeaderLabels(
-            [
-                "Nombre Completo",
-                "Email",
-                "Horas",
-                "Turno",
-                "Tutor",
-                "Inicio Guardias",
-                "Fin Guardias",
-            ]
-        )
+        self.tabla_profesores.setColumnCount(len(COLUMNAS_PROFESORES))
+        self.tabla_profesores.setHorizontalHeaderLabels(COLUMNAS_PROFESORES)
+        voluntarias_header = self.tabla_profesores.horizontalHeaderItem(COL_VOLUNTARIAS)
+        if voluntarias_header:
+            voluntarias_header.setToolTip("Guardias voluntarias hechas antes del reparto oficial")
 
         # Configurar anchos de columnas para ver todo el contenido
         header = self.tabla_profesores.horizontalHeader()
@@ -220,8 +219,9 @@ class ProfesorForm(BaseForm):
         self.tabla_profesores.setColumnWidth(2, 70)  # Horas - más estrecho
         self.tabla_profesores.setColumnWidth(3, 80)  # Turno - más estrecho
         self.tabla_profesores.setColumnWidth(4, 60)  # Tutor - más estrecho
-        self.tabla_profesores.setColumnWidth(5, 110)  # Inicio Guardias - más estrecho
-        self.tabla_profesores.setColumnWidth(6, 110)  # Fin Guardias - más estrecho
+        self.tabla_profesores.setColumnWidth(COL_VOLUNTARIAS, 60)  # Voluntarias - estrecha
+        self.tabla_profesores.setColumnWidth(COL_INICIO_GUARDIAS, 110)  # Inicio Guardias
+        self.tabla_profesores.setColumnWidth(COL_FIN_GUARDIAS, 110)  # Fin Guardias
 
         self.tabla_profesores.setSortingEnabled(True)
         self.tabla_profesores.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -330,6 +330,16 @@ class ProfesorForm(BaseForm):
         # Conectar señal de cambio de turno para actualizar matriz de restricciones
         self.horario_widget.turno_changed.connect(self._actualizar_matriz_restricciones_por_turno)
 
+        # Línea de ayuda de la cuota oficial: se recalcula poco después de cambiar las
+        # voluntarias, para no repartir todo el curso en cada pulsación
+        self._ayuda_cuota_timer = QTimer(self)
+        self._ayuda_cuota_timer.setSingleShot(True)
+        self._ayuda_cuota_timer.setInterval(300)
+        self._ayuda_cuota_timer.timeout.connect(self._actualizar_ayuda_cuota)
+        self.horario_widget.voluntarias_changed.connect(
+            lambda _valor: self._ayuda_cuota_timer.start()
+        )
+
         # Botones de acción más compactos
         botones_accion = QHBoxLayout()
         botones_accion.setSpacing(6)
@@ -400,6 +410,9 @@ class ProfesorForm(BaseForm):
 
         # Actualizar estado del formulario
         self.profesor_editando_id = None
+        self._profesor_ayuda_id = None
+        self._ayuda_cuota_timer.stop()
+        self.horario_widget.set_ayuda_cuota(None)
         self.titulo_seccion.setText("ALTA DE PROFESOR")
         self.submit_btn.setText("Guardar nuevo profesor")
         self.cancelar_btn.setVisible(False)
@@ -484,6 +497,7 @@ class ProfesorForm(BaseForm):
                     tutor=datos_basicos["es_tutor"],
                     fecha_inicio_guardias=datos_restricciones.get("fecha_inicio"),
                     fecha_fin_guardias=datos_restricciones.get("fecha_fin"),
+                    guardias_voluntarias=datos_horario.get("guardias_voluntarias", 0),
                     zona_preferida_id=datos_restricciones.get("zona_preferida_id"),
                     # Pasar la matriz completa
                     recreos_permitidos=recreos_dict if recreos_dict else {},
@@ -503,6 +517,7 @@ class ProfesorForm(BaseForm):
                     tutor=datos_basicos["es_tutor"],
                     fecha_inicio_guardias=datos_restricciones.get("fecha_inicio"),
                     fecha_fin_guardias=datos_restricciones.get("fecha_fin"),
+                    guardias_voluntarias=datos_horario.get("guardias_voluntarias", 0),
                     zona_preferida_id=datos_restricciones.get("zona_preferida_id"),
                     recreos_permitidos=recreos_dict if recreos_dict else {},  # Pasar matriz
                     dias_semana_permitidos=datos_restricciones.get("dias_permitidos"),
@@ -629,6 +644,7 @@ class ProfesorForm(BaseForm):
                     "turno": profesor_dto.turno,
                     "horas_manana": profesor_dto.horas_manana,
                     "horas_tarde": profesor_dto.horas_tarde,
+                    "guardias_voluntarias": profesor_dto.guardias_voluntarias,
                 }
             )
 
@@ -643,6 +659,9 @@ class ProfesorForm(BaseForm):
                 }
             )
 
+            self._profesor_ayuda_id = id_profesor
+            self._actualizar_ayuda_cuota()
+
             # Actualizar título - modo lectura
             self.titulo_seccion.setText("VISTA PREVIA")
             self.submit_btn.setText("Guardar Cambios")
@@ -650,6 +669,33 @@ class ProfesorForm(BaseForm):
 
         except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "cargar datos del profesor")
+
+    def _actualizar_ayuda_cuota(self):
+        """Explica la cuota oficial con las voluntarias del campo, sin guardarlas.
+
+        Sin profesor guardado (alta) o sin configuración, la línea no se muestra.
+        """
+        texto = None
+        id_profesor = self.profesor_editando_id or self._profesor_ayuda_id
+        if id_profesor:
+            try:
+                from services.distribucion_cuotas_service import DistribucionCuotasService
+
+                desglose = DistribucionCuotasService(self.session).desglose_cuota(
+                    id_profesor, self.horario_widget.get_guardias_voluntarias()
+                )
+            except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
+                logger.debug(f"No se pudo calcular la cuota oficial: {e}")
+                desglose = None
+            if desglose:
+                texto = (
+                    f"Cuota oficial: {desglose['cuota']} "
+                    f"(le tocan {desglose['parte_curso']} en el curso "
+                    f"− {desglose['voluntarias']} ya hechas)"
+                )
+                if desglose["ha_hecho_de_mas"]:
+                    texto += " · ha hecho más de las que le tocan"
+        self.horario_widget.set_ayuda_cuota(texto)
 
     def _recreos_guardados(self, id_profesor: int):
         """Matriz de recreos por día tal como está en la base de datos.
@@ -713,6 +759,7 @@ class ProfesorForm(BaseForm):
                         "turno": profesor_dto.turno,
                         "horas_manana": profesor_dto.horas_manana,
                         "horas_tarde": profesor_dto.horas_tarde,
+                        "guardias_voluntarias": profesor_dto.guardias_voluntarias,
                     }
                 )
 
@@ -732,6 +779,8 @@ class ProfesorForm(BaseForm):
 
             # Activar modo edición
             self.profesor_editando_id = id_profesor
+            self._profesor_ayuda_id = id_profesor
+            self._actualizar_ayuda_cuota()
             self.titulo_seccion.setText(f"EDITAR PROFESOR [ID: {id_profesor}]")
             self.submit_btn.setText("Actualizar Profesor")
             self.cancelar_btn.setVisible(True)

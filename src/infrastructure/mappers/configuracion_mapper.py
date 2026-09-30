@@ -40,6 +40,7 @@ class ConfiguracionMapper:
             anio_inicio_curso=model.anio_inicio_curso or 0,
             fecha_inicio_curso=model.fecha_inicio_curso,
             fecha_fin_curso=model.fecha_fin_curso,
+            fecha_inicio_reparto_oficial=getattr(model, "fecha_inicio_reparto_oficial", None),
             hora_recreo1_manana=model.hora_recreo1_manana,
             hora_recreo2_manana=model.hora_recreo2_manana,
             hora_recreo1_tarde=model.hora_recreo1_tarde,
@@ -64,6 +65,7 @@ class ConfiguracionMapper:
         model.anio_inicio_curso = entity.anio_inicio_curso
         model.fecha_inicio_curso = entity.fecha_inicio_curso
         model.fecha_fin_curso = entity.fecha_fin_curso
+        model.fecha_inicio_reparto_oficial = entity.fecha_inicio_reparto_oficial
         model.hora_recreo1_manana = entity.hora_recreo1_manana
         model.hora_recreo2_manana = entity.hora_recreo2_manana
         model.hora_recreo1_tarde = entity.hora_recreo1_tarde

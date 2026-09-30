@@ -106,6 +106,7 @@ class CrearProfesorUseCase:
                 es_tutor=dto.tutor,  # DTO usa 'tutor', entidad usa 'es_tutor'
                 fecha_inicio_guardias=dto.fecha_inicio_guardias,
                 fecha_fin_guardias=dto.fecha_fin_guardias,
+                guardias_voluntarias=dto.guardias_voluntarias,
                 zona_preferida=zona_preferida,
                 dias_semana_permitidos=dto.dias_semana_permitidos,
                 recreos_permitidos=dto.recreos_permitidos,
@@ -161,6 +162,7 @@ class CrearProfesorUseCase:
             tutor=entidad.es_tutor,  # Entidad usa 'es_tutor', DTO usa 'tutor'
             fecha_inicio_guardias=entidad.fecha_inicio_guardias,
             fecha_fin_guardias=entidad.fecha_fin_guardias,
+            guardias_voluntarias=entidad.guardias_voluntarias,
             zona_preferida_id=entidad.zona_preferida.zona_id
             if entidad.zona_preferida.tiene_preferencia
             else None,

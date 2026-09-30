@@ -130,6 +130,7 @@ class ExportadorDatos:
                 "fecha_fin_guardias": ExportadorDatos._serializar_fecha(
                     p.fecha_fin_guardias
                 ),  # Campo añadido
+                "guardias_voluntarias": p.guardias_voluntarias or 0,
                 "zona_preferida_id": p.zona_preferida_id,  # Campo añadido
                 "dias_semana_permitidos": p.dias_semana_permitidos,
                 "recreos_permitidos": p.recreos_permitidos,
@@ -163,6 +164,9 @@ class ExportadorDatos:
             "id": config.id,  # ID necesario para restauración completa
             "fecha_inicio_curso": ExportadorDatos._serializar_fecha(config.fecha_inicio_curso),
             "fecha_fin_curso": ExportadorDatos._serializar_fecha(config.fecha_fin_curso),
+            "fecha_inicio_reparto_oficial": ExportadorDatos._serializar_fecha(
+                config.fecha_inicio_reparto_oficial
+            ),
             "hora_recreo1_manana": ExportadorDatos._serializar_hora(config.hora_recreo1_manana),
             "hora_recreo2_manana": ExportadorDatos._serializar_hora(config.hora_recreo2_manana),
             "hora_recreo1_tarde": ExportadorDatos._serializar_hora(config.hora_recreo1_tarde),

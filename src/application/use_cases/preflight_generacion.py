@@ -10,6 +10,7 @@ panel de estado del curso (UXF-001, FUN-001).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from typing import List
 
 from infrastructure.database.models import Configuracion, Profesor, Zona
@@ -102,6 +103,9 @@ class PreflightGeneracionUseCase:
         )
         if completo:
             detalle = f"Del {config.fecha_inicio_curso} al {config.fecha_fin_curso}"
+            oficial = getattr(config, "fecha_inicio_reparto_oficial", None)
+            if isinstance(oficial, date) and oficial > config.fecha_inicio_curso:
+                detalle += f" · reparto oficial desde el {oficial}"
         else:
             detalle = "Indica las fechas de inicio y fin del curso en Ajustes."
         return Requisito(

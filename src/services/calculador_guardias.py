@@ -7,6 +7,8 @@ Implementa la lógica de cálculo basada en:
 - Recreos por día (configurables por turno y zonas por recreo)
 - Porcentaje de jornada de cada profesor y ajuste por tutoría
 - Turno de trabajo (mañana, tarde, mixto)
+- Guardias voluntarias hechas antes del reparto oficial (misma fórmula que
+  DistribucionCuotasService: parte de (S + W) menos las voluntarias de cada uno)
 """
 
 import json
@@ -171,6 +173,36 @@ def listar_dias_lectivos(config: Configuracion) -> List[date]:
     return dias
 
 
+def fecha_inicio_reparto(config: Configuracion) -> date:
+    """Primer día del reparto oficial: el mayor entre el inicio de curso y el inicio oficial.
+
+    Sin `fecha_inicio_reparto_oficial` (None) el reparto empieza con el curso.
+    """
+    inicio = config.fecha_inicio_curso
+    oficial = getattr(config, "fecha_inicio_reparto_oficial", None)
+    if isinstance(oficial, date) and (inicio is None or oficial > inicio):
+        return oficial
+    return inicio
+
+
+def listar_dias_reparto(config: Configuracion) -> List[date]:
+    """Días lectivos que entran en el reparto oficial de guardias.
+
+    Son los de `listar_dias_lectivos` desde `fecha_inicio_reparto(config)`: antes de
+    esa fecha sólo hay guardias voluntarias, que no se generan ni se cuentan como ranuras.
+    """
+    desde = fecha_inicio_reparto(config)
+    return [d for d in listar_dias_lectivos(config) if d >= desde]
+
+
+def voluntarias_de(profesor) -> int:
+    """Guardias voluntarias registradas en la ficha (0 si el dato falta o no es un entero)."""
+    valor = getattr(profesor, "guardias_voluntarias", 0)
+    if isinstance(valor, bool) or not isinstance(valor, int):
+        return 0
+    return max(0, valor)
+
+
 def _parse_recreos_config(config: Configuracion) -> List[dict]:
     """Parsea recreos_config JSON en una lista de dicts normalizados."""
     raw = getattr(config, "recreos_config", None)
@@ -324,8 +356,8 @@ def calcular_distribucion_cruda(session) -> Dict[int, float]:
         raise ValueError("No hay zonas registradas en el sistema")
     logger.info(f"Zonas disponibles: {len(zonas)}")
 
-    # Calcular días lectivos con festivos
-    dias_list = listar_dias_lectivos(config)
+    # Calcular días lectivos con festivos (sólo los del reparto oficial)
+    dias_list = listar_dias_reparto(config)
     dias_lectivos = len(dias_list)
 
     if dias_lectivos == 0:
@@ -417,11 +449,26 @@ def calcular_distribucion_cruda(session) -> Dict[int, float]:
     if suma_ponderada == 0:
         raise ValueError("La suma de participación ponderada es 0 (verificar turnos y porcentajes)")
 
-    # Distribuir slots proporcionalmente
-    distribucion = {}
-    for profesor_id, participacion in profesores_con_factor:
-        guardias_crudas = (participacion / suma_ponderada) * slots_totales
-        distribucion[profesor_id] = guardias_crudas
+    # Distribuir S + W proporcionalmente y descontar las voluntarias de cada uno.
+    # Quien hizo más de las que le tocan queda a 0 y se reparte de nuevo sin él.
+    voluntarias = {p.id: voluntarias_de(p) for p in profesores}
+    excluidos: set = set()
+    while True:
+        activos = [(pid, part) for pid, part in profesores_con_factor if pid not in excluidos]
+        suma_activos = sum(part for _, part in activos)
+        total = slots_totales + sum(voluntarias[pid] for pid, _ in activos)
+        distribucion = {pid: 0.0 for pid, _ in profesores_con_factor}
+        negativos = []
+        for profesor_id, participacion in activos:
+            parte = (participacion / suma_activos) * total if suma_activos else 0.0
+            guardias_crudas = parte - voluntarias[profesor_id]
+            if guardias_crudas < 0:
+                negativos.append(profesor_id)
+            distribucion[profesor_id] = guardias_crudas
+        if not negativos:
+            break
+        excluidos.update(negativos)
+        logger.info(f"{len(negativos)} profesores han hecho más voluntarias de las que les tocan")
 
     logger.info(f"Distribución cruda calculada para {len(distribucion)} profesores")
     logger.debug(f"Total slots a distribuir: {slots_totales}")
@@ -511,7 +558,7 @@ def obtener_estadisticas(session) -> Dict:
         logger.warning("No hay configuración del sistema")
         return {}
 
-    dias_lectivos = len(listar_dias_lectivos(config))
+    dias_lectivos = len(listar_dias_reparto(config))
 
     recreos_manana, recreos_tarde = calcular_recreos_activos(session)
 

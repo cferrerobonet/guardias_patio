@@ -19,6 +19,7 @@ class ConfiguracionEntity:
         anio_inicio_curso: Año de inicio del curso (ej: 2025)
         fecha_inicio_curso: Fecha de inicio del curso
         fecha_fin_curso: Fecha de fin del curso
+        fecha_inicio_reparto_oficial: Inicio del reparto oficial (None = inicio de curso)
         hora_recreo1_manana: Hora del primer recreo de mañana
         hora_recreo2_manana: Hora del segundo recreo de mañana
         hora_recreo1_tarde: Hora del primer recreo de tarde (opcional)
@@ -36,6 +37,7 @@ class ConfiguracionEntity:
     anio_inicio_curso: int = 0
     fecha_inicio_curso: Optional[date] = None
     fecha_fin_curso: Optional[date] = None
+    fecha_inicio_reparto_oficial: Optional[date] = None
     hora_recreo1_manana: Optional[time] = None
     hora_recreo2_manana: Optional[time] = None
     hora_recreo1_tarde: Optional[time] = None

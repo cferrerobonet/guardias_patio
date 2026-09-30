@@ -106,6 +106,7 @@ def importar_profesores(
                 existing.fecha_fin_guardias = _deserializar_fecha(
                     p_data.get("fecha_fin_guardias")
                 )
+                existing.guardias_voluntarias = int(p_data.get("guardias_voluntarias") or 0)
                 existing.zona_preferida_id = p_data.get("zona_preferida_id")
                 existing.dias_semana_permitidos = p_data.get("dias_semana_permitidos")
                 existing.recreos_permitidos = p_data.get("recreos_permitidos")
@@ -123,6 +124,7 @@ def importar_profesores(
                     activo=p_data.get("activo", True),
                     fecha_inicio_guardias=_deserializar_fecha(p_data.get("fecha_inicio_guardias")),
                     fecha_fin_guardias=_deserializar_fecha(p_data.get("fecha_fin_guardias")),
+                    guardias_voluntarias=int(p_data.get("guardias_voluntarias") or 0),
                     zona_preferida_id=p_data.get("zona_preferida_id"),
                     dias_semana_permitidos=p_data.get("dias_semana_permitidos"),
                     recreos_permitidos=p_data.get("recreos_permitidos"),
@@ -141,6 +143,7 @@ def importar_profesores(
                 activo=p_data.get("activo", True),
                 fecha_inicio_guardias=_deserializar_fecha(p_data.get("fecha_inicio_guardias")),
                 fecha_fin_guardias=_deserializar_fecha(p_data.get("fecha_fin_guardias")),
+                guardias_voluntarias=int(p_data.get("guardias_voluntarias") or 0),
                 zona_preferida_id=p_data.get("zona_preferida_id"),
                 dias_semana_permitidos=p_data.get("dias_semana_permitidos"),
                 recreos_permitidos=p_data.get("recreos_permitidos"),
@@ -208,6 +211,9 @@ def importar_configuracion(
         if existing:
             existing.fecha_inicio_curso = _deserializar_fecha(config_data["fecha_inicio_curso"])
             existing.fecha_fin_curso = _deserializar_fecha(config_data["fecha_fin_curso"])
+            existing.fecha_inicio_reparto_oficial = _deserializar_fecha(
+                config_data.get("fecha_inicio_reparto_oficial")
+            )
             existing.hora_recreo1_manana = _deserializar_hora(config_data["hora_recreo1_manana"])
             existing.hora_recreo2_manana = _deserializar_hora(config_data["hora_recreo2_manana"])
             existing.hora_recreo1_tarde = _deserializar_hora(config_data.get("hora_recreo1_tarde"))
@@ -233,6 +239,9 @@ def importar_configuracion(
                 anio_inicio_curso=anio_inicio,
                 fecha_inicio_curso=fecha_inicio,
                 fecha_fin_curso=_deserializar_fecha(config_data["fecha_fin_curso"]),
+                fecha_inicio_reparto_oficial=_deserializar_fecha(
+                    config_data.get("fecha_inicio_reparto_oficial")
+                ),
                 hora_recreo1_manana=_deserializar_hora(config_data["hora_recreo1_manana"]),
                 hora_recreo2_manana=_deserializar_hora(config_data["hora_recreo2_manana"]),
                 hora_recreo1_tarde=_deserializar_hora(config_data.get("hora_recreo1_tarde")),
@@ -255,6 +264,9 @@ def importar_configuracion(
             anio_inicio_curso=anio_inicio,
             fecha_inicio_curso=fecha_inicio,
             fecha_fin_curso=_deserializar_fecha(config_data["fecha_fin_curso"]),
+            fecha_inicio_reparto_oficial=_deserializar_fecha(
+                config_data.get("fecha_inicio_reparto_oficial")
+            ),
             hora_recreo1_manana=_deserializar_hora(config_data["hora_recreo1_manana"]),
             hora_recreo2_manana=_deserializar_hora(config_data["hora_recreo2_manana"]),
             hora_recreo1_tarde=_deserializar_hora(config_data.get("hora_recreo1_tarde")),

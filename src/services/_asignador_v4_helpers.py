@@ -15,7 +15,7 @@ from typing import Dict, List, Optional, Tuple
 
 from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
 from services._asignador_tipos import ContextoAsignacion, Slot
-from services.calculador_guardias import _parse_recreos_config, listar_dias_lectivos
+from services.calculador_guardias import _parse_recreos_config, listar_dias_reparto
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -50,12 +50,12 @@ def _generar_recreos_fallback(config: Configuracion) -> List[dict]:
 def _generar_slots(config: Configuracion, session) -> List[Slot]:
     """
     Genera todos los slots a cubrir considerando:
-    - Días lectivos (excluyendo festivos)
+    - Días lectivos (excluyendo festivos) desde el inicio del reparto oficial
     - Recreos configurados (o deducidos de horas)
     - Zonas activas en cada fecha
     - Número de zonas por recreo (campo "zonas" en recreos_config)
     """
-    dias_lectivos = listar_dias_lectivos(config)
+    dias_lectivos = listar_dias_reparto(config)
     zonas = session.query(Zona).all()
     zonas_ids = [z.id for z in zonas]
     zonas_dict = {z.id: z for z in zonas}

@@ -2,13 +2,16 @@
 Widget para configuración de fechas y recreos.
 
 Encapsula la lógica de configuración de:
-- Fechas del curso (inicio/fin)
+- Fechas del curso (inicio/fin) e inicio del reparto oficial de guardias
 - Recreos de mañana (2 recreos)
 - Recreos de tarde (2 recreos opcionales)
 """
 
+from datetime import date
+
 from PyQt6.QtCore import QDate, QTime, pyqtSignal
 from PyQt6.QtWidgets import (
+    QCheckBox,
     QDateEdit,
     QGroupBox,
     QHBoxLayout,
@@ -81,7 +84,6 @@ class FechasRecreosWidget(QGroupBox):
         self.fecha_inicio_input.setAccessibleName("Campo fecha de inicio del curso")
         self.fecha_inicio_input.setCalendarPopup(True)
         self.fecha_inicio_input.setDate(QDate.currentDate())
-        self.fecha_inicio_input.setStyleSheet(styles.STYLE_INPUT + "padding: 4px;")
         self.fecha_inicio_input.dateChanged.connect(self.config_changed.emit)
         layout.addWidget(self.fecha_inicio_input)
 
@@ -94,12 +96,69 @@ class FechasRecreosWidget(QGroupBox):
         self.fecha_fin_input.setAccessibleName("Campo fecha de fin del curso")
         self.fecha_fin_input.setCalendarPopup(True)
         self.fecha_fin_input.setDate(QDate.currentDate().addMonths(9))
-        self.fecha_fin_input.setStyleSheet(styles.STYLE_INPUT + "padding: 4px;")
         self.fecha_fin_input.dateChanged.connect(self.config_changed.emit)
         layout.addWidget(self.fecha_fin_input)
 
+        # Inicio del reparto oficial (antes sólo hay guardias voluntarias)
+        label_reparto = QLabel("Inicio del reparto oficial de guardias:")
+        label_reparto.setObjectName("smallFieldLabel")
+        layout.addWidget(label_reparto)
+
+        self.reparto_igual_inicio_check = QCheckBox("Igual que el inicio de curso")
+        self.reparto_igual_inicio_check.setAccessibleName(
+            "Reparto oficial desde el inicio de curso"
+        )
+        self.reparto_igual_inicio_check.setChecked(True)
+        self.reparto_igual_inicio_check.setToolTip(
+            "Desmárcala si las primeras semanas las cubren voluntarios: las guardias\n"
+            "se generan y se cuentan desde la fecha indicada, y las voluntarias de cada\n"
+            "profesor se descuentan de su parte del curso."
+        )
+        fila_reparto = QHBoxLayout()
+        fila_reparto.setSpacing(Spacing.SM)
+        fila_reparto.addWidget(self.reparto_igual_inicio_check)
+
+        self.fecha_reparto_input = QDateEdit()
+        self.fecha_reparto_input.setAccessibleName("Campo fecha de inicio del reparto oficial")
+        self.fecha_reparto_input.setCalendarPopup(True)
+        self.fecha_reparto_input.setDate(self.fecha_inicio_input.date())
+        self.fecha_reparto_input.setEnabled(False)
+        self.fecha_reparto_input.dateChanged.connect(self.config_changed.emit)
+        fila_reparto.addWidget(self.fecha_reparto_input)
+        layout.addLayout(fila_reparto)
+
+        self.reparto_igual_inicio_check.toggled.connect(self._on_reparto_igual_toggled)
+
+        # Las tres fechas con el mismo estilo
+        estilo_fecha = styles.STYLE_INPUT + "padding: 4px;"
+        for campo in (self.fecha_inicio_input, self.fecha_fin_input, self.fecha_reparto_input):
+            campo.setStyleSheet(estilo_fecha)
+
         grupo.setLayout(layout)
         return grupo
+
+    def _on_reparto_igual_toggled(self, igual: bool) -> None:
+        self.fecha_reparto_input.setEnabled(not igual)
+        if not igual and self.fecha_reparto_input.date() < self.fecha_inicio_input.date():
+            self.fecha_reparto_input.setDate(self.fecha_inicio_input.date())
+        self.config_changed.emit()
+
+    def get_fecha_reparto_oficial(self):
+        """Inicio del reparto oficial, o None si es igual que el inicio de curso."""
+        if self.reparto_igual_inicio_check.isChecked():
+            return None
+        return self.fecha_reparto_input.date().toPyDate()
+
+    def set_fecha_reparto_oficial(self, fecha) -> None:
+        """Carga el inicio del reparto oficial (None = igual que el inicio de curso)."""
+        if not isinstance(fecha, date):
+            fecha = None
+        self.reparto_igual_inicio_check.blockSignals(True)
+        self.reparto_igual_inicio_check.setChecked(fecha is None)
+        self.reparto_igual_inicio_check.blockSignals(False)
+        self.fecha_reparto_input.setEnabled(fecha is not None)
+        destino = fecha if fecha is not None else self.fecha_inicio_input.date().toPyDate()
+        self.fecha_reparto_input.setDate(QDate(destino.year, destino.month, destino.day))
 
     def _crear_grupo_recreos_manana(self) -> QGroupBox:
         """Crea el grupo de recreos de mañana."""
@@ -286,6 +345,19 @@ class FechasRecreosWidget(QGroupBox):
 
         if fecha_inicio >= fecha_fin:
             return False, "La fecha de inicio debe ser anterior a la fecha de fin"
+
+        if not self.reparto_igual_inicio_check.isChecked():
+            fecha_reparto = self.fecha_reparto_input.date()
+            if fecha_reparto < fecha_inicio:
+                return (
+                    False,
+                    "El inicio del reparto oficial no puede ser anterior al inicio de curso",
+                )
+            if fecha_reparto > fecha_fin:
+                return (
+                    False,
+                    "El inicio del reparto oficial no puede ser posterior al fin de curso",
+                )
 
         # Validar recreos de mañana
         recreo1_manana = self.recreo1_manana_input.time()

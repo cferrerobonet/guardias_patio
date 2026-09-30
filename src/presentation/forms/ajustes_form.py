@@ -248,6 +248,7 @@ class AjustesForm(BaseForm):
             dto = ActualizarConfiguracionDTO(
                 fecha_inicio_curso=fechas["fecha_inicio"],
                 fecha_fin_curso=fechas["fecha_fin"],
+                fecha_inicio_reparto_oficial=self.fechas_recreos_widget.get_fecha_reparto_oficial(),
                 hora_recreo1_manana=recreos_manana["recreo1"],
                 hora_recreo2_manana=recreos_manana["recreo2"],
                 hora_recreo1_tarde=recreos_tarde["recreo1"],
@@ -292,6 +293,9 @@ class AjustesForm(BaseForm):
 
             # Cargar fechas y recreos en el widget
             self.fechas_recreos_widget.set_fechas(config.fecha_inicio_curso, config.fecha_fin_curso)
+            self.fechas_recreos_widget.set_fecha_reparto_oficial(
+                getattr(config, "fecha_inicio_reparto_oficial", None)
+            )
             self.fechas_recreos_widget.set_recreos_manana(
                 config.hora_recreo1_manana, config.hora_recreo2_manana
             )

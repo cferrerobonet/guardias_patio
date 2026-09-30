@@ -66,6 +66,7 @@ Crea un nuevo profesor.
 | `tutor` | bool | — | Es tutor de grupo (default: false) |
 | `fecha_inicio_guardias` | date | — | Inicio período de guardias |
 | `fecha_fin_guardias` | date | — | Fin período de guardias |
+| `guardias_voluntarias` | int (0–500) | — | Guardias voluntarias hechas antes del inicio del reparto oficial; cuentan como hechas (default: 0) |
 | `zona_preferida_id` | int | — | ID de zona preferida |
 | `dias_semana_permitidos` | list[int] | — | Días (0=Lun … 4=Vie), default [0,1,2,3,4] |
 | `recreos_permitidos` | list[int] \| dict | — | Recreos (1–4) o dict por día |
@@ -312,6 +313,12 @@ Análisis de equidad en la distribución de guardias.
 ### `GET /api/v1/cuotas`
 
 Calcula la cuota de guardias esperada por profesor.
+
+Es la cuota **oficial**: sólo cuenta las ranuras desde el inicio del reparto oficial
+(`fecha_inicio_reparto_oficial` de la configuración; si falta, el inicio de curso). Cada
+grupo de turno reparte esas ranuras más las guardias voluntarias de sus profesores, y a
+cada uno se le descuentan las suyas; las cuotas suman las ranuras oficiales. Quien hizo
+más voluntarias de las que le tocan queda con cuota 0.
 
 **Query params**
 

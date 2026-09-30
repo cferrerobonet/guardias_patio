@@ -17,6 +17,7 @@ class ConfiguracionDTO(BaseModel):
     anio_inicio_curso: int  # Año de inicio del curso (ej: 2025)
     fecha_inicio_curso: date
     fecha_fin_curso: date
+    fecha_inicio_reparto_oficial: Optional[date] = None  # None = igual que fecha_inicio_curso
     hora_recreo1_manana: time
     hora_recreo2_manana: time
     hora_recreo1_tarde: Optional[time] = None
@@ -40,6 +41,8 @@ class ActualizarConfiguracionDTO(BaseModel):
     anio_inicio_curso: Optional[int] = None  # Año de inicio del curso (ej: 2025)
     fecha_inicio_curso: Optional[date] = None
     fecha_fin_curso: Optional[date] = None
+    # None es un valor válido (igual que el inicio de curso): sólo se aplica si se pasa
+    fecha_inicio_reparto_oficial: Optional[date] = None
     hora_recreo1_manana: Optional[time] = None
     hora_recreo2_manana: Optional[time] = None
     hora_recreo1_tarde: Optional[time] = None

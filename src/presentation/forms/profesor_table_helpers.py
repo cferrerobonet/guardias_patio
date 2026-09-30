@@ -9,6 +9,31 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem
 
+COLUMNAS_PROFESORES = [
+    "Nombre Completo",
+    "Email",
+    "Horas",
+    "Turno",
+    "Tutor",
+    "Volunt.",
+    "Inicio Guardias",
+    "Fin Guardias",
+]
+COL_VOLUNTARIAS = COLUMNAS_PROFESORES.index("Volunt.")
+COL_INICIO_GUARDIAS = COLUMNAS_PROFESORES.index("Inicio Guardias")
+COL_FIN_GUARDIAS = COLUMNAS_PROFESORES.index("Fin Guardias")
+
+
+class _ItemNumerico(QTableWidgetItem):
+    """Celda que ordena por su valor numérico (UserRole) y no por el texto («-», «10»)."""
+
+    def __lt__(self, other):
+        propio = self.data(Qt.ItemDataRole.UserRole)
+        ajeno = other.data(Qt.ItemDataRole.UserRole)
+        if isinstance(propio, int) and isinstance(ajeno, int):
+            return propio < ajeno
+        return super().__lt__(other)
+
 
 def cargar_tabla_profesores(*, session, table: QTableWidget, titulo_label, table_manager=None) -> None:
     """Cargar profesores y pintar filas en la tabla."""
@@ -54,19 +79,27 @@ def cargar_tabla_profesores(*, session, table: QTableWidget, titulo_label, table
         tutor_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         table.setItem(i, 4, tutor_item)
 
+        # Guardias voluntarias hechas (centrado, «-» si no hay)
+        voluntarias = int(getattr(prof, "guardias_voluntarias", 0) or 0)
+        voluntarias_item = _ItemNumerico(str(voluntarias) if voluntarias else "-")
+        voluntarias_item.setData(Qt.ItemDataRole.UserRole, voluntarias)
+        voluntarias_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        voluntarias_item.setToolTip("Guardias voluntarias hechas antes del reparto oficial")
+        table.setItem(i, COL_VOLUNTARIAS, voluntarias_item)
+
         # Fecha Inicio Guardias (centrado)
         fecha_inicio_text = (
             prof.fecha_inicio_guardias.strftime("%d/%m/%Y") if prof.fecha_inicio_guardias else "-"
         )
         fecha_inicio_item = QTableWidgetItem(fecha_inicio_text)
         fecha_inicio_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        table.setItem(i, 5, fecha_inicio_item)
+        table.setItem(i, COL_INICIO_GUARDIAS, fecha_inicio_item)
 
         # Fecha Fin Guardias (centrado)
         fecha_fin_text = prof.fecha_fin_guardias.strftime("%d/%m/%Y") if prof.fecha_fin_guardias else "-"
         fecha_fin_item = QTableWidgetItem(fecha_fin_text)
         fecha_fin_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        table.setItem(i, 6, fecha_fin_item)
+        table.setItem(i, COL_FIN_GUARDIAS, fecha_fin_item)
 
     table.setSortingEnabled(True)
     table.sortItems(0, Qt.SortOrder.AscendingOrder)

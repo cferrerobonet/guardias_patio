@@ -90,7 +90,7 @@ class EstadisticasPanel(QGroupBox):
         )
 
         # Formatear texto
-        dias_val = format_terminal_value(f"{stats.dias_lectivos} días (L-V)")
+        dias_val = format_terminal_value(f"{stats.dias_lectivos} días de reparto (L-V)")
         total_recreos = stats.recreos_manana + stats.recreos_tarde
 
         texto = f"""

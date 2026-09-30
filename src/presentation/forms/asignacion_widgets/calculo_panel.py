@@ -134,7 +134,7 @@ class CalculoPanel(QGroupBox):
             stats.dias_lectivos * (stats.recreos_manana + stats.recreos_tarde) * stats.num_zonas
         )
         total_recreos = stats.recreos_manana + stats.recreos_tarde
-        dias_info = f"{stats.dias_lectivos} días (L-V)"
+        dias_info = f"{stats.dias_lectivos} días de reparto (L-V)"
         slots_info = f"{stats.slots_totales} guardias"
         calc_info = f"{stats.dias_lectivos} × {total_recreos} × {stats.num_zonas}"
 
@@ -243,7 +243,7 @@ class CalculoPanel(QGroupBox):
                 stats.dias_lectivos * (stats.recreos_manana + stats.recreos_tarde) * stats.num_zonas
             )
             total_recreos = stats.recreos_manana + stats.recreos_tarde
-            dias_info = f"{stats.dias_lectivos} días (L-V)"
+            dias_info = f"{stats.dias_lectivos} días de reparto (L-V)"
             slots_info = f"{stats.slots_totales} guardias"
             calc_info = f"{stats.dias_lectivos} × {total_recreos} × {stats.num_zonas}"
 
