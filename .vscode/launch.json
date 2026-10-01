@@ -1,7 +1,7 @@
 {
   // Configuraciones de Ejecución y Depuración.
   // El intérprete es el que esté seleccionado en VS Code (barra inferior).
-  // Recomendado: el `.venv` del proyecto, que fija PyQt6 6.7.0 igual que el build.
+  // Recomendado: ~/.venvs/guardias-patio, fuera de iCloud, que fija PyQt6 6.7.0 igual que el build.
   "version": "0.2.0",
   "configurations": [
     {

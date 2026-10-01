@@ -1,4 +1,6 @@
-# Guardias de Patio — Instrucciones del asistente
+# Guardias de Patio — Instrucciones para agentes
+
+Fuente única de instrucciones para cualquier asistente de código. El `CLAUDE.md` de la raíz solo la importa: los cambios se hacen aquí.
 
 ## Comunicación
 - Español. Respuestas mínimas: sin explicaciones no pedidas, sin código de ejemplo no solicitado.
@@ -22,7 +24,7 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 | Sync SFTP y bloqueo | `sync/sync_manager.py` (qué se sube y cuándo), `sync/backends.py` (SFTP y carpeta local), `sync/cuentas.py` (ficha remota), `sync/session_lock.py`, `widgets/sync_progress_dialog.py` (`SyncWorker`) |
 | Tema y tokens | `presentation/theme/tokens.py`, `theme/light.qss`, `themes/tema_aplicacion.py` (tres capas + inline) |
 | Modelos ORM | `infrastructure/database/models.py` |
-| Versión canónica | `src/config/settings.py` → `app_version` (pyproject/README están desincronizados) |
+| Versión canónica | `src/config/settings.py` → `app_version`, igual que `pyproject.toml` (lo vigila `tests/audit/test_calidad_estatica.py`). La insignia del README no se mantiene |
 | Build | Sin PC Windows: publicar etiqueta `vX.Y.Z` → `.github/workflows/compilar.yml` compila las dos y las adjunta al release. En local: macOS `make dmg`; Windows `scripts/build_windows.ps1` (`-Diagnostico` para consola). **Un solo spec**: `GuardiasDePatio.spec` (lleva `keyring.backends`) |
 | Auditoría vigente | `auditoria/00_INDICE.md` → `30_REGISTRO_HALLAZGOS.md` (estado) · `17_PLAN_DE_ATAQUE.md` (backlog) · **`21_PLAN_DE_AUDITORIA_AMPLIADO.md`** (checks con comando, para auditar con modelos más pequeños) · `22_RECURSOS_DE_IA.md` (qué skill usar cuándo) |
 
@@ -51,7 +53,7 @@ En funciones standalone, sin anotación `: Session` en el parámetro.
 - `CHANGELOG.md` (Keep a Changelog, español): secciones `🎯 Resumen`, `✨ Added`, `Changed`, `Fixed`, `🧹 Housekeeping`.
 
 ## Workflow post-modificaciones (obligatorio, sin pedir confirmación)
-1. Tests: `$PY -m pytest tests/ --tb=no -q --no-cov` (corregir sólo fallos nuevos).
+1. Tests: `$PY -m pytest tests/ --tb=no -q --no-cov --timeout=120 -p no:cacheprovider` (corregir sólo fallos nuevos; sin `--timeout` se cuelga QA-008).
 2. Bump `app_version`.
 3. Entrada en `CHANGELOG.md` con fecha.
 4. `git add -A && git commit -m "tipo(scope): descripción" && git tag v{versión} && git push && git push --tags`.
@@ -73,10 +75,16 @@ python3.11 -m venv ~/.venvs/guardias-patio
 ```
 
 ## VS Code
-Ejecución y Depuración trae 9 configuraciones (app, app sin bloqueo de sesión, app en modo diagnóstico, API, y cinco de tests) y Terminal → Ejecutar tarea otras 10 (tests, lint, formato, compilar macOS/Windows, limpiar). Usan el intérprete seleccionado en el editor: elegir `.venv`. `launch.json`, `tasks.json` y `extensions.json` están versionados; `settings.json` es de cada equipo.
+Ejecución y Depuración trae 9 configuraciones (app, app sin bloqueo de sesión, app en modo diagnóstico, API, y cinco de tests) y Terminal → Ejecutar tarea otras 10 (tests, lint, formato, compilar macOS/Windows, limpiar). Usan el intérprete seleccionado en el editor: elegir `~/.venvs/guardias-patio/bin/python` (no el `.venv` del repo, corrupto). `launch.json`, `tasks.json` y `extensions.json` están versionados; `settings.json` es de cada equipo.
+
+## Comprobación tras editar
+Un hook (`.claude/settings.json` → `.claude/hooks/compilar_py.py`) pasa `py_compile` a cada `.py` editado y devuelve el error de sintaxis al momento. No sustituye a `ruff` ni a los tests.
+
+## Datos de ejemplo
+Están fuera del repositorio, en `../DATOS DE EJEMPLO (fuera del repositorio)/`. No copiarlos dentro: son datos reales del centro.
 
 ## Skills del proyecto
-`/build-windows-exe` · `/build-macos-dmg` · `/tests-locales` · `/auditoria-desktop`. No cargar `.agents/AGENTE_AUDITORIA_INTEGRAL_PORTABLE.md` completo: usar `auditoria/02_PLAN_MAESTRO_AUDITORIA.md`.
+En `.claude/skills/`: `/build-windows-exe` · `/build-macos-dmg` · `/tests-locales` · `/auditoria-desktop`. No cargar `.agents/AGENTE_AUDITORIA_INTEGRAL_PORTABLE.md` completo: usar `auditoria/02_PLAN_MAESTRO_AUDITORIA.md`.
 
 ## Tokens
 Leer por rangos con `grep -n`; no releer; no listar `src/` (usar el mapa); un fichero de tests a la vez; suite completa sólo al final.

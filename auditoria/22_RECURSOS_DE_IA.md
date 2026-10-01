@@ -50,6 +50,8 @@ Faltaba, y se propone crear en el siguiente lote: `/seguridad-y-privacidad` (los
 | `.agents/rules/reglas.md` y `.agents/workflows/post-cambios.md` | Sólo enlazaban al fichero de instrucciones | **Eliminados hoy** |
 | `.agents/AGENTE_AUDITORIA_INTEGRAL_PORTABLE.md` (41 KB) | Agente genérico de auditoría en seis olas | Conservar como referencia; **no cargarlo**: [[21_PLAN_DE_AUDITORIA_AMPLIADO]] es su instancia corta para este proyecto |
 | `.claude/agents.md` | Una regla sobre un fallo preexistente que ya no existe | **Fusionado** en el fichero de instrucciones y eliminado |
+| Instrucciones del proyecto (2026-10-01) | Vivían en `.claude/claude.md` | Movidas a `AGENTS.md` (fuente única); `CLAUDE.md` en la raíz solo la importa (DEV-007) |
+| Hook `PostToolUse` del proyecto (2026-10-01) | — | `py_compile` sobre cada `.py` editado, con el intérprete de `~/.venvs` (DEV-008) |
 | Agentes globales (`~/.claude/agents/`) | Ninguno | — |
 | Plugins | Ninguno instalado | — |
 

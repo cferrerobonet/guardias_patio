@@ -7,7 +7,7 @@ description: Ejecutar los tests de Guardias de Patio en local (pytest, pytest-qt
 
 ## Desde VS Code
 
-Ejecución y Depuración → "Tests: fichero abierto", "Tests: suite completa", "Tests: auditoría" o "Tests: cumplimiento del algoritmo". Terminal → Ejecutar tarea para las mismas sin depurador. Requiere tener seleccionado el intérprete `.venv`.
+Ejecución y Depuración → "Tests: fichero abierto", "Tests: suite completa", "Tests: auditoría" o "Tests: cumplimiento del algoritmo". Terminal → Ejecutar tarea para las mismas sin depurador. Requiere tener seleccionado el intérprete `~/.venvs/guardias-patio/bin/python`.
 
 ## Intérprete y dependencias
 

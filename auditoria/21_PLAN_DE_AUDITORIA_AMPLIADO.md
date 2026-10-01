@@ -164,7 +164,7 @@ Cada fila: **ID · qué · cómo (comando) · pasa si · severidad si falla**.
 
 | ID | Qué | Cómo | Pasa si | Sev. |
 | --- | --- | --- | --- | --- |
-| CHK-O-01 | Las instrucciones del asistente caben en una pantalla y no repiten otras fuentes | `wc -c .claude/claude.md .agents/*.md` | < 8 KB el principal; `.agents/` sólo el agente portable | P3 |
+| CHK-O-01 | Las instrucciones del asistente caben en una pantalla y no repiten otras fuentes | `wc -c AGENTS.md CLAUDE.md .agents/*.md` | < 8 KB el principal; `.agents/` sólo el agente portable | P3 |
 | CHK-O-02 | Ningún hook global ejecuta herramientas de otro stack | `python3 -c "import json;print(json.load(open('$HOME/.claude/settings.local.json')).get('hooks'))"` | Sin hooks web en un proyecto PyQt | P2 |
 | CHK-O-03 | MCP de Obsidian apunta a **esta** bóveda y sin clave en claro | Ver [[22_RECURSOS_DE_IA]] §4 | `.mcp.json` por bóveda, clave por variable de entorno | P2 |
 | CHK-O-04 | Skills instaladas: cada una tiene un uso declarado en [[22_RECURSOS_DE_IA]] | Leer la tabla | Todas clasificadas | P3 |

@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.4.1] - 2026-10-01
+
+### 🎯 Resumen
+Instrucciones para agentes de código en un solo sitio y comprobación de sintaxis al editar. La aplicación no cambia.
+
+### Changed
+- **`AGENTS.md` en la raíz** es ahora la fuente única de instrucciones del proyecto (antes en `.claude/claude.md`); `CLAUDE.md` solo la importa. Corrige la nota de versión desfasada, añade `--timeout` al paso de tests del flujo obligatorio y señala dónde están los datos de ejemplo (fuera del repositorio).
+- `/auditoria-desktop`, `/tests-locales` y `launch.json` recomiendan el intérprete `~/.venvs/guardias-patio`, no el de Homebrew ni el `.venv` corrupto.
+
+### ✨ Added
+- **Hook `PostToolUse`** que pasa `py_compile` a cada `.py` editado y devuelve el error de sintaxis al momento, sin dejar `.pyc` en iCloud.
+- Permisos para el intérprete de `~/.venvs` y para consultar `gh release` y `gh run`.
+
+### 🧹 Housekeeping
+- DEV-005 y DEV-007 a DEV-010 cerrados en `auditoria/30_REGISTRO_HALLAZGOS.md`.
+
 ## [6.4.0] - 2026-09-30
 
 ### 🎯 Resumen

@@ -190,8 +190,12 @@ Leyenda de estado: `NUEVO` · `PERSISTE` · `RESUELTO VERIFICADO` · `REGRESIÓN
 | DEV-002 | P2 | alta | Sin mapa rápido | RESUELTO VERIFICADO v5.43.0 | 11 |
 | DEV-003 | P3 | alta | Comandos incorrectos/lentos | RESUELTO VERIFICADO v5.43.0 (documentación); Makefile pendiente (BLD-002) | 11 |
 | DEV-004 | P3 | alta | Sin skills de proyecto | RESUELTO VERIFICADO v5.43.0 | 11 |
-| DEV-005 | P3 | alta | Permisos mínimos → prompts | NUEVO | 11 |
+| DEV-005 | P3 | alta | ~~Permisos mínimos → prompts~~ ✅ RESUELTO v6.4.1: permisos para el intérprete de `~/.venvs` y para consultar `gh release`/`gh run` | RESUELTO v6.4.1 | 11 |
 | DEV-006 | P3 | alta | Agente portable de 41 KB leído entero | NUEVO | 11 |
+| DEV-007 | P2 | alta | ~~Instrucciones solo en `.claude/claude.md`, en minúscula: sin `AGENTS.md` ni `CLAUDE.md` en la raíz, otros agentes y los sistemas que distinguen mayúsculas no las cargan~~ ✅ RESUELTO v6.4.1: `AGENTS.md` es la fuente única y `CLAUDE.md` la importa | RESUELTO v6.4.1 | 22 |
+| DEV-008 | P3 | alta | ~~Sin comprobación automática tras editar: un error de sintaxis se veía al correr los tests~~ ✅ RESUELTO v6.4.1: hook `PostToolUse` con `py_compile` (`.claude/hooks/compilar_py.py`) | RESUELTO v6.4.1 | 22 |
+| DEV-009 | P3 | alta | ~~Intérprete incoherente: gates de `/auditoria-desktop` con Homebrew, `/tests-locales`, `launch.json` y las instrucciones recomendaban el `.venv` corrupto~~ ✅ RESUELTO v6.4.1: todos apuntan a `~/.venvs/guardias-patio` | RESUELTO v6.4.1 | 22 |
+| DEV-010 | P3 | alta | ~~Paso 1 del flujo obligatorio sin `--timeout` (se cuelga en QA-008) y nota de versión desfasada («pyproject desincronizado»)~~ ✅ RESUELTO v6.4.1 | RESUELTO v6.4.1 | 22 |
 
 | SEC-004 | P1 | alta | ~~Listados reales del claustro versionados en un repositorio público~~ | **RESUELTO v5.96.2** · `docs/examples/datos ejemplo/` llevaba desde 2025-11-15 dos PDF y cuatro Excel con nombres de profesores reales. Retirados de HEAD (los ficheros quedan fuera del repositorio) y `.gitignore` + test que impiden versionar datos u ofimática. **Siguen en el historial público**: hace falta reescribirlo o hacer el repositorio privado, decisión de CarlosFB · `tests/audit/test_sin_datos_reales_en_el_repositorio.py` | 30 |
 

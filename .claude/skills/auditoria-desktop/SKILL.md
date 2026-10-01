@@ -10,7 +10,7 @@ Documentos: `auditoria/00_INDICE.md` (mapa), `auditoria/30_REGISTRO_HALLAZGOS.md
 ## Gates reproducibles
 
 ```bash
-PY=/opt/homebrew/bin/python3.11; export QT_QPA_PLATFORM=offscreen
+PY=~/.venvs/guardias-patio/bin/python; export QT_QPA_PLATFORM=offscreen
 $PY -m pytest --co -q --no-cov -p no:cacheprovider | tail -3        # 0 errores
 $PY -m ruff check src --statistics                                    # objetivo: 0
 $PY -m ruff check src --select F821                                   # obligatorio 0
@@ -33,7 +33,7 @@ grep -rhoE 'font-size: ?[0-9]+px' src/presentation | grep -oE '[0-9]+' | awk '$1
 2. En `30_REGISTRO_HALLAZGOS.md`: estado `RESUELTO VERIFICADO vX.Y.Z` + test citado.
 3. En `17_PLAN_DE_ATAQUE.md`: tachar y marcar `✅ RESUELTO vX.Y.Z`.
 4. Recuentos de `00_INDICE.md` recalculados desde el registro.
-5. Mismo commit que el código (regla del fichero de instrucciones).
+5. Mismo commit que el código (regla de `AGENTS.md`).
 
 ## Al reauditar (delta)
 

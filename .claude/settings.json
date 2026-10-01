@@ -32,7 +32,33 @@
       "Bash(sed -n *)",
       "Bash(cat *)",
       "Bash(make test*)",
-      "Bash(make bench)"
+      "Bash(make bench)",
+      "Bash(~/.venvs/guardias-patio/bin/python -m pytest *)",
+      "Bash(~/.venvs/guardias-patio/bin/python -m ruff *)",
+      "Bash(~/.venvs/guardias-patio/bin/python -m bandit *)",
+      "Bash(~/.venvs/guardias-patio/bin/python -m mypy *)",
+      "Bash(~/.venvs/guardias-patio/bin/python -m pip_audit *)",
+      "Bash(~/.venvs/guardias-patio/bin/python -m radon *)",
+      "Bash(~/.venvs/guardias-patio/bin/python -m vulture *)",
+      "Bash(gh release list*)",
+      "Bash(gh release view*)",
+      "Bash(gh run list*)",
+      "Bash(gh run view*)",
+      "Bash(gh run watch*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 30,
+            "command": "R=\"$(git rev-parse --show-toplevel)\"; P=~/.venvs/guardias-patio/bin/python; [ -x \"$P\" ] || P=\"$(command -v python3 || command -v python)\"; [ -n \"$P\" ] || exit 0; \"$P\" \"$R/.claude/hooks/compilar_py.py\""
+          }
+        ]
+      }
     ]
   }
 }
