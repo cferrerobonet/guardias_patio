@@ -86,3 +86,73 @@ def test_una_vista_rota_no_impide_recargar_el_resto(ventana):
     ventana.recargar_todas_las_vistas("prueba")
 
     assert sana.recargas == 1
+
+
+class _VistaQueCambia(_VistaFalsa):
+    datos_modificados = pyqtSignal()
+
+    def __init__(self, con_cambios=False):
+        super().__init__()
+        self._con_cambios = con_cambios
+
+    def tiene_cambios(self):
+        return self._con_cambios
+
+
+def test_un_cambio_recarga_las_demas_vistas_al_volver_a_ellas(ventana):
+    """Un profesor dado de alta no aparecía en Ausencias ni en Reportes (2026-10-03)."""
+    origen, otra = _VistaQueCambia(), _VistaFalsa()
+    ventana.widgets = {
+        "profesores": ContentWrapper("Profesores", QLabel()),
+        "ausencias": ContentWrapper("Ausencias", QLabel()),
+    }
+    ventana.widgets["profesores"].content_widget = origen
+    ventana.widgets["ausencias"].content_widget = otra
+    ventana._conectar_senales_de_recarga(origen, "profesores")
+
+    origen.datos_modificados.emit()
+    assert ventana._vistas_desfasadas == {"ausencias"}
+    assert otra.recargas == 0, "no se recarga todo al momento, sino al volver"
+
+    ventana._refrescar_vista("ausencias")
+    assert otra.recargas == 1
+    assert not ventana._vistas_desfasadas
+
+
+def test_no_se_recarga_una_vista_con_cambios_sin_guardar(ventana):
+    vista = _VistaQueCambia(con_cambios=True)
+    ventana.widgets = {"ajustes": ContentWrapper("Ajustes", QLabel())}
+    ventana.widgets["ajustes"].content_widget = vista
+    ventana._vistas_desfasadas = {"ajustes"}
+
+    ventana._refrescar_vista("ajustes")
+    assert vista.recargas == 0
+    assert ventana._vistas_desfasadas == {"ajustes"}
+
+
+def test_se_prefiere_refrescar_a_las_cargas_parciales(ventana):
+    class _Ausencias:
+        def __init__(self):
+            self.llamadas = []
+
+        def cargar_profesores(self):
+            self.llamadas.append("cargar_profesores")
+
+        def refrescar(self):
+            self.llamadas.append("refrescar")
+
+    vista = _Ausencias()
+    ventana._refresh_widget(vista)
+    assert vista.llamadas == ["refrescar"]
+
+
+def test_las_vistas_que_cambian_datos_lo_anuncian():
+    from presentation.forms.ajustes_form import AjustesForm
+    from presentation.forms.asignacion_calculo_form import AsignacionCalculoForm
+    from presentation.forms.import_export_form import ImportExportForm
+
+    assert hasattr(AjustesForm, "configuracion_guardada")
+    assert hasattr(AjustesForm, "cursos_modificados")
+    assert hasattr(AsignacionCalculoForm, "guardias_generadas")
+    assert hasattr(AsignacionCalculoForm, "guardias_limpiadas")
+    assert hasattr(ImportExportForm, "datos_recargados")

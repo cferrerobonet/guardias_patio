@@ -542,6 +542,10 @@ class ZonaForm(BaseForm):
         # Lo que se acaba de volcar en los campos no son cambios del usuario.
         self.descartar_cambios()
 
+    def revertir_cambios(self) -> None:
+        """«Descartar» vacía la ficha; antes quedaba abierta con lo descartado."""
+        self.cancelar_edicion()
+
     def cancelar_edicion(self):
         """Cancelar la edición y volver al modo 'nueva zona' (sin recargar tabla)."""
         self.zona_editando_id = None

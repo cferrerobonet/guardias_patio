@@ -39,6 +39,7 @@ class ImportExportForm(BaseForm):
     # Señales que se emiten cuando se importan datos
     profesores_importados = pyqtSignal()
     zonas_importadas = pyqtSignal()
+    datos_recargados = pyqtSignal()
 
     def __init__(self, session):
         """
@@ -415,11 +416,9 @@ class ImportExportForm(BaseForm):
 
             self.resultado_text.setText(mensaje)
 
-            # Emitir señales de datos importados
-            if resultado.get("profesores", 0) > 0:
-                self.profesores_importados.emit()
-            if resultado.get("zonas", 0) > 0:
-                self.zonas_importadas.emit()
+            # Una restauración cambia también cursos, configuración y guardias: antes
+            # sólo se avisaba si traía profesores o zonas (2026-10-03).
+            self.datos_recargados.emit()
 
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)

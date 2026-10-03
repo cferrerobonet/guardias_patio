@@ -358,6 +358,7 @@ class AusenciasSustitucionesWidget(BaseForm):
                 self.session, profesor_id, inicio, fin
             )
             self._guardias_en_tabla = guardias
+            self._ausencia_buscada = (profesor_id, inicio, fin)
             self._rellenar_tabla(guardias)
 
             tiene = len(guardias) > 0
@@ -471,6 +472,7 @@ class AusenciasSustitucionesWidget(BaseForm):
 
             from services.gestor_ausencias import reasignar_guardias_automaticamente
 
+            self._registrar_ausencia_buscada()
             resultado = reasignar_guardias_automaticamente(self.session, pendientes)
 
             self._rellenar_tabla(self._guardias_en_tabla)
@@ -484,10 +486,22 @@ class AusenciasSustitucionesWidget(BaseForm):
         except Exception as e:
             self.manejar_excepcion(e, "auto-asignar guardias")
 
+    def _registrar_ausencia_buscada(self) -> None:
+        """Antes de reasignar: si no, el ausente queda libre para sustituir a otros."""
+        if getattr(self, "_ausencia_buscada", None):
+            from services.gestor_ausencias import asegurar_ausencia
+
+            asegurar_ausencia(self.session, *self._ausencia_buscada)
+
     def guardar(self):
         try:
             guardadas = 0
             errores = []
+            if any(
+                (w := self.tabla_guardias.cellWidget(i, 6)) and w.currentData() is not None
+                for i in range(len(self._guardias_en_tabla))
+            ):
+                self._registrar_ausencia_buscada()
             for i, g in enumerate(self._guardias_en_tabla):
                 combo = self.tabla_guardias.cellWidget(i, 6)
                 if combo is None:
@@ -529,6 +543,7 @@ class AusenciasSustitucionesWidget(BaseForm):
     def limpiar_formulario(self):
         self.tabla_guardias.setRowCount(0)
         self._guardias_en_tabla = []
+        self._ausencia_buscada = None
         self.lbl_sin_guardias.setVisible(False)
         self.lbl_resultado.setVisible(False)
         self.btn_auto.setEnabled(False)

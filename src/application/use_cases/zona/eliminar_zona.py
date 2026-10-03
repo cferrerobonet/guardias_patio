@@ -61,9 +61,13 @@ class EliminarZonaUseCase:
             )
 
         try:
+            from services.calculador_guardias import ajustar_zonas_de_los_recreos
+
             nombre_zona = zona.nombre_zona
+            antes = self.session.query(Zona).count()
             self.session.delete(zona)
             self.session.commit()
+            ajustar_zonas_de_los_recreos(self.session, antes)
 
             # Invalidar cache de zonas
             invalidate_zonas_cache()

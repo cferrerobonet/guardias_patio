@@ -182,7 +182,7 @@ def test_probar_la_conexion_desde_ajustes_no_revienta_con_ssh():
 TECHO_TUPLAS_COMODIN = 125
 
 #: `except Exception` a secas. Igual: sólo puede bajar.
-TECHO_EXCEPTION_PELADO = 83
+TECHO_EXCEPTION_PELADO = 82
 
 #: Sólo cuenta la tupla de tres familias sin relación entre sí. `(OSError,
 #: ValueError)` alrededor de una escritura de fichero es precisa, no un comodín:

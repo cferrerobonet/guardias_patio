@@ -429,6 +429,17 @@ class CalendariosPdfWidget(QGroupBox):
         """Método público para refrescar el curso activo desde la UI principal."""
         self._actualizar_curso_activo_label()
 
+    def recargar(self):
+        """Profesores y curso de nuevo, respetando a quien se hubiera desmarcado."""
+        desmarcados = {
+            cb.property("profesor_id") for cb in self.profesor_checkboxes if not cb.isChecked()
+        }
+        self.cargar_profesores_checkboxes()
+        for cb in self.profesor_checkboxes:
+            if cb.property("profesor_id") in desmarcados:
+                cb.setChecked(False)
+        self.refrescar_curso_activo()
+
     def cargar_profesores_checkboxes(self):
         """Cargar checkboxes de profesores desde la base de datos."""
         try:

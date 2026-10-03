@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 from core.logging import get_logger
 from core.usage_logger import usage_log
@@ -102,6 +103,8 @@ class VentanaPrincipal(QMainWindow):
         self.sync_manager = sync_manager
         self.widgets: dict = {}
         self._view_factories: dict = {}
+        #: Vistas abiertas cuyos datos cambiaron en otra; se recargan al volver.
+        self._vistas_desfasadas: set = set()
         self._seccion_actual = "profesores"
         self.setup_ui()
 
@@ -204,7 +207,7 @@ class VentanaPrincipal(QMainWindow):
         if section not in self.widgets and section in self._view_factories:
             title, factory = self._view_factories[section]
             vista = factory()
-            self._conectar_senales_de_recarga(vista)
+            self._conectar_senales_de_recarga(vista, section)
             wrapped = ContentWrapper(title, vista)
             self.widgets[section] = wrapped
             self.content_stack.addWidget(wrapped)
@@ -227,6 +230,8 @@ class VentanaPrincipal(QMainWindow):
             return
 
         self._ensure_view(section)
+        if section in self._vistas_desfasadas:
+            self._refrescar_vista(section)
         if section in self.widgets:
             self.content_stack.setCurrentWidget(self.widgets[section])
             self._seccion_actual = section
@@ -308,7 +313,11 @@ class VentanaPrincipal(QMainWindow):
         if boton_guardar is not None and pulsado is boton_guardar:
             return bool(vista.guardar_cambios_pendientes())
 
-        if hasattr(vista, "descartar_cambios"):
+        # «Descartar» tiene que devolver la pantalla a lo guardado: antes sólo
+        # quitaba el aviso y lo descartado se guardaba en el siguiente «Guardar».
+        if hasattr(vista, "revertir_cambios"):
+            vista.revertir_cambios()
+        elif hasattr(vista, "descartar_cambios"):
             vista.descartar_cambios()
         return True
 
@@ -343,13 +352,15 @@ class VentanaPrincipal(QMainWindow):
 
     def _refresh_widget(self, widget) -> bool:
         """Llama al método de refresco disponible en el widget. Devuelve True si lo encontró."""
+        # `refrescar` primero: es el que recarga la vista entera (en Ausencias,
+        # `cargar_profesores` dejaba el historial sin recargar).
         for method in (
+            "refrescar",
             "cargar_datos",
             "actualizar_calendario",
             "cargar_profesores",
             "cargar_zonas",
             "cargar_guardias",
-            "refrescar",
         ):
             if hasattr(widget, method):
                 getattr(widget, method)()
@@ -361,6 +372,17 @@ class VentanaPrincipal(QMainWindow):
         "profesores_importados",
         "zonas_importadas",
         "datos_recargados",
+        "cursos_modificados",
+    )
+
+    #: Señales de un cambio hecho en una vista que afecta a las demás. No se
+    #: recarga todo al momento: las otras vistas se recargan al volver a ellas.
+    #: Antes no las escuchaba nadie y, por ejemplo, un profesor dado de alta no
+    #: aparecía en Ausencias ni en Reportes hasta reiniciar (2026-10-03).
+    SENALES_DE_CAMBIO = (
+        "datos_modificados",
+        "configuracion_guardada",
+        "sustitucion_guardada",
         "guardias_generadas",
         "guardias_limpiadas",
     )
@@ -389,7 +411,17 @@ class VentanaPrincipal(QMainWindow):
         except Exception as e:  # noqa: BLE001
             logger.warning(f"expire_all falló: {e}")
 
+        # El selector de curso tampoco se enteraba de cursos creados, cerrados o
+        # descargados hasta reiniciar (2026-10-03).
+        selector = getattr(getattr(self, "sidebar", None), "selector_curso", None)
+        if selector is not None and hasattr(selector, "refrescar"):
+            try:
+                selector.refrescar()
+            except (SQLAlchemyError, RuntimeError, ValueError) as e:
+                logger.warning(f"No se pudo recargar el selector de curso: {e}")
+
         refrescadas = 0
+        self._vistas_desfasadas.clear()
         for section, wrapped in self.widgets.items():
             widget = getattr(wrapped, "content_widget", None)
             if widget is None:
@@ -404,7 +436,7 @@ class VentanaPrincipal(QMainWindow):
 
         logger.info(f"✅ {refrescadas} vistas recargadas")
 
-    def _conectar_senales_de_recarga(self, widget):
+    def _conectar_senales_de_recarga(self, widget, section: str | None = None):
         """Conecta las señales de datos de una vista recién creada."""
         for nombre in self.SENALES_DE_RECARGA:
             senal = getattr(widget, nombre, None)
@@ -412,6 +444,32 @@ class VentanaPrincipal(QMainWindow):
                 senal.connect(
                     lambda _=None, n=nombre: self.recargar_todas_las_vistas(n)
                 )
+        for nombre in self.SENALES_DE_CAMBIO:
+            senal = getattr(widget, nombre, None)
+            if senal is not None and hasattr(senal, "connect"):
+                senal.connect(lambda *_, s=section: self._marcar_vistas_desfasadas(s))
+
+    def _marcar_vistas_desfasadas(self, origen: str | None) -> None:
+        """Las vistas ya abiertas, salvo la que cambió, se recargan al volver a ellas."""
+        self._vistas_desfasadas.update(s for s in self.widgets if s != origen)
+
+    def _refrescar_vista(self, section: str) -> None:
+        widget = getattr(self.widgets.get(section), "content_widget", None)
+        if widget is None:
+            self._vistas_desfasadas.discard(section)
+            return
+        if getattr(widget, "tiene_cambios", lambda: False)():
+            return
+        self._vistas_desfasadas.discard(section)
+        try:
+            from utils.cache import clear_all_cache
+
+            clear_all_cache()
+            self.session.expire_all()
+            self._refresh_widget(widget)
+        except (SQLAlchemyError, RuntimeError, ValueError, TypeError, AttributeError) as e:
+            # Una vista rota no puede impedir navegar.
+            logger.error(f"Error recargando {section}: {e}")
 
     def _on_curso_cambiado(self, curso_id: int):
         """Al cambiar de curso, todas las vistas abiertas deben mostrar el nuevo."""
@@ -436,7 +494,9 @@ class VentanaPrincipal(QMainWindow):
 
             if boton_guardar is not None and caja.clickedButton() is boton_guardar:
                 vista.guardar_cambios_pendientes()
-            if hasattr(vista, "descartar_cambios"):
+            if vista.tiene_cambios() and hasattr(vista, "revertir_cambios"):
+                vista.revertir_cambios()
+            elif hasattr(vista, "descartar_cambios"):
                 vista.descartar_cambios()
 
         self.recargar_todas_las_vistas(f"curso {curso_id}")

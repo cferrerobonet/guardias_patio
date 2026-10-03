@@ -5,12 +5,10 @@ Permite generar calendarios PDF e informes estadísticos.
 """
 
 import os
-from pathlib import Path
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
-    QFileDialog,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -20,8 +18,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
-from infrastructure.database.models import Configuracion, Profesor
+from infrastructure.database.models import Profesor
 from presentation.forms.base_form import BaseForm
 from presentation.forms.reportes_widgets import (
     CalendariosPdfWidget,
@@ -146,6 +145,11 @@ class ReportesForm(BaseForm):
         main_layout.addWidget(resultado_group)
 
         self.setLayout(main_layout)
+
+    def refrescar(self):
+        """La vista se crea una vez y se quedaba con los profesores de entonces."""
+        self.calendarios_widget.recargar()
+        self._cargar_profesores_ical()
 
     # ========== PROPIEDADES DE COMPATIBILIDAD ==========
 
@@ -717,62 +721,17 @@ class ReportesForm(BaseForm):
         publicar_desde(self)
 
     def _cargar_profesores_ical(self):
+        elegido = self._ical_combo.currentData()
         self._ical_combo.clear()
         try:
             profesores = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
             for p in profesores:
                 self._ical_combo.addItem(p.nombre_completo, p.id)
-        except Exception:
+        except SQLAlchemyError:
             pass
+        self._ical_combo.setCurrentIndex(max(self._ical_combo.findData(elegido), 0))
 
     def _exportar_ical(self):
-        profesor_id = self._ical_combo.currentData()
-        if profesor_id is None:
-            self.mostrar_advertencia("Sin selección", "Selecciona un profesor.")
-            return
+        from presentation.forms.reportes_widgets.exportacion_ical import exportar_ical_desde
 
-        profesor_nombre = self._ical_combo.currentText()
-        from services.icalendar_service import ICalendarService
-
-        nombre_archivo = ICalendarService.obtener_nombre_archivo_ics(profesor_nombre)
-        from utils.ui_helpers import recordar_carpeta, ultima_carpeta
-
-        # Propone la última carpeta usada, en vez de empezar siempre de cero
-        carpeta_previa = ultima_carpeta()
-        propuesta = (
-            str(Path(carpeta_previa) / nombre_archivo) if carpeta_previa else nombre_archivo
-        )
-        ruta, _ = QFileDialog.getSaveFileName(
-            self,
-            "Guardar archivo iCal",
-            propuesta,
-            "iCalendar (*.ics)",
-        )
-        if not ruta:
-            return
-        recordar_carpeta(ruta)
-
-        try:
-            config = self.session.query(Configuracion).first()
-            nombre_centro = "Centro Educativo"
-            if config and hasattr(config, "nombre_centro") and config.nombre_centro:
-                nombre_centro = config.nombre_centro
-
-            ok = ICalendarService.generar_icalendar_profesor(
-                session_or_factory=self.session,
-                profesor_id=profesor_id,
-                ruta_salida=ruta,
-                nombre_centro=nombre_centro,
-            )
-            if ok:
-                self.resultado_text.setText(
-                    f"✅ Archivo iCal exportado\n\nProfesor: {profesor_nombre}\nArchivo: {ruta}"
-                )
-                self.mostrar_exito("iCal exportado", f"Guardado en {ruta}")
-            else:
-                self.mostrar_advertencia(
-                    "Sin guardias", f"{profesor_nombre} no tiene guardias asignadas."
-                )
-        except (OSError, ValueError) as e:
-            self.mostrar_error("Error al exportar", str(e))
-
+        exportar_ical_desde(self)

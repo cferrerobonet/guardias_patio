@@ -437,6 +437,10 @@ class ProfesorForm(BaseForm):
         # NO recargar tabla - es más rápido y no se han guardado cambios
         # self.cargar_profesores()  # ELIMINADO - innecesario
 
+    def revertir_cambios(self) -> None:
+        """«Descartar» cierra la ficha; antes quedaba abierta con lo descartado."""
+        self.cancelar_edicion()
+
     def guardar_cambios_pendientes(self) -> bool:
         """Permite al guard de navegación ofrecer «Guardar» (UXA-004)."""
         self.guardar_profesor()

@@ -727,3 +727,148 @@ class TestAjustesCamposPersis:
         # El valor exacto depende del DTO — verificar que se guardó algo
         assert cfg is not None
         form.close()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# «Descartar» al salir de la vista
+# ──────────────────────────────────────────────────────────────────────────────
+
+class TestDescartarRevierte:
+    """«Descartar» sólo quitaba el aviso: lo descartado seguía en pantalla y se
+    guardaba con el siguiente «Guardar» (2026-10-03)."""
+
+    def test_profesor(self, qapp, session, profesor_factory):
+        prof = profesor_factory("DESCARTE, Test", turno="mañana", horas_contrato=20.0)
+        prof.email_corporativo = "antes@colegio.edu"
+        session.commit()
+        form = ProfesorForm(session)
+        form.show()
+        QApplication.processEvents()
+        _abrir_edicion(form, 0)
+        form.datos_basicos_widget.email_input.setText("descartado@colegio.edu")
+        form._al_editar_campo()
+        assert form.tiene_cambios()
+
+        form.revertir_cambios()
+        assert not form.tiene_cambios()
+        assert form.profesor_editando_id is None
+        assert form.datos_basicos_widget.email_input.text() == ""
+        _guardar(form)
+        session.expire_all()
+        assert session.get(Profesor, prof.id).email_corporativo == "antes@colegio.edu"
+        form.close()
+
+    def test_ajustes(self, qapp, session):
+        _config_base(session)
+        form = AjustesForm(session)
+        form.show()
+        QApplication.processEvents()
+        original = form.ajuste_tutores_input.text()
+        form.ajuste_tutores_input.setText("2.5")
+        assert form.tiene_cambios()
+
+        form.revertir_cambios()
+        assert form.ajuste_tutores_input.text() == original
+        assert not form.tiene_cambios()
+        assert not form._dirty_label.isVisible()
+        form.close()
+
+
+def test_reportes_ve_un_profesor_nuevo_y_respeta_los_desmarcados(qapp, session, profesor_factory):
+    from presentation.forms.reportes_form import ReportesForm
+
+    _config_base(session)
+    quitado = profesor_factory("QUITADO, Uno", turno="mañana", horas_contrato=20.0)
+    form = ReportesForm(session)
+    widget = form.calendarios_widget
+    next(cb for cb in widget.profesor_checkboxes if cb.property("profesor_id") == quitado.id)\
+        .setChecked(False)
+
+    nuevo = profesor_factory("NUEVO, Dos", turno="mañana", horas_contrato=20.0)
+    form.refrescar()
+
+    estado = {cb.property("profesor_id"): cb.isChecked() for cb in widget.profesor_checkboxes}
+    assert estado == {quitado.id: False, nuevo.id: True}
+    assert form._ical_combo.findData(nuevo.id) >= 0
+    form.close()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Guardar y reabrir: todos los campos
+# ──────────────────────────────────────────────────────────────────────────────
+
+def test_ajustes_todos_los_campos_sobreviven_a_reabrir(qapp, session):
+    from PyQt6.QtCore import QTime
+
+    _config_base(session)
+    form = AjustesForm(session)
+    fr = form.fechas_recreos_widget
+    fr.fecha_inicio_input.setDate(QDate(2026, 9, 8))
+    fr.fecha_fin_input.setDate(QDate(2027, 6, 18))
+    fr.reparto_igual_inicio_check.setChecked(False)
+    fr.fecha_reparto_input.setDate(QDate(2026, 9, 21))
+    fr.recreo1_manana_input.setTime(QTime(10, 45))
+    fr.recreo2_manana_input.setTime(QTime(12, 35))
+    fr.recreo1_tarde_input.setTime(QTime(16, 50))
+    fr.recreo2_tarde_input.setTime(QTime(18, 40))
+    form.ajuste_tutores_input.setText("0.8")
+    form.ajuste_no_tutores_input.setText("1.2")
+    form.festivos_auto_input.setText("0")
+    form.no_lectivos_input.setText("2026-10-09, 2026-12-07")
+    with patch.object(form, "mostrar_exito"), patch.object(form, "mostrar_advertencia") as aviso:
+        form.guardar_configuracion()
+    assert not aviso.called, aviso.call_args
+    form.close()
+
+    otra = AjustesForm(session)
+    fr = otra.fechas_recreos_widget
+    assert fr.get_fechas() == {"fecha_inicio": date(2026, 9, 8), "fecha_fin": date(2027, 6, 18)}
+    assert fr.get_fecha_reparto_oficial() == date(2026, 9, 21)
+    assert fr.get_recreos_manana() == {"recreo1": time(10, 45), "recreo2": time(12, 35)}
+    assert fr.get_recreos_tarde() == {"recreo1": time(16, 50), "recreo2": time(18, 40)}
+    assert otra.ajustes_widget.get_ajustes()["tutores"] == 0.8
+    assert otra.ajustes_widget.get_ajustes()["no_tutores"] == 1.2
+    assert otra.festivos_widget.get_festivos_config() == {
+        "activar_automaticos": False,
+        "dias_no_lectivos": "2026-10-09, 2026-12-07",
+    }
+    assert not otra.tiene_cambios()
+    otra.close()
+
+
+def test_un_dia_no_lectivo_imposible_no_se_acepta(qapp, session):
+    _config_base(session)
+    form = AjustesForm(session)
+    form.no_lectivos_input.setText("2026-10-09, 2026-30-03")
+    valido, mensaje = form.validar_formulario()
+    assert not valido and "2026-30-03" in mensaje
+    form.close()
+
+
+def test_zona_todos_los_campos_sobreviven_a_reabrir(qapp, session, zona_factory):
+    zona = zona_factory(nombre_zona="Zona Completa")
+    form = ZonaForm(session)
+    form.show()
+    QApplication.processEvents()
+    select_row(form.tabla_zonas, 0)
+    form.editar_zona()
+    w = form.datos_zona_widget
+    w.descripcion_input.setText("Junto a la pista")
+    w.usar_fecha_inicio_check.setChecked(True)
+    w.fecha_inicio_input.setDate(QDate(2026, 9, 14))
+    w.usar_fecha_fin_check.setChecked(True)
+    w.fecha_fin_input.setDate(QDate(2027, 5, 28))
+    with patch.object(form, "mostrar_exito"):
+        form.guardar_zona()
+
+    select_row(form.tabla_zonas, 0)
+    form.editar_zona()
+    assert w.get_datos() == {
+        "nombre": "Zona Completa",
+        "descripcion": "Junto a la pista",
+        "fecha_inicio": date(2026, 9, 14),
+        "fecha_fin": date(2027, 5, 28),
+    }
+    session.expire_all()
+    assert session.get(Zona, zona.id).fecha_fin == date(2027, 5, 28)
+    form.close()

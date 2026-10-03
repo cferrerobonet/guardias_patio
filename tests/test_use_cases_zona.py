@@ -322,3 +322,68 @@ class TestZonaUseCasesIntegracion:
         zonas = listar_uc.execute()
 
         assert len(zonas) == 5
+
+
+class TestZonasDeLosRecreos:
+    """Ajustes guarda cuántas zonas cubre cada recreo (siempre todas). Una zona
+    creada después se quedaba sin guardias hasta volver a guardar Ajustes."""
+
+    @staticmethod
+    def _config(session, zonas):
+        import json
+        from datetime import date, time
+
+        from infrastructure.database.models import Configuracion
+
+        recreos = [
+            {"id": 1, "etiqueta": "Recreo 1 Mañana", "turno": "mañana", "hora": "10:45",
+             "zonas": zonas},
+            {"id": 3, "etiqueta": "Recreo 1 Tarde", "turno": "tarde", "hora": "16:50", "zonas": 1},
+        ]
+        config = Configuracion(
+            anio_inicio_curso=2026, fecha_inicio_curso=date(2026, 9, 7),
+            fecha_fin_curso=date(2027, 6, 18), hora_recreo1_manana=time(10, 45),
+            hora_recreo2_manana=time(12, 35), recreos_config=json.dumps(recreos),
+        )
+        session.add(config)
+        session.commit()
+        return config
+
+    @staticmethod
+    def _zonas(config):
+        import json
+
+        return [r["zonas"] for r in json.loads(config.recreos_config)]
+
+    def test_crear_una_zona_la_suma_a_los_recreos_que_cubrian_todas(self, session):
+        clear_all_cache()
+        CrearZonaUseCase(session).execute(CrearZonaDTO(nombre_zona="Z1"))
+        config = self._config(session, zonas=1)
+        CrearZonaUseCase(session).execute(CrearZonaDTO(nombre_zona="Z2"))
+        session.refresh(config)
+        assert self._zonas(config) == [2, 2]
+
+    def test_eliminar_una_zona_la_resta(self, session):
+        clear_all_cache()
+        z1 = CrearZonaUseCase(session).execute(CrearZonaDTO(nombre_zona="Z1"))
+        CrearZonaUseCase(session).execute(CrearZonaDTO(nombre_zona="Z2"))
+        config = self._config(session, zonas=2)
+        EliminarZonaUseCase(session).execute(z1.id)
+        session.refresh(config)
+        assert self._zonas(config) == [1, 1]
+
+    def test_el_preflight_avisa_de_un_recreo_que_no_cubre_todas(self, session):
+        from application.use_cases.preflight_generacion import PreflightGeneracionUseCase
+
+        clear_all_cache()
+        for nombre in ("Z1", "Z2", "Z3"):
+            session.add(Zona(nombre_zona=nombre))
+        session.commit()
+        self._config(session, zonas=3)
+
+        recreos = next(
+            r for r in PreflightGeneracionUseCase(session).execute().requisitos
+            if r.clave == "recreos"
+        )
+        assert not recreos.cumplido
+        assert "Recreo 1 Tarde" in recreos.detalle and "Guarda Ajustes" in recreos.detalle

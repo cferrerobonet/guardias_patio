@@ -138,6 +138,15 @@ class FestivosWidget(QGroupBox):
                 return False, (
                     "Formato de días no lectivos incorrecto. Use: YYYY-MM-DD separados por comas"
                 )
+            # Una fecha imposible (p. ej. día y mes cambiados) pasaba el patrón y
+            # el reparto la ignoraba sin decir nada (2026-10-03).
+            from datetime import date
+
+            for texto in (t.strip() for t in dias_text.split(",")):
+                try:
+                    date.fromisoformat(texto)
+                except ValueError:
+                    return False, f"El día no lectivo {texto} no existe. Revisa día y mes."
 
             # Validar que las fechas sean válidas
             from datetime import datetime

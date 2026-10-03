@@ -56,6 +56,12 @@ def _get_zona_repo(zona_repo_or_session):
         return repo, zona_repo_or_session
 
 
+def _contar_zonas(session) -> int:
+    from infrastructure.database.models import Zona
+
+    return session.query(Zona).count()
+
+
 def importar_zonas_desde_csv(
     zona_repo_or_session,
     archivo_path: str,
@@ -99,6 +105,7 @@ def importar_zonas_desde_csv(
         return resultados
 
     total = len(filas)
+    zonas_antes = _contar_zonas(session)
     for i, fila in enumerate(filas):
         resultados["leidos"] += 1
         nombre = fila.get("nombre_zona", "").strip()
@@ -124,6 +131,10 @@ def importar_zonas_desde_csv(
 
     try:
         session.commit()
+        if resultados["importadas"]:
+            from services.calculador_guardias import ajustar_zonas_de_los_recreos
+
+            ajustar_zonas_de_los_recreos(session, zonas_antes)
     except Exception as e:
         session.rollback()
         logger.exception(f"Error de base de datos al guardar zonas importadas: {e}")
@@ -188,6 +199,7 @@ def importar_zonas_desde_excel(
         return resultados
 
     total = len(filas)
+    zonas_antes = _contar_zonas(session)
     for i, fila in enumerate(filas):
         resultados["leidos"] += 1
         nombre = str(fila.get("nombre_zona", "")).strip()
@@ -213,6 +225,10 @@ def importar_zonas_desde_excel(
 
     try:
         session.commit()
+        if resultados["importadas"]:
+            from services.calculador_guardias import ajustar_zonas_de_los_recreos
+
+            ajustar_zonas_de_los_recreos(session, zonas_antes)
     except Exception as e:
         session.rollback()
         logger.exception(f"Error de base de datos al guardar zonas importadas: {e}")

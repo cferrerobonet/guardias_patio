@@ -65,8 +65,12 @@ class CrearZonaUseCase:
         )
 
         try:
+            from services.calculador_guardias import ajustar_zonas_de_los_recreos
+
+            antes = self.session.query(Zona).count()
             self.session.add(nueva_zona)
             self.session.commit()
+            ajustar_zonas_de_los_recreos(self.session, antes)
             self.session.refresh(nueva_zona)
 
             # Invalidar cache de zonas

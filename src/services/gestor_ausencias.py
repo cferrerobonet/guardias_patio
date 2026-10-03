@@ -235,6 +235,28 @@ def obtener_guardias_afectadas(
     return guardias
 
 
+def asegurar_ausencia(session, profesor_id: int, fecha_inicio: date, fecha_fin: date) -> None:
+    """Deja registrada la ausencia del periodo si ninguna activa lo cubre ya.
+
+    La pantalla de sustituciones reasignaba las guardias sin registrar la
+    ausencia: el ausente quedaba libre esos días y salía como sustituto de otro
+    compañero (2026-10-03). Tipo neutro y sin motivo: no se guarda ningún dato de
+    salud que nadie haya escrito.
+    """
+    cubierta = (
+        session.query(Ausencia)
+        .filter(
+            Ausencia.profesor_id == profesor_id,
+            Ausencia.activa == True,  # noqa: E712
+            Ausencia.fecha_inicio <= fecha_inicio,
+            Ausencia.fecha_fin >= fecha_fin,
+        )
+        .first()
+    )
+    if cubierta is None:
+        registrar_ausencia(session, profesor_id, fecha_inicio, fecha_fin, tipo="otros")
+
+
 def obtener_guardias_afectadas_por_periodo(
     session,
     profesor_id: int,

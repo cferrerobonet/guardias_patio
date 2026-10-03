@@ -225,6 +225,37 @@ def _parse_recreos_config(config: Configuracion) -> List[dict]:
         return []
 
 
+def ajustar_zonas_de_los_recreos(session, antes: int) -> None:
+    """Al cambiar el número de zonas, los recreos que cubrían todas siguen cubriéndolas.
+
+    Ajustes guarda en cada recreo cuántas zonas cubre, y siempre escribe el total
+    del momento. Los repartos usan `min(recreo["zonas"], zonas)`: una zona creada
+    después de guardar Ajustes se quedaba sin guardias sin que nada avisara
+    (2026-10-03).
+    """
+    ahora = session.query(Zona).count()
+    if ahora == antes:
+        return
+    for config in session.query(Configuracion).all():
+        try:
+            recreos = json.loads(config.recreos_config or "[]")
+        except ValueError:
+            continue
+        if not isinstance(recreos, list):
+            continue
+        cambiado = False
+        for recreo in recreos:
+            if not isinstance(recreo, dict):
+                continue
+            zonas = recreo.get("zonas")
+            if zonas == antes or (isinstance(zonas, int) and zonas > ahora):
+                recreo["zonas"] = ahora
+                cambiado = True
+        if cambiado:
+            config.recreos_config = json.dumps(recreos)
+    session.commit()
+
+
 def calcular_recreos_activos(session) -> Tuple[int, int]:
     """
     Determina cuántos recreos están activos en mañana y tarde.

@@ -5,7 +5,7 @@ Form para gestionar los ajustes del curso escolar.
 Sigue el patrón MVP usando Use Cases.
 """
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -45,6 +45,10 @@ class AjustesForm(BaseForm):
     - Festivos y días no lectivos
     - Gestión de cursos escolares
     """
+
+    #: Las demás vistas dependen de la configuración y de los cursos.
+    configuracion_guardada = pyqtSignal()
+    cursos_modificados = pyqtSignal()
 
     def __init__(self, session, parent=None):
         """
@@ -177,6 +181,7 @@ class AjustesForm(BaseForm):
         from presentation.widgets.gestion_cursos_widget import GestionCursosWidget
 
         self.gestion_cursos_widget = GestionCursosWidget(self.session, self)
+        self.gestion_cursos_widget.curso_modificado.connect(self.cursos_modificados.emit)
         content_layout.addWidget(self.gestion_cursos_widget)
 
         # Espacio flexible antes de los botones
@@ -277,6 +282,7 @@ class AjustesForm(BaseForm):
 
             self.mostrar_exito("Configuración Guardada", mensaje_exito)
             self._marcar_guardado()
+            self.configuracion_guardada.emit()
 
         except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
             self.manejar_excepcion(e, "guardar configuración")
@@ -357,6 +363,17 @@ class AjustesForm(BaseForm):
         """Permite al guard de navegación ofrecer «Guardar» (UXA-004)."""
         self.guardar_configuracion()
         return not self.tiene_cambios()
+
+    def revertir_cambios(self) -> None:
+        """«Descartar» vuelve a lo guardado; antes sólo quitaba el aviso."""
+        self.cargar_configuracion()
+        self._marcar_guardado()
+
+    def refrescar(self) -> None:
+        """Recarga lo guardado sin pisar cambios que aún no se han guardado."""
+        if not self.tiene_cambios():
+            self.cargar_configuracion()
+        self.gestion_cursos_widget.refrescar()
 
     def _generar_recreos_config_json(self) -> str:
         """Genera el JSON de configuración de recreos basado en los valores del formulario."""

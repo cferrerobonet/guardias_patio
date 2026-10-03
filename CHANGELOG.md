@@ -5,6 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.4.3] - 2026-10-03
+
+### 🎯 Resumen
+Auditoría dirigida a fallos del mismo tipo que el de la zona preferida: datos que una pantalla no ve porque otra los cambió, avisos que no hacen lo que dicen y datos que se pierden o se ignoran sin decir nada. Lo más importante: un profesor ausente podía salir como sustituto de otro compañero en los mismos días.
+
+### Fixed
+- **Pantallas desfasadas** (FAL-005): las vistas se crean una vez y las señales de «datos modificados» de Profesores y Zonas no las escuchaba nadie. Un profesor dado de alta no aparecía en Ausencias ni en Reportes hasta reiniciar; tampoco se enteraban de las guardias generadas o limpiadas, de las sustituciones ni de los cambios de Ajustes. Ahora cada vista se recarga al volver a ella si algo cambió en otra (sin pisar cambios sin guardar). Ausencias recarga también el historial, Reportes conserva a quien se hubiera desmarcado y una restauración de copia JSON recarga todo aunque no traiga profesores ni zonas.
+- **Cursos escolares** (FAL-006): crear, activar, cerrar o reabrir un curso en Ajustes no llegaba al selector de curso ni a las demás vistas hasta reiniciar.
+- **«Descartar» al salir de una pantalla** (FAL-007) sólo quitaba el aviso: lo descartado seguía en la ficha y se guardaba con el siguiente «Guardar». Ahora Profesores y Zonas cierran la ficha y Ajustes vuelve a lo guardado.
+- **Zonas de cada recreo** (FAL-008): Ajustes guarda cuántas zonas cubre cada recreo y el reparto no pasa de ese número. Una zona creada después de guardar Ajustes se quedaba sin guardias sin aviso. Ahora crear, borrar o importar zonas actualiza los recreos, y la comprobación previa a generar avisa si algún recreo cubre menos zonas de las que hay.
+- **Días no lectivos imposibles** (FAL-009): una fecha como `2026-30-03` (día y mes cambiados) pasaba la validación y el reparto la ignoraba. Ahora Ajustes dice cuál no existe.
+- **Ausencias** (FAL-010): la pantalla de sustituciones reasignaba las guardias sin registrar la ausencia, así que el ausente quedaba libre y podía salir como sustituto de otro compañero esos mismos días (en la prueba era el único candidato). Al guardar o autoasignar se registra la ausencia del periodo, con tipo «otros» y sin motivo.
+
+### Changed
+- La exportación iCal de Reportes vive en `reportes_widgets/exportacion_ical.py`, como la publicación web, para que el formulario no pase del tamaño máximo.
+
+### 🧹 Housekeeping
+- Tests nuevos de guardar y reabrir para todos los campos de Ajustes y Zonas, de recarga entre vistas, de «Descartar», de zonas por recreo y de ausencias. Techo de `except Exception` rebajado a 82.
+
 ## [6.4.2] - 2026-10-03
 
 ### 🎯 Resumen

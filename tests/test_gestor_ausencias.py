@@ -908,3 +908,77 @@ def test_reasignar_guardia_ausencia_un_dia(session, datos_reasignacion):
     session.expire(g)
     session.refresh(g)
     assert g.profesor_id == p2.id
+
+
+class TestLaAusenciaQuedaRegistrada:
+    """Sustituir sin registrar la ausencia dejaba al ausente libre para cubrir a
+    otro compañero esos mismos días (2026-10-03)."""
+
+    @staticmethod
+    def _escenario(session, profesor_factory):
+        from infrastructure.database.models import Guardia, Zona
+
+        z1, z2 = Zona(nombre_zona="A"), Zona(nombre_zona="B")
+        session.add_all([z1, z2])
+        session.commit()
+        x = profesor_factory("X, Ausente", turno="mañana", horas_contrato=20.0)
+        y = profesor_factory("Y, Otro", turno="mañana", horas_contrato=20.0)
+        z = profesor_factory("Z, Libre", turno="mañana", horas_contrato=20.0)
+        lunes = date(2026, 10, 5)
+        gx = Guardia(profesor_id=x.id, fecha=lunes, turno="mañana", recreo=1, zona_id=z1.id)
+        gy = Guardia(profesor_id=y.id, fecha=lunes, turno="mañana", recreo=1, zona_id=z2.id)
+        session.add_all([gx, gy])
+        session.commit()
+        return x, y, z, gx, lunes
+
+    def test_el_ausente_no_sale_como_sustituto(self, session, profesor_factory):
+        from services.gestor_ausencias import (
+            asegurar_ausencia,
+            obtener_profesores_disponibles,
+            reasignar_guardia,
+        )
+
+        x, y, z, gx, lunes = self._escenario(session, profesor_factory)
+        asegurar_ausencia(session, x.id, lunes, lunes)
+        reasignar_guardia(session, gx.id, z.id)
+
+        candidatos = obtener_profesores_disponibles(
+            session, lunes, "mañana", 1, excluir_profesor_id=y.id
+        )
+        assert x.id not in {p.id for p, _ in candidatos}
+
+    def test_no_se_duplica_si_ya_hay_una_que_cubre_el_periodo(self, session, profesor_factory):
+        from infrastructure.database.models import Ausencia
+        from services.gestor_ausencias import asegurar_ausencia
+
+        x, *_ , lunes = self._escenario(session, profesor_factory)
+        asegurar_ausencia(session, x.id, lunes, lunes)
+        asegurar_ausencia(session, x.id, lunes, lunes)
+        ausencias = session.query(Ausencia).filter_by(profesor_id=x.id).all()
+        assert len(ausencias) == 1
+        assert ausencias[0].tipo == "otros" and ausencias[0].motivo is None
+
+    def test_la_pantalla_registra_la_ausencia_al_guardar(self, qapp, session, profesor_factory):
+        from unittest.mock import patch
+
+        from PyQt6.QtCore import QDate
+
+        from infrastructure.database.models import Ausencia
+        from presentation.widgets.ausencias_sustituciones import AusenciasSustitucionesWidget
+
+        x, y, z, gx, lunes = self._escenario(session, profesor_factory)
+        w = AusenciasSustitucionesWidget(session)
+        w.combo_profesor.setCurrentIndex(w.combo_profesor.findData(x.id))
+        w.fecha_inicio.setDate(QDate(2026, 10, 5))
+        w.fecha_fin.setDate(QDate(2026, 10, 5))
+        with patch.object(w, "mostrar_advertencia"):
+            w.buscar_guardias()
+        combo = w.tabla_guardias.cellWidget(0, 6)
+        combo.setCurrentIndex(combo.findData(z.id))
+        w.guardar()
+
+        ausencia = session.query(Ausencia).filter_by(profesor_id=x.id).one()
+        assert (ausencia.fecha_inicio, ausencia.fecha_fin) == (lunes, lunes)
+        session.expire_all()
+        assert session.get(type(gx), gx.id).profesor_id == z.id
+        w.close()

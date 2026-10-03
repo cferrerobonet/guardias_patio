@@ -5,7 +5,7 @@ Permite calcular la distribución teórica de guardias por profesor
 y generar el calendario de guardias.
 """
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QGridLayout,
     QLabel,
@@ -34,6 +34,10 @@ class AsignacionCalculoForm(BaseForm):
     - Generar el calendario de guardias
     - Analizar resultados e incidencias
     """
+
+    #: Reexpuestas del panel de generación para que la ventana las vea.
+    guardias_generadas = pyqtSignal()
+    guardias_limpiadas = pyqtSignal()
 
     def __init__(self, session, sync_manager=None, session_factory=None):
         """
@@ -137,6 +141,8 @@ class AsignacionCalculoForm(BaseForm):
             session_factory=self._session_factory,
         )
         right_layout.addWidget(self.generacion_panel, 1)
+        self.generacion_panel.guardias_generadas.connect(self.guardias_generadas.emit)
+        self.generacion_panel.guardias_limpiadas.connect(self.guardias_limpiadas.emit)
 
         right_container.setLayout(right_layout)
         grid_layout.addWidget(right_container, 0, 1)

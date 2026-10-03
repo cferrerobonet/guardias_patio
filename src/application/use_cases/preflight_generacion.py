@@ -125,6 +125,25 @@ class PreflightGeneracionUseCase:
                 recreos = _parse_recreos_config(config)
             except Exception as e:  # noqa: BLE001
                 logger.debug(f"No se pudieron leer los recreos: {e}")
+        # Un recreo guardado con menos zonas de las que hay dejaría alguna zona sin
+        # guardias sin decir nada (2026-10-03).
+        total_zonas = self.session.query(Zona).count()
+        cortos = [
+            r.get("etiqueta") or f"Recreo {r.get('id')}"
+            for r in self._recreos_guardados(config)
+            if isinstance(r.get("zonas"), int) and r["zonas"] < total_zonas
+        ]
+        if cortos:
+            return Requisito(
+                clave="recreos",
+                titulo="Recreos configurados",
+                cumplido=False,
+                detalle=(
+                    f"{', '.join(cortos)} cubre{'n' if len(cortos) > 1 else ''} menos zonas "
+                    f"de las {total_zonas} que hay. Guarda Ajustes para incluirlas todas."
+                ),
+                seccion="ajustes",
+            )
         return Requisito(
             clave="recreos",
             titulo="Recreos configurados",
@@ -136,6 +155,17 @@ class PreflightGeneracionUseCase:
             ),
             seccion="ajustes",
         )
+
+    @staticmethod
+    def _recreos_guardados(config) -> list:
+        """Los recreos tal cual: sin «zonas» los repartos cubren todas las zonas."""
+        import json
+
+        try:
+            datos = json.loads(getattr(config, "recreos_config", None) or "[]")
+        except ValueError:
+            return []
+        return [r for r in datos if isinstance(r, dict)] if isinstance(datos, list) else []
 
     def _zonas(self) -> Requisito:
         total = self.session.query(Zona).filter(Zona.activa.is_(True)).count()
