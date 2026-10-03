@@ -74,6 +74,12 @@ class ResumenPanelDTO(BaseModel):
     guardias_tarde: int = Field(default=0, ge=0)
     promedio_por_profesor: float = Field(default=0.0)
     cobertura_estimada: int = Field(default=0, ge=0, le=100)
+    #: Equidad del reparto frente a la cuota de cada uno (None si no se puede calcular).
+    ranuras_curso: Optional[int] = None
+    fuera_de_cuota: int = Field(default=0, ge=0)
+    mayor_diferencia: int = 0
+    profesor_mayor_diferencia: str = ""
+    sustituciones: int = Field(default=0, ge=0)
 
     model_config = {"from_attributes": True}
 
@@ -90,6 +96,10 @@ class EstadisticaProfesorDTO(BaseModel):
     estado: str = Field(default="❌ Sin guardias")
     fecha_inicio_guardias: Optional[date] = None
     fecha_fin_guardias: Optional[date] = None
+    cuota: Optional[int] = None
+    diferencia: Optional[int] = None
+    veces_sustituto: int = Field(default=0, ge=0)
+    veces_sustituido: int = Field(default=0, ge=0)
 
     model_config = {"from_attributes": True}
 
@@ -123,5 +133,9 @@ class EstadisticasPanelCompletoDTO(BaseModel):
     por_zona: List[EstadisticaZonaDTO] = Field(default_factory=list)
     grafico_profesores: DatosGraficoDTO = Field(default_factory=DatosGraficoDTO)
     grafico_zonas: DatosGraficoDTO = Field(default_factory=DatosGraficoDTO)
+    #: Diferencia con la cuota por profesor, ordenada de más por debajo a más por encima.
+    grafico_diferencias: DatosGraficoDTO = Field(default_factory=DatosGraficoDTO)
+    #: Quién ha cubierto más sustituciones (los diez primeros).
+    grafico_sustitutos: DatosGraficoDTO = Field(default_factory=DatosGraficoDTO)
 
     model_config = {"from_attributes": True}

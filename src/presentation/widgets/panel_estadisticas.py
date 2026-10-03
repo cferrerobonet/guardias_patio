@@ -31,7 +31,7 @@ from presentation.themes.tema_aplicacion import (
     TEXT_PRIMARY,
     get_table_style,
 )
-from presentation.widgets.bar_chart_widget import BarChartWidget, PieChartWidget
+from presentation.widgets.bar_chart_widget import BarChartWidget, DivergingBarChartWidget
 from utils.icons import icon_for_button
 from utils.ui_helpers import dotar_de_contrato
 
@@ -39,6 +39,24 @@ MplCanvas = BarChartWidget
 
 
 class PanelEstadisticas(BaseForm):
+    #: Cuota y diferencia en lugar del «% del total», que no dice si el reparto es
+    #: justo: un profesor a media jornada tiene la mitad y está bien (2026-10-03).
+    COLUMNAS_PROFESORES = (
+        ("Profesor", ""),
+        ("Cuota", "Guardias que le corresponden en el reparto oficial, ya descontadas "
+                  "sus voluntarias."),
+        ("Asignadas", "Guardias que tiene en el calendario del curso activo, "
+                      "sustituciones incluidas."),
+        ("Diferencia", "Asignadas menos cuota. Hasta ±1 es redondeo del reparto."),
+        ("Mañana", ""),
+        ("Tarde", ""),
+        ("Estado", ""),
+        ("Inicio guardias", "Fecha desde la que tiene guardias. «-» sin restricción."),
+        ("Fin guardias", "Fecha hasta la que tiene guardias. «-» sin restricción."),
+        ("Veces sustituto", "Guardias que ha cubierto en lugar de otro."),
+        ("Veces sustituido", "Guardias suyas que ha cubierto otro."),
+    )
+
     """Widget para mostrar estadísticas de guardias."""
 
     def __init__(self, session):
@@ -76,8 +94,10 @@ class PanelEstadisticas(BaseForm):
         self.tabs.addTab(self._crear_tab_resumen(), "Resumen")
         self.tabs.addTab(self._crear_tab_profesores(), "Por Profesor")
         self.tabs.addTab(self._crear_tab_zonas(), "Por Zona")
-        self.tabs.addTab(self._crear_tab_graficos(), "Gráficos")
-        self.tabs.addTab(self._crear_tab_heatmap(), "Equidad")
+        # La equidad está en los gráficos (diferencia con la cuota); el mapa de
+        # calor enseña la carga de cada semana, y así se llamaba al revés.
+        self.tabs.addTab(self._crear_tab_graficos(), "Gráficos de equidad")
+        self.tabs.addTab(self._crear_tab_heatmap(), "Carga semanal")
 
         layout_principal.addWidget(self.tabs)
         self.setLayout(layout_principal)
@@ -91,9 +111,9 @@ class PanelEstadisticas(BaseForm):
         layout = QVBoxLayout()
 
         # Tarjetas de métricas
-        self.label_total_guardias = QLabel("Total Guardias: 0")
-        self.label_total_profesores = QLabel("Profesores Activos: 0")
-        self.label_total_zonas = QLabel("Zonas Configuradas: 0")
+        self.label_total_guardias = QLabel("Guardias del curso: 0")
+        self.label_total_profesores = QLabel("Profesores con guardias: 0")
+        self.label_total_zonas = QLabel("Reparto: sin datos")
         self.label_cobertura = QLabel("Cobertura: 0%")
 
         estilo_metrica = f"""
@@ -138,51 +158,21 @@ class PanelEstadisticas(BaseForm):
             "Reparto por profesor",
             "Guardias asignadas a cada profesor frente a la cuota que le corresponde",
         )
-        self.tabla_profesores.setColumnCount(10)
+        self.tabla_profesores.setColumnCount(len(self.COLUMNAS_PROFESORES))
         self.tabla_profesores.setHorizontalHeaderLabels(
-            [
-                "Profesor",
-                "Total",
-                "Mañana",
-                "Tarde",
-                "% Total",
-                "Estado",
-                "Inicio Guardias",
-                "Fin Guardias",
-                "Veces sustituto",
-                "Veces sustituido",
-            ]
+            [titulo for titulo, _ in self.COLUMNAS_PROFESORES]
         )
         # Ajustar ancho automático de columnas al contenido
         self.tabla_profesores.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.ResizeToContents
         )
         self.tabla_profesores.setStyleSheet(get_table_style())
-        header = self.tabla_profesores.horizontalHeader()
-        header.model().setHeaderData(
-            6,
-            Qt.Orientation.Horizontal,
-            "Fecha desde la que el profesor tiene guardias asignadas.\n'-' significa sin restricción de período.",
-            Qt.ItemDataRole.ToolTipRole,
-        )
-        header.model().setHeaderData(
-            7,
-            Qt.Orientation.Horizontal,
-            "Fecha hasta la que el profesor tiene guardias asignadas.\n'-' significa sin restricción de período.",
-            Qt.ItemDataRole.ToolTipRole,
-        )
-        header.model().setHeaderData(
-            8,
-            Qt.Orientation.Horizontal,
-            "Número de guardias cubiertas por este profesor como sustituto de otro.",
-            Qt.ItemDataRole.ToolTipRole,
-        )
-        header.model().setHeaderData(
-            9,
-            Qt.Orientation.Horizontal,
-            "Número de guardias en las que este profesor fue sustituido por otro.",
-            Qt.ItemDataRole.ToolTipRole,
-        )
+        modelo = self.tabla_profesores.horizontalHeader().model()
+        for columna, (_, ayuda) in enumerate(self.COLUMNAS_PROFESORES):
+            if ayuda:
+                modelo.setHeaderData(
+                    columna, Qt.Orientation.Horizontal, ayuda, Qt.ItemDataRole.ToolTipRole
+                )
 
         layout.addWidget(self.tabla_profesores)
         widget.setLayout(layout)
@@ -223,14 +213,19 @@ class PanelEstadisticas(BaseForm):
         scroll_widget = QWidget()
         scroll_layout = QVBoxLayout()
 
-        self.canvas_profesores = BarChartWidget(
-            titulo="Distribución de Guardias por Profesor", horizontal=True
+        # ¿Es justo el reparto? Lo que importa es la distancia de cada uno a su
+        # cuota, no el número bruto de guardias. La tarta por zona salía siempre
+        # en porciones iguales: cada recreo cubre todas las zonas (2026-10-03).
+        self.canvas_diferencias = DivergingBarChartWidget(
+            titulo="Diferencia de cada profesor con su cuota",
+            rotulos=("Por debajo de su cuota", "Por encima de su cuota"),
         )
-        scroll_layout.addWidget(self.canvas_profesores)
+        scroll_layout.addWidget(self.canvas_diferencias)
 
-        self.canvas_zonas = PieChartWidget(titulo="Distribución de Guardias por Zona")
-        self.canvas_zonas.setMinimumHeight(380)
-        scroll_layout.addWidget(self.canvas_zonas)
+        self.canvas_sustitutos = BarChartWidget(
+            titulo="Quién ha cubierto más sustituciones", horizontal=True
+        )
+        scroll_layout.addWidget(self.canvas_sustitutos)
 
         scroll_widget.setLayout(scroll_layout)
         scroll.setWidget(scroll_widget)
@@ -244,8 +239,10 @@ class PanelEstadisticas(BaseForm):
         layout = QVBoxLayout()
 
         leyenda = QLabel(
-            "🟢 En cuota  🟡 Ligeramente sobre (+25%)  🔴 Muy sobre (+50%)  ⬜ Sin guardias"
+            "Guardias de cada profesor en cada semana del curso activo. Cuanto más "
+            "oscuro, más guardias esa semana: 1 · 2 · 3 o más."
         )
+        leyenda.setWordWrap(True)
         leyenda.setStyleSheet("padding: 6px; font-size: 12px;")
         layout.addWidget(leyenda)
 
@@ -253,19 +250,34 @@ class PanelEstadisticas(BaseForm):
         dotar_de_contrato(
             self.tabla_heatmap,
             "Mapa de calor de guardias",
-            "Cuántas guardias hay cada día de la semana en cada recreo",
+            "Guardias de cada profesor en cada semana del curso activo",
             ordenable=False,
         )
         self.tabla_heatmap.setStyleSheet(get_table_style())
-        self.tabla_heatmap.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        # Nombre entero y semanas de ancho fijo con desplazamiento: estirarlo todo
+        # dejaba los nombres en «B…» con un curso de cuarenta semanas.
+        cabecera = self.tabla_heatmap.horizontalHeader()
+        cabecera.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        cabecera.setDefaultSectionSize(52)
         self.tabla_heatmap.verticalHeader().setVisible(False)
         layout.addWidget(self.tabla_heatmap)
 
         widget.setLayout(layout)
         return widget
 
+    #: Escala de un solo tono para 1, 2 y 3 o más guardias en la semana (validada:
+    #: monótona y con contraste). Antes se pintaba en verde, ámbar y rojo frente a
+    #: una cuota que sólo miraba las horas de contrato (2026-10-03).
+    ESCALA_SEMANAL = (("#93B9E4", "#111827"), ("#4A82C3", "#FFFFFF"), ("#0C4A85", "#FFFFFF"))
+
     def _actualizar_heatmap_ui(self):
-        guardias = self.session.query(Guardia).all()
+        from infrastructure.database.models import CursoEscolar
+
+        consulta = self.session.query(Guardia)
+        curso = self.session.query(CursoEscolar).filter_by(activo=True).first()
+        if curso is not None:
+            consulta = consulta.filter(Guardia.curso_id == curso.id)
+        guardias = [g for g in consulta.all() if g.fecha]
         profesores = self.session.query(Profesor).all()
 
         if not guardias or not profesores:
@@ -273,70 +285,42 @@ class PanelEstadisticas(BaseForm):
             self.tabla_heatmap.setColumnCount(0)
             return
 
-        fechas = [g.fecha for g in guardias if g.fecha]
-        if not fechas:
-            return
+        fecha_min = min(g.fecha for g in guardias)
+        fecha_max = max(g.fecha for g in guardias)
 
-        fecha_min = min(fechas)
-        fecha_max = max(fechas)
-
-        # Calcular semanas (lunes de cada semana en el rango)
+        # Lunes de cada semana en el rango
         semanas = []
         d = fecha_min - timedelta(days=fecha_min.weekday())
         while d <= fecha_max:
             semanas.append(d)
             d += timedelta(days=7)
 
-        # Calcular cuotas totales por profesor (proporcional a horas)
-        total_horas = sum(p.horas_contrato for p in profesores if p.horas_contrato)
-        total_guardias_global = len(guardias)
-        cuota_por_prof = {}
-        if total_horas > 0:
-            for p in profesores:
-                factor = (p.horas_contrato or 0) / total_horas
-                cuota_por_prof[p.id] = max(1, round(total_guardias_global * factor))
-
-        # Guardar cuota semanal media
-        n_semanas = len(semanas) or 1
-        cuota_semanal = {pid: max(1, round(c / n_semanas)) for pid, c in cuota_por_prof.items()}
-
-        # Contar guardias por (profesor_id, semana_lunes)
         conteo: dict = defaultdict(int)
         for g in guardias:
-            if g.fecha:
-                lunes = g.fecha - timedelta(days=g.fecha.weekday())
-                conteo[(g.profesor_id, lunes)] += 1
+            conteo[(g.profesor_id, g.fecha - timedelta(days=g.fecha.weekday()))] += 1
 
-        # Cabeceras columnas
         col_headers = [f"S{i + 1}\n{s.strftime('%d/%m')}" for i, s in enumerate(semanas)]
         self.tabla_heatmap.setColumnCount(len(semanas) + 1)
         self.tabla_heatmap.setHorizontalHeaderLabels(["Profesor"] + col_headers)
+        self.tabla_heatmap.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.ResizeToContents
+        )
         self.tabla_heatmap.setRowCount(len(profesores))
-
-        COLOR_OK = QColor(180, 230, 180)  # verde claro
-        COLOR_WARN = QColor(255, 220, 100)  # ámbar
-        COLOR_OVER = QColor(255, 140, 140)  # rojo claro
-        COLOR_NONE = QColor(240, 240, 240)  # gris claro
 
         for row, prof in enumerate(sorted(profesores, key=lambda p: p.nombre_completo)):
             nombre_item = QTableWidgetItem(prof.nombre_completo)
             nombre_item.setFlags(nombre_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.tabla_heatmap.setItem(row, 0, nombre_item)
 
-            cuota_s = cuota_semanal.get(prof.id, 1)
             for col, lunes in enumerate(semanas):
                 n = conteo.get((prof.id, lunes), 0)
                 item = QTableWidgetItem(str(n) if n > 0 else "")
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                if n == 0:
-                    item.setBackground(COLOR_NONE)
-                elif n <= cuota_s * 1.25:
-                    item.setBackground(COLOR_OK)
-                elif n <= cuota_s * 1.5:
-                    item.setBackground(COLOR_WARN)
-                else:
-                    item.setBackground(COLOR_OVER)
+                if n > 0:
+                    fondo, texto = self.ESCALA_SEMANAL[min(n, 3) - 1]
+                    item.setBackground(QColor(fondo))
+                    item.setForeground(QColor(texto))
                 self.tabla_heatmap.setItem(row, col + 1, item)
 
     def actualizar_estadisticas(self):
@@ -355,106 +339,89 @@ class PanelEstadisticas(BaseForm):
             self.manejar_excepcion(e, "actualizar estadísticas")
 
     def _actualizar_resumen_ui(self):
-        """Actualizar el resumen general con datos del DTO."""
+        """Cifras que responden a «¿está cubierto el curso?» y «¿es justo el reparto?»."""
         resumen = self._datos.resumen
 
-        self.label_total_guardias.setText(f"Total Guardias: {resumen.total_guardias}")
-        self.label_total_profesores.setText(
-            f"Profesores Activos: {resumen.profesores_con_guardias} / {resumen.total_profesores}"
-        )
-        self.label_total_zonas.setText(f"Zonas Configuradas: {resumen.total_zonas}")
-
-        if resumen.total_guardias > 0 and resumen.profesores_con_guardias > 0:
-            self.label_cobertura.setText(f"Cobertura Estimada: {resumen.cobertura_estimada}%")
-
-            # Info adicional
-            porcentaje_manana = int(resumen.guardias_manana / resumen.total_guardias * 100)
-            porcentaje_tarde = int(resumen.guardias_tarde / resumen.total_guardias * 100)
-
-            info = f"""
-            📊 Detalles:
-            • Guardias de Mañana: {resumen.guardias_manana} ({porcentaje_manana}%)
-            • Guardias de Tarde: {resumen.guardias_tarde} ({porcentaje_tarde}%)
-            • Promedio por profesor: {resumen.promedio_por_profesor:.1f} guardias
-            """
-            self.label_info.setText(info)
+        if resumen.ranuras_curso:
+            self.label_total_guardias.setText(
+                f"Guardias del curso: {resumen.total_guardias} de {resumen.ranuras_curso} "
+                "ranuras del reparto oficial"
+            )
         else:
-            self.label_cobertura.setText("Cobertura Estimada: 0%")
+            self.label_total_guardias.setText(f"Guardias del curso: {resumen.total_guardias}")
+        self.label_total_profesores.setText(
+            f"Profesores con guardias: {resumen.profesores_con_guardias} "
+            f"de {resumen.total_profesores}"
+        )
+
+        if resumen.total_guardias == 0:
+            self.label_total_zonas.setText("Reparto: no hay guardias generadas en este curso")
+        elif resumen.ranuras_curso is None:
+            self.label_total_zonas.setText(
+                "Reparto: sin configuración del curso no se puede comparar con las cuotas"
+            )
+        elif resumen.fuera_de_cuota == 0:
+            self.label_total_zonas.setText(
+                "Reparto: todos los profesores están en su cuota (±1)"
+            )
+        else:
+            self.label_total_zonas.setText(
+                f"Reparto: {resumen.fuera_de_cuota} profesores se separan más de 1 de su "
+                f"cuota. Mayor diferencia: {resumen.mayor_diferencia:+d} "
+                f"({resumen.profesor_mayor_diferencia})"
+            )
+
+        if resumen.total_guardias > 0:
+            if resumen.ranuras_curso:
+                cobertura = round(resumen.total_guardias / resumen.ranuras_curso * 100)
+                self.label_cobertura.setText(f"Cobertura del curso: {cobertura}%")
+            else:
+                self.label_cobertura.setText("Cobertura del curso: sin ranuras con que comparar")
+            porcentaje_manana = round(resumen.guardias_manana / resumen.total_guardias * 100)
+            porcentaje_sust = round(resumen.sustituciones / resumen.total_guardias * 100)
+            self.label_info.setText(
+                f"Mañana: {resumen.guardias_manana} ({porcentaje_manana}%) · "
+                f"Tarde: {resumen.guardias_tarde} ({100 - porcentaje_manana}%)\n"
+                f"Sustituciones: {resumen.sustituciones} ({porcentaje_sust}% de las guardias)\n"
+                f"Zonas: {resumen.total_zonas}"
+            )
+        else:
+            self.label_cobertura.setText("Cobertura del curso: 0%")
             self.label_info.setText("No hay guardias generadas todavía.")
 
     def _actualizar_tabla_profesores_ui(self):
         """Actualizar la tabla de estadísticas por profesor con datos del DTO."""
         datos_profesor = self._datos.por_profesor
-
-        # Pre-calcular sustituciones por profesor
-        sust_por_prof: dict[int, int] = {}  # veces que actuó como sustituto
-        sustituido_por_prof: dict[int, int] = {}  # veces que fue sustituido
-        for g in self.session.query(Guardia).filter(Guardia.es_sustitucion == True).all():  # noqa: E712
-            sust_por_prof[g.profesor_id] = sust_por_prof.get(g.profesor_id, 0) + 1
-            if g.profesor_sustituido_id is not None:
-                sustituido_por_prof[g.profesor_sustituido_id] = (
-                    sustituido_por_prof.get(g.profesor_sustituido_id, 0) + 1
-                )
-
+        self.tabla_profesores.setSortingEnabled(False)
         self.tabla_profesores.setRowCount(len(datos_profesor))
 
-        for i, prof_dto in enumerate(datos_profesor):
-            self.tabla_profesores.setItem(i, 0, QTableWidgetItem(prof_dto.nombre_completo))
+        def _fecha(valor):
+            return valor.strftime("%d/%m/%Y") if valor else "-"
 
-            # Total (centrado)
-            total_item = QTableWidgetItem(str(prof_dto.total))
-            total_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.tabla_profesores.setItem(i, 1, total_item)
+        def _numero(valor, con_signo=False):
+            if valor is None:
+                return "—"
+            return f"{valor:+d}" if con_signo and valor else str(valor)
 
-            # Mañana (centrado)
-            manana_item = QTableWidgetItem(str(prof_dto.manana))
-            manana_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.tabla_profesores.setItem(i, 2, manana_item)
-
-            # Tarde (centrado)
-            tarde_item = QTableWidgetItem(str(prof_dto.tarde))
-            tarde_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.tabla_profesores.setItem(i, 3, tarde_item)
-
-            # Porcentaje (centrado)
-            porcentaje_item = QTableWidgetItem(f"{prof_dto.porcentaje:.1f}%")
-            porcentaje_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.tabla_profesores.setItem(i, 4, porcentaje_item)
-
-            # Estado
-            self.tabla_profesores.setItem(i, 5, QTableWidgetItem(prof_dto.estado))
-
-            # Fecha Inicio Guardias (centrado)
-            fecha_inicio_text = (
-                prof_dto.fecha_inicio_guardias.strftime("%d/%m/%Y")
-                if prof_dto.fecha_inicio_guardias
-                else "-"
+        for i, prof in enumerate(datos_profesor):
+            valores = (
+                prof.nombre_completo,
+                _numero(prof.cuota),
+                str(prof.total),
+                _numero(prof.diferencia, con_signo=True),
+                str(prof.manana),
+                str(prof.tarde),
+                prof.estado,
+                _fecha(prof.fecha_inicio_guardias),
+                _fecha(prof.fecha_fin_guardias),
+                str(prof.veces_sustituto) if prof.veces_sustituto else "—",
+                str(prof.veces_sustituido) if prof.veces_sustituido else "—",
             )
-            fecha_inicio_item = QTableWidgetItem(fecha_inicio_text)
-            fecha_inicio_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.tabla_profesores.setItem(i, 6, fecha_inicio_item)
-
-            # Fecha Fin Guardias (centrado)
-            fecha_fin_text = (
-                prof_dto.fecha_fin_guardias.strftime("%d/%m/%Y")
-                if prof_dto.fecha_fin_guardias
-                else "-"
-            )
-            fecha_fin_item = QTableWidgetItem(fecha_fin_text)
-            fecha_fin_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.tabla_profesores.setItem(i, 7, fecha_fin_item)
-
-            # Veces sustituto (centrado)
-            sust_count = sust_por_prof.get(prof_dto.profesor_id, 0)
-            sust_item = QTableWidgetItem(str(sust_count) if sust_count else "—")
-            sust_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.tabla_profesores.setItem(i, 8, sust_item)
-
-            # Veces sustituido (centrado)
-            sustituido_count = sustituido_por_prof.get(prof_dto.profesor_id, 0)
-            sustituido_item = QTableWidgetItem(str(sustituido_count) if sustituido_count else "—")
-            sustituido_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.tabla_profesores.setItem(i, 9, sustituido_item)
+            for columna, texto in enumerate(valores):
+                item = QTableWidgetItem(texto)
+                if columna not in (0, 6):
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.tabla_profesores.setItem(i, columna, item)
 
     def _actualizar_tabla_zonas_ui(self):
         """Actualizar la tabla de estadísticas por zona con datos del DTO."""
@@ -473,16 +440,13 @@ class PanelEstadisticas(BaseForm):
 
     def _actualizar_graficos_ui(self):
         """Actualizar los gráficos con datos del DTO."""
-        grafico_prof = self._datos.grafico_profesores
-        if grafico_prof.cantidades:
-            colores = ["#0E5FA8"] * len(grafico_prof.nombres)
-            datos_prof = list(zip(grafico_prof.nombres, grafico_prof.cantidades, colores))
-            self.canvas_profesores.set_datos(datos_prof)
+        diferencias = self._datos.grafico_diferencias
+        self.canvas_diferencias.set_datos(list(zip(diferencias.nombres, diferencias.cantidades)))
 
-        grafico_zonas = self._datos.grafico_zonas
-        if grafico_zonas.cantidades:
-            datos_zonas = list(zip(grafico_zonas.nombres, grafico_zonas.cantidades))
-            self.canvas_zonas.set_datos(datos_zonas)
+        sustitutos = self._datos.grafico_sustitutos
+        self.canvas_sustitutos.set_datos(
+            [(n, c, "") for n, c in zip(sustitutos.nombres, sustitutos.cantidades)]
+        )
 
     def refrescar(self):
         """Refrescar las estadísticas (útil después de generar guardias)."""

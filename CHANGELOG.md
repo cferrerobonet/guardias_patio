@@ -5,6 +5,28 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.5.0] - 2026-10-03
+
+### 🎯 Resumen
+Estadísticas que responden a la pregunta que importa: ¿es justo el reparto? Cada profesor se compara con su cuota (la misma que usa la generación), no con el total ni con la media de todos, y todo se limita al curso activo.
+
+### ✨ Added
+- **Gráfico «Diferencia de cada profesor con su cuota»**: barras a ambos lados del cero, ordenadas, azul por debajo y naranja por encima, con el valor con signo escrito. Colores validados para daltonismo y contraste.
+- **Gráfico «Quién ha cubierto más sustituciones»** (los diez primeros), de un solo color.
+- **Columnas «Cuota» y «Diferencia»** en la tabla por profesor; el estado dice «En su cuota» (hasta ±1, que es redondeo), «N por encima» o «N por debajo».
+- **Resumen nuevo**: guardias del curso frente a las ranuras del reparto oficial, cobertura real, cuántos profesores se separan de su cuota y quién más, y número de sustituciones.
+
+### Changed
+- **Sólo el curso activo**: antes se mezclaban las guardias de todos los cursos.
+- **Fuera la tarta por zona**: salía siempre en porciones iguales, porque cada recreo cubre todas las zonas. La tabla por zona se mantiene.
+- **Fuera la «cobertura estimada»** (promedio por profesor entre 50) y el «% del total», que no medían nada útil.
+- **Mapa de calor → «Carga semanal»**: escala de un solo tono por número de guardias en la semana (1 · 2 · 3 o más) en lugar de verde/ámbar/rojo frente a una cuota que sólo miraba las horas de contrato; nombres completos y semanas con desplazamiento horizontal. La pestaña se llamaba «Equidad» y la de gráficos pasa a «Gráficos de equidad».
+- Las barras horizontales respetan el color que se les pasa en lugar de pintar cada barra con colores de estado según la media.
+
+### 🧹 Housekeeping
+- Sin configuración del curso (sin cuotas) el panel lo dice y cuenta guardias como antes.
+- Pendiente como mejora general: la app ordena los nombres por código de carácter («DÍAZ» tras «DOMÍNGUEZ»), también en la tabla de profesores.
+
 ## [6.4.4] - 2026-10-03
 
 ### 🎯 Resumen

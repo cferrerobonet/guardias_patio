@@ -5,8 +5,10 @@ Recupera y calcula todas las estadísticas necesarias para
 el widget PanelEstadisticas de forma centralizada.
 """
 
-from collections import defaultdict
+from collections import Counter, defaultdict
+from typing import Optional
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from application.dtos.asignacion_guardias_dto import (
@@ -16,8 +18,14 @@ from application.dtos.asignacion_guardias_dto import (
     EstadisticaZonaDTO,
     ResumenPanelDTO,
 )
+from core.logging import get_logger
 from core.observability import with_metrics
-from infrastructure.database.models import Guardia, Profesor, Zona
+from infrastructure.database.models import Configuracion, CursoEscolar, Guardia, Profesor, Zona
+
+logger = get_logger(__name__)
+
+#: Hasta ±1 es redondeo del reparto, no una desigualdad.
+TOLERANCIA_CUOTA = 1
 
 
 class ObtenerEstadisticasPanelUseCase:
@@ -45,14 +53,20 @@ class ObtenerEstadisticasPanelUseCase:
         Returns:
             EstadisticasPanelCompletoDTO con todas las estadísticas
         """
-        # Obtener datos base
-        guardias = self.session.query(Guardia).all()
+        # Sólo el curso activo, como el calendario: antes se mezclaban todos (2026-10-03).
+        consulta = self.session.query(Guardia)
+        curso = self.session.query(CursoEscolar).filter_by(activo=True).first()
+        if curso is not None:
+            consulta = consulta.filter(Guardia.curso_id == curso.id)
+        guardias = consulta.all()
         profesores = self.session.query(Profesor).all()
         zonas = self.session.query(Zona).all()
+        cuotas = self._cuotas() if guardias else None
 
         # Calcular estadísticas
         resumen = self._calcular_resumen(guardias, profesores, zonas)
-        por_profesor = self._calcular_por_profesor(guardias, profesores)
+        por_profesor = self._calcular_por_profesor(guardias, profesores, cuotas)
+        self._completar_resumen(resumen, guardias, por_profesor, cuotas)
         por_zona = self._calcular_por_zona(guardias, zonas)
         grafico_profesores = self._preparar_grafico_profesores(guardias, profesores)
         grafico_zonas = self._preparar_grafico_zonas(guardias, zonas)
@@ -63,6 +77,60 @@ class ObtenerEstadisticasPanelUseCase:
             por_zona=por_zona,
             grafico_profesores=grafico_profesores,
             grafico_zonas=grafico_zonas,
+            grafico_diferencias=self._preparar_grafico_diferencias(por_profesor),
+            grafico_sustitutos=self._preparar_grafico_sustitutos(por_profesor),
+        )
+
+    def _cuotas(self) -> Optional[dict]:
+        """La cuota oficial de cada profesor, la misma que usa la generación.
+
+        Sin configuración no hay cuotas: el panel enseña entonces sólo recuentos.
+        """
+        if self.session.query(Configuracion).first() is None:
+            return None
+        try:
+            from services.distribucion_cuotas_service import DistribucionCuotasService
+
+            return DistribucionCuotasService(self.session).calcular_cuotas()
+        except (SQLAlchemyError, ValueError, TypeError, ZeroDivisionError) as e:
+            logger.warning(f"No se pudieron calcular las cuotas para las estadísticas: {e}")
+            return None
+
+    @staticmethod
+    def _completar_resumen(resumen, guardias, por_profesor, cuotas) -> None:
+        resumen.sustituciones = sum(1 for g in guardias if g.es_sustitucion)
+        if cuotas is None:
+            return
+        resumen.ranuras_curso = sum(cuotas.values())
+        con_cuota = [p for p in por_profesor if p.diferencia is not None]
+        resumen.fuera_de_cuota = sum(
+            1 for p in con_cuota if abs(p.diferencia) > TOLERANCIA_CUOTA
+        )
+        if con_cuota:
+            peor = max(con_cuota, key=lambda p: abs(p.diferencia))
+            resumen.mayor_diferencia = peor.diferencia
+            resumen.profesor_mayor_diferencia = peor.nombre_completo
+
+    @staticmethod
+    def _preparar_grafico_diferencias(por_profesor) -> DatosGraficoDTO:
+        filas = sorted(
+            (p for p in por_profesor if p.diferencia is not None),
+            key=lambda p: (p.diferencia, p.nombre_completo),
+        )
+        return DatosGraficoDTO(
+            nombres=[p.nombre_completo for p in filas],
+            cantidades=[p.diferencia for p in filas],
+        )
+
+    @staticmethod
+    def _preparar_grafico_sustitutos(por_profesor) -> DatosGraficoDTO:
+        filas = sorted(
+            (p for p in por_profesor if p.veces_sustituto),
+            key=lambda p: (-p.veces_sustituto, p.nombre_completo),
+        )[:10]
+        return DatosGraficoDTO(
+            nombres=[p.nombre_completo for p in filas],
+            cantidades=[p.veces_sustituto for p in filas],
         )
 
     def _calcular_resumen(
@@ -105,6 +173,7 @@ class ObtenerEstadisticasPanelUseCase:
         self,
         guardias: list,
         profesores: list,
+        cuotas: Optional[dict] = None,
     ) -> list[EstadisticaProfesorDTO]:
         """Calcular estadísticas por profesor."""
         # Agrupar guardias por profesor
@@ -117,6 +186,12 @@ class ObtenerEstadisticasPanelUseCase:
                 guardias_por_prof[g.profesor_id]["tarde"] += 1
 
         total_guardias = len(guardias)
+        sustituto = Counter(g.profesor_id for g in guardias if g.es_sustitucion)
+        sustituido = Counter(
+            g.profesor_sustituido_id
+            for g in guardias
+            if g.es_sustitucion and g.profesor_sustituido_id is not None
+        )
         resultado = []
 
         for profesor in profesores:
@@ -127,8 +202,19 @@ class ObtenerEstadisticasPanelUseCase:
             if total_guardias > 0:
                 porcentaje = (stats["total"] / total_guardias) * 100
 
-            # Determinar estado
-            if stats["total"] == 0:
+            cuota = cuotas.get(profesor.id) if cuotas is not None else None
+            diferencia = stats["total"] - cuota if cuota is not None else None
+
+            # Con cuota, el estado dice si el reparto es justo para él; sin ella
+            # (no hay configuración) sólo cuenta guardias.
+            if diferencia is not None:
+                if abs(diferencia) <= TOLERANCIA_CUOTA:
+                    estado = "✅ En su cuota"
+                elif diferencia > 0:
+                    estado = f"⚠️ {diferencia} por encima"
+                else:
+                    estado = f"⚠️ {-diferencia} por debajo"
+            elif stats["total"] == 0:
                 estado = "❌ Sin guardias"
             elif stats["total"] < 5:
                 estado = "⚠️ Pocas guardias"
@@ -146,6 +232,10 @@ class ObtenerEstadisticasPanelUseCase:
                     estado=estado,
                     fecha_inicio_guardias=profesor.fecha_inicio_guardias,
                     fecha_fin_guardias=profesor.fecha_fin_guardias,
+                    cuota=cuota,
+                    diferencia=diferencia,
+                    veces_sustituto=sustituto.get(profesor.id, 0),
+                    veces_sustituido=sustituido.get(profesor.id, 0),
                 )
             )
 

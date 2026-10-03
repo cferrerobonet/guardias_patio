@@ -10,7 +10,7 @@ from unittest.mock import patch
 import pytest
 
 from infrastructure.database.models import Guardia
-from presentation.widgets.bar_chart_widget import BarChartWidget, PieChartWidget
+from presentation.widgets.bar_chart_widget import BarChartWidget, DivergingBarChartWidget
 from presentation.widgets.panel_estadisticas import MplCanvas, PanelEstadisticas
 
 pytestmark = pytest.mark.ui
@@ -87,6 +87,31 @@ def datos_completos(session, profesor_factory, zona_factory):
     return {"profesores": profesores, "zonas": zonas, "guardias": guardias}
 
 
+@pytest.fixture
+def con_cuotas(session, datos_completos):
+    """Configuración del curso y cuotas conocidas: 5, 6, 4, 0 y 5 (suman 20)."""
+    from datetime import time
+    from unittest.mock import patch
+
+    from infrastructure.database.models import Configuracion
+
+    session.add(
+        Configuracion(
+            anio_inicio_curso=2026, fecha_inicio_curso=date(2026, 9, 7),
+            fecha_fin_curso=date(2027, 6, 18), hora_recreo1_manana=time(10, 45),
+            hora_recreo2_manana=time(12, 35),
+        )
+    )
+    session.commit()
+    ids = [p.id for p in datos_completos["profesores"]]
+    cuotas = dict(zip(ids, (5, 6, 4, 0, 5)))
+    with patch(
+        "services.distribucion_cuotas_service.DistribucionCuotasService.calcular_cuotas",
+        return_value=cuotas,
+    ):
+        yield cuotas
+
+
 # ============================================================================
 # TEST CLASS: BÁSICO
 # ============================================================================
@@ -125,18 +150,16 @@ class TestPanelEstadisticasBasico:
     def test_tiene_tablas(self, panel):
         """Test que tiene las tablas de profesores y zonas."""
         assert panel.tabla_profesores is not None
-        assert panel.tabla_profesores.columnCount() == 10
+        assert panel.tabla_profesores.columnCount() == 11
 
         assert panel.tabla_zonas is not None
         assert panel.tabla_zonas.columnCount() == 4
 
     def test_tiene_canvas_graficos(self, panel):
-        """Test que tiene los canvas de gráficos nativos."""
-        assert panel.canvas_profesores is not None
-        assert panel.canvas_zonas is not None
-        assert isinstance(panel.canvas_profesores, BarChartWidget)
-        assert isinstance(panel.canvas_zonas, PieChartWidget)
-
+        """Diferencia con la cuota (divergente) y sustituciones (barras): sin tarta."""
+        assert isinstance(panel.canvas_diferencias, DivergingBarChartWidget)
+        assert isinstance(panel.canvas_sustitutos, BarChartWidget)
+        assert not hasattr(panel, "canvas_zonas")
 
 # ============================================================================
 # TEST CLASS: RESUMEN
@@ -150,55 +173,38 @@ class TestPanelEstadisticasResumen:
         """Test resumen cuando no hay datos."""
         panel.actualizar_estadisticas()
 
-        assert "Total Guardias: 0" in panel.label_total_guardias.text()
-        assert "Profesores Activos: 0" in panel.label_total_profesores.text()
-        assert "Zonas Configuradas: 0" in panel.label_total_zonas.text()
+        assert "Guardias del curso: 0" in panel.label_total_guardias.text()
+        assert "Profesores con guardias: 0" in panel.label_total_profesores.text()
+        assert "no hay guardias" in panel.label_total_zonas.text()
         assert "0%" in panel.label_cobertura.text()
         assert "No hay guardias" in panel.label_info.text()
 
     def test_actualizar_resumen_con_datos(self, panel, datos_completos):
-        """Test resumen con datos completos."""
+        """Sin configuración no hay cuotas: se dice, en vez de inventar una cobertura."""
         panel.actualizar_estadisticas()
 
-        # Total guardias: 10 + 6 + 4 = 20
-        assert "Total Guardias: 20" in panel.label_total_guardias.text()
-
-        # 3 profesores tienen guardias de 5 totales
-        assert "Profesores Activos: 3 / 5" in panel.label_total_profesores.text()
-
-        # 3 zonas
-        assert "Zonas Configuradas: 3" in panel.label_total_zonas.text()
-
-        # Cobertura estimada (se calcula)
-        assert "%" in panel.label_cobertura.text()
+        assert "Guardias del curso: 20" in panel.label_total_guardias.text()
+        assert "Profesores con guardias: 3 de 5" in panel.label_total_profesores.text()
+        assert "sin configuración" in panel.label_total_zonas.text()
+        assert "sin ranuras" in panel.label_cobertura.text()
 
     def test_actualizar_resumen_info_detalles(self, panel, datos_completos):
-        """Test que muestra detalles de mañana/tarde."""
+        """Test que muestra detalles de mañana/tarde y sustituciones."""
         panel.actualizar_estadisticas()
 
         info = panel.label_info.text()
+        assert "Mañana: 11 (55%)" in info
+        assert "Tarde: 9 (45%)" in info
+        assert "Sustituciones: 0" in info
 
-        # Guardias de mañana: 5 (prof1) + 6 (prof2) = 11
-        assert "Guardias de Mañana: 11" in info
-
-        # Guardias de tarde: 5 (prof1) + 4 (prof3) = 9
-        assert "Guardias de Tarde: 9" in info
-
-        # Promedio por profesor
-        assert "Promedio por profesor:" in info
-
-    def test_actualizar_resumen_porcentajes(self, panel, datos_completos):
-        """Test que calcula porcentajes correctamente."""
+    def test_resumen_con_cuotas(self, panel, datos_completos, con_cuotas):
+        """Con cuotas: ranuras del curso, cobertura real y quién se separa más."""
         panel.actualizar_estadisticas()
 
-        info = panel.label_info.text()
-
-        # 11 mañana de 20 total = 55%
-        assert "55%" in info or "Guardias de Mañana: 11" in info
-
-        # 9 tarde de 20 total = 45%
-        assert "45%" in info or "Guardias de Tarde: 9" in info
-
+        assert "20 de 20 ranuras" in panel.label_total_guardias.text()
+        assert "Cobertura del curso: 100%" in panel.label_cobertura.text()
+        reparto = panel.label_total_zonas.text()
+        assert "2 profesores se separan" in reparto and "+5 (Profesor 1)" in reparto
 
 # ============================================================================
 # TEST CLASS: TABLA PROFESORES
@@ -225,33 +231,37 @@ class TestPanelEstadisticasTablaProfesores:
         """Test que las columnas tienen datos correctos."""
         panel.actualizar_estadisticas()
 
-        # Verificar primera fila (Profesor 1: 10 guardias)
         assert "Profesor 1" in panel.tabla_profesores.item(0, 0).text()
-        assert panel.tabla_profesores.item(0, 1).text() == "10"  # Total
-        assert panel.tabla_profesores.item(0, 2).text() == "5"  # Mañana
-        assert panel.tabla_profesores.item(0, 3).text() == "5"  # Tarde
+        assert panel.tabla_profesores.item(0, 1).text() == "—"  # Cuota: sin configuración
+        assert panel.tabla_profesores.item(0, 2).text() == "10"  # Asignadas
+        assert panel.tabla_profesores.item(0, 4).text() == "5"  # Mañana
+        assert panel.tabla_profesores.item(0, 5).text() == "5"  # Tarde
 
-    def test_tabla_profesores_porcentajes(self, panel, datos_completos):
-        """Test que calcula porcentajes correctamente."""
+    def test_tabla_profesores_cuota_y_diferencia(self, panel, datos_completos, con_cuotas):
+        """La tabla compara con la cuota de cada uno, no con el total."""
         panel.actualizar_estadisticas()
 
-        # Profesor 1: 10 de 20 = 50%
-        porcentaje = panel.tabla_profesores.item(0, 4).text()
-        assert "50" in porcentaje and "%" in porcentaje
-
-        # Profesor 2: 6 de 20 = 30%
-        porcentaje = panel.tabla_profesores.item(1, 4).text()
-        assert "30" in porcentaje and "%" in porcentaje
+        fila = {
+            panel.tabla_profesores.item(r, 0).text(): r
+            for r in range(panel.tabla_profesores.rowCount())
+        }
+        uno, cinco = fila["Profesor 1"], fila["Profesor 5"]
+        assert panel.tabla_profesores.item(uno, 1).text() == "5"
+        assert panel.tabla_profesores.item(uno, 3).text() == "+5"
+        assert "5 por encima" in panel.tabla_profesores.item(uno, 6).text()
+        assert panel.tabla_profesores.item(cinco, 3).text() == "-5"
+        assert "5 por debajo" in panel.tabla_profesores.item(cinco, 6).text()
+        assert "En su cuota" in panel.tabla_profesores.item(fila["Profesor 3"], 6).text()
 
     def test_tabla_profesores_estados(self, panel, datos_completos):
         """Test que asigna estados correctamente."""
         panel.actualizar_estadisticas()
 
         # Profesor 1: 10 guardias → "✅ Asignado"
-        assert "✅" in panel.tabla_profesores.item(0, 5).text()
+        assert "✅" in panel.tabla_profesores.item(0, 6).text()
 
         # Profesor 4: 0 guardias → "❌ Sin guardias"
-        assert "❌" in panel.tabla_profesores.item(3, 5).text()
+        assert "❌" in panel.tabla_profesores.item(3, 6).text()
 
     def test_tabla_profesores_estado_pocas_guardias(
         self, panel, session, profesor_factory, zona_factory
@@ -280,7 +290,7 @@ class TestPanelEstadisticasTablaProfesores:
         encontrado = False
         for row in range(panel.tabla_profesores.rowCount()):
             if "Test Prof" in panel.tabla_profesores.item(row, 0).text():
-                estado = panel.tabla_profesores.item(row, 5).text()
+                estado = panel.tabla_profesores.item(row, 6).text()
                 assert "⚠️" in estado
                 encontrado = True
                 break
@@ -356,60 +366,48 @@ class TestPanelEstadisticasGraficos:
         # No debería crashear
         panel.actualizar_estadisticas()
 
-    def test_actualizar_graficos_con_datos(self, panel, datos_completos):
-        """Test que genera gráficos con datos."""
+    def test_actualizar_graficos_con_datos(self, panel, datos_completos, con_cuotas):
+        """El gráfico de diferencias va de más por debajo a más por encima."""
         panel.actualizar_estadisticas()
 
-        assert panel.canvas_profesores is not None
-        assert panel.canvas_zonas is not None
-        assert len(panel.canvas_profesores._datos) > 0
-        assert len(panel.canvas_zonas._datos) > 0
+        valores = [valor for _, valor in panel.canvas_diferencias._datos]
+        assert valores == sorted(valores)
+        assert valores[0] == -5 and valores[-1] == 5
 
-    def test_grafico_profesores_tipo_barras(self, panel, datos_completos):
-        """Test que el gráfico de profesores es BarChartWidget."""
+    def test_sin_cuotas_no_hay_grafico_de_diferencias(self, panel, datos_completos):
+        """Sin configuración no se puede comparar: el gráfico dice que no hay datos."""
         panel.actualizar_estadisticas()
 
-        assert isinstance(panel.canvas_profesores, BarChartWidget)
-        assert len(panel.canvas_profesores._datos) > 0
+        assert panel.canvas_diferencias._datos == []
+        assert "sin datos" in panel.canvas_diferencias.accessibleDescription()
 
-    def test_grafico_zonas_tipo_pastel(self, panel, datos_completos):
-        """Test que el gráfico de zonas es PieChartWidget."""
-        panel.actualizar_estadisticas()
-
-        assert isinstance(panel.canvas_zonas, PieChartWidget)
-        assert len(panel.canvas_zonas._datos) > 0
-
-    def test_grafico_profesores_solo_con_guardias(self, panel, datos_completos):
-        """Test que solo muestra profesores con guardias."""
-        panel.actualizar_estadisticas()
-
-        assert len(panel.canvas_profesores._datos) == 3
-
-    def test_grafico_nombres_truncados(self, panel, session, profesor_factory, zona_factory):
-        """Test que trunca nombres largos."""
-        prof = profesor_factory(
-            nombre_completo="Apellido Muy Largo Larguísimo, Nombre", horas_contrato=25.0
-        )
-        zona = zona_factory(nombre_zona="Test")
-        session.add_all([prof, zona])
-        session.commit()
-
-        g = Guardia(
-            fecha=date.today(),
-            turno="mañana",
-            recreo=1,
-            profesor_id=prof.id,
-            zona_id=zona.id,
-        )
-        session.add(g)
+    def test_grafico_de_sustitutos(self, panel, session, datos_completos):
+        """Quién ha cubierto más sustituciones, de un solo color."""
+        profesores = datos_completos["profesores"]
+        guardia = datos_completos["guardias"][0]
+        guardia.es_sustitucion = True
+        guardia.profesor_sustituido_id = profesores[3].id
         session.commit()
 
         panel.actualizar_estadisticas()
 
-        # Nombres en _datos deben estar truncados (split por coma, max 18 chars en horizontal)
-        for label, _, _ in panel.canvas_profesores._datos:
-            assert len(label) <= 18
+        assert panel.canvas_sustitutos._datos == [("Profesor 1", 1, "")]
+        assert "Sustituciones: 1 (5% de las guardias)" in panel.label_info.text()
 
+    def test_grafico_diferencias_incluye_a_todos_los_que_tienen_cuota(
+        self, panel, datos_completos, con_cuotas
+    ):
+        """También los que no tienen guardias: son los que más importan."""
+        panel.actualizar_estadisticas()
+
+        assert len(panel.canvas_diferencias._datos) == 5
+
+    def test_grafico_lleva_el_nombre_completo(self, panel, datos_completos, con_cuotas):
+        """Nombres completos: recortar el apellido a 15 letras repetía nombres."""
+        panel.actualizar_estadisticas()
+
+        nombres = {nombre for nombre, _ in panel.canvas_diferencias._datos}
+        assert "Profesor 1" in nombres
 
 # ============================================================================
 # TEST CLASS: ACTUALIZAR ESTADÍSTICAS
@@ -481,7 +479,7 @@ class TestPanelEstadisticasIntegracion:
         """Test flujo: sin datos → agregar datos → actualizar."""
         # 1. Estado inicial sin datos
         panel.actualizar_estadisticas()
-        assert "Total Guardias: 0" in panel.label_total_guardias.text()
+        assert "Guardias del curso: 0" in panel.label_total_guardias.text()
 
         # 2. Agregar datos
         prof = profesor_factory(nombre_completo="Test", horas_contrato=25.0)
@@ -504,7 +502,7 @@ class TestPanelEstadisticasIntegracion:
         panel.actualizar_estadisticas()
 
         # 4. Verificar cambios
-        assert "Total Guardias: 5" in panel.label_total_guardias.text()
+        assert "Guardias del curso: 5" in panel.label_total_guardias.text()
         assert panel.tabla_profesores.rowCount() == 1
         assert panel.tabla_zonas.rowCount() == 1
 
