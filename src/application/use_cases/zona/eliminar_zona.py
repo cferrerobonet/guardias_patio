@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
-from infrastructure.database.models import Guardia, Zona
+from infrastructure.database.models import Guardia, Profesor, Zona
 from utils.logger import get_logger
 from utils.repository_cache import invalidate_zonas_cache
 
@@ -65,6 +65,11 @@ class EliminarZonaUseCase:
 
             nombre_zona = zona.nombre_zona
             antes = self.session.query(Zona).count()
+            # Quien la tenía como preferida se queda sin preferencia: si no, la
+            # clave foránea impedía borrarla con un error técnico (2026-10-03).
+            self.session.query(Profesor).filter(Profesor.zona_preferida_id == zona_id).update(
+                {Profesor.zona_preferida_id: None}, synchronize_session="fetch"
+            )
             self.session.delete(zona)
             self.session.commit()
             ajustar_zonas_de_los_recreos(self.session, antes)

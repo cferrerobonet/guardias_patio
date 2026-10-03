@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from core.exceptions import BusinessLogicError, NotFoundError
 from core.observability import with_metrics
-from infrastructure.database.models import Guardia, Profesor
+from infrastructure.database.models import Ausencia, Guardia, Profesor
 from utils.logger import get_logger
 from utils.repository_cache import invalidate_profesores_cache
 
@@ -65,6 +65,10 @@ class EliminarProfesorUseCase:
 
         try:
             nombre_profesor = profesor.nombre_completo
+            # Sus ausencias se van con él: si no, el ORM intentaba dejarlas sin
+            # profesor y el borrado fallaba con un error técnico (2026-10-03).
+            for ausencia in self.session.query(Ausencia).filter_by(profesor_id=profesor_id):
+                self.session.delete(ausencia)
             self.session.delete(profesor)
             self.session.commit()
 

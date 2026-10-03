@@ -321,6 +321,16 @@ class GestorCursos:
         La vista llamaba al repositorio y hacía ella el `commit`, que es
         justamente lo que no debe decidir una pantalla.
         """
+        from infrastructure.database.models import Configuracion, Profesor
+
+        # Lo que apunta al curso se suelta antes: la clave foránea impedía
+        # borrarlo, por ejemplo el curso activo (2026-10-03).
+        self.session.query(Profesor).filter(Profesor.curso_id == curso_id).update(
+            {Profesor.curso_id: None}, synchronize_session="fetch"
+        )
+        self.session.query(Configuracion).filter(
+            Configuracion.curso_activo_id == curso_id
+        ).update({Configuracion.curso_activo_id: None}, synchronize_session="fetch")
         borrado = self.curso_repo.delete(curso_id)
         self.session.commit()
         if borrado:

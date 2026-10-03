@@ -481,6 +481,13 @@ class DiaDetalleDialog(QDialog):
         linea1.addWidget(label_fechas)
         linea1.addStretch()
 
+        # Las sustituciones registran la ausencia; si las fechas estaban mal, éste
+        # es el sitio para quitarla (2026-10-03).
+        boton_anular = QPushButton("Anular ausencia")
+        boton_anular.setToolTip("El profesor vuelve a estar disponible esos días")
+        boton_anular.clicked.connect(lambda _=False, a=ausencia: self._anular_ausencia(a))
+        linea1.addWidget(boton_anular)
+
         layout.addLayout(linea1)
 
         # Segunda línea: Motivo (si existe)
@@ -495,6 +502,26 @@ class DiaDetalleDialog(QDialog):
         )
 
         return widget
+
+    def _anular_ausencia(self, ausencia: Ausencia) -> None:
+        """Desactiva la ausencia (queda en el historial) y repinta el calendario."""
+        from PyQt6.QtWidgets import QMessageBox
+
+        from services.gestor_ausencias import desactivar_ausencia
+
+        respuesta = QMessageBox.question(
+            self,
+            "Anular ausencia",
+            f"{ausencia.profesor.nombre_completo} volverá a estar disponible del "
+            f"{ausencia.fecha_inicio:%d/%m/%Y} al {ausencia.fecha_fin:%d/%m/%Y}.\n\n"
+            "Las sustituciones ya hechas no cambian.",
+        )
+        if respuesta != QMessageBox.StandardButton.Yes:
+            return
+        desactivar_ausencia(self.session, ausencia.id)
+        # La misma señal que la permuta: el calendario se repinta entero.
+        self.permuta_realizada.emit()
+        self.accept()
 
     def _crear_seccion_sustituciones(self) -> QGroupBox:
         """Crear sección con lista de sustituciones."""

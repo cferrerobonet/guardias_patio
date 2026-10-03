@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.4.4] - 2026-10-03
+
+### 🎯 Resumen
+Segunda pasada de la auditoría: importaciones, cambios desde el calendario, borrados y recarga de Cálculo, Estadísticas y Perfiles. Lo importante: borrar un profesor con ausencias, una zona que era la preferida de alguien o un curso referenciado fallaba con un error técnico.
+
+### Fixed
+- **Borrados que fallaban** (FAL-012): con las claves foráneas activas no se podía borrar un profesor con ausencias, una zona que era la preferida de algún profesor ni un curso al que apuntaban la configuración o algún profesor (por ejemplo, el curso activo). Ahora las ausencias del profesor se borran con él, los profesores se quedan sin zona preferida y las referencias al curso se sueltan.
+
+### ✨ Added
+- **«Anular ausencia»** en el detalle del día del calendario (FAL-013). Desde la 6.4.3 las sustituciones registran la ausencia; si las fechas estaban mal, ahora se puede anular: el profesor vuelve a estar disponible y las sustituciones ya hechas no cambian. La ausencia queda desactivada, no borrada.
+
+### 🧹 Housekeeping
+- El docstring de `limpiar_todas_las_sustituciones` decía que devolvía las guardias a su titular; no lo hace (ni lo hacía la versión original): sólo olvida el historial y afecta a todos los cursos. Comportamiento sin cambios, pendiente de decisión (FAL-014).
+- Revisado sin cambios: la importación de profesores (sólo nombre y correo, por diseño) se confirma al terminar; la permuta comprueba ausencias; `DialogoReasignacion` no se usa en ninguna parte; Cálculo, Estadísticas y Perfiles se recargan bien al volver.
+- `tests/test_borrados_en_cadena.py`, con las claves foráneas activas.
+
 ## [6.4.3] - 2026-10-03
 
 ### 🎯 Resumen

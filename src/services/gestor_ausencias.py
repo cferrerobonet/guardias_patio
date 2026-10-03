@@ -524,13 +524,17 @@ def permutar_guardias(session, guardia_a_id: int, guardia_b_id: int) -> tuple:
 
 
 def limpiar_todas_las_sustituciones(session) -> int:
-    """Devuelve a su profesor original todas las guardias sustituidas (COD-003).
+    """Olvida el historial de sustituciones: el sustituto se queda la guardia (COD-003).
+
+    No devuelve las guardias a su titular (para eso está `deshacer_sustitucion`):
+    sólo quita la marca y a quién se sustituía. Es lo que hacía la versión
+    original de la pantalla; afecta a todos los cursos.
 
     Estaba escrito en la vista del historial, que hacía el `UPDATE` masivo y el
     `commit` por su cuenta: la única escritura directa contra la base de datos
     que quedaba en la capa de presentación.
 
-    Devuelve cuántas guardias se han devuelto.
+    Devuelve cuántas guardias dejan de constar como sustitución.
     """
     afectadas = (
         session.query(Guardia)
