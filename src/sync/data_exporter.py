@@ -296,7 +296,6 @@ class DataExporter:
                     existing.fecha_inicio = parse_date(z_data.get("fecha_inicio"))
                     existing.fecha_fin = parse_date(z_data.get("fecha_fin"))
                     existing.activa = z_data.get("activa", True) is not False
-                    existing.capacidad_profesores = z_data.get("capacidad_profesores")
                 else:
                     # Crear nueva
                     zona = Zona(
@@ -306,7 +305,6 @@ class DataExporter:
                         fecha_inicio=parse_date(z_data.get("fecha_inicio")),
                         fecha_fin=parse_date(z_data.get("fecha_fin")),
                         activa=z_data.get("activa", True) is not False,
-                        capacidad_profesores=z_data.get("capacidad_profesores"),
                     )
                     session.add(zona)
                 zonas_importadas += 1

@@ -127,7 +127,7 @@ class PreflightGeneracionUseCase:
                 logger.debug(f"No se pudieron leer los recreos: {e}")
         # Un recreo guardado con menos zonas de las que hay dejaría alguna zona sin
         # guardias sin decir nada (2026-10-03).
-        total_zonas = self.session.query(Zona).count()
+        total_zonas = self.session.query(Zona).filter(Zona.activa.is_(True)).count()
         cortos = [
             r.get("etiqueta") or f"Recreo {r.get('id')}"
             for r in self._recreos_guardados(config)

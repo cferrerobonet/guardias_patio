@@ -18,39 +18,26 @@ pytestmark = [pytest.mark.slow, pytest.mark.integration]
 _THRESHOLDS = {
     # (restriccion, algo) → (min_pct, strict)
     ("R1_turno", "cpsat"): (100.0, True),
-    ("R1_turno", "v4"): (100.0, True),
     ("R2_ausencias", "cpsat"): (100.0, True),
-    ("R2_ausencias", "v4"): (100.0, True),
     ("R3_fecha_inicio", "cpsat"): (100.0, True),
-    ("R3_fecha_inicio", "v4"): (100.0, True),
     ("R4_fecha_fin", "cpsat"): (100.0, True),
-    ("R4_fecha_fin", "v4"): (100.0, True),
     ("R5_recreos_lista", "cpsat"): (100.0, True),
-    ("R5_recreos_lista", "v4"): (100.0, True),
     ("R6_recreos_dict", "cpsat"): (100.0, True),
-    ("R6_recreos_dict", "v4"): (100.0, True),
     # R7 CP-SAT: gap conocido — se verifica sin assert (solo registra)
     ("R7_dias_semana", "cpsat"): (0.0, False),
-    ("R7_dias_semana", "v4"): (100.0, True),
     ("R8_max_guardia_dia", "cpsat"): (100.0, True),
-    ("R8_max_guardia_dia", "v4"): (95.0, True),
     ("R9_no_simultaneidad", "cpsat"): (100.0, True),
-    ("R9_no_simultaneidad", "v4"): (100.0, True),
     ("R10_zona_preferida", "cpsat"): (30.0, True),
-    ("R10_zona_preferida", "v4"): (30.0, True),
     ("R11_equidad", "cpsat"): (0.0, False),   # S10 tiene restricciones que sesgan la distribución
-    ("R11_equidad", "v4"): (0.0, False),
     ("R12_ajuste_tutor", "cpsat"): (0.0, False),  # depende de distribución
-    ("R12_ajuste_tutor", "v4"): (0.0, False),
     ("R13_consecutividad", "cpsat"): (40.0, True),
-    ("R13_consecutividad", "v4"): (40.0, True),
 }
 
 
-def _run_and_verify(algo: str, session, build_scenario, run_cpsat, run_v4, compliance_reporter):
+def _run_and_verify(algo: str, session, build_scenario, run_cpsat, compliance_reporter):
     s = scenario_S10()
     profesores, _ = build_scenario(s.prof_configs, s.n_zonas, s.inicio, s.fin)
-    guardias, _ = run_cpsat() if algo == "cpsat" else run_v4()
+    guardias, _ = run_cpsat()
 
     verifier = ComplianceVerifier(profesores, guardias, session)
     all_results = verifier.run_all()
@@ -75,9 +62,9 @@ def _run_and_verify(algo: str, session, build_scenario, run_cpsat, run_v4, compl
     return fallos_regresion
 
 
-@pytest.mark.parametrize("algo", ["v4", "cpsat"])
+@pytest.mark.parametrize("algo", ["cpsat"])
 def test_regression_s10_completo(
-    algo, session, build_scenario, run_cpsat, run_v4, compliance_reporter
+    algo, session, build_scenario, run_cpsat, compliance_reporter
 ):
     """
     Escenario mixto completo S10 como suite de regresión.
@@ -85,7 +72,7 @@ def test_regression_s10_completo(
     Verifica simultáneamente R1–R13 con umbrales definidos en _THRESHOLDS.
     R7 CP-SAT sigue marcado como gap conocido (threshold=0%, no strict).
     """
-    fallos = _run_and_verify(algo, session, build_scenario, run_cpsat, run_v4, compliance_reporter)
+    fallos = _run_and_verify(algo, session, build_scenario, run_cpsat, compliance_reporter)
 
     assert not fallos, (
         f"\n[{algo}] REGRESIÓN DETECTADA en S10 ({len(fallos)} restricciones):\n"

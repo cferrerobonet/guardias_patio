@@ -127,17 +127,13 @@ class TestImportarZonasCsv:
         assert res["errores"] == 0
         assert session.query(Zona).count() == 3
 
-    def test_zona_con_capacidad(self, session, csv_basico):
+    def test_la_columna_capacidad_de_csv_antiguos_se_ignora(self, session, csv_basico):
+        """`capacidad_profesores` se retiró en la v6.7.0; los CSV que la traen valen."""
         importar_zonas_desde_csv(session, csv_basico)
         zona = session.query(Zona).filter(Zona.nombre_zona == "Patio Central").first()
         assert zona is not None
-        assert zona.capacidad_profesores == 3
         assert zona.activa is True
-
-    def test_zona_sin_capacidad_es_none(self, session, csv_basico):
-        importar_zonas_desde_csv(session, csv_basico)
-        zona = session.query(Zona).filter(Zona.nombre_zona == "Entrada Principal").first()
-        assert zona.capacidad_profesores is None
+        assert not hasattr(Zona, "capacidad_profesores")
 
     def test_duplicado_omitido(self, session, csv_con_duplicado):
         res = importar_zonas_desde_csv(session, csv_con_duplicado)

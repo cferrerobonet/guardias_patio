@@ -21,23 +21,10 @@ from services.asignador_guardias_cpsat import (
     generar_guardias_cpsat,
     guardar_guardias_cpsat_en_bd,
 )
-from services.asignador_guardias_v4_hibrido import (
-    generar_guardias_v4_hibrido,
-    guardar_guardias_en_bd,
-)
 from services.calculador_guardias import obtener_estadisticas
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
-
-
-def _normalizar_algoritmo(algoritmo: str | None) -> str:
-    algoritmo_normalizado = (algoritmo or "").strip().lower()
-    if algoritmo_normalizado in ("cpsat", "optimo", "cp-sat"):
-        return "cpsat"
-    if algoritmo_normalizado in ("v4.0", "rapido", "v2.9", "v3.0"):
-        return "v4.0"
-    return "v4.0"
 
 
 class GenerarGuardiasUseCase:
@@ -118,26 +105,14 @@ class GenerarGuardiasUseCase:
             stats = obtener_estadisticas(self.session) or {}
             esperado = stats.get("slots_totales", 0)
 
-            # Obtener configuración para determinar algoritmo a usar
-            config = self.session.query(Configuracion).first()
-            if not config:
+            if not self.session.query(Configuracion).first():
                 raise BusinessLogicError("No existe configuración del curso")
 
-            algoritmo_raw = getattr(config, "algoritmo_asignacion", "v4.0")
-            algoritmo = _normalizar_algoritmo(algoritmo_raw)
-
-            if algoritmo_raw != algoritmo:
-                logger.warning(
-                    "Algoritmo legacy/no reconocido '%s' normalizado a '%s'",
-                    algoritmo_raw,
-                    algoritmo,
-                )
-
-            logger.info(f"🔧 Algoritmo seleccionado: {algoritmo}")
-
-            # Generar calendario
+            # Un solo algoritmo: el «Rápido» (v4) se retiró en la v6.7.0 porque ponía
+            # dos guardias el mismo día y dejaba profesores lejos de su cuota.
+            algoritmo = "cpsat"
             if progress_callback:
-                progress_callback(f"Generando guardias (algoritmo {algoritmo})...", 50)
+                progress_callback("Generando guardias...", 50)
 
             # Crear wrapper para adaptar callback (porcentaje, mensaje) -> (mensaje, porcentaje)
             def adapter_callback(porcentaje: int, mensaje: str = ""):
@@ -146,27 +121,12 @@ class GenerarGuardiasUseCase:
                     porcentaje_escalado = 50 + int(porcentaje * 0.30)
                     progress_callback(mensaje or "Generando guardias...", porcentaje_escalado)
 
-            # SELECTOR DE ALGORITMO
-            # - "v4.0" o "rapido": Algoritmo v4 Híbrido (rápido, heurístico)
-            # - "cpsat" u "optimo": Algoritmo CP-SAT (más lento, garantiza óptimo)
-            if algoritmo in ("cpsat", "optimo", "cp-sat"):
-                logger.info("✨ Usando algoritmo CP-SAT (optimización garantizada)")
-                calendario, resumen = generar_guardias_cpsat(
-                    self.session, adapter_callback, cancelacion=cancelacion, desde=desde
-                )
-                # Guardar en base de datos
-                if progress_callback:
-                    progress_callback("Guardando guardias en base de datos...", 80)
-                guardar_guardias_cpsat_en_bd(self.session, calendario)
-            else:
-                logger.info("✨ Usando algoritmo v4.0 Híbrido (5 fases)")
-                calendario, resumen = generar_guardias_v4_hibrido(
-                    self.session, adapter_callback, cancelacion=cancelacion
-                )
-                # Guardar en base de datos
-                if progress_callback:
-                    progress_callback("Guardando guardias en base de datos...", 80)
-                guardar_guardias_en_bd(self.session, calendario)
+            calendario, resumen = generar_guardias_cpsat(
+                self.session, adapter_callback, cancelacion=cancelacion, desde=desde
+            )
+            if progress_callback:
+                progress_callback("Guardando guardias en base de datos...", 80)
+            guardar_guardias_cpsat_en_bd(self.session, calendario)
 
             if progress_callback:
                 progress_callback("Proceso completado", 100)

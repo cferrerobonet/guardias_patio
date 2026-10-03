@@ -216,14 +216,14 @@ class TestAsignarGuardiaUseCase:
             recreo=1,
         )
 
-        # Mock de ZonaEntity para simular capacidad limitada
+        # Zona desactivada (la capacidad de zona se retiró en la v6.7.0)
         from domain.entities.zona_entity import ZonaEntity
 
         zona_entity_mock = ZonaEntity(
-            id=zona.id, nombre_zona=zona.nombre_zona, capacidad_profesores=2
+            id=zona.id, nombre_zona=zona.nombre_zona, activa=False
         )
 
-        # Intentar asignar un tercer profesor (excede capacidad)
+        # Intentar asignar un tercer profesor
         prof3 = profesor_factory(
             nombre_completo="Profesor 3",
             turno="mañana",
@@ -233,7 +233,7 @@ class TestAsignarGuardiaUseCase:
 
         use_case = AsignarGuardiaUseCase(session)
 
-        # Mock del repositorio para devolver la entidad con capacidad limitada
+        # Mock del repositorio para devolver la zona desactivada
         mocker.patch.object(use_case.zona_repo, "get_by_id", return_value=zona_entity_mock)
 
         dto = CrearGuardiaDTO(
@@ -244,7 +244,7 @@ class TestAsignarGuardiaUseCase:
             zona_id=zona.id,
         )
 
-        with pytest.raises(BusinessLogicError, match="capacidad máxima"):
+        with pytest.raises(BusinessLogicError, match="desactivada"):
             use_case.execute(dto)
 
     def test_asignar_guardia_error_bd(self, session, profesor_factory, zona_factory, mocker):

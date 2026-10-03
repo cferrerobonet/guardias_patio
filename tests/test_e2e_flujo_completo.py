@@ -18,13 +18,18 @@ from pathlib import Path
 
 import pytest
 from infrastructure.database.models import Configuracion, Guardia, Profesor, Zona
-from services.asignador_guardias_v4_hibrido import (
-    generar_guardias_v4_hibrido,
-    guardar_guardias_en_bd,
+from services.asignador_guardias_cpsat import (
+    generar_guardias_cpsat,
+    guardar_guardias_cpsat_en_bd as guardar_guardias_en_bd,
 )
 from services.exportador import ExportadorDatos
 from services.exportador_pdf import ExportadorPDF
 from utils import get_logger
+
+def _generar(session):
+    """CP-SAT con poco tiempo: el algoritmo «Rápido» (v4) se retiró en la v6.7.0."""
+    return generar_guardias_cpsat(session, timeout_seconds=10)
+
 
 logger = get_logger(__name__)
 
@@ -140,9 +145,7 @@ class TestFlujCompletoUsuario:
         assert config is not None, "Debe existir configuración"
 
         # Generar guardias
-        guardias_generadas, asignaciones = generar_guardias_v4_hibrido(
-            session=session_e2e,
-        )
+        guardias_generadas, asignaciones = _generar(session_e2e)
 
         # Guardar guardias en la base de datos
         guardar_guardias_en_bd(session_e2e, guardias_generadas)
@@ -162,7 +165,8 @@ class TestFlujCompletoUsuario:
             assert guardia.profesor_id is not None
             assert guardia.zona_id is not None
             assert guardia.turno in ["mañana", "tarde"]
-            assert guardia.recreo in [1, 2]
+            # Identificadores reales de recreos_config: 1-2 mañana, 3-4 tarde
+            assert guardia.recreo in [1, 2, 3, 4]
             # Verificar que la fecha está en el rango configurado
             assert config.fecha_inicio_curso <= guardia.fecha <= config.fecha_fin_curso
 
@@ -180,7 +184,6 @@ class TestFlujCompletoUsuario:
         # Verificar que hay cierta equidad (diferencia máxima razonable)
         counts = list(guardias_por_profesor.values())
         if len(counts) > 1:
-            # v4.0 prioriza cobertura completa sobre equidad perfecta
             # La diferencia puede ser mayor si hay restricciones de turno/disponibilidad
             # Verificamos que todos tengan al menos algunas guardias
             assert min(counts) > 0, "Todos los profesores deben tener guardias"
@@ -357,7 +360,7 @@ class TestFlujCompletoUsuario:
         session_e2e.commit()
 
         # Generar guardias
-        guardias_generadas, asignaciones = generar_guardias_v4_hibrido(session=session_e2e)
+        guardias_generadas, asignaciones = _generar(session_e2e)
         guardar_guardias_en_bd(session_e2e, guardias_generadas)
 
         # Verificar que se generaron guardias
@@ -450,7 +453,7 @@ class TestValidacionesIntegradas:
 
         # Intentar generar guardias - debe lanzar excepción
         with pytest.raises(ValueError, match="No hay profesores activos"):
-            generar_guardias_v4_hibrido(session=session_e2e)
+            _generar(session_e2e)
 
         logger.info("✅ Correctamente se lanzó excepción al intentar generar sin profesores")
 
@@ -491,7 +494,7 @@ class TestValidacionesIntegradas:
         session_e2e.commit()
 
         # Primera generación
-        guardias_primera, _ = generar_guardias_v4_hibrido(session_e2e)
+        guardias_primera, _ = _generar(session_e2e)
         guardar_guardias_en_bd(session_e2e, guardias_primera)
         session_e2e.flush()
         count_primera = session_e2e.query(Guardia).count()
@@ -503,7 +506,7 @@ class TestValidacionesIntegradas:
         session_e2e.expire_all()  # Limpiar identity map
 
         # Segunda generación
-        guardias_segunda, _ = generar_guardias_v4_hibrido(session_e2e)
+        guardias_segunda, _ = _generar(session_e2e)
         guardar_guardias_en_bd(session_e2e, guardias_segunda)
         session_e2e.flush()
         count_segunda = session_e2e.query(Guardia).count()

@@ -64,7 +64,6 @@ def _mock_zona():
     m.fecha_inicio = None
     m.fecha_fin = None
     m.activa = False
-    m.capacidad_profesores = 2
     return m
 
 
@@ -235,15 +234,13 @@ class TestZonaSyncDTO:
         original = ZonaSyncDTO.from_orm(_mock_zona())
         assert ZonaSyncDTO.from_dict(original.to_dict()) == original
 
-    def test_activa_y_capacidad_viajan(self):
+    def test_activa_viaja(self):
         datos = ZonaSyncDTO.from_orm(_mock_zona()).to_dict()
         assert datos["activa"] is False
-        assert datos["capacidad_profesores"] == 2
 
-    def test_fichero_antiguo_sin_activa_ni_capacidad(self):
+    def test_fichero_antiguo_sin_activa(self):
         dto = ZonaSyncDTO.from_dict({"id": 1, "nombre_zona": "Z1"})
         assert dto.activa is True
-        assert dto.capacidad_profesores is None
 
 
 # ---------------------------------------------------------------------------

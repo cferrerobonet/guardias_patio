@@ -61,7 +61,7 @@ class ObtenerEstadisticasPanelUseCase:
             consulta = consulta.filter(Guardia.curso_id == curso.id)
         guardias = consulta.all()
         profesores = self.session.query(Profesor).all()
-        zonas = self.session.query(Zona).all()
+        zonas = self.session.query(Zona).filter(Zona.activa.is_(True)).all()
         cuotas = self._cuotas() if guardias else None
 
         # Calcular estadísticas

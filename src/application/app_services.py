@@ -222,6 +222,12 @@ class AppServices:
     def contar_zonas(self) -> int:
         return self.zonas.count()
 
+    def contar_zonas_activas(self) -> int:
+        """Las que se cubren: una zona desactivada no recibe guardias."""
+        from infrastructure.database.models import Zona
+
+        return self._session.query(Zona).filter(Zona.activa.is_(True)).count()
+
     def contar_guardias(self) -> int:
         return self.guardias.count()
 

@@ -54,10 +54,9 @@ def _filas():
         ],
         Zona: [
             dict(id=11, nombre_zona="Patio norte", descripcion="Junto a la pista",
-                 fecha_inicio=date(2026, 9, 14), fecha_fin=date(2027, 5, 28), activa=False,
-                 capacidad_profesores=2),
+                 fecha_inicio=date(2026, 9, 14), fecha_fin=date(2027, 5, 28), activa=False),
             dict(id=12, nombre_zona="Porche", descripcion=None, fecha_inicio=None,
-                 fecha_fin=None, activa=True, capacidad_profesores=None),
+                 fecha_fin=None, activa=True),
         ],
         Profesor: [
             dict(id=21, nombre_completo="PRIMERO, Uno", email_corporativo="uno@epla.es",
@@ -243,7 +242,7 @@ def test_copia_json_manual_antigua_sin_campos_nuevos(origen, destino, tmp_path, 
 #: la nube, 2026-09-06, no traía ninguna de estas).
 CLAVES_NUEVAS = {
     "profesores": ("guardias_voluntarias", "zona_preferida_id", "curso_id"),
-    "zonas": ("activa", "capacidad_profesores"),
+    "zonas": ("activa",),
     "configuracion": ("fecha_inicio_reparto_oficial", "curso_activo_id"),
     "guardias": ("es_sustitucion", "profesor_sustituido_id", "notas"),
 }

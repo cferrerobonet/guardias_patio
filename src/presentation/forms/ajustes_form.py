@@ -121,11 +121,6 @@ class AjustesForm(BaseForm):
         return self.ajustes_widget.ajuste_no_tutores_input
 
     @property
-    def algoritmo_combo(self):
-        """Acceso al campo algoritmo_combo del widget ajustes."""
-        return self.ajustes_widget.algoritmo_combo
-
-    @property
     def festivos_auto_input(self):
         """Acceso al campo festivos_auto del widget festivos."""
         return self.festivos_widget.festivos_auto_input
@@ -382,7 +377,8 @@ class AjustesForm(BaseForm):
 
         from application.app_services import AppServices
 
-        num_zonas = AppServices(self.session).contar_zonas()
+        # Sólo las activas: una zona desactivada no se cubre (2026-10-03).
+        num_zonas = AppServices(self.session).contar_zonas_activas()
         if num_zonas == 0:
             num_zonas = 4
 

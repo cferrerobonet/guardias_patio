@@ -133,12 +133,11 @@ class Zona(Base):
     fecha_inicio = Column(Date, nullable=True)  # Fecha inicio operativa (opcional)
     fecha_fin = Column(Date, nullable=True)  # Fecha fin operativa (opcional)
     activa = Column(Boolean, nullable=False, default=True, server_default="1")
-    capacidad_profesores = Column(Integer, nullable=True)  # Máx. profesores simultáneos (None=sin límite)
+    # `capacidad_profesores` se retiró en la v6.7.0: cada hueco lo cubre un profesor y
+    # nadie la usaba. En las bases ya creadas la columna queda vacía en disco:
+    # quitarla obliga a reconstruir la tabla, y con las claves foráneas activas eso
+    # podría arrastrar las guardias en cascada.
     guardias = relationship("Guardia", back_populates="zona")
-
-    __table_args__ = (
-        CheckConstraint("capacidad_profesores IS NULL OR capacidad_profesores >= 1", name="ck_zona_capacidad"),
-    )
 
 
 class Configuracion(Base):

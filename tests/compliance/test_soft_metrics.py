@@ -2,7 +2,7 @@
 Tests de métricas BLANDAS (R10–R13) × 2 algoritmos.
 
 Umbrales (del plan):
-  R10 zona preferida   : CP-SAT ≥60%, v4 ≥50%
+  R10 zona preferida   : CP-SAT ≥60%
   R11 equidad          : desv ≤15% para ambos
   R12 ajuste tutor     : ratio ≤ajuste±5% para ambos
   R13 consecutividad   : ≥60% días en bloque para ambos
@@ -18,8 +18,8 @@ from tests.compliance.verifiers import ComplianceVerifier
 pytestmark = pytest.mark.slow
 
 
-def _run_algo(algo, run_cpsat, run_v4):
-    return run_cpsat() if algo == "cpsat" else run_v4()
+def _run_algo(algo, run_cpsat):
+    return run_cpsat()
 
 
 # ---------------------------------------------------------------------------
@@ -27,13 +27,13 @@ def _run_algo(algo, run_cpsat, run_v4):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("algo,min_pct", [("cpsat", 40.0), ("v4", 40.0)])
+@pytest.mark.parametrize("algo,min_pct", [("cpsat", 40.0)])
 def test_r10_zona_preferida(
-    algo, min_pct, session, build_scenario, run_cpsat, run_v4, compliance_reporter
+    algo, min_pct, session, build_scenario, run_cpsat, compliance_reporter
 ):
     s = scenario_S09()
     profesores, _ = build_scenario(s.prof_configs, s.n_zonas, s.inicio, s.fin)
-    guardias, _ = _run_algo(algo, run_cpsat, run_v4)
+    guardias, _ = _run_algo(algo, run_cpsat)
 
     verifier = ComplianceVerifier(profesores, guardias, session)
     result = verifier.metric_r10_zona_preferida()
@@ -53,11 +53,11 @@ def test_r10_zona_preferida(
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("algo", ["cpsat", "v4"])
-def test_r11_equidad(algo, session, build_scenario, run_cpsat, run_v4, compliance_reporter):
+@pytest.mark.parametrize("algo", ["cpsat"])
+def test_r11_equidad(algo, session, build_scenario, run_cpsat, compliance_reporter):
     s = scenario_S01()
     profesores, _ = build_scenario(s.prof_configs, s.n_zonas, s.inicio, s.fin)
-    guardias, _ = _run_algo(algo, run_cpsat, run_v4)
+    guardias, _ = _run_algo(algo, run_cpsat)
 
     verifier = ComplianceVerifier(profesores, guardias, session)
     result = verifier.metric_r11_equidad()
@@ -75,8 +75,8 @@ def test_r11_equidad(algo, session, build_scenario, run_cpsat, run_v4, complianc
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("algo", ["cpsat", "v4"])
-def test_r12_ajuste_tutor(algo, session, build_scenario, run_cpsat, run_v4, compliance_reporter):
+@pytest.mark.parametrize("algo", ["cpsat"])
+def test_r12_ajuste_tutor(algo, session, build_scenario, run_cpsat, compliance_reporter):
     """
     Escenario con mezcla de tutores y no-tutores.
     Con ajuste_tutores=ajuste_no_tutores=1.0 el ratio esperado es 1.0.
@@ -89,7 +89,7 @@ def test_r12_ajuste_tutor(algo, session, build_scenario, run_cpsat, run_v4, comp
     )
 
     profesores, _ = build_scenario(prof_configs, n_zonas=1)
-    guardias, _ = _run_algo(algo, run_cpsat, run_v4)
+    guardias, _ = _run_algo(algo, run_cpsat)
 
     verifier = ComplianceVerifier(profesores, guardias, session)
     # Con ajuste_tutores=1.0, ajuste_no_tutores=1.0, ratio esperado = 1.0 ± 5%
@@ -111,14 +111,14 @@ def test_r12_ajuste_tutor(algo, session, build_scenario, run_cpsat, run_v4, comp
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("algo", ["cpsat", "v4"])
-def test_r13_consecutividad(algo, session, build_scenario, run_cpsat, run_v4, compliance_reporter):
+@pytest.mark.parametrize("algo", ["cpsat"])
+def test_r13_consecutividad(algo, session, build_scenario, run_cpsat, compliance_reporter):
     """
     Con 3 semanas el escenario tiene suficientes días para detectar patrones.
     """
     s = scenario_S10()
     profesores, _ = build_scenario(s.prof_configs, s.n_zonas, s.inicio, s.fin)
-    guardias, _ = _run_algo(algo, run_cpsat, run_v4)
+    guardias, _ = _run_algo(algo, run_cpsat)
 
     verifier = ComplianceVerifier(profesores, guardias, session)
     result = verifier.metric_r13_consecutividad()

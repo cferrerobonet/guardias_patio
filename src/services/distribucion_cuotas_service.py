@@ -8,12 +8,15 @@ Factores considerados:
 - Turno (mañana, tarde, mixto) según recreos disponibles
 - Horas de contrato (proporción respecto a 30h jornada completa)
 - Factor de tutoría (ajuste_tutores / ajuste_no_tutores de configuración)
-- Fechas de inicio/fin de guardias (proporción de días disponibles)
+- Fechas de inicio/fin de guardias: NO reducen la cuota. Quien sólo está parte del
+  curso hace la del curso entero dentro de su periodo (decisión de CarlosFB,
+  2026-10-03); si no le cabe, el generador reparte el sobrante
+  (`services.reparto_agrupado.cuotas_alcanzables`)
 - Total de slots disponibles (sólo días lectivos desde el inicio del reparto oficial)
 - Guardias voluntarias hechas antes del reparto oficial
 
 Fórmula de cálculo:
-    factor_total = factor_turno × factor_horas × factor_tutoria × proporcion_tiempo
+    factor_total = factor_horas × factor_tutoria   (el turno decide la bolsa de huecos)
     parte_i = round((S + W) × factor_i / suma_factores)   (S = ranuras oficiales,
                                                            W = voluntarias del grupo)
     cuota_i = parte_i − voluntarias_i                     (suma de cuotas = S)
@@ -312,7 +315,7 @@ class DistribucionCuotasService:
         """
         dias_lectivos = listar_dias_reparto(config)
         recreos = _parse_recreos_config(config)
-        zonas = self.session.query(Zona).all()
+        zonas = self.session.query(Zona).filter(Zona.activa.is_(True)).all()
 
         if not dias_lectivos or not recreos or not zonas:
             return 0
@@ -351,7 +354,7 @@ class DistribucionCuotasService:
         """
         dias_lectivos = listar_dias_reparto(config)
         recreos = _parse_recreos_config(config)
-        zonas = self.session.query(Zona).all()
+        zonas = self.session.query(Zona).filter(Zona.activa.is_(True)).all()
 
         if not dias_lectivos or not recreos or not zonas:
             return {"mañana": 0, "tarde": 0}

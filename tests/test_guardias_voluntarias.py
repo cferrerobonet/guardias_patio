@@ -404,14 +404,6 @@ class TestAsignadores:
         assert min(g.fecha for g in guardias) >= date(2025, 10, 1)
         assert len(guardias) == len(listar_dias_reparto(_config_de(session)))
 
-    def test_v4_no_genera_guardias_antes_del_inicio_oficial(self, session):
-        from services.asignador_guardias_v4_hibrido import generar_guardias_v4_hibrido
-
-        _curso_corto(session)
-        guardias, _ = generar_guardias_v4_hibrido(session)
-        assert guardias
-        assert min(g.fecha for g in guardias) >= date(2025, 10, 1)
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Esquema: migración Alembic y fallback

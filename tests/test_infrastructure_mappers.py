@@ -36,7 +36,6 @@ def _make_zona_model(**kwargs):
     m.id = kwargs.get("id", 1)
     m.nombre_zona = kwargs.get("nombre_zona", "Patio A")
     m.descripcion = kwargs.get("descripcion", "Zona principal")
-    m.capacidad_profesores = kwargs.get("capacidad_profesores", 3)
     m.activa = kwargs.get("activa", True)
     return m
 
@@ -127,7 +126,6 @@ class TestZonaMapper:
         entity = ZonaEntity(
             nombre_zona="Zona B",
             descripcion="Zona secundaria",
-            capacidad_profesores=2,
             activa=True,
         )
         model = ZonaMapper.to_model(entity)
@@ -138,7 +136,6 @@ class TestZonaMapper:
         entity = ZonaEntity(
             nombre_zona="Zona C",
             descripcion="Zona terciaria",
-            capacidad_profesores=1,
             activa=False,
         )
         existing = MagicMock()

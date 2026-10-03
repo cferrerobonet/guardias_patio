@@ -101,7 +101,7 @@ def _generar_recreos_fallback(config: Configuracion) -> List[dict]:
 def _generar_slots(config: Configuracion, session) -> List[Slot]:
     """Genera todos los slots a cubrir (sólo días lectivos del reparto oficial)."""
     dias_lectivos = listar_dias_reparto(config)
-    zonas = session.query(Zona).all()
+    zonas = session.query(Zona).filter(Zona.activa.is_(True)).all()
     recreos = _parse_recreos_config(config)
 
     if not recreos:
@@ -180,6 +180,7 @@ def _es_elegible_basico(profesor: Profesor, slot: Slot, session) -> bool:
     2. No ausente
     3. Fecha en rango del profesor
     4. Recreo permitido
+    5. Día de la semana permitido
     """
     # 1. TURNO COMPATIBLE
     if profesor.turno and profesor.turno not in ("completo", "mixto", "ambos"):
@@ -194,6 +195,13 @@ def _es_elegible_basico(profesor: Profesor, slot: Slot, session) -> bool:
     if profesor.fecha_inicio_guardias and slot.fecha < profesor.fecha_inicio_guardias:
         return False
     if profesor.fecha_fin_guardias and slot.fecha > profesor.fecha_fin_guardias:
+        return False
+
+    # 5. DÍA DE LA SEMANA PERMITIDO. Sólo se miraba la matriz de recreos: un
+    # profesor con días limitados y sin matriz (importado o de una versión
+    # anterior) recibía guardias en días vetados (2026-10-03).
+    dias_permitidos = _parse_json_field(profesor.dias_semana_permitidos, [])
+    if dias_permitidos and slot.fecha.weekday() not in dias_permitidos:
         return False
 
     # 4. RECREO PERMITIDO

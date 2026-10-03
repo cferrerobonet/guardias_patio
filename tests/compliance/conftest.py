@@ -4,7 +4,7 @@ Fixtures para la suite de tests de cumplimiento de restricciones.
 Proporciona:
 - engine/session propios (SQLite en memoria, scope=function)
 - build_scenario(): construye BD con profesores, zonas y config
-- run_cpsat() / run_v4(): ejecutan los algoritmos contra la sesión activa
+- run_cpsat(): ejecuta el algoritmo contra la sesión activa (v4 se retiró en la v6.7.0)
 - compliance_reporter: recolector de resultados por sesión → JSON
 """
 
@@ -192,7 +192,7 @@ def build_ausencia(session):
 
 
 # ---------------------------------------------------------------------------
-# run_cpsat / run_v4
+# run_cpsat
 # ---------------------------------------------------------------------------
 
 
@@ -204,18 +204,6 @@ def run_cpsat(session):
         from services.asignador_guardias_cpsat import generar_guardias_cpsat
 
         return generar_guardias_cpsat(session, timeout_seconds=timeout)
-
-    return _run
-
-
-@pytest.fixture
-def run_v4(session):
-    """Devuelve callable que ejecuta el algoritmo v4 híbrido."""
-
-    def _run() -> tuple[list[Guardia], dict]:
-        from services.asignador_guardias_v4_hibrido import generar_guardias_v4_hibrido
-
-        return generar_guardias_v4_hibrido(session)
 
     return _run
 

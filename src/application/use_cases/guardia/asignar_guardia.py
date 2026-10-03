@@ -119,21 +119,10 @@ class AsignarGuardiaUseCase:
                     f"en {dto.fecha} {dto.turno} recreo {dto.numero_recreo}"
                 )
 
-            # 4. Verificar capacidad de la zona (obtener guardias actuales)
-            guardias_momento = self.guardia_repo.find_by_fecha_turno_recreo(
-                fecha=dto.fecha,
-                turno=dto.turno,
-                recreo=dto.numero_recreo,
-            )
-
-            profesores_en_zona = [
-                g.profesor_id for g in guardias_momento if g.zona_id == dto.zona_id
-            ]
-
-            if not zona.puede_asignar_profesor(len(profesores_en_zona)):
-                raise BusinessLogicError(
-                    f"La zona {zona.nombre_zona} ya alcanzó su capacidad máxima"
-                )
+            # 4. Una zona desactivada no recibe guardias (la capacidad de zona se
+            #    retiró en la v6.7.0: cada hueco lo cubre un profesor).
+            if not zona.puede_asignar_profesor():
+                raise BusinessLogicError(f"La zona {zona.nombre_zona} está desactivada")
 
             # 5. Crear entidad de guardia
             guardia_entity = GuardiaEntity(

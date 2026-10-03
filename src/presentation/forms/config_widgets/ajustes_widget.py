@@ -4,7 +4,6 @@ Widget de configuración de ajustes adicionales.
 Combina:
 - Multiplicador para tutores (ajuste_tutores)
 - Multiplicador para no tutores (ajuste_no_tutores)
-- Información del algoritmo de asignación (solo lectura)
 """
 
 from PyQt6.QtCore import QRegularExpression, pyqtSignal
@@ -13,14 +12,6 @@ from PyQt6.QtWidgets import QGroupBox, QLabel, QLineEdit, QVBoxLayout
 
 from presentation.theme import legacy_styles as styles
 
-ALGORITMO_LABELS = {
-    "v4.0": "Rápido (v4 Híbrido)",
-    "rapido": "Rápido (v4 Híbrido)",
-    "cpsat": "Óptimo (CP-SAT)",
-    "optimo": "Óptimo (CP-SAT)",
-    "cp-sat": "Óptimo (CP-SAT)",
-}
-
 
 class AjustesWidget(QGroupBox):
     """
@@ -28,7 +19,7 @@ class AjustesWidget(QGroupBox):
 
     Combina en un solo widget:
     - Multiplicadores de guardias (tutores/no tutores)
-    - Selector de algoritmo de asignación
+    - (el algoritmo es siempre CP-SAT desde la v6.7.0)
 
     Signals:
         config_changed: Emitido cuando cambia cualquier valor
@@ -45,7 +36,6 @@ class AjustesWidget(QGroupBox):
             parent: Widget padre opcional
         """
         super().__init__("🔧 Ajustes Adicionales", parent)
-        self._algoritmo_actual = "v4.0"
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -100,31 +90,6 @@ class AjustesWidget(QGroupBox):
         self.ajuste_no_tutores_input.textChanged.connect(self.config_changed.emit)
         layout.addWidget(self.ajuste_no_tutores_input)
 
-        # ===== Información de algoritmo (solo lectura) =====
-        label_algoritmo = QLabel("Algoritmos disponibles:")
-        label_algoritmo.setStyleSheet(
-            styles.STYLE_LABEL_FIELD + "font-size: 12px; margin-bottom: 1px; margin-top: 4px;"
-        )
-        layout.addWidget(label_algoritmo)
-
-        # Label informativo con todos los algoritmos
-        self.algoritmo_info = QLabel()
-        self.algoritmo_info.setWordWrap(True)
-        self.algoritmo_info.setStyleSheet(
-            styles.STYLE_INPUT + "padding: 10px 12px; background-color: #f8f8f8; color: #334155; "
-            "font-size: 12px; line-height: 1.45; border: 1px solid #d7dee7;"
-        )
-        self.algoritmo_info.setToolTip(
-            "ALGORITMOS DISPONIBLES ACTUALMENTE:\n\n"
-            "• Rápido (v4 Híbrido)\n"
-            "  Heurístico y ágil para uso general.\n\n"
-            "• Óptimo (CP-SAT)\n"
-            "  Más lento, pero busca la mejor solución posible.\n\n"
-            "Selecciona el algoritmo según tus necesidades de velocidad o calidad de solución."
-        )
-        self._actualizar_info_algoritmo()
-        layout.addWidget(self.algoritmo_info)
-
         self.setLayout(layout)
 
     # ===== API PÚBLICA: GET/SET =====
@@ -142,14 +107,15 @@ class AjustesWidget(QGroupBox):
         return {
             "tutores": float(self.ajuste_tutores_input.text() or 1.0),
             "no_tutores": float(self.ajuste_no_tutores_input.text() or 1.0),
-            "algoritmo": self._algoritmo_actual,
+            # Un solo algoritmo desde la v6.7.0 (se retiró el «Rápido»).
+            "algoritmo": "cpsat",
         }
 
     def set_ajustes(
         self,
         tutores: float = 1.0,
         no_tutores: float = 1.0,
-        algoritmo: str = "v4.0",
+        algoritmo: str = "cpsat",
     ) -> None:
         """
         Establece los valores de ajustes.
@@ -157,12 +123,10 @@ class AjustesWidget(QGroupBox):
         Args:
             tutores: Multiplicador para tutores (default: 1.0)
             no_tutores: Multiplicador para no tutores (default: 1.0)
-            algoritmo: Algoritmo actual guardado en configuración
+            algoritmo: se acepta por compatibilidad; ya no se muestra
         """
         self.ajuste_tutores_input.setText(str(tutores))
         self.ajuste_no_tutores_input.setText(str(no_tutores))
-        self._algoritmo_actual = self._normalizar_algoritmo(algoritmo)
-        self._actualizar_info_algoritmo()
 
     def validar(self) -> tuple[bool, str]:
         """
@@ -190,20 +154,3 @@ class AjustesWidget(QGroupBox):
             return False, "El multiplicador de no tutores debe ser un número válido"
 
         return True, ""
-
-    def _normalizar_algoritmo(self, algoritmo: str | None) -> str:
-        algoritmo_normalizado = (algoritmo or "").strip().lower()
-        if algoritmo_normalizado in ("cpsat", "optimo", "cp-sat"):
-            return "cpsat"
-        return "v4.0"
-
-    def _actualizar_info_algoritmo(self) -> None:
-        algoritmo_activo = ALGORITMO_LABELS.get(self._algoritmo_actual, "Rápido (v4 Híbrido)")
-        self.algoritmo_info.setText(
-            "Activo: "
-            f"{algoritmo_activo}\n\n"
-            "Disponibles actualmente:\n"
-            "• Rápido (v4 Híbrido): heurístico, más ágil para el día a día.\n"
-            "• Óptimo (CP-SAT): más lento, pero busca la mejor solución posible.\n\n"
-            "Cambia el algoritmo según tus necesidades de velocidad o calidad de resultado."
-        )

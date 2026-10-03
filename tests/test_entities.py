@@ -350,51 +350,24 @@ class TestZonaEntity:
             id=1,
             nombre_zona="Patio Norte",
             descripcion="Zona de recreo norte",
-            capacidad_profesores=3,
             activa=True,
         )
         assert zona.descripcion == "Zona de recreo norte"
-        assert zona.capacidad_profesores == 3
-        assert zona.tiene_capacidad_limitada is True
 
     def test_nombre_display(self):
         """Test propiedad nombre_display."""
         zona = ZonaEntity(id=1, nombre_zona="Patio Principal")
         assert zona.nombre_display == "Patio Principal"
 
-    def test_tiene_capacidad_limitada_true(self):
-        """Test que tiene_capacidad_limitada es True cuando hay límite."""
-        zona = ZonaEntity(id=1, nombre_zona="Patio", capacidad_profesores=3)
-        assert zona.tiene_capacidad_limitada is True
-
-    def test_tiene_capacidad_limitada_false(self):
-        """Test que tiene_capacidad_limitada es False cuando no hay límite."""
-        zona = ZonaEntity(id=1, nombre_zona="Patio")
-        assert zona.tiene_capacidad_limitada is False
-
     def test_puede_asignar_profesor_zona_inactiva(self):
         """Test que no se puede asignar profesor a zona inactiva."""
         zona = ZonaEntity(id=1, nombre_zona="Patio", activa=False)
-        assert zona.puede_asignar_profesor(0) is False
+        assert zona.puede_asignar_profesor() is False
 
     def test_puede_asignar_profesor_sin_limite(self):
-        """Test que se puede asignar profesor sin límite de capacidad."""
+        """Una zona activa admite profesores."""
         zona = ZonaEntity(id=1, nombre_zona="Patio")
-        assert zona.puede_asignar_profesor(10) is True
-        assert zona.puede_asignar_profesor(100) is True
-
-    def test_puede_asignar_profesor_con_capacidad_disponible(self):
-        """Test que se puede asignar profesor con capacidad disponible."""
-        zona = ZonaEntity(id=1, nombre_zona="Patio", capacidad_profesores=3)
-        assert zona.puede_asignar_profesor(0) is True
-        assert zona.puede_asignar_profesor(1) is True
-        assert zona.puede_asignar_profesor(2) is True
-
-    def test_puede_asignar_profesor_capacidad_completa(self):
-        """Test que no se puede asignar profesor con capacidad completa."""
-        zona = ZonaEntity(id=1, nombre_zona="Patio", capacidad_profesores=3)
-        assert zona.puede_asignar_profesor(3) is False
-        assert zona.puede_asignar_profesor(4) is False
+        assert zona.puede_asignar_profesor() is True
 
     def test_igualdad_por_id(self):
         """Test que dos zonas con mismo ID son iguales."""
@@ -424,17 +397,10 @@ class TestZonaEntity:
         zonas = {z1, z2}
         assert len(zonas) == 1
 
-    def test_str_representation_sin_capacidad(self):
-        """Test representación en string sin capacidad."""
+    def test_str_representation(self):
+        """Test representación en string."""
         zona = ZonaEntity(id=1, nombre_zona="Patio Principal")
         assert str(zona) == "Patio Principal"
-
-    def test_str_representation_con_capacidad(self):
-        """Test representación en string con capacidad."""
-        zona = ZonaEntity(id=1, nombre_zona="Patio", capacidad_profesores=3)
-        resultado = str(zona)
-        assert "Patio" in resultado
-        assert "3" in resultado
 
     def test_repr_representation(self):
         """Test representación para debugging."""

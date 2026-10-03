@@ -146,12 +146,9 @@ class TestGeneracion:
         assert panel.content_text.toPlainText().strip()
         form.close()
 
-    def test_cambiar_algoritmo_no_rompe(self, form):
-        combo = form.generacion_panel.algoritmo_combo
-        assert combo.count() > 0
-        for i in range(combo.count()):
-            combo.setCurrentIndex(i)
-            QApplication.processEvents()
+    def test_no_se_ofrece_elegir_algoritmo(self, form):
+        """El «Rápido» (v4) se retiró en la v6.7.0: el selector sobraba."""
+        assert not hasattr(form.generacion_panel, "algoritmo_combo")
 
 
 class TestLimpieza:

@@ -160,7 +160,6 @@ class ZonaSyncDTO:
     fecha_inicio: Optional[str]
     fecha_fin: Optional[str]
     activa: bool = True
-    capacidad_profesores: Optional[int] = None
 
     @classmethod
     def from_orm(cls, orm_obj: Any) -> "ZonaSyncDTO":
@@ -171,7 +170,6 @@ class ZonaSyncDTO:
             fecha_inicio=serialize_date(orm_obj.fecha_inicio) if orm_obj.fecha_inicio else None,
             fecha_fin=serialize_date(orm_obj.fecha_fin) if orm_obj.fecha_fin else None,
             activa=orm_obj.activa is not False,
-            capacidad_profesores=orm_obj.capacidad_profesores,
         )
 
     @classmethod
@@ -183,7 +181,6 @@ class ZonaSyncDTO:
             fecha_inicio=data.get("fecha_inicio"),
             fecha_fin=data.get("fecha_fin"),
             activa=data.get("activa", True) is not False,
-            capacidad_profesores=data.get("capacidad_profesores"),
         )
 
     def to_dict(self) -> dict:

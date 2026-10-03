@@ -298,7 +298,7 @@ class TestDataExporterBD:
 
     def test_la_descarga_conserva_zona_preferida_y_datos_de_zona(self, session_export, tmp_path):
         """La descarga reconstruye la base desde cero: lo que no viaja se pierde (2026-10-03)."""
-        cerrada = Zona(nombre_zona="Cerrada", activa=False, capacidad_profesores=2)
+        cerrada = Zona(nombre_zona="Cerrada", activa=False)
         preferida = Zona(nombre_zona="Preferida")
         session_export.add_all([cerrada, preferida])
         session_export.flush()
@@ -318,4 +318,3 @@ class TestDataExporterBD:
         assert session_export.get(Profesor, ids[2]).zona_preferida_id == ids[1]
         zona = session_export.get(Zona, ids[0])
         assert zona.activa is False
-        assert zona.capacidad_profesores == 2

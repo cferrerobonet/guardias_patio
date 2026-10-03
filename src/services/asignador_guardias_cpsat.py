@@ -26,7 +26,7 @@ from __future__ import annotations
 import threading
 from collections import defaultdict
 from datetime import date
-from typing import Callable, Dict, List, Optional, Set, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from ortools.sat.python import cp_model
 from sqlalchemy.exc import SQLAlchemyError
@@ -35,6 +35,7 @@ from infrastructure.database.models import (
     Configuracion,
     Guardia,
     Profesor,
+    Zona,
 )
 from services._asignador_cpsat_helpers import (
     ProgresoSolver,
@@ -43,8 +44,14 @@ from services._asignador_cpsat_helpers import (
     _generar_slots,
     resolver_con_progreso,
 )
-from services._asignador_v4_helpers import calcular_ventanas_bloque
 from services.distribucion_cuotas_service import DistribucionCuotasService
+from services.reparto_agrupado import (
+    cuotas_alcanzables,
+    objetivos_justos,
+    reparar_equidad,
+    repartir_por_carriles,
+    terminos_de_agrupacion,
+)
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -174,7 +181,11 @@ def generar_guardias_cpsat(
     reportar(10, "Generando slots...")
     slots = _generar_slots(config, session)
     if not slots:
-        raise ValueError("No se pudieron generar slots")
+        if not session.query(Zona).filter(Zona.activa.is_(True)).count():
+            raise ValueError("No hay zonas activas que cubrir: crea al menos una zona")
+        raise ValueError(
+            "No hay huecos que cubrir: revisa las fechas del curso, los recreos y las zonas"
+        )
 
     # Generación incremental: se congela lo anterior a `desde` y se respetan las
     # sustituciones posteriores, que son decisiones tomadas a mano (FUN-002).
@@ -249,14 +260,19 @@ def generar_guardias_cpsat(
     logger.info(f"  ✓ {len(x)} variables booleanas creadas")
 
     # -------------------------------------------------------------------------
-    # RESTRICCIÓN 1: Cada slot debe tener exactamente 1 profesor
+    # RESTRICCIÓN 1: Cada slot, como mucho un profesor; dejarlo vacío se penaliza
     # -------------------------------------------------------------------------
+    # Con «exactamente uno», un día sin profesores suficientes volvía el modelo
+    # imposible y no se generaba nada. Ahora se cubre todo lo posible y lo que
+    # falta queda en el resumen (2026-10-03).
+    huecos_vacios = []
     for s_idx in range(len(slots)):
         profs_elegibles = slot_profs[s_idx]
         if profs_elegibles:
-            model.AddExactlyOne(x[(p_id, s_idx)] for p_id in profs_elegibles)
+            model.AddAtMostOne(x[(p_id, s_idx)] for p_id in profs_elegibles)
+            huecos_vacios.append(1 - sum(x[(p_id, s_idx)] for p_id in profs_elegibles))
 
-    logger.info("  ✓ Restricción: cada slot = 1 profesor")
+    logger.info("  ✓ Restricción: cada slot, como mucho 1 profesor")
 
     # -------------------------------------------------------------------------
     # RESTRICCIÓN 2: Máximo 1 guardia por día por profesor
@@ -316,6 +332,17 @@ def generar_guardias_cpsat(
 
     logger.info(f"  ✓ Cuotas calculadas por turno (suma={sum(cuotas_ideales.values()):.0f})")
 
+    # Lo que de verdad toca a cada uno: su cuota si le cabe y, si no, el reparto
+    # más justo posible del sobrante. Es la referencia de la equidad (2026-10-03).
+    reportar(27, "Buscando el reparto más justo posible...")
+    cuotas_base = {p.id: int(round(cuotas_ideales[p.id])) for p in profesores}
+    objetivo = objetivos_justos(
+        slots, profesores, prof_slots, slot_profs,
+        cuotas_alcanzables(slots, profesores, prof_slots, cuotas_base),
+        segundos=min(30.0, timeout_seconds * 0.25), cancelacion=cancelacion,
+    )
+    reportar(29, "Reparto justo calculado")
+
     # Variable auxiliar: número de guardias por profesor
     n_guardias: Dict[int, cp_model.IntVar] = {}
     for p in profesores:
@@ -331,118 +358,30 @@ def generar_guardias_cpsat(
     # Desviación de cada profesor respecto a su cuota
     desviaciones: List[cp_model.IntVar] = []
     for p in profesores:
-        cuota = int(round(cuotas_ideales[p.id]))
+        cuota = objetivo.get(p.id, 0)
         if prof_slots[p.id]:
-            dev = model.NewIntVar(0, 50, f"dev_{p.id}")
+            # Cota holgada: con 50 fijo, una diferencia mayor volvía el modelo imposible.
+            dev = model.NewIntVar(0, len(prof_slots[p.id]) + cuota, f"dev_{p.id}")
             model.Add(dev >= n_guardias[p.id] - cuota)
             model.Add(dev >= cuota - n_guardias[p.id])
             desviaciones.append(dev)
 
     # Máxima desviación
-    max_dev = model.NewIntVar(0, 50, "max_dev")
+    max_dev = model.NewIntVar(0, 10_000, "max_dev")
     model.AddMaxEquality(max_dev, desviaciones)
 
     logger.info("  ✓ Objetivo 1: minimizar inequidad (max_desv + sum_desv)")
 
     # -------------------------------------------------------------------------
-    # OBJETIVO 2 (SECUNDARIO): MAXIMIZAR CONSECUTIVIDAD
+    # OBJETIVO 2: AGRUPAR (tramos de días seguidos, un carril, un recreo)
     # -------------------------------------------------------------------------
-    # Estrategia: Incentivar que guardias consecutivas en el calendario
-    # sean asignadas al mismo profesor.
-    # Para cada par de slots (s1, s2) en días consecutivos d y d+1,
-    # si el mismo profesor cubre ambos, damos un "bonus" (reducimos penalización).
-    # Esto fomenta bloques de días consecutivos para cada profesor.
-
-    # Ordenar días lectivos y crear mapeo día -> índice ordinal
+    # Sustituye al «span» (días entre la primera y la última guardia), que no
+    # distinguía un tramo largo de muchas guardias sueltas, y a la concentración
+    # por zona, que no miraba el recreo (2026-10-03).
     dias_unicos = sorted(set(s.fecha for s in slots))
     dia_a_ordinal: Dict[date, int] = {d: i for i, d in enumerate(dias_unicos)}
-
-    # Para cada profesor, agrupar sus slots por día
-    # slots_por_prof_dia[prof_id][dia_ordinal] = lista de slot_idx
-    slots_por_prof_dia: Dict[int, Dict[int, List[int]]] = defaultdict(lambda: defaultdict(list))
-    for p in profesores:
-        for s_idx in prof_slots[p.id]:
-            dia_ord = dia_a_ordinal[slots[s_idx].fecha]
-            slots_por_prof_dia[p.id][dia_ord].append(s_idx)
-
-    # Crear variable: tiene_guardia_dia[prof_id][dia_ord] = 1 si el profesor
-    # tiene al menos una guardia ese día
-    tiene_guardia_dia: Dict[int, Dict[int, cp_model.IntVar]] = {}
-
-    for p in profesores:
-        tiene_guardia_dia[p.id] = {}
-        for dia_ord, slot_idxs in slots_por_prof_dia[p.id].items():
-            if slot_idxs:
-                tiene = model.NewBoolVar(f"tiene_{p.id}_{dia_ord}")
-                # tiene = 1 si alguno de los slots de ese día está asignado
-                model.AddMaxEquality(tiene, [x[(p.id, s_idx)] for s_idx in slot_idxs])
-                tiene_guardia_dia[p.id][dia_ord] = tiene
-
-    # Span directo: distancia entre primera y última guardia por profesor
-    max_dia_ord = len(dias_unicos) - 1
-    primera: Dict[int, cp_model.IntVar] = {}
-    ultima: Dict[int, cp_model.IntVar] = {}
-    span: Dict[int, cp_model.IntVar] = {}
-
-    for p in profesores:
-        if not tiene_guardia_dia.get(p.id):
-            continue
-        primera[p.id] = model.NewIntVar(0, max_dia_ord, f"primera_{p.id}")
-        ultima[p.id] = model.NewIntVar(0, max_dia_ord, f"ultima_{p.id}")
-        span[p.id] = model.NewIntVar(0, max_dia_ord, f"span_{p.id}")
-
-        for dia_ord, tiene in tiene_guardia_dia[p.id].items():
-            model.Add(primera[p.id] <= dia_ord).OnlyEnforceIf(tiene)
-            model.Add(ultima[p.id] >= dia_ord).OnlyEnforceIf(tiene)
-
-        model.Add(span[p.id] == ultima[p.id] - primera[p.id])
-
-    logger.info(f"  ✓ Objetivo 2: minimizar span primera/última guardia ({len(span)} profesores)")
-
-    # -------------------------------------------------------------------------
-    # OBJETIVO 3 (TERCIARIO): PREFERENCIA DE ZONA
-    # -------------------------------------------------------------------------
-    # Estrategia: Cada profesor debería hacer guardias en la MISMA zona.
-    # Maximizar la concentración: si un profesor hace N guardias,
-    # maximizar que estén en la misma zona.
-
-    # Para cada profesor, contar guardias por zona
-    penalizacion_zona: List[cp_model.IntVar] = []
-
-    for p in profesores:
-        slots_prof = prof_slots[p.id]
-        if not slots_prof or len(slots_prof) < 2:
-            continue
-
-        # Agrupar slots por zona
-        slots_por_zona: Dict[int, List[int]] = defaultdict(list)
-        for s_idx in slots_prof:
-            zona_id = slots[s_idx].zona_id
-            slots_por_zona[zona_id].append(s_idx)
-
-        if len(slots_por_zona) < 2:
-            # Solo tiene acceso a una zona, no hay penalización posible
-            continue
-
-        # guardias_en_zona[z] = número de guardias del profesor en zona z
-        guardias_en_zona: Dict[int, cp_model.IntVar] = {}
-        for zona_id, slot_idxs in slots_por_zona.items():
-            g_zona = model.NewIntVar(0, len(slot_idxs), f"gz_{p.id}_{zona_id}")
-            model.Add(g_zona == sum(x[(p.id, s_idx)] for s_idx in slot_idxs))
-            guardias_en_zona[zona_id] = g_zona
-
-        # max_en_una_zona = máximo de guardias en una sola zona
-        max_en_zona = model.NewIntVar(0, len(slots_prof), f"maxz_{p.id}")
-        model.AddMaxEquality(max_en_zona, list(guardias_en_zona.values()))
-
-        # Penalización = guardias_totales - max_en_zona
-        # (guardias fuera de la zona principal)
-        pen_zona = model.NewIntVar(0, len(slots_prof), f"penz_{p.id}")
-        model.Add(pen_zona == n_guardias[p.id] - max_en_zona)
-        penalizacion_zona.append(pen_zona)
-
-    n_pen_zona = len(penalizacion_zona)
-    logger.info(f"  ✓ Objetivo 3: maximizar concentración zona ({n_pen_zona} profesores)")
+    agrupacion = terminos_de_agrupacion(model, x, slots, prof_slots)
+    logger.info("  ✓ Objetivo 2: tramos de días seguidos, un carril y un recreo")
 
     # -------------------------------------------------------------------------
     # OBJETIVO 3b: PENALIZAR GUARDIAS FUERA DE ZONA PREFERIDA EXPLÍCITA
@@ -472,114 +411,45 @@ def generar_guardias_cpsat(
     # -------------------------------------------------------------------------
     # COMBINAR OBJETIVOS CON PESOS
     # -------------------------------------------------------------------------
-    PESO_EQUIDAD = 1_000_000
-    PESO_EQUIDAD_SUMA = 10_000
-    PESO_SPAN = 300
-    PESO_ZONA = 3
+    # Una guardia de diferencia con el objetivo pesa más que cualquier mejora de
+    # agrupación: la equidad nunca se cambia por tener las guardias más juntas.
+    PESO_EQUIDAD = 50_000
+    PESO_EQUIDAD_SUMA = 5_000
 
-    objetivo = (
-        PESO_EQUIDAD * max_dev
+    PESO_HUECO_VACIO = 10_000_000
+
+    objetivo_modelo = (
+        PESO_HUECO_VACIO * sum(huecos_vacios)
+        + PESO_EQUIDAD * max_dev
         + PESO_EQUIDAD_SUMA * sum(desviaciones)
-        + PESO_SPAN * sum(span.values())
-        + PESO_ZONA * sum(penalizacion_zona)
+        + sum(agrupacion)
         + PESO_ZONA_PREF * sum(penalizacion_zona_preferida)
     )
 
-    model.Minimize(objetivo)
+    model.Minimize(objetivo_modelo)
 
     logger.info(
         f"  ✓ Objetivo combinado: equidad({PESO_EQUIDAD}*max + {PESO_EQUIDAD_SUMA}*sum) "
-        f"+ span({PESO_SPAN}*{len(span)} profs) + zona({PESO_ZONA}) "
-        f"+ zona_pref({PESO_ZONA_PREF}*{n_pen_zona_pref} profs)"
+        f"+ agrupación + zona_pref({PESO_ZONA_PREF}*{n_pen_zona_pref} profs)"
     )
 
     # =========================================================================
-    # FASE 5: GENERAR HINTS (SOLUCIÓN INICIAL GREEDY MEJORADA)
+    # FASE 5: PUNTO DE PARTIDA (CARRILES)
     # =========================================================================
     if use_hints:
         logger.info("")
-        logger.info("FASE 5: GENERANDO HINTS (Greedy mejorado)")
+        logger.info("FASE 5: PUNTO DE PARTIDA POR CARRILES")
         logger.info("-" * 80)
         reportar(30, "Generando solución inicial...")
-
-        asig_greedy: Dict[int, int] = {p.id: 0 for p in profesores}
-        slot_asignado: Dict[int, int] = {}
-        guardias_por_dia_greedy: Dict[Tuple[int, date], Set[int]] = defaultdict(set)
-        momento_ocupado: Set[Tuple[int, date, str, int]] = set()
-
-        # Tracking adicional para consecutividad y zona
-        ultimo_dia_guardia: Dict[int, int] = {}
-        zona_principal: Dict[int, Dict[int, int]] = defaultdict(lambda: defaultdict(int))
-        prof_por_id = {p.id: p for p in profesores}
-
-        # Ventanas de bloque para guiar la semilla greedy
-        cuotas_int = {p.id: int(round(cuotas_ideales[p.id])) for p in profesores}
-        ventanas_hint = calcular_ventanas_bloque(profesores, cuotas_int, dias_unicos)
-
-        for s_idx in range(len(slots)):
-            slot = slots[s_idx]
-            dia_ord = dia_a_ordinal[slot.fecha]
-            candidatos = []
-
-            for p_id in slot_profs[s_idx]:
-                # Max 1/día
-                if guardias_por_dia_greedy[(p_id, slot.fecha)]:
-                    continue
-                # No simultaneidad
-                momento = (p_id, slot.fecha, slot.turno, slot.recreo_id)
-                if momento in momento_ocupado:
-                    continue
-                candidatos.append(p_id)
-
-            if candidatos:
-                def score_candidato(pid):
-                    ratio = asig_greedy[pid] / max(cuotas_ideales[pid], 0.1)
-
-                    # Penalización fuerte fuera de ventana
-                    ventana = ventanas_hint.get(pid)
-                    fuera = 0.0
-                    if ventana:
-                        inicio, fin = ventana
-                        fuera = 0.0 if inicio <= dia_ord <= fin else 10.0
-
-                    # Bonus consecutividad
-                    bonus_consec = 0.0
-                    if pid in ultimo_dia_guardia:
-                        diff = dia_ord - ultimo_dia_guardia[pid]
-                        if diff == 1:
-                            bonus_consec = -0.3
-                        elif diff <= 3:
-                            bonus_consec = -0.05
-
-                    # Bonus zona (priorizar zona_preferida_id si está configurada)
-                    bonus_zona = 0.0
-                    zona_pref_id = prof_por_id[pid].zona_preferida_id
-                    if zona_pref_id:
-                        if slot.zona_id == zona_pref_id:
-                            bonus_zona = -0.1
-                    elif zona_principal[pid]:
-                        zona_mas_usada = max(zona_principal[pid], key=zona_principal[pid].get)
-                        if slot.zona_id == zona_mas_usada:
-                            bonus_zona = -0.05
-
-                    return ratio + fuera + bonus_consec + bonus_zona
-
-                mejor = min(candidatos, key=score_candidato)
-                slot_asignado[s_idx] = mejor
-                asig_greedy[mejor] += 1
-                guardias_por_dia_greedy[(mejor, slot.fecha)].add(s_idx)
-                momento = (mejor, slot.fecha, slot.turno, slot.recreo_id)
-                momento_ocupado.add(momento)
-
-                # Actualizar tracking
-                ultimo_dia_guardia[mejor] = dia_ord
-                zona_principal[mejor][slot.zona_id] += 1
-
-        # Aplicar hints al modelo
-        for s_idx, p_id in slot_asignado.items():
+        semilla = reparar_equidad(
+            slots,
+            repartir_por_carriles(slots, profesores, prof_slots, slot_profs, objetivo),
+            prof_slots,
+            objetivo,
+        )
+        for s_idx, p_id in semilla.items():
             model.AddHint(x[(p_id, s_idx)], 1)
-
-        logger.info(f"  ✓ Hint greedy mejorado: {len(slot_asignado)}/{len(slots)} slots")
+        logger.info(f"  ✓ Punto de partida: {len(semilla)}/{len(slots)} slots")
 
     # =========================================================================
     # FASE 6: RESOLVER
@@ -660,7 +530,7 @@ def generar_guardias_cpsat(
     desviacion_media = sum(abs(d) for d in diferencias) / len(diferencias)
     suma_desv = sum(abs(d) for d in diferencias)
     suma_cuotas = sum(cuotas_ideales.values())
-    indice_equidad = 100 * (1 - suma_desv / suma_cuotas)
+    indice_equidad = 100 * (1 - suma_desv / suma_cuotas) if suma_cuotas else 100.0
 
     logger.info(f"  Total guardias: {len(guardias)} / {len(slots)}")
     logger.info(f"  Índice de Equidad: {indice_equidad:.1f}%")

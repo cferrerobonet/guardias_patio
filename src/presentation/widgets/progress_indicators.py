@@ -39,7 +39,7 @@ _logger = get_logger(__name__)
 # la generación. Los antiguos (iterativo, ilp, orquestador, v3) ya no existen.
 LOGGERS_CAPTURADOS = (
     "services.asignador_guardias_cpsat",
-    "services.asignador_guardias_v4_hibrido",
+    "services.reparto_agrupado",
 )
 
 

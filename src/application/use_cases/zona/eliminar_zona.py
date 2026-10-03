@@ -64,7 +64,7 @@ class EliminarZonaUseCase:
             from services.calculador_guardias import ajustar_zonas_de_los_recreos
 
             nombre_zona = zona.nombre_zona
-            antes = self.session.query(Zona).count()
+            antes = self.session.query(Zona).filter(Zona.activa.is_(True)).count()
             # Quien la tenía como preferida se queda sin preferencia: si no, la
             # clave foránea impedía borrarla con un error técnico (2026-10-03).
             self.session.query(Profesor).filter(Profesor.zona_preferida_id == zona_id).update(

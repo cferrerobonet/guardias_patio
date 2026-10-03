@@ -10,7 +10,6 @@ from contextlib import contextmanager
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
-    QComboBox,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -23,9 +22,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from application.dtos.domain_services_dtos import AnalisisEquidadRequest
 from application.use_cases.analisis_equidad_use_case import AnalisisEquidadUseCase
 from application.use_cases.asignacion_guardias import GenerarGuardiasUseCase
-from application.use_cases.configuracion.actualizar_configuracion import (
-    ActualizarConfiguracionUseCase,
-)
 from application.use_cases.guardia import LimpiarGuardiasUseCase
 from infrastructure.repositories import SQLAlchemyGuardiaRepository
 from presentation.theme.terminal_format import (
@@ -38,7 +34,6 @@ from presentation.theme.terminal_format import (
     format_terminal_warning,
     wrap_terminal_html,
 )
-from presentation.theme.tokens import Spacing
 from services import papelera_guardias
 from utils import get_logger
 from utils.icons import icon_for_button
@@ -131,43 +126,6 @@ class GeneracionPanel(QGroupBox):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 8, 6, 8)
         layout.setSpacing(6)
-
-        # Selector de algoritmo
-        algoritmo_container = QHBoxLayout()
-        algoritmo_container.setContentsMargins(0, 0, 0, 4)
-        algoritmo_container.setSpacing(Spacing.SM)
-
-        algoritmo_label = QLabel("Algoritmo:")
-        algoritmo_label.setProperty("texto", "fuerte")
-        algoritmo_container.addWidget(algoritmo_label)
-
-        self.algoritmo_combo = QComboBox()
-        self.algoritmo_combo.addItem("Rápido (v4 Híbrido)", "v4.0")
-        self.algoritmo_combo.addItem("Óptimo (CP-SAT)", "cpsat")
-        self.algoritmo_combo.setCurrentIndex(1)  # Default: óptimo (CP-SAT)
-        self.algoritmo_combo.setToolTip(
-            "Rápido: ~1 segundo, heurístico\nÓptimo: ~10 segundos, garantiza la mejor solución"
-        )
-        self.algoritmo_combo.setStyleSheet("""
-            QComboBox {
-                padding: 4px 8px;
-                border: 1px solid #d1d5db;
-                border-radius: 4px;
-                background: white;
-                min-width: 150px;
-            }
-            QComboBox:hover {
-                border-color: #1E7E34;
-            }
-            QComboBox::drop-down {
-                border: none;
-                padding-right: 4px;
-            }
-        """)
-        algoritmo_container.addWidget(self.algoritmo_combo)
-        algoritmo_container.addStretch()
-
-        layout.addLayout(algoritmo_container)
 
         # Contenedor de botones
         button_container = QHBoxLayout()
@@ -297,14 +255,6 @@ class GeneracionPanel(QGroupBox):
         from presentation.widgets.progress_indicators import ejecutar_con_progreso
 
         try:
-            # Obtener algoritmo seleccionado y actualizar configuración
-            algoritmo_seleccionado = self.algoritmo_combo.currentData()
-            from application.dtos import ActualizarConfiguracionDTO
-
-            ActualizarConfiguracionUseCase(self.session).execute(
-                ActualizarConfiguracionDTO(algoritmo_asignacion=algoritmo_seleccionado)
-            )
-
             from application.app_services import AppServices
 
             app_svc = AppServices(self.session)
@@ -312,8 +262,12 @@ class GeneracionPanel(QGroupBox):
             n_profesores = app_svc.contar_profesores_activos()
             eliminar_existentes = True
 
-            # Estimación de tiempo: ~2s base + 0.5s por profesor (heurística empírica CP-SAT)
-            segundos_est = max(5, 2 + int(n_profesores * 0.5))
+            # El solver agota su tiempo límite y antes calcula el reparto justo
+            # (hasta 30 s): la cuenta por profesor se quedaba muy corta.
+            from config.settings import get_settings
+
+            limite = get_settings().solver_timeout_segundos
+            segundos_est = int(limite + min(30.0, limite * 0.25) + 10)
             if segundos_est < 60:
                 tiempo_est = f"~{segundos_est} segundos"
             else:
@@ -321,7 +275,6 @@ class GeneracionPanel(QGroupBox):
 
             resumen_previo = (
                 f"Profesores activos: {n_profesores}\n"
-                f"Algoritmo: {algoritmo_seleccionado.upper()}\n"
                 f"Tiempo estimado: {tiempo_est}"
             )
 

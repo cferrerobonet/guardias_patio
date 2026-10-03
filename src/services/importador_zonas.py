@@ -5,7 +5,6 @@ Columnas esperadas en el CSV/Excel:
 - nombre_zona (obligatorio)
 - descripcion (opcional)
 - activa (opcional, default True, acepta: 1/0, true/false, si/no)
-- capacidad_profesores (opcional, entero)
 """
 
 import csv as csv_module
@@ -59,7 +58,7 @@ def _get_zona_repo(zona_repo_or_session):
 def _contar_zonas(session) -> int:
     from infrastructure.database.models import Zona
 
-    return session.query(Zona).count()
+    return session.query(Zona).filter(Zona.activa.is_(True)).count()
 
 
 def importar_zonas_desde_csv(
@@ -122,7 +121,6 @@ def importar_zonas_desde_csv(
                 nombre_zona=nombre,
                 descripcion=fila.get("descripcion", "").strip() or None,
                 activa=_parse_bool(fila.get("activa", "1")),
-                capacidad_profesores=_parse_int_or_none(fila.get("capacidad_profesores", "")),
             ))
             resultados["importadas"] += 1
             resultados["detalles"].append(f"'{nombre}': importada")
@@ -216,7 +214,6 @@ def importar_zonas_desde_excel(
                 nombre_zona=nombre,
                 descripcion=str(fila.get("descripcion", "")).strip() or None,
                 activa=_parse_bool(str(fila.get("activa", "1"))),
-                capacidad_profesores=_parse_int_or_none(str(fila.get("capacidad_profesores", ""))),
             ))
             resultados["importadas"] += 1
             resultados["detalles"].append(f"'{nombre}': importada")

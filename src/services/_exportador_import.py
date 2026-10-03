@@ -212,7 +212,6 @@ def importar_zonas(
                 existing.fecha_inicio = _deserializar_fecha(z_data.get("fecha_inicio"))
                 existing.fecha_fin = _deserializar_fecha(z_data.get("fecha_fin"))
                 existing.activa = z_data.get("activa", True) is not False
-                existing.capacidad_profesores = z_data.get("capacidad_profesores")
             else:
                 zona = Zona(
                     id=z_data["id"],
@@ -221,7 +220,6 @@ def importar_zonas(
                     fecha_inicio=_deserializar_fecha(z_data.get("fecha_inicio")),
                     fecha_fin=_deserializar_fecha(z_data.get("fecha_fin")),
                     activa=z_data.get("activa", True) is not False,
-                    capacidad_profesores=z_data.get("capacidad_profesores"),
                 )
                 session.add(zona)
         else:
@@ -231,7 +229,6 @@ def importar_zonas(
                 fecha_inicio=_deserializar_fecha(z_data.get("fecha_inicio")),
                 fecha_fin=_deserializar_fecha(z_data.get("fecha_fin")),
                 activa=z_data.get("activa", True) is not False,
-                capacidad_profesores=z_data.get("capacidad_profesores"),
             )
             session.add(zona)
         count += 1

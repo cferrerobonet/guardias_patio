@@ -5,6 +5,34 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.7.0] - 2026-10-03
+
+### 🎯 Resumen
+Guardias agrupadas: cada profesor hace las suyas en tramos de días seguidos, en la misma zona y en el mismo recreo, sin perder la equidad. Medido con los calendarios reales de 2025/26 y 2026/27: un profesor típico pasaba de 10-12 tramos sueltos, 3-4 zonas y dos recreos a 2 tramos, una zona y un recreo. Además, el reparto tiene en cuenta todos los parámetros que se pueden configurar.
+
+### ✨ Added
+- **Reparto por carriles** (`services/reparto_agrupado.py`). Un carril es un recreo en una zona. Cada profesor lleva un carril días seguidos hasta completar lo suyo; quien sólo falta un día no pierde su carril. CP-SAT recibe ese calendario como punto de partida y lo pule con un objetivo nuevo: tramos de días seguidos (contados sobre los días que cada profesor puede hacer), un carril y un recreo. Sustituye al «span» (días entre la primera y la última guardia), que no distinguía un tramo largo de muchas guardias sueltas, y a la concentración por zona, que no miraba el recreo.
+- **Reparto justo en dos pasos**: primero se calcula cuántas guardias le tocan de verdad a cada uno (su cuota si le cabe y, si no, el reparto más justo del sobrante); después se agrupa sin apartarse de esos números.
+- `tests/test_reparto_parametros.py`: inventario de cada columna de profesor, zona, configuración y ausencia con su papel en el reparto. Una columna nueva sin decidir hace fallar el test.
+
+### Fixed
+- **Equidad**: cuando un profesor no podía llegar a su cuota (por ejemplo, termina el 20 de octubre y va tres días por semana), el sobrante podía caer entero sobre otro (+26 en los datos reales). Ahora se reparte.
+- **Zonas desactivadas**: se seguían cubriendo. Ya no generan huecos ni cuentan para los recreos ni para las cuotas.
+- **Días de la semana permitidos**: CP-SAT sólo miraba la matriz de recreos. Un profesor con días limitados y sin matriz (importado o de una versión anterior) podía recibir guardias en días vetados. El test de cumplimiento R7 de CP-SAT, marcado como fallo conocido, pasa.
+- La cota de desviación del modelo era fija (50): una diferencia mayor volvía el modelo imposible.
+
+### Removed
+- **Algoritmo «Rápido» (v4 híbrido)**: para cubrirlo todo ponía dos guardias el mismo día a un profesor y dejaba a otros lejos de su cuota (−15 y −7 con los datos de 2025/26). Se retira con su código (`asignador_guardias_v4_hibrido`, `services/assignment`) y el selector de la pantalla de generación y de Ajustes: el algoritmo es siempre CP-SAT.
+- **«Capacidad de profesores» de una zona**: no la usaba nada (cada hueco lo cubre un profesor) y no se podía editar. Sale del modelo, la sincronización, las copias JSON y la importación CSV (los CSV que la traen se siguen aceptando). En las bases ya creadas la columna queda vacía en disco: quitarla obligaría a reconstruir la tabla de zonas, que con las claves foráneas activas podría arrastrar las guardias.
+
+### Changed
+- **Si no se puede cubrir todo** (un día sin profesores suficientes con una guardia al día como mucho), CP-SAT cubre todo lo posible y el resumen dice cuántos huecos quedan, en lugar de fallar entero. El rápido lo «conseguía» saltándose la regla.
+- Mensaje claro si no hay zonas activas o no hay huecos que cubrir.
+- La estimación de tiempo de la pantalla de generación usa el tiempo límite real del solver.
+- Las horas de mañana y tarde de los mixtos no reparten sus guardias entre turnos: se ajusta a mano en la rejilla de recreos (decisión de CarlosFB).
+- Las fechas de inicio y fin de un profesor no reducen su cuota: la del curso entero se concentra en su periodo (decisión de CarlosFB). Se corrige la documentación del servicio de cuotas, que decía lo contrario.
+- La generación tarda algo más (unos 2-2,5 minutos con el tiempo límite de 120 s): el primer paso añade hasta 30 s.
+
 ## [6.6.1] - 2026-10-03
 
 ### 🎯 Resumen

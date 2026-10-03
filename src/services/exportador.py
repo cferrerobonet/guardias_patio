@@ -151,7 +151,6 @@ class ExportadorDatos:
                 "fecha_inicio": ExportadorDatos._serializar_fecha(z.fecha_inicio),  # Campo añadido
                 "fecha_fin": ExportadorDatos._serializar_fecha(z.fecha_fin),  # Campo añadido
                 "activa": z.activa is not False,
-                "capacidad_profesores": z.capacidad_profesores,
             }
             for z in zonas
         ]

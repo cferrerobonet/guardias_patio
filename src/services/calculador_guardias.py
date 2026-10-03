@@ -233,7 +233,7 @@ def ajustar_zonas_de_los_recreos(session, antes: int) -> None:
     después de guardar Ajustes se quedaba sin guardias sin que nada avisara
     (2026-10-03).
     """
-    ahora = session.query(Zona).count()
+    ahora = session.query(Zona).filter(Zona.activa.is_(True)).count()
     if ahora == antes:
         return
     for config in session.query(Configuracion).all():
@@ -333,9 +333,9 @@ def calcular_slots_reales(session, config: Configuracion) -> int:
     Returns:
         int: Número total de slots disponibles
     """
-    from services.asignador_guardias_v4_hibrido import _generar_slots
+    from services._asignador_cpsat_helpers import _generar_slots
 
-    # Usar el mismo método que el generador de guardias v4.0
+    # Los mismos huecos que el generador
     try:
         slots_list = _generar_slots(config, session)
         return len(slots_list)
@@ -381,7 +381,7 @@ def calcular_distribucion_cruda(session) -> Dict[int, float]:
     logger.info(f"Profesores a considerar: {len(profesores)}")
 
     # Obtener todas las zonas activas
-    zonas = session.query(Zona).all()
+    zonas = session.query(Zona).filter(Zona.activa.is_(True)).all()
     if not zonas:
         logger.error("No hay zonas registradas en el sistema")
         raise ValueError("No hay zonas registradas en el sistema")
@@ -594,7 +594,7 @@ def obtener_estadisticas(session) -> Dict:
     recreos_manana, recreos_tarde = calcular_recreos_activos(session)
 
     # Contar zonas disponibles
-    num_zonas = session.query(Zona).count()
+    num_zonas = session.query(Zona).filter(Zona.activa.is_(True)).count()
 
     # Contar profesores activos (disponibles para asignación)
     num_profesores = (

@@ -19,7 +19,7 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 | Ventana y navegación | `src/presentation/ventana_principal.py` (10 vistas en `create_views`; `ContentWrapper` con margen inferior), `components/menu_lateral.py` |
 | Vista de generación **real** | `forms/asignacion_calculo_form.py` → `asignacion_widgets/calculo_panel.py` (cuotas) + `generacion_panel.py` (generar, resultados, emails) |
 | Progreso / hilos | `widgets/progress_indicators.py` (`ejecutar_con_progreso`, `ProgressDialog`), `progress_worker.py` (`WorkerThread`), `progress_handlers.py` |
-| Caso de uso generación | `application/use_cases/asignacion_guardias/generar_guardias.py` → `services/asignador_guardias_cpsat.py` (+ `_asignador_cpsat_helpers.py`) o `services/asignador_guardias_v4_hibrido.py` |
+| Caso de uso generación | `application/use_cases/asignacion_guardias/generar_guardias.py` → `services/asignador_guardias_cpsat.py` (+ `_asignador_cpsat_helpers.py`, `reparto_agrupado.py`: cuotas alcanzables, reparto justo y carriles). Único algoritmo desde v6.7.0; criterios del reparto e inventario de parámetros en `tests/test_reparto_parametros.py` |
 | Sesión BD y PRAGMAs | `database/db_manager.py` (`initialize_user_database`, NullPool, `check_same_thread=False`, journal DELETE) |
 | Sync SFTP y bloqueo | `sync/sync_manager.py` (qué se sube y cuándo), `sync/backends.py` (SFTP y carpeta local), `sync/cuentas.py` (ficha remota), `sync/session_lock.py`, `widgets/sync_progress_dialog.py` (`SyncWorker`) |
 | Tema y tokens | `presentation/theme/tokens.py`, `theme/light.qss`, `themes/tema_aplicacion.py` (tres capas + inline) |
@@ -38,7 +38,7 @@ $PY -m ruff check src --statistics
 $PY -m bandit -r src -q -ll · $PY -m pip_audit --progress-spinner off · $PY -m radon cc src -s -n C · $PY -m vulture src --min-confidence 80
 ```
 Los tests de API necesitan `GUARDIAS_API_SECRET_KEY=<cualquiera>` en el entorno y `slowapi` instalado.
-La suite completa pasa de una sola pasada (~2.880 tests, 60 s sin `tests/benchmarks`). Cuatro barreras automáticas en `tests/conftest.py` impiden que un test toque algo real: `dialogos_modales`, `sin_smtp_de_verdad`, `sin_llavero_de_verdad`, `sin_env_de_verdad` (marcadores `modales_reales`, `smtp_real`, `llavero_real`, `env_real` para desactivarlas).
+La suite completa pasa de una sola pasada (~3.020 tests, unos 2 minutos sin `tests/benchmarks`). Cuatro barreras automáticas en `tests/conftest.py` impiden que un test toque algo real: `dialogos_modales`, `sin_smtp_de_verdad`, `sin_llavero_de_verdad`, `sin_env_de_verdad` (marcadores `modales_reales`, `smtp_real`, `llavero_real`, `env_real` para desactivarlas).
 
 ## Patrón polimórfico (Session | RepositoryFactory)
 Servicios en `src/services/` y clases en `src/presentation/` aceptan ambos; normalizar en `__init__`:

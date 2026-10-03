@@ -63,14 +63,14 @@ def test_log_handler_captura_los_loggers_de_los_algoritmos_actuales(qapp, qtbot)
     handler = dialog._log_handler
     capturados = {
         name
-        for name in ("services.asignador_guardias_cpsat", "services.asignador_guardias_v4_hibrido")
+        for name in ("services.asignador_guardias_cpsat", "services.reparto_agrupado")
         if handler in logging.getLogger(name).handlers
     }
     dialog._cancelado = True
     dialog.close()
     assert capturados == {
         "services.asignador_guardias_cpsat",
-        "services.asignador_guardias_v4_hibrido",
+        "services.reparto_agrupado",
     }, f"el handler no cubre los algoritmos vivos: {capturados}"
 
 

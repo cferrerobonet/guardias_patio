@@ -140,8 +140,9 @@ class TestIntegrationGeneracionBasica:
         config = config_uc.execute(config_dto)
         assert config is not None
 
-        # Crear 2 profesores de mañana y 2 de tarde para cobertura completa
-        for i in range(1, 3):
+        # 4 de mañana y 4 de tarde: cada día hay 4 huecos por turno y nadie hace
+        # más de una guardia al día
+        for i in range(1, 5):
             dto_m = CrearProfesorDTO(
                 nombre_completo=f"Profesor Mañana {i}",
                 horas_contrato=25,
@@ -188,7 +189,7 @@ class TestIntegrationGeneracionBasica:
         assert count_guardias == 40
 
         # Verificar distribución en resumen (4 profesores)
-        assert len(resumen.resumen_por_profesor) == 4
+        assert len(resumen.resumen_por_profesor) == 8
 
         # Verificar que la distribución total suma 40
         total_asignadas = sum(resumen.resumen_por_profesor.values())
@@ -647,15 +648,11 @@ class TestIntegrationValidacionesAsignador:
         generar_uc,
     ):
         """
-        Test: Validación comportamiento múltiples guardias al día.
+        Test: nunca dos guardias el mismo día al mismo profesor.
 
-        v4.0 permite múltiples guardias al día para lograr cobertura 100%.
-        Con un solo profesor mixto, debe cubrir todos los slots aunque
-        requiera múltiples guardias por día.
-
-        Valida:
-        - Cobertura completa aunque requiera múltiples guardias/día
-        - No más de 4 guardias al día (2 recreos × 2 turnos)
+        El algoritmo «Rápido» (v4) se saltaba esta regla para cubrirlo todo y se
+        retiró en la v6.7.0. Con un solo profesor, una guardia al día y lo que
+        no se puede cubrir queda en el resumen.
         """
         # Setup
         config_dto = ActualizarConfiguracionDTO(
@@ -684,21 +681,15 @@ class TestIntegrationValidacionesAsignador:
         zona_dto = CrearZonaDTO(nombre_zona="Zona 1", descripcion="Zona 1")
         zona_uc.execute(zona_dto)
 
-        # Generar
-        generar_uc.execute()
+        # Generar: 3 días × 4 recreos × 1 zona = 12 huecos, un solo profesor
+        resumen = generar_uc.execute()
 
-        # v4.0: Con 1 profesor mixto y 1 zona, debe cubrir todos los slots
-        # Slots = 3 días × 4 recreos × 1 zona = 12 slots
         guardias = session.query(Guardia).filter(Guardia.profesor_id == prof.id).all()
-
-        # Debe tener exactamente 12 guardias (cobertura 100%)
-        assert len(guardias) == 12
-
-        # Verificar distribución por fecha (máx 4 por día: 2 recreos × 2 turnos)
         from collections import Counter
-        guardias_por_fecha = Counter(g.fecha for g in guardias)
-        for fecha, count in guardias_por_fecha.items():
-            assert count <= 4, f"Más de 4 guardias el {fecha}"
+
+        assert max(Counter(g.fecha for g in guardias).values()) == 1
+        assert len(guardias) == 3
+        assert resumen.slots_sin_cubrir == 9
 
     def test_validacion_no_simultaneidad(
         self,
