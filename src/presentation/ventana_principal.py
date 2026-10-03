@@ -97,6 +97,9 @@ class VentanaPrincipal(QMainWindow):
 
     _nueva_version_signal = pyqtSignal(str, str, str)
 
+    #: Cada cuánto se vuelve a preguntar por una versión nueva con la app abierta.
+    INTERVALO_COMPROBAR_VERSION_MS = 6 * 60 * 60 * 1000
+
     def __init__(self, session, sync_manager=None):
         super().__init__()
         self.session = session
@@ -626,7 +629,14 @@ class VentanaPrincipal(QMainWindow):
         from config.settings import get_settings
         from utils.update_checker import check_for_updates
 
-        self._nueva_version_signal.connect(self._on_nueva_version)
+        if not getattr(self, "_aviso_de_version_conectado", False):
+            self._aviso_de_version_conectado = True
+            self._nueva_version_signal.connect(self._on_nueva_version)
+            # Sólo se miraba al arrancar: con la app abierta todo el día, una
+            # versión publicada a media mañana no se anunciaba (2026-10-03).
+            self._timer_version = QTimer(self)
+            self._timer_version.timeout.connect(self._check_updates)
+            self._timer_version.start(self.INTERVALO_COMPROBAR_VERSION_MS)
         check_for_updates(get_settings().app_version, self._nueva_version_signal.emit)
 
     def _on_nueva_version(self, version: str, download_url: str, notas: str = "") -> None:

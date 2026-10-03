@@ -57,6 +57,15 @@ class GenerarGuardiasUseCase:
         """
         self.session = session
 
+    def _guardias_del_curso_activo(self):
+        from infrastructure.database.models import CursoEscolar
+
+        curso = self.session.query(CursoEscolar).filter_by(activo=True).first()
+        consulta = self.session.query(Guardia)
+        if curso is None:
+            return consulta.filter(Guardia.curso_id.is_(None))
+        return consulta.filter(Guardia.curso_id == curso.id)
+
     @with_metrics("generar_guardias")
     def execute(
         self,
@@ -83,23 +92,23 @@ class GenerarGuardiasUseCase:
             BusinessLogicError: Si hay errores en la generación
         """
         try:
-            # Verificar guardias existentes
-            count_guardias = self.session.query(Guardia).count()
+            # Sólo las guardias del curso activo: antes se borraban las de todos
+            # los cursos y generar el nuevo se llevaba el historial (2026-10-03).
+            del_curso = self._guardias_del_curso_activo()
+            count_guardias = del_curso.count()
 
             if count_guardias > 0 and eliminar_existentes:
                 if progress_callback:
                     progress_callback("Eliminando guardias existentes...", 10)
 
                 if desde is None:
-                    borradas = self.session.query(Guardia).delete()
+                    borradas = del_curso.delete(synchronize_session=False)
                 else:
                     # Incremental: sólo se borra lo recalculable. Lo anterior a la
                     # fecha y las sustituciones se quedan como están (FUN-002).
-                    borradas = (
-                        self.session.query(Guardia)
-                        .filter(Guardia.fecha >= desde, Guardia.es_sustitucion.is_(False))
-                        .delete(synchronize_session=False)
-                    )
+                    borradas = del_curso.filter(
+                        Guardia.fecha >= desde, Guardia.es_sustitucion.is_(False)
+                    ).delete(synchronize_session=False)
                 logger.info(f"Eliminadas {borradas} guardias existentes (pendiente commit)")
 
             # Obtener estadísticas

@@ -18,6 +18,12 @@ from nombres_ascii import copia_con_nombres_ascii  # noqa: E402
 
 ES_MACOS = sys.platform == "darwin"
 NOMBRE = "Guardias de Patio" if ES_MACOS else "GuardiasDePatio"
+
+import re  # noqa: E402
+
+VERSION = re.search(
+    r'^version = "([^"]+)"', (Path(SPECPATH) / "pyproject.toml").read_text(encoding="utf-8"), re.M
+).group(1)
 ICONO = "imagenes/icono.icns" if ES_MACOS else "imagenes/logo.ico"
 
 # La variante de diagnóstico de Windows sale de este mismo spec: consola visible
@@ -126,4 +132,10 @@ if ES_MACOS:
         name=f"{NOMBRE}.app",
         icon=ICONO,
         bundle_identifier='com.guardias-patio.app',
+        # Sin esto el Info.plist decía 0.0.0 y macOS no sabía qué versión era
+        # la instalada (2026-10-03).
+        info_plist={
+            'CFBundleShortVersionString': VERSION,
+            'CFBundleVersion': VERSION,
+        },
     )

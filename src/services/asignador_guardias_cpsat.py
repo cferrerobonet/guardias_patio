@@ -54,7 +54,7 @@ logger = get_logger(__name__)
 # =============================================================================
 
 
-def _preparar_generacion_incremental(session, slots, desde: date):
+def _preparar_generacion_incremental(session, slots, desde: date, curso_id=None):
     """Reparte el trabajo entre lo que se conserva y lo que hay que recalcular.
 
     Devuelve `(guardias_conservadas, ya_asignadas, slots_pendientes)`:
@@ -67,9 +67,12 @@ def _preparar_generacion_incremental(session, slots, desde: date):
     - **slots_pendientes**: los huecos desde `desde` que no cubre ninguna guardia
       conservada.
     """
+    # Sólo el curso activo: las guardias de un curso anterior también son
+    # «anteriores a desde» y se descontaban de la cuota (2026-10-03).
     conservadas = (
         session.query(Guardia)
         .filter((Guardia.fecha < desde) | (Guardia.es_sustitucion.is_(True)))
+        .filter(Guardia.curso_id == curso_id if curso_id else Guardia.curso_id.is_(None))
         .all()
     )
     # Una sustitución anterior a `desde` ya entra por la primera condición.
@@ -179,7 +182,7 @@ def generar_guardias_cpsat(
     ya_asignadas: Dict[int, int] = {}
     if desde is not None:
         guardias_conservadas, ya_asignadas, slots = _preparar_generacion_incremental(
-            session, slots, desde
+            session, slots, desde, curso_id
         )
         logger.info(
             f"  ✓ Incremental desde {desde}: se conservan {len(guardias_conservadas)} guardias"

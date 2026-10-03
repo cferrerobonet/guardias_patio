@@ -282,3 +282,86 @@ def test_la_descarga_del_instalador_usa_el_mismo_contexto():
     assert "contexto_ssl()" in fuente
     # `urlretrieve` no admite contexto: fallaría igual que la comprobación.
     assert "urlretrieve(" not in fuente
+
+
+class _Redireccion:
+    """Respuesta de `github.com/.../releases/latest`: sólo importa adónde lleva."""
+
+    def __init__(self, destino):
+        self._destino = destino
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *excepcion):
+        return False
+
+    def geturl(self):
+        return self._destino
+
+
+def _api_agotada(destino="https://github.com/x/y/releases/tag/v9.1.0"):
+    import urllib.error
+
+    def _urlopen(req, *a, **k):
+        url = req.full_url if hasattr(req, "full_url") else req
+        if "api.github.com" in url:
+            raise urllib.error.HTTPError(url, 403, "rate limit exceeded", None, None)
+        return _Redireccion(destino)
+
+    return _urlopen
+
+
+@pytest.mark.parametrize(
+    "sistema, instalador",
+    [("Darwin", "GuardiasPatio_v9.1.0_macOS.dmg"),
+     ("Windows", "GuardiasDePatio-9.1.0-Windows-Setup.exe")],
+)
+def test_con_la_api_agotada_se_pregunta_a_la_web(monkeypatch, sistema, instalador):
+    """60 consultas por hora y por IP: en el centro se agotaban y no salía el aviso."""
+    monkeypatch.setattr(update_checker.urllib.request, "urlopen", _api_agotada())
+    monkeypatch.setattr(update_checker.platform, "system", lambda: sistema)
+    monkeypatch.setattr(update_checker, "Thread", _HiloInmediato)
+    recibido = []
+    update_checker.check_for_updates("1.0.0", lambda *args: recibido.append(args))
+
+    version, url, notas = recibido[0]
+    assert version == "9.1.0"
+    assert url.endswith(f"/releases/download/v9.1.0/{instalador}")
+    assert update_checker.url_de_confianza(url)
+
+
+def test_si_la_web_no_lleva_a_una_version_no_se_avisa(monkeypatch, caplog):
+    monkeypatch.setattr(
+        update_checker.urllib.request, "urlopen",
+        _api_agotada("https://github.com/x/y/releases"),
+    )
+    monkeypatch.setattr(update_checker, "Thread", _HiloInmediato)
+    recibido = []
+    with caplog.at_level("WARNING", logger=update_checker.__name__):
+        update_checker.check_for_updates("1.0.0", lambda *args: recibido.append(args))
+    assert not recibido
+    assert "No se pudo comprobar" in caplog.text
+
+
+def test_el_resultado_de_la_comprobacion_queda_en_el_log(monkeypatch, caplog):
+    """El éxito no dejaba rastro: no había forma de saber si funcionaba en un equipo."""
+    with caplog.at_level("INFO", logger=update_checker.__name__):
+        _comprobar(monkeypatch)
+    assert "Versión instalada 1.0.0, última publicada 9.0.0 (vía api)" in caplog.text
+
+
+def test_la_ventana_vuelve_a_preguntar_cada_poco():
+    """Con la app abierta todo el día, una versión de media mañana no se anunciaba."""
+    from presentation.ventana_principal import VentanaPrincipal
+
+    fuente = inspect.getsource(VentanaPrincipal._check_updates)
+    assert "INTERVALO_COMPROBAR_VERSION_MS" in fuente
+    assert VentanaPrincipal.INTERVALO_COMPROBAR_VERSION_MS <= 12 * 60 * 60 * 1000
+
+
+def test_el_paquete_de_macos_lleva_la_version():
+    from pathlib import Path
+
+    spec = (Path(__file__).resolve().parents[2] / "GuardiasDePatio.spec").read_text("utf-8")
+    assert "CFBundleShortVersionString" in spec

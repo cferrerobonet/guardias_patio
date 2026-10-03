@@ -10,6 +10,19 @@ logger = logging.getLogger(__name__)
 
 RELEASES_URL = "https://api.github.com/repos/cferrerobonet/guardias_patio/releases/latest"
 
+#: Plan B sin API. La API sin autenticar admite 60 consultas por hora y por IP
+#: pública: en el centro todos los equipos salen por la misma y cada arranque
+#: gasta dos, así que se agotaba, GitHub respondía 403 y el aviso de versión
+#: nueva no salía (2026-10-03). Esta página redirige a `.../tag/vX.Y.Z`.
+RELEASES_WEB = "https://github.com/cferrerobonet/guardias_patio/releases/latest"
+DESCARGAS_WEB = "https://github.com/cferrerobonet/guardias_patio/releases/download"
+
+#: Nombre fijo del instalador de cada sistema (Makefile e `installer_windows.iss`).
+_INSTALADOR_POR_SISTEMA = {
+    "Darwin": "GuardiasPatio_v{v}_macOS.dmg",
+    "Windows": "GuardiasDePatio-{v}-Windows-Setup.exe",
+}
+
 #: Sólo se acepta descargar de aquí. `urlopen` admite también `file:` y esquemas
 #: propios, así que una respuesta manipulada podría hacer que la aplicación se
 #: bajara «la actualización» de cualquier sitio (SEC-003, B310).
@@ -53,25 +66,55 @@ def check_for_updates(current_version: str, callback: Callable[[str, str, str], 
 
     def _check():
         try:
-            if not url_de_confianza(RELEASES_URL):
-                return
-            req = urllib.request.Request(RELEASES_URL, headers={"User-Agent": "guardias-patio"})
-            # nosec B310 - la URL se valida en url_de_confianza(): sólo https a GitHub
-            with urllib.request.urlopen(req, timeout=5, context=contexto_ssl()) as r:  # nosec B310
-                data = json.loads(r.read())
-                latest = data["tag_name"].lstrip("v")
-                if _is_newer(latest, current_version):
-                    download_url = _find_download_url(data.get("assets", []))
-                    callback(latest, download_url, (data.get("body") or "").strip())
+            latest, download_url, notas, fuente = _ultima_version()
         except Exception as e:  # noqa: BLE001 - nunca debe tumbar la interfaz
             # Antes se tragaba sin más y un fallo de certificado era invisible.
             logger.warning("No se pudo comprobar si hay versión nueva: %s", e)
+            return
+        # El éxito también se anota: sin esto no había forma de saber, mirando
+        # el registro de un equipo, si la comprobación funcionaba.
+        logger.info(
+            "Versión instalada %s, última publicada %s (vía %s)", current_version, latest, fuente
+        )
+        if _is_newer(latest, current_version):
+            callback(latest, download_url, notas)
 
     Thread(target=_check, daemon=True).start()
 
 
 #: Extensión del instalador de cada sistema, para no ofrecer a Windows un DMG.
 _EXTENSION_POR_SISTEMA = {"Darwin": ".dmg", "Windows": ".exe"}
+
+
+def _abrir(url: str):
+    if not url_de_confianza(url):
+        raise ValueError(f"URL no permitida: {url}")
+    req = urllib.request.Request(url, headers={"User-Agent": "guardias-patio"})
+    # nosec B310 - la URL se valida en url_de_confianza(): sólo https a GitHub
+    return urllib.request.urlopen(req, timeout=5, context=contexto_ssl())  # nosec B310
+
+
+def _ultima_version() -> tuple[str, str, str, str]:
+    """`(versión, url del instalador, notas, fuente)`: la API y, si falla, la web."""
+    try:
+        with _abrir(RELEASES_URL) as r:
+            data = json.loads(r.read())
+        return (
+            data["tag_name"].lstrip("v"),
+            _find_download_url(data.get("assets", [])),
+            (data.get("body") or "").strip(),
+            "api",
+        )
+    except Exception as e:  # noqa: BLE001 - límite de la API, red o respuesta rara
+        logger.info("La API de GitHub no respondió (%s); se pregunta a la web", e)
+    with _abrir(RELEASES_WEB) as r:
+        destino = r.geturl()
+    if "/tag/" not in destino:
+        raise ValueError(f"La web no redirigió a una versión: {destino}")
+    version = destino.rsplit("/tag/", 1)[1].lstrip("v")
+    plantilla = _INSTALADOR_POR_SISTEMA.get(platform.system())
+    url = f"{DESCARGAS_WEB}/v{version}/{plantilla.format(v=version)}" if plantilla else ""
+    return version, url, "", "web"
 
 
 def _find_download_url(assets: list) -> str:

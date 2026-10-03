@@ -164,3 +164,31 @@ def test_el_indicador_avisa_de_forma_permanente_de_que_no_hay_servidor():
     )
     assert "Solo en este equipo" in fuente
     assert fuente.index("if not self.sync_manager") < fuente.index("Solo en este equipo")
+
+
+def test_generar_no_borra_las_guardias_de_otros_cursos(session, curso_generable):
+    """Generar borraba las guardias de todos los cursos: el historial se perdía."""
+    from datetime import date
+
+    from application.use_cases.asignacion_guardias.generar_guardias import (
+        GenerarGuardiasUseCase,
+    )
+    from infrastructure.database.models import CursoEscolar, Guardia, Profesor, Zona
+
+    anterior = CursoEscolar(
+        anio_inicio=2024, anio_fin=2025, fecha_inicio=date(2024, 9, 1),
+        fecha_fin=date(2025, 6, 30), nombre="Curso 2024/2025", activo=False, cerrado=True,
+    )
+    session.add(anterior)
+    session.commit()
+    profesor = session.query(Profesor).first()
+    session.add(
+        Guardia(profesor_id=profesor.id, fecha=date(2025, 3, 3), turno="mañana", recreo=1,
+                zona_id=session.query(Zona).first().id, curso_id=anterior.id)
+    )
+    session.commit()
+
+    GenerarGuardiasUseCase(session).execute()
+
+    assert session.query(Guardia).filter_by(curso_id=anterior.id).count() == 1
+    assert session.query(Guardia).filter_by(curso_id=curso_generable.id).count() > 0

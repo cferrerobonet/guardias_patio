@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.6.1] - 2026-10-03
+
+### 🎯 Resumen
+El aviso de versión nueva no salía en los equipos del centro y generar el curso borraba las guardias de los cursos anteriores.
+
+### Fixed
+- **Aviso de actualización** (login y menú lateral): la app pregunta a la API de GitHub, que sin autenticar admite 60 consultas por hora por IP pública. En el centro todos los equipos comparten IP y cada arranque gasta dos: se agotaba, GitHub respondía 403 y el aviso no salía. Ahora, si la API no responde, se lee la última versión de la página web de releases (sin ese límite) y se construye el enlace del instalador.
+- **Comprobación periódica**: con la app abierta se vuelve a mirar cada 6 horas; antes sólo al arrancar.
+- **Registro**: cada comprobación anota la versión instalada y la última publicada (y de dónde se leyó). Antes el éxito no dejaba rastro y no había forma de saber si funcionaba en un equipo.
+- **Generar el calendario borraba las guardias de todos los cursos**, no sólo las del activo: el historial del curso anterior se perdía. La generación incremental tampoco descuenta ya guardias de otros cursos de la cuota.
+- El paquete de macOS declaraba la versión 0.0.0 en `Info.plist`.
+
 ## [6.6.0] - 2026-10-03
 
 ### 🎯 Resumen
