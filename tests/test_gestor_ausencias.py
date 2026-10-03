@@ -975,10 +975,13 @@ class TestLaAusenciaQuedaRegistrada:
             w.buscar_guardias()
         combo = w.tabla_guardias.cellWidget(0, 6)
         combo.setCurrentIndex(combo.findData(z.id))
+        assert w.combo_tipo.currentData() == "otros"
+        w.combo_tipo.setCurrentIndex(w.combo_tipo.findData("permiso"))
         w.guardar()
 
         ausencia = session.query(Ausencia).filter_by(profesor_id=x.id).one()
         assert (ausencia.fecha_inicio, ausencia.fecha_fin) == (lunes, lunes)
+        assert ausencia.tipo == "permiso"
         session.expire_all()
         assert session.get(type(gx), gx.id).profesor_id == z.id
         w.close()

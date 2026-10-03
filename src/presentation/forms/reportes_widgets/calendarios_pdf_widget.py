@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
 
 from presentation.theme.tokens import Spacing
 from presentation.themes.tema_aplicacion import TEXT_SECONDARY
+from utils.orden import clave_alfabetica
 
 
 class CalendariosPdfWidget(QGroupBox):
@@ -452,7 +453,7 @@ class CalendariosPdfWidget(QGroupBox):
             from application.app_services import AppServices
 
             profesores = AppServices(self.session).profesores.get_all()
-            profesores = sorted(profesores, key=lambda p: p.nombre_completo)
+            profesores = sorted(profesores, key=lambda p: clave_alfabetica(p.nombre_completo))
 
             for profesor in profesores:
                 checkbox = QCheckBox(f"{profesor.nombre_completo} ({profesor.turno})")

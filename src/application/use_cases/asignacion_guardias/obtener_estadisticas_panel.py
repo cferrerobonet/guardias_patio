@@ -21,6 +21,7 @@ from application.dtos.asignacion_guardias_dto import (
 from core.logging import get_logger
 from core.observability import with_metrics
 from infrastructure.database.models import Configuracion, CursoEscolar, Guardia, Profesor, Zona
+from utils.orden import clave_alfabetica
 
 logger = get_logger(__name__)
 
@@ -115,7 +116,7 @@ class ObtenerEstadisticasPanelUseCase:
     def _preparar_grafico_diferencias(por_profesor) -> DatosGraficoDTO:
         filas = sorted(
             (p for p in por_profesor if p.diferencia is not None),
-            key=lambda p: (p.diferencia, p.nombre_completo),
+            key=lambda p: (p.diferencia, clave_alfabetica(p.nombre_completo)),
         )
         return DatosGraficoDTO(
             nombres=[p.nombre_completo for p in filas],
@@ -126,7 +127,7 @@ class ObtenerEstadisticasPanelUseCase:
     def _preparar_grafico_sustitutos(por_profesor) -> DatosGraficoDTO:
         filas = sorted(
             (p for p in por_profesor if p.veces_sustituto),
-            key=lambda p: (-p.veces_sustituto, p.nombre_completo),
+            key=lambda p: (-p.veces_sustituto, clave_alfabetica(p.nombre_completo)),
         )[:10]
         return DatosGraficoDTO(
             nombres=[p.nombre_completo for p in filas],

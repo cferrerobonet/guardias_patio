@@ -813,7 +813,7 @@ def test_ajustes_todos_los_campos_sobreviven_a_reabrir(qapp, session):
     fr.recreo2_tarde_input.setTime(QTime(18, 40))
     form.ajuste_tutores_input.setText("0.8")
     form.ajuste_no_tutores_input.setText("1.2")
-    form.festivos_auto_input.setText("0")
+    form.festivos_auto_input.setChecked(False)
     form.no_lectivos_input.setText("2026-10-09, 2026-12-07")
     with patch.object(form, "mostrar_exito"), patch.object(form, "mostrar_advertencia") as aviso:
         form.guardar_configuracion()

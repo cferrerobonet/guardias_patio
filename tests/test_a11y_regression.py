@@ -172,6 +172,6 @@ class TestAusenciasSustitucionesA11Y:
             "Buscar guardias del profesor en el período seleccionado",
             "Guardar todas las sustituciones asignadas",
             "Cancelar cambios y limpiar tabla",
-            "Eliminar todas las sustituciones del calendario actual",
+            "Tipo de ausencia",
         ]
         _check_accessible_names(widget, expected)

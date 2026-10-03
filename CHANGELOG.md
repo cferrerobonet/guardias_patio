@@ -5,6 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.6.0] - 2026-10-03
+
+### 🎯 Resumen
+Pendientes de la auditoría cerrados y dos mejoras generales: los nombres se ordenan como en un diccionario en toda la aplicación y sale el código que no usaba nadie.
+
+### ✨ Added
+- **Tipo de ausencia** en la pantalla de sustituciones (Baja médica, Permiso, Vacaciones, Otros; por defecto «Otros»). Antes se registraba siempre como «otros». Viaja cifrado a la nube, como hasta ahora.
+- **«Aplicar los festivos nacionales automáticamente» es una casilla**, en lugar de un campo de texto que pedía «1» o «0».
+
+### Changed
+- **Orden alfabético de diccionario** en todas las listas de profesores y zonas (tablas, desplegables, informes, avisos por correo, publicación web, estadísticas): sin tildes ni mayúsculas y con la ñ entre la n y la o. Antes «DÍAZ» quedaba detrás de «DOMÍNGUEZ» y «Ávila» detrás de «Zapata».
+
+### Removed
+- **«Limpiar historial»** de Ausencias / Sustituciones (decisión de CarlosFB, FAL-014): dejaba a los sustitutos como titulares y borraba a quién se sustituía en todos los cursos. Para volver atrás queda «Deshacer sustitución».
+- Código sin uso: el diálogo `DialogoReasignacion` y el widget `PdfExportWidget`, que ninguna pantalla abría.
+
+### Fixed
+- Al crear la configuración por primera vez, desactivar los festivos automáticos no surtía efecto (`or True` convertía el «no» en «sí»).
+
 ## [6.5.0] - 2026-10-03
 
 ### 🎯 Resumen

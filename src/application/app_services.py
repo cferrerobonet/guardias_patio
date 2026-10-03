@@ -16,6 +16,8 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy.orm import Session
 
+from utils.orden import clave_alfabetica
+
 if TYPE_CHECKING:
     from application.use_cases.configuracion import (
         ActualizarConfiguracionUseCase,
@@ -261,9 +263,9 @@ class AppServices:
             .join(GuardiaModel, ProfesorModel.id == GuardiaModel.profesor_id)
             .filter(GuardiaModel.curso_id == curso_id)
             .distinct()
-            .order_by(ProfesorModel.nombre_completo)
             .all()
         )
+        models.sort(key=lambda m: clave_alfabetica(m.nombre_completo))
         return [ProfesorMapper.to_entity(m) for m in models]
 
     def ausencias_de_profesores_en_curso(self, curso_id: int):

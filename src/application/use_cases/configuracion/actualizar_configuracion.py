@@ -103,7 +103,8 @@ class ActualizarConfiguracionUseCase:
                     hora_recreo2_tarde=dto.hora_recreo2_tarde,
                     ajuste_tutores=dto.ajuste_tutores or 1.0,
                     ajuste_no_tutores=dto.ajuste_no_tutores or 1.0,
-                    activar_festivos_automaticos=dto.activar_festivos_automaticos or True,
+                    # `or True` convertía el «no» en «sí» al crear la configuración.
+                    activar_festivos_automaticos=dto.activar_festivos_automaticos is not False,
                     dias_no_lectivos_personalizados=dto.dias_no_lectivos_personalizados or "",
                     recreos_config=dto.recreos_config or "",
                     algoritmo_asignacion=dto.algoritmo_asignacion or "v2.9",

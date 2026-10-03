@@ -235,13 +235,15 @@ def obtener_guardias_afectadas(
     return guardias
 
 
-def asegurar_ausencia(session, profesor_id: int, fecha_inicio: date, fecha_fin: date) -> None:
+def asegurar_ausencia(
+    session, profesor_id: int, fecha_inicio: date, fecha_fin: date, tipo: str = "otros"
+) -> None:
     """Deja registrada la ausencia del periodo si ninguna activa lo cubre ya.
 
     La pantalla de sustituciones reasignaba las guardias sin registrar la
     ausencia: el ausente quedaba libre esos días y salía como sustituto de otro
-    compañero (2026-10-03). Tipo neutro y sin motivo: no se guarda ningún dato de
-    salud que nadie haya escrito.
+    compañero (2026-10-03). Sin motivo y, si no se elige otro, con tipo «otros»:
+    no se guarda ningún dato de salud que nadie haya indicado.
     """
     cubierta = (
         session.query(Ausencia)
@@ -254,7 +256,7 @@ def asegurar_ausencia(session, profesor_id: int, fecha_inicio: date, fecha_fin: 
         .first()
     )
     if cubierta is None:
-        registrar_ausencia(session, profesor_id, fecha_inicio, fecha_fin, tipo="otros")
+        registrar_ausencia(session, profesor_id, fecha_inicio, fecha_fin, tipo=tipo)
 
 
 def obtener_guardias_afectadas_por_periodo(
@@ -521,33 +523,6 @@ def permutar_guardias(session, guardia_a_id: int, guardia_b_id: int) -> tuple:
         f"Permuta: {nombre_a} ({guardia_a.fecha}) ↔ {nombre_b} ({guardia_b.fecha})"
     )
     return guardia_a, guardia_b
-
-
-def limpiar_todas_las_sustituciones(session) -> int:
-    """Olvida el historial de sustituciones: el sustituto se queda la guardia (COD-003).
-
-    No devuelve las guardias a su titular (para eso está `deshacer_sustitucion`):
-    sólo quita la marca y a quién se sustituía. Es lo que hacía la versión
-    original de la pantalla; afecta a todos los cursos.
-
-    Estaba escrito en la vista del historial, que hacía el `UPDATE` masivo y el
-    `commit` por su cuenta: la única escritura directa contra la base de datos
-    que quedaba en la capa de presentación.
-
-    Devuelve cuántas guardias dejan de constar como sustitución.
-    """
-    afectadas = (
-        session.query(Guardia)
-        .filter(Guardia.es_sustitucion.is_(True))
-        .update(
-            {"es_sustitucion": False, "profesor_sustituido_id": None},
-            synchronize_session=False,
-        )
-    )
-    session.commit()
-    session.expire_all()
-    logger.info(f"Historial de sustituciones limpiado: {afectadas} guardias devueltas")
-    return afectadas
 
 
 def deshacer_sustitucion(session, guardia_id: int) -> Guardia:

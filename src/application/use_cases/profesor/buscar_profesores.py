@@ -12,6 +12,7 @@ from application.dtos.profesor_dto import ProfesorDTO
 from application.use_cases.profesor.parsers import parse_dias_semana, parse_recreos
 from core.observability import with_metrics
 from infrastructure.database.models import Profesor
+from utils.orden import clave_alfabetica
 
 
 class BuscarProfesoresUseCase:
@@ -58,6 +59,7 @@ class BuscarProfesoresUseCase:
                 .all()
             )
 
+        profesores = sorted(profesores, key=lambda p: clave_alfabetica(p.nombre_completo))
         return [self._convertir_a_dto(prof) for prof in profesores]
 
     def _convertir_a_dto(self, profesor: Profesor) -> ProfesorDTO:

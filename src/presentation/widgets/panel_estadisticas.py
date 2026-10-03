@@ -33,6 +33,7 @@ from presentation.themes.tema_aplicacion import (
 )
 from presentation.widgets.bar_chart_widget import BarChartWidget, DivergingBarChartWidget
 from utils.icons import icon_for_button
+from utils.orden import clave_alfabetica
 from utils.ui_helpers import dotar_de_contrato
 
 MplCanvas = BarChartWidget
@@ -307,7 +308,8 @@ class PanelEstadisticas(BaseForm):
         )
         self.tabla_heatmap.setRowCount(len(profesores))
 
-        for row, prof in enumerate(sorted(profesores, key=lambda p: p.nombre_completo)):
+        ordenados = sorted(profesores, key=lambda p: clave_alfabetica(p.nombre_completo))
+        for row, prof in enumerate(ordenados):
             nombre_item = QTableWidgetItem(prof.nombre_completo)
             nombre_item.setFlags(nombre_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.tabla_heatmap.setItem(row, 0, nombre_item)

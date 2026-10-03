@@ -59,6 +59,7 @@ from presentation.themes.tema_aplicacion import (
 )
 from presentation.widgets.table_manager import TableManager
 from utils.icons import icon_for_button
+from utils.orden import clave_alfabetica
 
 logger = get_logger(__name__)
 
@@ -588,7 +589,8 @@ class ProfesorForm(BaseForm):
             from application.app_services import AppServices
 
             zonas_all = sorted(
-                AppServices(self.session).zonas.get_all(), key=lambda z: z.nombre_zona
+                AppServices(self.session).zonas.get_all(),
+                key=lambda z: clave_alfabetica(z.nombre_zona),
             )
             zonas_list = [(z.id, z.nombre_zona) for z in zonas_all]
             # Poblar el widget no es una edición del usuario (UXA-004).

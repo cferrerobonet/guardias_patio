@@ -32,6 +32,7 @@ from presentation.widgets.toast_notification import ToastNotification
 from services.exportador_pdf import ExportadorPDF
 from utils import get_logger
 from utils.icons import icon_for_button
+from utils.orden import clave_alfabetica
 
 logger = get_logger(__name__)
 
@@ -724,7 +725,10 @@ class ReportesForm(BaseForm):
         elegido = self._ical_combo.currentData()
         self._ical_combo.clear()
         try:
-            profesores = self.session.query(Profesor).order_by(Profesor.nombre_completo).all()
+            profesores = sorted(
+                self.session.query(Profesor).all(),
+                key=lambda p: clave_alfabetica(p.nombre_completo),
+            )
             for p in profesores:
                 self._ical_combo.addItem(p.nombre_completo, p.id)
         except SQLAlchemyError:

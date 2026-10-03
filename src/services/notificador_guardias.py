@@ -15,6 +15,7 @@ from typing import Callable, Optional
 
 from core.logging import get_logger
 from infrastructure.database.models import Guardia, Profesor
+from utils.orden import clave_alfabetica
 
 logger = get_logger(__name__)
 
@@ -64,9 +65,9 @@ def preparar_envios(session, mes_anio: Optional[str] = None) -> Preparacion:
     profesores = (
         session.query(Profesor)
         .filter(Profesor.activo.is_(True))
-        .order_by(Profesor.nombre_completo)
         .all()
     )
+    profesores.sort(key=lambda p: clave_alfabetica(p.nombre_completo))
 
     for profesor in profesores:
         correo = (profesor.email_corporativo or "").strip()

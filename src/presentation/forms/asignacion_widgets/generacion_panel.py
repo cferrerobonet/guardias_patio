@@ -42,6 +42,7 @@ from presentation.theme.tokens import Spacing
 from services import papelera_guardias
 from utils import get_logger
 from utils.icons import icon_for_button
+from utils.orden import clave_alfabetica
 
 _logger = get_logger(__name__)
 
@@ -711,9 +712,8 @@ class GeneracionPanel(QGroupBox):
                         turno_mixto.append((prof, cnt))
 
             # Ordenar cada grupo alfabéticamente
-            turno_manana.sort(key=lambda x: x[0].nombre_completo)
-            turno_tarde.sort(key=lambda x: x[0].nombre_completo)
-            turno_mixto.sort(key=lambda x: x[0].nombre_completo)
+            for grupo in (turno_manana, turno_tarde, turno_mixto):
+                grupo.sort(key=lambda x: clave_alfabetica(x[0].nombre_completo))
 
             # Mostrar TURNO MAÑANA
             if turno_manana:

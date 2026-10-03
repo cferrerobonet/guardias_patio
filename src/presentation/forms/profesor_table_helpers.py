@@ -9,6 +9,8 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem
 
+from utils.orden import clave_alfabetica
+
 COLUMNAS_PROFESORES = [
     "Nombre Completo",
     "Email",
@@ -42,7 +44,10 @@ def cargar_tabla_profesores(*, session, table: QTableWidget, titulo_label, table
     table.setSortingEnabled(False)
     table.setRowCount(0)
 
-    profesores = sorted(AppServices(session).profesores.get_all(), key=lambda p: p.nombre_completo)
+    profesores = sorted(
+        AppServices(session).profesores.get_all(),
+        key=lambda p: clave_alfabetica(p.nombre_completo),
+    )
     total_profesores = len(profesores)
     table.setRowCount(total_profesores)
 

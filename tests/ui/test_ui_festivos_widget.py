@@ -23,19 +23,20 @@ class TestFestivosRenderizado:
         assert hasattr(widget, "festivos_auto_input")
         assert hasattr(widget, "no_lectivos_input")
 
-    def test_estado_inicial_vacio(self, widget):
-        assert widget.festivos_auto_input.text() == ""
+    def test_estado_inicial(self, widget):
+        """Los festivos automáticos vienen marcados, como el valor por defecto de la BD."""
+        assert widget.festivos_auto_input.isChecked()
         assert widget.no_lectivos_input.text() == ""
 
 
 class TestFestivosGetSet:
-    def test_set_activar_true_muestra_1(self, widget):
+    def test_set_activar_true_marca_la_casilla(self, widget):
         widget.set_festivos_config(activar_automaticos=True, dias_no_lectivos="")
-        assert widget.festivos_auto_input.text() == "1"
+        assert widget.festivos_auto_input.isChecked()
 
-    def test_set_activar_false_muestra_0(self, widget):
+    def test_set_activar_false_desmarca_la_casilla(self, widget):
         widget.set_festivos_config(activar_automaticos=False, dias_no_lectivos="")
-        assert widget.festivos_auto_input.text() == "0"
+        assert not widget.festivos_auto_input.isChecked()
 
     def test_set_dias_no_lectivos(self, widget):
         widget.set_festivos_config(activar_automaticos=True, dias_no_lectivos="2025-10-09, 2025-12-08")
@@ -52,11 +53,9 @@ class TestFestivosGetSet:
         cfg = widget.get_festivos_config()
         assert cfg["activar_automaticos"] is False
 
-    def test_get_config_vacio_usa_default_activo(self, widget):
-        """Input vacío se interpreta como activado (default=1)."""
-        widget.festivos_auto_input.setText("")
-        cfg = widget.get_festivos_config()
-        assert cfg["activar_automaticos"] is True
+    def test_la_casilla_es_la_que_manda(self, widget):
+        widget.festivos_auto_input.setChecked(False)
+        assert widget.get_festivos_config()["activar_automaticos"] is False
 
 
 class TestFestivosValidacion:
@@ -71,12 +70,6 @@ class TestFestivosValidacion:
         ok, _ = widget.validar()
         assert ok is True
 
-    def test_validacion_falla_festivos_auto_invalido(self, widget):
-        widget.festivos_auto_input.setText("si")
-        ok, msg = widget.validar()
-        assert ok is False
-        assert msg != ""
-
     def test_validacion_falla_fecha_formato_incorrecto(self, widget):
         widget.set_festivos_config(activar_automaticos=True, dias_no_lectivos="09/10/2025")
         ok, msg = widget.validar()
@@ -90,4 +83,4 @@ class TestFestivosValidacion:
     def test_signal_config_changed_emitido(self, widget, qtbot):
         """Modificar festivos_auto_input emite config_changed."""
         with qtbot.waitSignal(widget.config_changed, timeout=1000):
-            widget.festivos_auto_input.setText("0")
+            widget.festivos_auto_input.setChecked(False)

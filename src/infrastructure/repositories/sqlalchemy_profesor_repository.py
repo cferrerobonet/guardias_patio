@@ -18,6 +18,7 @@ from domain.entities import ProfesorEntity
 from domain.repositories import IProfesorRepository
 from infrastructure.database.models import Guardia, Profesor
 from infrastructure.mappers import ProfesorMapper
+from utils.orden import clave_alfabetica
 
 logger = get_logger(__name__)
 
@@ -58,9 +59,9 @@ class SQLAlchemyProfesorRepository(IProfesorRepository):
             models = (
                 self.session.query(Profesor)
                 .options(joinedload(Profesor.zona_preferida), joinedload(Profesor.curso))
-                .order_by(Profesor.nombre_completo)
                 .all()
             )
+            models.sort(key=lambda m: clave_alfabetica(m.nombre_completo))
             return self.mapper.to_entities(models)
         except SQLAlchemyError as e:
             logger.error("Error al obtener todos los profesores", error=str(e))

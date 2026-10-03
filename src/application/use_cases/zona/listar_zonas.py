@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from application.dtos.zona_dto import ZonaDTO
 from core.observability import with_metrics
 from infrastructure.database.models import Zona
+from utils.orden import clave_alfabetica
 from utils.repository_cache import cache_zonas
 
 
@@ -41,6 +42,8 @@ class ListarZonasUseCase:
             Lista de ZonaDTO con todas las zonas del sistema,
             ordenadas alfabéticamente por nombre
         """
-        zonas = self.session.query(Zona).order_by(Zona.nombre_zona).all()
+        zonas = sorted(
+            self.session.query(Zona).all(), key=lambda z: clave_alfabetica(z.nombre_zona)
+        )
 
         return [ZonaDTO.model_validate(zona) for zona in zonas]

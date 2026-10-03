@@ -395,3 +395,25 @@ class TestConfiguracionUseCasesIntegracion:
 
         # Solo debe haber una configuración en la BD
         assert session.query(Configuracion).count() == 1
+
+
+def test_crear_la_configuracion_con_los_festivos_desactivados(session):
+    """`or True` convertía el «no» en «sí» al crear la configuración (2026-10-03)."""
+    from datetime import date, time
+
+    from application.dtos.configuracion_dto import ActualizarConfiguracionDTO
+    from application.use_cases.configuracion.actualizar_configuracion import (
+        ActualizarConfiguracionUseCase,
+    )
+    from infrastructure.database.models import Configuracion
+
+    ActualizarConfiguracionUseCase(session).execute(
+        ActualizarConfiguracionDTO(
+            fecha_inicio_curso=date(2026, 9, 7),
+            fecha_fin_curso=date(2027, 6, 18),
+            hora_recreo1_manana=time(10, 45),
+            hora_recreo2_manana=time(12, 35),
+            activar_festivos_automaticos=False,
+        )
+    )
+    assert session.query(Configuracion).one().activar_festivos_automaticos is False

@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
 
 from infrastructure.database.models import Guardia, Profesor
 from utils import get_logger
+from utils.orden import clave_alfabetica
 from utils.ui_helpers import aplicar_caja
 
 logger = get_logger(__name__)
@@ -95,9 +96,9 @@ class PermutarGuardiaDialog(QDialog):
         profesores = (
             self.session.query(Profesor)
             .filter(Profesor.activo.is_(True), Profesor.id != self.guardia.profesor_id)
-            .order_by(Profesor.nombre_completo)
             .all()
         )
+        profesores.sort(key=lambda p: clave_alfabetica(p.nombre_completo))
         self.combo_profesor.clear()
         for profesor in profesores:
             self.combo_profesor.addItem(profesor.nombre_completo, profesor.id)

@@ -7,7 +7,7 @@ Combina:
 """
 
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QGroupBox, QLabel, QLineEdit, QVBoxLayout
+from PyQt6.QtWidgets import QCheckBox, QGroupBox, QLabel, QLineEdit, QVBoxLayout
 
 from presentation.theme import legacy_styles as styles
 
@@ -44,21 +44,13 @@ class FestivosWidget(QGroupBox):
         layout.setContentsMargins(6, 6, 6, 6)
 
         # ===== Festivos automáticos =====
-        label_auto = QLabel("Aplicar festivos automáticos:")
-        label_auto.setObjectName("smallFieldLabel")
-        layout.addWidget(label_auto)
-
-        self.festivos_auto_input = QLineEdit()
-        self.festivos_auto_input.setPlaceholderText("1 (sí) / 0 (no)")
-        self.festivos_auto_input.setStyleSheet(
-            styles.STYLE_INPUT + "padding: 3px; margin-bottom: 2px;"
-        )
+        # Una casilla: antes era un campo de texto que pedía «1» o «0» (2026-10-03).
+        self.festivos_auto_input = QCheckBox("Aplicar los festivos nacionales automáticamente")
+        self.festivos_auto_input.setChecked(True)
         self.festivos_auto_input.setToolTip(
-            "Activar festivos nacionales automáticos:\n"
-            "1 = Aplicar festivos oficiales de España\n"
-            "0 = No aplicar festivos automáticos"
+            "Marca los festivos oficiales de España como días no lectivos"
         )
-        self.festivos_auto_input.textChanged.connect(self.config_changed.emit)
+        self.festivos_auto_input.toggled.connect(self.config_changed.emit)
         layout.addWidget(self.festivos_auto_input)
 
         # ===== Días no lectivos personalizados =====
@@ -92,11 +84,8 @@ class FestivosWidget(QGroupBox):
                 - activar_automaticos: bool (True si se activan festivos)
                 - dias_no_lectivos: str (fechas separadas por comas)
         """
-        auto_text = (self.festivos_auto_input.text() or "1").strip()
-        activar = auto_text in ("1", "true", "True")
-
         return {
-            "activar_automaticos": activar,
+            "activar_automaticos": self.festivos_auto_input.isChecked(),
             "dias_no_lectivos": (self.no_lectivos_input.text() or "").strip(),
         }
 
@@ -110,7 +99,7 @@ class FestivosWidget(QGroupBox):
             activar_automaticos: Si se activan festivos automáticos
             dias_no_lectivos: Fechas separadas por comas (YYYY-MM-DD)
         """
-        self.festivos_auto_input.setText("1" if activar_automaticos else "0")
+        self.festivos_auto_input.setChecked(bool(activar_automaticos))
         self.no_lectivos_input.setText(dias_no_lectivos or "")
 
     def validar(self) -> tuple[bool, str]:
@@ -122,11 +111,6 @@ class FestivosWidget(QGroupBox):
                 - es_valido: True si todos los valores son válidos
                 - mensaje_error: Descripción del error si no es válido
         """
-        # Validar festivos automáticos
-        auto_text = (self.festivos_auto_input.text() or "1").strip()
-        if auto_text not in ("0", "1", "true", "True", "false", "False"):
-            return False, "Festivos automáticos debe ser 1 (sí) o 0 (no)"
-
         # Validar formato de días no lectivos
         dias_text = (self.no_lectivos_input.text() or "").strip()
         if dias_text:

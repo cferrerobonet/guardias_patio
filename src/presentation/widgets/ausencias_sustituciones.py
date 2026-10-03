@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 from presentation.forms.base_form import BaseForm
 from presentation.themes.tema_aplicacion import TEXT_SECONDARY, get_table_style
 from utils.icons import icon_for_button
+from utils.orden import clave_alfabetica
 from utils.ui_helpers import dotar_de_contrato, llenando_tabla, pintar_tabla_vacia
 
 _DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
@@ -61,6 +62,14 @@ class AusenciasSustitucionesWidget(BaseForm):
         layout.addWidget(self._crear_panel_ausencia())
         layout.addWidget(self._crear_panel_guardias())
         layout.addWidget(self._crear_panel_historial())
+
+    #: Los cuatro que admite la base de datos (`ck_ausencia_tipo`).
+    TIPOS_DE_AUSENCIA = (
+        ("Baja médica", "baja_medica"),
+        ("Permiso", "permiso"),
+        ("Vacaciones", "vacaciones"),
+        ("Otros", "otros"),
+    )
 
     def _crear_panel_ausencia(self) -> QGroupBox:
         grupo = QGroupBox("Registrar Ausencia")
@@ -106,6 +115,20 @@ class AusenciasSustitucionesWidget(BaseForm):
         self.fecha_fin.dateChanged.connect(self._validar_fechas)
         col_fin.addWidget(self.fecha_fin)
         fila.addLayout(col_fin, 1)
+
+        # Antes la ausencia se registraba siempre como «otros» porque no había
+        # dónde elegirlo (2026-10-03). Viaja cifrado a la nube (PRIV-001).
+        col_tipo = QVBoxLayout()
+        lbl_tipo = QLabel("Tipo:")
+        lbl_tipo.setObjectName("fieldLabel")
+        col_tipo.addWidget(lbl_tipo)
+        self.combo_tipo = QComboBox()
+        for texto, valor in self.TIPOS_DE_AUSENCIA:
+            self.combo_tipo.addItem(texto, valor)
+        self.combo_tipo.setCurrentIndex(self.combo_tipo.findData("otros"))
+        self.combo_tipo.setAccessibleName("Tipo de ausencia")
+        col_tipo.addWidget(self.combo_tipo)
+        fila.addLayout(col_tipo, 1)
 
         col_btn = QVBoxLayout()
         col_btn.addWidget(QLabel(""))
@@ -248,15 +271,9 @@ class AusenciasSustitucionesWidget(BaseForm):
 
         filtros.addStretch()
 
-        self.btn_limpiar_historial = QPushButton("Limpiar historial")
-        self.btn_limpiar_historial.setIcon(icon_for_button("delete"))
-        self.btn_limpiar_historial.setMinimumHeight(35)
-        self.btn_limpiar_historial.setProperty("danger", "true")
-        self.btn_limpiar_historial.setAccessibleName(
-            "Eliminar todas las sustituciones del calendario actual"
-        )
-        self.btn_limpiar_historial.clicked.connect(self.limpiar_historial)
-
+        # «Limpiar historial» se retiró (2026-10-03): dejaba a los sustitutos como
+        # titulares y borraba a quién se sustituía en todos los cursos. Para
+        # volver atrás está «Deshacer sustitución», de una en una.
         self.btn_deshacer = QPushButton("Deshacer sustitución")
         self.btn_deshacer.setIcon(icon_for_button("undo"))
         self.btn_deshacer.setMinimumHeight(35)
@@ -268,8 +285,6 @@ class AusenciasSustitucionesWidget(BaseForm):
         )
         self.btn_deshacer.clicked.connect(self.deshacer_seleccion)
         filtros.addWidget(self.btn_deshacer)
-
-        filtros.addWidget(self.btn_limpiar_historial)
 
         lay.addLayout(filtros)
 
@@ -309,7 +324,7 @@ class AusenciasSustitucionesWidget(BaseForm):
 
             profesores = sorted(
                 AppServices(self.session).profesores.get_all(),
-                key=lambda p: p.nombre_completo,
+                key=lambda p: clave_alfabetica(p.nombre_completo),
             )
             self.combo_profesor.clear()
             self.combo_hist_profesor.clear()
@@ -491,7 +506,9 @@ class AusenciasSustitucionesWidget(BaseForm):
         if getattr(self, "_ausencia_buscada", None):
             from services.gestor_ausencias import asegurar_ausencia
 
-            asegurar_ausencia(self.session, *self._ausencia_buscada)
+            asegurar_ausencia(
+                self.session, *self._ausencia_buscada, tipo=self.combo_tipo.currentData()
+            )
 
     def guardar(self):
         try:
@@ -648,23 +665,6 @@ class AusenciasSustitucionesWidget(BaseForm):
             self.mostrar_advertencia("No se pudo deshacer", str(e))
         except Exception as e:  # noqa: BLE001
             self.manejar_excepcion(e, "deshacer sustitución")
-
-    def limpiar_historial(self):
-        if not self.confirmar_accion(
-            "Limpiar historial",
-            "¿Eliminar todas las sustituciones del calendario actual?\n"
-            "Esta acción no se puede deshacer.",
-        ):
-            return
-        try:
-            from services.gestor_ausencias import limpiar_todas_las_sustituciones
-
-            limpiar_todas_las_sustituciones(self.session)
-            self.cargar_historial()
-            self.sustitucion_guardada.emit()
-            self.mostrar_exito("Historial limpiado", "Todas las sustituciones han sido eliminadas.")
-        except Exception as e:
-            self.manejar_excepcion(e, "limpiar historial")
 
     def refrescar(self):
         self.cargar_profesores()
