@@ -7,6 +7,7 @@ No importa desde exportador.py (evita importaciones circulares).
 import base64
 import json
 import os
+import re
 from datetime import date, datetime, time, timezone
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -15,7 +16,14 @@ from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy.exc import SQLAlchemyError
 
 from core.logging import get_logger
-from infrastructure.database.models import Ausencia, Configuracion, Guardia, Profesor, Zona
+from infrastructure.database.models import (
+    Ausencia,
+    Configuracion,
+    CursoEscolar,
+    Guardia,
+    Profesor,
+    Zona,
+)
 
 logger = get_logger(__name__)
 
@@ -59,8 +67,34 @@ def _deserializar_fecha(fecha_str: Optional[str]) -> Optional[date]:
 def _deserializar_hora(hora_str: Optional[str]) -> Optional[time]:
     if not hora_str:
         return None
-    h, m = hora_str.split(":")
-    return time(int(h), int(m))
+    partes = [int(p) for p in str(hora_str).split(":")]
+    return time(*partes[:3])
+
+
+def _fecha_hora(valor: Optional[str]) -> datetime:
+    try:
+        return datetime.fromisoformat(valor) if valor else datetime.now(timezone.utc)
+    except (TypeError, ValueError):
+        return datetime.now(timezone.utc)
+
+
+def _si_existe(session, modelo, id_: Optional[int]) -> Optional[int]:
+    """La referencia si la fila existe; si no, None.
+
+    Con las claves foráneas activas, una copia que apunta a una zona, curso o
+    profesor que no viene en ella abortaba la restauración entera (2026-10-03).
+    """
+    if id_ is None:
+        return None
+    return id_ if session.get(modelo, id_) is not None else None
+
+
+def vaciar_tablas(session) -> None:
+    """Borra los datos en orden de dependencias, para que las claves no lo impidan."""
+    for modelo in (Guardia, Ausencia, Profesor, Zona, Configuracion, CursoEscolar):
+        session.query(modelo).delete()
+    session.commit()
+    session.expunge_all()
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +141,10 @@ def importar_profesores(
                     p_data.get("fecha_fin_guardias")
                 )
                 existing.guardias_voluntarias = int(p_data.get("guardias_voluntarias") or 0)
-                existing.zona_preferida_id = p_data.get("zona_preferida_id")
+                existing.zona_preferida_id = _si_existe(
+                    session, Zona, p_data.get("zona_preferida_id")
+                )
+                existing.curso_id = _si_existe(session, CursoEscolar, p_data.get("curso_id"))
                 existing.dias_semana_permitidos = p_data.get("dias_semana_permitidos")
                 existing.recreos_permitidos = p_data.get("recreos_permitidos")
             else:
@@ -125,7 +162,8 @@ def importar_profesores(
                     fecha_inicio_guardias=_deserializar_fecha(p_data.get("fecha_inicio_guardias")),
                     fecha_fin_guardias=_deserializar_fecha(p_data.get("fecha_fin_guardias")),
                     guardias_voluntarias=int(p_data.get("guardias_voluntarias") or 0),
-                    zona_preferida_id=p_data.get("zona_preferida_id"),
+                    zona_preferida_id=_si_existe(session, Zona, p_data.get("zona_preferida_id")),
+                    curso_id=_si_existe(session, CursoEscolar, p_data.get("curso_id")),
                     dias_semana_permitidos=p_data.get("dias_semana_permitidos"),
                     recreos_permitidos=p_data.get("recreos_permitidos"),
                 )
@@ -144,7 +182,8 @@ def importar_profesores(
                 fecha_inicio_guardias=_deserializar_fecha(p_data.get("fecha_inicio_guardias")),
                 fecha_fin_guardias=_deserializar_fecha(p_data.get("fecha_fin_guardias")),
                 guardias_voluntarias=int(p_data.get("guardias_voluntarias") or 0),
-                zona_preferida_id=p_data.get("zona_preferida_id"),
+                zona_preferida_id=_si_existe(session, Zona, p_data.get("zona_preferida_id")),
+                curso_id=_si_existe(session, CursoEscolar, p_data.get("curso_id")),
                 dias_semana_permitidos=p_data.get("dias_semana_permitidos"),
                 recreos_permitidos=p_data.get("recreos_permitidos"),
             )
@@ -172,6 +211,8 @@ def importar_zonas(
                 existing.descripcion = z_data.get("descripcion")
                 existing.fecha_inicio = _deserializar_fecha(z_data.get("fecha_inicio"))
                 existing.fecha_fin = _deserializar_fecha(z_data.get("fecha_fin"))
+                existing.activa = z_data.get("activa", True) is not False
+                existing.capacidad_profesores = z_data.get("capacidad_profesores")
             else:
                 zona = Zona(
                     id=z_data["id"],
@@ -179,6 +220,8 @@ def importar_zonas(
                     descripcion=z_data.get("descripcion"),
                     fecha_inicio=_deserializar_fecha(z_data.get("fecha_inicio")),
                     fecha_fin=_deserializar_fecha(z_data.get("fecha_fin")),
+                    activa=z_data.get("activa", True) is not False,
+                    capacidad_profesores=z_data.get("capacidad_profesores"),
                 )
                 session.add(zona)
         else:
@@ -187,6 +230,8 @@ def importar_zonas(
                 descripcion=z_data.get("descripcion"),
                 fecha_inicio=_deserializar_fecha(z_data.get("fecha_inicio")),
                 fecha_fin=_deserializar_fecha(z_data.get("fecha_fin")),
+                activa=z_data.get("activa", True) is not False,
+                capacidad_profesores=z_data.get("capacidad_profesores"),
             )
             session.add(zona)
         count += 1
@@ -209,6 +254,11 @@ def importar_configuracion(
     if "id" in config_data:
         existing = session.query(Configuracion).filter_by(id=config_data["id"]).first()
         if existing:
+            if config_data.get("anio_inicio_curso") is not None:
+                existing.anio_inicio_curso = config_data["anio_inicio_curso"]
+            existing.curso_activo_id = _si_existe(
+                session, CursoEscolar, config_data.get("curso_activo_id")
+            )
             existing.fecha_inicio_curso = _deserializar_fecha(config_data["fecha_inicio_curso"])
             existing.fecha_fin_curso = _deserializar_fecha(config_data["fecha_fin_curso"])
             existing.fecha_inicio_reparto_oficial = _deserializar_fecha(
@@ -252,6 +302,9 @@ def importar_configuracion(
                 ajuste_tutores=config_data.get("ajuste_tutores", 1.0),
                 ajuste_no_tutores=config_data.get("ajuste_no_tutores", 1.0),
                 algoritmo_asignacion=config_data.get("algoritmo_asignacion", "v2.9"),
+                curso_activo_id=_si_existe(
+                    session, CursoEscolar, config_data.get("curso_activo_id")
+                ),
             )
             session.add(config)
     else:
@@ -277,6 +330,7 @@ def importar_configuracion(
             ajuste_tutores=config_data.get("ajuste_tutores", 1.0),
             ajuste_no_tutores=config_data.get("ajuste_no_tutores", 1.0),
             algoritmo_asignacion=config_data.get("algoritmo_asignacion", "v2.9"),
+            curso_activo_id=_si_existe(session, CursoEscolar, config_data.get("curso_activo_id")),
         )
         session.add(config)
     session.commit()
@@ -314,7 +368,14 @@ def importar_guardias(
             zona_id = zona.id if zona else None
 
         if profesor_id and zona_id:
-            curso_id = g_data.get("curso_id")
+            curso_id = _si_existe(session, CursoEscolar, g_data.get("curso_id"))
+            sustitucion = {
+                "es_sustitucion": bool(g_data.get("es_sustitucion", False)),
+                "profesor_sustituido_id": _si_existe(
+                    session, Profesor, g_data.get("profesor_sustituido_id")
+                ),
+                "notas": g_data.get("notas"),
+            }
 
             if "id" in g_data:
                 existing = session.query(Guardia).filter_by(id=g_data["id"]).first()
@@ -325,6 +386,8 @@ def importar_guardias(
                     existing.recreo = g_data["recreo"]
                     existing.zona_id = zona_id
                     existing.curso_id = curso_id
+                    for campo, valor in sustitucion.items():
+                        setattr(existing, campo, valor)
                 else:
                     guardia = Guardia(
                         id=g_data["id"],
@@ -334,6 +397,7 @@ def importar_guardias(
                         recreo=g_data["recreo"],
                         zona_id=zona_id,
                         curso_id=curso_id,
+                        **sustitucion,
                     )
                     session.add(guardia)
             else:
@@ -344,6 +408,7 @@ def importar_guardias(
                     recreo=g_data["recreo"],
                     zona_id=zona_id,
                     curso_id=curso_id,
+                    **sustitucion,
                 )
                 session.add(guardia)
             count += 1
@@ -429,7 +494,6 @@ def importar_ausencias(
                 )
                 session.add(ausencia)
             count += 1
-            count += 1  # preservado del original
 
     session.commit()
     return count
@@ -539,13 +603,19 @@ def importar_usuarios(
         return 0
 
 
+def _anios_del_nombre(nombre: str) -> tuple[Optional[int], Optional[int]]:
+    """Años de «Curso 2025/2026»: las copias antiguas no traían otra cosa."""
+    encontrado = re.search(r"(\d{4})\D+(\d{4})", nombre or "")
+    if not encontrado:
+        return None, None
+    return int(encontrado.group(1)), int(encontrado.group(2))
+
+
 def importar_cursos_escolares(
     session, cursos_data: Optional[dict[str, Any]], limpiar: bool = False
 ) -> int:
     if not cursos_data or "cursos" not in cursos_data:
         return 0
-
-    from infrastructure.database.models import CursoEscolar
 
     try:
         if limpiar:
@@ -558,42 +628,53 @@ def importar_cursos_escolares(
             if not nombre:
                 continue
 
-            existe = session.query(CursoEscolar).filter_by(nombre=nombre).first()
-            if existe:
-                existe.activo = curso.get("activo", False)
-                existe.cerrado = curso.get("cerrado", False)
-            else:
-                anio_inicio = curso.get("anio_inicio")
-                anio_fin = curso.get("anio_fin")
-                if anio_inicio is None or anio_fin is None:
-                    continue
+            anio_inicio, anio_fin = curso.get("anio_inicio"), curso.get("anio_fin")
+            if anio_inicio is None or anio_fin is None:
+                anio_inicio, anio_fin = _anios_del_nombre(nombre)
 
-                fecha_inicio = (
-                    date.fromisoformat(curso["fecha_inicio"])
-                    if curso.get("fecha_inicio")
-                    else date(int(anio_inicio), 9, 1)
+            existe = session.get(CursoEscolar, curso["id"]) if curso.get("id") else None
+            if existe is None:
+                existe = session.query(CursoEscolar).filter_by(nombre=nombre).first()
+            if existe is None and anio_inicio is not None and anio_fin is not None:
+                existe = (
+                    session.query(CursoEscolar)
+                    .filter_by(anio_inicio=int(anio_inicio), anio_fin=int(anio_fin))
+                    .first()
                 )
-                fecha_fin = (
-                    date.fromisoformat(curso["fecha_fin"])
-                    if curso.get("fecha_fin")
-                    else date(int(anio_fin), 6, 30)
+
+            if existe is None:
+                if anio_inicio is None or anio_fin is None:
+                    logger.warning(f"Curso sin años, no se puede restaurar: {nombre}")
+                    continue
+                existe = CursoEscolar(
+                    nombre=nombre, anio_inicio=int(anio_inicio), anio_fin=int(anio_fin)
                 )
-                nuevo_curso = CursoEscolar(
-                    nombre=nombre,
-                    anio_inicio=int(anio_inicio),
-                    anio_fin=int(anio_fin),
-                    fecha_inicio=fecha_inicio,
-                    fecha_fin=fecha_fin,
-                    activo=curso.get("activo", False),
-                    cerrado=curso.get("cerrado", False),
-                )
-                session.add(nuevo_curso)
+                if curso.get("id") and session.get(CursoEscolar, curso["id"]) is None:
+                    existe.id = curso["id"]
+                session.add(existe)
+            elif anio_inicio is not None and anio_fin is not None:
+                existe.anio_inicio = int(anio_inicio)
+                existe.anio_fin = int(anio_fin)
+
+            existe.nombre = nombre
+            existe.fecha_inicio = _deserializar_fecha(curso.get("fecha_inicio")) or (
+                existe.fecha_inicio or date(existe.anio_inicio, 9, 1)
+            )
+            existe.fecha_fin = _deserializar_fecha(curso.get("fecha_fin")) or (
+                existe.fecha_fin or date(existe.anio_fin, 6, 30)
+            )
+            existe.activo = curso.get("activo", False)
+            existe.cerrado = curso.get("cerrado", False)
+            if curso.get("fecha_creacion"):
+                existe.created_at = _fecha_hora(curso["fecha_creacion"])
+            elif existe.created_at is None:
+                existe.created_at = _fecha_hora(None)
 
             count += 1
 
         session.commit()
         return count
-    except SQLAlchemyError as e:
+    except (SQLAlchemyError, ValueError, TypeError) as e:
         logger.warning(f"Error al importar cursos escolares: {e}")
         session.rollback()
         return 0
@@ -629,26 +710,32 @@ def importar_todo(
     if "usuarios" in datos:
         resultado["usuarios"] = importar_usuarios(datos["usuarios"], limpiar)
 
+    # Orden de dependencias: cada tabla después de las que referencia. Antes los
+    # profesores entraban antes que las zonas y, con las claves foráneas activas,
+    # una zona preferida abortaba la restauración (2026-10-03).
+    if limpiar:
+        vaciar_tablas(session)
+
     if "cursos_escolares" in datos:
         resultado["cursos_escolares"] = importar_cursos_escolares(
-            session, datos["cursos_escolares"], limpiar
+            session, datos["cursos_escolares"]
         )
 
-    if "profesores" in datos:
-        resultado["profesores"] = importar_profesores(session, datos["profesores"], limpiar)
-
     if "zonas" in datos:
-        resultado["zonas"] = importar_zonas(session, datos["zonas"], limpiar)
+        resultado["zonas"] = importar_zonas(session, datos["zonas"])
+
+    if "profesores" in datos:
+        resultado["profesores"] = importar_profesores(session, datos["profesores"])
 
     if "configuracion" in datos:
         resultado["configuracion"] = (
-            1 if importar_configuracion(session, datos["configuracion"], limpiar) else 0
+            1 if importar_configuracion(session, datos["configuracion"]) else 0
         )
 
     if "guardias" in datos:
-        resultado["guardias"] = importar_guardias(session, datos["guardias"], limpiar)
+        resultado["guardias"] = importar_guardias(session, datos["guardias"])
 
     if "ausencias" in datos:
-        resultado["ausencias"] = importar_ausencias(session, datos["ausencias"], limpiar)
+        resultado["ausencias"] = importar_ausencias(session, datos["ausencias"])
 
     return resultado

@@ -295,3 +295,27 @@ class TestDataExporterBD:
         result = DataExporter.import_from_json(session_export, ruta, clear_existing=True)
         assert result is True
         ruta.unlink(missing_ok=True)
+
+    def test_la_descarga_conserva_zona_preferida_y_datos_de_zona(self, session_export, tmp_path):
+        """La descarga reconstruye la base desde cero: lo que no viaja se pierde (2026-10-03)."""
+        cerrada = Zona(nombre_zona="Cerrada", activa=False, capacidad_profesores=2)
+        preferida = Zona(nombre_zona="Preferida")
+        session_export.add_all([cerrada, preferida])
+        session_export.flush()
+        profesor = Profesor(
+            nombre_completo="ZONA, Preferida", horas_contrato=20.0,
+            porcentaje_jornada=66.7, turno="mañana", zona_preferida_id=preferida.id,
+        )
+        session_export.add(profesor)
+        session_export.commit()
+        ids = (cerrada.id, preferida.id, profesor.id)
+
+        ruta = tmp_path / "sync.json"
+        assert DataExporter.export_to_json(session_export, ruta)
+        assert DataExporter.import_from_json(session_export, ruta, clear_existing=True)
+        session_export.expire_all()
+
+        assert session_export.get(Profesor, ids[2]).zona_preferida_id == ids[1]
+        zona = session_export.get(Zona, ids[0])
+        assert zona.activa is False
+        assert zona.capacidad_profesores == 2

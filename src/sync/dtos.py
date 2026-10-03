@@ -88,6 +88,10 @@ class ProfesorSyncDTO:
     dias_semana_permitidos: Optional[str]
     recreos_permitidos: Optional[str]
     guardias_voluntarias: int = 0
+    # Sin ella la zona preferida se perdía en cada descarga, que reconstruye
+    # la base local desde cero (2026-10-03).
+    zona_preferida_id: Optional[int] = None
+    curso_id: Optional[int] = None
 
     @classmethod
     def from_orm(cls, orm_obj: Any) -> "ProfesorSyncDTO":
@@ -111,6 +115,8 @@ class ProfesorSyncDTO:
             dias_semana_permitidos=orm_obj.dias_semana_permitidos,
             recreos_permitidos=orm_obj.recreos_permitidos,
             guardias_voluntarias=int(getattr(orm_obj, "guardias_voluntarias", 0) or 0),
+            zona_preferida_id=orm_obj.zona_preferida_id,
+            curso_id=orm_obj.curso_id,
         )
 
     @classmethod
@@ -133,6 +139,8 @@ class ProfesorSyncDTO:
             dias_semana_permitidos=data.get("dias_semana_permitidos"),
             recreos_permitidos=data.get("recreos_permitidos"),
             guardias_voluntarias=int(data.get("guardias_voluntarias") or 0),
+            zona_preferida_id=data.get("zona_preferida_id"),
+            curso_id=data.get("curso_id"),
         )
 
     def to_dict(self) -> dict:
@@ -151,6 +159,8 @@ class ZonaSyncDTO:
     descripcion: Optional[str]
     fecha_inicio: Optional[str]
     fecha_fin: Optional[str]
+    activa: bool = True
+    capacidad_profesores: Optional[int] = None
 
     @classmethod
     def from_orm(cls, orm_obj: Any) -> "ZonaSyncDTO":
@@ -160,6 +170,8 @@ class ZonaSyncDTO:
             descripcion=orm_obj.descripcion,
             fecha_inicio=serialize_date(orm_obj.fecha_inicio) if orm_obj.fecha_inicio else None,
             fecha_fin=serialize_date(orm_obj.fecha_fin) if orm_obj.fecha_fin else None,
+            activa=orm_obj.activa is not False,
+            capacidad_profesores=orm_obj.capacidad_profesores,
         )
 
     @classmethod
@@ -170,6 +182,8 @@ class ZonaSyncDTO:
             descripcion=data.get("descripcion"),
             fecha_inicio=data.get("fecha_inicio"),
             fecha_fin=data.get("fecha_fin"),
+            activa=data.get("activa", True) is not False,
+            capacidad_profesores=data.get("capacidad_profesores"),
         )
 
     def to_dict(self) -> dict:
@@ -198,6 +212,7 @@ class ConfiguracionSyncDTO:
     ajuste_no_tutores: float
     algoritmo_asignacion: Optional[str]
     fecha_inicio_reparto_oficial: Optional[str] = None
+    curso_activo_id: Optional[int] = None
 
     @classmethod
     def from_orm(cls, orm_obj: Any) -> "ConfiguracionSyncDTO":
@@ -226,6 +241,7 @@ class ConfiguracionSyncDTO:
             if orm_obj.ajuste_no_tutores
             else 1.0,
             algoritmo_asignacion=orm_obj.algoritmo_asignacion,
+            curso_activo_id=orm_obj.curso_activo_id,
             fecha_inicio_reparto_oficial=serialize_date(orm_obj.fecha_inicio_reparto_oficial)
             if getattr(orm_obj, "fecha_inicio_reparto_oficial", None)
             else None,
@@ -248,6 +264,7 @@ class ConfiguracionSyncDTO:
             ajuste_tutores=float(data.get("ajuste_tutores", 1.0)),
             ajuste_no_tutores=float(data.get("ajuste_no_tutores", 1.0)),
             algoritmo_asignacion=data.get("algoritmo_asignacion"),
+            curso_activo_id=data.get("curso_activo_id"),
             fecha_inicio_reparto_oficial=data.get("fecha_inicio_reparto_oficial"),
         )
 
@@ -269,6 +286,9 @@ class GuardiaSyncDTO:
     turno: str
     recreo: int
     zona_id: int
+    es_sustitucion: bool = False
+    profesor_sustituido_id: Optional[int] = None
+    notas: Optional[str] = None
 
     @classmethod
     def from_orm(cls, orm_obj: Any) -> "GuardiaSyncDTO":
@@ -280,6 +300,9 @@ class GuardiaSyncDTO:
             turno=orm_obj.turno,
             recreo=orm_obj.recreo,
             zona_id=orm_obj.zona_id,
+            es_sustitucion=bool(orm_obj.es_sustitucion),
+            profesor_sustituido_id=orm_obj.profesor_sustituido_id,
+            notas=orm_obj.notas,
         )
 
     @classmethod
@@ -292,6 +315,9 @@ class GuardiaSyncDTO:
             turno=data["turno"],
             recreo=data["recreo"],
             zona_id=data["zona_id"],
+            es_sustitucion=bool(data.get("es_sustitucion", False)),
+            profesor_sustituido_id=data.get("profesor_sustituido_id"),
+            notas=data.get("notas"),
         )
 
     def to_dict(self) -> dict:

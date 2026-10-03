@@ -150,7 +150,7 @@ def test_importar_guardias_por_nombre_resuelve_ids():
     assert imp.importar_guardias(s, data) == 1
 
 
-def test_importar_ausencias_duplica_count_por_bug_actual():
+def test_importar_ausencias_cuenta_una_vez():
     s = _S()
     prof = SimpleNamespace(id=1)
 
@@ -162,8 +162,7 @@ def test_importar_ausencias_duplica_count_por_bug_actual():
 
     s.query = query
     data = [{"fecha_inicio": "2025-01-01", "fecha_fin": "2025-01-02", "tipo": "otros", "profesor_nombre_completo": "P"}]
-    # comportamiento actual del módulo: count += 1 dos veces
-    assert imp.importar_ausencias(s, data) == 2
+    assert imp.importar_ausencias(s, data) == 1
 
 
 def test_importar_smtp_config_incompleto_false(tmp_path, monkeypatch):

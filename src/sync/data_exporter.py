@@ -47,6 +47,26 @@ from sync.dtos import (
 logger = logging.getLogger(__name__)
 
 
+def _fecha_hora(valor: Optional[str]) -> datetime:
+    """Fecha y hora ISO; los ficheros viejos traen solo la fecha."""
+    try:
+        return datetime.fromisoformat(valor) if valor else datetime.now(timezone.utc)
+    except (TypeError, ValueError):
+        logger.warning(f"Fecha de creación ilegible, se usa la actual: {valor}")
+        return datetime.now(timezone.utc)
+
+
+def _si_existe(session: Session, modelo, id_: Optional[int]) -> Optional[int]:
+    """La referencia si la fila existe; si no, None.
+
+    Las claves foráneas están activas: una referencia a una fila que ya no
+    existe haría fallar la descarga entera y la sesión no podría subir.
+    """
+    if id_ is None:
+        return None
+    return id_ if session.get(modelo, id_) is not None else None
+
+
 class DataExporter:
     """Exporta e importa datos de la base de datos a/desde JSON."""
 
@@ -244,7 +264,7 @@ class DataExporter:
                     existing.nombre = c_data["nombre"]
                     existing.activo = c_data["activo"]
                     existing.cerrado = c_data["cerrado"]
-                    existing.created_at = parse_date(c_data["created_at"])
+                    existing.created_at = _fecha_hora(c_data.get("created_at"))
                 else:
                     # Crear nuevo
                     curso = CursoEscolar(
@@ -256,7 +276,7 @@ class DataExporter:
                         nombre=c_data["nombre"],
                         activo=c_data["activo"],
                         cerrado=c_data["cerrado"],
-                        created_at=parse_date(c_data["created_at"]),
+                        created_at=_fecha_hora(c_data.get("created_at")),
                     )
                     session.add(curso)
                 cursos_importados += 1
@@ -275,6 +295,8 @@ class DataExporter:
                     existing.descripcion = z_data.get("descripcion")
                     existing.fecha_inicio = parse_date(z_data.get("fecha_inicio"))
                     existing.fecha_fin = parse_date(z_data.get("fecha_fin"))
+                    existing.activa = z_data.get("activa", True) is not False
+                    existing.capacidad_profesores = z_data.get("capacidad_profesores")
                 else:
                     # Crear nueva
                     zona = Zona(
@@ -283,6 +305,8 @@ class DataExporter:
                         descripcion=z_data.get("descripcion"),
                         fecha_inicio=parse_date(z_data.get("fecha_inicio")),
                         fecha_fin=parse_date(z_data.get("fecha_fin")),
+                        activa=z_data.get("activa", True) is not False,
+                        capacidad_profesores=z_data.get("capacidad_profesores"),
                     )
                     session.add(zona)
                 zonas_importadas += 1
@@ -311,6 +335,10 @@ class DataExporter:
                         "dias_semana_permitidos"
                     )  # Campo añadido
                     existing.recreos_permitidos = p_data.get("recreos_permitidos")  # Campo añadido
+                    existing.zona_preferida_id = _si_existe(
+                        session, Zona, p_data.get("zona_preferida_id")
+                    )
+                    existing.curso_id = _si_existe(session, CursoEscolar, p_data.get("curso_id"))
                 else:
                     # Crear nuevo
                     profesor = Profesor(
@@ -331,6 +359,10 @@ class DataExporter:
                             "dias_semana_permitidos"
                         ),  # Campo añadido
                         recreos_permitidos=p_data.get("recreos_permitidos"),  # Campo añadido
+                        zona_preferida_id=_si_existe(
+                            session, Zona, p_data.get("zona_preferida_id")
+                        ),
+                        curso_id=_si_existe(session, CursoEscolar, p_data.get("curso_id")),
                     )
                     session.add(profesor)
                 profesores_importados += 1
@@ -343,6 +375,11 @@ class DataExporter:
                 existing = session.query(Configuracion).filter_by(id=c_data["id"]).first()
                 if existing:
                     # Actualizar
+                    if c_data.get("anio_inicio_curso") is not None:
+                        existing.anio_inicio_curso = c_data["anio_inicio_curso"]
+                    existing.curso_activo_id = _si_existe(
+                        session, CursoEscolar, c_data.get("curso_activo_id")
+                    )
                     existing.fecha_inicio_curso = parse_date(c_data["fecha_inicio_curso"])
                     existing.fecha_fin_curso = parse_date(c_data["fecha_fin_curso"])
                     existing.fecha_inicio_reparto_oficial = parse_date(
@@ -390,6 +427,9 @@ class DataExporter:
                         algoritmo_asignacion=c_data.get(
                             "algoritmo_asignacion", "v2.9"
                         ),  # Campo añadido
+                        curso_activo_id=_si_existe(
+                            session, CursoEscolar, c_data.get("curso_activo_id")
+                        ),
                     )
                     session.add(config)
                 configs_importadas += 1
@@ -409,6 +449,11 @@ class DataExporter:
                         turno=g_data["turno"],
                         recreo=g_data["recreo"],
                         zona_id=g_data["zona_id"],
+                        es_sustitucion=bool(g_data.get("es_sustitucion", False)),
+                        profesor_sustituido_id=_si_existe(
+                            session, Profesor, g_data.get("profesor_sustituido_id")
+                        ),
+                        notas=g_data.get("notas"),
                     )
                     session.add(guardia)
                     guardias_importadas += 1

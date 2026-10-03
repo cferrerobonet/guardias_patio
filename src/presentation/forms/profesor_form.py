@@ -398,6 +398,11 @@ class ProfesorForm(BaseForm):
 
     def _limpiar_formulario(self):
         """Limpiar todos los campos del formulario y preseleccionar matriz según turno."""
+        # La vista se crea al arrancar y el combo de zonas se quedaba con las de
+        # entonces: una zona creada o descargada después no aparecía, la ficha
+        # mostraba «Sin preferencia» y al guardar se borraba (2026-10-03).
+        self.cargar_zonas()
+
         # Delegar limpieza a los widgets
         self.datos_basicos_widget.limpiar()
         self.horario_widget.limpiar()

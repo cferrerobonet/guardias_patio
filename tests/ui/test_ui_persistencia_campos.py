@@ -267,6 +267,32 @@ class TestProfesorCamposRestriccionesPersis:
         assert session.get(Profesor, prof_id).zona_preferida_id is None
         form.close()
 
+    def test_zona_creada_con_la_vista_abierta_se_ve_y_no_se_borra(
+        self, qapp, session, profesor_factory
+    ):
+        # La vista de profesores se crea al arrancar; las zonas pueden llegar
+        # después (vista Zonas, importación o descarga) (2026-10-03).
+        prof = profesor_factory("ZONATARDE, Test", turno="mañana", horas_contrato=20.0)
+        prof_id = prof.id
+        form = ProfesorForm(session)
+        form.show()
+        QApplication.processEvents()
+
+        zona = Zona(nombre_zona="Zona Tardía")
+        session.add(zona)
+        session.commit()
+        prof.zona_preferida_id = zona.id
+        session.commit()
+
+        _abrir_edicion(form, 0)
+        assert form.restricciones_widget.get_zona_preferida_id() == zona.id
+        form.datos_basicos_widget.email_input.setText("tarde@colegio.edu")
+        QApplication.processEvents()
+        _guardar(form)
+        session.expire_all()
+        assert session.get(Profesor, prof_id).zona_preferida_id == zona.id
+        form.close()
+
     def test_fecha_inicio_guardias_persiste(self, qapp, session, profesor_factory):
         prof = profesor_factory("FECHAINICIO, Test", turno="mañana", horas_contrato=20.0)
         prof_id = prof.id

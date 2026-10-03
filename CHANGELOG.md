@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.4.2] - 2026-10-03
+
+### 🎯 Resumen
+La zona preferida de un profesor se borraba sola. Al abrir la aplicación se descarga la copia de la nube y la base local se reconstruye desde cero, pero esa copia nunca llevaba la zona preferida. Al revisar el mismo patrón en la sincronización y en la copia de seguridad JSON aparecieron más datos que se perdían, y una restauración manual que podía fallar entera. Ahora todas las columnas viajan en los dos caminos y un test lo vigila para las columnas futuras. Las copias subidas con versiones anteriores siguen cargando igual.
+
+### Fixed
+- **Zona preferida del profesor** (FAL-002): no viajaba en la sincronización con la nube y se perdía en cada arranque. Además, el desplegable de zonas de la ficha se rellenaba una sola vez, al arrancar: una zona creada, importada o descargada después no aparecía, la ficha enseñaba «Sin preferencia» y al guardar se borraba. Ahora se recarga cada vez que se abre la ficha.
+- **Sincronización con la nube** (FAL-003): tampoco viajaban los datos de sustitución de las guardias (sustitución, profesor sustituido y notas), el curso activo de la configuración, el curso del profesor, ni la capacidad y el estado activo de las zonas (una zona desactivada volvía a estar activa). La fecha y hora de creación de los cursos se quedaba solo en fecha.
+- **Copia de seguridad JSON** (FAL-004): los cursos escolares se exportaban sin años ni fechas y, al restaurar en una base vacía, se descartaban todos. Los profesores se importaban antes que las zonas y, con las claves foráneas activas, una zona preferida abortaba la restauración. Faltaban los mismos campos que en la sincronización y el contador de ausencias importadas contaba cada una dos veces.
+- Una referencia a una fila que ya no existe (zona, curso o profesor borrados) se importa vacía en lugar de hacer fallar la descarga o la restauración enteras. Las horas y fechas de creación ilegibles ya no detienen la importación.
+
+### ✨ Added
+- `tests/test_ida_y_vuelta_completa.py`: rellena todas las columnas de todas las tablas y comprueba, columna a columna y con las claves foráneas activas, la ida y vuelta por la nube y por la copia JSON, la carga de un volcado de una versión anterior y la de referencias huérfanas. Si se añade una columna al modelo sin hacerla viajar, el test falla.
+
+### Changed
+- La ruta del justificante de una ausencia sigue sin subir a la nube, a propósito (dato de salud, PRIV-001). La copia JSON manual sí la conserva.
+
 ## [6.4.1] - 2026-10-01
 
 ### 🎯 Resumen

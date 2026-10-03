@@ -51,6 +51,8 @@ def _mock_profesor():
     m.fecha_fin_guardias = None
     m.dias_semana_permitidos = None
     m.recreos_permitidos = None
+    m.guardias_voluntarias = 0
+    m.zona_preferida_id = 3
     return m
 
 
@@ -61,6 +63,8 @@ def _mock_zona():
     m.descripcion = "Zona norte del patio"
     m.fecha_inicio = None
     m.fecha_fin = None
+    m.activa = False
+    m.capacidad_profesores = 2
     return m
 
 
@@ -197,6 +201,17 @@ class TestProfesorSyncDTO:
         )
         assert dto.tutor is False
 
+    def test_zona_preferida_viaja(self):
+        dto = ProfesorSyncDTO.from_orm(_mock_profesor())
+        assert dto.to_dict()["zona_preferida_id"] == 3
+
+    def test_fichero_antiguo_sin_zona_preferida(self):
+        dto = ProfesorSyncDTO.from_dict(
+            {"id": 1, "nombre_completo": "Test", "horas_contrato": 18.0,
+             "porcentaje_jornada": 80.0, "turno": "T"}
+        )
+        assert dto.zona_preferida_id is None
+
     def test_horas_float_conversion(self):
         m = _mock_profesor()
         m.horas_manana = 12  # int
@@ -219,6 +234,16 @@ class TestZonaSyncDTO:
     def test_from_dict_round_trip(self):
         original = ZonaSyncDTO.from_orm(_mock_zona())
         assert ZonaSyncDTO.from_dict(original.to_dict()) == original
+
+    def test_activa_y_capacidad_viajan(self):
+        datos = ZonaSyncDTO.from_orm(_mock_zona()).to_dict()
+        assert datos["activa"] is False
+        assert datos["capacidad_profesores"] == 2
+
+    def test_fichero_antiguo_sin_activa_ni_capacidad(self):
+        dto = ZonaSyncDTO.from_dict({"id": 1, "nombre_zona": "Z1"})
+        assert dto.activa is True
+        assert dto.capacidad_profesores is None
 
 
 # ---------------------------------------------------------------------------

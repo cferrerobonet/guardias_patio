@@ -132,6 +132,7 @@ class ExportadorDatos:
                 ),  # Campo añadido
                 "guardias_voluntarias": p.guardias_voluntarias or 0,
                 "zona_preferida_id": p.zona_preferida_id,  # Campo añadido
+                "curso_id": p.curso_id,
                 "dias_semana_permitidos": p.dias_semana_permitidos,
                 "recreos_permitidos": p.recreos_permitidos,
             }
@@ -149,6 +150,8 @@ class ExportadorDatos:
                 "descripcion": z.descripcion,
                 "fecha_inicio": ExportadorDatos._serializar_fecha(z.fecha_inicio),  # Campo añadido
                 "fecha_fin": ExportadorDatos._serializar_fecha(z.fecha_fin),  # Campo añadido
+                "activa": z.activa is not False,
+                "capacidad_profesores": z.capacidad_profesores,
             }
             for z in zonas
         ]
@@ -162,6 +165,8 @@ class ExportadorDatos:
 
         return {
             "id": config.id,  # ID necesario para restauración completa
+            "anio_inicio_curso": config.anio_inicio_curso,
+            "curso_activo_id": config.curso_activo_id,
             "fecha_inicio_curso": ExportadorDatos._serializar_fecha(config.fecha_inicio_curso),
             "fecha_fin_curso": ExportadorDatos._serializar_fecha(config.fecha_fin_curso),
             "fecha_inicio_reparto_oficial": ExportadorDatos._serializar_fecha(
@@ -198,6 +203,9 @@ class ExportadorDatos:
                 "zona_id": g.zona_id,  # FK necesario para relaciones
                 "zona_nombre": g.zona.nombre_zona if g.zona else None,
                 "curso_id": g.curso_id,  # Curso escolar asociado
+                "es_sustitucion": bool(g.es_sustitucion),
+                "profesor_sustituido_id": g.profesor_sustituido_id,
+                "notas": g.notas,
             }
             for g in guardias
         ]
@@ -277,6 +285,13 @@ class ExportadorDatos:
 
                 cursos_export.append(
                     {
+                        # Sin años ni fechas la restauración en una base vacía
+                        # descartaba todos los cursos (2026-10-03).
+                        "id": curso.id,
+                        "anio_inicio": curso.anio_inicio,
+                        "anio_fin": curso.anio_fin,
+                        "fecha_inicio": ExportadorDatos._serializar_fecha(curso.fecha_inicio),
+                        "fecha_fin": ExportadorDatos._serializar_fecha(curso.fecha_fin),
                         "nombre": curso.nombre,
                         "activo": curso.activo,
                         "cerrado": curso.cerrado,
