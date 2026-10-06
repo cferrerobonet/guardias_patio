@@ -104,6 +104,8 @@ class DistribucionCuotasService:
         self.ultima_parte_curso: Dict[int, int] = {}
         self.ultimas_voluntarias: Dict[int, int] = {}
         self.ultimos_excedidos: Set[int] = set()
+        #: Huecos que se dejan sin cubrir a propósito, por turno (equidad primero).
+        self.ultimos_huecos_previstos: Dict[str, int] = {}
 
     def calcular_cuotas(
         self,
@@ -633,18 +635,41 @@ class DistribucionCuotasService:
         voluntarias = voluntarias or {}
         slots_manana = slots_por_turno.get("mañana", 0)
         slots_tarde = slots_por_turno.get("tarde", 0)
-        elegibles_manana = profs_manana + profs_mixtos
-        elegibles_tarde = profs_tarde + profs_mixtos
+
+        # Equidad primero (2026-10-06, `reparto_equitativo`): los mixtos sólo ponen
+        # lo que el profesorado fijo de cada turno no cubre, sin pasar del nivel
+        # del turno fijo más cargado; lo que no quepa queda sin cubrir. Antes cada
+        # turno se repartía entero entre sus fijos y los mixtos, y sin fijos de un
+        # turno sus huecos caían todos en los pocos mixtos.
+        from services.reparto_equitativo import reparto_equitativo
+
+        suma_f = lambda grupo: sum(factores.get(p.id, 0) for p in grupo)  # noqa: E731
+        f_mixtos = suma_f(profs_mixtos)
+        suma_v = lambda grupo: sum(voluntarias.get(p.id, 0) for p in grupo)  # noqa: E731
+        reparto = reparto_equitativo(
+            {"mañana": slots_manana, "tarde": slots_tarde},
+            {"mañana": suma_f(profs_manana), "tarde": suma_f(profs_tarde)},
+            f_mixtos,
+            {"mañana": suma_v(profs_manana), "tarde": suma_v(profs_tarde)},
+            suma_v(profs_mixtos),
+        )
+        self.ultimos_huecos_previstos = {
+            t: max(0, slots_por_turno.get(t, 0) - int(round(r.cubiertos)))
+            for t, r in reparto.items()
+        }
+        if any(self.ultimos_huecos_previstos.values()):
+            self.logger.info(
+                "Equidad primero: quedan sin cubrir "
+                + ", ".join(f"{n} de {t}" for t, n in self.ultimos_huecos_previstos.items() if n)
+                + " (los mixtos no pasan del reparto del profesorado fijo)"
+            )
 
         vol_manana: Dict[int, int] = {p.id: voluntarias.get(p.id, 0) for p in profs_manana}
         vol_tarde: Dict[int, int] = {p.id: voluntarias.get(p.id, 0) for p in profs_tarde}
-        suma_f_manana = sum(factores.get(p.id, 0) for p in elegibles_manana)
-        suma_f_tarde = sum(factores.get(p.id, 0) for p in elegibles_tarde)
         for p in profs_mixtos:
             v = voluntarias.get(p.id, 0)
-            f = factores.get(p.id, 0)
-            base_m = slots_manana * f / suma_f_manana if suma_f_manana else 0.0
-            base_t = slots_tarde * f / suma_f_tarde if suma_f_tarde else 0.0
+            base_m = reparto["mañana"].de_mixtos
+            base_t = reparto["tarde"].de_mixtos
             if base_m + base_t > 0:
                 v_m = int(round(v * base_m / (base_m + base_t)))
             else:
@@ -652,14 +677,37 @@ class DistribucionCuotasService:
             vol_manana[p.id] = v_m
             vol_tarde[p.id] = v - v_m
 
-        # Distribuir slots de mañana entre profesores de mañana + mixtos
+        def factores_del_turno(turno: str, fijos: List[Profesor], vol: Dict[int, int]):
+            """Factores del reparto de un turno: los mixtos, escalados a lo que ponen en él.
+
+            El reparto de un grupo es proporcional a los factores, contando las
+            voluntarias; la escala hace que el mixto reciba, en este turno, justo su
+            parte (lo que pone más sus voluntarias asignadas a este turno).
+            """
+            r = reparto[turno]
+            hechas = sum(vol.get(p.id, 0) for p in profs_mixtos)
+            if (r.de_mixtos <= 0 and hechas <= 0) or not f_mixtos:
+                return fijos, factores
+            nivel_mixtos = (r.de_mixtos + hechas) / f_mixtos
+            escala = nivel_mixtos / r.nivel_fijos if r.nivel_fijos > 0 else 1.0
+            propios = dict(factores)
+            for p in profs_mixtos:
+                propios[p.id] = factores.get(p.id, 0) * escala
+            return fijos + profs_mixtos, propios
+
+        elegibles_manana, factores_manana = factores_del_turno("mañana", profs_manana, vol_manana)
+        elegibles_tarde, factores_tarde = factores_del_turno("tarde", profs_tarde, vol_tarde)
+
+        # Distribuir lo que se cubre de mañana entre fijos de mañana y mixtos
         cuotas_manana, partes_manana, exc_manana = self._distribuir_grupo_con_voluntarias(
-            elegibles_manana, factores, slots_manana, vol_manana, "mañana"
+            elegibles_manana, factores_manana, int(round(reparto["mañana"].cubiertos)),
+            vol_manana, "mañana",
         )
 
-        # Distribuir slots de tarde entre profesores de tarde + mixtos
+        # Distribuir lo que se cubre de tarde entre fijos de tarde y mixtos
         cuotas_tarde, partes_tarde, exc_tarde = self._distribuir_grupo_con_voluntarias(
-            elegibles_tarde, factores, slots_tarde, vol_tarde, "tarde"
+            elegibles_tarde, factores_tarde, int(round(reparto["tarde"].cubiertos)),
+            vol_tarde, "tarde",
         )
 
         # Combinar cuotas

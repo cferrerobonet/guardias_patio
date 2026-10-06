@@ -191,3 +191,32 @@ def test_el_calendario_solo_pinta_los_recreos_guardados(session, curso_generable
     session.commit()
     claves = sorted(obtener_zonas_esperadas_por_recreo(session, date(2025, 9, 16)))
     assert claves == [("tarde", 3), ("tarde", 4)]
+
+
+# ── Equidad primero con pocos mixtos ────────────────────────────────────────
+
+
+def test_pocos_mixtos_no_cargan_mas_que_sus_companeros(session, curso_generable):
+    """Con todo el claustro de tarde y un mixto, el mixto se quedaba con todos los
+    huecos de mañana (una guardia diaria); ahora su cuota y lo que se le asigna son
+    las de un compañero de su jornada, y la mañana queda con huecos (2026-10-06)."""
+    from application.use_cases.asignacion_guardias.generar_guardias import (
+        GenerarGuardiasUseCase,
+    )
+    from services.distribucion_cuotas_service import DistribucionCuotasService
+
+    _todos_de_tarde(session)
+    profes = session.query(Profesor).order_by(Profesor.id).all()
+    mixto, companero = profes[0], profes[1]
+    mixto.turno = "mixto"
+    for p in (mixto, companero):
+        p.horas_contrato, p.porcentaje_jornada, p.tutor = 25.0, 100.0, False
+    session.commit()
+
+    cuotas = DistribucionCuotasService(session).calcular_cuotas()
+    assert abs(cuotas[mixto.id] - cuotas[companero.id]) <= 1
+
+    resumen = GenerarGuardiasUseCase(session).execute()
+    asignadas = lambda p: session.query(Guardia).filter_by(profesor_id=p.id).count()  # noqa: E731
+    assert asignadas(mixto) <= cuotas[mixto.id] + 1
+    assert resumen.slots_sin_cubrir > 0

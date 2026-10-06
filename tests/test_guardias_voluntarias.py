@@ -138,10 +138,15 @@ def _escenario_variado(session, oficial=None):
     session.commit()
 
 
-# Cuotas que daba la versión anterior (v6.3.3) con este escenario, sin voluntarias.
+# Cuotas del servicio con este escenario, sin voluntarias. Desde la v6.10.0
+# (equidad primero, `reparto_equitativo`) los mixtos sólo ponen lo que falta en
+# cada turno al mismo nivel que los fijos: con 30 h y sin tutoría, mañana (A01),
+# tarde (A04), mixto (A06) y mixto sólo de tarde (A08) hacen 62-63. En la v6.3.3
+# eran 58, 41, 98 y 40: el mixto cobraba la parte de los dos turnos. El total no
+# cambia (584) y no queda ningún hueco.
 CUOTAS_V633_SERVICIO = {
-    "A01": 58, "A02": 43, "A03": 29, "A04": 41, "A05": 24, "A06": 98,
-    "A07": 53, "A08": 40, "A09": 42, "A10": 52, "A11": 16, "A12": 88,
+    "A01": 63, "A02": 47, "A03": 31, "A04": 62, "A05": 38, "A06": 63,
+    "A07": 34, "A08": 63, "A09": 46, "A10": 56, "A11": 25, "A12": 56,
 }  # fmt: skip
 CUOTAS_V633_CALCULADOR = {
     "A01": 43, "A02": 32, "A03": 22, "A04": 43, "A05": 26, "A06": 87,

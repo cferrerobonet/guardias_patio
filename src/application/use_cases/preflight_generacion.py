@@ -249,7 +249,8 @@ class PreflightGeneracionUseCase:
                 problemas.append(
                     f"Cada día de {turno} hay {por_dia} guardias y solo {pueden} profesores "
                     f"pueden hacerlas (de {turno} o mixtos), y cada uno hace como mucho una al "
-                    f"día: quedarán huecos de {turno} todos los días. Da de alta profesorado, "
+                    f"día y no más guardias que sus compañeros (la equidad va primero): "
+                    f"quedarán huecos de {turno} todos los días. Da de alta profesorado, "
                     f"pon a alguien como mixto o reduce zonas o recreos de {turno}."
                 )
         if not problemas:

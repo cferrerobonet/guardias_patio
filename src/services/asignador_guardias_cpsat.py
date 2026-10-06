@@ -336,9 +336,9 @@ def generar_guardias_cpsat(
     # más justo posible del sobrante. Es la referencia de la equidad (2026-10-03).
     reportar(27, "Buscando el reparto más justo posible...")
     cuotas_base = {p.id: int(round(cuotas_ideales[p.id])) for p in profesores}
+    alcanzables = cuotas_alcanzables(slots, profesores, prof_slots, cuotas_base)
     objetivo = objetivos_justos(
-        slots, profesores, prof_slots, slot_profs,
-        cuotas_alcanzables(slots, profesores, prof_slots, cuotas_base),
+        slots, profesores, prof_slots, slot_profs, alcanzables,
         segundos=min(30.0, timeout_seconds * 0.25), cancelacion=cancelacion,
     )
     reportar(29, "Reparto justo calculado")
@@ -351,6 +351,15 @@ def generar_guardias_cpsat(
             model.Add(n_guardias[p.id] == sum(x[(p.id, s_idx)] for s_idx in prof_slots[p.id]))
         else:
             n_guardias[p.id] = model.NewIntVar(0, 0, f"n_{p.id}")
+
+    # Equidad primero (2026-10-06): nadie pasa de su cuota en más de una guardia
+    # para tapar un hueco; si no hay quien lo cubra sin eso, el hueco se queda.
+    # El reparto justo ya cumple este tope, así que el modelo nunca es imposible.
+    # Sin cuotas (todas a 0) no hay referencia de equidad: no se limita a nadie.
+    for p in profesores if any(alcanzables.values()) else []:
+        if prof_slots[p.id]:
+            tope = max(objetivo.get(p.id, 0), alcanzables.get(p.id, 0) + 1)
+            model.Add(n_guardias[p.id] <= tope)
 
     # -------------------------------------------------------------------------
     # OBJETIVO 1 (PRIMARIO): MINIMIZAR INEQUIDAD

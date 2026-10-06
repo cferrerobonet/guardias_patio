@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.10.0] - 2026-10-06
+
+### 🎯 Resumen
+Equidad primero (decisión de CarlosFB): nadie hace más guardias que sus compañeros de su misma jornada para tapar huecos, y es aceptable que queden patios sin cubrir. Con todo el claustro de tarde y tres o cuatro mixtos, los mixtos recibían cuotas imposibles (494 y 248) y una guardia cada día lectivo del curso (132), mientras los demás hacían unas 40.
+
+### Changed
+- **Cuotas** (`services/reparto_equitativo.py`, `DistribucionCuotasService`): se busca el nivel común más bajo (guardias por unidad de jornada, contando las voluntarias hechas) con el que se cubre todo; cada turno lo cubre su profesorado fijo y los mixtos sólo ponen lo que falte, al mismo nivel. Un mixto no pasa del nivel del turno fijo más cargado: lo que no quepa queda como hueco previsto (`ultimos_huecos_previstos`). Sin mixtos el resultado es el de siempre. Con mixtos y los dos turnos cubiertos, el mixto deja de cobrar la parte de los dos turnos: en el escenario de pruebas, a igual jornada, mañana, tarde y mixto pasan de 58, 41 y 98 a 63, 62 y 63, con el mismo total.
+- **Reparto** (`objetivos_justos` y CP-SAT): pasar de la cuota en más de una guardia cuesta más que dejar un hueco (antes cubrir iba antes que todo) y el modelo final no deja pasar de cuota + 1. Sin cuotas calculadas no se limita a nadie.
+- El aviso previo a generar explica que los mixtos no hacen más que sus compañeros.
+
+### 🧹 Housekeeping
+- `tests/test_reparto_equitativo.py` (5) y `test_pocos_mixtos_no_cargan_mas_que_sus_companeros` (falla con el cálculo anterior, comprobado). `test_servicio_igual_que_v633` lleva la referencia nueva, con las cifras anteriores en el comentario.
+- Comprobado con una copia de los datos del usuario afectado: con tres mixtos, 32 guardias cada uno (64 el que no es tutor), como sus compañeros de tarde (media 31,4), y 750 huecos de mañana; con cuatro, 33 (67) y 712 huecos. Con los datos del otro usuario (39 de mañana y 30 de tarde, sin mixtos), 2.452 de 2.452, igual que antes.
+
 ## [6.9.2] - 2026-10-06
 
 ### 🎯 Resumen

@@ -102,8 +102,16 @@ def objetivos_justos(
             vacios.append(1 - sum(x[pid, i] for pid in pids))
     _una_al_dia(modelo, x, slots, prof_slots)
     desviaciones, maxima = _desviaciones(modelo, x, prof_slots, profesores, cuotas)
-    # Cubrir va antes que todo: un hueco vacío cuesta más que cualquier desviación.
-    modelo.Minimize(1_000_000 * sum(vacios) + 100 * maxima + sum(desviaciones))
+    # Equidad primero (CarlosFB, 2026-10-06): pasar de la cuota en más de una
+    # guardia cuesta más que dejar un hueco. Antes cubrir iba antes que todo y,
+    # sin profesorado fijo de un turno, los mixtos acababan con una guardia diaria
+    # todo el curso. Una de más se admite: es el redondeo de las cuotas.
+    # Sin cuotas (todas a 0: el cálculo no tenía huecos que repartir) no hay
+    # referencia de equidad y no se limita a nadie.
+    excesos = _excesos(modelo, x, prof_slots, profesores, cuotas) if any(cuotas.values()) else []
+    modelo.Minimize(
+        10_000_000 * sum(excesos) + 1_000_000 * sum(vacios) + 100 * maxima + sum(desviaciones)
+    )
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = segundos
@@ -302,6 +310,19 @@ def _una_al_dia(modelo, x, slots, prof_slots) -> None:
         for lista in por_dia.values():
             if len(lista) > 1:
                 modelo.AddAtMostOne(x[pid, i] for i in lista)
+
+
+def _excesos(modelo, x, prof_slots, profesores, cuotas):
+    """Guardias de cada profesor por encima de su cuota más una."""
+    excesos = []
+    for p in profesores:
+        ids = prof_slots.get(p.id, [])
+        if not ids:
+            continue
+        e = modelo.NewIntVar(0, len(ids), "")
+        modelo.Add(e >= sum(x[p.id, i] for i in ids) - cuotas.get(p.id, 0) - 1)
+        excesos.append(e)
+    return excesos
 
 
 def _desviaciones(modelo, x, prof_slots, profesores, objetivo):
