@@ -209,7 +209,8 @@ def _parse_recreos_config(config: Configuracion) -> List[dict]:
     if not raw:
         return []
     try:
-        data = json.loads(raw)
+        # La entidad de dominio ya trae la lista; el modelo y el DTO, el texto JSON.
+        data = raw if isinstance(raw, list) else json.loads(raw)
         out = []
         for r in data:
             out.append(

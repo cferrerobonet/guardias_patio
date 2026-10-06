@@ -23,11 +23,19 @@ def parse_recreos_config(config: Configuracion) -> List[Dict]:
     Returns:
         Lista de dicts con datos de cada recreo
     """
-    if config.recreos_config:
+    # La configuración llega como entidad de dominio, con los recreos ya en
+    # lista: `json.loads` de una lista fallaba en silencio y el calendario se
+    # inventaba los recreos a partir de las cuatro horas de Ajustes. Un centro
+    # sin guardias de mañana veía sus recreos de mañana «sin guardia asignada»
+    # cada día y las de tarde quedaban escondidas debajo (2026-10-06).
+    datos = config.recreos_config
+    if isinstance(datos, str) and datos:
         try:
-            return json.loads(config.recreos_config)
+            datos = json.loads(datos)
         except (json.JSONDecodeError, TypeError):
-            pass
+            datos = None
+    if isinstance(datos, list) and datos:
+        return datos
 
     # Fallback: deducir de campos individuales
     recreos: List[Dict] = []

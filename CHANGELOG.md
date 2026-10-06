@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.9.2] - 2026-10-06
+
+### 🎯 Resumen
+Con «Hay guardias de mañana» desmarcado, la generación cubría el 100 %, pero el calendario seguía pintando los recreos de mañana con «SIN GUARDIA ASIGNADA» en cada zona; las guardias de tarde quedaban debajo, fuera de la vista de la celda, y parecía que no se había asignado nada (aviso de CarlosFB con captura).
+
+### Fixed
+- **Calendario**: solo pinta los recreos guardados en Ajustes; los de un turno sin guardias, mañana o tarde, ya no salen. Leía la configuración como entidad de dominio, con los recreos ya en lista; `json.loads` de una lista fallaba en silencio y el calendario se inventaba los recreos a partir de las cuatro horas de Ajustes. No se notaba mientras todos los centros tenían los cuatro recreos. Afecta también al detalle del día.
+- `_parse_recreos_config` acepta igualmente la lista o el texto JSON.
+
+### 🧹 Housekeeping
+- `test_el_calendario_solo_pinta_los_recreos_guardados` (falla con la lectura anterior, comprobado). Comprobado con una copia de los datos del usuario afectado: octubre solo con los recreos de tarde y sus guardias desde el 21.
+
 ## [6.9.1] - 2026-10-06
 
 ### 🎯 Resumen

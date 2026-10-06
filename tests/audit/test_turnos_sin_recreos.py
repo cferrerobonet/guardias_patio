@@ -172,3 +172,22 @@ def test_el_panel_deja_generar_y_avisa_antes_de_los_huecos(qapp, session, curso_
     assert "quedarán huecos" in panel.label_bloqueo.text()
     assert "ningún profesor de mañana" in panel.label_bloqueo.text()
     panel.close()
+
+
+# ── Calendario ──────────────────────────────────────────────────────────────
+
+
+def test_el_calendario_solo_pinta_los_recreos_guardados(session, curso_generable):
+    """Leía la configuración como entidad (recreos en lista), `json.loads` fallaba en
+    silencio y se inventaba los recreos a partir de las cuatro horas de Ajustes: los de
+    mañana salían «sin guardia asignada» y tapaban las guardias de tarde (2026-10-06)."""
+    from datetime import date
+
+    from presentation.widgets.vista_calendario_helpers import (
+        obtener_zonas_esperadas_por_recreo,
+    )
+
+    session.query(Configuracion).first().recreos_config = SOLO_TARDE
+    session.commit()
+    claves = sorted(obtener_zonas_esperadas_por_recreo(session, date(2025, 9, 16)))
+    assert claves == [("tarde", 3), ("tarde", 4)]
