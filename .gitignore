@@ -149,3 +149,13 @@ docs/examples/
 *.xls
 docs/**/*.pdf
 
+
+# Copias de seguridad manuales: van en la carpeta «COPIAS DE SEGURIDAD» de la app,
+# al lado de la de código y fuera del repositorio. Esto es solo la segunda barrera.
+*.sql
+*.sql.gz
+*.dump
+*.tgz
+*.tar.gz
+*.zip
+*.dup
