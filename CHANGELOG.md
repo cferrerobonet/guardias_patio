@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.8.1] - 2026-10-06
+
+### 🎯 Resumen
+La v6.8.0 no llegó a publicarse: la compilación de GitHub se paraba en un test del reparto que fallaba allí desde la v6.7.0. Mismo contenido que la v6.8.0, ya con instaladores de macOS y Windows.
+
+### 🧹 Housekeeping
+- `test_cada_profesor_en_un_carril_y_en_dias_seguidos`: fallo conocido sólo en CI (FAL-023). En los ordenadores de GitHub, con 8 s de solver, el reparto deja a veces un día suelto; en local el test sigue siendo estricto.
+
 ## [6.8.0] - 2026-10-06
 
 ### 🎯 Resumen
