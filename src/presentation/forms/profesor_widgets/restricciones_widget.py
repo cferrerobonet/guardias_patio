@@ -50,6 +50,12 @@ class SemanaRestriccionesWidget(QWidget):
         super().__init__(parent)
         self._recreos = recreos
         self._celdas: Dict[tuple, QPushButton] = {}  # (dia, recreo) -> QPushButton
+        self._etiquetas: Dict[int, QLabel] = {}
+        self._plantillas: Dict[str, QPushButton] = {}
+        # Turnos con guardias según Ajustes (2026-10-06): las filas de un turno
+        # sin recreos no se muestran ni las tocan las plantillas, pero conservan
+        # su valor por si el turno vuelve a tener guardias.
+        self._turnos = (True, True)
         self._build()
 
     def _build(self):
@@ -73,6 +79,7 @@ class SemanaRestriccionesWidget(QWidget):
             btn.setMaximumHeight(26)
             _datos = datos
             btn.clicked.connect(lambda _=False, d=_datos: self._aplicar_plantilla(d))
+            self._plantillas[etiqueta] = btn
             tpl_layout.addWidget(btn)
         tpl_layout.addStretch()
         layout.addLayout(tpl_layout)
@@ -100,6 +107,8 @@ class SemanaRestriccionesWidget(QWidget):
             lbl = QLabel(f"R{recreo}")
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             lbl.setStyleSheet("font-size: 12px; color: #555;")
+            lbl.setToolTip(f"Recreo {recreo} ({'mañana' if recreo <= 2 else 'tarde'})")
+            self._etiquetas[recreo] = lbl
             grid.addWidget(lbl, row + 1, 0)
             for col in range(5):
                 btn = QPushButton("✓")
@@ -151,8 +160,26 @@ class SemanaRestriccionesWidget(QWidget):
         self._aplicar_color(btn, checked)
         self.changed.emit()
 
+    def _recreo_visible(self, recreo: int) -> bool:
+        manana, tarde = self._turnos
+        return manana if recreo <= 2 else tarde
+
+    def set_turnos_con_recreos(self, manana: bool, tarde: bool) -> None:
+        """Muestra solo las filas de los turnos con guardias (Ajustes)."""
+        self._turnos = (bool(manana), bool(tarde))
+        for recreo, lbl in self._etiquetas.items():
+            visible = self._recreo_visible(recreo)
+            lbl.setVisible(visible)
+            for dia in range(5):
+                self._celdas[(dia, recreo)].setVisible(visible)
+        # Con un solo turno, «Solo mañanas» y «Solo tardes» no significan nada.
+        for etiqueta in ("Solo mañanas", "Solo tardes"):
+            self._plantillas[etiqueta].setVisible(bool(manana and tarde))
+
     def _aplicar_plantilla(self, datos: Dict[int, List[int]]):
         for (dia, recreo), btn in self._celdas.items():
+            if not self._recreo_visible(recreo):
+                continue
             activo = recreo in datos.get(dia, [])
             btn.blockSignals(True)
             btn.setChecked(activo)
@@ -435,6 +462,10 @@ class RestriccionesWidget(QGroupBox):
                 return True  # Hay diferencias
 
         return False  # Son iguales
+
+    def set_turnos_con_recreos(self, manana: bool, tarde: bool) -> None:
+        """La rejilla enseña solo los recreos de los turnos con guardias."""
+        self.semana_widget.set_turnos_con_recreos(manana, tarde)
 
     def preseleccionar_segun_turno(self, turno: str):
         """Pre-seleccionar recreos según el turno del profesor."""

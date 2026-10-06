@@ -3,8 +3,10 @@ Widget para configuración de fechas y recreos.
 
 Encapsula la lógica de configuración de:
 - Fechas del curso (inicio/fin) e inicio del reparto oficial de guardias
-- Recreos de mañana (2 recreos)
-- Recreos de tarde (2 recreos opcionales)
+- Recreos de mañana (2 recreos) y de tarde (2 recreos). Cada turno se puede
+  quitar entero con la casilla de su grupo: hay centros sin guardias de mañana
+  o sin guardias de tarde, y sus recreos dejaban la mitad de los huecos sin
+  nadie que pudiera cubrirlos (2026-10-06).
 """
 
 from datetime import date
@@ -161,8 +163,14 @@ class FechasRecreosWidget(QGroupBox):
         self.fecha_reparto_input.setDate(QDate(destino.year, destino.month, destino.day))
 
     def _crear_grupo_recreos_manana(self) -> QGroupBox:
-        """Crea el grupo de recreos de mañana."""
-        grupo = QGroupBox("Recreos de Mañana")
+        """Crea el grupo de recreos de mañana; desmarcado, no hay guardias de mañana."""
+        grupo = QGroupBox("Hay guardias de mañana")
+        grupo.setCheckable(True)
+        grupo.setChecked(True)
+        grupo.setAccessibleName("Hay guardias de mañana")
+        grupo.setToolTip("Desmárcalo si en el centro no hay guardias de patio por la mañana")
+        grupo.toggled.connect(self.config_changed.emit)
+        self.grupo_manana = grupo
         layout = QHBoxLayout()
         layout.setSpacing(6)
         layout.setContentsMargins(6, 6, 6, 6)
@@ -201,8 +209,14 @@ class FechasRecreosWidget(QGroupBox):
         return grupo
 
     def _crear_grupo_recreos_tarde(self) -> QGroupBox:
-        """Crea el grupo de recreos de tarde."""
-        grupo = QGroupBox("🌙 Recreos de Tarde (opcional)")
+        """Crea el grupo de recreos de tarde; desmarcado, no hay guardias de tarde."""
+        grupo = QGroupBox("Hay guardias de tarde")
+        grupo.setCheckable(True)
+        grupo.setChecked(True)
+        grupo.setAccessibleName("Hay guardias de tarde")
+        grupo.setToolTip("Desmárcalo si en el centro no hay guardias de patio por la tarde")
+        grupo.toggled.connect(self.config_changed.emit)
+        self.grupo_tarde = grupo
         layout = QHBoxLayout()
         layout.setSpacing(6)
         layout.setContentsMargins(6, 6, 6, 6)
@@ -275,6 +289,21 @@ class FechasRecreosWidget(QGroupBox):
             "recreo1": self.recreo1_tarde_input.time().toPyTime(),
             "recreo2": self.recreo2_tarde_input.time().toPyTime(),
         }
+
+    def hay_recreos_manana(self) -> bool:
+        """Si el centro tiene guardias de mañana (casilla del grupo)."""
+        return self.grupo_manana.isChecked()
+
+    def hay_recreos_tarde(self) -> bool:
+        """Si el centro tiene guardias de tarde (casilla del grupo)."""
+        return self.grupo_tarde.isChecked()
+
+    def set_turnos_con_recreos(self, manana: bool, tarde: bool) -> None:
+        """Marca qué turnos tienen recreos, sin avisar de cambios pendientes."""
+        for grupo, valor in ((self.grupo_manana, manana), (self.grupo_tarde, tarde)):
+            grupo.blockSignals(True)
+            grupo.setChecked(bool(valor))
+            grupo.blockSignals(False)
 
     def set_fechas(self, fecha_inicio, fecha_fin) -> None:
         """
@@ -359,28 +388,33 @@ class FechasRecreosWidget(QGroupBox):
                     "El inicio del reparto oficial no puede ser posterior al fin de curso",
                 )
 
-        # Validar recreos de mañana
+        manana = self.hay_recreos_manana()
+        tarde = self.hay_recreos_tarde()
+        if not manana and not tarde:
+            return (
+                False,
+                "Marca al menos un turno con guardias (mañana o tarde): "
+                "sin recreos no hay guardias que repartir",
+            )
+
+        # Las horas solo se comprueban en los turnos que tienen guardias.
         recreo1_manana = self.recreo1_manana_input.time()
         recreo2_manana = self.recreo2_manana_input.time()
-
-        if recreo1_manana >= recreo2_manana:
+        if manana and recreo1_manana >= recreo2_manana:
             return (
                 False,
                 "El recreo 1 de mañana debe ser anterior al recreo 2 de mañana",
             )
 
-        # Validar recreos de tarde
         recreo1_tarde = self.recreo1_tarde_input.time()
         recreo2_tarde = self.recreo2_tarde_input.time()
-
-        if recreo1_tarde >= recreo2_tarde:
+        if tarde and recreo1_tarde >= recreo2_tarde:
             return (
                 False,
                 "El recreo 1 de tarde debe ser anterior al recreo 2 de tarde",
             )
 
-        # Validar que recreos de tarde sean después de mañana
-        if recreo1_tarde <= recreo2_manana:
+        if manana and tarde and recreo1_tarde <= recreo2_manana:
             return (
                 False,
                 "Los recreos de tarde deben ser posteriores a los de mañana",

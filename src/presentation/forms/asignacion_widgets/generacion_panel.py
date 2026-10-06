@@ -221,7 +221,15 @@ class GeneracionPanel(QGroupBox):
             return None
 
         self.generar_button.setEnabled(estado.listo)
-        if estado.listo:
+        if estado.listo and estado.avisos:
+            # Se puede generar, pero quedarán huecos: decirlo ANTES (2026-10-06).
+            self.generar_button.setToolTip("Generar el calendario de guardias")
+            self.label_bloqueo.setText(
+                "Se puede generar, pero quedarán huecos sin cubrir:\n"
+                + "\n".join(f"• {r.detalle}" for r in estado.avisos)
+            )
+            self.label_bloqueo.setVisible(True)
+        elif estado.listo:
             self.generar_button.setToolTip("Generar el calendario de guardias")
             self.label_bloqueo.setVisible(False)
         else:
@@ -744,11 +752,32 @@ class GeneracionPanel(QGroupBox):
         )
         lineas.append("")
 
-        # Causas principales
-        lineas.append(format_terminal_warning("🔍 POSIBLES CAUSAS:"))
-        lineas.append(format_terminal_info("• Restricciones de horario muy estrictas"))
-        lineas.append(format_terminal_info("• Fechas de inicio/fin limitadas"))
-        lineas.append(format_terminal_info("• Turnos incompatibles"))
+        # La causa concreta, si se sabe: con todo el profesorado de tarde y recreos
+        # de mañana, la lista genérica de «posibles causas» no ayudaba a ver que
+        # faltaba la mitad por eso (2026-10-06). Las demás asignaciones sí se
+        # guardan: la generación cubre todo lo que puede.
+        causas = []
+        try:
+            from application.use_cases.preflight_generacion import PreflightGeneracionUseCase
+
+            causas = [r.detalle for r in PreflightGeneracionUseCase(self.session).execute().avisos]
+        except SQLAlchemyError as e:
+            _logger.warning(f"No se pudo leer la causa de los huecos: {e}")
+        lineas.append(
+            f"{format_terminal_label('Asignadas:')} "
+            f"{format_terminal_number(resumen.guardias_generadas)} "
+            f"{format_terminal_info('(guardadas: los huecos no impiden repartir el resto)')}"
+        )
+        lineas.append("")
+        if causas:
+            lineas.append(format_terminal_warning("🔍 CAUSA:"))
+            for causa in causas:
+                lineas.append(format_terminal_info(f"• {causa}"))
+        else:
+            lineas.append(format_terminal_warning("🔍 POSIBLES CAUSAS:"))
+            lineas.append(format_terminal_info("• Restricciones de horario muy estrictas"))
+            lineas.append(format_terminal_info("• Fechas de inicio/fin limitadas"))
+            lineas.append(format_terminal_info("• Turnos incompatibles"))
         lineas.append("")
 
         # Recursos

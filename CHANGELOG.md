@@ -5,6 +5,26 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.9.0] - 2026-10-06
+
+### 🎯 Resumen
+Centros sin guardias de mañana o sin guardias de tarde. Un usuario con todo el profesorado de tarde tenía recreos de mañana y cada generación dejaba el 50 % de los huecos sin nadie que pudiera cubrirlos; no había forma de quitarlos, porque Ajustes exigía sus horas. La generación sí terminaba (repartía y guardaba toda la tarde), pero el resumen solo daba causas genéricas y parecía que no había hecho nada.
+
+### ✨ Added
+- **Ajustes → «Hay guardias de mañana» / «Hay guardias de tarde»**: cada grupo de recreos lleva su casilla. Desmarcado, ese turno no tiene recreos ni huecos ni cuotas, y sus horas no se validan. Tiene que quedar al menos uno. Los identificadores no cambian (1-2 mañana, 3-4 tarde), así que las rejillas guardadas de los profesores siguen valiendo.
+- **Rejilla de recreos del profesor**: solo enseña los recreos de los turnos con guardias; «Solo mañanas» y «Solo tardes» desaparecen si solo hay uno. Las filas ocultas conservan su valor por si el turno vuelve.
+- **Aviso antes de generar** (no bloquea, se reparte lo posible): si un turno con recreos no tiene ningún profesor que pueda cubrirlo, o si cada día pide más guardias que profesores pueden hacerlas (de ese turno o mixtos, una al día como mucho), lo dice con la salida: desmarcar el turno, dar de alta profesorado o poner a alguien como mixto.
+
+### Changed
+- El resumen de la generación con huecos dice cuántas guardias se han asignado y guardado y la causa concreta, en lugar de una lista genérica de «posibles causas».
+
+### Fixed
+- Una configuración sin recreos de tarde volvía a crearlos al guardar Ajustes (el formulario se quedaba con las horas de serie, 15:30 y 17:00): ahora la casilla de tarde se carga desmarcada.
+
+### 🧹 Housekeeping
+- `services/calculador_guardias.turnos_con_recreos()`: única lectura de qué turnos tienen guardias (Ajustes, rejilla y comprobación previa); acepta listas antiguas con «manana».
+- `tests/audit/test_turnos_sin_recreos.py` (9). Comprobado con una copia de los datos del usuario afectado: con los recreos de mañana, aviso y 878 de 1.756; sin ellos, 878 de 878 y ningún aviso.
+
 ## [6.8.1] - 2026-10-06
 
 ### 🎯 Resumen

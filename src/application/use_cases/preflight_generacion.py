@@ -29,6 +29,9 @@ class Requisito:
     detalle: str = ""
     #: Sección del menú lateral que permite resolverlo.
     seccion: str = ""
+    #: Aviso sin bloqueo: se puede generar, pero quedarán huecos. El reparto
+    #: cubre todo lo que puede (v6.7.0); esto dice antes qué no podrá cubrir.
+    aviso: bool = False
 
 
 @dataclass(frozen=True)
@@ -39,7 +42,12 @@ class ResultadoPreflight:
 
     @property
     def faltantes(self) -> List[Requisito]:
-        return [r for r in self.requisitos if not r.cumplido]
+        return [r for r in self.requisitos if not r.cumplido and not r.aviso]
+
+    @property
+    def avisos(self) -> List[Requisito]:
+        """Lo que no impide generar pero dejará huecos sin cubrir."""
+        return [r for r in self.requisitos if not r.cumplido and r.aviso]
 
     @property
     def listo(self) -> bool:
@@ -74,6 +82,7 @@ class PreflightGeneracionUseCase:
         yield self._recreos(config)
         yield self._zonas()
         yield self._profesores()
+        yield self._profesorado_por_turno(config)
 
     # -- comprobaciones ------------------------------------------------------
 
@@ -177,6 +186,81 @@ class PreflightGeneracionUseCase:
                 f"{total} zonas activas" if total else "Crea al menos una zona de patio."
             ),
             seccion="zonas",
+        )
+
+    #: Turnos que pueden cubrir los recreos de cualquier turno (como al repartir).
+    _TURNOS_COMODIN = ("completo", "mixto", "ambos", "", None)
+
+    def _profesorado_por_turno(self, config) -> Requisito:
+        """Cada turno con recreos necesita profesorado suficiente para cubrirlos.
+
+        Un centro con todo el profesorado de tarde y recreos de mañana generaba
+        con la mitad de los huecos sin nadie elegible (2026-10-06). Y con pocos
+        mixtos pasa lo mismo a menor escala: cada profesor hace como mucho una
+        guardia al día, así que si un turno pide cada día más guardias que
+        profesores pueden cubrirlo, quedan huecos todos los días. No bloquea: se
+        reparte lo posible y aquí se dice antes qué no.
+        """
+        from services.calculador_guardias import _parse_recreos_config, turnos_con_recreos
+
+        ok = Requisito(
+            clave="turnos",
+            titulo="Profesorado para cada turno",
+            cumplido=True,
+            detalle="Cada turno con recreos tiene profesorado suficiente para cubrirlos.",
+            seccion="ajustes",
+            aviso=True,
+        )
+        if config is None:
+            return ok
+        manana, tarde = turnos_con_recreos(config)
+        recreos = _parse_recreos_config(config)
+        zonas = self.session.query(Zona).filter(Zona.activa.is_(True)).count()
+        activos = [
+            (t or "").strip().lower()
+            for (t,) in self.session.query(Profesor.turno).filter(Profesor.activo.is_(True))
+        ]
+        if not activos or not zonas:
+            return ok
+
+        problemas = []
+        for turno, hay in (("mañana", manana), ("tarde", tarde)):
+            if not hay:
+                continue
+            # Como en turnos_con_recreos: lo que no es de tarde es de mañana.
+            del_turno = [
+                r for r in recreos
+                if (str(r.get("turno") or "").strip().lower() == "tarde") == (turno == "tarde")
+            ]
+            por_dia = (
+                sum(min(int(r.get("zonas") or zonas), zonas) for r in del_turno)
+                if del_turno
+                else 2 * zonas
+            )
+            pueden = sum(1 for a in activos if a == turno or a in self._TURNOS_COMODIN)
+            if pueden == 0:
+                problemas.append(
+                    f"Hay recreos de {turno} pero ningún profesor de {turno} ni mixto: "
+                    f"todos sus huecos se quedarán sin cubrir. Si el centro no tiene guardias "
+                    f"de {turno}, desmarca «Hay guardias de {turno}» en Ajustes; si las tiene, "
+                    f"da de alta a su profesorado."
+                )
+            elif pueden < por_dia:
+                problemas.append(
+                    f"Cada día de {turno} hay {por_dia} guardias y solo {pueden} profesores "
+                    f"pueden hacerlas (de {turno} o mixtos), y cada uno hace como mucho una al "
+                    f"día: quedarán huecos de {turno} todos los días. Da de alta profesorado, "
+                    f"pon a alguien como mixto o reduce zonas o recreos de {turno}."
+                )
+        if not problemas:
+            return ok
+        return Requisito(
+            clave="turnos",
+            titulo="Profesorado para cada turno",
+            cumplido=False,
+            detalle=" ".join(problemas),
+            seccion="ajustes",
+            aviso=True,
         )
 
     def _profesores(self) -> Requisito:

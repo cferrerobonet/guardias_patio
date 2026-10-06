@@ -305,6 +305,9 @@ class AjustesForm(BaseForm):
                 self.fechas_recreos_widget.set_recreos_tarde(
                     config.hora_recreo1_tarde, config.hora_recreo2_tarde
                 )
+            from services.calculador_guardias import turnos_con_recreos
+
+            self.fechas_recreos_widget.set_turnos_con_recreos(*turnos_con_recreos(config))
 
             # Cargar ajustes
             algoritmo = getattr(config, "algoritmo_asignacion", "v4.0")
@@ -385,30 +388,35 @@ class AjustesForm(BaseForm):
         recreos = []
         recreos_manana = self.fechas_recreos_widget.get_recreos_manana()
         recreos_tarde = self.fechas_recreos_widget.get_recreos_tarde()
+        # Un turno desmarcado no tiene recreos: sin ellos no hay huecos que nadie
+        # pueda cubrir (2026-10-06). Los ids no cambian: 1-2 mañana, 3-4 tarde,
+        # que es lo que guardan las rejillas de los profesores.
+        manana = self.fechas_recreos_widget.hay_recreos_manana()
+        tarde = self.fechas_recreos_widget.hay_recreos_tarde()
 
         hora_r1_manana = recreos_manana["recreo1"]
-        if hora_r1_manana != time(0, 0):
+        if manana and hora_r1_manana != time(0, 0):
             recreos.append({
                 "id": 1, "etiqueta": "Recreo 1 Mañana",
                 "turno": "mañana", "hora": hora_r1_manana.strftime("%H:%M"), "zonas": num_zonas,
             })
 
         hora_r2_manana = recreos_manana["recreo2"]
-        if hora_r2_manana != time(0, 0):
+        if manana and hora_r2_manana != time(0, 0):
             recreos.append({
                 "id": 2, "etiqueta": "Recreo 2 Mañana",
                 "turno": "mañana", "hora": hora_r2_manana.strftime("%H:%M"), "zonas": num_zonas,
             })
 
         hora_r1_tarde = recreos_tarde["recreo1"]
-        if hora_r1_tarde != time(0, 0):
+        if tarde and hora_r1_tarde != time(0, 0):
             recreos.append({
                 "id": 3, "etiqueta": "Recreo 1 Tarde",
                 "turno": "tarde", "hora": hora_r1_tarde.strftime("%H:%M"), "zonas": num_zonas,
             })
 
         hora_r2_tarde = recreos_tarde["recreo2"]
-        if hora_r2_tarde != time(0, 0):
+        if tarde and hora_r2_tarde != time(0, 0):
             recreos.append({
                 "id": 4, "etiqueta": "Recreo 2 Tarde",
                 "turno": "tarde", "hora": hora_r2_tarde.strftime("%H:%M"), "zonas": num_zonas,

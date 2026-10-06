@@ -371,9 +371,21 @@ class ProfesorForm(BaseForm):
         self._mostrar_formulario()
 
     def _mostrar_formulario(self):
+        self._ajustar_rejilla_a_los_turnos()
         self._form_panel.setVisible(True)
         self._splitter.setStretchFactor(0, 60)
         self._splitter.setStretchFactor(1, 40)
+
+    def _ajustar_rejilla_a_los_turnos(self) -> None:
+        """Solo los recreos de los turnos con guardias en Ajustes (2026-10-06)."""
+        try:
+            from services.calculador_guardias import turnos_con_recreos_guardados
+
+            self.restricciones_widget.set_turnos_con_recreos(
+                *turnos_con_recreos_guardados(self.session)
+            )
+        except SQLAlchemyError as e:
+            logger.warning(f"No se pudieron leer los turnos con recreos: {e}")
 
     def _cerrar_formulario(self):
         self._form_panel.setVisible(False)

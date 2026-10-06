@@ -225,6 +225,32 @@ def _parse_recreos_config(config: Configuracion) -> List[dict]:
         return []
 
 
+def turnos_con_recreos(config) -> tuple[bool, bool]:
+    """(hay guardias de mañana, hay guardias de tarde) según los recreos guardados.
+
+    Un centro puede no tener recreos de mañana o de tarde (2026-10-06); Ajustes,
+    la rejilla de recreos del profesor y la comprobación previa a generar lo
+    leen de aquí. Sin lista guardada (configuraciones antiguas), por las horas.
+    """
+    if config is None:
+        return True, True
+    lista = _parse_recreos_config(config)
+    if lista:
+        # Lo que no es de tarde es de mañana: hay listas antiguas con «manana».
+        de_tarde = [str(r.get("turno") or "").strip().lower() == "tarde" for r in lista]
+        return (not all(de_tarde), any(de_tarde))
+    hora = lambda campo: getattr(config, campo, None)  # noqa: E731
+    return (
+        bool(hora("hora_recreo1_manana") or hora("hora_recreo2_manana")),
+        bool(hora("hora_recreo1_tarde") and hora("hora_recreo2_tarde")),
+    )
+
+
+def turnos_con_recreos_guardados(session) -> tuple[bool, bool]:
+    """`turnos_con_recreos` de la configuración guardada (para la interfaz)."""
+    return turnos_con_recreos(session.query(Configuracion).first())
+
+
 def ajustar_zonas_de_los_recreos(session, antes: int) -> None:
     """Al cambiar el número de zonas, los recreos que cubrían todas siguen cubriéndolas.
 

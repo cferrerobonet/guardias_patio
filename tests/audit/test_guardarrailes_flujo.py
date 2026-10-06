@@ -108,7 +108,7 @@ def test_el_preflight_detalla_cada_requisito_para_poder_guiar(session):
 
     estado = PreflightGeneracionUseCase(session).execute()
 
-    assert len(estado.requisitos) == 5
+    assert len(estado.requisitos) == 6  # + profesorado para cada turno (2026-10-06)
     for requisito in estado.requisitos:
         assert requisito.titulo
         assert requisito.detalle, f"{requisito.clave} no explica cómo resolverse"
