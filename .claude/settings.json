@@ -1,4 +1,8 @@
 {
+  "claudeMdExcludes": [
+    "**/iCloud~md~obsidian/Documents/CLAUDE.md",
+    "**/iCloud~md~obsidian/Documents/02 EPLA/CLAUDE.md"
+  ],
   "permissions": {
     "allow": [
       "Bash(git add *)",

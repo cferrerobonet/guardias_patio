@@ -19,13 +19,13 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 | Ventana y navegación | `src/presentation/ventana_principal.py` (10 vistas en `create_views`; `ContentWrapper` con margen inferior), `components/menu_lateral.py` |
 | Vista de generación **real** | `forms/asignacion_calculo_form.py` → `asignacion_widgets/calculo_panel.py` (cuotas) + `generacion_panel.py` (generar, resultados, emails) |
 | Progreso / hilos | `widgets/progress_indicators.py` (`ejecutar_con_progreso`, `ProgressDialog`), `progress_worker.py` (`WorkerThread`), `progress_handlers.py` |
-| Caso de uso generación | `application/use_cases/asignacion_guardias/generar_guardias.py` → `services/asignador_guardias_cpsat.py` (+ `_asignador_cpsat_helpers.py`, `reparto_agrupado.py`: cuotas alcanzables, reparto justo y carriles). Único algoritmo desde v6.7.0; criterios del reparto e inventario de parámetros en `tests/test_reparto_parametros.py` |
+| Caso de uso generación | `application/use_cases/asignacion_guardias/generar_guardias.py` → `services/asignador_guardias_cpsat.py` (+ `_asignador_cpsat_helpers.py`, `reparto_agrupado.py`: cuotas alcanzables, reparto justo y carriles). Único algoritmo desde v6.7.0; criterios en `.claude/rules/reparto-guardias.md` |
 | Sesión BD y PRAGMAs | `database/db_manager.py` (`initialize_user_database`, NullPool, `check_same_thread=False`, journal DELETE) |
-| Sync SFTP y bloqueo | `sync/sync_manager.py` (qué se sube y cuándo), `sync/backends.py` (SFTP y carpeta local), `sync/cuentas.py` (ficha remota), `sync/session_lock.py`, `widgets/sync_progress_dialog.py` (`SyncWorker`) |
+| Sync SFTP y bloqueo | `sync/sync_manager.py` (qué se sube y cuándo), `sync/backends.py` (SFTP y carpeta local), `sync/cuentas.py` (ficha remota), `sync/session_lock.py`, `widgets/sync_progress_dialog.py` (`SyncWorker`). Reglas: `.claude/rules/sincronizacion.md` |
 | Tema y tokens | `presentation/theme/tokens.py`, `theme/light.qss`, `themes/tema_aplicacion.py` (tres capas + inline) |
 | Modelos ORM | `infrastructure/database/models.py` |
 | Versión canónica | `src/config/settings.py` → `app_version`, igual que `pyproject.toml` (lo vigila `tests/audit/test_calidad_estatica.py`). La insignia del README no se mantiene |
-| Build | Sin PC Windows: publicar etiqueta `vX.Y.Z` → `.github/workflows/compilar.yml` compila las dos y las adjunta al release. En local: macOS `make dmg`; Windows `scripts/build_windows.ps1` (`-Diagnostico` para consola). **Un solo spec**: `GuardiasDePatio.spec` (lleva `keyring.backends`) |
+| Build y empaquetado | Regla `.claude/rules/empaquetado.md` (se carga al tocar spec, scripts de build o workflows). Publicar etiqueta `vX.Y.Z` compila las dos plataformas |
 | Auditoría vigente | `auditoria/00_INDICE.md` → `30_REGISTRO_HALLAZGOS.md` (estado) · `17_PLAN_DE_ATAQUE.md` (backlog) · **`21_PLAN_DE_AUDITORIA_AMPLIADO.md`** (checks con comando, para auditar con modelos más pequeños) · `22_RECURSOS_DE_IA.md` (qué skill usar cuándo) |
 
 ## Comandos que funcionan
@@ -37,8 +37,7 @@ $PY -m pytest tests/ -q --no-cov --timeout=120 -p no:cacheprovider    # todo (re
 $PY -m ruff check src --statistics
 $PY -m bandit -r src -q -ll · $PY -m pip_audit --progress-spinner off · $PY -m radon cc src -s -n C · $PY -m vulture src --min-confidence 80
 ```
-Los tests de API necesitan `GUARDIAS_API_SECRET_KEY=<cualquiera>` en el entorno y `slowapi` instalado.
-La suite completa pasa de una sola pasada (~3.020 tests, unos 2 minutos sin `tests/benchmarks`). Cuatro barreras automáticas en `tests/conftest.py` impiden que un test toque algo real: `dialogos_modales`, `sin_smtp_de_verdad`, `sin_llavero_de_verdad`, `sin_env_de_verdad` (marcadores `modales_reales`, `smtp_real`, `llavero_real`, `env_real` para desactivarlas).
+Reglas de tests (barreras, secreto de la API de 16+ caracteres, `timeout` en macOS): `.claude/rules/tests.md`. La suite completa pasa de una sola pasada (unos 2 minutos sin `tests/benchmarks`); el repositorio no se formatea con `ruff format`: la barrera es `ruff check`.
 
 ## Patrón polimórfico (Session | RepositoryFactory)
 Servicios en `src/services/` y clases en `src/presentation/` aceptan ambos; normalizar en `__init__`:
@@ -58,9 +57,6 @@ En funciones standalone, sin anotación `: Session` en el parámetro.
 3. Entrada en `CHANGELOG.md` con fecha.
 4. `git add -A && git commit -m "tipo(scope): descripción" && git tag v{versión} && git push && git push --tags`.
 
-## Barrera antes que test (obligatorio)
-Un test que pueda tocar red, llavero, `.env`, servidor SFTP/SMTP o una base real se escribe **después** de la barrera en `tests/conftest.py`, nunca antes. El 2026-09-06 tres tests llegaron a IONOS, al Keychain y al `.env` de desarrollo por hacerlo al revés. Un fallo de test preexistente (no causado por la sesión) se anota y no se corrige en la misma sesión.
-
 ## Seguimiento de auditorías/guiones (obligatorio)
 Al completar un ítem de un documento de auditoría o guion: tacharlo (`~~texto~~ ✅ RESUELTO vX.Y.Z`) en el documento fuente y en `auditoria/30_REGISTRO_HALLAZGOS.md`; commit junto al código.
 
@@ -75,7 +71,7 @@ python3.11 -m venv ~/.venvs/guardias-patio
 ```
 
 ## VS Code
-Ejecución y Depuración trae 9 configuraciones (app, app sin bloqueo de sesión, app en modo diagnóstico, API, y cinco de tests) y Terminal → Ejecutar tarea otras 10 (tests, lint, formato, compilar macOS/Windows, limpiar). Usan el intérprete seleccionado en el editor: elegir `~/.venvs/guardias-patio/bin/python` (no el `.venv` del repo, corrupto). `launch.json`, `tasks.json` y `extensions.json` están versionados; `settings.json` es de cada equipo.
+Configuraciones de depuración y tareas versionadas (`launch.json`, `tasks.json`); usan el intérprete `~/.venvs/guardias-patio/bin/python`, no el `.venv` del repo.
 
 ## Comprobación tras editar
 Un hook (`.claude/settings.json` → `.claude/hooks/compilar_py.py`) pasa `py_compile` a cada `.py` editado y devuelve el error de sintaxis al momento. No sustituye a `ruff` ni a los tests.
