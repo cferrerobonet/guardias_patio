@@ -182,8 +182,9 @@ class AuditoriaGuardiasForm(QWidget):
                         Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft
                     )
                     if color:
-                        from PyQt6.QtGui import QColor
-                        item.setBackground(QColor(color))
+                        from presentation.theme.modo_oscuro import color_fondo
+
+                        item.setBackground(color_fondo(color))
                     self.tabla.setItem(row, col, item)
                 # Guardar metadatos en la primera celda para el botón re-sustituir
                 self.tabla.item(row, 0).setData(

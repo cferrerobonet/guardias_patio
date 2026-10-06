@@ -9,6 +9,8 @@ from PyQt6.QtCore import QRect, Qt
 from PyQt6.QtGui import QColor, QFont, QPainter, QPen
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
+from presentation.theme.modo_oscuro import color_borde, color_fondo, color_texto
+
 #: Serie única y polos del gráfico divergente. Validados con el comprobador de
 #: paletas (contraste, separación con daltonismo): azul por debajo, naranja por
 #: encima y gris para el cero, que tiene que leerse como «nada».
@@ -135,7 +137,7 @@ class BarChartWidget(QWidget):
     def paintEvent(self, event):
         if not self._datos:
             p = QPainter(self)
-            p.setPen(QColor("#9CA3AF"))
+            p.setPen(color_texto("#9CA3AF"))
             p.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "Sin datos")
             return
         if self._horizontal:
@@ -157,19 +159,19 @@ class BarChartWidget(QWidget):
 
         if self._titulo:
             p.setFont(_fuente(TIPO_NORMAL, negrita=True))
-            p.setPen(QColor("#374151"))
+            p.setPen(color_texto("#374151"))
             p.drawText(QRect(0, 4, w, 22), Qt.AlignmentFlag.AlignCenter, self._titulo)
 
-        p.setPen(QPen(QColor("#E5E7EB"), 1))
+        p.setPen(QPen(color_borde("#E5E7EB"), 1))
         for i in range(5):
             y = pad_top + chart_h - int(chart_h * i / 4)
             p.drawLine(pad_left, y, w - pad_right, y)
             val = max_val * i / 4
-            p.setPen(QColor("#9CA3AF"))
+            p.setPen(color_texto("#9CA3AF"))
             p.setFont(_fuente(TIPO_MINIMA))
             p.drawText(QRect(0, y - 8, pad_left - 2, 16),
                        Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, str(int(val)))
-            p.setPen(QPen(QColor("#E5E7EB"), 1))
+            p.setPen(QPen(color_borde("#E5E7EB"), 1))
 
         media = sum(v for _, v, _ in self._datos) / n if n else 1
         for i, (label, valor, _) in enumerate(self._datos):
@@ -179,7 +181,7 @@ class BarChartWidget(QWidget):
             color = _color_por_valor(valor, media, max_val)
             p.fillRect(int(x), y, int(bar_w), bar_h_px, color)
             p.setFont(_fuente(TIPO_MINIMA))
-            p.setPen(QColor("#374151"))
+            p.setPen(color_texto("#374151"))
             p.drawText(
                 QRect(int(x), y - 16, int(bar_w), 16),
                 Qt.AlignmentFlag.AlignCenter,
@@ -187,7 +189,7 @@ class BarChartWidget(QWidget):
             )
             label_short = label[:10] if len(label) > 10 else label
             p.setFont(_fuente(TIPO_MINIMA))
-            p.setPen(QColor("#6B7280"))
+            p.setPen(color_texto("#6B7280"))
             p.save()
             p.translate(int(x + bar_w / 2), h - pad_bot + 4)
             p.rotate(45)
@@ -208,7 +210,7 @@ class BarChartWidget(QWidget):
 
         if self._titulo:
             p.setFont(_fuente(TIPO_NORMAL, negrita=True))
-            p.setPen(QColor("#374151"))
+            p.setPen(color_texto("#374151"))
             p.drawText(QRect(0, 6, w, 22), Qt.AlignmentFlag.AlignCenter, self._titulo)
 
         # Una serie, un color: el que se pasa. Antes se ignoraba y cada barra se
@@ -221,7 +223,7 @@ class BarChartWidget(QWidget):
 
             # Fondo alterno
             if i % 2 == 0:
-                p.fillRect(0, y - 1, w, BAR_HEIGHT + 2, QColor("#F9FAFB"))
+                p.fillRect(0, y - 1, w, BAR_HEIGHT + 2, color_fondo("#F9FAFB"))
 
             # Barra
             p.fillRect(PAD_LEFT, y + 2, bar_w_px, BAR_HEIGHT - 4, color)
@@ -231,18 +233,18 @@ class BarChartWidget(QWidget):
             if len(apellidos) > 26:
                 apellidos = apellidos[:24] + "…"
             p.setFont(_fuente(TIPO_MINIMA))
-            p.setPen(QColor("#111827"))
+            p.setPen(color_texto("#111827"))
             p.drawText(QRect(4, y, PAD_LEFT - 8, BAR_HEIGHT),
                        Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, apellidos)
 
             # Valor numérico a la derecha
             p.setFont(_fuente(TIPO_MINIMA, negrita=True))
-            p.setPen(QColor("#374151"))
+            p.setPen(color_texto("#374151"))
             p.drawText(QRect(PAD_LEFT + bar_w_px + 4, y, PAD_RIGHT - 4, BAR_HEIGHT),
                        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, str(int(valor)))
 
         # Eje base
-        p.setPen(QPen(QColor("#D1D5DB"), 1))
+        p.setPen(QPen(color_borde("#D1D5DB"), 1))
         p.drawLine(PAD_LEFT, title_h, PAD_LEFT, h - PAD_BOT)
 
 
@@ -287,7 +289,7 @@ class DivergingBarChartWidget(QWidget):
     def paintEvent(self, event):
         p = QPainter(self)
         if not self._datos:
-            p.setPen(QColor(COLOR_NEUTRO))
+            p.setPen(color_texto(COLOR_NEUTRO))
             p.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "Sin datos")
             return
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -302,7 +304,7 @@ class DivergingBarChartWidget(QWidget):
 
         if self._titulo:
             p.setFont(_fuente(TIPO_NORMAL, negrita=True))
-            p.setPen(QColor("#374151"))
+            p.setPen(color_texto("#374151"))
             p.drawText(QRect(0, 6, w, 22), Qt.AlignmentFlag.AlignCenter, self._titulo)
 
         # Leyenda de los dos polos, encima del cero
@@ -312,7 +314,7 @@ class DivergingBarChartWidget(QWidget):
             (f"← {self._rotulos[0]}", COLOR_POR_DEBAJO, Qt.AlignmentFlag.AlignRight, cero - 160),
             (f"{self._rotulos[1]} →", COLOR_POR_ENCIMA, Qt.AlignmentFlag.AlignLeft, cero + 8),
         ):
-            p.setPen(QColor(color))
+            p.setPen(color_texto(color))
             p.drawText(QRect(x0, y_leyenda, 152, 16),
                        alineacion | Qt.AlignmentFlag.AlignVCenter, texto)
 
@@ -320,18 +322,18 @@ class DivergingBarChartWidget(QWidget):
         for i, (etiqueta, valor) in enumerate(self._datos):
             y = arriba + i * (BAR_HEIGHT + BAR_GAP)
             if i % 2 == 0:
-                p.fillRect(0, y - 1, w, BAR_HEIGHT + 2, QColor("#F9FAFB"))
+                p.fillRect(0, y - 1, w, BAR_HEIGHT + 2, color_fondo("#F9FAFB"))
 
             nombre = etiqueta if len(etiqueta) <= 30 else etiqueta[:28] + "…"
             p.setFont(_fuente(TIPO_MINIMA))
-            p.setPen(QColor("#111827"))
+            p.setPen(color_texto("#111827"))
             p.drawText(QRect(4, y, PAD_LEFT - 8, BAR_HEIGHT),
                        Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, nombre)
 
             largo = int(abs(valor) / alcance * mitad)
             texto = f"{valor:+.0f}" if valor else "0"
             p.setFont(_fuente(TIPO_MINIMA, negrita=True))
-            p.setPen(QColor("#374151"))
+            p.setPen(color_texto("#374151"))
             if valor > 0:
                 p.fillRect(cero + 1, y + 4, max(2, largo), BAR_HEIGHT - 8, QColor(COLOR_POR_ENCIMA))
                 p.drawText(QRect(cero + largo + 4, y, 40, BAR_HEIGHT),
@@ -342,7 +344,7 @@ class DivergingBarChartWidget(QWidget):
                 p.drawText(QRect(cero - largo - 44, y, 40, BAR_HEIGHT),
                            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, texto)
             else:
-                p.setPen(QColor(COLOR_NEUTRO))
+                p.setPen(color_texto(COLOR_NEUTRO))
                 p.drawText(QRect(cero + 6, y, 40, BAR_HEIGHT),
                            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, texto)
 
@@ -401,7 +403,7 @@ class PieChartWidget(QWidget):
     def paintEvent(self, event):
         if not self._datos:
             p = QPainter(self)
-            p.setPen(QColor("#9CA3AF"))
+            p.setPen(color_texto("#9CA3AF"))
             p.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "Sin datos")
             return
 
@@ -414,7 +416,7 @@ class PieChartWidget(QWidget):
 
         if self._titulo:
             p.setFont(_fuente(TIPO_NORMAL, negrita=True))
-            p.setPen(QColor("#374151"))
+            p.setPen(color_texto("#374151"))
             p.drawText(QRect(0, 4, w, 22), Qt.AlignmentFlag.AlignCenter, self._titulo)
 
         chart_area_h = h - title_h - legend_h - pad * 2
@@ -432,7 +434,7 @@ class PieChartWidget(QWidget):
             span = int((valor / total) * 360 * 16)
             color = QColor(self.COLORS[i % len(self.COLORS)])
             p.setBrush(color)
-            p.setPen(QPen(QColor("white"), 2))
+            p.setPen(QPen(color_fondo("white"), 2))
             p.drawPie(cx - r, cy - r, diameter, diameter, start_angle, -span)
             # Etiqueta de porcentaje dentro del sector
             pct = valor / total * 100
@@ -442,23 +444,23 @@ class PieChartWidget(QWidget):
                 lx = int(cx + label_r * math.cos(mid_angle))
                 ly = int(cy - label_r * math.sin(mid_angle))
                 p.setFont(_fuente(TIPO_MINIMA, negrita=True))
-                p.setPen(QColor("white"))
+                p.setPen(color_texto("white"))
                 p.drawText(QRect(lx - 22, ly - 9, 44, 18), Qt.AlignmentFlag.AlignCenter,
                            f"{pct:.0f}%")
             start_angle -= span
 
         if self._donut:
             inner_r = int(r * 0.52)
-            p.setBrush(QColor("white"))
+            p.setBrush(color_fondo("white"))
             p.setPen(Qt.PenStyle.NoPen)
             p.drawEllipse(cx - inner_r, cy - inner_r, inner_r * 2, inner_r * 2)
             # Total en el centro
             p.setFont(_fuente(TIPO_TITULO, negrita=True))
-            p.setPen(QColor("#374151"))
+            p.setPen(color_texto("#374151"))
             p.drawText(QRect(cx - inner_r, cy - 14, inner_r * 2, 28),
                        Qt.AlignmentFlag.AlignCenter, str(int(total)))
             p.setFont(_fuente(TIPO_MINIMA))
-            p.setPen(QColor("#9CA3AF"))
+            p.setPen(color_texto("#9CA3AF"))
             p.drawText(QRect(cx - inner_r, cy + 12, inner_r * 2, 16),
                        Qt.AlignmentFlag.AlignCenter, "guardias")
 
@@ -470,7 +472,7 @@ class PieChartWidget(QWidget):
             p.fillRect(pad, row_y + 4, 14, 14, color)
             pct = f"{valor / total * 100:.1f}%"
             p.setFont(_fuente(TIPO_MINIMA))
-            p.setPen(QColor("#374151"))
+            p.setPen(color_texto("#374151"))
             p.drawText(pad + 20, row_y, w - pad - 20, 22,
                        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
                        f"{label}  ·  {int(valor)} guardias  ({pct})")

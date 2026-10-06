@@ -24,6 +24,7 @@ from infrastructure.database.models import (
     Profesor,
     Zona,
 )
+from services._exportador_formatos import normalizar
 
 logger = get_logger(__name__)
 
@@ -54,6 +55,10 @@ def _desencriptar_password(encrypted_password: str) -> str:
     try:
         return _get_fernet().decrypt(encrypted_password.encode("utf-8")).decode("utf-8")
     except InvalidToken:
+        # Cifrada en otro equipo, con su clave: no se puede leer, y devolver el
+        # texto cifrado guardaba como contraseña algo que no lo es.
+        if encrypted_password.startswith("gAAAAA"):
+            return ""
         try:
             return base64.b64decode(encrypted_password.encode("utf-8")).decode("utf-8")
         except (ValueError, TypeError, OSError, UnicodeDecodeError):
@@ -89,11 +94,22 @@ def _si_existe(session, modelo, id_: Optional[int]) -> Optional[int]:
     return id_ if session.get(modelo, id_) is not None else None
 
 
+_EN_CURSO = "importacion_en_curso"
+
+
+def _confirmar(session) -> None:
+    """Dentro de `importar_todo` todo va en una transacción: sólo se vuelca."""
+    if getattr(session, "info", {}).get(_EN_CURSO):
+        session.flush()
+    else:
+        session.commit()
+
+
 def vaciar_tablas(session) -> None:
     """Borra los datos en orden de dependencias, para que las claves no lo impidan."""
     for modelo in (Guardia, Ausencia, Profesor, Zona, Configuracion, CursoEscolar):
         session.query(modelo).delete()
-    session.commit()
+    _confirmar(session)
     session.expunge_all()
 
 
@@ -110,7 +126,7 @@ def importar_profesores(
         session.query(Ausencia).delete()
         session.flush()
         session.query(Profesor).delete()
-        session.commit()
+        _confirmar(session)
         session.expunge_all()
 
     count = 0
@@ -190,7 +206,7 @@ def importar_profesores(
             session.add(profesor)
         count += 1
 
-    session.commit()
+    _confirmar(session)
     return count
 
 
@@ -233,7 +249,7 @@ def importar_zonas(
             session.add(zona)
         count += 1
 
-    session.commit()
+    _confirmar(session)
     return count
 
 
@@ -330,7 +346,7 @@ def importar_configuracion(
             curso_activo_id=_si_existe(session, CursoEscolar, config_data.get("curso_activo_id")),
         )
         session.add(config)
-    session.commit()
+    _confirmar(session)
     return True
 
 
@@ -410,7 +426,7 @@ def importar_guardias(
                 session.add(guardia)
             count += 1
 
-    session.commit()
+    _confirmar(session)
     return count
 
 
@@ -492,7 +508,7 @@ def importar_ausencias(
                 session.add(ausencia)
             count += 1
 
-    session.commit()
+    _confirmar(session)
     return count
 
 
@@ -508,6 +524,8 @@ def _importar_smtp_config(smtp_data: dict[str, str]) -> bool:
             return False
 
         smtp_password = _desencriptar_password(smtp_password_encrypted)
+        if not smtp_password:
+            return False
 
         # Escritor único: la contraseña va al llavero del sistema y el
         # resto al `.env` de la carpeta de datos. Aquí se escribía en la
@@ -543,6 +561,8 @@ def _importar_sftp_config(sftp_data: dict[str, str]) -> bool:
             return False
 
         sftp_password = _desencriptar_password(sftp_password_encrypted)
+        if not sftp_password:
+            return False
 
         # Escritor único: la contraseña va al llavero del sistema y el
         # resto al `.env` de la carpeta de datos. Aquí se escribía en la
@@ -577,9 +597,8 @@ def importar_usuarios(
     try:
         user_auth = UserAuth()
 
-        if limpiar:
-            user_auth.users = {}
-
+        # Las cuentas de este equipo no se borran: una copia de otro equipo
+        # dejaba fuera a quien no viniera en ella. Se añaden y se actualizan.
         count = 0
         for usuario in usuarios_data["usuarios"]:
             username = usuario.get("username")
@@ -587,6 +606,7 @@ def importar_usuarios(
                 continue
 
             user_auth.users[username] = {
+                **user_auth.users.get(username, {}),
                 "password_hash": usuario.get("password_hash", ""),
                 "email": usuario.get("email", ""),
                 "created_at": usuario.get("created_at", ""),
@@ -669,20 +689,22 @@ def importar_cursos_escolares(
 
             count += 1
 
-        session.commit()
+        _confirmar(session)
         return count
     except (SQLAlchemyError, ValueError, TypeError) as e:
+        if getattr(session, "info", {}).get(_EN_CURSO):
+            raise
         logger.warning(f"Error al importar cursos escolares: {e}")
         session.rollback()
         return 0
 
 
 def importar_todo(
-    session, ruta_archivo: Union[str, Path], limpiar: bool = False
+    session, ruta_archivo: Union[str, Path], limpiar: bool = False, clave: Optional[bytes] = None
 ) -> dict[str, int]:
     ruta = Path(ruta_archivo)
     with ruta.open("r", encoding="utf-8") as f:
-        datos = json.load(f)
+        datos = normalizar(json.load(f), clave)
 
     resultado = {
         "profesores": 0,
@@ -696,43 +718,56 @@ def importar_todo(
         "cursos_escolares": 0,
     }
 
-    if "smtp_config" in datos and datos["smtp_config"]:
+    # Todo en una transacción: si algo falla, la base se queda como estaba. Antes
+    # cada tabla se confirmaba por separado y un error a medias la dejaba vacía.
+    session.info[_EN_CURSO] = True
+    confirmado = False
+    try:
+        # Orden de dependencias: cada tabla después de las que referencia. Antes
+        # los profesores entraban antes que las zonas y, con las claves foráneas
+        # activas, una zona preferida abortaba la restauración (2026-10-03).
+        if limpiar:
+            vaciar_tablas(session)
+
+        if "cursos_escolares" in datos:
+            resultado["cursos_escolares"] = importar_cursos_escolares(
+                session, datos["cursos_escolares"]
+            )
+
+        if "zonas" in datos:
+            resultado["zonas"] = importar_zonas(session, datos["zonas"])
+
+        if "profesores" in datos:
+            resultado["profesores"] = importar_profesores(session, datos["profesores"])
+
+        if "configuracion" in datos:
+            resultado["configuracion"] = (
+                1 if importar_configuracion(session, datos["configuracion"]) else 0
+            )
+
+        if "guardias" in datos:
+            resultado["guardias"] = importar_guardias(session, datos["guardias"])
+
+        if "ausencias" in datos:
+            resultado["ausencias"] = importar_ausencias(session, datos["ausencias"])
+
+        session.commit()
+        confirmado = True
+    finally:
+        session.info.pop(_EN_CURSO, None)
+        if not confirmado:
+            session.rollback()
+
+    # Cuentas y credenciales, sólo con los datos ya restaurados.
+    if datos.get("smtp_config"):
         if _importar_smtp_config(datos["smtp_config"]):
             resultado["smtp_config"] = 1
 
-    if "sftp_config" in datos and datos["sftp_config"]:
+    if datos.get("sftp_config"):
         if _importar_sftp_config(datos["sftp_config"]):
             resultado["sftp_config"] = 1
 
     if "usuarios" in datos:
         resultado["usuarios"] = importar_usuarios(datos["usuarios"], limpiar)
-
-    # Orden de dependencias: cada tabla después de las que referencia. Antes los
-    # profesores entraban antes que las zonas y, con las claves foráneas activas,
-    # una zona preferida abortaba la restauración (2026-10-03).
-    if limpiar:
-        vaciar_tablas(session)
-
-    if "cursos_escolares" in datos:
-        resultado["cursos_escolares"] = importar_cursos_escolares(
-            session, datos["cursos_escolares"]
-        )
-
-    if "zonas" in datos:
-        resultado["zonas"] = importar_zonas(session, datos["zonas"])
-
-    if "profesores" in datos:
-        resultado["profesores"] = importar_profesores(session, datos["profesores"])
-
-    if "configuracion" in datos:
-        resultado["configuracion"] = (
-            1 if importar_configuracion(session, datos["configuracion"]) else 0
-        )
-
-    if "guardias" in datos:
-        resultado["guardias"] = importar_guardias(session, datos["guardias"])
-
-    if "ausencias" in datos:
-        resultado["ausencias"] = importar_ausencias(session, datos["ausencias"])
 
     return resultado

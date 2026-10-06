@@ -27,6 +27,13 @@ from utils.icons import icon_for_button
 from utils.ui_helpers import get_corporate_icon
 
 
+def _azul_texto() -> str:
+    """El azul de los textos HTML, aclarado en modo oscuro (no pasan por la hoja)."""
+    from presentation.theme.modo_oscuro import color_texto
+
+    return color_texto("#0E5FA8").name()
+
+
 class RegisterDialog(QDialog):
     """Diálogo de registro de nuevo usuario con confirmación de contraseña."""
 
@@ -244,7 +251,7 @@ class RegisterDialog(QDialog):
                 | Qt.WindowType.WindowTitleHint
             )
             msg.setText(
-                f"Usuario <span style='color: #0E5FA8; font-style: italic;'>{username}</span> "
+                f"Usuario <span style='color: {_azul_texto()}; font-style: italic;'>{username}</span> "
                 f"registrado correctamente.<br><br>"
                 f"Ahora puedes iniciar sesión con tus credenciales."
             )
@@ -442,7 +449,8 @@ class LoginDialog(QDialog):
         form_layout_outer.addSpacing(8)
 
         forgot_password_label = QLabel(
-            '<a href="#" style="color: #0E5FA8; text-decoration: none;">¿Olvidaste tu contraseña?</a>'
+            f'<a href="#" style="color: {_azul_texto()}; text-decoration: none;">'
+            "¿Olvidaste tu contraseña?</a>"
         )
         forgot_password_label.setStyleSheet("font-size: 12px; background: transparent;")
         forgot_password_label.setTextFormat(Qt.TextFormat.RichText)
@@ -659,7 +667,7 @@ class LoginDialog(QDialog):
                 | Qt.WindowType.WindowTitleHint
             )
             msg.setText(
-                "Por favor, introduce tu <span style='color: #0E5FA8; "
+                f"Por favor, introduce tu <span style='color: {_azul_texto()}; "
                 "font-style: italic;'>nueva contraseña</span> para iniciar sesión."
             )
             msg.exec()

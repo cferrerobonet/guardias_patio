@@ -195,7 +195,13 @@ class VentanaPrincipal(QMainWindow):
             "Ausencias / Sustituciones",
             lambda: AusenciasSustitucionesWidget(session),
         )
-        self._register("importar", "Importar / Exportar Datos", lambda: ImportExportForm(session))
+        self._register(
+            "importar",
+            "Importar / Exportar Datos",
+            lambda: ImportExportForm(
+                session, getattr(self.sync_manager, "clave_datos", None)
+            ),
+        )
         self._register("reportes", "Generador de Reportes", lambda: ReportesForm(session))
         self._register("estadisticas", "Estadísticas", lambda: PanelEstadisticas(session))
 

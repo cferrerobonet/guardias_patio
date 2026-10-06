@@ -162,6 +162,12 @@ def main():
     # Crear la aplicación
     app = QApplication(sys.argv)
 
+    # Claro u oscuro según el sistema, antes de que nadie ponga estilos: cada hoja
+    # se traduce al aplicarse y se rehace si el sistema cambia de modo.
+    from presentation.theme import modo_oscuro
+
+    modo_oscuro.instalar(app)
+
     # Manejar señales de terminación para graceful shutdown
     import signal
 

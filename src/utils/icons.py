@@ -223,10 +223,14 @@ class Icons:
 
     @classmethod
     def _create_colored_icon(cls, svg_path: Path, color: str, size: int) -> QIcon:
-        """Crea un QIcon a partir de un SVG con el color especificado."""
-        # Leer el SVG
-        svg_content = svg_path.read_text()
+        """Crea un QIcon a partir de un SVG; en modo oscuro, con el color aclarado."""
+        from presentation.theme.modo_oscuro import icono_segun_modo
 
+        svg = svg_path.read_text()
+        return icono_segun_modo(lambda c: cls._pintar_svg(svg, c, size), color)
+
+    @staticmethod
+    def _pintar_svg(svg_content: str, color: str, size: int) -> QIcon:
         # Inyectar el color en el SVG
         # Si no tiene fill definido, agregar fill al path
         if 'fill=' not in svg_content:

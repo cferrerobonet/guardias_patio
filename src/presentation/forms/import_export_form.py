@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 from infrastructure.repositories.repository_factory import RepositoryFactory
 from presentation.dialogs.column_mapping_dialog import ColumnMappingDialog
@@ -41,14 +42,16 @@ class ImportExportForm(BaseForm):
     zonas_importadas = pyqtSignal()
     datos_recargados = pyqtSignal()
 
-    def __init__(self, session):
+    def __init__(self, session, clave_datos=None):
         """
         Inicializar formulario de importación/exportación.
 
         Args:
             session: Sesión de base de datos
+            clave_datos: Clave de la cuenta, para leer las ausencias del volcado de la nube
         """
         super().__init__(session)
+        self.clave_datos = clave_datos
         self.setup_ui()
 
     # ========== PROPIEDADES DE COMPATIBILIDAD ==========
@@ -394,7 +397,9 @@ class ImportExportForm(BaseForm):
                 return
 
             # Importar datos
-            resultado = ExportadorDatos.importar_todo(self.session, archivo, limpiar)
+            resultado = ExportadorDatos.importar_todo(
+                self.session, archivo, limpiar, self.clave_datos
+            )
 
             mensaje = (
                 f"✅ Datos importados exitosamente desde:\n{archivo}\n\n"
@@ -435,9 +440,12 @@ class ImportExportForm(BaseForm):
             msg.setStyleSheet(self.parent().styleSheet() if self.parent() else "")
             msg.exec()
 
-        except (ValueError, TypeError) as e:
+        except (ValueError, TypeError, KeyError, OSError, SQLAlchemyError) as e:
+            # La importación va en una transacción: un fallo no toca los datos.
             self.manejar_excepcion(e, "importar datos")
-            self.resultado_text.setText(f"Error al importar: {e}")
+            self.resultado_text.setText(
+                f"Error al importar: {e}\n\nNo se ha cambiado ningún dato."
+            )
 
     def importar_profesores(self):
         """Importar profesores desde un archivo Excel."""

@@ -590,7 +590,6 @@ def pintar_tabla_vacia(tabla, mensaje: str) -> bool:
     Devuelve True si ha tenido que escribir el mensaje.
     """
     from PyQt6.QtCore import Qt
-    from PyQt6.QtGui import QColor
     from PyQt6.QtWidgets import QTableWidgetItem
 
     if tabla.rowCount() > 0:
@@ -601,7 +600,9 @@ def pintar_tabla_vacia(tabla, mensaje: str) -> bool:
     celda = QTableWidgetItem(mensaje)
     celda.setFlags(Qt.ItemFlag.ItemIsEnabled)
     celda.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-    celda.setForeground(QColor("#6B7280"))
+    from presentation.theme.modo_oscuro import color_texto
+
+    celda.setForeground(color_texto("#6B7280"))
     tabla.setItem(0, 0, celda)
     if columnas > 1:
         tabla.setSpan(0, 0, 1, columnas)

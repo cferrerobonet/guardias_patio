@@ -5,6 +5,29 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.8.0] - 2026-10-06
+
+### 🎯 Resumen
+Modo oscuro que sigue al del sistema operativo y una importación de copias JSON que ya no puede dejar la base a medias. Con el sistema en oscuro la aplicación mezclaba zonas negras con texto oscuro y no se podía usar; y «Importar datos» fallaba con el JSON de la nube («list indices must be integers or slices, not str», en el registro del 2026-09-30 y del 2026-10-04) después de haber vaciado ya las tablas.
+
+### ✨ Added
+- **Modo oscuro automático** (`presentation/theme/modo_oscuro.py`). Sin botón: manda el sistema, y si cambia con la aplicación abierta se repinta todo sin reiniciar. Cada hoja de estilos se guarda en claro y se traduce al aplicarse según el uso de cada color: fondos y bordes claros a oscuros, textos oscuros a claros, acentos (botones, avisos) conservados y velos translúcidos intactos. Paleta de Qt oscura, Fusion en Windows y Linux (sus controles nativos se pintan siempre en claro) y estilo nativo en macOS. Los iconos se repintan con el color del modo de cada momento; los gráficos, el mapa de calor y las celdas coloreadas usan los mismos colores traducidos. `GUARDIAS_TEMA=oscuro|claro` lo fuerza para pruebas.
+- «Importar datos» acepta también el volcado de la nube (`guardias_patio_data.json`): configuración y cursos como listas y ausencias cifradas, que se leen con la clave de la sesión.
+
+### Fixed
+- **La importación de una copia JSON va en una sola transacción**: si algo falla, la base queda como estaba. Antes cada tabla se confirmaba por separado y un error a medias la dejaba vacía. Todo se valida y se descifra antes de borrar nada.
+- Los fallos de importación de base de datos, de lectura o de claves que faltan se avisan al usuario («No se ha cambiado ningún dato») en lugar de escaparse sin control.
+- Una copia hecha en otro equipo ya no guarda como contraseña de correo o del servidor el texto cifrado que no se puede leer aquí: se deja la configuración de este equipo.
+- Importar una copia ya no borra las cuentas de este equipo que no vengan en ella ni sus datos de bloqueo; las añade o las actualiza. Cuentas y credenciales se tocan sólo con los datos ya restaurados.
+- Exportar serializa los datos antes de abrir el archivo: un fallo no deja un JSON cortado.
+- Celda del curso activo: texto negro sobre el amarillo en los dos modos.
+
+### 🧹 Housekeeping
+- Comprobado con una copia de los datos reales (69 profesores, 4 zonas, 2.452 guardias): copia JSON a base vacía, sobre los mismos datos y limpiando; volcado de la nube importado como copia; subida y descarga de la nube; descarga del volcado real del servidor; copia rota a medias (la base no cambia) y volcado con ausencias cifradas. Todo idéntico columna a columna.
+- Tests nuevos en `tests/test_ida_y_vuelta_completa.py` (volcado de la nube como copia, sin clave no toca nada, fallo a medias) y `tests/test_modo_oscuro.py`.
+- `services/_exportador_formatos.py`: la adaptación del volcado de la nube, aparte para no pasar el techo de líneas de `_exportador_import.py`.
+- FUN-010: tema oscuro hecho; queda el alto contraste.
+
 ## [6.7.0] - 2026-10-03
 
 ### 🎯 Resumen

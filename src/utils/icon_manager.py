@@ -73,10 +73,15 @@ class IconManager:
             logger.debug(f"Icono no encontrado: {icon_file}")
             return QIcon()  # Retorna icono vacío
 
-        # Leer el contenido del SVG
         with open(icon_file, "r", encoding="utf-8") as f:
-            svg_content = f.read()
+            svg = f.read()
 
+        from presentation.theme.modo_oscuro import icono_segun_modo
+
+        return icono_segun_modo(lambda c: self._pintar_svg(svg, c, size), color)
+
+    @staticmethod
+    def _pintar_svg(svg_content: str, color: str, size: int) -> QIcon:
         # Reemplazar el color del SVG de manera más agresiva
         # Los SVGs de Material Design usan diferentes formatos
         svg_content = svg_content.replace('fill="currentColor"', f'fill="{color}"')

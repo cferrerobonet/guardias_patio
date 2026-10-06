@@ -373,9 +373,10 @@ class ExportadorDatos:
             "cursos_escolares": ExportadorDatos.exportar_cursos_escolares(session),  # Cursos
         }
 
-        ruta = Path(ruta_archivo)
-        with ruta.open("w", encoding="utf-8") as f:
-            json.dump(datos_completos, f, ensure_ascii=False, indent=2)
+        # Se serializa antes de abrir el archivo: un fallo a medias dejaba un JSON
+        # cortado que después no se podía importar.
+        texto = json.dumps(datos_completos, ensure_ascii=False, indent=2)
+        Path(ruta_archivo).write_text(texto, encoding="utf-8")
 
     @staticmethod
     def importar_profesores(
@@ -429,6 +430,9 @@ class ExportadorDatos:
 
     @staticmethod
     def importar_todo(
-        session, ruta_archivo: Union[str, Path], limpiar: bool = False
+        session,
+        ruta_archivo: Union[str, Path],
+        limpiar: bool = False,
+        clave: Optional[bytes] = None,
     ) -> dict[str, int]:
-        return _importar_todo_impl(session, ruta_archivo, limpiar)
+        return _importar_todo_impl(session, ruta_archivo, limpiar, clave)

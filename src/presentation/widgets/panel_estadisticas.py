@@ -9,7 +9,6 @@ from collections import defaultdict
 from datetime import timedelta
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QHeaderView,
     QLabel,
@@ -25,6 +24,7 @@ from PyQt6.QtWidgets import (
 from application.use_cases.asignacion_guardias import ObtenerEstadisticasPanelUseCase
 from infrastructure.database.models import Guardia, Profesor
 from presentation.forms.base_form import BaseForm
+from presentation.theme.modo_oscuro import color_fondo, color_texto
 from presentation.themes.tema_aplicacion import (
     CONTENT_BG_ALT,
     PRIMARY_BLUE,
@@ -321,8 +321,8 @@ class PanelEstadisticas(BaseForm):
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 if n > 0:
                     fondo, texto = self.ESCALA_SEMANAL[min(n, 3) - 1]
-                    item.setBackground(QColor(fondo))
-                    item.setForeground(QColor(texto))
+                    item.setBackground(color_fondo(fondo))
+                    item.setForeground(color_texto(texto))
                 self.tabla_heatmap.setItem(row, col + 1, item)
 
     def actualizar_estadisticas(self):

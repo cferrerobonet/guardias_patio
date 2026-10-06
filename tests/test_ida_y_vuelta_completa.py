@@ -288,3 +288,47 @@ def test_una_referencia_huerfana_no_tumba_la_descarga(origen, destino, tmp_path)
     assert profesor.zona_preferida_id is None and profesor.curso_id is None
     assert destino.get(Configuracion, 1).curso_activo_id is None
     assert destino.get(Guardia, 31).profesor_sustituido_id is None
+
+
+def test_el_volcado_de_la_nube_se_puede_importar_como_copia(origen, destino, tmp_path):
+    """Importar `guardias_patio_data.json` desde «Importar datos» fallaba (2026-10-04)."""
+    from services.exportador import ExportadorDatos
+    from sync.data_exporter import DataExporter
+
+    ruta = tmp_path / "guardias_patio_data.json"
+    assert DataExporter.export_to_json(origen, ruta, clave=CLAVE)
+    resultado = ExportadorDatos.importar_todo(destino, ruta, limpiar=True, clave=CLAVE)
+    destino.expire_all()
+    assert resultado["cursos_escolares"] == 2 and resultado["configuracion"] == 1
+    assert _volcado(destino, SOLO_EN_LOCAL) == _volcado(origen, SOLO_EN_LOCAL)
+
+
+def test_el_volcado_de_la_nube_sin_clave_no_toca_nada(origen, tmp_path):
+    from services.exportador import ExportadorDatos
+    from sync.data_exporter import DataExporter
+
+    ruta = tmp_path / "guardias_patio_data.json"
+    assert DataExporter.export_to_json(origen, ruta, clave=CLAVE)
+    antes = _volcado(origen)
+    with pytest.raises(ValueError, match="cifrados"):
+        ExportadorDatos.importar_todo(origen, ruta, limpiar=True)
+    origen.expire_all()
+    assert _volcado(origen) == antes
+
+
+def test_una_copia_que_falla_a_medias_deja_la_base_como_estaba(
+    origen, tmp_path, monkeypatch
+):
+    from services.exportador import ExportadorDatos
+
+    ruta = tmp_path / "copia.json"
+    _copia_manual(origen, ruta, monkeypatch)
+    datos = json.loads(ruta.read_text(encoding="utf-8"))
+    del datos["guardias"][1]["fecha"]
+    ruta.write_text(json.dumps(datos), encoding="utf-8")
+    antes = _volcado(origen)
+
+    with pytest.raises(KeyError):
+        ExportadorDatos.importar_todo(origen, ruta, limpiar=True)
+    origen.expire_all()
+    assert _volcado(origen) == antes

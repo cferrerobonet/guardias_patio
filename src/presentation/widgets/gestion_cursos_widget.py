@@ -203,6 +203,7 @@ class GestionCursosWidget(QWidget):
                 # Resaltar curso activo
                 if curso.activo:
                     item_nombre.setBackground(Qt.GlobalColor.yellow)
+                    item_nombre.setForeground(Qt.GlobalColor.black)
                     item_nombre.setText(f"⭐ {curso.nombre}")
 
                 self.tabla_cursos.setItem(i, 0, item_nombre)

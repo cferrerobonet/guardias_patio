@@ -3,6 +3,7 @@ paths:
   - "src/sync/**"
   - "src/services/exportador.py"
   - "src/services/_exportador_import.py"
+  - "src/services/_exportador_formatos.py"
   - "src/infrastructure/database/models.py"
   - "alembic/versions/**"
   - "tests/test_ida_y_vuelta_completa.py"
