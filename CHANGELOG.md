@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [6.9.1] - 2026-10-06
+
+### 🎯 Resumen
+Librerías con vulnerabilidades conocidas actualizadas. La comprobación de GitHub (pip-audit) fallaba desde que se publicaron 14 avisos sobre PyJWT 2.13.0.
+
+### Fixed
+- **PyJWT 2.13.0 → 2.15.0** (`requirements.txt`, `requirements.lock`, `pyproject.toml`): 14 vulnerabilidades (PYSEC-2026-4140 a 4152 y CVE-2026-102275), corregidas en la 2.14.0 y la 2.15.0. La usa la API REST para sus tokens.
+- **urllib3 2.7.0 → 2.8.0** (`requirements.lock`): 3 vulnerabilidades (PYSEC-2026-4175 a 4177). La comprobación de GitHub no la veía porque audita las dependencias de desarrollo, no el fichero fijado.
+
+### 🧹 Housekeeping
+- `pip-audit` sin vulnerabilidades y `pip check` sin conflictos; la suite completa pasa.
+
 ## [6.9.0] - 2026-10-06
 
 ### 🎯 Resumen
