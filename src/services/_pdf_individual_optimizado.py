@@ -145,19 +145,18 @@ def exportar_profesor_individual_optimizado(
         )
         banner.add(fondo)
 
-        borde = Rect(
-            0, 0, ancho_pagina, 0.3 * cm, fillColor=PDFStyles.AZUL_OSCURO, strokeColor=None
-        )
+        # Filete dorado bajo la banda verde, como en la aplicación
+        borde = Rect(0, 0, ancho_pagina, 0.12 * cm, fillColor=PDFStyles.DORADO, strokeColor=None)
         banner.add(borde)
 
         titulo_texto = String(
             ancho_pagina / 2,
             altura_banner - 0.8 * cm,
             "CALENDARIO PERSONAL DE GUARDIAS",
-            fontSize=PDFStyles.TAMANO_TITULO_PRINCIPAL,
+            fontSize=20,
             fontName=PDFStyles.FUENTE_TITULO,
             textAnchor="middle",
-            fillColor=colors.whitesmoke,
+            fillColor=colors.white,
         )
         banner.add(titulo_texto)
 
@@ -183,9 +182,9 @@ def exportar_profesor_individual_optimizado(
             f"Turno: {turno_valor}     Tutor: {tutor_valor}     "
             f"Periodo: {periodo_inicio} - {periodo_fin}",
             fontSize=9,
-            fontName="Helvetica",
+            fontName=PDFStyles.FUENTE_NORMAL,
             textAnchor="middle",
-            fillColor=colors.whitesmoke,
+            fillColor=colors.white,
         )
         banner.add(linea_info)
 
@@ -262,7 +261,7 @@ def exportar_profesor_individual_optimizado(
                     leyenda_ancho,
                     leyenda_alto,
                     fillColor=PDFStyles.FONDO_CLARO,
-                    strokeColor=colors.HexColor("#dee2e6"),
+                    strokeColor=PDFStyles.LINEA,
                     strokeWidth=1,
                 )
                 leyenda_drawing.add(marco)
@@ -274,8 +273,8 @@ def exportar_profesor_individual_optimizado(
                     x_pos,
                     y_pos,
                     "Recreos:",
-                    fontSize=7,
-                    fontName="Helvetica-Bold",
+                    fontSize=8,
+                    fontName=PDFStyles.FUENTE_NEGRITA,
                     textAnchor="start",
                 )
                 leyenda_drawing.add(texto)
@@ -288,22 +287,22 @@ def exportar_profesor_individual_optimizado(
                             x_pos,
                             y_pos + 0.08 * cm,
                             0.08 * cm,
-                            fillColor=colors.grey,
-                            strokeColor=colors.grey,
+                            fillColor=PDFStyles.TEXTO_GRIS,
+                            strokeColor=PDFStyles.TEXTO_GRIS,
                         )
                         leyenda_drawing.add(circulo)
-                        forma_nombre = "●=R1"
+                        forma_nombre = "R1"
                     elif recreo == 2:
                         cuadrado = Rect(
                             x_pos - 0.08 * cm,
                             y_pos,
                             0.16 * cm,
                             0.16 * cm,
-                            fillColor=colors.grey,
-                            strokeColor=colors.grey,
+                            fillColor=PDFStyles.TEXTO_GRIS,
+                            strokeColor=PDFStyles.TEXTO_GRIS,
                         )
                         leyenda_drawing.add(cuadrado)
-                        forma_nombre = "■=R2"
+                        forma_nombre = "R2"
                     elif recreo == 3:
                         puntos = [
                             x_pos,
@@ -314,10 +313,10 @@ def exportar_profesor_individual_optimizado(
                             y_pos,
                         ]
                         triangulo = Polygon(
-                            puntos, fillColor=colors.grey, strokeColor=colors.grey
+                            puntos, fillColor=PDFStyles.TEXTO_GRIS, strokeColor=PDFStyles.TEXTO_GRIS
                         )
                         leyenda_drawing.add(triangulo)
-                        forma_nombre = "▲=R3"
+                        forma_nombre = "R3"
                     else:
                         puntos = [
                             x_pos,
@@ -329,16 +328,18 @@ def exportar_profesor_individual_optimizado(
                             x_pos - 0.08 * cm,
                             y_pos + 0.04 * cm,
                         ]
-                        rombo = Polygon(puntos, fillColor=colors.grey, strokeColor=colors.grey)
+                        rombo = Polygon(
+                            puntos, fillColor=PDFStyles.TEXTO_GRIS, strokeColor=PDFStyles.TEXTO_GRIS
+                        )
                         leyenda_drawing.add(rombo)
-                        forma_nombre = f"◆=R{recreo}"
+                        forma_nombre = f"R{recreo}"
 
                     texto = String(
                         x_pos + 0.22 * cm,
                         y_pos,
                         forma_nombre,
-                        fontSize=6,
-                        fontName="Helvetica",
+                        fontSize=7.5,
+                        fontName=PDFStyles.FUENTE_NORMAL,
                         textAnchor="start",
                     )
                     leyenda_drawing.add(texto)
@@ -350,7 +351,7 @@ def exportar_profesor_individual_optimizado(
                     0.1 * cm,
                     0.02 * cm,
                     leyenda_alto - 0.2 * cm,
-                    fillColor=colors.HexColor("#dee2e6"),
+                    fillColor=PDFStyles.LINEA,
                     strokeColor=None,
                 )
                 leyenda_drawing.add(sep)
@@ -360,8 +361,8 @@ def exportar_profesor_individual_optimizado(
                     x_pos,
                     y_pos,
                     "Zonas:",
-                    fontSize=7,
-                    fontName="Helvetica-Bold",
+                    fontSize=8,
+                    fontName=PDFStyles.FUENTE_NEGRITA,
                     textAnchor="start",
                 )
                 leyenda_drawing.add(texto)
@@ -392,8 +393,8 @@ def exportar_profesor_individual_optimizado(
                         x_pos + 0.15 * cm,
                         y_pos,
                         zona_nombre,
-                        fontSize=6,
-                        fontName="Helvetica",
+                        fontSize=7.5,
+                        fontName=PDFStyles.FUENTE_NORMAL,
                         textAnchor="start",
                     )
                     leyenda_drawing.add(texto)
@@ -476,7 +477,7 @@ def exportar_profesor_individual_optimizado(
                         ("TEXTCOLOR", (3, fila_actual), (3, fila_actual), color_recreo)
                     )
                     estilos_filas.append(
-                        ("FONTNAME", (3, fila_actual), (3, fila_actual), "Helvetica-Bold")
+                        ("FONTNAME", (3, fila_actual), (3, fila_actual), PDFStyles.FUENTE_NEGRITA)
                     )
 
                     if guardia.zona:
@@ -485,7 +486,12 @@ def exportar_profesor_individual_optimizado(
                             ("TEXTCOLOR", (4, fila_actual), (4, fila_actual), color_zona)
                         )
                         estilos_filas.append(
-                            ("FONTNAME", (4, fila_actual), (4, fila_actual), "Helvetica-Bold")
+                            (
+                                "FONTNAME",
+                                (4, fila_actual),
+                                (4, fila_actual),
+                                PDFStyles.FUENTE_NEGRITA,
+                            )
                         )
 
                     fila_actual += 1
@@ -496,7 +502,7 @@ def exportar_profesor_individual_optimizado(
                         "LINEBELOW",
                         (0, fila_actual - 1),
                         (-1, fila_actual - 1),
-                        3,
+                        1.5,
                         PDFStyles.AZUL_PRINCIPAL,
                     )
                 )
@@ -505,15 +511,17 @@ def exportar_profesor_individual_optimizado(
 
         estilos_base = [
             ("BACKGROUND", (0, 0), (-1, 0), PDFStyles.FONDO_TABLA_HEADER),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("FONTNAME", (0, 0), (-1, 0), PDFStyles.FUENTE_NEGRITA),
             ("FONTSIZE", (0, 0), (-1, 0), PDFStyles.TAMANO_ENCABEZADO_TABLA),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+            ("TOPPADDING", (0, 0), (-1, 0), 7),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 7),
             ("TEXTCOLOR", (0, 1), (2, -1), PDFStyles.TEXTO_OSCURO),
             ("FONTNAME", (0, 1), (-1, -1), PDFStyles.FUENTE_NORMAL),
             ("FONTSIZE", (0, 1), (-1, -1), PDFStyles.TAMANO_CUERPO_TABLA),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("LINEBELOW", (0, 0), (-1, -1), 0.4, PDFStyles.LINEA),
+            ("BOX", (0, 0), (-1, -1), 0.6, PDFStyles.LINEA),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("TOPPADDING", (0, 1), (-1, -1), 6),
             ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
@@ -531,7 +539,8 @@ def exportar_profesor_individual_optimizado(
             "ResumenIndividual",
             parent=styles["Normal"],
             fontSize=11,
-            textColor=colors.HexColor("#2c3e50"),
+            fontName=PDFStyles.FUENTE_NORMAL,
+            textColor=PDFStyles.TEXTO_OSCURO,
         )
 
         total_guardias = len(guardias)
@@ -550,7 +559,7 @@ def exportar_profesor_individual_optimizado(
             zona_mas_frecuente = ("N/A", 0)
 
         resumen_text = f"""
-        <b>📊 Resumen Estadístico:</b><br/>
+        <b>Resumen del curso</b><br/>
         • Total de guardias: {total_guardias}<br/>
         • Días con guardias: {dias_con_guardias}<br/>
         • Guardias de mañana: {guardias_manana}<br/>
@@ -568,7 +577,8 @@ def exportar_profesor_individual_optimizado(
             "FooterIndividual",
             parent=styles["Normal"],
             fontSize=8,
-            textColor=colors.grey,
+            fontName=PDFStyles.FUENTE_NORMAL,
+            textColor=PDFStyles.TEXTO_GRIS,
             alignment=2,
         )
 
@@ -578,7 +588,9 @@ def exportar_profesor_individual_optimizado(
 
         reportar_progreso(95, "Construyendo PDF...")
 
-        doc.build(elements)
+        doc.build(
+            elements, onFirstPage=PDFStyles.pie_de_pagina, onLaterPages=PDFStyles.pie_de_pagina
+        )
 
         reportar_progreso(100, "PDF generado exitosamente")
         return True

@@ -171,34 +171,67 @@ def _pagina(profesor, guardias, enlace: str, nombre_centro: str) -> str:
 <meta name="robots" content="noindex, nofollow">
 <title>Guardias de patio — {html.escape(profesor.nombre_completo)}</title>
 <style>
-  :root {{ color-scheme: light dark; }}
-  body {{ font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-         margin: 0 auto; max-width: 46rem; padding: 1.5rem; line-height: 1.5; }}
-  h1 {{ font-size: 1.35rem; margin-bottom: 0.25rem; }}
-  h2 {{ font-size: 1.05rem; margin-top: 2rem; }}
-  p.centro {{ color: #6B7280; margin-top: 0; }}
-  table {{ border-collapse: collapse; width: 100%; font-size: 0.95rem; }}
-  th {{ background: #0E5FA8; color: #fff; text-align: left; padding: 0.5rem 0.6rem; }}
-  td {{ padding: 0.45rem 0.6rem; border-bottom: 1px solid #E1E4E8; }}
-  tr:nth-child(even) td {{ background: rgba(0,0,0,0.03); }}
-  .suscribir {{ display: inline-block; margin: 1.5rem 0; padding: 0.6rem 1rem;
-                background: #0E5FA8; color: #fff; text-decoration: none;
-                border-radius: 4px; }}
-  footer {{ margin-top: 2.5rem; font-size: 0.85rem; color: #6B7280; }}
-  @media (max-width: 30rem) {{ body {{ padding: 1rem; }} table {{ font-size: 0.85rem; }} }}
+  /* Paleta de la aplicación (y de Partes de salida), en claro y en oscuro. Barlow
+     solo si el equipo la tiene: la página no carga nada de fuera. */
+  :root {{ color-scheme: light dark;
+           --fondo: #F3F5F1; --lienzo: #FFFFFF; --banda: #EEF2EC; --linea: #D9E0D5;
+           --texto: #1D2A20; --tenue: #5D6B60; --verde: #2C7A3A; --verde-osc: #1C5226;
+           --sobre-verde: #FFFFFF; --dorado: #B97A12; }}
+  @media (prefers-color-scheme: dark) {{
+    :root {{ --fondo: #121713; --lienzo: #1A211C; --banda: #222B24; --linea: #323D35;
+             --texto: #E4EBE5; --tenue: #9AA89D; --verde: #5FBF6E; --verde-osc: #7FD08C;
+             --sobre-verde: #0D1A10; --dorado: #E3A94A; }}
+  }}
+  body {{ font-family: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+         background: var(--fondo); color: var(--texto); margin: 0; padding: 1.5rem 1rem;
+         line-height: 1.5; }}
+  main {{ max-width: 46rem; margin: 0 auto; background: var(--lienzo);
+          border: 1px solid var(--linea); border-radius: 12px; overflow: hidden; }}
+  header {{ padding: 1.25rem 1.5rem 1rem; border-bottom: 4px solid var(--verde);
+            box-shadow: 0 2px 0 var(--dorado); }}
+  .contenido {{ padding: 0.5rem 1.5rem 1.5rem; }}
+  h1, h2 {{ font-family: "Barlow Condensed", "Arial Narrow", "Barlow", system-ui, sans-serif;
+            font-weight: 700; }}
+  h1 {{ font-size: 1.7rem; line-height: 1.15; margin: 0 0 0.25rem; }}
+  h2 {{ font-size: 1.25rem; margin: 1.75rem 0 0.5rem; color: var(--verde-osc); }}
+  p.centro {{ color: var(--tenue); margin: 0; }}
+  table {{ border-collapse: collapse; width: 100%; font-size: 0.95rem;
+           border: 1px solid var(--linea); border-radius: 10px; overflow: hidden; }}
+  th {{ background: var(--banda); color: var(--tenue); text-align: left;
+        padding: 0.5rem 0.6rem; font-size: 0.85rem; }}
+  td {{ padding: 0.45rem 0.6rem; border-top: 1px solid var(--linea); }}
+  td + td, th + th {{ white-space: nowrap; }}
+  tr:nth-child(even) td {{ background: var(--fondo); }}
+  .suscribir {{ display: inline-block; margin: 1.25rem 0 0.25rem; padding: 0.55rem 1rem;
+                background: var(--verde); color: var(--sobre-verde); font-weight: 600;
+                text-decoration: none; border-radius: 8px; }}
+  footer {{ padding: 1rem 1.5rem; font-size: 0.85rem; color: var(--tenue);
+            background: var(--banda); border-top: 1px solid var(--linea); }}
+  footer p {{ margin: 0.25rem 0; }}
+  @media (max-width: 30rem) {{
+    body {{ padding: 0.75rem 0.5rem; }}
+    table {{ font-size: 0.85rem; }}
+    header, .contenido, footer {{ padding-left: 1rem; padding-right: 1rem; }}
+  }}
 </style>
 </head>
 <body>
+<main>
+<header>
 <h1>Guardias de patio de {html.escape(profesor.nombre_completo)}</h1>
 <p class="centro">{html.escape(nombre_centro)} · {len(guardias)} guardias en el curso</p>
+</header>
+<div class="contenido">
 <a class="suscribir" href="{enlace}.ics">Añadir a mi calendario</a>
 {"".join(bloques)}
+</div>
 <footer>
   <p>Esta dirección es solo tuya: no la compartas si no quieres que otros vean
   tus guardias.</p>
   <p>Si algo no cuadra, habla con jefatura: esta página es una copia de consulta
   y no se puede editar desde aquí.</p>
 </footer>
+</main>
 </body>
 </html>
 """

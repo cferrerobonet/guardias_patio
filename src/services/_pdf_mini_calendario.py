@@ -7,7 +7,6 @@ Extraído de _pdf_individual_optimizado.py para reducir su tamaño (ARQ-05).
 from calendar import monthcalendar
 
 from reportlab.graphics.shapes import Circle, Drawing, Polygon, Rect, String
-from reportlab.lib import colors
 from reportlab.lib.units import cm
 
 from infrastructure.database.models import Configuracion
@@ -41,8 +40,10 @@ def crear_mini_calendario(
         ancho,
         alto,
         fillColor=None,
-        strokeColor=colors.HexColor("#2c3e50"),
-        strokeWidth=1.5,
+        strokeColor=PDFStyles.LINEA,
+        strokeWidth=0.8,
+        rx=4,
+        ry=4,
     )
     drawing.add(marco)
 
@@ -55,7 +56,7 @@ def crear_mini_calendario(
         alto - header_height,
         ancho,
         header_height,
-        fillColor=colors.HexColor("#ecf0f1"),
+        fillColor=PDFStyles.VERDE_SUAVE,
         strokeColor=None,
     )
     drawing.add(fondo_encabezado)
@@ -82,8 +83,9 @@ def crear_mini_calendario(
         alto - header_height * 0.6,
         f"{meses_nombres[mes]} {anio}",
         fontSize=font_size_titulo,
-        fontName="Helvetica-Bold",
+        fontName=PDFStyles.FUENTE_TITULO,
         textAnchor="middle",
+        fillColor=PDFStyles.VERDE_OSCURO,
     )
     drawing.add(titulo)
 
@@ -101,8 +103,9 @@ def crear_mini_calendario(
             y,
             dia,
             fontSize=font_size_dias,
-            fontName="Helvetica-Bold",
+            fontName=PDFStyles.FUENTE_NEGRITA,
             textAnchor="middle",
+            fillColor=PDFStyles.TEXTO_GRIS,
         )
         drawing.add(texto)
 
@@ -219,9 +222,9 @@ def crear_mini_calendario(
                     y + celda_alto / 8,
                     str(dia),
                     fontSize=font_size_numeros - 1,
-                    fontName="Helvetica-Bold",
+                    fontName=PDFStyles.FUENTE_NEGRITA,
                     textAnchor="middle",
-                    fillColor=colors.black,
+                    fillColor=PDFStyles.TEXTO_OSCURO,
                 )
             else:
                 # Número normal para días sin guardias
@@ -230,8 +233,9 @@ def crear_mini_calendario(
                     y + celda_alto / 3,
                     str(dia),
                     fontSize=font_size_numeros,
-                    fontName="Helvetica",
+                    fontName=PDFStyles.FUENTE_NORMAL,
                     textAnchor="middle",
+                    fillColor=PDFStyles.TEXTO_OSCURO,
                 )
 
             drawing.add(texto)

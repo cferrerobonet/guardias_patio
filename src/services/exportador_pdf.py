@@ -9,11 +9,11 @@ from datetime import date
 from pathlib import Path
 from typing import Callable, Optional
 
-from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import (
+    HRFlowable,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -25,6 +25,7 @@ from sqlalchemy.orm import joinedload
 
 from infrastructure.database.models import Guardia, Profesor
 from services.gestor_cursos import GestorCursos
+from services.pdf_styles import PDFStyles
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -96,9 +97,10 @@ class ExportadorPDF:
             titulo_style = ParagraphStyle(
                 "CustomTitle",
                 parent=styles["Heading1"],
-                fontSize=18,
-                textColor=colors.HexColor("#2c3e50"),
-                spaceAfter=12,
+                fontSize=22,
+                fontName=PDFStyles.FUENTE_TITULO,
+                textColor=PDFStyles.TEXTO_OSCURO,
+                spaceAfter=6,
                 alignment=1,  # Centrado
             )
 
@@ -126,13 +128,17 @@ class ExportadorPDF:
                 "InfoStyle",
                 parent=styles["Normal"],
                 fontSize=12,
-                textColor=colors.HexColor("#34495e"),
-                spaceAfter=20,
+                fontName=PDFStyles.FUENTE_NORMAL,
+                textColor=PDFStyles.TEXTO_MEDIO,
+                spaceAfter=8,
                 alignment=1,
             )
 
             info = Paragraph(f"<b>Profesor/a:</b> {profesor.nombre_completo}", info_style)
             elements.append(info)
+            elements.append(
+                HRFlowable(width="100%", thickness=1.2, color=PDFStyles.DORADO, spaceAfter=16)
+            )
 
             # Tabla de guardias
             if guardias:
@@ -172,22 +178,14 @@ class ExportadorPDF:
                 # Estilo de tabla
                 tabla.setStyle(
                     TableStyle(
-                        [
-                            # Encabezado
-                            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3498db")),
-                            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                        PDFStyles.tabla_estandar()
+                        + [
                             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                             ("FONTSIZE", (0, 0), (-1, 0), 11),
-                            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-                            # Cuerpo
-                            ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
-                            ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
-                            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                            ("TOPPADDING", (0, 0), (-1, 0), 7),
+                            ("BOTTOMPADDING", (0, 0), (-1, 0), 7),
                             ("FONTSIZE", (0, 1), (-1, -1), 10),
-                            ("GRID", (0, 0), (-1, -1), 1, colors.black),
                             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
                         ]
                     )
                 )
@@ -201,7 +199,8 @@ class ExportadorPDF:
                     "ResumenStyle",
                     parent=styles["Normal"],
                     fontSize=11,
-                    textColor=colors.HexColor("#2c3e50"),
+                    fontName=PDFStyles.FUENTE_NORMAL,
+                    textColor=PDFStyles.TEXTO_OSCURO,
                 )
 
                 total_guardias = len(guardias)
@@ -224,7 +223,8 @@ class ExportadorPDF:
                     "NoGuardiasStyle",
                     parent=styles["Normal"],
                     fontSize=12,
-                    textColor=colors.HexColor("#e74c3c"),
+                    fontName=PDFStyles.FUENTE_NORMAL,
+                    textColor=PDFStyles.TEXTO_AVISO,
                     alignment=1,
                 )
 
@@ -241,7 +241,8 @@ class ExportadorPDF:
                 "FooterStyle",
                 parent=styles["Normal"],
                 fontSize=8,
-                textColor=colors.grey,
+                fontName=PDFStyles.FUENTE_NORMAL,
+                textColor=PDFStyles.TEXTO_GRIS,
                 alignment=2,  # Derecha
             )
 
@@ -252,7 +253,11 @@ class ExportadorPDF:
             elements.append(footer)
 
             # Construir PDF
-            doc.build(elements)
+            doc.build(
+                elements,
+                onFirstPage=PDFStyles.pie_de_pagina,
+                onLaterPages=PDFStyles.pie_de_pagina,
+            )
             return True
 
         except (SQLAlchemyError, ValueError, TypeError, OSError) as e:

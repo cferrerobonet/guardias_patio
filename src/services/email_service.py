@@ -52,11 +52,12 @@ def generar_plantilla_email_html(
         ... )
     """
     # Estilos según tipo de sección
+    # Paleta de la aplicación (y de Partes de salida): verde EPLA, dorado y neutros.
     estilos_secciones = {
-        "info": {"bg_color": "#e3f2fd", "border_color": "#2196F3"},
-        "warning": {"bg_color": "#fff3e0", "border_color": "#FF9800"},
-        "success": {"bg_color": "#e8f5e9", "border_color": "#4CAF50"},
-        "neutral": {"bg_color": "#f5f5f5", "border_color": "#9e9e9e"},
+        "info": {"bg_color": "#EEF2EC", "border_color": "#2C7A3A"},
+        "warning": {"bg_color": "#FBF0D9", "border_color": "#B97A12"},
+        "success": {"bg_color": "#E2F0E3", "border_color": "#2C7A3A"},
+        "neutral": {"bg_color": "#F3F5F1", "border_color": "#C9D2C5"},
     }
 
     # Construir secciones HTML
@@ -68,38 +69,38 @@ def generar_plantilla_email_html(
             estilo = estilos_secciones.get(tipo, estilos_secciones["neutral"])
 
             secciones_html += f"""
-      <div style="background-color: {estilo["bg_color"]}; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid {estilo["border_color"]};">
+      <div style="background-color: {estilo["bg_color"]}; padding: 14px 16px; border-radius: 8px; margin: 18px 0; border-left: 3px solid {estilo["border_color"]};">
         {contenido}
       </div>
 """
 
-    # Plantilla HTML completa con logo corporativo verde
+    # Plantilla del correo: la de Partes de salida. Cabecera blanca con filete verde
+    # y dorado, cuerpo en Arial (la que se ve igual en todos los gestores de correo)
+    # y pie gris.
     html = f"""
 <html>
-  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 20px;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+  <body style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.55; color: #1D2A20; background-color: #F3F5F1; margin: 0; padding: 24px 12px;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #D9E0D5; border-radius: 12px; overflow: hidden;">
 
-      <!-- Logo corporativo con gradiente verde -->
-      <div style="background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%); padding: 30px 20px; text-align: center;">
-        <div style="background-color: white; width: 80px; height: 80px; margin: 0 auto 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <span style="font-size: 40px;">🏫</span>
-        </div>
-        <h1 style="color: white; margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Guardias de Patio</h1>
-        <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0; font-size: 13px;">Sistema de Gestión de Guardias</p>
+      <!-- Cabecera -->
+      <div style="padding: 22px 24px 16px; border-bottom: 4px solid #2C7A3A;">
+        <div style="font-size: 22px; font-weight: 700; color: #1C5226; letter-spacing: 0.2px;">Guardias de Patio</div>
+        <div style="font-size: 13px; color: #5D6B60; margin-top: 2px;">Gestión y asignación de guardias escolares</div>
       </div>
+      <div style="height: 2px; background-color: #B97A12; line-height: 2px; font-size: 0;">&nbsp;</div>
 
       <!-- Contenido principal -->
-      <div style="padding: 30px 20px;">
-        <h2 style="color: #4CAF50; margin: 0 0 20px 0; font-size: 22px;">{titulo}</h2>
+      <div style="padding: 26px 24px 8px;">
+        <h2 style="color: #1D2A20; margin: 0 0 18px 0; font-size: 21px; font-weight: 700;">{titulo}</h2>
 
         {contenido_principal}
 
         {secciones_html}
       </div>
 
-      <!-- Footer -->
-      <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-        <p style="font-size: 12px; color: #6b7280; margin: 0;">
+      <!-- Pie -->
+      <div style="background-color: #EEF2EC; padding: 16px 24px; text-align: center; border-top: 1px solid #D9E0D5;">
+        <p style="font-size: 12px; color: #5D6B60; margin: 0;">
           {pie_texto}
         </p>
       </div>
@@ -200,9 +201,9 @@ Sistema de Gestión de Guardias
                 {
                     "tipo": "info",
                     "contenido": f"""
-        <div style="text-align: center; background-color: #e8f5e9; border: 2px solid #4CAF50; border-radius: 6px; padding: 20px; margin: 20px 0;">
-          <p style="margin: 0 0 10px 0; color: #2e7d32;">Tu código de recuperación es:</p>
-          <div style="font-size: 24px; font-weight: bold; color: #4CAF50; letter-spacing: 2px; font-family: monospace;">
+        <div style="text-align: center; background-color: #E2F0E3; border: 1px solid #9FCFA7; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0 0 10px 0; color: #1C5226;">Tu código de recuperación es:</p>
+          <div style="font-size: 24px; font-weight: bold; color: #1C5226; letter-spacing: 2px; font-family: monospace;">
             {recovery_code}
           </div>
         </div>
@@ -340,7 +341,7 @@ Sistema de Gestión de Guardias
         <p style="margin: 5px 0;">• Google Calendar</p>
         <p style="margin: 5px 0;">• Apple Calendar (iPhone, iPad, Mac)</p>
         <p style="margin: 5px 0;">• Microsoft Outlook</p>
-        <p style="margin: 5px 0; color: #92400e; font-size: 14px; margin-top: 10px;">
+        <p style="margin: 5px 0; color: #9A5B00; font-size: 14px; margin-top: 10px;">
           <em>Solo tienes que abrir el archivo desde tu dispositivo y se añadirán automáticamente todas las guardias.</em>
         </p>
                     """,

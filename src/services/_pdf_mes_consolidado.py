@@ -13,12 +13,13 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
 from infrastructure.database.models import Guardia, Profesor
 from services.gestor_cursos import GestorCursos
+from services.pdf_styles import PDFStyles
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -127,37 +128,40 @@ def exportar_mes_consolidado(
         titulo_style = ParagraphStyle(
             "CustomTitle",
             parent=styles_doc["Heading1"],
-            fontSize=20,
-            textColor=colors.HexColor("#2c3e50"),
-            spaceAfter=10,
+            fontSize=24,
+            textColor=PDFStyles.TEXTO_OSCURO,
+            spaceAfter=4,
             alignment=1,
-            fontName="Helvetica-Bold",
+            fontName=PDFStyles.FUENTE_TITULO,
         )
 
-        titulo = Paragraph(f"📅 CALENDARIO DE GUARDIAS - {meses[mes - 1]} {anio}", titulo_style)
+        titulo = Paragraph(f"CALENDARIO DE GUARDIAS · {meses[mes - 1]} {anio}", titulo_style)
         elements.append(titulo)
-        elements.append(Spacer(1, 0.5 * cm))
+        elements.append(Spacer(1, 0.2 * cm))
 
         # Subtítulo con resumen
         subtitulo_style = ParagraphStyle(
             "Subtitulo",
             parent=styles_doc["Normal"],
             fontSize=11,
-            textColor=colors.HexColor("#7f8c8d"),
+            fontName=PDFStyles.FUENTE_NORMAL,
+            textColor=PDFStyles.TEXTO_GRIS,
             alignment=1,
-            spaceAfter=15,
+            spaceAfter=8,
         )
 
         profesores_unicos = len(set(g.profesor_id for g in guardias if g.profesor_id))
         dias_con_guardias = len(guardias_por_fecha)
 
         subtitulo = Paragraph(
-            f"Total: {len(guardias)} guardias | {profesores_unicos} profesores | "
+            f"{len(guardias)} guardias · {profesores_unicos} profesores · "
             f"{dias_con_guardias} días con guardias",
             subtitulo_style,
         )
         elements.append(subtitulo)
-        elements.append(Spacer(1, 0.3 * cm))
+        elements.append(
+            HRFlowable(width="100%", thickness=1.2, color=PDFStyles.DORADO, spaceAfter=12)
+        )
 
         # Crear tabla consolidada
         data = [["Fecha", "Día", "Turno", "Recreo", "Profesor", "Zona"]]
@@ -199,19 +203,14 @@ def exportar_mes_consolidado(
         tabla = Table(data, colWidths=[2.5 * cm, 2.5 * cm, 2 * cm, 2 * cm, 7 * cm, 4.5 * cm])
 
         # Estilos de la tabla
-        estilos_tabla = [
-            # Encabezado
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3498db")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+        estilos_tabla = PDFStyles.tabla_estandar() + [
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, 0), 11),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
-            # Cuerpo
-            ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#2c3e50")),
-            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("TOPPADDING", (0, 0), (-1, 0), 7),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 7),
+            # Fecha y día en negrita: abren cada grupo
+            ("FONTNAME", (0, 1), (1, -1), PDFStyles.FUENTE_NEGRITA),
             ("FONTSIZE", (0, 1), (-1, -1), 9),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#bdc3c7")),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("LEFTPADDING", (0, 0), (-1, -1), 6),
             ("RIGHTPADDING", (0, 0), (-1, -1), 6),
@@ -231,7 +230,11 @@ def exportar_mes_consolidado(
                 if color_actual % 2 == 0:
                     color_fondo = colors.white
                 else:
-                    color_fondo = colors.HexColor("#ecf0f1")
+                    color_fondo = PDFStyles.FONDO_TABLA_ALTERNADO_2
+                if color_actual:
+                    estilos_tabla.append(
+                        ("LINEABOVE", (0, fila_actual), (-1, fila_actual), 0.8, PDFStyles.VERDE)
+                    )
                 color_actual += 1
                 fecha_anterior = fecha
 
@@ -251,7 +254,8 @@ def exportar_mes_consolidado(
             "FooterStyle",
             parent=styles_doc["Normal"],
             fontSize=8,
-            textColor=colors.HexColor("#7f8c8d"),
+            fontName=PDFStyles.FUENTE_NORMAL,
+            textColor=PDFStyles.TEXTO_GRIS,
             alignment=2,
         )
 
@@ -260,7 +264,9 @@ def exportar_mes_consolidado(
         elements.append(footer)
 
         # Generar PDF
-        doc.build(elements)
+        doc.build(
+            elements, onFirstPage=PDFStyles.pie_de_pagina, onLaterPages=PDFStyles.pie_de_pagina
+        )
 
         reportar_progreso(100, "PDF consolidado generado exitosamente")
         logger.info(f"PDF consolidado generado: {ruta_salida}")
@@ -376,18 +382,21 @@ def exportar_curso_completo(
         titulo_style = ParagraphStyle(
             "CursoTitle",
             parent=styles["Heading1"],
-            fontSize=20,
-            textColor=colors.HexColor("#1976D2"),
-            spaceAfter=20,
+            fontSize=24,
+            fontName=PDFStyles.FUENTE_TITULO,
+            textColor=PDFStyles.TEXTO_OSCURO,
+            spaceAfter=6,
             alignment=1,
         )
 
         titulo = Paragraph(
-            f"📚 Guardias de Patio - Curso Escolar {anio_inicio}/{anio_inicio + 1}",
+            f"GUARDIAS DE PATIO · CURSO {anio_inicio}/{anio_inicio + 1}",
             titulo_style,
         )
         elements.append(titulo)
-        elements.append(Spacer(1, 0.5 * cm))
+        elements.append(
+            HRFlowable(width="100%", thickness=1.2, color=PDFStyles.DORADO, spaceAfter=8)
+        )
 
         # Procesar cada mes del curso
         total_meses = len(meses_curso)
@@ -414,13 +423,14 @@ def exportar_curso_completo(
             mes_style = ParagraphStyle(
                 "MesTitle",
                 parent=styles["Heading2"],
-                fontSize=16,
-                textColor=colors.HexColor("#2196F3"),
-                spaceAfter=12,
+                fontSize=17,
+                fontName=PDFStyles.FUENTE_TITULO,
+                textColor=PDFStyles.VERDE_OSCURO,
+                spaceAfter=8,
                 spaceBefore=12,
             )
 
-            mes_titulo = Paragraph(f"📅 {meses_nombres[mes]} {anio}", mes_style)
+            mes_titulo = Paragraph(f"{meses_nombres[mes]} {anio}", mes_style)
             elements.append(mes_titulo)
 
             # Obtener curso activo
@@ -484,27 +494,15 @@ def exportar_curso_completo(
 
                 tabla.setStyle(
                     TableStyle(
-                        [
-                            # Encabezado
-                            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3498db")),
-                            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                        PDFStyles.tabla_estandar()
+                        + [
                             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                             ("FONTSIZE", (0, 0), (-1, 0), 10),
-                            ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-                            # Cuerpo
-                            ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
-                            ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
-                            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                            ("TOPPADDING", (0, 0), (-1, 0), 6),
+                            ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+                            ("FONTNAME", (0, 1), (1, -1), PDFStyles.FUENTE_NEGRITA),
                             ("FONTSIZE", (0, 1), (-1, -1), 9),
-                            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
                             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                            (
-                                "ROWBACKGROUNDS",
-                                (0, 1),
-                                (-1, -1),
-                                [colors.white, colors.lightgrey],
-                            ),
                         ]
                     )
                 )
@@ -517,7 +515,8 @@ def exportar_curso_completo(
                     "NoGuardiasMes",
                     parent=styles["Normal"],
                     fontSize=10,
-                    textColor=colors.grey,
+                    fontName=PDFStyles.FUENTE_NORMAL,
+                    textColor=PDFStyles.TEXTO_GRIS,
                     alignment=1,
                 )
                 elements.append(Paragraph("Sin guardias asignadas", no_guardias_style))
@@ -530,13 +529,14 @@ def exportar_curso_completo(
             "FooterCurso",
             parent=styles["Normal"],
             fontSize=8,
-            textColor=colors.grey,
+            fontName=PDFStyles.FUENTE_NORMAL,
+            textColor=PDFStyles.TEXTO_GRIS,
             alignment=2,
         )
 
         fecha_generacion = datetime.now().strftime("%d/%m/%Y %H:%M")
         footer = Paragraph(
-            f"Documento generado el {fecha_generacion} | "
+            f"Documento generado el {fecha_generacion} · "
             f"Profesores incluidos: {len(profesores)}",
             footer_style,
         )
@@ -544,7 +544,9 @@ def exportar_curso_completo(
         elements.append(footer)
 
         # Construir PDF
-        doc.build(elements)
+        doc.build(
+            elements, onFirstPage=PDFStyles.pie_de_pagina, onLaterPages=PDFStyles.pie_de_pagina
+        )
 
         reportar_progreso(100, f"PDF generado: {nombre_archivo}")
         return True
