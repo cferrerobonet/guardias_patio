@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.1.0] - 2026-10-09
+
+### 🎯 Resumen
+Pantalla de guardias del patio para la smart TV (web `guardiasdepatio.epla.es`, en `WEB GUARDIAS DE PATIO - CÓDIGO FUENTE/`). La app deja en el servidor un resumen mínimo tras cada sincronización; la web solo lo lee.
+
+### ✨ Added
+- **Resumen para la pantalla** (`sync/pantalla.py`): tras subir los datos, publica en `web/datos/<cuenta>.json` los recreos, las zonas y quién tiene cada guardia. Sin correos ni otros datos personales; un fallo solo queda en el registro y no afecta a la sincronización.
+
 ## [7.0.0] - 2026-10-09
 
 ### 🎯 Resumen

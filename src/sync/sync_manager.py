@@ -21,7 +21,7 @@ from core.paths import get_user_data_directory
 # Los backends viven en `backends.py` desde v5.90.0: este módulo pasaba de las
 # 1.200 líneas mezclando cómo se sube un fichero con qué se sube y cuándo. Se
 # reexportan porque medio programa los importa desde aquí.
-from sync import integridad
+from sync import integridad, pantalla
 from sync.backends import (
     ERRORES_DE_TRANSPORTE,
     LocalSyncBackend,
@@ -359,6 +359,7 @@ class SyncManager:
         try:
             if self.backend.upload_file(local_json_path, remote_path):
                 integridad.publicar_huella(self, local_json_path, nueva_version)
+                pantalla.publicar_pantalla(self, local_json_path)
                 self.version_descargada = nueva_version
                 self._guardar_metadata_local(
                     nueva_version, pendiente_subida=False, huella=huella
