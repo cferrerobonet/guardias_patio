@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from utils.icons import icon_for_button
+from utils.icons import icon_for_button, icon_for_form
 
 
 def create_sftp_tab(dialog) -> QWidget:
@@ -39,7 +39,7 @@ def create_sftp_tab(dialog) -> QWidget:
         "<li><b>Recuperación ante fallos:</b> Si pierdes tu dispositivo, tus datos "
         "están seguros</li>"
         "</ul>"
-        "<p style='color: #dc2626; font-weight: bold;'>"
+        "<p style='color: #A32D2D; font-weight: bold;'>"
         "Sin SFTP configurado, la aplicación no puede garantizar la seguridad "
         "de tus datos ni permitir el trabajo colaborativo."
         "</p>"
@@ -48,8 +48,8 @@ def create_sftp_tab(dialog) -> QWidget:
     info_text.setStyleSheet("""
         QLabel {
             padding: 15px;
-            background-color: #fef3c7;
-            border-left: 4px solid #f59e0b;
+            background-color: #FBF0D9;
+            border-left: 4px solid #B97A12;
             border-radius: 5px;
             line-height: 1.5;
         }
@@ -136,13 +136,13 @@ def create_sftp_tab(dialog) -> QWidget:
     dialog.sftp_test_btn.setAccessibleName("Botón probar conexión SFTP")
     dialog.sftp_test_btn.setIcon(icon_for_button("test"))
     dialog.sftp_test_btn.setMinimumWidth(180)
-    dialog.sftp_test_btn.setMinimumHeight(36)
+    dialog.sftp_test_btn.setMinimumHeight(34)
     dialog.sftp_test_btn.clicked.connect(dialog._test_sftp)
     dialog.sftp_save_btn = QPushButton("Guardar Configuración")
     dialog.sftp_save_btn.setAccessibleName("Botón guardar configuración SFTP")
     dialog.sftp_save_btn.setIcon(icon_for_button("save"))
     dialog.sftp_save_btn.setMinimumWidth(180)
-    dialog.sftp_save_btn.setMinimumHeight(36)
+    dialog.sftp_save_btn.setMinimumHeight(34)
     dialog.sftp_save_btn.clicked.connect(dialog._save_sftp)
     action_row.addWidget(dialog.sftp_test_btn)
     action_row.addWidget(dialog.sftp_save_btn)
@@ -154,20 +154,9 @@ def create_sftp_tab(dialog) -> QWidget:
     load_json_row = QHBoxLayout()
     dialog.sftp_load_json_btn = QPushButton("Cargar configuración desde archivo JSON")
     dialog.sftp_load_json_btn.setAccessibleName("Botón cargar configuración SFTP desde archivo")
-    dialog.sftp_load_json_btn.setIcon(icon_for_button("open"))
-    dialog.sftp_load_json_btn.setMinimumHeight(36)
-    dialog.sftp_load_json_btn.setStyleSheet("""
-        QPushButton {
-            background-color: #6366f1;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        QPushButton:hover {
-            background-color: #4f46e5;
-        }
-    """)
+    dialog.sftp_load_json_btn.setIcon(icon_for_form("open"))
+    dialog.sftp_load_json_btn.setMinimumHeight(34)
+    dialog.sftp_load_json_btn.setProperty("secondary", "true")
     dialog.sftp_load_json_btn.clicked.connect(dialog._load_sftp_from_json)
     load_json_row.addWidget(dialog.sftp_load_json_btn)
 
@@ -201,12 +190,12 @@ def create_smtp_tab(dialog) -> QWidget:
         "<li><b>Recuperación de contraseñas:</b> Códigos de recuperación por email</li>"
         "<li><b>Notificaciones:</b> Alertas y avisos importantes</li>"
         "</ul>"
-        "<p style='color: #166529;'>"
+        "<p style='color: #1C5226;'>"
         "<b>Esta funcionalidad NO es crítica.</b> Si no configuras SMTP ahora, podrás "
         "seguir usando la aplicación normalmente. Solo necesitarás copiar manualmente los "
         "calendarios o códigos de recuperación."
         "</p>"
-        "<p style='color: #6b7280; font-size: 13px;'>"
+        "<p style='color: #5D6B60; font-size: 13px;'>"
         "<b>Tip:</b> Los datos SMTP son los de la cuenta de email que enviará los mensajes. "
         "Puede ser cualquier cuenta de Gmail, Outlook, etc."
         "</p>"
@@ -215,8 +204,8 @@ def create_smtp_tab(dialog) -> QWidget:
     info_text.setStyleSheet("""
         QLabel {
             padding: 15px;
-            background-color: #d1fae5;
-            border-left: 4px solid #1E7E34;
+            background-color: #E2F0E3;
+            border-left: 4px solid #2C7A3A;
             border-radius: 5px;
             line-height: 1.5;
         }
@@ -302,13 +291,13 @@ def create_smtp_tab(dialog) -> QWidget:
     dialog.smtp_test_btn.setAccessibleName("Botón probar conexión SMTP")
     dialog.smtp_test_btn.setIcon(icon_for_button("test"))
     dialog.smtp_test_btn.setMinimumWidth(180)
-    dialog.smtp_test_btn.setMinimumHeight(36)
+    dialog.smtp_test_btn.setMinimumHeight(34)
     dialog.smtp_test_btn.clicked.connect(dialog._test_smtp)
     dialog.smtp_save_btn = QPushButton("Guardar Configuración")
     dialog.smtp_save_btn.setAccessibleName("Botón guardar configuración SMTP")
     dialog.smtp_save_btn.setIcon(icon_for_button("save"))
     dialog.smtp_save_btn.setMinimumWidth(180)
-    dialog.smtp_save_btn.setMinimumHeight(36)
+    dialog.smtp_save_btn.setMinimumHeight(34)
     dialog.smtp_save_btn.clicked.connect(dialog._save_smtp)
     smtp_action_row.addWidget(dialog.smtp_test_btn)
     smtp_action_row.addWidget(dialog.smtp_save_btn)
@@ -320,20 +309,9 @@ def create_smtp_tab(dialog) -> QWidget:
     smtp_load_json_row = QHBoxLayout()
     dialog.smtp_load_json_btn = QPushButton("Cargar configuración desde archivo JSON")
     dialog.smtp_load_json_btn.setAccessibleName("Botón cargar configuración SMTP desde archivo")
-    dialog.smtp_load_json_btn.setIcon(icon_for_button("open"))
-    dialog.smtp_load_json_btn.setMinimumHeight(36)
-    dialog.smtp_load_json_btn.setStyleSheet("""
-        QPushButton {
-            background-color: #6366f1;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        QPushButton:hover {
-            background-color: #4f46e5;
-        }
-    """)
+    dialog.smtp_load_json_btn.setIcon(icon_for_form("open"))
+    dialog.smtp_load_json_btn.setMinimumHeight(34)
+    dialog.smtp_load_json_btn.setProperty("secondary", "true")
     dialog.smtp_load_json_btn.clicked.connect(dialog._load_smtp_from_json)
     smtp_load_json_row.addWidget(dialog.smtp_load_json_btn)
 

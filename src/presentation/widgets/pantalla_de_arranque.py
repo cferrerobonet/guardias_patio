@@ -35,7 +35,8 @@ class PantallaDeArranque(QSplashScreen):
         from utils.ui_helpers import get_corporate_pixmap
 
         lienzo = QPixmap(ANCHO, ALTO)
-        lienzo.fill(QColor("#3E4857"))
+        # Verde EPLA oscuro, como la presentación de Partes de salida.
+        lienzo.fill(QColor("#1C5226"))
 
         logo = get_corporate_pixmap(120)
         if logo is not None and not logo.isNull():

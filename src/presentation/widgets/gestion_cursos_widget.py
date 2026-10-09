@@ -24,6 +24,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from core.logging import get_logger
 from presentation.dialogs.dialogo_crear_curso import DialogoCrearCurso
 from presentation.theme import legacy_styles as styles
+from presentation.theme.modo_oscuro import color_fondo
 from presentation.widgets.toast_notification import ToastNotification
 from services.gestor_cursos import GestorCursos
 from utils.icons import icon_for_button
@@ -202,7 +203,7 @@ class GestionCursosWidget(QWidget):
 
                 # Resaltar curso activo
                 if curso.activo:
-                    item_nombre.setBackground(Qt.GlobalColor.yellow)
+                    item_nombre.setBackground(color_fondo("#FBF0D9"))
                     item_nombre.setForeground(Qt.GlobalColor.black)
                     item_nombre.setText(f"⭐ {curso.nombre}")
 
@@ -255,7 +256,7 @@ class GestionCursosWidget(QWidget):
                 item_sin.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 # Resaltar si hay guardias sin asignar
                 if sin_asignar > 0:
-                    item_sin.setBackground(Qt.GlobalColor.red)
+                    item_sin.setBackground(color_fondo("#F8E3E1"))
                     item_sin.setForeground(Qt.GlobalColor.white)
                 self.tabla_cursos.setItem(i, 7, item_sin)
 

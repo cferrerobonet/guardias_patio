@@ -152,7 +152,7 @@ class AjustesForm(BaseForm):
 
         # Indicador de cambios sin guardar
         self._dirty_label = QLabel("● Cambios sin guardar")
-        self._dirty_label.setStyleSheet("color: #D97706; font-size: 12px; font-weight: bold;")
+        self._dirty_label.setStyleSheet("color: #9A5B00; font-size: 12px; font-weight: bold;")
         self._dirty_label.setVisible(False)
         content_layout.addWidget(self._dirty_label)
 
@@ -271,7 +271,7 @@ class AjustesForm(BaseForm):
 
             mensaje_exito = (
                 f"La configuración del curso "
-                f"<span style='color: #0E5FA8; font-style: italic;'>{año_inicio}-{año_fin}</span> "
+                f"<span style='color: #2C7A3A; font-style: italic;'>{año_inicio}-{año_fin}</span> "
                 f"ha sido guardada correctamente."
             )
 

@@ -100,7 +100,9 @@ def test_generar_pesa_mas_que_limpiar(qapp, session):
     try:
         assert panel.generar_button.objectName() == "botonPrimarioDeVista"
         assert panel.limpiar_button.property("danger") == "true"
-        assert panel.limpiar_button.minimumHeight() < panel.generar_button.minimumHeight()
+        # Desde el 2026-10-09 todos los botones miden lo mismo (consistencia visual
+        # pedida por CarlosFB): el primario se distingue por el peso, no por la altura.
+        assert panel.limpiar_button.minimumHeight() <= panel.generar_button.minimumHeight()
         assert panel.limpiar_button.toolTip(), "la acción destructiva no avisa de lo que hace"
     finally:
         panel.close()

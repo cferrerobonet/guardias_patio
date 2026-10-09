@@ -4,7 +4,7 @@ Widget para operaciones de JSON (exportar/importar).
 Agrupa las funcionalidades de exportación e importación de datos en JSON.
 """
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
     QGroupBox,
@@ -52,7 +52,7 @@ class JsonOperationsWidget(QWidget):
 
     def _crear_grupo_exportar(self) -> QGroupBox:
         """Crear grupo de exportación a JSON."""
-        grupo = QGroupBox("EXPORTAR DATOS A JSON")
+        grupo = QGroupBox("Hacer copia de seguridad")
 
         layout = QVBoxLayout()
         layout.setSpacing(10)
@@ -60,8 +60,8 @@ class JsonOperationsWidget(QWidget):
 
         # Información
         info = QLabel(
-            "Exporta todos los datos actuales a un archivo JSON para respaldo "
-            "o transferencia a otro equipo."
+            "Guarda en un archivo todos los datos de la aplicación. Sirve de respaldo "
+            "y para pasar los datos a otro equipo."
         )
         info.setWordWrap(True)
         info.setStyleSheet(
@@ -74,25 +74,28 @@ class JsonOperationsWidget(QWidget):
         layout.addWidget(info)
 
         # Botón de exportación
-        self.exportar_btn = QPushButton("Exportar a JSON...")
+        self.exportar_btn = QPushButton("Hacer copia de seguridad…")
         self.exportar_btn.setIcon(icon_for_button("export"))
         self.exportar_btn.clicked.connect(self.exportar_solicitado.emit)
-        self.exportar_btn.setMinimumHeight(40)
-        layout.addWidget(self.exportar_btn)
+        self.exportar_btn.setMinimumHeight(34)
+        layout.addWidget(self.exportar_btn, alignment=Qt.AlignmentFlag.AlignLeft)
 
         grupo.setLayout(layout)
         return grupo
 
     def _crear_grupo_importar(self) -> QGroupBox:
         """Crear grupo de importación desde JSON."""
-        grupo = QGroupBox("IMPORTAR DATOS DESDE JSON")
+        grupo = QGroupBox("Restaurar copia de seguridad")
 
         layout = QVBoxLayout()
         layout.setSpacing(10)
         layout.setContentsMargins(15, 20, 15, 15)
 
         # Advertencia
-        info = QLabel("ATENCIÓN: Esto puede ELIMINAR los datos actuales si activas la opción.")
+        info = QLabel(
+            "Atención: con la casilla marcada, los datos actuales se sustituyen "
+            "por los de la copia."
+        )
         info.setWordWrap(True)
         info.setStyleSheet(
             f"""
@@ -105,7 +108,7 @@ class JsonOperationsWidget(QWidget):
         layout.addWidget(info)
 
         # Checkbox de limpiar
-        self.limpiar_checkbox = QCheckBox("Eliminar datos existentes antes de importar")
+        self.limpiar_checkbox = QCheckBox("Sustituir los datos actuales por los de la copia")
         self.limpiar_checkbox.setChecked(True)
         self.limpiar_checkbox.setStyleSheet(
             f"""
@@ -114,21 +117,17 @@ class JsonOperationsWidget(QWidget):
                 font-weight: normal;
                 color: {TEXT_SECONDARY};
             }}
-            QCheckBox::indicator {{
-                width: 18px;
-                height: 18px;
-            }}
         """
         )
         layout.addWidget(self.limpiar_checkbox)
 
         # Botón de importación
-        self.importar_btn = QPushButton("Importar desde JSON...")
+        self.importar_btn = QPushButton("Restaurar copia de seguridad…")
         self.importar_btn.setIcon(icon_for_button("import"))
         self.importar_btn.clicked.connect(self.importar_solicitado.emit)
-        self.importar_btn.setMinimumHeight(40)
+        self.importar_btn.setMinimumHeight(34)
         self.importar_btn.setProperty("warning", "true")
-        layout.addWidget(self.importar_btn)
+        layout.addWidget(self.importar_btn, alignment=Qt.AlignmentFlag.AlignLeft)
 
         grupo.setLayout(layout)
         return grupo

@@ -27,7 +27,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QGuiApplication, QIcon, QIconEngine, QPalette
 from PyQt6.QtWidgets import QApplication, QWidget
 
-from presentation.theme.tokens import Colors
+from presentation.theme.tokens import BORDES_OSCUROS, FONDOS_OSCUROS, TEXTOS_OSCUROS, Colors
 
 _PROPIEDAD = "hojaDeEstiloClara"
 
@@ -65,6 +65,9 @@ def _hex(h: float, luz: float, s: float) -> str:
     return "#{:02X}{:02X}{:02X}".format(round(r * 255), round(g * 255), round(b * 255))
 
 
+_FONDOS, _TEXTOS, _BORDES = FONDOS_OSCUROS, TEXTOS_OSCUROS, BORDES_OSCUROS
+
+
 def _es_acento(luz: float, s: float) -> bool:
     return s >= 0.3 and 0.15 < luz <= 0.85
 
@@ -72,6 +75,8 @@ def _es_acento(luz: float, s: float) -> bool:
 @lru_cache(maxsize=2048)
 def fondo(color: str) -> str:
     """Un fondo claro pasa a oscuro; uno de acento se oscurece para el texto claro."""
+    if color.upper() in _FONDOS:
+        return _FONDOS[color.upper()]
     h, luz, s = _hls(color)
     if _es_acento(luz, s):
         return _hex(h, min(luz, 0.42), s)
@@ -83,6 +88,8 @@ def fondo(color: str) -> str:
 @lru_cache(maxsize=2048)
 def texto(color: str) -> str:
     """Un texto oscuro pasa a claro; uno claro (blanco sobre acento) se queda."""
+    if color.upper() in _TEXTOS:
+        return _TEXTOS[color.upper()]
     h, luz, s = _hls(color)
     if luz < 0.55:
         return _hex(h, 1 - luz * 0.75, s)
@@ -91,6 +98,8 @@ def texto(color: str) -> str:
 
 @lru_cache(maxsize=2048)
 def borde(color: str) -> str:
+    if color.upper() in _BORDES:
+        return _BORDES[color.upper()]
     h, luz, s = _hls(color)
     if _es_acento(luz, s):
         return _hex(h, luz, s)
@@ -222,7 +231,7 @@ def _paleta(oscuro: bool) -> QPalette:
         for g in grupos:
             p.setColor(g, r, QColor(valor))
         p.setColor(QPalette.ColorGroup.Disabled, r, QColor(valor))
-    apagado = QColor(Colors.TEXT_DISABLED if not oscuro else "#6B7280")
+    apagado = QColor(Colors.TEXT_DISABLED if not oscuro else "#6B776E")
     for r in (rol.WindowText, rol.Text, rol.ButtonText):
         p.setColor(QPalette.ColorGroup.Disabled, r, apagado)
     return p

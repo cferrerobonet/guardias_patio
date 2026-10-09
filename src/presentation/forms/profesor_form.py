@@ -184,13 +184,13 @@ class ProfesorForm(BaseForm):
         self.limpiar_busqueda_btn.clicked.connect(self.limpiar_busqueda)
         self.limpiar_busqueda_btn.setStyleSheet("""
             QPushButton {
-                background-color: #e0e0e0;
+                background-color: #D9E0D5;
                 border: none;
                 border-radius: 3px;
                 padding: 5px;
             }
             QPushButton:hover {
-                background-color: #d0d0d0;
+                background-color: #D9E0D5;
             }
         """)
         busqueda_layout.addWidget(self.limpiar_busqueda_btn)
@@ -349,15 +349,16 @@ class ProfesorForm(BaseForm):
         self.submit_btn.setIcon(icon_for_button("save"))
         self.submit_btn.setProperty("success", "true")
         self.submit_btn.clicked.connect(self.guardar_profesor)
-        self.submit_btn.setMaximumHeight(32)  # Altura reducida
+        self.submit_btn.setMaximumHeight(34)  # Altura reducida
 
         self.cancelar_btn = QPushButton("Cancelar")
         self.cancelar_btn.setIcon(icon_for_button("close"))
         self.cancelar_btn.setProperty("danger", "true")
         self.cancelar_btn.clicked.connect(self.cancelar_edicion)
         self.cancelar_btn.setVisible(False)
-        self.cancelar_btn.setMaximumHeight(32)  # Altura reducida
+        self.cancelar_btn.setMaximumHeight(34)  # Altura reducida
 
+        botones_accion.addStretch()
         botones_accion.addWidget(self.submit_btn)
         botones_accion.addWidget(self.cancelar_btn)
         layout.addLayout(botones_accion)
@@ -851,12 +852,12 @@ class ProfesorForm(BaseForm):
             nombre_profesor = profesores_a_eliminar[0][1]
             mensaje = (
                 f"¿Eliminar al profesor "
-                f"<span style='color: #0E5FA8; font-style: italic;'>{nombre_profesor}</span>?"
+                f"<span style='color: #2C7A3A; font-style: italic;'>{nombre_profesor}</span>?"
             )
         else:
             nombres_html = "<br>• ".join(
                 [
-                    f"<span style='color: #0E5FA8; font-style: italic;'>{nombre}</span>"
+                    f"<span style='color: #2C7A3A; font-style: italic;'>{nombre}</span>"
                     for _, nombre in profesores_a_eliminar
                 ]
             )

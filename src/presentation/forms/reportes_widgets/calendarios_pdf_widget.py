@@ -95,10 +95,10 @@ class CalendariosPdfWidget(QGroupBox):
 
         # Botón de exportación
         self.exportar_pdf_btn = QPushButton("Generar PDFs")
-        self.exportar_pdf_btn.setMinimumHeight(40)
+        self.exportar_pdf_btn.setMinimumHeight(34)
         self.exportar_pdf_btn.setProperty("success", "true")
         self.exportar_pdf_btn.setAccessibleName("Botón generar calendarios PDF")
-        layout.addWidget(self.exportar_pdf_btn)
+        layout.addWidget(self.exportar_pdf_btn, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.setLayout(layout)
 
@@ -192,13 +192,13 @@ class CalendariosPdfWidget(QGroupBox):
         self.curso_activo_label.setStyleSheet(
             """
             QLabel {
-                background-color: #e3f2fd;
-                border: 2px solid #2196f3;
+                background-color: #E2F0E3;
+                border: 2px solid #2C7A3A;
                 border-radius: 4px;
                 padding: 8px;
                 font-size: 12px;
                 font-weight: bold;
-                color: #1976d2;
+                color: #2C7A3A;
             }
         """
         )
@@ -255,11 +255,7 @@ class CalendariosPdfWidget(QGroupBox):
             """
             QCheckBox {
                 font-weight: bold;
-                color: #1976D2;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
+                color: #2C7A3A;
             }
         """
         )
@@ -295,12 +291,8 @@ class CalendariosPdfWidget(QGroupBox):
             """
             QCheckBox {
                 font-weight: bold;
-                color: #166529;
+                color: #1C5226;
                 font-size: 12px;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
             }
         """
         )
@@ -413,13 +405,13 @@ class CalendariosPdfWidget(QGroupBox):
                 self.curso_activo_label.setStyleSheet(
                     """
                     QLabel {
-                        background-color: #fff3cd;
-                        border: 2px solid #ffc107;
+                        background-color: #FBF0D9;
+                        border: 2px solid #B97A12;
                         border-radius: 4px;
                         padding: 8px;
                         font-size: 12px;
                         font-weight: bold;
-                        color: #856404;
+                        color: #9A5B00;
                     }
                 """
                 )
@@ -463,10 +455,6 @@ class CalendariosPdfWidget(QGroupBox):
                     """
                     QCheckBox {
                         font-size: 12px;
-                    }
-                    QCheckBox::indicator {
-                        width: 16px;
-                        height: 16px;
                     }
                 """
                 )

@@ -35,10 +35,10 @@ logger = get_logger(__name__)
 _DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie"]
 #: Nombre completo del día, para lo que anuncia el lector de pantalla (UXA-005).
 _DIAS_COMPLETOS = ["lunes", "martes", "miércoles", "jueves", "viernes"]
-_COLOR_ON = "#4CAF50"
-_COLOR_OFF = "#E0E0E0"
+_COLOR_ON = "#2C7A3A"
+_COLOR_OFF = "#D9E0D5"
 _COLOR_ON_TEXT = "white"
-_COLOR_OFF_TEXT = "#888"
+_COLOR_OFF_TEXT = "#7D8A80"
 
 
 class SemanaRestriccionesWidget(QWidget):
@@ -106,7 +106,7 @@ class SemanaRestriccionesWidget(QWidget):
         for row, recreo in enumerate(self._recreos):
             lbl = QLabel(f"R{recreo}")
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setStyleSheet("font-size: 12px; color: #555;")
+            lbl.setStyleSheet("font-size: 12px; color: #46524A;")
             lbl.setToolTip(f"Recreo {recreo} ({'mañana' if recreo <= 2 else 'tarde'})")
             self._etiquetas[recreo] = lbl
             grid.addWidget(lbl, row + 1, 0)

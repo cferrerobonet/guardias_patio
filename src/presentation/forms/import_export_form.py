@@ -87,9 +87,8 @@ class ImportExportForm(BaseForm):
 
         # Descripción
         desc = QLabel(
-            "Gestiona la importación y exportación de datos de la aplicación. "
-            "Puedes exportar/importar datos en formato JSON o importar profesores "
-            "desde archivos Excel."
+            "Haz una copia de seguridad de todos los datos y restáurala cuando la "
+            "necesites, o importa el profesorado desde un archivo Excel."
         )
         desc.setWordWrap(True)
         desc.setStyleSheet(
@@ -141,7 +140,7 @@ class ImportExportForm(BaseForm):
 
     def _crear_seccion_importar_profesores(self) -> QGroupBox:
         """Crear sección de importación de profesores desde Excel."""
-        grupo = QGroupBox("IMPORTAR PROFESORES DESDE EXCEL")
+        grupo = QGroupBox("Importar profesores desde Excel")
 
         layout = QVBoxLayout()
         layout.setSpacing(10)
@@ -164,23 +163,23 @@ class ImportExportForm(BaseForm):
         self.importar_profesores_btn = QPushButton("Importar Profesores...")
         self.importar_profesores_btn.setIcon(icon_for_button("import"))
         self.importar_profesores_btn.clicked.connect(self.importar_profesores)
-        self.importar_profesores_btn.setMinimumHeight(40)
+        self.importar_profesores_btn.setMinimumHeight(34)
         self.importar_profesores_btn.setProperty("warning", "true")
-        layout.addWidget(self.importar_profesores_btn)
+        layout.addWidget(self.importar_profesores_btn, alignment=Qt.AlignmentFlag.AlignLeft)
 
         grupo.setLayout(layout)
         return grupo
 
     def _crear_seccion_copias(self) -> QGroupBox:
         """Sección para volver a un estado anterior (FUN-004)."""
-        grupo = QGroupBox("VOLVER A UN ESTADO ANTERIOR")
+        grupo = QGroupBox("Copias automáticas")
 
         layout = QVBoxLayout()
         layout.setSpacing(10)
         layout.setContentsMargins(15, 20, 15, 15)
 
         info = QLabel(
-            "La aplicación guarda una copia antes de generar o limpiar las guardias. "
+            "La aplicación guarda sola una copia antes de generar o limpiar las guardias. "
             "Si algo sale mal, puedes volver a como estaba."
         )
         info.setWordWrap(True)
@@ -193,12 +192,12 @@ class ImportExportForm(BaseForm):
         )
         layout.addWidget(info)
 
-        self.restaurar_btn = QPushButton("Ver copias de seguridad...")
+        self.restaurar_btn = QPushButton("Ver copias automáticas…")
         self.restaurar_btn.setIcon(icon_for_button("restore"))
         self.restaurar_btn.clicked.connect(self.restaurar_copia)
-        self.restaurar_btn.setMinimumHeight(40)
-        self.restaurar_btn.setAccessibleName("Ver y restaurar copias de seguridad")
-        layout.addWidget(self.restaurar_btn)
+        self.restaurar_btn.setMinimumHeight(34)
+        self.restaurar_btn.setAccessibleName("Ver y restaurar copias automáticas")
+        layout.addWidget(self.restaurar_btn, alignment=Qt.AlignmentFlag.AlignLeft)
 
         grupo.setLayout(layout)
         return grupo
@@ -279,9 +278,9 @@ class ImportExportForm(BaseForm):
             propuesta = str(Path(carpeta_previa) / nombre) if carpeta_previa else nombre
             archivo, _ = QFileDialog.getSaveFileName(
                 self,
-                "Exportar datos",
+                "Hacer copia de seguridad",
                 propuesta,
-                "Archivos JSON (*.json)",
+                "Copias de seguridad (*.json)",
             )
 
             if not archivo:
@@ -309,8 +308,8 @@ class ImportExportForm(BaseForm):
                 usuario_count = 0
 
             mensaje = (
-                f"✅ Datos exportados exitosamente a:\n{archivo}\n\n"
-                f"Datos exportados:\n"
+                f"✅ Copia de seguridad guardada en:\n{archivo}\n\n"
+                f"Contenido de la copia:\n"
                 f"• Profesores: {prof_count}\n"
                 f"• Zonas: {zona_count}\n"
                 f"• Configuración: {config_count}\n"
@@ -319,11 +318,13 @@ class ImportExportForm(BaseForm):
             )
 
             self.resultado_text.setText(mensaje)
-            self.mostrar_exito("Datos exportados", "Los datos se exportaron correctamente.")
+            self.mostrar_exito(
+                "Copia de seguridad hecha", "La copia de seguridad se ha guardado correctamente."
+            )
 
         except Exception as e:
-            self.manejar_excepcion(e, "exportar datos")
-            self.resultado_text.setText(f"Error al exportar: {e}")
+            self.manejar_excepcion(e, "hacer la copia de seguridad")
+            self.resultado_text.setText(f"Error al hacer la copia de seguridad: {e}")
 
     def importar_datos(self):
         """Importar datos desde archivo JSON."""
@@ -335,7 +336,7 @@ class ImportExportForm(BaseForm):
 
                 msg = QMessageBox(self)
                 msg.setIcon(QMessageBox.Icon.Question)
-                msg.setWindowTitle("Confirmar importación")
+                msg.setWindowTitle("Confirmar restauración")
                 msg.setWindowIcon(get_corporate_icon())
                 msg.setWindowFlags(
                     Qt.WindowType.Dialog
@@ -356,7 +357,7 @@ class ImportExportForm(BaseForm):
 
             # Diálogo para seleccionar archivo
             archivo, _ = QFileDialog.getOpenFileName(
-                self, "Importar datos", "", "Archivos JSON (*.json)"
+                self, "Restaurar copia de seguridad", "", "Copias de seguridad (*.json)"
             )
 
             if not archivo:
@@ -369,8 +370,9 @@ class ImportExportForm(BaseForm):
                     datos_preview = _json.load(_f)
             except _json.JSONDecodeError as je:
                 self.mostrar_error(
-                    "JSON inválido",
-                    f"El archivo no es un JSON válido:\n{je.msg} (línea {je.lineno}, col {je.colno})",
+                    "Copia no válida",
+                    "El archivo no es una copia de seguridad válida:\n"
+                    f"{je.msg} (línea {je.lineno}, col {je.colno})",
                 )
                 return
             except OSError as oe:
@@ -389,7 +391,7 @@ class ImportExportForm(BaseForm):
             if not (set(datos_preview.keys()) & _CLAVES_ESPERADAS):
                 claves = ", ".join(sorted(datos_preview.keys())) or "(ninguna)"
                 self.mostrar_error(
-                    "Backup incompatible",
+                    "Copia incompatible",
                     f"El archivo no contiene secciones reconocidas.\n\n"
                     f"Claves encontradas: {claves}\n"
                     f"Se esperaba al menos una de: {', '.join(sorted(_CLAVES_ESPERADAS))}",
@@ -402,8 +404,8 @@ class ImportExportForm(BaseForm):
             )
 
             mensaje = (
-                f"✅ Datos importados exitosamente desde:\n{archivo}\n\n"
-                f"Datos importados:\n"
+                f"✅ Copia de seguridad restaurada desde:\n{archivo}\n\n"
+                f"Datos restaurados:\n"
                 f"• Profesores: {resultado['profesores']}\n"
                 f"• Zonas: {resultado['zonas']}\n"
                 f"• Configuración: {resultado['configuracion']}\n"
@@ -434,7 +436,7 @@ class ImportExportForm(BaseForm):
                 | Qt.WindowType.WindowTitleHint
             )
             msg.setText(
-                "✅ Datos importados correctamente.\n\n"
+                "✅ Copia de seguridad restaurada correctamente.\n\n"
                 "Las tablas de profesores y zonas se han actualizado automáticamente."
             )
             msg.setStyleSheet(self.parent().styleSheet() if self.parent() else "")
@@ -444,7 +446,7 @@ class ImportExportForm(BaseForm):
             # La importación va en una transacción: un fallo no toca los datos.
             self.manejar_excepcion(e, "importar datos")
             self.resultado_text.setText(
-                f"Error al importar: {e}\n\nNo se ha cambiado ningún dato."
+                f"Error al restaurar la copia: {e}\n\nNo se ha cambiado ningún dato."
             )
 
     def importar_profesores(self):

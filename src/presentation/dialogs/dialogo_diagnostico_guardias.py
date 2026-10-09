@@ -49,7 +49,7 @@ class DialogoDiagnosticoGuardias(QDialog):
 
         # Título
         titulo = QLabel("Se detectaron problemas en la asignación")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold; color: #e67e22;")
+        titulo.setStyleSheet("font-size: 20px; font-weight: bold; color: #9A5B00;")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(titulo)
 
@@ -62,7 +62,7 @@ class DialogoDiagnosticoGuardias(QDialog):
             f"Guardias: {stats['total_guardias_asignadas']}/"
             f"{stats['total_slots_esperados']}"
         )
-        subtitulo.setStyleSheet("font-size: 14px; color: #7f8c8d; margin: 5px;")
+        subtitulo.setStyleSheet("font-size: 14px; color: #5D6B60; margin: 5px;")
         subtitulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(subtitulo)
 
@@ -78,18 +78,18 @@ class DialogoDiagnosticoGuardias(QDialog):
             layout_problemas,
             "PROBLEMAS CRÍTICOS",
             self.diagnostico.problemas_criticos,
-            "#e74c3c",
+            "#A32D2D",
         )
 
         self._agregar_seccion_problemas(
             layout_problemas,
             "PROBLEMAS IMPORTANTES",
             self.diagnostico.problemas_altos,
-            "#e67e22",
+            "#9A5B00",
         )
 
         self._agregar_seccion_problemas(
-            layout_problemas, "PROBLEMAS MENORES", self.diagnostico.problemas_medios, "#f39c12"
+            layout_problemas, "PROBLEMAS MENORES", self.diagnostico.problemas_medios, "#B97A12"
         )
 
         layout_problemas.addStretch()
@@ -104,8 +104,8 @@ class DialogoDiagnosticoGuardias(QDialog):
             )
             recomendacion.setWordWrap(True)
             recomendacion.setStyleSheet(
-                "background-color: #ecf0f1; padding: 10px; border-radius: 5px; "
-                "color: #2c3e50; font-size: 12px;"
+                "background-color: #F3F5F1; padding: 10px; border-radius: 5px; "
+                "color: #1D2A20; font-size: 12px;"
             )
             layout.addWidget(recomendacion)
 
@@ -119,9 +119,9 @@ class DialogoDiagnosticoGuardias(QDialog):
         )
         btn_ajustar.clicked.connect(self._on_ajustar_manual)
         btn_ajustar.setStyleSheet(
-            "QPushButton { background-color: #3498db; color: white; "
-            "padding: 10px 20px; font-size: 14px; border-radius: 5px; }"
-            "QPushButton:hover { background-color: #2980b9; }"
+            "QPushButton { background-color: #2C7A3A; color: white; "
+            "padding: 6px 14px; font-size: 14px; border-radius: 8px; }"
+            "QPushButton:hover { background-color: #2C7A3A; }"
         )
 
         btn_continuar_ilp = QPushButton("Continuar con ILP Avanzado")
@@ -132,9 +132,9 @@ class DialogoDiagnosticoGuardias(QDialog):
         )
         btn_continuar_ilp.clicked.connect(self._on_continuar_ilp)
         btn_continuar_ilp.setStyleSheet(
-            "QPushButton { background-color: #27ae60; color: white; "
-            "padding: 10px 20px; font-size: 14px; border-radius: 5px; }"
-            "QPushButton:hover { background-color: #229954; }"
+            "QPushButton { background-color: #2C7A3A; color: white; "
+            "padding: 6px 14px; font-size: 14px; border-radius: 8px; }"
+            "QPushButton:hover { background-color: #2C7A3A; }"
         )
 
         # Deshabilitar ILP si no es recomendado
@@ -189,7 +189,7 @@ class DialogoDiagnosticoGuardias(QDialog):
                     lbl_sugerencia = QLabel(f"   → {sugerencia}")
                     lbl_sugerencia.setWordWrap(True)
                     lbl_sugerencia.setStyleSheet(
-                        "font-size: 12px; color: #7f8c8d; margin-left: 30px; "
+                        "font-size: 12px; color: #5D6B60; margin-left: 30px; "
                         "margin-top: 3px; font-style: italic;"
                     )
                     layout_grupo.addWidget(lbl_sugerencia)
@@ -201,7 +201,7 @@ class DialogoDiagnosticoGuardias(QDialog):
                     # Mostrar nombres si son pocos
                     nombres = [p["nombre"] for p in profesores]
                     lbl_detalle = QLabel(f"   Afectados: {', '.join(nombres)}")
-                    lbl_detalle.setStyleSheet("font-size: 12px; color: #95a5a6; margin-left: 30px;")
+                    lbl_detalle.setStyleSheet("font-size: 12px; color: #9AA79D; margin-left: 30px;")
                     layout_grupo.addWidget(lbl_detalle)
 
             # Espaciado entre problemas

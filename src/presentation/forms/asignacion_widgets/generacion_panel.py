@@ -96,26 +96,6 @@ class GeneracionPanel(QGroupBox):
         self.limpiar_guardias_uc = LimpiarGuardiasUseCase(guardia_repo)
         self.analisis_equidad_uc = AnalisisEquidadUseCase(session)
 
-        self.setStyleSheet("""
-            QGroupBox {
-                background-color: #ffffff;
-                font-weight: bold;
-                font-size: 13px;
-                border: 2px solid #1E7E34;
-                border-radius: 6px;
-                margin-top: 16px;
-                padding-top: 14px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 6px 12px;
-                left: 12px;
-                top: -2px;
-                background-color: white;
-                color: #166529;
-            }
-        """)
         self._setup_ui()
         self._mostrar_mensaje_inicial()
         self.actualizar_boton_de_deshacer()
@@ -135,7 +115,7 @@ class GeneracionPanel(QGroupBox):
         # Botón Generar (deshabilitado hasta que se calculen cuotas)
         self.generar_button = QPushButton("Generar Asignación")
         self.generar_button.setIcon(icon_for_button("target"))
-        self.generar_button.setMinimumHeight(36)
+        self.generar_button.setMinimumHeight(34)
         self.generar_button.clicked.connect(self._generar_guardias)
         self.generar_button.setEnabled(False)  # Deshabilitado hasta calcular cuotas
         self.generar_button.setToolTip("Primero debe calcular las cuotas")
@@ -160,7 +140,7 @@ class GeneracionPanel(QGroupBox):
         button_container.addWidget(self.deshacer_limpieza_button, 1)
 
         for boton in (self.limpiar_button, self.deshacer_limpieza_button):
-            boton.setMinimumHeight(32)
+            boton.setMinimumHeight(34)
 
         layout.addLayout(button_container)
 
@@ -168,7 +148,7 @@ class GeneracionPanel(QGroupBox):
         self.label_bloqueo = QLabel("")
         self.label_bloqueo.setWordWrap(True)
         self.label_bloqueo.setStyleSheet(
-            "color: #92400e; background: #fef3c7; border: 1px solid #fcd34d;"
+            "color: #9A5B00; background: #FBF0D9; border: 1px solid #FBF0D9;"
             " border-radius: 4px; padding: 6px 8px;"
         )
         self.label_bloqueo.setVisible(False)
@@ -185,7 +165,7 @@ class GeneracionPanel(QGroupBox):
         # Botón de notificación por email (solo visible post-generación)
         self.btn_notificar = QPushButton("Enviar emails a profesores")
         self.btn_notificar.setIcon(icon_for_button("email"))
-        self.btn_notificar.setMinimumHeight(36)
+        self.btn_notificar.setMinimumHeight(34)
         self.btn_notificar.setProperty("success", "true")
         self.btn_notificar.setToolTip(
             "Envía un email a cada profesor con sus guardias asignadas"

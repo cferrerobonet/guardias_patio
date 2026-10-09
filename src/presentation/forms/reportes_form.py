@@ -90,14 +90,14 @@ class ReportesForm(BaseForm):
         self.tabs.setStyleSheet(
             """
             QTabWidget::pane {
-                border: 2px solid #bdc3c7;
+                border: 2px solid #C9D2C5;
                 border-radius: 8px;
                 background: white;
                 padding: 10px;
             }
             QTabBar::tab {
-                background: #ecf0f1;
-                border: 2px solid #bdc3c7;
+                background: #F3F5F1;
+                border: 2px solid #C9D2C5;
                 border-bottom: none;
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
@@ -112,7 +112,7 @@ class ReportesForm(BaseForm):
                 margin-bottom: -2px;
             }
             QTabBar::tab:hover {
-                background: #d5dbdb;
+                background: #D9E0D5;
             }
         """
         )
@@ -691,7 +691,7 @@ class ReportesForm(BaseForm):
         btn = QPushButton("Exportar archivo .ics")
         btn.setIcon(icon_for_button("calendar"))
         btn.clicked.connect(self._exportar_ical)
-        layout.addWidget(btn)
+        layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignLeft)
 
         # Publicación web (FUN-009)
         separador = QLabel(
@@ -707,10 +707,10 @@ class ReportesForm(BaseForm):
         self.btn_publicar_web = QPushButton("Generar calendarios para la web…")
         self.btn_publicar_web.setIcon(icon_for_button("open"))
         self.btn_publicar_web.clicked.connect(self._publicar_en_la_web)
-        layout.addWidget(self.btn_publicar_web)
+        layout.addWidget(self.btn_publicar_web, alignment=Qt.AlignmentFlag.AlignLeft)
 
         for boton in (btn, self.btn_publicar_web):
-            boton.setMinimumHeight(36)
+            boton.setMinimumHeight(34)
         layout.addStretch()
 
         return tab

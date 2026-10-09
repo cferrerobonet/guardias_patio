@@ -70,8 +70,8 @@ class SidebarMenu(QWidget):
         logo_section = QWidget()
         logo_section.setStyleSheet("""
             QWidget {
-                background-color: #E8E8E8;
-                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+                background-color: #EEF2EC;
+                border-bottom: 1px solid #D9E0D5;
             }
         """)
         logo_section_layout = QVBoxLayout(logo_section)
@@ -89,14 +89,15 @@ class SidebarMenu(QWidget):
         self._toggle_btn.setToolTip("Colapsar/expandir sidebar (Ctrl+B)")
         self._toggle_btn.setStyleSheet("""
             QPushButton {
-                background-color: rgba(0,0,0,0.08);
-                color: #555;
+                background-color: transparent;
+                color: #5D6B60;
                 border: none;
-                border-radius: 4px;
+                border-radius: 6px;
                 font-size: 12px;
                 padding: 2px;
+                min-height: 0px;
             }
-            QPushButton:hover { background-color: rgba(0,0,0,0.15); }
+            QPushButton:hover { background-color: #E2E8DF; color: #1D2A20; }
         """)
         self._toggle_btn.clicked.connect(self.toggle_collapse)
         top_row.addWidget(self._toggle_btn)
@@ -122,34 +123,23 @@ class SidebarMenu(QWidget):
             self.selector_curso.setStyleSheet("""
                 QComboBox {
                     background-color: white;
-                    color: #2c3e50;
-                    border: 2px solid #3498db;
-                    border-radius: 5px;
-                    padding: 8px 10px;
-                    font-size: 13px;
-                    font-weight: bold;
+                    color: #1D2A20;
+                    border: 1px solid #C9D2C5;
+                    border-radius: 7px;
+                    padding: 6px 9px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    min-height: 20px;
                 }
                 QComboBox:hover {
-                    background-color: #f8f9fa;
-                    border: 2px solid #2980b9;
-                }
-                QComboBox::drop-down {
-                    border: none;
-                    width: 25px;
-                }
-                QComboBox::down-arrow {
-                    image: none;
-                    border-left: 5px solid transparent;
-                    border-right: 5px solid transparent;
-                    border-top: 6px solid #3498db;
-                    margin-right: 8px;
+                    border: 1px solid #2C7A3A;
                 }
                 QComboBox QAbstractItemView {
                     background-color: white;
-                    color: #2c3e50;
-                    selection-background-color: #3498db;
-                    selection-color: white;
-                    border: 2px solid #3498db;
+                    color: #1D2A20;
+                    selection-background-color: #E2F0E3;
+                    selection-color: #1D2A20;
+                    border: 1px solid #D9E0D5;
                     outline: none;
                 }
             """)
@@ -261,7 +251,7 @@ class SidebarMenu(QWidget):
 
         # Si no hay logo corporativo, usar icono por defecto (school.svg)
         # En este caso usamos color oscuro porque el fondo es claro
-        icon = get_icon("school", "#3a4149", 100)
+        icon = get_icon("school", "#2F3B32", 100)
         pixmap = icon.pixmap(100, 100)
         self.logo_label.setPixmap(pixmap)
         self.logo_label.setStyleSheet("""
@@ -277,12 +267,12 @@ class SidebarMenu(QWidget):
         label.setObjectName("categoryLabel")
         label.setStyleSheet("""
             QLabel#categoryLabel {
-                color: rgba(255, 255, 255, 0.95);
+                color: #5D6B60;
                 font-size: 12px;
                 font-weight: 700;
                 letter-spacing: 1.5px;
                 text-transform: uppercase;
-                padding: 12px 20px 6px 20px;
+                padding: 12px 20px 4px 20px;
                 background-color: transparent;
             }
         """)
@@ -293,9 +283,9 @@ class SidebarMenu(QWidget):
         separator.setObjectName("separator")
         separator.setStyleSheet("""
             QFrame {
-                background-color: rgba(255, 255, 255, 0.2);
+                background-color: #D9E0D5;
                 max-height: 1px;
-                margin: 0px 16px 8px 16px;
+                margin: 0px 16px 6px 16px;
             }
         """)
         layout.addWidget(separator)
@@ -310,11 +300,11 @@ class SidebarMenu(QWidget):
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setProperty("section", section)
         btn.setProperty("active", "false")
-        btn.setMinimumHeight(38)  # Altura moderada
+        btn.setMinimumHeight(34)
 
         # Añadir icono si se proporciona
         if icon_name:
-            icon = get_icon(icon_name, "white", 20)  # Iconos de 20px
+            icon = get_icon(icon_name, "#2F3B32", 20)  # Iconos de 20px
             btn.setIcon(icon)
             from PyQt6.QtCore import QSize
 
@@ -322,26 +312,29 @@ class SidebarMenu(QWidget):
 
         btn.setStyleSheet("""
             QPushButton {
-                color: rgba(255, 255, 255, 0.95);
+                color: #1D2A20;
                 background-color: transparent;
                 text-align: left;
-                padding: 10px 28px;
-                border: none;
-                border-radius: 6px;
+                padding: 7px 16px;
+                margin: 1px 10px;
+                border: 1px solid transparent;
+                border-radius: 7px;
                 font-size: 14px;
-                font-weight: 500;
+                font-weight: 600;
+                min-height: 20px;
             }
             QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.12);
-                color: white;
+                background-color: #E2E8DF;
+                color: #1D2A20;
             }
             QPushButton[active="true"] {
-                background-color: #0E5FA8;
-                color: white;
-                font-weight: 600;
+                background-color: #FFFFFF;
+                color: #2C7A3A;
+                border: 1px solid #D9E0D5;
+                font-weight: 700;
             }
             QPushButton[active="true"]:hover {
-                background-color: #0C5291;
+                background-color: #FFFFFF;
             }
         """)
         btn.clicked.connect(lambda: self.on_menu_clicked(btn, section))
@@ -373,8 +366,8 @@ class SidebarMenu(QWidget):
         info_container = QWidget()
         info_container.setStyleSheet("""
             QWidget {
-                background-color: rgba(0, 0, 0, 0.15);
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                background-color: #EEF2EC;
+                border-top: 1px solid #D9E0D5;
             }
         """)
         info_layout = QVBoxLayout(info_container)
@@ -387,7 +380,7 @@ class SidebarMenu(QWidget):
         self.sync_status_label.setWordWrap(True)
         self.sync_status_label.setStyleSheet("""
             QLabel {
-                color: rgba(255, 255, 255, 0.6);
+                color: #5D6B60;
                 font-size: 12px;
                 background-color: transparent;
                 border: none;
@@ -400,16 +393,17 @@ class SidebarMenu(QWidget):
         self._update_banner.setCursor(Qt.CursorShape.PointingHandCursor)
         self._update_banner.setStyleSheet("""
             QPushButton {
-                color: #1A237E;
-                background-color: #FFF176;
-                border: 1px solid #F9A825;
-                border-radius: 4px;
+                color: #FFFFFF;
+                background-color: #9A5B00;
+                border: 1px solid #9A5B00;
+                border-radius: 7px;
                 padding: 5px 8px;
-                font-size: 12px;
-                font-weight: bold;
+                font-size: 13px;
+                font-weight: 700;
+                min-height: 0px;
             }
             QPushButton:hover {
-                background-color: #FDD835;
+                background-color: #7A4800;
             }
         """)
         self._update_banner.hide()
@@ -421,9 +415,9 @@ class SidebarMenu(QWidget):
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         version_label.setStyleSheet("""
             QLabel {
-                color: rgba(255, 255, 255, 0.85);
+                color: #5D6B60;
                 font-size: 12px;
-                font-weight: bold;
+                font-weight: 600;
                 background-color: transparent;
                 border: none;
             }
@@ -435,16 +429,17 @@ class SidebarMenu(QWidget):
         btn_acerca.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_acerca.setStyleSheet("""
             QPushButton {
-                color: rgba(255, 255, 255, 0.7);
-                background-color: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                border-radius: 4px;
-                padding: 6px 12px;
-                font-size: 12px;
+                color: #1D2A20;
+                background-color: #FFFFFF;
+                border: 1px solid #C9D2C5;
+                border-radius: 7px;
+                padding: 4px 10px;
+                font-size: 13px;
+                font-weight: 600;
+                min-height: 0px;
             }
             QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.2);
-                color: white;
+                border-color: #2C7A3A;
             }
         """)
         btn_acerca.clicked.connect(self._show_about_dialog)
@@ -460,12 +455,12 @@ class SidebarMenu(QWidget):
         if not hasattr(self, "sync_status_label"):
             return
         colores = {
-            "ok": "rgba(100,220,100,0.8)",
-            "warning": "rgba(255,200,50,0.8)",
-            "error": "rgba(255,80,80,0.8)",
-            "syncing": "rgba(100,180,255,0.8)",
+            "ok": "#2C7A3A",
+            "warning": "#9A5B00",
+            "error": "#A32D2D",
+            "syncing": "#2E6B73",
         }
-        color = colores.get(estado, "rgba(255,255,255,0.6)")
+        color = colores.get(estado, "#5D6B60")
         self.sync_status_label.setText(texto)
         self.sync_status_label.setStyleSheet(f"""
             QLabel {{

@@ -121,7 +121,7 @@ class SyncProgressDialog(QDialog):
 
         # Detalles (oculto por defecto)
         self.details_label = QLabel("")
-        self.details_label.setStyleSheet("color: #666; font-size: 12px;")
+        self.details_label.setStyleSheet("color: #5D6B60; font-size: 12px;")
         self.details_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.details_label.setWordWrap(True)
         layout.addWidget(self.details_label)
@@ -184,7 +184,7 @@ class SyncProgressDialog(QDialog):
             )
             self.progress_bar.setStyleSheet("""
                 QProgressBar::chunk {
-                    background-color: #4CAF50;
+                    background-color: #2C7A3A;
                 }
             """)
         else:
@@ -195,7 +195,7 @@ class SyncProgressDialog(QDialog):
             )
             self.progress_bar.setStyleSheet("""
                 QProgressBar::chunk {
-                    background-color: #FF9800;
+                    background-color: #B97A12;
                 }
             """)
 
@@ -207,7 +207,7 @@ class SyncProgressDialog(QDialog):
         self.update_progress(self._current_step, "Error en la sincronización", error_message)
         self.progress_bar.setStyleSheet("""
             QProgressBar::chunk {
-                background-color: #F44336;
+                background-color: #A32D2D;
             }
         """)
         self._show_close_button()

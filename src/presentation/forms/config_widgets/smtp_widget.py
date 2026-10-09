@@ -231,16 +231,16 @@ class SMTPConfigWidget(QGroupBox):
         yes_button.setStyleSheet("""
             QPushButton {
                 min-width: 100px;
-                min-height: 35px;
-                padding: 5px 15px;
-                font-size: 13px;
-                background-color: #166529;
+                min-height: 20px;
+                padding: 6px 14px;
+                font-size: 14px;
+                background-color: #1C5226;
                 color: white;
-                border: 2px solid #047857;
-                border-radius: 4px;
+                border: 2px solid #1C5226;
+                border-radius: 8px;
             }
-            QPushButton:hover { background-color: #047857; }
-            QPushButton:pressed { background-color: #065f46; }
+            QPushButton:hover { background-color: #1C5226; }
+            QPushButton:pressed { background-color: #1C5226; }
         """)
 
         no_button = msg.button(QMessageBox.StandardButton.No)
@@ -248,16 +248,16 @@ class SMTPConfigWidget(QGroupBox):
         no_button.setStyleSheet("""
             QPushButton {
                 min-width: 100px;
-                min-height: 35px;
-                padding: 5px 15px;
-                font-size: 13px;
-                background-color: #dc2626;
+                min-height: 20px;
+                padding: 6px 14px;
+                font-size: 14px;
+                background-color: #A32D2D;
                 color: white;
-                border: 2px solid #b91c1c;
-                border-radius: 4px;
+                border: 2px solid #8A2424;
+                border-radius: 8px;
             }
-            QPushButton:hover { background-color: #b91c1c; }
-            QPushButton:pressed { background-color: #991b1b; }
+            QPushButton:hover { background-color: #8A2424; }
+            QPushButton:pressed { background-color: #8A2424; }
         """)
 
         return msg.exec() == QMessageBox.StandardButton.Yes
@@ -418,45 +418,45 @@ class SMTPConfigWidget(QGroupBox):
                         min-width: 400px;
                     }
                     QLabel {
-                        color: #2c3e50;
+                        color: #1D2A20;
                         font-size: 13px;
                         padding: 10px;
                     }
                     QLineEdit {
-                        padding: 8px;
-                        border: 1px solid #dcdcdc;
-                        border-radius: 4px;
-                        font-size: 13px;
+                        padding: 6px 9px;
+                        border: 1px solid #7D8A80;
+                        border-radius: 7px;
+                        font-size: 14px;
                         background-color: white;
-                        color: #2c3e50;
+                        color: #1D2A20;
                         min-width: 350px;
                     }
                     QLineEdit:focus {
-                        border: 2px solid #3498db;
+                        border: 2px solid #2C7A3A;
                     }
                     QPushButton {
-                        background-color: #3498db;
+                        background-color: #2C7A3A;
                         color: white;
                         border: none;
-                        padding: 8px 20px;
-                        border-radius: 4px;
-                        font-size: 13px;
+                        padding: 6px 14px;
+                        border-radius: 8px;
+                        font-size: 14px;
                         font-weight: bold;
                         min-width: 80px;
                     }
                     QPushButton:hover {
-                        background-color: #2980b9;
+                        background-color: #2C7A3A;
                     }
                     QPushButton:pressed {
-                        background-color: #21618c;
+                        background-color: #1C5226;
                     }
                     QPushButton[text="Cancelar"],
                     QPushButton[text="Cancel"] {
-                        background-color: #95a5a6;
+                        background-color: #9AA79D;
                     }
                     QPushButton[text="Cancelar"]:hover,
                     QPushButton[text="Cancel"]:hover {
-                        background-color: #7f8c8d;
+                        background-color: #5D6B60;
                     }
                 """)
 
@@ -555,11 +555,11 @@ Sistema de Gestión de Guardias de Patio
                 "✅ Email de Prueba Enviado",
                 f"La conexión SMTP se estableció correctamente y se envió "
                 f"un email de prueba.<br><br>"
-                f"<b>Servidor:</b> <span style='color: #0E5FA8; "
+                f"<b>Servidor:</b> <span style='color: #2C7A3A; "
                 f"font-style: italic;'>{smtp_server}:{smtp_port}</span><br>"
-                f"<b>Usuario:</b> <span style='color: #0E5FA8; "
+                f"<b>Usuario:</b> <span style='color: #2C7A3A; "
                 f"font-style: italic;'>{smtp_user}</span><br>"
-                f"<b>Email enviado a:</b> <span style='color: #0E5FA8; "
+                f"<b>Email enviado a:</b> <span style='color: #2C7A3A; "
                 f"font-style: italic;'>{destination_email}</span><br><br>"
                 "Revisa tu bandeja de entrada (y spam) para verificar que llegó el email.",
             )
@@ -595,17 +595,17 @@ Sistema de Gestión de Guardias de Patio
         ok_button.setText("Entendido")
         ok_button.setStyleSheet("""
             QPushButton {
-                min-width: 120px;
-                min-height: 35px;
-                padding: 5px 15px;
-                font-size: 13px;
-                background-color: #dc2626;
+                min-width: 110px;
+                min-height: 20px;
+                padding: 6px 14px;
+                font-size: 14px;
+                background-color: #A32D2D;
                 color: white;
-                border: 2px solid #b91c1c;
-                border-radius: 4px;
+                border: 2px solid #8A2424;
+                border-radius: 8px;
             }
-            QPushButton:hover { background-color: #b91c1c; }
-            QPushButton:pressed { background-color: #991b1b; }
+            QPushButton:hover { background-color: #8A2424; }
+            QPushButton:pressed { background-color: #8A2424; }
         """)
         error_msg.exec()
 

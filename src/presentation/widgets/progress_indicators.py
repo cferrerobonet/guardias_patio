@@ -145,7 +145,7 @@ class ProgressDialog(QDialog):
             QLabel {
                 font-size: 14px;
                 font-weight: bold;
-                color: #1976D2;
+                color: #2C7A3A;
             }
         """)
         layout.addWidget(self.label_mensaje)
@@ -158,7 +158,7 @@ class ProgressDialog(QDialog):
         self.progress_bar.setTextVisible(True)
         self.progress_bar.setStyleSheet("""
             QProgressBar {
-                border: 2px solid #CCCCCC;
+                border: 2px solid #C9D2C5;
                 border-radius: 5px;
                 text-align: center;
                 height: 30px;
@@ -167,7 +167,7 @@ class ProgressDialog(QDialog):
             }
             QProgressBar::chunk {
                 background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #4CAF50, stop:1 #66BB6A);
+                    stop:0 #2C7A3A, stop:1 #2C7A3A);
                 border-radius: 3px;
             }
         """)
@@ -179,7 +179,7 @@ class ProgressDialog(QDialog):
         self.label_tiempo.setStyleSheet("""
             QLabel {
                 font-size: 12px;
-                color: #757575;
+                color: #5D6B60;
                 font-family: 'Courier New', monospace;
             }
         """)
@@ -194,9 +194,9 @@ class ProgressDialog(QDialog):
         self.label_cpu.setStyleSheet("""
             QLabel {
                 font-size: 12px;
-                color: #666;
+                color: #5D6B60;
                 padding: 4px 8px;
-                background-color: #f0f0f0;
+                background-color: #F3F5F1;
                 border-radius: 3px;
             }
         """)
@@ -207,9 +207,9 @@ class ProgressDialog(QDialog):
         self.label_eta.setStyleSheet("""
             QLabel {
                 font-size: 12px;
-                color: #666;
+                color: #5D6B60;
                 padding: 4px 8px;
-                background-color: #f0f0f0;
+                background-color: #F3F5F1;
                 border-radius: 3px;
             }
         """)
@@ -223,7 +223,7 @@ class ProgressDialog(QDialog):
         self.label_detalle.setStyleSheet("""
             QLabel {
                 font-size: 12px;
-                color: #555555;
+                color: #46524A;
             }
         """)
         layout.addWidget(self.label_detalle)
@@ -236,7 +236,7 @@ class ProgressDialog(QDialog):
                 QLabel {
                     font-size: 12px;
                     font-weight: bold;
-                    color: #666666;
+                    color: #5D6B60;
                     margin-top: 5px;
                 }
             """)
@@ -247,8 +247,8 @@ class ProgressDialog(QDialog):
             self.text_log.setReadOnly(True)
             self.text_log.setStyleSheet("""
                 QTextEdit {
-                    background-color: #F5F5F5;
-                    border: 1px solid #DDDDDD;
+                    background-color: #F3F5F1;
+                    border: 1px solid #D9E0D5;
                     border-radius: 4px;
                     font-family: 'Courier New', monospace;
                     font-size: 12px;
@@ -421,13 +421,13 @@ class ProgressDialog(QDialog):
 
             # Actualizar label con color según uso
             if cpu_percent < 30:
-                color = "#4CAF50"  # Verde
+                color = "#2C7A3A"  # Verde
                 emoji = "💻"
             elif cpu_percent < 70:
-                color = "#FF9800"  # Naranja
+                color = "#B97A12"  # Naranja
                 emoji = "⚡"
             else:
-                color = "#F44336"  # Rojo
+                color = "#A32D2D"  # Rojo
                 emoji = "🔥"
 
             # Mostrar: % total, cores activos y cores equivalentes
@@ -441,7 +441,7 @@ class ProgressDialog(QDialog):
                     color: {color};
                     font-weight: bold;
                     padding: 4px 8px;
-                    background-color: #f0f0f0;
+                    background-color: #F3F5F1;
                     border-radius: 3px;
                 }}
             """)

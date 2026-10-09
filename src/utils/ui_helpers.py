@@ -41,37 +41,38 @@ def announce(message: str, widget: Optional[QWidget] = None) -> None:
 # Estilos consistentes para todos los QMessageBox
 MESSAGEBOX_STYLE = """
     QMessageBox {
-        background-color: white !important;
+        background-color: #FFFFFF;
         min-width: 400px;
     }
     QMessageBox QLabel {
-        color: #1f2937 !important;
+        color: #1D2A20;
         font-size: 14px;
         padding: 10px;
     }
     QMessageBox QPushButton {
-        background-color: #166529 !important;
-        color: white !important;
-        font-weight: 600 !important;
-        font-size: 13px !important;
-        padding: 8px 24px !important;
-        border: 2px solid #047857 !important;
-        border-radius: 6px !important;
-        min-width: 100px !important;
-        min-height: 35px !important;
+        background-color: #FFFFFF;
+        color: #1D2A20;
+        font-weight: 600;
+        font-size: 14px;
+        padding: 6px 14px;
+        border: 1px solid #C9D2C5;
+        border-radius: 8px;
+        min-width: 96px;
+        min-height: 20px;
     }
     QMessageBox QPushButton:hover {
-        background-color: #047857 !important;
+        border-color: #2C7A3A;
     }
     QMessageBox QPushButton:pressed {
-        background-color: #065f46 !important;
+        background-color: #EEF2EC;
     }
     QMessageBox QPushButton:default {
-        background-color: #0284c7 !important;
-        border: 2px solid #0369a1 !important;
+        background-color: #2C7A3A;
+        color: #FFFFFF;
+        border: 1px solid #2C7A3A;
     }
     QMessageBox QPushButton:default:hover {
-        background-color: #0369a1 !important;
+        background-color: #1C5226;
     }
 """
 
@@ -602,7 +603,7 @@ def pintar_tabla_vacia(tabla, mensaje: str) -> bool:
     celda.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
     from presentation.theme.modo_oscuro import color_texto
 
-    celda.setForeground(color_texto("#6B7280"))
+    celda.setForeground(color_texto("#5D6B60"))
     tabla.setItem(0, 0, celda)
     if columnas > 1:
         tabla.setSpan(0, 0, 1, columnas)

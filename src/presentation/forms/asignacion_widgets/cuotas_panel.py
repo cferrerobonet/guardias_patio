@@ -58,25 +58,6 @@ class CuotasPanel(QGroupBox):
         self.configuracion_id = None
         self._ultima_response = None
 
-        self.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                font-size: 13px;
-                border: 2px solid #f59e0b;
-                border-radius: 6px;
-                margin-top: 16px;
-                padding-top: 14px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 6px 12px;
-                left: 12px;
-                top: -2px;
-                background-color: white;
-                color: #d97706;
-            }
-        """)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -89,24 +70,14 @@ class CuotasPanel(QGroupBox):
         button_layout = QHBoxLayout()
 
         self.calcular_button = QPushButton("Calcular Cuotas")
-        self.calcular_button.setMinimumHeight(35)
+        self.calcular_button.setMinimumHeight(34)
         self.calcular_button.clicked.connect(self.calcular_cuotas)
         button_layout.addWidget(self.calcular_button)
 
         # Badge informativo de total (solo lectura, no interactivo)
         self.total_badge = QLabel("Total: -- guardias")
-        self.total_badge.setStyleSheet("""
-            QLabel {
-                background-color: #1E7E34;
-                color: white;
-                font-weight: bold;
-                font-size: 14px;
-                padding: 8px 20px;
-                border-radius: 6px;
-                border: none;
-            }
-        """)
-        self.total_badge.setMinimumHeight(35)
+        self.total_badge.setObjectName("totalGuardias")
+        self.total_badge.setMinimumHeight(34)
         button_layout.addWidget(self.total_badge)
 
         layout.addLayout(button_layout)

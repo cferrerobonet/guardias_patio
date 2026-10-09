@@ -96,7 +96,7 @@ class InitialConfigDialog(QDialog):
             QLabel {
                 font-size: 20px;
                 font-weight: bold;
-                color: #1f2937;
+                color: #1D2A20;
                 padding: 10px;
             }
         """)
@@ -109,9 +109,9 @@ class InitialConfigDialog(QDialog):
         description_label.setStyleSheet("""
             QLabel {
                 font-size: 14px;
-                color: #6b7280;
+                color: #5D6B60;
                 padding: 10px;
-                background-color: #f9fafb;
+                background-color: #F3F5F1;
                 border-radius: 5px;
             }
         """)
@@ -123,13 +123,13 @@ class InitialConfigDialog(QDialog):
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #d1d5db;
+                border: 1px solid #C9D2C5;
                 border-radius: 5px;
                 background-color: white;
             }
             QTabBar::tab {
-                background-color: #f3f4f6;
-                border: 1px solid #d1d5db;
+                background-color: #F3F5F1;
+                border: 1px solid #C9D2C5;
                 padding: 10px 20px;
                 margin-right: 2px;
             }
@@ -171,14 +171,14 @@ class InitialConfigDialog(QDialog):
         self.skip_smtp_btn.setIcon(icon_for_button("skip"))
         self.skip_smtp_btn.setStyleSheet("""
             QPushButton {
-                background-color: #f59e0b;
+                background-color: #9A5B00;
                 color: white;
-                padding: 10px 20px;
-                border-radius: 5px;
+                padding: 6px 14px;
+                border-radius: 8px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #d97706;
+                background-color: #9A5B00;
             }
         """)
         self.skip_smtp_btn.clicked.connect(self._skip_smtp)
@@ -187,18 +187,18 @@ class InitialConfigDialog(QDialog):
         self.continue_btn.setIcon(icon_for_button("check"))
         self.continue_btn.setStyleSheet("""
             QPushButton {
-                background-color: #1E7E34;
+                background-color: #2C7A3A;
                 color: white;
-                padding: 10px 20px;
-                border-radius: 5px;
+                padding: 6px 14px;
+                border-radius: 8px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #166529;
+                background-color: #1C5226;
             }
             QPushButton:disabled {
-                background-color: #d1d5db;
-                color: #9ca3af;
+                background-color: #C9D2C5;
+                color: #9AA79D;
             }
         """)
         self.continue_btn.clicked.connect(self.accept)

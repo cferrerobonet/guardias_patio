@@ -42,6 +42,7 @@ from presentation.dialogs.modales_perfil import (
 )
 from presentation.forms.base_form import BaseForm
 from presentation.theme import legacy_styles as styles
+from presentation.theme.modo_oscuro import color_fondo
 from presentation.widgets.toast_notification import ToastNotification
 from sync.sync_manager import UserAuth
 from utils.icons import icon_for_button
@@ -185,16 +186,16 @@ class PerfilesUsuarioForm(BaseForm):
         btn_refrescar.setIcon(icon_for_button("refresh"))
         btn_refrescar.setStyleSheet("""
             QPushButton {
-                background-color: #607D8B;
+                background-color: #5D6B60;
                 color: white;
                 border: none;
-                padding: 8px 12px;
-                border-radius: 4px;
+                padding: 6px 14px;
+                border-radius: 8px;
                 font-size: 14px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #546E7A;
+                background-color: #5D6B60;
             }
         """)
         btn_refrescar.setToolTip("Refrescar tabla")
@@ -252,7 +253,7 @@ class PerfilesUsuarioForm(BaseForm):
                 # Usuario
                 item_usuario = QTableWidgetItem(perfil.username)
                 if perfil.es_actual:
-                    item_usuario.setBackground(Qt.GlobalColor.yellow)
+                    item_usuario.setBackground(color_fondo("#FBF0D9"))
                     item_usuario.setForeground(Qt.GlobalColor.black)
                 self.tabla.setItem(row, 0, item_usuario)
 
@@ -379,7 +380,7 @@ class PerfilesUsuarioForm(BaseForm):
 
             # Advertencia
             advertencia = QLabel(
-                "<p style='color: #d32f2f; font-weight: bold;'>⚠️ ADVERTENCIA: Se eliminará:</p>"
+                "<p style='color: #A32D2D; font-weight: bold;'>⚠️ ADVERTENCIA: Se eliminará:</p>"
                 "<ul style='margin-left: 20px;'>"
                 "<li>El perfil de usuario</li>"
                 "<li>Su base de datos completa</li>"
@@ -403,12 +404,12 @@ class PerfilesUsuarioForm(BaseForm):
             btn_cancelar = QPushButton("Cancelar")
             btn_cancelar.setObjectName("secondaryButton")
             btn_cancelar.setMinimumWidth(100)
-            btn_cancelar.setMinimumHeight(35)
+            btn_cancelar.setMinimumHeight(34)
 
             btn_eliminar = QPushButton("Eliminar Perfil")
             btn_eliminar.setIcon(icon_for_button("delete"))
             btn_eliminar.setMinimumWidth(140)
-            btn_eliminar.setMinimumHeight(35)
+            btn_eliminar.setMinimumHeight(34)
             btn_eliminar.setProperty("danger", "true")
 
             button_box.addButton(btn_cancelar, QDialogButtonBox.ButtonRole.RejectRole)

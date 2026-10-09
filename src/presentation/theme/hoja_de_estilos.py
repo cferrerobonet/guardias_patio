@@ -10,13 +10,13 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from presentation.theme.tokens import Colors, familias_del_sistema
+from presentation.theme.tokens import FAMILIA_MONO, FAMILIA_TITULOS, Colors, familias_del_sistema
 from utils import get_logger
 
 logger = get_logger(__name__)
 
 RUTA_QSS = Path(__file__).parent / "light.qss"
-_MARCADOR = re.compile(r"@([A-Z_]+)@")
+_MARCADOR = re.compile(r"@([A-Z0-9_]+)@")
 
 
 def _valores() -> dict:
@@ -27,6 +27,12 @@ def _valores() -> dict:
     }
     # La familia tipográfica depende del sistema operativo (VIS-003).
     valores["FONT_FAMILY"] = ", ".join(f'"{f}"' for f in familias_del_sistema())
+    # Las flechas de desplegables y campos numéricos son SVG de `imagenes/icons`.
+    from core.paths import get_resources_directory
+
+    valores["ICONOS"] = (get_resources_directory() / "icons").as_posix()
+    valores["FONT_TITULOS"] = f'"{FAMILIA_TITULOS}", ' + valores["FONT_FAMILY"]
+    valores["FONT_MONO"] = f'"{FAMILIA_MONO}", "Menlo", "Consolas", monospace'
     return valores
 
 

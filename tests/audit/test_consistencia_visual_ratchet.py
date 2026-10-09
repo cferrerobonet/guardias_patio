@@ -17,7 +17,11 @@ Bajadas registradas (lote 8, v5.58.0):
 - `setStyleSheet` 288 → 260 (v5.65.0): las hojas repetidas literalmente pasan a
   reglas semánticas de `light.qss` (`#tituloDialogo`, `[caja="aviso"]`…). El resto
   son estilos únicos por widget: sacarlos exige mirar cada vista, y eso sigue
-  siendo el grueso de VIS-001."""
+  siendo el grueso de VIS-001.
+- 2026-10-09, diseño de Partes de salida: `setStyleSheet` 238 → 223, `hex_literales`
+  467 → 413, `lineas_con_emoji` 315 → 301 y `setMinimum` 143 → 139. Las cajas de los
+  paneles de cálculo y el recuadro de total pasan a `light.qss`, y las paletas oscuras
+  y las del panel de resultados a `tokens.py`."""
 
 import re
 from pathlib import Path
@@ -30,11 +34,11 @@ UMBRALES = {
     # 238 desde v5.89.0: extraídos a la hoja los estilos que estaban escritos
     # dos o tres veces. Los ~157 que quedan son distintos entre sí —ajustes de
     # un widget concreto—, así que sacarlos crearía un rol por widget.
-    "setStyleSheet": 238,
-    "hex_literales": 467,
+    "setStyleSheet": 223,
+    "hex_literales": 413,
     "font_size_menor_12px": 0,
     "qfont_menor_9pt": 0,
-    "lineas_con_emoji": 315,
+    "lineas_con_emoji": 301,
     # 17 desde v5.95.0: las casillas de la matriz de disponibilidad dejan de
     # tener tamaño fijo para poder estirarse. Un tamaño fijo es peor que un
     # mínimo cuando la pantalla escala (UXA-001), así que el cambio va en la
@@ -45,7 +49,7 @@ UMBRALES = {
     # previo de importación, que necesita una tabla de cuatro columnas legible.
     # Ya van tres subidas seguidas por diálogos nuevos: el mínimo de un diálogo
     # con tabla debería salir de un sitio común en vez de repetirse en cada uno.
-    "setMinimum": 143,
+    "setMinimum": 139,
 }
 EMOJI = re.compile("[\U0001f300-\U0001faff☀-➿]")
 
@@ -161,7 +165,7 @@ def test_la_hoja_construida_no_deja_marcadores_sin_resolver():
 
     hoja = construir_hoja_de_estilos()
     assert hoja, "la hoja de estilos salió vacía"
-    assert not re.findall(r"@[A-Z_]+@", hoja), "quedan marcadores sin token"
+    assert not re.findall(r"@[A-Z0-9_]+@", hoja), "quedan marcadores sin token"
     # Y la familia tipográfica es la del sistema, no la del navegador.
     assert "-apple-system" not in hoja
 

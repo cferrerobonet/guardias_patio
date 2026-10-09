@@ -26,8 +26,8 @@ from infrastructure.database.models import Guardia, Profesor
 from presentation.forms.base_form import BaseForm
 from presentation.theme.modo_oscuro import color_fondo, color_texto
 from presentation.themes.tema_aplicacion import (
-    CONTENT_BG_ALT,
-    PRIMARY_BLUE,
+    BORDER_LIGHT,
+    CONTENT_BG,
     TEXT_PRIMARY,
     get_table_style,
 )
@@ -88,7 +88,7 @@ class PanelEstadisticas(BaseForm):
         btn_refrescar.setIcon(icon_for_button("refresh"))
         btn_refrescar.clicked.connect(self.actualizar_estadisticas)
         btn_refrescar.setProperty("success", "true")
-        layout_principal.addWidget(btn_refrescar)
+        layout_principal.addWidget(btn_refrescar, alignment=Qt.AlignmentFlag.AlignLeft)
 
         # Pestañas
         self.tabs = QTabWidget()
@@ -119,12 +119,12 @@ class PanelEstadisticas(BaseForm):
 
         estilo_metrica = f"""
             QLabel {{
-                background-color: {CONTENT_BG_ALT};
-                padding: 15px;
-                border-radius: 8px;
-                border: 2px solid {PRIMARY_BLUE};
-                font-size: 13px;
-                font-weight: bold;
+                background-color: {CONTENT_BG};
+                padding: 12px;
+                border-radius: 10px;
+                border: 1px solid {BORDER_LIGHT};
+                font-size: 14px;
+                font-weight: 600;
                 color: {TEXT_PRIMARY};
             }}
         """
@@ -269,7 +269,7 @@ class PanelEstadisticas(BaseForm):
     #: Escala de un solo tono para 1, 2 y 3 o más guardias en la semana (validada:
     #: monótona y con contraste). Antes se pintaba en verde, ámbar y rojo frente a
     #: una cuota que sólo miraba las horas de contrato (2026-10-03).
-    ESCALA_SEMANAL = (("#93B9E4", "#111827"), ("#4A82C3", "#FFFFFF"), ("#0C4A85", "#FFFFFF"))
+    ESCALA_SEMANAL = (("#9FCFA7", "#1D2A20"), ("#2C7A3A", "#FFFFFF"), ("#1C5226", "#FFFFFF"))
 
     def _actualizar_heatmap_ui(self):
         from infrastructure.database.models import CursoEscolar

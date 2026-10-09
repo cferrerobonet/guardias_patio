@@ -55,7 +55,7 @@ class ForgotPasswordDialog(QDialog):
         info.setStyleSheet("""
             QLabel {
                 font-size: 13px;
-                color: #374151;
+                color: #2F3B32;
                 padding: 10px 40px;
             }
         """)
@@ -69,7 +69,7 @@ class ForgotPasswordDialog(QDialog):
 
         self.user_input = QLineEdit()
         self.user_input.setPlaceholderText("Usuario o email")
-        self.user_input.setMinimumHeight(35)
+        self.user_input.setMinimumHeight(34)
         self.user_input.returnPressed.connect(self.send_recovery_email)
         form_layout.addRow("👤 Usuario/Email:", self.user_input)
 
@@ -82,26 +82,26 @@ class ForgotPasswordDialog(QDialog):
 
         cancel_btn = QPushButton("Cancelar")
         cancel_btn.setObjectName("secondaryButton")
-        cancel_btn.setMinimumHeight(40)
+        cancel_btn.setMinimumHeight(34)
         cancel_btn.clicked.connect(self.reject)
         buttons_layout.addWidget(cancel_btn)
 
         send_btn = QPushButton("Enviar Código")
         send_btn.setIcon(icon_for_button("email"))
-        send_btn.setMinimumHeight(40)
+        send_btn.setMinimumHeight(34)
         send_btn.clicked.connect(self.send_recovery_email)
         send_btn.setDefault(True)
         send_btn.setStyleSheet("""
             QPushButton {
-                background-color: #0E5FA8;
+                background-color: #2C7A3A;
                 color: white;
                 border: none;
-                border-radius: 6px;
+                border-radius: 8px;
                 font-size: 14px;
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #0C5291;
+                background-color: #1C5226;
             }
         """)
         buttons_layout.addWidget(send_btn)
@@ -195,7 +195,7 @@ class ForgotPasswordDialog(QDialog):
         )
         msg.setText(
             f"Se ha enviado un código de recuperación a:<br><br>"
-            f"<span style='color: #0E5FA8; font-style: italic;'>{email}</span><br><br>"
+            f"<span style='color: #2C7A3A; font-style: italic;'>{email}</span><br><br>"
             f"Revisa tu bandeja de entrada (y también la carpeta de spam).<br><br>"
             f"Usa el código recibido en el siguiente paso para restablecer tu contraseña."
         )

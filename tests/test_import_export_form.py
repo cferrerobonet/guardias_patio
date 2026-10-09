@@ -129,7 +129,7 @@ class TestImportExportFormExportar:
 
         # Verificar que se llamó al exportador
         mock_exportar.assert_called_once()
-        assert "exportado" in form.resultado_text.toPlainText().lower()
+        assert "copia de seguridad guardada" in form.resultado_text.toPlainText().lower()
 
         # Limpiar
         os.unlink(temp_file.name)
@@ -215,7 +215,7 @@ class TestImportExportFormImportar:
 
         # Verificar que se llamó al importador
         mock_importar.assert_called_once()
-        assert "importado" in form.resultado_text.toPlainText().lower()
+        assert "copia de seguridad restaurada" in form.resultado_text.toPlainText().lower()
 
         # Limpiar
         os.unlink(temp_file.name)

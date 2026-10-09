@@ -6,10 +6,10 @@ class ToastNotification(QWidget):
     """Notificación flotante no intrusiva en esquina inferior derecha."""
 
     _COLORES = {
-        "success": ("#1E7E34", "#D1FAE5", "#166534"),
-        "error": ("#DC3545", "#FEE2E2", "#991B1B"),
-        "info": ("#0E5FA8", "#E6F2FA", "#1E40AF"),
-        "warning": ("#856404", "#FFF3CD", "#92400E"),
+        "success": ("#2C7A3A", "#E2F0E3", "#1C5226"),
+        "error": ("#A32D2D", "#F8E3E1", "#8A2424"),
+        "info": ("#2C7A3A", "#E2F0E3", "#1C5226"),
+        "warning": ("#9A5B00", "#FBF0D9", "#9A5B00"),
     }
 
     #: Cuánto se queda cada tipo en pantalla. Un fallo no puede desaparecer solo

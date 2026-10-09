@@ -50,7 +50,7 @@ class DialogoCrearPerfilProfesional(QDialog):
 
         self.input_usuario = QLineEdit()
         self.input_usuario.setPlaceholderText("Nombre de usuario único")
-        self.input_usuario.setMinimumHeight(32)
+        self.input_usuario.setMinimumHeight(34)
         self.input_usuario.setAccessibleName("Campo nombre de usuario")
         self.input_usuario.setValidator(
             QRegularExpressionValidator(QRegularExpression(r"[a-zA-Z0-9_\-\.]{3,50}"))
@@ -59,7 +59,7 @@ class DialogoCrearPerfilProfesional(QDialog):
 
         self.input_email = QLineEdit()
         self.input_email.setPlaceholderText("correo@ejemplo.com")
-        self.input_email.setMinimumHeight(32)
+        self.input_email.setMinimumHeight(34)
         self.input_email.setAccessibleName("Campo correo electrónico")
         self.input_email.setValidator(
             QRegularExpressionValidator(
@@ -71,14 +71,14 @@ class DialogoCrearPerfilProfesional(QDialog):
         self.input_password = QLineEdit()
         self.input_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_password.setPlaceholderText("8+ chars, mayúscula, número y símbolo")
-        self.input_password.setMinimumHeight(32)
+        self.input_password.setMinimumHeight(34)
         self.input_password.setAccessibleName("Campo contraseña del perfil")
         form_layout.addRow("Contraseña:", self.input_password)
 
         self.input_password_confirm = QLineEdit()
         self.input_password_confirm.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_password_confirm.setPlaceholderText("Repetir contraseña")
-        self.input_password_confirm.setMinimumHeight(32)
+        self.input_password_confirm.setMinimumHeight(34)
         self.input_password_confirm.setAccessibleName("Campo confirmar contraseña del perfil")
         form_layout.addRow("Confirmar:", self.input_password_confirm)
 
@@ -172,13 +172,13 @@ class DialogoEditarPerfilProfesional(QDialog):
         form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         label_usuario = QLabel(self.username)
-        label_usuario.setStyleSheet("font-weight: bold; color: #333;")
+        label_usuario.setStyleSheet("font-weight: bold; color: #2F3B32;")
         form_layout.addRow("Usuario:", label_usuario)
 
         self.input_email = QLineEdit()
         self.input_email.setText(email_actual)
         self.input_email.setPlaceholderText("correo@ejemplo.com")
-        self.input_email.setMinimumHeight(32)
+        self.input_email.setMinimumHeight(34)
         self.input_email.setAccessibleName("Campo correo electrónico del perfil")
         self.input_email.setValidator(
             QRegularExpressionValidator(
@@ -250,7 +250,7 @@ class DialogoCambiarPasswordProfesional(QDialog):
 
         # Título
         titulo = QLabel(f"🔐 Cambiar Contraseña: {self.username}")
-        titulo.setStyleSheet("font-size: 16px; font-weight: bold; color: #FF9800;")
+        titulo.setStyleSheet("font-size: 16px; font-weight: bold; color: #B97A12;")
         layout.addWidget(titulo)
 
         # Descripción
@@ -267,21 +267,21 @@ class DialogoCambiarPasswordProfesional(QDialog):
         self.input_actual = QLineEdit()
         self.input_actual.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_actual.setPlaceholderText("Contraseña actual")
-        self.input_actual.setMinimumHeight(32)
+        self.input_actual.setMinimumHeight(34)
         self.input_actual.setAccessibleName("Campo contraseña actual")
         form_layout.addRow("Actual:", self.input_actual)
 
         self.input_nueva = QLineEdit()
         self.input_nueva.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_nueva.setPlaceholderText("8+ chars, mayúscula, número y símbolo")
-        self.input_nueva.setMinimumHeight(32)
+        self.input_nueva.setMinimumHeight(34)
         self.input_nueva.setAccessibleName("Campo nueva contraseña")
         form_layout.addRow("Nueva:", self.input_nueva)
 
         self.input_confirmar = QLineEdit()
         self.input_confirmar.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_confirmar.setPlaceholderText("Repetir nueva contraseña")
-        self.input_confirmar.setMinimumHeight(32)
+        self.input_confirmar.setMinimumHeight(34)
         self.input_confirmar.setAccessibleName("Campo confirmar nueva contraseña")
         form_layout.addRow("Confirmar:", self.input_confirmar)
 

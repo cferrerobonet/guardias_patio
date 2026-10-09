@@ -176,14 +176,14 @@ class VistaCalendario(BaseForm):
         self.combo_vista.setMinimumWidth(120)
         self.combo_vista.setStyleSheet("""
             QComboBox {
-                padding: 5px 10px;
-                border: 2px solid #2196F3;
-                border-radius: 4px;
+                padding: 6px 9px;
+                border: 1px solid #7D8A80;
+                border-radius: 7px;
                 background-color: white;
-                font-size: 12px;
+                font-size: 14px;
             }
             QComboBox:hover {
-                background-color: #E3F2FD;
+                background-color: #E2F0E3;
             }
         """)
         barra_layout.addWidget(self.combo_vista)
@@ -206,9 +206,9 @@ class VistaCalendario(BaseForm):
         self.label_periodo.setFont(font_periodo)
         self.label_periodo.setStyleSheet("""
             QLabel {
-                color: #1976D2;
+                color: #2C7A3A;
                 padding: 8px 16px;
-                background-color: #E3F2FD;
+                background-color: #E2F0E3;
                 border-radius: 6px;
             }
         """)
@@ -227,19 +227,19 @@ class VistaCalendario(BaseForm):
         self.btn_hoy.clicked.connect(self.ir_a_hoy)
         self.btn_hoy.setStyleSheet("""
             QPushButton {
-                padding: 8px 16px;
-                background-color: #4CAF50;
+                padding: 6px 14px;
+                background-color: #2C7A3A;
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: 8px;
                 font-weight: bold;
-                font-size: 12px;
+                font-size: 14px;
             }
             QPushButton:hover {
-                background-color: #45A049;
+                background-color: #2C7A3A;
             }
             QPushButton:pressed {
-                background-color: #388E3C;
+                background-color: #2C7A3A;
             }
         """)
         barra_layout.addWidget(self.btn_hoy)
@@ -253,11 +253,11 @@ class VistaCalendario(BaseForm):
         self.spin_anio.setVisible(False)  # Solo visible en vista anual
         self.spin_anio.setStyleSheet("""
             QSpinBox {
-                padding: 5px 10px;
-                border: 2px solid #2196F3;
-                border-radius: 4px;
+                padding: 6px 9px;
+                border: 1px solid #7D8A80;
+                border-radius: 7px;
                 background-color: white;
-                font-size: 12px;
+                font-size: 14px;
             }
         """)
         barra_layout.addWidget(self.spin_anio)
@@ -270,19 +270,19 @@ class VistaCalendario(BaseForm):
         btn_refrescar.clicked.connect(self.refrescar)
         btn_refrescar.setStyleSheet("""
             QPushButton {
-                padding: 8px 16px;
-                background-color: #2196F3;
+                padding: 6px 14px;
+                background-color: #2C7A3A;
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: 8px;
                 font-weight: bold;
-                font-size: 12px;
+                font-size: 14px;
             }
             QPushButton:hover {
-                background-color: #1976D2;
+                background-color: #2C7A3A;
             }
             QPushButton:pressed {
-                background-color: #0D47A1;
+                background-color: #1C5226;
             }
         """)
         barra_layout.addWidget(btn_refrescar)
@@ -295,16 +295,16 @@ class VistaCalendario(BaseForm):
         self.btn_compacto.clicked.connect(self.toggle_modo_compacto)
         self.btn_compacto.setStyleSheet("""
             QPushButton {
-                padding: 8px 16px;
-                background-color: #607D8B;
+                padding: 6px 14px;
+                background-color: #5D6B60;
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: 8px;
                 font-weight: bold;
-                font-size: 12px;
+                font-size: 14px;
             }
-            QPushButton:hover { background-color: #546E7A; }
-            QPushButton:checked { background-color: #37474F; }
+            QPushButton:hover { background-color: #5D6B60; }
+            QPushButton:checked { background-color: #2F3B32; }
         """)
         barra_layout.addWidget(self.btn_compacto)
 
@@ -314,19 +314,19 @@ class VistaCalendario(BaseForm):
         """Estilo CSS para botones de navegación."""
         return """
             QPushButton {
-                padding: 8px 16px;
-                background-color: #2196F3;
+                padding: 6px 14px;
+                background-color: #2C7A3A;
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: 8px;
                 font-weight: bold;
-                font-size: 12px;
+                font-size: 14px;
             }
             QPushButton:hover {
-                background-color: #1976D2;
+                background-color: #2C7A3A;
             }
             QPushButton:pressed {
-                background-color: #0D47A1;
+                background-color: #1C5226;
             }
         """
 
@@ -336,18 +336,18 @@ class VistaCalendario(BaseForm):
         leyenda_layout.setSpacing(15)
 
         label_titulo = QLabel("LEYENDA:")
-        label_titulo.setStyleSheet("font-weight: bold; font-size: 12px; color: #1976D2;")
+        label_titulo.setStyleSheet("font-weight: bold; font-size: 12px; color: #2C7A3A;")
         leyenda_layout.addWidget(label_titulo)
 
         # Items de leyenda con colores
         items = [
-            ("🟨", "Hoy", "#FFF9C4", "#FBC02D"),
-            ("🟦", "Con guardias", "#E3F2FD", "#90CAF9"),
-            ("🟧", "Con sustituciones", "#FFF3E0", "#FF9800"),
-            ("■", "Con ausencias", "#FCE4EC", "#E91E63"),
-            ("□", "Sin actividad", "#FAFAFA", "#E0E0E0"),
-            ("■", "No lectivo", "#F5F5F5", "#BDBDBD"),
-            ("!", "Zona sin guardia", "#FFEBEE", "#D32F2F"),
+            ("🟨", "Hoy", "#FBF0D9", "#B97A12"),
+            ("🟩", "Con guardias", "#E2F0E3", "#9FCFA7"),
+            ("🟧", "Con sustituciones", "#FBE9DC", "#C8641E"),
+            ("■", "Con ausencias", "#F6E3EA", "#B0456E"),
+            ("□", "Sin actividad", "#F3F5F1", "#D9E0D5"),
+            ("■", "No lectivo", "#F3F5F1", "#C9D2C5"),
+            ("!", "Zona sin guardia", "#F8E3E1", "#A32D2D"),
         ]
 
         for emoji, texto, bg_color, border_color in items:
@@ -442,10 +442,10 @@ class VistaCalendario(BaseForm):
             label.setFont(font)
             label.setStyleSheet("""
                 QLabel {
-                    background-color: #2196F3;
-                    color: white;
-                    padding: 12px;
-                    border-radius: 4px;
+                    background-color: #EEF2EC;
+                    color: #2F3B32;
+                    padding: 8px;
+                    border-radius: 7px;
                 }
             """)
             grid_calendario.addWidget(label, 0, i)
@@ -529,10 +529,10 @@ class VistaCalendario(BaseForm):
             label.setFont(font)
             label.setStyleSheet("""
                 QLabel {
-                    background-color: #2196F3;
-                    color: white;
-                    padding: 12px;
-                    border-radius: 4px;
+                    background-color: #EEF2EC;
+                    color: #2F3B32;
+                    padding: 8px;
+                    border-radius: 7px;
                 }
             """)
             grid_calendario.addWidget(label, 0, i)
@@ -610,7 +610,7 @@ class VistaCalendario(BaseForm):
         grupo.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
-                border: 2px solid #2196F3;
+                border: 2px solid #2C7A3A;
                 border-radius: 6px;
                 margin-top: 10px;
                 padding: 10px;
@@ -619,7 +619,7 @@ class VistaCalendario(BaseForm):
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-                color: #1976D2;
+                color: #2C7A3A;
             }
         """)
 
@@ -634,7 +634,7 @@ class VistaCalendario(BaseForm):
         for i, dia in enumerate(dias_semana_cortos):
             label = QLabel(dia)
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setStyleSheet("font-size: 12px; font-weight: bold; color: #666;")
+            label.setStyleSheet("font-size: 12px; font-weight: bold; color: #5D6B60;")
             grid.addWidget(label, 0, i)
 
         # Días del mes

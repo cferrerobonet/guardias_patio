@@ -31,7 +31,7 @@ def _azul_texto() -> str:
     """El azul de los textos HTML, aclarado en modo oscuro (no pasan por la hoja)."""
     from presentation.theme.modo_oscuro import color_texto
 
-    return color_texto("#0E5FA8").name()
+    return color_texto("#2C7A3A").name()
 
 
 class RegisterDialog(QDialog):
@@ -70,7 +70,7 @@ class RegisterDialog(QDialog):
 
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("Ej: carlos@ceip.es")
-        self.username_input.setMinimumHeight(35)
+        self.username_input.setMinimumHeight(34)
         # UX-01: validar en tiempo real — sólo caracteres permitidos en username
         username_validator = QRegularExpressionValidator(
             __import__('PyQt6.QtCore', fromlist=['QRegularExpression']).QRegularExpression(
@@ -83,21 +83,21 @@ class RegisterDialog(QDialog):
 
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("Ej: carlos@ejemplo.com (OBLIGATORIO)")
-        self.email_input.setMinimumHeight(35)
+        self.email_input.setMinimumHeight(34)
         self.email_input.setAccessibleName("Campo email")
         form_layout.addRow("📧 Email *:", self.email_input)
 
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Mín. 8 chars, mayúscula, número, símbolo")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_input.setMinimumHeight(35)
+        self.password_input.setMinimumHeight(34)
         self.password_input.setAccessibleName("Campo contraseña")
         form_layout.addRow("🔑 Contraseña:", self.password_input)
 
         self.password_confirm_input = QLineEdit()
         self.password_confirm_input.setPlaceholderText("Repite la contraseña")
         self.password_confirm_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_confirm_input.setMinimumHeight(35)
+        self.password_confirm_input.setMinimumHeight(34)
         self.password_confirm_input.setAccessibleName("Campo confirmar contraseña")
         self.password_confirm_input.returnPressed.connect(self.register)
         form_layout.addRow("🔑 Confirmar:", self.password_confirm_input)
@@ -111,7 +111,7 @@ class RegisterDialog(QDialog):
             "✓ Las contraseñas deben coincidir\n"
             "✓ Email obligatorio para recuperación"
         )
-        requirements.setStyleSheet("color: #6B7280; font-size: 12px; padding: 0px 40px;")
+        requirements.setStyleSheet("color: #5D6B60; font-size: 12px; padding: 0px 40px;")
         layout.addWidget(requirements)
 
         # Botones
@@ -121,13 +121,13 @@ class RegisterDialog(QDialog):
 
         cancel_btn = QPushButton("Cancelar")
         cancel_btn.setIcon(icon_for_button("close"))
-        cancel_btn.setMinimumHeight(40)
+        cancel_btn.setMinimumHeight(34)
         cancel_btn.clicked.connect(self.reject)
         cancel_btn.setProperty("secondary", "true")
         buttons_layout.addWidget(cancel_btn)
 
         register_btn = QPushButton("Registrarse")
-        register_btn.setMinimumHeight(40)
+        register_btn.setMinimumHeight(34)
         register_btn.clicked.connect(self.register)
         register_btn.setDefault(True)
         register_btn.setProperty("success", "true")
@@ -302,7 +302,7 @@ class LoginDialog(QDialog):
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
         self.setWindowTitle("Iniciar Sesión - Guardias de Patio")
-        self.setWindowIcon(get_icon("login", "#0E5FA8", 32))
+        self.setWindowIcon(get_icon("login", "#2C7A3A", 32))
         self.setModal(True)
         self.setFixedSize(720, 480)
 
@@ -318,8 +318,10 @@ class LoginDialog(QDialog):
         # ── Panel izquierdo: marca ──────────────────────────────────────────
         brand_panel = QLabel()
         brand_panel.setFixedWidth(280)
+        brand_panel.setObjectName("panelMarca")
         brand_panel.setStyleSheet(
-            "QLabel { background-color: #0E5FA8; }"
+            "QLabel#panelMarca { background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+            " stop:0 #1C5226, stop:1 #2C7A3A); border-right: 3px solid #B97A12; }"
         )
         brand_layout = QVBoxLayout(brand_panel)
         brand_layout.setContentsMargins(24, 40, 24, 32)
@@ -351,7 +353,8 @@ class LoginDialog(QDialog):
 
         app_title = QLabel("Guardias\nde Patio")
         app_title.setStyleSheet(
-            "QLabel { font-size: 26px; font-weight: 700; color: white;"
+            "QLabel { font-family: 'Barlow Condensed'; font-size: 34px; font-weight: 800;"
+            " color: white;"
             " background: transparent; line-height: 1.2; }"
         )
         app_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -409,14 +412,15 @@ class LoginDialog(QDialog):
 
         welcome = QLabel("Bienvenido")
         welcome.setStyleSheet(
-            "QLabel { font-size: 22px; font-weight: 700; color: #111827;"
+            "QLabel { font-family: 'Barlow Condensed'; font-size: 28px; font-weight: 700;"
+            " color: #1D2A20;"
             " background: transparent; }"
         )
         form_layout_outer.addWidget(welcome)
 
         hint = QLabel("Inicia sesión para continuar")
         hint.setStyleSheet(
-            "QLabel { font-size: 12px; color: #6B7280; background: transparent; }"
+            "QLabel { font-size: 12px; color: #5D6B60; background: transparent; }"
         )
         form_layout_outer.addWidget(hint)
         form_layout_outer.addSpacing(28)
@@ -428,21 +432,21 @@ class LoginDialog(QDialog):
         self.username_combo = QComboBox()
         self.username_combo.setEditable(True)
         self.username_combo.setPlaceholderText("Selecciona o escribe tu usuario")
-        self.username_combo.setMinimumHeight(36)
+        self.username_combo.setMinimumHeight(34)
         self.username_combo.setAccessibleName("Campo selector de usuario")
         self.username_combo.currentTextChanged.connect(self.on_user_selected)
         user_label = QLabel("Usuario")
-        user_label.setStyleSheet("QLabel { font-size: 12px; font-weight: 600; color: #374151; background: transparent; }")
+        user_label.setStyleSheet("QLabel { font-size: 12px; font-weight: 600; color: #2F3B32; background: transparent; }")
         form_layout.addRow(user_label, self.username_combo)
 
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Introduce tu contraseña")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_input.setMinimumHeight(36)
+        self.password_input.setMinimumHeight(34)
         self.password_input.setAccessibleName("Campo contraseña de acceso")
         self.password_input.returnPressed.connect(self.login)
         pwd_label = QLabel("Contraseña")
-        pwd_label.setStyleSheet("QLabel { font-size: 12px; font-weight: 600; color: #374151; background: transparent; }")
+        pwd_label.setStyleSheet("QLabel { font-size: 12px; font-weight: 600; color: #2F3B32; background: transparent; }")
         form_layout.addRow(pwd_label, self.password_input)
 
         form_layout_outer.addLayout(form_layout)
@@ -462,13 +466,13 @@ class LoginDialog(QDialog):
 
         self.login_btn = QPushButton(" Iniciar Sesión")
         self.login_btn.setIcon(get_icon("login", "white", 18))
-        self.login_btn.setMinimumHeight(42)
+        self.login_btn.setMinimumHeight(40)
         self.login_btn.clicked.connect(self.login)
         self.login_btn.setDefault(True)
         self.login_btn.setStyleSheet(
-            "QPushButton { background-color: #0E5FA8; color: white; border: none;"
-            " border-radius: 6px; font-size: 14px; font-weight: 600; }"
-            "QPushButton:hover { background-color: #0C5291; }"
+            "QPushButton { background-color: #2C7A3A; color: white; border: none;"
+            " border-radius: 9px; font-size: 15px; font-weight: 700; }"
+            "QPushButton:hover { background-color: #1C5226; }"
         )
         form_layout_outer.addWidget(self.login_btn)
 
@@ -478,24 +482,25 @@ class LoginDialog(QDialog):
         secondary_layout.setSpacing(8)
 
         self.register_btn = QPushButton(" Nuevo Usuario")
-        self.register_btn.setIcon(get_icon("account-plus", "white", 18))
-        self.register_btn.setMinimumHeight(36)
+        self.register_btn.setIcon(get_icon("account-plus", "#2F3B32", 18))
+        self.register_btn.setMinimumHeight(34)
         self.register_btn.clicked.connect(self.open_register_dialog)
-        self.register_btn.setProperty("success", "true")
+        self.register_btn.setProperty("secondary", "true")
         secondary_layout.addWidget(self.register_btn)
 
         self.delete_user_btn = QPushButton(" Eliminar")
-        self.delete_user_btn.setIcon(get_icon("close", "white", 18))
-        self.delete_user_btn.setMinimumHeight(36)
+        self.delete_user_btn.setIcon(get_icon("close", "#A32D2D", 18))
+        self.delete_user_btn.setMinimumHeight(34)
         self.delete_user_btn.clicked.connect(self.open_delete_user_dialog)
         self.delete_user_btn.setProperty("danger", "true")
+        self.delete_user_btn.setProperty("secondary", "true")
         secondary_layout.addWidget(self.delete_user_btn)
 
         form_layout_outer.addLayout(secondary_layout)
         form_layout_outer.addStretch()
 
         info_label = QLabel("¿Primera vez? Haz clic en Nuevo Usuario")
-        info_label.setStyleSheet("QLabel { color: #9CA3AF; font-size: 12px; background: transparent; }")
+        info_label.setStyleSheet("QLabel { color: #9AA79D; font-size: 12px; background: transparent; }")
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         form_layout_outer.addWidget(info_label)
 
@@ -505,7 +510,7 @@ class LoginDialog(QDialog):
         # así que basta con colocarlo una vez.
         self.close_btn = QPushButton(self)
         self.close_btn.setObjectName("botonCerrarLogin")  # estilo en light.qss
-        self.close_btn.setIcon(get_icon("close", "#6B7280", 16))
+        self.close_btn.setIcon(get_icon("close", "#5D6B60", 16))
         self.close_btn.setToolTip("Cerrar")
         self.close_btn.setAccessibleName("Cerrar la ventana de inicio de sesión")
         self.close_btn.setCursor(Qt.CursorShape.PointingHandCursor)

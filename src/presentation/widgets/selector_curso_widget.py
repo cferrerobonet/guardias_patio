@@ -87,16 +87,16 @@ class SelectorCursoWidget(QWidget):
             msg_box.setDefaultButton(QMessageBox.StandardButton.Ok)
             msg_box.setStyleSheet("""
                 QPushButton {
-                    background-color: #e74c3c;
+                    background-color: #A32D2D;
                     color: white;
                     border: none;
-                    padding: 8px 16px;
-                    border-radius: 4px;
+                    padding: 6px 14px;
+                    border-radius: 8px;
                     font-weight: bold;
                     min-width: 80px;
                 }
                 QPushButton:hover {
-                    background-color: #c0392b;
+                    background-color: #A32D2D;
                 }
             """)
             msg_box.exec()
@@ -129,22 +129,22 @@ class SelectorCursoWidget(QWidget):
             msg_confirmar.setDefaultButton(QMessageBox.StandardButton.No)
             msg_confirmar.setStyleSheet("""
                 QPushButton {
-                    background-color: #3498db;
+                    background-color: #2C7A3A;
                     color: white;
                     border: none;
-                    padding: 8px 16px;
-                    border-radius: 4px;
+                    padding: 6px 14px;
+                    border-radius: 8px;
                     font-weight: bold;
                     min-width: 80px;
                 }
                 QPushButton:hover {
-                    background-color: #2980b9;
+                    background-color: #2C7A3A;
                 }
                 QPushButton:default {
-                    background-color: #e74c3c;
+                    background-color: #A32D2D;
                 }
                 QPushButton:default:hover {
-                    background-color: #c0392b;
+                    background-color: #A32D2D;
                 }
             """)
             respuesta = msg_confirmar.exec()

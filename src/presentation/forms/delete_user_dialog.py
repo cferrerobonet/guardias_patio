@@ -69,10 +69,10 @@ class DeleteUserDialog(QDialog):
         message.setStyleSheet("""
             QLabel {
                 font-size: 13px;
-                color: #374151;
+                color: #2F3B32;
                 padding: 20px 40px;
-                background-color: #FEF3C7;
-                border-left: 4px solid #F59E0B;
+                background-color: #FBF0D9;
+                border-left: 4px solid #B97A12;
             }
         """)
         message.setWordWrap(True)
@@ -87,7 +87,7 @@ class DeleteUserDialog(QDialog):
         from PyQt6.QtWidgets import QComboBox
 
         self.username_combo = QComboBox()
-        self.username_combo.setMinimumHeight(35)
+        self.username_combo.setMinimumHeight(34)
         self.username_combo.setAccessibleName("Selector de usuario a eliminar")
         users = list(self.user_auth.users.keys())
         if users:
@@ -101,7 +101,7 @@ class DeleteUserDialog(QDialog):
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Confirma con la contraseña del usuario")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_input.setMinimumHeight(35)
+        self.password_input.setMinimumHeight(34)
         self.password_input.returnPressed.connect(self.delete_user)
         self.password_input.setAccessibleName("Campo contraseña para confirmar eliminación")
         form_layout.addRow("Contraseña:", self.password_input)
@@ -110,7 +110,7 @@ class DeleteUserDialog(QDialog):
 
         # Confirmación adicional
         confirm_label = QLabel("Escribe la contraseña del usuario para confirmar la eliminación")
-        confirm_label.setStyleSheet("color: #DC2626; font-size: 12px; padding: 0px 40px;")
+        confirm_label.setStyleSheet("color: #A32D2D; font-size: 12px; padding: 0px 40px;")
         confirm_label.setWordWrap(True)
         layout.addWidget(confirm_label)
 
@@ -121,14 +121,14 @@ class DeleteUserDialog(QDialog):
 
         cancel_btn = QPushButton("Cancelar")
         cancel_btn.setObjectName("secondaryButton")
-        cancel_btn.setMinimumHeight(40)
+        cancel_btn.setMinimumHeight(34)
         cancel_btn.clicked.connect(self.reject)
         cancel_btn.setAccessibleName("Botón cancelar eliminación de usuario")
         buttons_layout.addWidget(cancel_btn)
 
         delete_btn = QPushButton("ELIMINAR PERMANENTEMENTE")
         delete_btn.setIcon(icon_for_button("delete"))
-        delete_btn.setMinimumHeight(40)
+        delete_btn.setMinimumHeight(34)
         delete_btn.clicked.connect(self.delete_user)
         delete_btn.setDefault(True)
         delete_btn.setAccessibleName("Botón eliminar usuario permanentemente")
@@ -183,7 +183,7 @@ class DeleteUserDialog(QDialog):
         )
         msg.setText(
             f"¿Estás ABSOLUTAMENTE SEGURO de que quieres eliminar el usuario "
-            f"<span style='color: #DC2626; font-style: italic;'>{username}</span>?<br><br>"
+            f"<span style='color: #A32D2D; font-style: italic;'>{username}</span>?<br><br>"
             f"Se eliminarán:<br>"
             f"• Toda la base de datos local<br>"
             f"• Todos los archivos en la nube<br>"

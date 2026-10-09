@@ -134,7 +134,7 @@ class AusenciasSustitucionesWidget(BaseForm):
         col_btn.addWidget(QLabel(""))
         self.btn_buscar = QPushButton("Buscar guardias afectadas")
         self.btn_buscar.setIcon(icon_for_button("search"))
-        self.btn_buscar.setMinimumHeight(40)
+        self.btn_buscar.setMinimumHeight(34)
         self.btn_buscar.setAccessibleName("Buscar guardias del profesor en el período seleccionado")
         self.btn_buscar.clicked.connect(self.buscar_guardias)
         col_btn.addWidget(self.btn_buscar)
@@ -157,7 +157,7 @@ class AusenciasSustitucionesWidget(BaseForm):
         cabecera.addStretch()
         self.btn_auto = QPushButton("Auto-asignar todo")
         self.btn_auto.setIcon(icon_for_button("account-switch"))
-        self.btn_auto.setMinimumHeight(35)
+        self.btn_auto.setMinimumHeight(34)
         self.btn_auto.setProperty("secondary", "true")
         self.btn_auto.setEnabled(False)
         self.btn_auto.setAccessibleName(
@@ -206,14 +206,14 @@ class AusenciasSustitucionesWidget(BaseForm):
         botones.addStretch()
         self.btn_cancelar_tabla = QPushButton("Cancelar")
         self.btn_cancelar_tabla.setIcon(icon_for_button("close"))
-        self.btn_cancelar_tabla.setMinimumHeight(40)
+        self.btn_cancelar_tabla.setMinimumHeight(34)
         self.btn_cancelar_tabla.setEnabled(False)
         self.btn_cancelar_tabla.setAccessibleName("Cancelar cambios y limpiar tabla")
         self.btn_cancelar_tabla.clicked.connect(self.limpiar_formulario)
         botones.addWidget(self.btn_cancelar_tabla)
         self.btn_guardar = QPushButton("Guardar sustituciones")
         self.btn_guardar.setIcon(icon_for_button("save"))
-        self.btn_guardar.setMinimumHeight(40)
+        self.btn_guardar.setMinimumHeight(34)
         self.btn_guardar.setProperty("success", "true")
         self.btn_guardar.setEnabled(False)
         self.btn_guardar.setAccessibleName("Guardar todas las sustituciones asignadas")
@@ -265,7 +265,7 @@ class AusenciasSustitucionesWidget(BaseForm):
 
         btn_filtrar = QPushButton("Filtrar")
         btn_filtrar.setIcon(icon_for_button("search"))
-        btn_filtrar.setMinimumHeight(35)
+        btn_filtrar.setMinimumHeight(34)
         btn_filtrar.clicked.connect(self.cargar_historial)
         filtros.addWidget(btn_filtrar)
 
@@ -276,7 +276,7 @@ class AusenciasSustitucionesWidget(BaseForm):
         # volver atrás está «Deshacer sustitución», de una en una.
         self.btn_deshacer = QPushButton("Deshacer sustitución")
         self.btn_deshacer.setIcon(icon_for_button("undo"))
-        self.btn_deshacer.setMinimumHeight(35)
+        self.btn_deshacer.setMinimumHeight(34)
         self.btn_deshacer.setAccessibleName(
             "Devolver la guardia seleccionada a su profesor original"
         )
@@ -338,7 +338,7 @@ class AusenciasSustitucionesWidget(BaseForm):
     def _validar_fechas(self):
         valido = self.fecha_fin.date() >= self.fecha_inicio.date()
         self.btn_buscar.setEnabled(valido)
-        self.fecha_fin.setStyleSheet("" if valido else "border: 1px solid #E74C3C;")
+        self.fecha_fin.setStyleSheet("" if valido else "border: 1px solid #A32D2D;")
 
     def buscar_guardias(self):
         try:
@@ -446,7 +446,7 @@ class AusenciasSustitucionesWidget(BaseForm):
         combo = QComboBox()
         combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         combo.setMinimumWidth(200)
-        combo.setMinimumHeight(36)
+        combo.setMinimumHeight(34)
         combo.addItem("— Sin asignar —", None)
         for prof, _ in disponibles:
             combo.addItem(prof.nombre_completo, prof.id)
@@ -552,7 +552,7 @@ class AusenciasSustitucionesWidget(BaseForm):
             self.manejar_excepcion(e, "guardar sustituciones")
 
     def _mostrar_resultado(self, texto: str, ok: bool):
-        color = "#27AE60" if ok else "#E67E22"
+        color = "#2C7A3A" if ok else "#9A5B00"
         self.lbl_resultado.setStyleSheet(f"font-size: 12px; padding: 4px 0; color: {color};")
         self.lbl_resultado.setText(texto)
         self.lbl_resultado.setVisible(True)

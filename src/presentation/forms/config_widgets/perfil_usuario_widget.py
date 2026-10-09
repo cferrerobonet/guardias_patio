@@ -64,9 +64,9 @@ class PerfilUsuarioWidget(QGroupBox):
         self.username_display.setStyleSheet(
             """
             QLineEdit[readOnly="true"] {
-                background-color: #e5e7eb;
-                color: #4b5563;
-                border: 1px solid #d1d5db;
+                background-color: #D9E0D5;
+                color: #46524A;
+                border: 1px solid #C9D2C5;
                 padding: 3px;
                 margin-bottom: 2px;
                 font-weight: 500;

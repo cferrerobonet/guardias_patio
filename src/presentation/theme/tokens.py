@@ -6,14 +6,19 @@ tipográfica de cada sistema operativo.
 
 import sys
 
-#: Pila tipográfica por sistema. `-apple-system` no es una familia real fuera del
-#: navegador: en Windows y Linux no resolvía y Qt caía a su fuente por defecto,
-#: de modo que la aplicación no se veía como se diseñó (VIS-003).
+#: Pila tipográfica por sistema. Barlow es la del diseño, compartido con Partes de
+#: salida, y viaja dentro de la aplicación (`imagenes/fuentes`, OFL). Detrás, la del
+#: sistema por si no se pudiera cargar. `-apple-system` no es una familia real fuera
+#: del navegador: en Windows y Linux no resolvía y Qt caía a su fuente por defecto (VIS-003).
 FAMILIAS_POR_SISTEMA = {
-    "darwin": ["SF Pro Text", "Helvetica Neue", "Helvetica", "Arial"],
-    "win32": ["Segoe UI", "Tahoma", "Arial"],
-    "linux": ["Cantarell", "Noto Sans", "DejaVu Sans", "Arial"],
+    "darwin": ["Barlow", "Helvetica Neue", "Helvetica", "Arial"],
+    "win32": ["Barlow", "Segoe UI", "Tahoma", "Arial"],
+    "linux": ["Barlow", "Cantarell", "Noto Sans", "DejaVu Sans", "Arial"],
 }
+
+#: Títulos y cifras: la versión condensada. Datos tabulares (horas, recuentos): monoespaciada.
+FAMILIA_TITULOS = "Barlow Condensed"
+FAMILIA_MONO = "JetBrains Mono"
 
 #: Cuerpo base por sistema. El mismo valor en puntos no se ve igual en cada uno:
 #: la fuente del sistema es de 13 pt en macOS y de 9 pt en Windows. Se mantiene el
@@ -38,65 +43,78 @@ def cuerpo_del_sistema() -> int:
     """Tamaño base de la fuente, en puntos, para este sistema operativo."""
     return CUERPO_POR_SISTEMA[_clave_de_sistema()]
 
+
+def cargar_fuentes() -> None:
+    """Registra en Qt las tipografías del diseño. Sin ellas, se usa la del sistema."""
+    from PyQt6.QtGui import QFontDatabase
+
+    from core.paths import get_resources_directory
+
+    for ttf in sorted((get_resources_directory() / "fuentes").glob("*.ttf")):
+        QFontDatabase.addApplicationFont(str(ttf))
+
 class Colors:
-    # Primarios. El azul anterior (#007ACC) daba 4,51:1 sobre blanco: pasaba el
-    # mínimo AA por una centésima y no dejaba margen para los estados hover ni
-    # para el anillo de foco. Este da 6,52:1 (VIS-002, UXA-010).
-    PRIMARY = "#0E5FA8"        # 6,5:1 sobre blanco
-    PRIMARY_LIGHT = "#E6F2FA"  # fondo de selección y realces suaves
-    PRIMARY_DARK = "#0C5291"   # 8,0:1 — hover, pressed y foco
-    FOCUS_RING = "#0E5FA8"     # anillo de foco: 2 px
-    FOCUS_HALO = "#BFD7F2"     # halo del anillo, para separarlo del fondo
+    # Paleta compartida con Partes de salida: verde EPLA, dorado y neutros que tiran
+    # ligeramente al verde. El modo oscuro la traduce (`modo_oscuro.py`) y fija los
+    # neutros a los mismos valores que la otra aplicación.
+    PRIMARY = "#2C7A3A"        # 5,3:1 sobre blanco
+    PRIMARY_LIGHT = "#E2F0E3"  # fondo de selección y realces suaves
+    PRIMARY_DARK = "#1C5226"   # 9,3:1 — hover, pressed
+    FOCUS_RING = "#2C7A3A"     # anillo de foco: 2 px
+    FOCUS_HALO = "#B9DCBE"     # halo del anillo, para separarlo del fondo
+
+    # Dorado: etiquetas y avisos de atención
+    GOLD = "#B97A12"
+    GOLD_SOFT = "#FBF0D9"
 
     # Semánticos — texto sobre blanco
-    SUCCESS = "#1E7E34"        # 5,1:1 AA
-    SUCCESS_DARK = "#166529"   # 7,2:1 — hover y bordes de acento
-    SUCCESS_BG = "#D1FAE5"     # fondo badge/info-box verde
-    SUCCESS_BORDER = "#6EE7B7"
-    WARNING = "#856404"        # 5.5:1 AA
-    WARNING_BG = "#FFF3CD"     # fondo badge/info-box ámbar
-    WARNING_BG_ALT = "#FEF3C7" # variante amber
-    WARNING_BORDER = "#F59E0B"
-    ERROR = "#DC3545"          # 4.5:1 AA sobre blanco
-    # Sobre el fondo rosa del aviso, el rojo de arriba se queda en 3,7:1 y no
-    # llega a AA: dentro de la caja de error hay que usar este (UXA-010).
-    ERROR_ON_BG = "#9B1C1C"    # 6,7:1 sobre ERROR_BG
-    ERROR_BG = "#FEE2E2"
-    ERROR_BORDER = "#FCA5A5"
-    INFO = "#0C6674"           # 6.6:1 AA
-    INFO_BG = "#EFF6FF"        # fondo badge/info-box azul
-    INFO_BORDER = "#BFDBFE"
+    SUCCESS = "#2C7A3A"        # 5,3:1 AA
+    SUCCESS_DARK = "#1C5226"   # 9,3:1 — hover y bordes de acento
+    SUCCESS_BG = "#E2F0E3"     # fondo badge/info-box verde
+    SUCCESS_BORDER = "#9FCFA7"
+    WARNING = "#9A5B00"        # 5,6:1 AA
+    WARNING_BG = "#FFF3DC"     # fondo badge/info-box ámbar
+    WARNING_BG_ALT = "#FBF0D9" # variante dorada
+    WARNING_BORDER = "#B97A12"
+    ERROR = "#A32D2D"          # 7,0:1 AA sobre blanco
+    ERROR_ON_BG = "#8A2424"    # 7,3:1 sobre ERROR_BG
+    ERROR_BG = "#F8E3E1"
+    ERROR_BORDER = "#E0A9A5"
+    INFO = "#2E6B73"           # 6,0:1 AA
+    INFO_BG = "#EEF2EC"        # fondo badge/info-box
+    INFO_BORDER = "#C9D2C5"
 
     # Botones secundarios
-    SECONDARY = "#6B7280"      # gris neutro
-    SECONDARY_HOVER = "#4B5563"
+    SECONDARY = "#5D6B60"      # gris verdoso
+    SECONDARY_HOVER = "#46524A"
 
-    # Terminal retro (paneles vintage)
-    TERMINAL_BG = "#0F172A"
-    TERMINAL_BORDER = "#1F2937"
-    TERMINAL_TEXT = "#D1D5DB"
-    TERMINAL_ACCENT = "#22C55E"
+    # Panel de resultados del cálculo: verde muy suave con texto oscuro, para que
+    # los valores en dorado y verde se lean (en oscuro lo traduce `modo_oscuro`).
+    TERMINAL_BG = "#EEF2EC"
+    TERMINAL_BORDER = "#D9E0D5"
+    TERMINAL_TEXT = "#1D2A20"
+    TERMINAL_ACCENT = "#2C7A3A"
 
     # Superficies
-    BACKGROUND = "#FFFFFF"
-    SURFACE = "#F8F9FA"
-    BORDER = "#E1E4E8"         # separadores decorativos
-    BORDER_DARK = "#D1D5DB"
-    # El borde de un campo de texto delimita dónde se escribe: con 1,3:1 sobre
-    # blanco era casi invisible. WCAG pide 3:1 para estos bordes (UXA-010).
-    BORDER_CONTROL = "#7C8794"  # 3,6:1 sobre blanco
+    BACKGROUND = "#FFFFFF"     # lienzo de contenido
+    SURFACE = "#F3F5F1"        # fondo de ventana y campos
+    SURFACE_2 = "#EEF2EC"      # barras, menú lateral y cabeceras
+    BORDER = "#D9E0D5"         # separadores decorativos
+    BORDER_DARK = "#C9D2C5"
+    # El borde de un campo de texto delimita dónde se escribe: WCAG pide 3:1 (UXA-010).
+    BORDER_CONTROL = "#7D8A80"  # 3,6:1 sobre blanco
 
     # Texto
-    TEXT_PRIMARY = "#1F2937"
-    TEXT_SECONDARY = "#6B7280"
-    TEXT_DISABLED = "#9CA3AF"
+    TEXT_PRIMARY = "#1D2A20"
+    TEXT_SECONDARY = "#5D6B60"
+    TEXT_DISABLED = "#9AA79D"
     TEXT_ON_PRIMARY = "#FFFFFF"
 
-    # Sidebar
-    SIDEBAR_BG = "#3E4857"
-    SIDEBAR_TEXT = "#FFFFFF"
-    SIDEBAR_HOVER = "#4A5668"
-    SIDEBAR_BORDER = "#2A3340"
+    # Menú lateral: claro, como los ajustes de Partes de salida
+    SIDEBAR_BG = "#EEF2EC"
+    SIDEBAR_TEXT = "#1D2A20"
+    SIDEBAR_HOVER = "#E2E8DF"
+    SIDEBAR_BORDER = "#D9E0D5"
 
 class Spacing:
     XS = 4
@@ -119,6 +137,41 @@ class FontSize:
     H1 = 28
 
 class BorderRadius:
-    SM = 2
-    MD = 4
-    LG = 6
+    # Radios del diseño de Partes de salida: 7–8 px campos y botones, 10 px cajas.
+    SM = 4
+    MD = 7
+    LG = 10
+
+
+#: Modo oscuro: cada color de la paleta tiene su pareja fija, la misma que usa Partes de
+#: salida, según se use de fondo, de texto o de borde. Lo que no está aquí lo traduce
+#: `modo_oscuro.py` con sus reglas.
+FONDOS_OSCUROS = {
+    "#FFFFFF": "#1A211C", "#F3F5F1": "#121713", "#EEF2EC": "#222B24",
+    "#E2E8DF": "#2A342C", "#E2F0E3": "#1F3524", "#FBF0D9": "#3A2E17",
+    "#FFF3DC": "#3A2C14", "#F8E3E1": "#3A1F1F", "#D9E0D5": "#323D35",
+    "#C9D2C5": "#3A463D",
+}
+TEXTOS_OSCUROS = {
+    "#1D2A20": "#E4EBE5", "#2F3B32": "#C9D3CB", "#46524A": "#B3BFB6",
+    "#5D6B60": "#9AA89D", "#9AA79D": "#6B776E", "#2C7A3A": "#5FBF6E",
+    "#1C5226": "#7FD08C", "#B97A12": "#E3A94A", "#9A5B00": "#F0B45A",
+    "#A32D2D": "#F08A8A", "#8A2424": "#F08A8A", "#2E6B73": "#7CC0C8",
+}
+BORDES_OSCUROS = {
+    "#D9E0D5": "#323D35", "#C9D2C5": "#3A463D", "#7D8A80": "#5E6B61",
+    "#9FCFA7": "#2F5A37", "#E0A9A5": "#6B3333",
+}
+
+
+#: Colores del texto del panel de resultados (HTML), por papel, en claro y en oscuro.
+TERMINAL_CLARO = {
+    "titulo": "#1C5226", "etiqueta": "#46524A", "valor": "#7A4800", "exito": "#1C5226",
+    "aviso": "#9A5B00", "error": "#A32D2D", "info": "#5D6B60", "profesor": "#2E6B73",
+    "prompt": "#2C7A3A",
+}
+TERMINAL_OSCURO = {
+    "titulo": "#7FD08C", "etiqueta": "#B3BFB6", "valor": "#E3A94A", "exito": "#7FD08C",
+    "aviso": "#F0B45A", "error": "#F08A8A", "info": "#9AA89D", "profesor": "#7CC0C8",
+    "prompt": "#5FBF6E",
+}

@@ -89,11 +89,11 @@ class AsignacionCalculoForm(BaseForm):
         instrucciones.setWordWrap(True)
         instrucciones.setStyleSheet("""
             QLabel {
-                background-color: #EFF6FF;
-                border: 1px solid #BFDBFE;
+                background-color: #E2F0E3;
+                border: 1px solid #9FCFA7;
                 border-radius: 6px;
                 padding: 10px;
-                color: #1E40AF;
+                color: #1C5226;
                 font-size: 13px;
             }
         """)

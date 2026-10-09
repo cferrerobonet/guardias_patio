@@ -502,8 +502,8 @@ class TestVistaCalendarioEstilos:
         # Obtener estilo del widget
         estilo = celda.styleSheet()
 
-        # Debe tener borde azul para "hoy"
-        assert "#007acc" in estilo.lower() or "#e3f2fd" in estilo.lower()
+        # «Hoy» va en dorado, como en la leyenda
+        assert "#b97a12" in estilo.lower() and "#fbf0d9" in estilo.lower()
 
     def test_estilo_dia_con_guardias(self, qapp, session, profesor_factory, zona_factory):
         """Test que día con guardias tiene estilo especial (azul claro)"""
@@ -531,8 +531,8 @@ class TestVistaCalendarioEstilos:
 
         estilo = celda.styleSheet()
 
-        # Debe tener color azul claro para días con guardias (#E3F2FD)
-        assert "#e3f2fd" in estilo.lower() or "#90caf9" in estilo.lower()
+        # Días con guardias: verde suave (#E2F0E3) con borde verde (#9FCFA7)
+        assert "#e2f0e3" in estilo.lower() or "#9fcfa7" in estilo.lower()
 
     def test_estilo_dia_sin_guardias(self, qapp):
         """Test que día sin guardias tiene estilo normal (gris)"""
@@ -547,8 +547,8 @@ class TestVistaCalendarioEstilos:
 
         estilo = celda.styleSheet()
 
-        # Debe tener color gris claro para días sin guardias
-        assert "#fafafa" in estilo.lower() or "#f5f5f5" in estilo.lower()
+        # Debe tener el fondo neutro para días sin guardias
+        assert "#f3f5f1" in estilo.lower()
 
     def test_prioridad_estilo_hoy_sobre_guardias(
         self, qapp, session, profesor_factory, zona_factory
@@ -578,8 +578,8 @@ class TestVistaCalendarioEstilos:
 
         estilo = celda.styleSheet()
 
-        # Debe ser azul (hoy) no azul claro de guardias
-        assert "#007acc" in estilo.lower() or "#e3f2fd" in estilo.lower()
+        # Debe ser el dorado de «hoy», no el verde de los días con guardias
+        assert "#b97a12" in estilo.lower() and "#9fcfa7" not in estilo.lower()
 
 
 # ========================================

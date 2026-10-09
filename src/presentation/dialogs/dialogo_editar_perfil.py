@@ -76,15 +76,15 @@ class DialogoEditarPerfil(QDialog):
         btn_guardar.setIcon(icon_for_button("save"))
         btn_guardar.setStyleSheet("""
             QPushButton {
-                background-color: #2196F3;
+                background-color: #2C7A3A;
                 color: white;
                 border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
+                padding: 6px 14px;
+                border-radius: 8px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #0b7dda;
+                background-color: #2C7A3A;
             }
         """)
         btn_guardar.clicked.connect(self.guardar_cambios)

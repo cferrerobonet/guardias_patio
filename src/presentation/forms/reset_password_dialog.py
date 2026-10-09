@@ -54,21 +54,21 @@ class ResetPasswordDialog(QDialog):
 
         self.code_input = QLineEdit()
         self.code_input.setPlaceholderText("Código de recuperación")
-        self.code_input.setMinimumHeight(35)
+        self.code_input.setMinimumHeight(34)
         self.code_input.setAccessibleName("Campo código de recuperación")
         form_layout.addRow("🔑 Código:", self.code_input)
 
         self.new_password_input = QLineEdit()
         self.new_password_input.setPlaceholderText("Nueva contraseña")
         self.new_password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.new_password_input.setMinimumHeight(35)
+        self.new_password_input.setMinimumHeight(34)
         self.new_password_input.setAccessibleName("Campo nueva contraseña")
         form_layout.addRow("Nueva Contraseña:", self.new_password_input)
 
         self.confirm_password_input = QLineEdit()
         self.confirm_password_input.setPlaceholderText("Confirmar nueva contraseña")
         self.confirm_password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.confirm_password_input.setMinimumHeight(35)
+        self.confirm_password_input.setMinimumHeight(34)
         self.confirm_password_input.returnPressed.connect(self.reset_password)
         self.confirm_password_input.setAccessibleName("Campo confirmar nueva contraseña")
         form_layout.addRow("Confirmar:", self.confirm_password_input)
@@ -82,13 +82,13 @@ class ResetPasswordDialog(QDialog):
 
         cancel_btn = QPushButton("Cancelar")
         cancel_btn.setObjectName("secondaryButton")
-        cancel_btn.setMinimumHeight(40)
+        cancel_btn.setMinimumHeight(34)
         cancel_btn.clicked.connect(self.reject)
         cancel_btn.setAccessibleName("Botón cancelar recuperación de contraseña")
         buttons_layout.addWidget(cancel_btn)
 
         reset_btn = QPushButton("Cambiar Contraseña")
-        reset_btn.setMinimumHeight(40)
+        reset_btn.setMinimumHeight(34)
         reset_btn.clicked.connect(self.reset_password)
         reset_btn.setDefault(True)
         reset_btn.setAccessibleName("Botón confirmar nueva contraseña")
@@ -177,7 +177,7 @@ class ResetPasswordDialog(QDialog):
             Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )
         msg.setText(
-            f"La contraseña de <span style='color: #0E5FA8; font-style: italic;'>"
+            f"La contraseña de <span style='color: #2C7A3A; font-style: italic;'>"
             f"{self.username}</span> ha sido cambiada correctamente.<br><br>"
             f"Ahora puedes iniciar sesión con tu nueva contraseña."
         )

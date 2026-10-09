@@ -48,12 +48,12 @@ class Icons:
 
     # Colores predefinidos
     WHITE = "#FFFFFF"
-    DARK = "#424242"      # Gris oscuro profesional
-    PRIMARY = "#2196F3"   # Azul de la app
-    MUTED = "#757575"     # Gris medio
-    SUCCESS = "#4CAF50"   # Verde
-    DANGER = "#f44336"    # Rojo
-    WARNING = "#FF9800"   # Naranja
+    DARK = "#2F3B32"      # Gris verdoso oscuro
+    PRIMARY = "#2C7A3A"   # Verde EPLA
+    MUTED = "#5D6B60"     # Gris verdoso medio
+    SUCCESS = "#2C7A3A"   # Verde
+    DANGER = "#A32D2D"    # Rojo
+    WARNING = "#B97A12"   # Dorado
 
     # Mapeo de nombres de iconos a archivos
     _ICON_MAP = {

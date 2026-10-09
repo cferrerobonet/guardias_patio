@@ -128,7 +128,7 @@ class DiaDetalleDialog(QDialog):
         else:
             label_sin_guardias = QLabel("No hay guardias asignadas para este día")
             label_sin_guardias.setStyleSheet(
-                "padding: 20px; background-color: #f0f0f0; border-radius: 5px; color: #666;"
+                "padding: 20px; background-color: #F3F5F1; border-radius: 5px; color: #5D6B60;"
             )
             contenido_layout.addWidget(label_sin_guardias)
 
@@ -149,7 +149,7 @@ class DiaDetalleDialog(QDialog):
 
         # Botón cerrar
         btn_cerrar = QPushButton("Cerrar")
-        btn_cerrar.setMinimumHeight(35)
+        btn_cerrar.setMinimumHeight(34)
         btn_cerrar.clicked.connect(self.accept)
         layout.addWidget(btn_cerrar)
 
@@ -221,7 +221,7 @@ class DiaDetalleDialog(QDialog):
             # Estilo simple y limpio sin marcos dobles
             stat_widget.setStyleSheet("""
                 QWidget {
-                    background-color: #f8f9fa;
+                    background-color: #F3F5F1;
                     border-radius: 6px;
                 }
             """)
@@ -270,7 +270,7 @@ class DiaDetalleDialog(QDialog):
         font_header.setBold(True)
         header.setFont(font_header)
         header.setStyleSheet(
-            "background-color: #e3f2fd; padding: 8px; border-radius: 4px; color: #1565C0;"
+            "background-color: #E2F0E3; padding: 8px; border-radius: 4px; color: #1C5226;"
         )
         layout.addWidget(header)
 
@@ -310,7 +310,7 @@ class DiaDetalleDialog(QDialog):
         # Zona con badge rojo
         zona_label = QLabel(f"{zona.nombre_zona}")
         zona_label.setStyleSheet("""
-            background-color: #D32F2F;
+            background-color: #A32D2D;
             color: white;
             font-weight: bold;
             font-size: 12px;
@@ -327,14 +327,14 @@ class DiaDetalleDialog(QDialog):
         font_alerta.setPointSize(FontSize.CAPTION)
         font_alerta.setBold(True)
         label_alerta.setFont(font_alerta)
-        label_alerta.setStyleSheet("color: #B71C1C; padding-left: 8px;")
+        label_alerta.setStyleSheet("color: #8A2424; padding-left: 8px;")
         layout.addWidget(label_alerta, 2)
 
         # Estilo del widget
         widget.setStyleSheet("""
             QWidget {
-                background-color: #FFEBEE;
-                border: 2px solid #D32F2F;
+                background-color: #F8E3E1;
+                border: 2px solid #A32D2D;
                 border-radius: 5px;
             }
         """)
@@ -360,7 +360,7 @@ class DiaDetalleDialog(QDialog):
         avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         avatar.setStyleSheet("""
             QLabel {
-                background-color: #0E5FA8;
+                background-color: #2C7A3A;
                 color: white;
                 border-radius: 17px;
                 font-size: 12px;
@@ -373,7 +373,7 @@ class DiaDetalleDialog(QDialog):
         if guardia.zona:
             zona_label = QLabel(f"{guardia.zona.nombre_zona}")
             zona_label.setStyleSheet("""
-                background-color: #1976D2;
+                background-color: #2C7A3A;
                 color: white;
                 font-weight: bold;
                 font-size: 12px;
@@ -393,7 +393,9 @@ class DiaDetalleDialog(QDialog):
         font_profesor = QFont()
         font_profesor.setPointSize(FontSize.CAPTION)
         label_profesor.setFont(font_profesor)
-        label_profesor.setStyleSheet("color: #333; padding-left: 8px; qproperty-wordWrap: false;")
+        label_profesor.setStyleSheet(
+            "color: #2F3B32; padding-left: 8px; qproperty-wordWrap: false;"
+        )
         label_profesor.setMinimumWidth(200)  # Asegurar espacio suficiente
         layout.addWidget(label_profesor, 2)  # Mayor stretch factor
 
@@ -402,8 +404,8 @@ class DiaDetalleDialog(QDialog):
         icon_turno = turno_icons.get(guardia.profesor.turno, "")
         label_turno = QLabel(f"{icon_turno} {guardia.profesor.turno}")
         label_turno.setStyleSheet(
-            "color: #666; font-size: 12px; "
-            "background-color: #f5f5f5; padding: 3px 8px; border-radius: 3px;"
+            "color: #5D6B60; font-size: 12px; "
+            "background-color: #F3F5F1; padding: 3px 8px; border-radius: 3px;"
         )
         layout.addWidget(label_turno)
 
@@ -420,12 +422,12 @@ class DiaDetalleDialog(QDialog):
         widget.setStyleSheet("""
             QWidget {
                 background-color: white;
-                border-left: 4px solid #4CAF50;
+                border-left: 4px solid #2C7A3A;
                 border-radius: 4px;
                 margin: 2px 0px;
             }
             QWidget:hover {
-                background-color: #f8f9fa;
+                background-color: #F3F5F1;
             }
         """)
 
@@ -493,12 +495,12 @@ class DiaDetalleDialog(QDialog):
         # Segunda línea: Motivo (si existe)
         if ausencia.motivo:
             label_motivo = QLabel(f"Motivo: {ausencia.motivo}")
-            label_motivo.setStyleSheet("color: #555; font-size: 12px; font-style: italic;")
+            label_motivo.setStyleSheet("color: #46524A; font-size: 12px; font-style: italic;")
             label_motivo.setWordWrap(True)
             layout.addWidget(label_motivo)
 
         widget.setStyleSheet(
-            "background-color: #FEE2E2; border-left: 3px solid #DC2626; border-radius: 3px;"
+            "background-color: #F8E3E1; border-left: 3px solid #A32D2D; border-radius: 3px;"
         )
 
         return widget
@@ -551,7 +553,7 @@ class DiaDetalleDialog(QDialog):
         avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         avatar.setStyleSheet("""
             QLabel {
-                background-color: #E67E22;
+                background-color: #9A5B00;
                 color: white;
                 border-radius: 15px;
                 font-size: 12px;
@@ -564,7 +566,7 @@ class DiaDetalleDialog(QDialog):
         badge = QLabel("SUST")
         badge.setStyleSheet("""
             QLabel {
-                background-color: #E67E22;
+                background-color: #9A5B00;
                 color: white;
                 border-radius: 3px;
                 padding: 2px 6px;
@@ -584,13 +586,13 @@ class DiaDetalleDialog(QDialog):
         # Zona
         if guardia.zona:
             label_zona = QLabel(guardia.zona.nombre_zona)
-            label_zona.setStyleSheet("color: #1976D2; font-size: 12px;")
+            label_zona.setStyleSheet("color: #2C7A3A; font-size: 12px;")
             layout.addWidget(label_zona)
 
         layout.addStretch()
 
         widget.setStyleSheet(
-            "background-color: #FFF3E0; border-left: 3px solid #E67E22; "
+            "background-color: #FBE9DC; border-left: 3px solid #9A5B00; "
             "border-radius: 3px; padding: 2px;"
         )
 

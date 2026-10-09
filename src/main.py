@@ -189,8 +189,13 @@ def main():
     # Fuente y hoja de estilos ANTES de mostrar nada: el diálogo de configuración
     # inicial se abría sin estilos, porque se aplicaban más abajo (VIS-001).
     from presentation.theme.hoja_de_estilos import construir_hoja_de_estilos
-    from presentation.theme.tokens import cuerpo_del_sistema, familias_del_sistema
+    from presentation.theme.tokens import (
+        cargar_fuentes,
+        cuerpo_del_sistema,
+        familias_del_sistema,
+    )
 
+    cargar_fuentes()
     font = QFont()
     font.setFamilies(familias_del_sistema())
     font.setPointSize(cuerpo_del_sistema())

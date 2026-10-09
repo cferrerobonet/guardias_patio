@@ -106,15 +106,15 @@ class DialogoCrearPerfil(QDialog):
         btn_crear.setAccessibleName("Botón crear nuevo perfil de usuario")
         btn_crear.setStyleSheet("""
             QPushButton {
-                background-color: #4CAF50;
+                background-color: #2C7A3A;
                 color: white;
                 border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
+                padding: 6px 14px;
+                border-radius: 8px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #45a049;
+                background-color: #2C7A3A;
             }
         """)
         btn_crear.clicked.connect(self.crear_perfil)

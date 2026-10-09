@@ -60,15 +60,15 @@ class DialogoAcercaDe(QDialog):
         btn_cerrar.clicked.connect(self.accept)
         btn_cerrar.setStyleSheet("""
             QPushButton {
-                background-color: #3498db;
+                background-color: #2C7A3A;
                 color: white;
                 border: none;
-                border-radius: 5px;
-                padding: 8px 16px;
+                border-radius: 8px;
+                padding: 6px 14px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #2980b9;
+                background-color: #2C7A3A;
             }
         """)
         layout.addWidget(btn_cerrar, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -83,7 +83,7 @@ class DialogoAcercaDe(QDialog):
         from utils.icon_manager import get_icon
 
         icon_label = QLabel()
-        icon = get_icon("school", "#3498db", 64)
+        icon = get_icon("school", "#2C7A3A", 64)
         icon_label.setPixmap(icon.pixmap(64, 64))
         header_layout.addWidget(icon_label)
 
@@ -95,11 +95,11 @@ class DialogoAcercaDe(QDialog):
 
         name_label = QLabel(APP_NAME)
         name_label.setFont(QFont("", FontSize.H3, QFont.Weight.Bold))
-        name_label.setStyleSheet("color: #2c3e50;")
+        name_label.setStyleSheet("color: #1D2A20;")
         info_layout.addWidget(name_label)
 
         version_label = QLabel(f"Versión {APP_VERSION}")
-        version_label.setStyleSheet("color: #7f8c8d; font-size: 14px;")
+        version_label.setStyleSheet("color: #5D6B60; font-size: 14px;")
         info_layout.addWidget(version_label)
 
         header_layout.addWidget(info_widget)
@@ -136,10 +136,10 @@ class DialogoAcercaDe(QDialog):
         desc_label.setWordWrap(True)
         desc_label.setStyleSheet("""
             QLabel {
-                color: #555;
+                color: #46524A;
                 font-size: 12px;
                 padding: 10px;
-                background-color: #f8f9fa;
+                background-color: #F3F5F1;
                 border-radius: 5px;
             }
         """)
@@ -231,7 +231,7 @@ class DialogoAcercaDe(QDialog):
             QLabel {
                 font-family: monospace;
                 font-size: 12px;
-                color: #555;
+                color: #46524A;
                 padding: 10px;
             }
         """)
@@ -248,12 +248,12 @@ class DialogoAcercaDe(QDialog):
         row_layout.setSpacing(10)
 
         label_widget = QLabel(label)
-        label_widget.setStyleSheet("font-weight: bold; color: #2c3e50;")
+        label_widget.setStyleSheet("font-weight: bold; color: #1D2A20;")
         label_widget.setFixedWidth(160)
         row_layout.addWidget(label_widget)
 
         value_widget = QLabel(str(value))
-        value_widget.setStyleSheet("color: #555;")
+        value_widget.setStyleSheet("color: #46524A;")
         value_widget.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         row_layout.addWidget(value_widget)
         row_layout.addStretch()

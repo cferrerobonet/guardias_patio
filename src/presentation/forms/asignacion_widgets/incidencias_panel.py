@@ -39,25 +39,6 @@ class IncidenciasPanel(QGroupBox):
         """
         super().__init__("⚠️ Análisis de Incidencias y Recomendaciones", parent)
         self.session = session
-        self.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                font-size: 13px;
-                border: 2px solid #f59e0b;
-                border-radius: 6px;
-                margin-top: 16px;
-                padding-top: 14px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 6px 12px;
-                left: 12px;
-                top: -2px;
-                background-color: white;
-                color: #d97706;
-            }
-        """)
         self._setup_ui()
 
     def _setup_ui(self):

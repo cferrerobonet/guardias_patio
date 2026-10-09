@@ -54,22 +54,22 @@ class TableManager:
         self.table.setStyleSheet(
             """
             QTableWidget {
-                gridline-color: #e0e0e0;
-                selection-background-color: #0E5FA8;
+                gridline-color: #D9E0D5;
+                selection-background-color: #2C7A3A;
                 selection-color: white;
             }
             QTableWidget::item:hover {
-                background-color: #e8f4ff;
+                background-color: #E2F0E3;
             }
             QTableWidget::item:selected {
-                background-color: #0E5FA8;
+                background-color: #2C7A3A;
                 color: white;
             }
             QTableWidget QHeaderView::section {
-                background-color: #f5f5f5;
+                background-color: #F3F5F1;
                 padding: 6px;
                 border: none;
-                border-bottom: 2px solid #0E5FA8;
+                border-bottom: 2px solid #2C7A3A;
                 font-weight: bold;
             }
         """

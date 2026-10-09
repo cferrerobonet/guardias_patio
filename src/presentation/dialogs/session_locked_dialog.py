@@ -60,8 +60,8 @@ class SessionLockedDialog(QDialog):
         info_container = QLabel()
         info_container.setStyleSheet("""
             QLabel {
-                background-color: #f5f5f5;
-                border: 1px solid #ddd;
+                background-color: #F3F5F1;
+                border: 1px solid #D9E0D5;
                 border-radius: 8px;
                 padding: 15px;
                 font-family: monospace;
@@ -89,7 +89,7 @@ class SessionLockedDialog(QDialog):
         )
         explanation.setWordWrap(True)
         explanation.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        explanation.setStyleSheet("font-size: 12px; color: #666; margin-top: 10px;")
+        explanation.setStyleSheet("font-size: 12px; color: #5D6B60; margin-top: 10px;")
         layout.addWidget(explanation)
 
         # Botones
@@ -101,15 +101,15 @@ class SessionLockedDialog(QDialog):
         retry_button.clicked.connect(self.accept)
         retry_button.setStyleSheet("""
             QPushButton {
-                background-color: #2196F3;
+                background-color: #2C7A3A;
                 color: white;
                 border: none;
-                padding: 10px 20px;
-                border-radius: 5px;
+                padding: 6px 14px;
+                border-radius: 8px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #1976D2;
+                background-color: #2C7A3A;
             }
         """)
         button_layout.addWidget(retry_button)
@@ -119,15 +119,15 @@ class SessionLockedDialog(QDialog):
         cancel_button.clicked.connect(self.reject)
         cancel_button.setStyleSheet("""
             QPushButton {
-                background-color: #f44336;
+                background-color: #A32D2D;
                 color: white;
                 border: none;
-                padding: 10px 20px;
-                border-radius: 5px;
+                padding: 6px 14px;
+                border-radius: 8px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #d32f2f;
+                background-color: #A32D2D;
             }
         """)
         button_layout.addWidget(cancel_button)

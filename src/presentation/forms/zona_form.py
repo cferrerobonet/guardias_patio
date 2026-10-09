@@ -320,6 +320,7 @@ class ZonaForm(BaseForm):
         # Botones de acción
         btn_action_layout = QHBoxLayout()
         btn_action_layout.setSpacing(8)
+        btn_action_layout.addStretch()
 
         self.submit_btn = QPushButton("Guardar Zona")
         self.submit_btn.setIcon(icon_for_button("save"))
@@ -652,12 +653,12 @@ class ZonaForm(BaseForm):
             nombre_zona = zonas_a_eliminar[0][1]
             mensaje = (
                 f"¿Eliminar la zona "
-                f"<span style='color: #0E5FA8; font-style: italic;'>{nombre_zona}</span>?"
+                f"<span style='color: #2C7A3A; font-style: italic;'>{nombre_zona}</span>?"
             )
         else:
             nombres_html = "<br>• ".join(
                 [
-                    f"<span style='color: #0E5FA8; font-style: italic;'>{nombre}</span>"
+                    f"<span style='color: #2C7A3A; font-style: italic;'>{nombre}</span>"
                     for _, nombre in zonas_a_eliminar
                 ]
             )

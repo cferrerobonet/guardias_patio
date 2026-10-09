@@ -194,7 +194,7 @@ def estilo_dia_miniatura(fecha: date, num_guardias: int, fecha_actual: date) -> 
     if es_hoy:
         return """
             QLabel {
-                background-color: #FBC02D;
+                background-color: #9A5B00;
                 color: white;
                 border-radius: 3px;
                 font-size: 12px;
@@ -206,7 +206,7 @@ def estilo_dia_miniatura(fecha: date, num_guardias: int, fecha_actual: date) -> 
         return f"""
             QLabel {{
                 background-color: rgb({255 - intensidad}, {242 - intensidad // 2}, 253);
-                border: 1px solid #90CAF9;
+                border: 1px solid #9FCFA7;
                 border-radius: 3px;
                 font-size: 12px;
             }}
@@ -214,8 +214,8 @@ def estilo_dia_miniatura(fecha: date, num_guardias: int, fecha_actual: date) -> 
     else:
         return """
             QLabel {
-                background-color: #FAFAFA;
-                border: 1px solid #E0E0E0;
+                background-color: #F3F5F1;
+                border: 1px solid #D9E0D5;
                 border-radius: 3px;
                 font-size: 12px;
             }

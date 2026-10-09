@@ -205,7 +205,7 @@ class SFTPConfigWidget(QGroupBox):
             "<p style='margin-top: 10px;'>"
             "Estás a punto de modificar la configuración SFTP que afecta a "
             "<b>todos los usuarios de este sistema</b>.</p>"
-            "<p style='margin-top: 10px; color: #b91c1c;'>"
+            "<p style='margin-top: 10px; color: #8A2424;'>"
             "<b>IMPORTANTE:</b> Este servidor SFTP se usa para sincronizar "
             "copias de seguridad entre diferentes dispositivos.<br>"
             "Los cambios se guardarán en el archivo <code>.env</code> del sistema."
@@ -222,20 +222,20 @@ class SFTPConfigWidget(QGroupBox):
         yes_button.setStyleSheet(
             """
             QPushButton {
-                min-width: 180px;
-                min-height: 35px;
-                padding: 5px 15px;
-                font-size: 13px;
-                background-color: #166529;
+                min-width: 110px;
+                min-height: 20px;
+                padding: 6px 14px;
+                font-size: 14px;
+                background-color: #1C5226;
                 color: white;
-                border: 2px solid #047857;
-                border-radius: 4px;
+                border: 2px solid #1C5226;
+                border-radius: 8px;
             }
             QPushButton:hover {
-                background-color: #047857;
+                background-color: #1C5226;
             }
             QPushButton:pressed {
-                background-color: #065f46;
+                background-color: #1C5226;
             }
         """
         )
@@ -246,19 +246,19 @@ class SFTPConfigWidget(QGroupBox):
             """
             QPushButton {
                 min-width: 100px;
-                min-height: 35px;
-                padding: 5px 15px;
-                font-size: 13px;
-                background-color: #dc2626;
+                min-height: 20px;
+                padding: 6px 14px;
+                font-size: 14px;
+                background-color: #A32D2D;
                 color: white;
-                border: 2px solid #b91c1c;
-                border-radius: 4px;
+                border: 2px solid #8A2424;
+                border-radius: 8px;
             }
             QPushButton:hover {
-                background-color: #b91c1c;
+                background-color: #8A2424;
             }
             QPushButton:pressed {
-                background-color: #991b1b;
+                background-color: #8A2424;
             }
         """
         )
@@ -461,13 +461,13 @@ class SFTPConfigWidget(QGroupBox):
         )
         success_msg.setText(
             f"La conexión SFTP se estableció correctamente.<br><br>"
-            f"<b>Servidor:</b> <span style='color: #0E5FA8; "
+            f"<b>Servidor:</b> <span style='color: #2C7A3A; "
             f"font-style: italic;'>{sftp_host}:{sftp_port}</span><br>"
-            f"<b>Usuario:</b> <span style='color: #0E5FA8; "
+            f"<b>Usuario:</b> <span style='color: #2C7A3A; "
             f"font-style: italic;'>{sftp_user}</span><br>"
-            f"<b>Directorio:</b> <span style='color: #0E5FA8; "
+            f"<b>Directorio:</b> <span style='color: #2C7A3A; "
             f"font-style: italic;'>{sftp_basedir}</span><br>"
-            f"<b>Archivos encontrados:</b> <span style='color: #166529; "
+            f"<b>Archivos encontrados:</b> <span style='color: #1C5226; "
             f"font-weight: bold;'>{file_count}</span><br><br>"
             "El servidor está listo para sincronizar copias de seguridad."
         )
@@ -498,20 +498,20 @@ class SFTPConfigWidget(QGroupBox):
         ok_button.setStyleSheet(
             """
             QPushButton {
-                min-width: 120px;
-                min-height: 35px;
-                padding: 5px 15px;
-                font-size: 13px;
-                background-color: #dc2626;
+                min-width: 110px;
+                min-height: 20px;
+                padding: 6px 14px;
+                font-size: 14px;
+                background-color: #A32D2D;
                 color: white;
-                border: 2px solid #b91c1c;
-                border-radius: 4px;
+                border: 2px solid #8A2424;
+                border-radius: 8px;
             }
             QPushButton:hover {
-                background-color: #b91c1c;
+                background-color: #8A2424;
             }
             QPushButton:pressed {
-                background-color: #991b1b;
+                background-color: #8A2424;
             }
         """
         )

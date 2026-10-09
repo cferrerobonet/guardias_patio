@@ -115,7 +115,7 @@ class InformesEstadisticosWidget(QGroupBox):
 
         btn_generar = QPushButton("Generar Reporte")
         btn_generar.setIcon(icon_for_button("chart"))
-        btn_generar.setMinimumHeight(40)
+        btn_generar.setMinimumHeight(34)
         btn_generar.setProperty("success", "true")
         btn_generar.clicked.connect(self._generar_reporte)
         botones_layout.addWidget(btn_generar)
@@ -128,11 +128,11 @@ class InformesEstadisticosWidget(QGroupBox):
         self.desc_reporte.setStyleSheet(
             """
             QLabel {
-                background-color: #ecf0f1;
+                background-color: #F3F5F1;
                 border-radius: 6px;
                 padding: 16px;
                 font-size: 13px;
-                color: #2c3e50;
+                color: #1D2A20;
             }
         """
         )
