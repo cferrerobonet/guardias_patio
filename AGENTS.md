@@ -22,7 +22,7 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 | Caso de uso generación | `application/use_cases/asignacion_guardias/generar_guardias.py` → `services/asignador_guardias_cpsat.py` (+ `_asignador_cpsat_helpers.py`, `reparto_agrupado.py`: cuotas alcanzables, reparto justo y carriles). Único algoritmo desde v6.7.0; criterios en `.claude/rules/reparto-guardias.md` |
 | Sesión BD y PRAGMAs | `database/db_manager.py` (`initialize_user_database`, NullPool, `check_same_thread=False`, journal DELETE) |
 | Sync SFTP y bloqueo | `sync/sync_manager.py` (qué se sube y cuándo), `sync/backends.py` (SFTP y carpeta local), `sync/cuentas.py` (ficha remota), `sync/session_lock.py`, `widgets/sync_progress_dialog.py` (`SyncWorker`). Reglas: `.claude/rules/sincronizacion.md` |
-| Tema y tokens | `presentation/theme/tokens.py`, `theme/light.qss`, `themes/tema_aplicacion.py` (tres capas + inline) |
+| Tema y tokens | `presentation/theme/tokens.py` (paleta clara y oscura, fuentes Barlow de `imagenes/fuentes`), `theme/light.qss` (medidas comunes: 34 px), `themes/tema_aplicacion.py` (solo lo propio de la ventana) + inline. Documentos: `services/pdf_styles.py` |
 | Modelos ORM | `infrastructure/database/models.py` |
 | Versión canónica | `src/config/settings.py` → `app_version`, igual que `pyproject.toml` (lo vigila `tests/audit/test_calidad_estatica.py`). La insignia del README no se mantiene |
 | Build y empaquetado | Regla `.claude/rules/empaquetado.md` (se carga al tocar spec, scripts de build o workflows). Publicar etiqueta `vX.Y.Z` compila las dos plataformas |

@@ -5,6 +5,36 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.0.0] - 2026-10-09
+
+### 🎯 Resumen
+Diseño nuevo, el mismo de Partes de salida, en la aplicación y en todo lo que genera: verde EPLA y dorado, Barlow para el texto y Barlow Condensed para títulos y cifras, en claro y en oscuro. Botones y campos miden lo mismo en todas las pantallas. Sin cambios de comportamiento ni de datos.
+
+### ✨ Added
+- **Tipografías** Barlow, Barlow Condensed y JetBrains Mono dentro de la aplicación (`imagenes/fuentes`, licencia OFL), también incrustadas en los PDF.
+- **Flechas y casillas propias** (`imagenes/icons`): desplegables, fechas, horas y números con la misma flecha; casillas de 16 px, verdes con marca blanca.
+- **Pie común en los PDF**: filete dorado, «Guardias de Patio · EPLA» y número de página.
+
+### Changed
+- **Paleta** (`tokens.py`): verde EPLA, dorado y neutros que tiran al verde. El modo oscuro fija los neutros a los mismos valores que Partes de salida (`FONDOS_OSCUROS`, `TEXTOS_OSCUROS`, `BORDES_OSCUROS`).
+- **Menú lateral claro**: la sección activa es una tarjeta blanca con el texto en verde. Login con banda verde y filete dorado; pantalla de arranque en verde.
+- **Medidas comunes** (`light.qss`): 34 px de alto para todos los botones y campos, también la acción principal de cada vista, que se distingue por la negrita; mismo relleno, cuerpo y radio; ancho máximo para fechas, horas, números y desplegables. Los botones de exportar/importar, reportes, zonas, estadísticas y alta de profesor miden lo que su texto.
+- **Cajas de los paneles de cálculo**: borde fino y radio 10, en vez de bordes de 2 px de colores distintos. El panel de resultados pasa a fondo verde suave con colores legibles en los dos modos.
+- **Copias de seguridad**: «Exportar/Importar JSON» pasa a «Hacer copia de seguridad» y «Restaurar copia de seguridad»; las copias internas, a «Copias automáticas».
+- **Calendario**: «Hoy» en dorado, como en su leyenda; las cabeceras de los días, en gris verdoso.
+- **PDF**: cabeceras verdes, filas alternas en gris verdoso, colores de zona y recreo armonizados, título condensado con filete dorado; en el mes consolidado, fecha y día en negrita y una línea entre días.
+- **Correo**: plantilla de Partes de salida (cabecera blanca con filete verde y dorado, cajas en los tonos de la aplicación, pie gris).
+- **Web publicada**: misma paleta en claro y en oscuro, en una tarjeta con cabecera y pie; columnas cortas sin cortes en el móvil.
+
+### Fixed
+- **La hoja de estilos no se aplicaba**: un marcador con dígitos rompía su lectura («Could not parse application stylesheet») y la hoja de la ventana pisaba la común con otros valores. De ahí las alturas distintas entre pantallas y la cabecera de cada vista sin estilo.
+- Texto ilegible en botones verdes y dorados (contraste por debajo de 4,5:1) y texto naranja sobre blanco en el panel de cálculo.
+- Los títulos de los PDF empezaban por un cuadrado negro (emoji que la fuente no tiene).
+
+### 🧹 Housekeeping
+- Umbrales de consistencia visual rebajados: `setStyleSheet` 238 → 223, colores sueltos 467 → 413, líneas con emoji 315 → 301, `setMinimum` 143 → 139.
+- Tests adaptados al cambio pedido: «Generar» ya no es más alto que «Limpiar» (mismo alto, más peso), textos de copia de seguridad y colores del calendario. El marcador de la hoja admite dígitos y el test lo vigila.
+
 ## [6.10.0] - 2026-10-06
 
 ### 🎯 Resumen
