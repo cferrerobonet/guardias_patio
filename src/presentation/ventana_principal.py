@@ -4,6 +4,7 @@ Ventana principal de Guardias de Patio
 Layout profesional con sidebar oscuro y contenido blanco.
 """
 
+import sys
 from datetime import datetime, timezone
 
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
@@ -92,6 +93,14 @@ class ContentWrapper(QWidget):
         layout.addWidget(scroll)
 
 
+def abrir_a_toda_pantalla(ventana, plataforma: str = sys.platform) -> None:
+    """Muestra la ventana lo más grande posible según el sistema."""
+    if plataforma == "darwin":
+        ventana.showFullScreen()
+    else:
+        ventana.showMaximized()
+
+
 class VentanaPrincipal(QMainWindow):
     """Ventana principal: menú lateral, cabecera de vista y área de contenido."""
 
@@ -120,8 +129,9 @@ class VentanaPrincipal(QMainWindow):
         # Una sola fuente para el mínimo: la que está en ajustes (VIS-009).
         self.setMinimumSize(ajustes.window_min_width, ajustes.window_min_height)
 
-        # Abrir maximizada para mantener los controles nativos de la ventana en Windows
-        self.showMaximized()
+        # Ocupa toda la pantalla: en macOS, la pantalla completa nativa (el botón verde);
+        # en Windows, maximizada, que conserva la barra de tareas y los controles de la ventana.
+        abrir_a_toda_pantalla(self)
 
         # Aplicar stylesheet global
         self.setStyleSheet(get_complete_stylesheet())

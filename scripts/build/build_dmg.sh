@@ -97,7 +97,7 @@ else
     echo "${BLUE}🔏 Firmando bundle (ad-hoc: sin certificado Developer ID)...${NC}"
     echo "  ⚠️  macOS dirá que la aplicación está dañada al abrirla: Gatekeeper"
     echo "     rechaza toda firma que no sea Developer ID notarizada (BLD-004)."
-    echo "     El DMG lleva dentro las instrucciones para abrirla igualmente."
+    echo "     (El DMG ya no lleva LÉEME desde la 7.3.0, por decisión de CarlosFB.)"
     codesign -s - --force --deep "$TMP_DMG_DIR/${APP_NAME}.app"
 fi
 codesign --verify --deep --strict "$TMP_DMG_DIR/${APP_NAME}.app"
@@ -105,34 +105,6 @@ echo "${GREEN}✓ Firma verificada${NC}"
 
 # Crear enlace simbólico a Applications
 ln -s /Applications "$TMP_DMG_DIR/Applications"
-
-# Sin notarizar, macOS dice que la aplicación está dañada y propone la papelera.
-# No lo está: es Gatekeeper rechazando una firma que no es de Apple. Quien instala
-# necesita saberlo y necesita el comando, así que viajan dentro del propio DMG.
-if [ -z "${APPLE_ID:-}" ]; then
-    cat > "$TMP_DMG_DIR/LÉEME - si dice que está dañada.txt" <<'AVISO'
-Si al abrir la aplicación macOS dice que "está dañada y no se puede abrir"
-──────────────────────────────────────────────────────────────────────────
-
-No está dañada. macOS bloquea cualquier aplicación que no esté firmada con un
-certificado de pago de Apple, y este centro todavía no lo usa. El mensaje es el
-mismo que daría un archivo corrupto, pero la causa es otra.
-
-Para abrirla, una sola vez por ordenador:
-
-  1. Arrastra la aplicación a la carpeta Aplicaciones, como siempre.
-  2. Abre la aplicación Terminal (Launchpad → Otros → Terminal).
-  3. Copia esta línea, pégala, y pulsa Intro:
-
-     xattr -dr com.apple.quarantine "/Applications/Guardias de Patio.app"
-
-  4. Abre la aplicación normalmente. No habrá que repetirlo en las
-     siguientes actualizaciones salvo que vuelva a aparecer el aviso.
-
-Ese comando sólo quita la marca de "descargado de internet". No modifica la
-aplicación ni desactiva ninguna protección del sistema.
-AVISO
-fi
 
 # Crear el DMG
 hdiutil create \

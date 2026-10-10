@@ -162,8 +162,27 @@ class TestVentanaPrincipal:
         window = VentanaPrincipal(session)
         qtbot.addWidget(window)
         assert window is not None
-        assert window.isMaximized()
-        assert not window.isFullScreen()
+        # macOS abre a pantalla completa nativa; el resto, maximizada (7.3.0)
+        if sys.platform == "darwin":
+            assert window.isFullScreen()
+        else:
+            assert window.isMaximized()
+            assert not window.isFullScreen()
+
+    def test_abrir_a_toda_pantalla_segun_el_sistema(self):
+        from unittest.mock import MagicMock
+
+        from presentation.ventana_principal import abrir_a_toda_pantalla
+
+        mac = MagicMock()
+        abrir_a_toda_pantalla(mac, plataforma="darwin")
+        mac.showFullScreen.assert_called_once()
+        mac.showMaximized.assert_not_called()
+        for sistema in ("win32", "linux"):
+            otra = MagicMock()
+            abrir_a_toda_pantalla(otra, plataforma=sistema)
+            otra.showMaximized.assert_called_once()
+            otra.showFullScreen.assert_not_called()
 
     def test_add_view(self, qtbot, session):
         from PyQt6.QtWidgets import QLabel

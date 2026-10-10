@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.3.0] - 2026-10-10
+
+### 🎯 Resumen
+La ventana principal ocupa toda la pantalla al entrar, y el disco de instalación de macOS deja de llevar el LÉEME.
+
+### ✨ Added
+- **Pantalla completa al entrar** (`abrir_a_toda_pantalla`, `src/presentation/ventana_principal.py`): en macOS la ventana se abre en la pantalla completa nativa (lo mismo que pulsar el botón verde); en Windows, maximizada, que conserva la barra de tareas y los controles de la ventana.
+
+### Changed
+- **El DMG ya no incluye «LÉEME - si dice que está dañada.txt»** (`scripts/build/build_dmg.sh`), por decisión de CarlosFB. Aviso: el mensaje «está dañada» de macOS no es un fallo de la aplicación sino de Gatekeeper ante una app sin notarizar, y la compilación de GitHub no la notariza; en otro Mac puede volver a salir. El remedio, que ya no viaja en el DMG, es `xattr -dr com.apple.quarantine "/Applications/Guardias de Patio.app"`.
+
+### 🧪 Tests
+- `tests/test_core_and_main_window.py`: la ventana se abre a pantalla completa en macOS y maximizada en el resto, y `abrir_a_toda_pantalla` elige el modo según la plataforma.
+
 ## [7.2.0] - 2026-10-10
 
 ### 🎯 Resumen
