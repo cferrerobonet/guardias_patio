@@ -424,10 +424,8 @@ class SidebarMenu(QWidget):
         """)
         info_layout.addWidget(version_label)
 
-        # Botón "Acerca de"
-        btn_acerca = QPushButton("ℹ️ Acerca de...")
-        btn_acerca.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_acerca.setStyleSheet("""
+        # Estilo común de los botones del pie del menú (Videotutoriales y Acerca de)
+        estilo_boton_pie = """
             QPushButton {
                 color: #1D2A20;
                 background-color: #FFFFFF;
@@ -441,7 +439,21 @@ class SidebarMenu(QWidget):
             QPushButton:hover {
                 border-color: #2C7A3A;
             }
-        """)
+        """
+
+        # Botón de ayuda: la lista de videotutoriales
+        btn_videos = QPushButton("▶ Videotutoriales")
+        btn_videos.setObjectName("botonVideotutoriales")
+        btn_videos.setToolTip("Abre en el navegador la lista de videotutoriales de la aplicación")
+        btn_videos.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_videos.setStyleSheet(estilo_boton_pie)
+        btn_videos.clicked.connect(self._abrir_videotutoriales)
+        info_layout.addWidget(btn_videos)
+
+        # Botón "Acerca de"
+        btn_acerca = QPushButton("ℹ️ Acerca de...")
+        btn_acerca.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_acerca.setStyleSheet(estilo_boton_pie)
         btn_acerca.clicked.connect(self._show_about_dialog)
         info_layout.addWidget(btn_acerca)
 
@@ -491,6 +503,14 @@ class SidebarMenu(QWidget):
             getattr(self, "_update_download_url", ""),
             getattr(self, "_update_notas", ""),
         )
+
+    def _abrir_videotutoriales(self):
+        """Abre la lista de videotutoriales en el navegador."""
+        import webbrowser
+
+        from utils.constants import URL_VIDEOTUTORIALES
+
+        webbrowser.open(URL_VIDEOTUTORIALES)
 
     def _show_about_dialog(self):
         """Mostrar el diálogo Acerca de"""

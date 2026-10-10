@@ -154,6 +154,43 @@ class TestMenuLateral:
         qtbot.addWidget(sidebar)
         assert sidebar is not None
 
+    def test_boton_de_videotutoriales_abre_la_lista(self, qtbot):
+        from PyQt6.QtWidgets import QPushButton
+
+        from presentation.components.menu_lateral import SidebarMenu
+        from utils.constants import URL_VIDEOTUTORIALES
+
+        sidebar = SidebarMenu()
+        qtbot.addWidget(sidebar)
+        boton = sidebar.findChild(QPushButton, "botonVideotutoriales")
+        assert boton is not None, "el menú lateral debe llevar el botón de videotutoriales"
+        with patch("webbrowser.open") as abrir:
+            boton.click()
+        abrir.assert_called_once_with(URL_VIDEOTUTORIALES)
+
+    def test_la_url_es_la_de_la_lista_de_reproduccion(self):
+        from utils.constants import URL_VIDEOTUTORIALES
+
+        assert URL_VIDEOTUTORIALES.startswith("https://www.youtube.com/playlist?list=PL")
+        assert "watch?v=" not in URL_VIDEOTUTORIALES, "solo la lista, sin vídeos sueltos"
+
+
+@pytest.mark.ui
+class TestAcercaDeVideotutoriales:
+    def test_el_dialogo_ofrece_la_lista(self, qtbot):
+        from PyQt6.QtWidgets import QPushButton
+
+        from presentation.dialogs.dialogo_acerca_de import DialogoAcercaDe
+        from utils.constants import URL_VIDEOTUTORIALES
+
+        dlg = DialogoAcercaDe()
+        qtbot.addWidget(dlg)
+        boton = dlg.findChild(QPushButton, "botonVideotutorialesAcercaDe")
+        assert boton is not None
+        with patch("webbrowser.open") as abrir:
+            boton.click()
+        abrir.assert_called_once_with(URL_VIDEOTUTORIALES)
+
 
 # ===========================================================================
 # ui_styles

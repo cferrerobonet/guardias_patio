@@ -32,7 +32,7 @@ class DialogoAcercaDe(QDialog):
         super().__init__(parent)
         self.session = session
         self.setWindowTitle("Acerca de")
-        self.setMinimumSize(500, 450)
+        self.setMinimumSize(500, 500)
         self.setMaximumSize(600, 550)
         self.setup_ui()
 
@@ -145,8 +145,22 @@ class DialogoAcercaDe(QDialog):
         """)
         layout.addWidget(desc_label)
 
+        btn_videos = QPushButton("▶ Ver los videotutoriales")
+        btn_videos.setObjectName("botonVideotutorialesAcercaDe")
+        btn_videos.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_videos.clicked.connect(self._abrir_videotutoriales)
+        layout.addWidget(btn_videos)
+
         layout.addStretch()
         return widget
+
+    def _abrir_videotutoriales(self):
+        """Abre la lista de videotutoriales en el navegador."""
+        import webbrowser
+
+        from utils.constants import URL_VIDEOTUTORIALES
+
+        webbrowser.open(URL_VIDEOTUTORIALES)
 
     def _create_tech_tab(self) -> QWidget:
         """Tab con información técnica"""

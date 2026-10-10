@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.2.0] - 2026-10-10
+
+### 🎯 Resumen
+Los videotutoriales de la aplicación (lista de reproducción de YouTube en modo oculto) están ahora a un clic desde la propia aplicación, donde el usuario busca ayuda.
+
+### ✨ Added
+- **Botón «▶ Videotutoriales»** en el pie del menú lateral, sobre «Acerca de…», visible en todas las pantallas. Abre en el navegador la lista de reproducción, no vídeos sueltos.
+- **Botón «▶ Ver los videotutoriales»** en la pestaña Información de «Acerca de…», con la misma dirección.
+- `URL_VIDEOTUTORIALES` (`src/utils/constants.py`) es la única fuente de la dirección: para cambiarla basta con editarla ahí.
+
+### Changed
+- «Acerca de…» crece a 500 px de alto como mínimo para que la descripción no quede recortada con el botón nuevo; «Última actualización» pasa a 2026-10-10.
+- Los dos botones del pie del menú comparten un único estilo (`estilo_boton_pie`), sin añadir colores nuevos (vigilado por `test_ratchet_no_empeora[hex_literales]`).
+
+### 🧪 Tests
+- `tests/test_presentation_forms.py`: el menú lateral lleva el botón y abre la lista (con `webbrowser.open` simulado, sin tocar la red); la dirección es una lista de reproducción y no un vídeo suelto; «Acerca de…» ofrece el mismo botón. Sin el botón, falla (comprobado).
+
 ## [7.1.0] - 2026-10-09
 
 ### 🎯 Resumen
