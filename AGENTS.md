@@ -25,7 +25,7 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 | Tema y tokens | `presentation/theme/tokens.py` (paleta clara y oscura, fuentes Barlow de `imagenes/fuentes`), `theme/light.qss` (medidas comunes: 34 px), `themes/tema_aplicacion.py` (solo lo propio de la ventana) + inline. Documentos: `services/pdf_styles.py` |
 | Modelos ORM | `infrastructure/database/models.py` |
 | Versión canónica | `src/config/settings.py` → `app_version`, igual que `pyproject.toml` (lo vigila `tests/audit/test_calidad_estatica.py`). La insignia del README no se mantiene |
-| Build y empaquetado | Regla `.claude/rules/empaquetado.md` (se carga al tocar spec, scripts de build o workflows). Publicar etiqueta `vX.Y.Z` compila las dos plataformas |
+| Build y empaquetado | Regla `.claude/rules/empaquetado.md` (se carga al tocar spec, scripts de build o workflows). Publicar etiqueta `vX.Y.Z` compila las dos plataformas. **Nunca compilar en local** (ni `make dmg`, que publica el release, ni `pyinstaller`): solo GitHub |
 | Auditoría vigente | `auditoria/00_INDICE.md` → `30_REGISTRO_HALLAZGOS.md` (estado) · `17_PLAN_DE_ATAQUE.md` (backlog) · **`21_PLAN_DE_AUDITORIA_AMPLIADO.md`** (checks con comando, para auditar con modelos más pequeños) · `22_RECURSOS_DE_IA.md` (qué skill usar cuándo) |
 
 ## Comandos que funcionan
