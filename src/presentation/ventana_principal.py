@@ -1,0 +1,660 @@
+"""
+Ventana principal de Guardias de Patio
+==================================
+Layout profesional con sidebar oscuro y contenido blanco.
+"""
+
+import sys
+from datetime import datetime, timezone
+
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QScrollArea,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
+from sqlalchemy.exc import SQLAlchemyError
+
+from core.logging import get_logger
+from core.usage_logger import usage_log
+from presentation.components.menu_lateral import SidebarMenu
+from presentation.forms.ajustes_form import AjustesForm
+from presentation.forms.asignacion_calculo_form import AsignacionCalculoForm
+from presentation.forms.import_export_form import ImportExportForm
+from presentation.forms.perfiles_usuario_form import PerfilesUsuarioForm
+
+# Importar formularios existentes (los vamos a wrapper)
+from presentation.forms.profesor_form import ProfesorForm
+from presentation.forms.reportes_form import ReportesForm
+from presentation.forms.zona_form import ZonaForm
+from presentation.themes.tema_aplicacion import (
+    CONTENT_BG,
+    get_complete_stylesheet,
+)
+from presentation.widgets import (
+    AusenciasSustitucionesWidget,
+    PanelEstadisticas,
+    VistaCalendario,
+)
+
+logger = get_logger(__name__)
+
+
+class ContentWrapper(QWidget):
+    """Wrapper para dar estilo uniforme al contenido"""
+
+    def __init__(self, title: str, content_widget: QWidget, parent=None):
+        super().__init__(parent)
+        #: La vista real. Hay que conservarla: es a quien se le pide recargar
+        #: cuando cambian los datos.
+        self.content_widget = content_widget
+        self.title = title
+        self.setup_ui(title, content_widget)
+
+    #: Aire por debajo del contenido. Las vistas llevan margen inferior 0 y el
+    #: envoltorio tampoco tenía, así que la última fila —los botones de Nuevo,
+    #: Editar y Eliminar, o la leyenda del calendario— quedaba pegada al borde de
+    #: la ventana y se veía cortada. Al ponerlo aquí vale para las diez vistas.
+    MARGEN_INFERIOR = 12
+
+    def setup_ui(self, title: str, content_widget: QWidget):
+        """Configurar el layout alineado con el sidebar"""
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, self.MARGEN_INFERIOR)
+        layout.setSpacing(0)
+
+        # Cabecera con el título de la vista. El título se pasaba al envoltorio y
+        # nunca se pintaba: cada pantalla ponía el suyo, o no ponía ninguno
+        # (VIS-006). Aquí es uno y el mismo para todas.
+        self.cabecera = QLabel(title)
+        self.cabecera.setObjectName("cabeceraDeVista")
+        layout.addWidget(self.cabecera)
+
+        # Un lector de pantalla necesita saber en qué sección se ha entrado
+        # (UXA-013): sin esto, cambiar de vista no anunciaba nada.
+        self.setAccessibleName(title)
+        content_widget.setAccessibleName(title)
+
+        # Scroll area para el contenido
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setStyleSheet(
+            f"QScrollArea {{ background-color: {CONTENT_BG}; border: none; }} QScrollArea > QWidget > QWidget {{ background-color: {CONTENT_BG}; }}"
+        )
+        scroll.setWidget(content_widget)
+
+        layout.addWidget(scroll)
+
+
+def abrir_a_toda_pantalla(ventana, plataforma: str = sys.platform) -> None:
+    """Muestra la ventana lo más grande posible según el sistema."""
+    if plataforma == "darwin":
+        ventana.showFullScreen()
+    else:
+        ventana.showMaximized()
+
+
+class VentanaPrincipal(QMainWindow):
+    """Ventana principal: menú lateral, cabecera de vista y área de contenido."""
+
+    _nueva_version_signal = pyqtSignal(str, str, str)
+
+    #: Cada cuánto se vuelve a preguntar por una versión nueva con la app abierta.
+    INTERVALO_COMPROBAR_VERSION_MS = 6 * 60 * 60 * 1000
+
+    def __init__(self, session, sync_manager=None):
+        super().__init__()
+        self.session = session
+        self.sync_manager = sync_manager
+        self.widgets: dict = {}
+        self._view_factories: dict = {}
+        #: Vistas abiertas cuyos datos cambiaron en otra; se recargan al volver.
+        self._vistas_desfasadas: set = set()
+        self._seccion_actual = "profesores"
+        self.setup_ui()
+
+    def setup_ui(self):
+        """Configurar la interfaz principal"""
+        from config.settings import get_settings
+
+        self.setWindowTitle("Guardias de Patio")
+        ajustes = get_settings()
+        # Una sola fuente para el mínimo: la que está en ajustes (VIS-009).
+        self.setMinimumSize(ajustes.window_min_width, ajustes.window_min_height)
+
+        # Ocupa toda la pantalla: en macOS, la pantalla completa nativa (el botón verde);
+        # en Windows, maximizada, que conserva la barra de tareas y los controles de la ventana.
+        abrir_a_toda_pantalla(self)
+
+        # Aplicar stylesheet global
+        self.setStyleSheet(get_complete_stylesheet())
+
+        # Widget central
+        central = QWidget()
+        self.setCentralWidget(central)
+
+        # Layout principal: Vertical
+        main_layout = QVBoxLayout(central)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Layout horizontal: Sidebar + Contenido (SIN TopBar)
+        content_layout = QHBoxLayout()
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+
+        # Sidebar con sesión para el selector de curso
+        self.sidebar = SidebarMenu(session=self.session)
+        self.sidebar.section_changed.connect(self.on_section_changed)
+        content_layout.addWidget(self.sidebar)
+
+        # Stacked widget para el contenido
+        self.content_stack = QStackedWidget()
+        self.content_stack.setStyleSheet(f"QStackedWidget {{ background-color: {CONTENT_BG}; }}")
+        content_layout.addWidget(self.content_stack)
+
+        main_layout.addLayout(content_layout)
+
+        # Crear todas las vistas
+        self.create_views()
+
+        # Conectar señales de los widgets
+        self.connect_signals()
+
+        # Activar la primera sección (Dashboard)
+        # Cambiar la sección activa inicial a "profesores" en lugar de "dashboard"
+        self.sidebar.set_active_section("profesores")
+
+        # Auto-sync en background cada 30 minutos
+        if self.sync_manager:
+            self._setup_auto_sync()
+        # Siempre: sin sync_manager el indicador debe avisar de que no hay servidor.
+        self._update_sync_status_label()
+
+        self._configurar_atajos()
+
+        # Verificar actualizaciones en background
+        self._check_updates()
+
+    def create_views(self):
+        """Registrar factories de vistas — lazy loading: solo se instancian al navegar."""
+        session = self.session
+        sync_manager = self.sync_manager
+
+        self._register("profesores", "Gestión de Profesores", lambda: ProfesorForm(session))
+        self._register("zonas", "Gestión de Zonas", lambda: ZonaForm(session))
+        self._register("ajustes", "Ajustes del Curso Escolar", lambda: AjustesForm(session))
+        self._register(
+            "perfiles", "Gestión de Perfiles de Usuario", lambda: PerfilesUsuarioForm(session)
+        )
+        self._register(
+            "asignacion_calculo",
+            "Cálculo y Asignación",
+            lambda: AsignacionCalculoForm(session, sync_manager=sync_manager),
+        )
+        self._register("calendario", "Calendario de Guardias", lambda: VistaCalendario(session))
+        self._register(
+            "ausencias_sustituciones",
+            "Ausencias / Sustituciones",
+            lambda: AusenciasSustitucionesWidget(session),
+        )
+        self._register(
+            "importar",
+            "Importar / Exportar Datos",
+            lambda: ImportExportForm(
+                session, getattr(self.sync_manager, "clave_datos", None)
+            ),
+        )
+        self._register("reportes", "Generador de Reportes", lambda: ReportesForm(session))
+        self._register("estadisticas", "Estadísticas", lambda: PanelEstadisticas(session))
+
+        # Pre-instanciar solo la sección inicial para que el stack no quede vacío
+        self._ensure_view("profesores")
+
+    def _register(self, section: str, title: str, factory):
+        self._view_factories[section] = (title, factory)
+
+    def _ensure_view(self, section: str):
+        """Instancia el widget de una sección si aún no existe."""
+        if section not in self.widgets and section in self._view_factories:
+            title, factory = self._view_factories[section]
+            vista = factory()
+            self._conectar_senales_de_recarga(vista, section)
+            wrapped = ContentWrapper(title, vista)
+            self.widgets[section] = wrapped
+            self.content_stack.addWidget(wrapped)
+
+    def add_view(self, section: str, title: str, content_widget: QWidget):
+        """API de compatibilidad — instancia inmediata."""
+        wrapped = ContentWrapper(title, content_widget)
+        self.widgets[section] = wrapped
+        self.content_stack.addWidget(wrapped)
+
+    def on_section_changed(self, section: str):
+        """Cambiar de sección — instancia el widget si es la primera vez."""
+        if section == self._seccion_actual:
+            return
+
+        # Guard central de cambios sin guardar. Antes cambiar de sección los
+        # descartaba en silencio (UXA-004).
+        if not self.confirmar_salida_de_la_vista_actual():
+            self.sidebar.set_active_section(self._seccion_actual)
+            return
+
+        self._ensure_view(section)
+        if section in self._vistas_desfasadas:
+            self._refrescar_vista(section)
+        if section in self.widgets:
+            self.content_stack.setCurrentWidget(self.widgets[section])
+            self._seccion_actual = section
+            usage_log("NAV", section=section)
+
+    #: Atajos globales de navegación, en el orden del menú lateral (UXF-011).
+    ATAJOS_DE_SECCION = (
+        ("Ctrl+1", "profesores"),
+        ("Ctrl+2", "zonas"),
+        ("Ctrl+3", "ajustes"),
+        ("Ctrl+4", "perfiles"),
+        ("Ctrl+5", "asignacion_calculo"),
+        ("Ctrl+6", "calendario"),
+        ("Ctrl+7", "ausencias_sustituciones"),
+        ("Ctrl+8", "importar"),
+        ("Ctrl+9", "reportes"),
+        ("Ctrl+0", "estadisticas"),
+    )
+
+    def _configurar_atajos(self) -> None:
+        """Atajos para moverse por la aplicación sin ratón.
+
+        Antes sólo existía Ctrl+B, que pliega el menú: llegar a cualquier pantalla
+        exigía ratón (UXF-011). El atajo se anuncia en la pista de cada botón del
+        menú, que si no nadie lo descubriría.
+        """
+        from PyQt6.QtGui import QKeySequence, QShortcut
+        from PyQt6.QtWidgets import QPushButton
+
+        for combinacion, seccion in self.ATAJOS_DE_SECCION:
+            atajo = QShortcut(QKeySequence(combinacion), self)
+            atajo.activated.connect(lambda s=seccion: self._navegar_con_atajo(s))
+
+        for boton in self.sidebar.findChildren(QPushButton):
+            seccion = boton.property("section")
+            for combinacion, destino in self.ATAJOS_DE_SECCION:
+                if seccion == destino:
+                    texto = boton.text().strip()
+                    boton.setToolTip(f"{texto} ({combinacion})")
+                    boton.setAccessibleName(f"Ir a {texto}")
+                    break
+
+    def _navegar_con_atajo(self, seccion: str) -> None:
+        self.sidebar.set_active_section(seccion)
+        self.on_section_changed(seccion)
+
+    def vista_actual(self):
+        """Widget de contenido de la sección visible, o None."""
+        envoltorio = self.content_stack.currentWidget()
+        return getattr(envoltorio, "content_widget", None)
+
+    def confirmar_salida_de_la_vista_actual(self) -> bool:
+        """Pregunta qué hacer con los cambios pendientes. False = quedarse.
+
+        Se usa igual al navegar entre secciones y al cerrar la aplicación, para
+        no duplicar el modal en cada formulario (UXA-004).
+        """
+        vista = self.vista_actual()
+        if vista is None or not getattr(vista, "tiene_cambios", lambda: False)():
+            return True
+
+        caja = QMessageBox(self)
+        caja.setIcon(QMessageBox.Icon.Warning)
+        caja.setWindowTitle("Cambios sin guardar")
+        caja.setText("Hay cambios sin guardar en esta pantalla.")
+        caja.setInformativeText("¿Qué quieres hacer con ellos?")
+
+        boton_guardar = None
+        if getattr(vista, "puede_guardar_desde_el_guard", lambda: False)():
+            boton_guardar = caja.addButton("Guardar", QMessageBox.ButtonRole.AcceptRole)
+        caja.addButton("Descartar", QMessageBox.ButtonRole.DestructiveRole)
+        boton_cancelar = caja.addButton("Seguir editando", QMessageBox.ButtonRole.RejectRole)
+        caja.setDefaultButton(boton_cancelar)
+        caja.exec()
+
+        pulsado = caja.clickedButton()
+        if pulsado is boton_cancelar:
+            return False
+        if boton_guardar is not None and pulsado is boton_guardar:
+            return bool(vista.guardar_cambios_pendientes())
+
+        # «Descartar» tiene que devolver la pantalla a lo guardado: antes sólo
+        # quitaba el aviso y lo descartado se guardaba en el siguiente «Guardar».
+        if hasattr(vista, "revertir_cambios"):
+            vista.revertir_cambios()
+        elif hasattr(vista, "descartar_cambios"):
+            vista.descartar_cambios()
+        return True
+
+    def connect_signals(self):
+        """Conectar señales de los widgets"""
+        # Conectar cambio de curso del selector con refresco de todas las vistas
+        logger.info("🔌 Iniciando conexión de señales...")
+        logger.info(f"   Sidebar existe: {self.sidebar is not None}")
+        logger.info(f"   Sidebar tiene selector_curso: {hasattr(self.sidebar, 'selector_curso')}")
+
+        if hasattr(self.sidebar, "selector_curso"):
+            logger.info(f"   selector_curso es None: {self.sidebar.selector_curso is None}")
+            if self.sidebar.selector_curso:
+                logger.info(f"   Tipo de selector_curso: {type(self.sidebar.selector_curso)}")
+                tiene_signal = hasattr(self.sidebar.selector_curso, "curso_cambiado")
+                logger.info(f"   selector_curso tiene curso_cambiado: {tiene_signal}")
+
+        if hasattr(self.sidebar, "selector_curso") and self.sidebar.selector_curso:
+            logger.info("🔗 Conectando señal curso_cambiado del selector al handler")
+            self.sidebar.selector_curso.curso_cambiado.connect(self._on_curso_cambiado)
+            logger.info("✅ Señal curso_cambiado conectada correctamente")
+
+            # Test: Emitir señal de prueba
+            logger.info("🧪 Emitiendo señal de prueba para verificar conexión...")
+            try:
+                # No emitir realmente, solo verificar que el objeto está listo
+                logger.info("✅ Conexión verificada - lista para recibir señales")
+            except (ValueError, TypeError, OSError) as e:
+                logger.error(f"❌ Error al verificar conexión: {e}")
+        else:
+            logger.warning("⚠️ No se pudo conectar señal - selector_curso no disponible")
+
+    def _refresh_widget(self, widget) -> bool:
+        """Llama al método de refresco disponible en el widget. Devuelve True si lo encontró."""
+        # `refrescar` primero: es el que recarga la vista entera (en Ausencias,
+        # `cargar_profesores` dejaba el historial sin recargar).
+        for method in (
+            "refrescar",
+            "cargar_datos",
+            "actualizar_calendario",
+            "cargar_profesores",
+            "cargar_zonas",
+            "cargar_guardias",
+        ):
+            if hasattr(widget, method):
+                getattr(widget, method)()
+                return True
+        return False
+
+    #: Señales que emiten las vistas cuando cambian los datos de fondo.
+    SENALES_DE_RECARGA = (
+        "profesores_importados",
+        "zonas_importadas",
+        "datos_recargados",
+        "cursos_modificados",
+    )
+
+    #: Señales de un cambio hecho en una vista que afecta a las demás. No se
+    #: recarga todo al momento: las otras vistas se recargan al volver a ellas.
+    #: Antes no las escuchaba nadie y, por ejemplo, un profesor dado de alta no
+    #: aparecía en Ausencias ni en Reportes hasta reiniciar (2026-10-03).
+    SENALES_DE_CAMBIO = (
+        "datos_modificados",
+        "configuracion_guardada",
+        "sustitucion_guardada",
+        "guardias_generadas",
+        "guardias_limpiadas",
+    )
+
+    def recargar_todas_las_vistas(self, motivo: str = "cambio de datos"):
+        """
+        Vuelve a pintar todas las vistas ya abiertas.
+
+        Una importación o una descarga sustituyen los datos por debajo. Sin esto
+        las vistas siguen mostrando lo anterior y hay que cerrar y volver a abrir
+        la aplicación para ver lo nuevo.
+        """
+        logger.info(f"🔄 Recargando vistas ({motivo})")
+
+        # La caché de consultas guarda resultados durante minutos: si no se vacía,
+        # las vistas se repintan con los datos viejos.
+        try:
+            from utils.cache import clear_all_cache
+
+            clear_all_cache()
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"No se pudo vaciar la caché: {e}")
+
+        try:
+            self.session.expire_all()
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"expire_all falló: {e}")
+
+        # El selector de curso tampoco se enteraba de cursos creados, cerrados o
+        # descargados hasta reiniciar (2026-10-03).
+        selector = getattr(getattr(self, "sidebar", None), "selector_curso", None)
+        if selector is not None and hasattr(selector, "refrescar"):
+            try:
+                selector.refrescar()
+            except (SQLAlchemyError, RuntimeError, ValueError) as e:
+                logger.warning(f"No se pudo recargar el selector de curso: {e}")
+
+        refrescadas = 0
+        self._vistas_desfasadas.clear()
+        for section, wrapped in self.widgets.items():
+            widget = getattr(wrapped, "content_widget", None)
+            if widget is None:
+                continue
+            try:
+                if self._refresh_widget(widget):
+                    refrescadas += 1
+                else:
+                    logger.debug(f"   {section} no expone forma de recargarse")
+            except Exception as e:  # noqa: BLE001 - una vista rota no puede tumbar al resto
+                logger.error(f"   Error recargando {section}: {e}")
+
+        logger.info(f"✅ {refrescadas} vistas recargadas")
+
+    def _conectar_senales_de_recarga(self, widget, section: str | None = None):
+        """Conecta las señales de datos de una vista recién creada."""
+        for nombre in self.SENALES_DE_RECARGA:
+            senal = getattr(widget, nombre, None)
+            if senal is not None and hasattr(senal, "connect"):
+                senal.connect(
+                    lambda _=None, n=nombre: self.recargar_todas_las_vistas(n)
+                )
+        for nombre in self.SENALES_DE_CAMBIO:
+            senal = getattr(widget, nombre, None)
+            if senal is not None and hasattr(senal, "connect"):
+                senal.connect(lambda *_, s=section: self._marcar_vistas_desfasadas(s))
+
+    def _marcar_vistas_desfasadas(self, origen: str | None) -> None:
+        """Las vistas ya abiertas, salvo la que cambió, se recargan al volver a ellas."""
+        self._vistas_desfasadas.update(s for s in self.widgets if s != origen)
+
+    def _refrescar_vista(self, section: str) -> None:
+        widget = getattr(self.widgets.get(section), "content_widget", None)
+        if widget is None:
+            self._vistas_desfasadas.discard(section)
+            return
+        if getattr(widget, "tiene_cambios", lambda: False)():
+            return
+        self._vistas_desfasadas.discard(section)
+        try:
+            from utils.cache import clear_all_cache
+
+            clear_all_cache()
+            self.session.expire_all()
+            self._refresh_widget(widget)
+        except (SQLAlchemyError, RuntimeError, ValueError, TypeError, AttributeError) as e:
+            # Una vista rota no puede impedir navegar.
+            logger.error(f"Error recargando {section}: {e}")
+
+    def _on_curso_cambiado(self, curso_id: int):
+        """Al cambiar de curso, todas las vistas abiertas deben mostrar el nuevo."""
+        # Los cambios pendientes son del curso anterior: aquí no cabe "seguir
+        # editando", pero sí avisar y dar la opción de guardarlos (UXF-004).
+        vista = self.vista_actual()
+        if vista is not None and getattr(vista, "tiene_cambios", lambda: False)():
+            caja = QMessageBox(self)
+            caja.setIcon(QMessageBox.Icon.Warning)
+            caja.setWindowTitle("Cambios sin guardar")
+            caja.setText("Hay cambios sin guardar que pertenecen al curso anterior.")
+            caja.setInformativeText(
+                "Al cambiar de curso se descartan, porque ya no corresponden a los "
+                "datos que vas a ver."
+            )
+            boton_guardar = None
+            if getattr(vista, "puede_guardar_desde_el_guard", lambda: False)():
+                boton_guardar = caja.addButton("Guardar antes", QMessageBox.ButtonRole.AcceptRole)
+            descartar = caja.addButton("Descartar", QMessageBox.ButtonRole.DestructiveRole)
+            caja.setDefaultButton(boton_guardar or descartar)
+            caja.exec()
+
+            if boton_guardar is not None and caja.clickedButton() is boton_guardar:
+                vista.guardar_cambios_pendientes()
+            if vista.tiene_cambios() and hasattr(vista, "revertir_cambios"):
+                vista.revertir_cambios()
+            elif hasattr(vista, "descartar_cambios"):
+                vista.descartar_cambios()
+
+        self.recargar_todas_las_vistas(f"curso {curso_id}")
+
+    # ── Auto-sync ──────────────────────────────────────────────────────────────
+
+    def _setup_auto_sync(self):
+        self._auto_sync_timer = QTimer(self)
+        self._auto_sync_timer.timeout.connect(self._trigger_auto_sync)
+        self._auto_sync_timer.start(30 * 60 * 1000)  # 30 minutos
+        # Timer de UI: actualiza el label de tiempo transcurrido cada minuto
+        self._sync_ui_timer = QTimer(self)
+        self._sync_ui_timer.timeout.connect(self._update_sync_status_label)
+        self._sync_ui_timer.start(60 * 1000)
+
+    def _trigger_auto_sync(self):
+        if not self.sync_manager:
+            return
+        from presentation.widgets.sync_progress_dialog import SyncWorker
+
+        self._sync_worker = SyncWorker(self.sync_manager)  # sesión propia (CRW-003)
+        self.sidebar.set_sync_status("syncing", "↻ Sincronizando...")
+        self._sync_worker.finished.connect(self._on_auto_sync_finished)
+        self._sync_worker.start()
+
+    def _on_auto_sync_finished(self, success: bool):
+        self._update_sync_status_label(error=not success)
+        if not success:
+            self._avisar_de_que_no_se_esta_subiendo()
+
+    def _avisar_de_que_no_se_esta_subiendo(self) -> None:
+        """Explica una vez por sesión por qué la sincronización no sube (SYNC-014).
+
+        La sincronización automática sólo sube; si otro equipo ha publicado
+        cambios, la subida se rechaza para no pisarlos. Hasta ahora eso quedaba
+        en un «✕ Error de sync» diminuto del menú lateral y en el registro: quien
+        estaba delante seguía trabajando horas sin saber que nada salía del equipo.
+        """
+        if getattr(self, "_aviso_de_sync_mostrado", False):
+            return
+
+        motivo = getattr(self.sync_manager, "motivo_ultimo_fallo", None)
+        if not motivo:
+            return  # Un fallo puntual de red no merece interrumpir
+
+        self._aviso_de_sync_mostrado = True
+        caja = QMessageBox(self)
+        caja.setIcon(QMessageBox.Icon.Warning)
+        caja.setWindowTitle("Tus cambios no se están subiendo")
+        caja.setText("La copia de la nube ha cambiado desde que abriste la aplicación.")
+        caja.setInformativeText(
+            f"{motivo}\n\n"
+            "Tu trabajo está guardado en este equipo y queda pendiente de subir, "
+            "pero no se sube para no pisar lo que haya publicado otra persona.\n\n"
+            "Lo que conviene hacer: cerrar la aplicación y volver a abrirla. Al "
+            "arrancar se descarga la copia buena y se resuelve la situación."
+        )
+        caja.setStandardButtons(QMessageBox.StandardButton.Ok)
+        caja.exec()
+
+    def _update_sync_status_label(self, error: bool = False):
+        if not self.sync_manager:
+            # Aviso permanente de que se está trabajando sin servidor (UXF-005):
+            # antes el indicador se quedaba en un gris que no decía nada.
+            self.sidebar.set_sync_status("warning", "⚠ Solo en este equipo")
+            return
+        if error:
+            if getattr(self.sync_manager, "motivo_ultimo_fallo", None):
+                self.sidebar.set_sync_status("error", "✕ Sin subir: la nube cambió")
+            else:
+                self.sidebar.set_sync_status("error", "✕ Error de sync")
+            return
+        last = self.sync_manager.get_last_sync_time()
+        if last is None:
+            self.sidebar.set_sync_status("warning", "⚠ Sin sincronizar")
+            return
+        # Normalizar a UTC si es naive
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        minutos = int((datetime.now(timezone.utc) - last).total_seconds() / 60)
+        if minutos < 2:
+            self.sidebar.set_sync_status("ok", "✓ Sincronizado ahora")
+        elif minutos < 60:
+            self.sidebar.set_sync_status("ok", f"✓ Sync hace {minutos} min")
+        else:
+            horas = minutos // 60
+            estado = "warning" if minutos > 60 else "ok"
+            self.sidebar.set_sync_status(estado, f"⚠ Sync hace {horas}h")
+
+    def closeEvent(self, event):
+        if not self.confirmar_salida_de_la_vista_actual():
+            event.ignore()
+            return
+        if not self.sync_manager:
+            event.accept()
+            return
+        last = self.sync_manager.get_last_sync_time()
+        if last is None:
+            pendiente = True
+        else:
+            if last.tzinfo is None:
+                last = last.replace(tzinfo=timezone.utc)
+            pendiente = (datetime.now(timezone.utc) - last).total_seconds() > 300
+        if pendiente:
+            resp = QMessageBox.question(
+                self,
+                "Cambios sin sincronizar",
+                "Hay cambios sin sincronizar con la nube. ¿Sincronizar antes de salir?",
+                QMessageBox.StandardButton.Yes
+                | QMessageBox.StandardButton.No
+                | QMessageBox.StandardButton.Cancel,
+            )
+            if resp == QMessageBox.StandardButton.Cancel:
+                event.ignore()
+                return
+            if resp == QMessageBox.StandardButton.Yes:
+                from presentation.widgets.sync_progress_dialog import SyncProgressDialog, SyncWorker
+
+                dlg = SyncProgressDialog(self)
+                worker = SyncWorker(self.sync_manager)  # sesión propia (CRW-003)
+                worker.finished.connect(lambda _: dlg.accept())
+                worker.start()
+                dlg.exec()
+        event.accept()
+
+    def _check_updates(self) -> None:
+        from config.settings import get_settings
+        from utils.update_checker import check_for_updates
+
+        if not getattr(self, "_aviso_de_version_conectado", False):
+            self._aviso_de_version_conectado = True
+            self._nueva_version_signal.connect(self._on_nueva_version)
+            # Sólo se miraba al arrancar: con la app abierta todo el día, una
+            # versión publicada a media mañana no se anunciaba (2026-10-03).
+            self._timer_version = QTimer(self)
+            self._timer_version.timeout.connect(self._check_updates)
+            self._timer_version.start(self.INTERVALO_COMPROBAR_VERSION_MS)
+        check_for_updates(get_settings().app_version, self._nueva_version_signal.emit)
+
+    def _on_nueva_version(self, version: str, download_url: str, notas: str = "") -> None:
+        if hasattr(self, "sidebar"):
+            self.sidebar.show_update_banner(version, download_url, notas)

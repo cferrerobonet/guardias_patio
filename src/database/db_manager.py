@@ -1,0 +1,889 @@
+"""
+Gestión de conexión a la base de datos con optimizaciones de rendimiento.
+
+Características:
+- Connection pooling para reutilización de conexiones
+- Configuración optimizada para SQLite y PostgreSQL
+- Control de timeout y reintentos
+- Logging de conexiones
+- Soporte multi-usuario con bases de datos aisladas
+"""
+
+import hashlib
+import os
+import threading
+import time
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Optional
+
+from sqlalchemy import create_engine, event, pool, text
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import sessionmaker
+
+from core.paths import get_user_data_directory
+from utils.constants import TIMEOUT_DB
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+# Directorio base para bases de datos de usuarios
+USER_DATA_DIR = get_user_data_directory()
+
+# Variable global para el usuario activo
+_current_user_id = None
+_current_engine = None
+_current_session_factory = None
+
+# Lock para proteger acceso concurrente a las variables globales del engine (DB-09)
+_db_lock = threading.Lock()
+
+
+def _hash_username(username: str) -> str:
+    """Genera un hash del nombre de usuario para usar como nombre de carpeta."""
+    if not username or not username.strip():
+        raise ValueError("El nombre de usuario no puede estar vacío")
+    return hashlib.sha256(username.encode()).hexdigest()[:16]
+
+
+def _get_user_backup_dir(username: str) -> Path:
+    """Devuelve el directorio de backups de un usuario."""
+    user_hash = _hash_username(username)
+    return USER_DATA_DIR / user_hash / "backups"
+
+
+def _prune_old_backups(backup_dir: Path, max_backups: int) -> None:
+    """Elimina backups antiguos manteniendo los más recientes."""
+    if max_backups <= 0:
+        return
+
+    backup_files = sorted(
+        backup_dir.glob("guardias_patio_backup_*.db"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    for backup_file in backup_files[max_backups:]:
+        try:
+            backup_file.unlink()
+        except OSError as e:
+            logger.warning(f"No se pudo eliminar backup antiguo {backup_file}: {e}")
+
+
+def _run_automatic_backup_if_needed(username: str) -> None:
+    """Genera backup periódico si se cumple el intervalo configurado."""
+    try:
+        from config.settings import get_settings
+
+        settings = get_settings()
+        if not settings.auto_backup_enabled:
+            return
+
+        interval_hours = max(1, int(settings.auto_backup_interval_hours))
+        backup_dir = _get_user_backup_dir(username)
+        backup_dir.mkdir(parents=True, exist_ok=True)
+
+        backup_files = sorted(
+            backup_dir.glob("guardias_patio_backup_*.db"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if backup_files:
+            elapsed_seconds = time.time() - backup_files[0].stat().st_mtime
+            if elapsed_seconds < interval_hours * 3600:
+                return
+
+        backup_path = backup_database(username, backup_dir=backup_dir)
+        if backup_path:
+            _prune_old_backups(backup_dir, int(settings.max_auto_backups))
+            logger.info(f"Backup automático generado: {backup_path}")
+    except Exception as e:
+        logger.warning(f"No se pudo ejecutar backup automático para {username}: {e}")
+
+
+def _run_alembic_migrations(engine, db_path: Path) -> bool:
+    """
+    Ejecuta migraciones de Alembic para inicializar/actualizar el esquema.
+
+    Args:
+        engine: SQLAlchemy engine
+        db_path: Ruta al archivo de base de datos
+
+    Returns:
+        True si Alembic completó correctamente, False en caso de fallo.
+    """
+    try:
+        # Configurar Alembic
+        import sys
+        from pathlib import Path
+
+        from alembic.config import Config
+
+        from alembic import command
+
+        # Obtener ruta al alembic.ini
+        if getattr(sys, "frozen", False):
+            # Aplicación empaquetada
+            if hasattr(sys, "_MEIPASS"):
+                alembic_ini_path = Path(sys._MEIPASS) / "alembic.ini"
+            else:
+                alembic_ini_path = Path(sys.executable).parent / "alembic.ini"
+        else:
+            # Modo desarrollo
+            alembic_ini_path = Path(__file__).parent.parent.parent / "alembic.ini"
+
+        if not alembic_ini_path.exists():
+            logger.warning(f"alembic.ini no encontrado en {alembic_ini_path}")
+            return False
+
+        # Configurar Alembic
+        alembic_cfg = Config(str(alembic_ini_path))
+        alembic_cfg.set_main_option("sqlalchemy.url", str(engine.url))
+        # El registro ya lo ha montado la aplicación: que `env.py` no lo sustituya (BLD-020).
+        alembic_cfg.attributes["configure_logger"] = False
+
+        command.upgrade(alembic_cfg, "head")
+        logger.info("✓ Migraciones de Alembic aplicadas/verificadas correctamente")
+
+        return True
+
+    except Exception as e:
+        logger.warning(f"No se pudieron ejecutar migraciones de Alembic: {e}")
+        return False
+
+
+def _apply_direct_migrations(engine):
+    """
+    Aplica migraciones directas con SQL para añadir columnas faltantes.
+    Esta función es un fallback cuando Alembic no funciona correctamente.
+    """
+    from sqlalchemy import inspect, text
+
+    try:
+        inspector = inspect(engine)
+        existing_tables = inspector.get_table_names()
+
+        with engine.connect() as conn:
+            # ========== TABLA PROFESORES ==========
+            if 'profesores' in existing_tables:
+                profesores_columns = [col['name'] for col in inspector.get_columns('profesores')]
+
+                # profesores.activo
+                if 'activo' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.activo...")
+                    sql = "ALTER TABLE profesores ADD COLUMN activo BOOLEAN DEFAULT 1 NOT NULL"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.activo añadida")
+
+                # profesores.zona_preferida_id
+                if 'zona_preferida_id' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.zona_preferida_id...")
+                    sql = "ALTER TABLE profesores ADD COLUMN zona_preferida_id INTEGER"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.zona_preferida_id añadida")
+
+                # profesores.dias_semana_permitidos
+                if 'dias_semana_permitidos' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.dias_semana_permitidos...")
+                    sql = "ALTER TABLE profesores ADD COLUMN dias_semana_permitidos TEXT"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.dias_semana_permitidos añadida")
+
+                # profesores.recreos_permitidos
+                if 'recreos_permitidos' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.recreos_permitidos...")
+                    conn.execute(text("ALTER TABLE profesores ADD COLUMN recreos_permitidos TEXT"))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.recreos_permitidos añadida")
+
+                # profesores.curso_id
+                if 'curso_id' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.curso_id...")
+                    conn.execute(text(
+                        "ALTER TABLE profesores ADD COLUMN curso_id INTEGER REFERENCES cursos_escolares(id)"
+                    ))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.curso_id añadida")
+
+                # profesores.guardias_voluntarias
+                if 'guardias_voluntarias' not in profesores_columns:
+                    logger.info("Añadiendo columna profesores.guardias_voluntarias...")
+                    conn.execute(text(
+                        "ALTER TABLE profesores "
+                        "ADD COLUMN guardias_voluntarias INTEGER DEFAULT 0 NOT NULL"
+                    ))
+                    conn.commit()
+                    logger.info("✓ Columna profesores.guardias_voluntarias añadida")
+
+            # ========== TABLA CONFIGURACION ==========
+            if 'configuracion' in existing_tables:
+                config_columns = [col['name'] for col in inspector.get_columns('configuracion')]
+
+                # configuracion.anio_inicio_curso
+                if 'anio_inicio_curso' not in config_columns:
+                    logger.info("Añadiendo columna configuracion.anio_inicio_curso...")
+                    sql = "ALTER TABLE configuracion ADD COLUMN anio_inicio_curso INTEGER"
+                    conn.execute(text(sql))
+                    # Poblar desde fecha_inicio_curso
+                    conn.execute(text("""
+                        UPDATE configuracion
+                        SET anio_inicio_curso = CAST(strftime('%Y', fecha_inicio_curso) AS INTEGER)
+                        WHERE anio_inicio_curso IS NULL AND fecha_inicio_curso IS NOT NULL
+                    """))
+                    conn.commit()
+                    logger.info("✓ Columna configuracion.anio_inicio_curso añadida")
+
+                # configuracion.curso_activo_id
+                if 'curso_activo_id' not in config_columns:
+                    logger.info("Añadiendo columna configuracion.curso_activo_id...")
+                    sql = "ALTER TABLE configuracion ADD COLUMN curso_activo_id INTEGER"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna configuracion.curso_activo_id añadida")
+
+                # configuracion.algoritmo_asignacion
+                if 'algoritmo_asignacion' not in config_columns:
+                    logger.info("Añadiendo columna configuracion.algoritmo_asignacion...")
+                    sql = "ALTER TABLE configuracion ADD COLUMN algoritmo_asignacion VARCHAR DEFAULT 'v2.9' NOT NULL"  # noqa: E501
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna configuracion.algoritmo_asignacion añadida")
+
+                # configuracion.recreos_config
+                if 'recreos_config' not in config_columns:
+                    logger.info("Añadiendo columna configuracion.recreos_config...")
+                    conn.execute(text("ALTER TABLE configuracion ADD COLUMN recreos_config TEXT"))
+                    conn.commit()
+                    logger.info("✓ Columna configuracion.recreos_config añadida")
+
+                # configuracion.fecha_inicio_reparto_oficial
+                if 'fecha_inicio_reparto_oficial' not in config_columns:
+                    logger.info("Añadiendo columna configuracion.fecha_inicio_reparto_oficial...")
+                    conn.execute(text(
+                        "ALTER TABLE configuracion ADD COLUMN fecha_inicio_reparto_oficial DATE"
+                    ))
+                    conn.commit()
+                    logger.info("✓ Columna configuracion.fecha_inicio_reparto_oficial añadida")
+
+            # ========== TABLA CURSOS_ESCOLARES ==========
+            if 'cursos_escolares' not in existing_tables:
+                logger.info("Creando tabla cursos_escolares...")
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS cursos_escolares (
+                        id INTEGER PRIMARY KEY,
+                        nombre VARCHAR NOT NULL,
+                        anio_inicio INTEGER NOT NULL,
+                        anio_fin INTEGER NOT NULL,
+                        fecha_inicio DATE NOT NULL,
+                        fecha_fin DATE NOT NULL,
+                        activo BOOLEAN DEFAULT 0 NOT NULL,
+                        cerrado BOOLEAN DEFAULT 0 NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                        UNIQUE(anio_inicio, anio_fin)
+                    )
+                """))
+                conn.commit()
+                logger.info("✓ Tabla cursos_escolares creada")
+            else:
+                # Verificar columna cerrado en cursos_escolares
+                cursos_columns = [col['name'] for col in inspector.get_columns('cursos_escolares')]
+                if 'cerrado' not in cursos_columns:
+                    logger.info("Añadiendo columna cursos_escolares.cerrado...")
+                    sql = "ALTER TABLE cursos_escolares ADD COLUMN cerrado BOOLEAN DEFAULT 0 NOT NULL"  # noqa: E501
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna cursos_escolares.cerrado añadida")
+
+            # ========== TABLA GUARDIAS ==========
+            if 'guardias' in existing_tables:
+                guardias_columns = [col['name'] for col in inspector.get_columns('guardias')]
+
+                # guardias.curso_id
+                if 'curso_id' not in guardias_columns:
+                    logger.info("Añadiendo columna guardias.curso_id...")
+                    sql = "ALTER TABLE guardias ADD COLUMN curso_id INTEGER"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info("✓ Columna guardias.curso_id añadida")
+
+            # ========== TABLA AUSENCIAS ==========
+            if 'ausencias' not in existing_tables:
+                logger.info("Creando tabla ausencias...")
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS ausencias (
+                        id INTEGER PRIMARY KEY,
+                        profesor_id INTEGER NOT NULL REFERENCES profesores(id),
+                        fecha_inicio DATE NOT NULL,
+                        fecha_fin DATE NOT NULL,
+                        tipo VARCHAR NOT NULL,
+                        motivo TEXT,
+                        documento_path VARCHAR,
+                        activa BOOLEAN DEFAULT 1 NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
+                conn.commit()
+                logger.info("✓ Tabla ausencias creada")
+
+            logger.info("✓ Migraciones directas completadas")
+
+    except Exception as e:
+        logger.error(f"Error aplicando migraciones directas: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        # No lanzar excepción, continuar con el flujo normal
+
+
+def initialize_user_database(username: str):
+    """
+    Inicializa la base de datos para un usuario específico.
+
+    Args:
+        username: Nombre de usuario (ej: 'Jefatura_FpBach')
+
+    Returns:
+        tuple: (engine, SessionLocal) para el usuario
+    """
+    global _current_user_id, _current_engine, _current_session_factory
+
+    # Crear hash del nombre de usuario
+    user_hash = _hash_username(username)
+
+    # Crear directorio del usuario
+    user_dir = USER_DATA_DIR / user_hash
+    user_dir.mkdir(parents=True, exist_ok=True)
+
+    # Path de la base de datos del usuario
+    db_path = user_dir / "guardias_patio.db"
+    database_url = f"sqlite:///{db_path}"
+
+    logger.info(f"Inicializando BD para usuario: {username} (hash: {user_hash})")
+    logger.info(f"Database path: {db_path}")
+
+    # Crear engine específico para este usuario
+    engine = create_engine(
+        database_url,
+        echo=False,
+        future=True,
+        poolclass=pool.NullPool,
+        connect_args={
+            "check_same_thread": False,
+            "timeout": TIMEOUT_DB,
+        },
+    )
+
+    # Pragmas de optimización para SQLite
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_conn, connection_record):
+        """Configura pragmas de optimización para SQLite."""
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        # Usar DELETE mode en lugar de WAL para evitar problemas con OneDrive
+        # WAL crea archivos -wal y -shm que OneDrive puede bloquear
+        cursor.execute("PRAGMA journal_mode=DELETE")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA cache_size=10000")
+        cursor.execute("PRAGMA temp_store=MEMORY")
+        cursor.close()
+
+    # Ejecutar Alembic como estrategia única de init/migración
+    alembic_ok = _run_alembic_migrations(engine, db_path)
+
+    if not alembic_ok:
+        raise RuntimeError(
+            "No se pudo inicializar la base de datos con Alembic. "
+            "Revise alembic.ini y el estado de migraciones."
+        )
+
+    _run_automatic_backup_if_needed(username)
+
+    # Session factory para este usuario
+    session_factory = sessionmaker(
+        autocommit=False, autoflush=False, bind=engine, expire_on_commit=False
+    )
+
+    # Guardar referencias globales de forma thread-safe (DB-09)
+    with _db_lock:
+        _current_user_id = username
+        _current_engine = engine
+        _current_session_factory = session_factory
+
+    logger.info(f"Base de datos inicializada para usuario: {username}")
+
+    return engine, session_factory
+
+
+def get_current_user_id() -> str:
+    """Obtiene el ID del usuario activo."""
+    return _current_user_id
+
+
+def get_user_database_path(username: str) -> Path:
+    """Obtiene el path de la base de datos de un usuario."""
+    user_hash = _hash_username(username)
+    return USER_DATA_DIR / user_hash / "guardias_patio.db"
+
+
+def create_user_database(username: str) -> bool:
+    """
+    Crea una nueva base de datos para un usuario con la estructura completa.
+
+    Args:
+        username: Nombre de usuario
+
+    Returns:
+        bool: True si se creó correctamente
+    """
+    try:
+        db_path = get_user_database_path(username)
+
+        # Crear directorio si no existe
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Crear/actualizar la base de datos exclusivamente vía Alembic
+        engine = create_engine(
+            f"sqlite:///{db_path}",
+            poolclass=pool.NullPool,
+            connect_args={"check_same_thread": False, "timeout": TIMEOUT_DB}
+        )
+        alembic_ok = _run_alembic_migrations(engine, db_path)
+        if not alembic_ok:
+            logger.error(
+                f"No se pudo crear la base de datos para usuario {username}: "
+                "falló la inicialización con Alembic"
+            )
+            return False
+
+        logger.info(f"Base de datos creada para usuario: {username}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error creando base de datos para usuario {username}: {e}")
+        return False
+
+
+def user_has_database(username: str) -> bool:
+    """Verifica si un usuario tiene una base de datos creada."""
+    db_path = get_user_database_path(username)
+    return db_path.exists()
+
+
+def delete_user_database(username: str) -> bool:
+    """
+    Elimina completamente la base de datos y archivos de un usuario.
+
+    Args:
+        username: Nombre de usuario
+
+    Returns:
+        bool: True si se eliminó correctamente
+    """
+    try:
+        user_hash = _hash_username(username)
+        user_dir = USER_DATA_DIR / user_hash
+
+        if user_dir.exists():
+            import shutil
+
+            shutil.rmtree(user_dir)
+            logger.info(f"Base de datos eliminada para usuario: {username}")
+            return True
+        else:
+            logger.warning(f"No existe base de datos para usuario: {username}")
+            return False
+    except Exception as e:
+        logger.error(f"Error eliminando base de datos de usuario {username}: {e}")
+        return False
+
+
+def backup_database(username: str, backup_dir: Optional[Path] = None) -> Optional[Path]:
+    """
+    Crea una copia de seguridad de la base de datos de un usuario.
+
+    Args:
+        username: Nombre de usuario
+        backup_dir: Directorio destino del backup. Si None, usa data/backups/
+
+    Returns:
+        Path al archivo de backup creado, o None si falla
+    """
+    import shutil
+    from datetime import datetime
+
+    try:
+        db_path = get_user_database_path(username)
+        if not db_path.exists():
+            logger.error(f"No existe BD para usuario: {username}")
+            return None
+
+        if backup_dir is None:
+            backup_dir = _get_user_backup_dir(username)
+
+        backup_dir = Path(backup_dir)
+        backup_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_filename = f"guardias_patio_backup_{timestamp}.db"
+        backup_path = backup_dir / backup_filename
+
+        shutil.copy2(db_path, backup_path)
+        os.chmod(backup_path, 0o600)
+
+        logger.info(f"Backup creado: {backup_path}")
+        return backup_path
+
+    except Exception as e:
+        logger.error(f"Error creando backup de usuario {username}: {e}")
+        return None
+
+
+def listar_backups(username: str) -> list:
+    """Devuelve las copias de seguridad del usuario, de la más reciente a la más antigua.
+
+    Cada elemento es un diccionario con `ruta`, `momento` (datetime) y `tamano`
+    en bytes. Sirve para ofrecer «volver a antes de la generación de las 10:32»
+    (FUN-004).
+    """
+    from datetime import datetime
+
+    backup_dir = _get_user_backup_dir(username)
+    if not backup_dir.exists():
+        return []
+
+    copias = []
+    for fichero in backup_dir.glob("guardias_patio_backup_*.db"):
+        try:
+            estado = fichero.stat()
+        except OSError:
+            continue
+        copias.append(
+            {
+                "ruta": fichero,
+                "momento": datetime.fromtimestamp(estado.st_mtime),
+                "tamano": estado.st_size,
+            }
+        )
+
+    copias.sort(key=lambda c: c["momento"], reverse=True)
+    return copias
+
+
+def backup_antes_de(username: str, motivo: str) -> Optional[Path]:
+    """Copia de seguridad previa a una operación que destruye datos (FUN-004).
+
+    Generar borra todas las guardias del curso y «Limpiar» también. Hasta ahora no
+    había vuelta atrás: `backup_database()` existía desde hacía tiempo, pero no la
+    llamaba nadie desde la aplicación.
+    """
+    ruta = backup_database(username)
+    if ruta:
+        logger.info(f"Copia de seguridad antes de {motivo}: {ruta}")
+    else:
+        logger.warning(f"No se pudo crear la copia de seguridad antes de {motivo}")
+    return ruta
+
+
+def restore_database(username: str, backup_path: str | Path) -> bool:
+    """
+    Restaura la base de datos de un usuario desde un backup.
+    Crea un backup automático de la BD actual antes de restaurar.
+
+    Args:
+        username: Nombre de usuario
+        backup_path: Ruta al archivo de backup (.db)
+
+    Returns:
+        bool: True si se restauró correctamente
+    """
+    import shutil
+    import sqlite3
+
+    backup_path = Path(backup_path)
+
+    if not backup_path.exists():
+        logger.error(f"Archivo de backup no encontrado: {backup_path}")
+        return False
+
+    # Validar que sea un SQLite válido
+    try:
+        conn = sqlite3.connect(str(backup_path))
+        conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        conn.close()
+    except sqlite3.DatabaseError as e:
+        logger.error(f"El archivo de backup no es una BD SQLite válida: {e}")
+        return False
+
+    try:
+        db_path = get_user_database_path(username)
+
+        # Auto-backup de la BD actual antes de restaurar
+        if db_path.exists():
+            safety_backup = backup_database(username)
+            if safety_backup:
+                logger.info(f"Backup de seguridad creado antes de restaurar: {safety_backup}")
+
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(backup_path, db_path)
+        os.chmod(db_path, 0o600)
+
+        logger.info(f"BD restaurada para usuario {username} desde: {backup_path}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error restaurando BD de usuario {username}: {e}")
+        return False
+
+
+# URL de la base de datos (fallback para compatibilidad con scripts legacy)
+# NOTA: En producción siempre se debe usar initialize_user_database(user_id)
+# Este fallback usa ruta absoluta para evitar crear BD en directorios incorrectos
+from core.paths import get_database_path  # noqa: E402
+
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{get_database_path()}")
+
+# Detectar tipo de base de datos
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
+IS_POSTGRESQL = DATABASE_URL.startswith("postgresql")
+
+# Engine y SessionLocal por defecto (se sobrescribirán al iniciar sesión)
+if IS_SQLITE:
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        future=True,
+        poolclass=pool.NullPool,
+        connect_args={
+            "check_same_thread": False,
+            "timeout": TIMEOUT_DB,
+        },
+    )
+
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_conn, connection_record):
+        """Configura pragmas de optimización para SQLite."""
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        # Usar DELETE mode en lugar de WAL para evitar problemas con OneDrive
+        cursor.execute("PRAGMA journal_mode=DELETE")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA cache_size=10000")
+        cursor.execute("PRAGMA temp_store=MEMORY")
+        cursor.close()
+        logger.debug("SQLite pragmas configurados")
+
+elif IS_POSTGRESQL:
+    pool_size = int(os.getenv("DB_POOL_SIZE", "10"))
+    max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "20"))
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        future=True,
+        poolclass=pool.QueuePool,
+        pool_size=pool_size,
+        max_overflow=max_overflow,
+        pool_timeout=30,
+        pool_recycle=3600,
+        pool_pre_ping=True,
+    )
+
+    logger.info(f"Engine PostgreSQL creado: pool_size={pool_size}, max_overflow={max_overflow}, timeout=30s")
+
+else:
+    pool_size = int(os.getenv("DB_POOL_SIZE", "5"))
+    max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "10"))
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        future=True,
+        poolclass=pool.QueuePool,
+        pool_size=pool_size,
+        max_overflow=max_overflow,
+        pool_timeout=30,
+    )
+
+    logger.warning(f"Base de datos no reconocida: {DATABASE_URL[:20]}...")
+
+# Session factory base (fallback para cuando no hay usuario activo)
+_base_session_factory = sessionmaker(
+    autocommit=False, autoflush=False, bind=engine, expire_on_commit=False
+)
+
+
+class _SmartSessionLocal:
+    """
+    Wrapper inteligente que devuelve la sesión del usuario activo
+    o la sesión fallback si no hay usuario.
+
+    Esto permite que código legacy que usa SessionLocal() directamente
+    funcione correctamente con el sistema multi-usuario.
+    """
+
+    def __call__(self):
+        """Crea una sesión usando el factory correcto."""
+        if _current_session_factory is not None:
+            return _current_session_factory()
+        else:
+            logger.warning(
+                "SessionLocal() llamado sin usuario activo. "
+                "Usando BD legacy en data/guardias_patio.db. "
+                "Considerar usar initialize_user_database(username) primero."
+            )
+            return _base_session_factory()
+
+
+# SessionLocal inteligente que usa la BD del usuario activo
+SessionLocal = _SmartSessionLocal()
+
+logger.info(f"Database manager inicializado: {DATABASE_URL[:50]}")
+
+
+def _create_session_with_retry(session_factory):
+    """Crea sesión de BD con retry y backoff ante errores operacionales."""
+    from config.settings import get_settings
+
+    max_retries = max(1, int(get_settings().max_retries_db))
+    for attempt in range(1, max_retries + 1):
+        session = session_factory()
+        try:
+            # Fuerza checkout de conexión para detectar locks/errores tempranos.
+            session.execute(text("SELECT 1"))
+            return session
+        except OperationalError as e:
+            session.close()
+            if attempt == max_retries:
+                raise
+            wait = 0.5 * (2 ** attempt)  # 1s, 2s, 4s
+            logger.warning(
+                f"Error BD al abrir sesión, reintento {attempt}/{max_retries} "
+                f"en {wait:.1f}s: {e}"
+            )
+            time.sleep(wait)
+
+
+def get_session():
+    """
+    Generador de sesión de base de datos.
+    Usa la base de datos del usuario activo si está configurada.
+
+    Uso en FastAPI/generadores:
+        for session in get_session():
+            # usar session
+            pass
+
+    Yields:
+        Session: Sesión de SQLAlchemy
+
+    Example:
+        for db in get_session():
+            profesores = db.query(Profesor).all()
+    """
+    # Leer factory de forma thread-safe (DB-09)
+    with _db_lock:
+        session_factory = _current_session_factory if _current_session_factory else _base_session_factory
+
+    db = _create_session_with_retry(session_factory)
+    try:
+        yield db
+    except Exception as e:
+        logger.error(f"Error en sesión de BD: {e}", exc_info=True)
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@contextmanager
+def get_db_session():
+    """
+    Context manager para sesiones de base de datos.
+    Usa la base de datos del usuario activo si está configurada.
+
+    Uso recomendado para scripts y servicios:
+        with get_db_session() as session:
+            profesores = session.query(Profesor).all()
+
+    Yields:
+        Session: Sesión de SQLAlchemy
+
+    Example:
+        with get_db_session() as db:
+            profesor = Profesor(nombre="García, Juan")
+            db.add(profesor)
+            db.commit()
+    """
+    # Leer factory de forma thread-safe (DB-09)
+    with _db_lock:
+        session_factory = _current_session_factory if _current_session_factory else _base_session_factory
+
+    session = _create_session_with_retry(session_factory)
+    try:
+        yield session
+        session.commit()
+    except Exception as e:
+        logger.error(f"Error en sesión de BD: {e}", exc_info=True)
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def get_pool_status():
+    """
+    Obtiene estadísticas del connection pool.
+
+    Returns:
+        dict: Estadísticas del pool (size, checked_out, overflow, etc.)
+
+    Example:
+        status = get_pool_status()
+        print(f"Conexiones activas: {status['checked_out']}")
+    """
+    if IS_SQLITE:
+        return {"type": "NullPool", "note": "SQLite no usa connection pool"}
+
+    return {
+        "type": engine.pool.__class__.__name__,
+        "size": engine.pool.size(),
+        "checked_out": engine.pool.checkedout(),
+        "overflow": engine.pool.overflow(),
+        "total": engine.pool.size() + engine.pool.overflow(),
+    }
+
+
+def print_pool_status():
+    """
+    Imprime estadísticas del connection pool.
+
+    Útil para debugging y análisis de rendimiento.
+
+    Example:
+        print_pool_status()
+        # Output:
+        # ========== Connection Pool Status ==========
+        # Type:           QueuePool
+        # Size:           10
+        # Checked out:    3
+        # Overflow:       2
+        # Total:          12
+        # ===========================================
+    """
+    status = get_pool_status()
+
+    logger.debug("=" * 45)
+    logger.debug("Connection Pool Status".center(45))
+    logger.debug("=" * 45)
+
+    if "note" in status:
+        logger.debug(f"Type: {status['type']}")
+        logger.debug(f"Note: {status['note']}")
+    else:
+        logger.debug(f"Type:           {status['type']}")
+        logger.debug(f"Size:           {status['size']}")
+        logger.debug(f"Checked out:    {status['checked_out']}")
+        logger.debug(f"Overflow:       {status['overflow']}")
+        logger.debug(f"Total:          {status['total']}")
+
+    logger.debug("=" * 45)

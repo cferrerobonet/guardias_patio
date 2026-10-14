@@ -1,0 +1,86 @@
+"""
+Use Case: Crear una nueva zona.
+
+Permite registrar una nueva zona en el sistema validando los datos de entrada.
+Invalida cache de zonas tras crear.
+"""
+
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from application.dtos.zona_dto import CrearZonaDTO, ZonaDTO
+from core.exceptions import BusinessLogicError
+from core.observability import with_metrics
+from infrastructure.database.models import Zona
+from utils.logger import get_logger
+from utils.repository_cache import invalidate_zonas_cache
+
+logger = get_logger(__name__)
+
+
+class CrearZonaUseCase:
+    """
+    Caso de uso para crear una nueva zona.
+
+    Valida los datos y crea un nuevo registro de zona en la base de datos.
+    """
+
+    def __init__(self, session: Session):
+        """
+        Inicializar el caso de uso.
+
+        Args:
+            session: Sesión de SQLAlchemy para acceso a base de datos
+        """
+        self.session = session
+
+    @with_metrics("crear_zona")
+    def execute(self, data: CrearZonaDTO) -> ZonaDTO:
+        """
+        Ejecutar la creación de una nueva zona.
+
+        Args:
+            data: DTO con los datos de la zona a crear
+
+        Returns:
+            ZonaDTO con los datos de la zona creada (incluido su ID)
+
+        Raises:
+            BusinessLogicError: Si ya existe una zona con ese nombre
+        """
+        # Verificar si ya existe una zona con ese nombre
+        zona_existente = (
+            self.session.query(Zona).filter(Zona.nombre_zona == data.nombre_zona).first()
+        )
+
+        if zona_existente:
+            raise BusinessLogicError(f"Ya existe una zona con el nombre '{data.nombre_zona}'")
+
+        # Crear la nueva zona
+        nueva_zona = Zona(
+            nombre_zona=data.nombre_zona,
+            descripcion=data.descripcion or None,
+            fecha_inicio=data.fecha_inicio,
+            fecha_fin=data.fecha_fin,
+        )
+
+        try:
+            from services.calculador_guardias import ajustar_zonas_de_los_recreos
+
+            antes = self.session.query(Zona).filter(Zona.activa.is_(True)).count()
+            self.session.add(nueva_zona)
+            self.session.commit()
+            ajustar_zonas_de_los_recreos(self.session, antes)
+            self.session.refresh(nueva_zona)
+
+            # Invalidar cache de zonas
+            invalidate_zonas_cache()
+            logger.info(
+                f"Zona creada y cache invalidado: {nueva_zona.nombre_zona} (ID: {nueva_zona.id})"
+            )
+
+            return ZonaDTO.model_validate(nueva_zona)
+
+        except (SQLAlchemyError, ValueError, TypeError) as e:
+            self.session.rollback()
+            raise BusinessLogicError(f"Error al crear la zona: {str(e)}") from e

@@ -1,0 +1,66 @@
+"""
+Zona Mapper
+
+Convierte entre el modelo SQLAlchemy Zona y la entidad ZonaEntity.
+"""
+
+from typing import Optional
+
+from domain.entities import ZonaEntity
+from infrastructure.database.models import Zona
+
+
+class ZonaMapper:
+    """
+    Mapper para convertir entre Zona (SQLAlchemy) y ZonaEntity (Domain).
+    """
+
+    @staticmethod
+    def to_entity(model: Zona) -> ZonaEntity:
+        """
+        Convierte un modelo SQLAlchemy a una entidad de dominio.
+
+        Args:
+            model: Modelo SQLAlchemy Zona
+
+        Returns:
+            ZonaEntity
+        """
+        return ZonaEntity(
+            id=model.id,
+            nombre_zona=model.nombre_zona,
+            descripcion=model.descripcion,
+            fecha_inicio=getattr(model, 'fecha_inicio', None),
+            fecha_fin=getattr(model, 'fecha_fin', None),
+            activa=model.activa,
+        )
+
+    @staticmethod
+    def to_model(entity: ZonaEntity, model: Optional[Zona] = None) -> Zona:
+        """
+        Convierte una entidad de dominio a un modelo SQLAlchemy.
+
+        Args:
+            entity: Entidad de dominio
+            model: Modelo existente a actualizar (opcional)
+
+        Returns:
+            Modelo SQLAlchemy Zona
+        """
+        if model is None:
+            model = Zona()
+
+        model.nombre_zona = entity.nombre_zona
+        model.descripcion = entity.descripcion
+        model.activa = entity.activa
+        if hasattr(model, 'fecha_inicio'):
+            model.fecha_inicio = entity.fecha_inicio
+        if hasattr(model, 'fecha_fin'):
+            model.fecha_fin = entity.fecha_fin
+
+        return model
+
+    @staticmethod
+    def to_entities(models: list[Zona]) -> list[ZonaEntity]:
+        """Convierte una lista de modelos a entidades."""
+        return [ZonaMapper.to_entity(model) for model in models]

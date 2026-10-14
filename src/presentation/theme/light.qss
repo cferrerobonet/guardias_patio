@@ -1,0 +1,834 @@
+/* Diseño compartido con Partes de salida: verde EPLA y dorado, neutros que tiran
+   al verde, Barlow para el texto y Barlow Condensed para títulos y cifras.
+
+   MEDIDAS COMUNES. Todos los controles de una línea —botones, campos, desplegables,
+   fechas, horas y números— miden lo mismo: 34 px de alto (padding + borde + texto
+   de 14 px), también la acción principal de una vista. Ningún widget fija su
+   propia altura ni su propio cuerpo de letra: si hace falta otra medida, se añade
+   aquí con un papel, no en la vista. */
+
+/* ========== GLOBAL ========== */
+QWidget {
+    font-family: @FONT_FAMILY@;
+    font-size: 14px;
+    color: @TEXT_PRIMARY@;
+}
+
+QMainWindow, QDialog {
+    background-color: @SURFACE@;
+}
+
+/* Las ayudas emergentes son QWidget, así que la regla de arriba les daba el
+   texto oscuro pero no el fondo, que lo pone el sistema. Aquí se fijan las dos. */
+QToolTip {
+    background-color: @TEXT_PRIMARY@;
+    color: @TEXT_ON_PRIMARY@;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 13px;
+}
+
+/* ========== BOTONES GENERALES ========== */
+QPushButton {
+    background-color: @PRIMARY@;
+    color: @TEXT_ON_PRIMARY@;
+    font-weight: 600;
+    padding: 6px 14px;
+    border: 1px solid @PRIMARY@;
+    border-radius: 8px;
+    min-height: 20px;
+}
+
+QPushButton:hover {
+    background-color: @PRIMARY_DARK@;
+    border-color: @PRIMARY_DARK@;
+}
+
+QPushButton:pressed {
+    background-color: @PRIMARY_DARK@;
+}
+
+QPushButton:disabled {
+    background-color: @BORDER@;
+    border-color: @BORDER@;
+    color: @TEXT_SECONDARY@;
+}
+
+/* ========== SECUNDARIOS ========== */
+/* Secundario: blanco con borde, como en Partes de salida. Se marcaba de dos
+   formas —`objectName` y la propiedad `secondary`— y las dos valen (VIS-007). */
+QPushButton#secondaryButton,
+QPushButton[secondary="true"] {
+    background-color: @BACKGROUND@;
+    color: @TEXT_PRIMARY@;
+    border: 1px solid @BORDER_DARK@;
+}
+
+QPushButton#secondaryButton:hover,
+QPushButton[secondary="true"]:hover {
+    background-color: @BACKGROUND@;
+    border-color: @PRIMARY@;
+}
+
+QPushButton#secondaryButton:pressed,
+QPushButton[secondary="true"]:pressed {
+    background-color: @SURFACE_2@;
+}
+
+/* ========== BOTONES DE ÉXITO Y PELIGRO ========== */
+QPushButton[success="true"] {
+    background-color: @SUCCESS@;
+    border-color: @SUCCESS@;
+    color: @TEXT_ON_PRIMARY@;
+}
+QPushButton[success="true"]:hover {
+    background-color: @SUCCESS_DARK@;
+    border-color: @SUCCESS_DARK@;
+}
+QPushButton[danger="true"] {
+    background-color: @ERROR@;
+    border-color: @ERROR@;
+    color: @TEXT_ON_PRIMARY@;
+}
+QPushButton[danger="true"]:hover {
+    background-color: @ERROR_ON_BG@;
+    border-color: @ERROR_ON_BG@;
+}
+
+/* Peligro discreto: secundario con el texto en rojo, para borrar algo que no es
+   la acción de la pantalla (en Partes de salida, «peligro»). */
+QPushButton[secondary="true"][danger="true"] {
+    background-color: @BACKGROUND@;
+    color: @ERROR@;
+    border: 1px solid @BORDER_DARK@;
+}
+QPushButton[secondary="true"][danger="true"]:hover {
+    background-color: @BACKGROUND@;
+    border-color: @ERROR@;
+}
+
+/* ========== INPUTS ========== */
+/* Campos: fondo de ventana, borde de control (3:1, UXA-010) y 34 px de alto. */
+QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
+    background-color: @SURFACE@;
+    color: @TEXT_PRIMARY@;
+    padding: 6px 9px;
+    border: 1px solid @BORDER_CONTROL@;
+    border-radius: 7px;
+    selection-background-color: @PRIMARY@;
+    selection-color: @TEXT_ON_PRIMARY@;
+}
+
+QLineEdit, QSpinBox, QDoubleSpinBox, QDateEdit, QTimeEdit, QDateTimeEdit {
+    min-height: 20px;
+}
+
+QDateEdit, QTimeEdit, QDateTimeEdit {
+    background-color: @SURFACE@;
+    color: @TEXT_PRIMARY@;
+    padding: 6px 9px;
+    border: 1px solid @BORDER_CONTROL@;
+    border-radius: 7px;
+}
+
+QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
+    border: 1px solid @FOCUS_RING@;
+    background-color: @BACKGROUND@;
+}
+
+/* ========== COMBOBOX ========== */
+QComboBox {
+    background-color: @SURFACE@;
+    color: @TEXT_PRIMARY@;
+    padding: 6px 9px;
+    border: 1px solid @BORDER_CONTROL@;
+    border-radius: 7px;
+    min-height: 20px;
+}
+
+QComboBox:hover {
+    border-color: @PRIMARY@;
+}
+
+QComboBox:focus {
+    border: 1px solid @FOCUS_RING@;
+}
+
+QComboBox QAbstractItemView {
+    background-color: @BACKGROUND@;
+    color: @TEXT_PRIMARY@;
+    border: 1px solid @BORDER@;
+    selection-background-color: @PRIMARY_LIGHT@;
+    selection-color: @TEXT_PRIMARY@;
+}
+
+/* ========== FLECHAS Y ANCHOS ==========
+   Flechas propias en desplegables, fechas, horas y números: las del sistema eran
+   un recuadro gris oscuro que no casaba con el resto. Y un ancho máximo para los
+   campos de contenido corto, que se estiraban hasta ocupar toda la fila. */
+QComboBox::drop-down, QDateEdit::drop-down, QDateTimeEdit::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 22px;
+    border: none;
+    background: transparent;
+}
+QComboBox::down-arrow, QDateEdit::down-arrow, QDateTimeEdit::down-arrow {
+    image: url("@ICONOS@/flecha-abajo.svg");
+    width: 12px;
+    height: 12px;
+}
+QSpinBox::up-button, QDoubleSpinBox::up-button, QTimeEdit::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+    width: 18px;
+    border: none;
+    background: transparent;
+}
+QSpinBox::down-button, QDoubleSpinBox::down-button, QTimeEdit::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+    width: 18px;
+    border: none;
+    background: transparent;
+}
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow, QTimeEdit::up-arrow {
+    image: url("@ICONOS@/flecha-arriba.svg");
+    width: 10px;
+    height: 10px;
+}
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow, QTimeEdit::down-arrow {
+    image: url("@ICONOS@/flecha-abajo.svg");
+    width: 10px;
+    height: 10px;
+}
+QDateEdit, QDateTimeEdit {
+    max-width: 150px;
+}
+QTimeEdit {
+    max-width: 110px;
+}
+QSpinBox, QDoubleSpinBox {
+    max-width: 120px;
+}
+QComboBox {
+    max-width: 360px;
+}
+
+/* ========== CASILLAS ========== */
+QCheckBox, QRadioButton {
+    spacing: 8px;
+    background: transparent;
+}
+
+QCheckBox:disabled, QRadioButton:disabled {
+    color: @TEXT_SECONDARY@;
+}
+
+/* Casilla de Partes de salida: 16 px, borde de control y verde con marca blanca. */
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid @BORDER_CONTROL@;
+    border-radius: 4px;
+    background-color: @BACKGROUND@;
+}
+QCheckBox::indicator:hover {
+    border-color: @PRIMARY@;
+}
+QCheckBox::indicator:checked {
+    background-color: @PRIMARY@;
+    border-color: @PRIMARY@;
+    image: url("@ICONOS@/marca-blanca.svg");
+}
+QCheckBox::indicator:disabled {
+    background-color: @SURFACE_2@;
+    border-color: @BORDER@;
+}
+
+/* ========== TABLAS ========== */
+QTableWidget, QTableView {
+    background-color: @BACKGROUND@;
+    alternate-background-color: @SURFACE@;
+    gridline-color: @BORDER@;
+    color: @TEXT_PRIMARY@;
+    border: 1px solid @BORDER@;
+    border-radius: 10px;
+    selection-background-color: @PRIMARY_LIGHT@;
+    selection-color: @TEXT_PRIMARY@;
+}
+
+QTableWidget::item:selected, QTableView::item:selected {
+    background-color: @PRIMARY_LIGHT@;
+    color: @TEXT_PRIMARY@;
+}
+
+QHeaderView::section {
+    background-color: @SURFACE_2@;
+    color: @TEXT_SECONDARY@;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 7px 8px;
+    border: none;
+    border-bottom: 1px solid @BORDER@;
+}
+
+QTableCornerButton::section {
+    background-color: @SURFACE_2@;
+    border: none;
+}
+
+/* ========== LISTAS ========== */
+QListWidget, QListView, QTreeWidget, QTreeView {
+    background-color: @BACKGROUND@;
+    border: 1px solid @BORDER@;
+    border-radius: 8px;
+    selection-background-color: @PRIMARY_LIGHT@;
+    selection-color: @TEXT_PRIMARY@;
+}
+
+/* ========== PESTAÑAS ========== */
+QTabWidget::pane {
+    border: 1px solid @BORDER@;
+    border-radius: 10px;
+    background-color: @BACKGROUND@;
+    top: -1px;
+}
+
+QTabBar::tab {
+    background-color: transparent;
+    color: @TEXT_SECONDARY@;
+    font-weight: 600;
+    padding: 7px 14px;
+    margin-right: 2px;
+    border: 1px solid transparent;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+}
+
+QTabBar::tab:hover {
+    color: @TEXT_PRIMARY@;
+}
+
+QTabBar::tab:selected {
+    background-color: @BACKGROUND@;
+    color: @PRIMARY@;
+    border: 1px solid @BORDER@;
+    border-bottom-color: @BACKGROUND@;
+}
+
+/* ========== BARRAS ========== */
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 2px;
+}
+QScrollBar::handle:vertical {
+    background: @BORDER_DARK@;
+    border-radius: 4px;
+    min-height: 30px;
+}
+QScrollBar:horizontal {
+    background: transparent;
+    height: 10px;
+    margin: 2px;
+}
+QScrollBar::handle:horizontal {
+    background: @BORDER_DARK@;
+    border-radius: 4px;
+    min-width: 30px;
+}
+QScrollBar::add-line, QScrollBar::sub-line {
+    width: 0;
+    height: 0;
+}
+QScrollBar::add-page, QScrollBar::sub-page {
+    background: transparent;
+}
+
+QProgressBar {
+    border: 1px solid @BORDER@;
+    border-radius: 6px;
+    background-color: @SURFACE_2@;
+    text-align: center;
+    min-height: 14px;
+}
+QProgressBar::chunk {
+    background-color: @PRIMARY@;
+    border-radius: 5px;
+}
+
+/* ========== SIDEBAR ========== */
+/* Claro, como el menú de los ajustes de Partes de salida: la sección activa es
+   una tarjeta blanca con el texto en verde. */
+QWidget#sidebar {
+    background-color: @SIDEBAR_BG@;
+    border-right: 1px solid @SIDEBAR_BORDER@;
+}
+
+QLabel#sidebarTitle {
+    color: @SIDEBAR_TEXT@;
+    font-family: @FONT_TITULOS@;
+    font-size: 19px;
+    font-weight: 700;
+    padding: 12px;
+}
+
+QLabel#menuCategory {
+    color: @TEXT_SECONDARY@;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 12px 16px 4px 16px;
+    margin-top: 16px;
+}
+
+QPushButton#menuButton {
+    background-color: transparent;
+    color: @SIDEBAR_TEXT@;
+    font-weight: 600;
+    text-align: left;
+    border: 1px solid transparent;
+    margin: 1px 10px;
+}
+
+QPushButton#menuButton:hover {
+    background-color: @SIDEBAR_HOVER@;
+    color: @SIDEBAR_TEXT@;
+}
+
+QPushButton#menuButtonActive {
+    background-color: @BACKGROUND@;
+    color: @PRIMARY@;
+    font-weight: 700;
+    text-align: left;
+    border: 1px solid @BORDER@;
+    margin: 1px 10px;
+}
+
+/* ========== LABELS ========== */
+QLabel#heading1 {
+    font-family: @FONT_TITULOS@;
+    font-size: 28px;
+    font-weight: 700;
+}
+QLabel#heading2 {
+    font-family: @FONT_TITULOS@;
+    font-size: 24px;
+    font-weight: 700;
+}
+QLabel#heading3 {
+    font-family: @FONT_TITULOS@;
+    font-size: 20px;
+    font-weight: 700;
+}
+QLabel#secondary {
+    color: @SECONDARY@;
+    font-size: 12px;
+}
+
+/* ========== LABELS DE FORMULARIO ========== */
+QLabel#fieldLabel {
+    font-size: 13px;
+    font-weight: 700;
+    color: @TEXT_PRIMARY@;
+    margin-bottom: 4px;
+    margin-top: 8px;
+}
+
+QLabel#smallFieldLabel {
+    font-size: 12px;
+    font-weight: 700;
+    color: @TEXT_PRIMARY@;
+    margin-bottom: 1px;
+    margin-top: 8px;
+}
+
+QLabel#titleMain {
+    font-family: @FONT_TITULOS@;
+    font-size: 19px;
+    font-weight: 700;
+    color: @TEXT_PRIMARY@;
+    background-color: transparent;
+    padding: 4px 0;
+    margin-bottom: 6px;
+}
+
+/* ========== GROUPBOX ========== */
+/* Caja de Partes de salida: blanca, borde fino y radio 10. El título va en la
+   versión condensada, sin fondo propio. */
+QGroupBox {
+    font-family: @FONT_TITULOS@;
+    font-weight: 700;
+    font-size: 16px;
+    color: @TEXT_PRIMARY@;
+    border: 1px solid @BORDER@;
+    border-radius: 10px;
+    margin-top: 18px;
+    padding: 14px 10px 10px 10px;
+    background-color: @BACKGROUND@;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 4px;
+    left: 10px;
+    top: 0px;
+    background-color: transparent;
+    color: @TEXT_PRIMARY@;
+}
+
+/* ========== MESSAGEBOX ========== */
+QMessageBox {
+    background-color: @BACKGROUND@;
+    min-width: 400px;
+}
+
+QMessageBox QLabel {
+    color: @TEXT_PRIMARY@;
+    font-size: 14px;
+    padding: 10px;
+}
+
+QMessageBox QPushButton {
+    background-color: @BACKGROUND@;
+    color: @TEXT_PRIMARY@;
+    border: 1px solid @BORDER_DARK@;
+    min-width: 96px;
+}
+
+QMessageBox QPushButton:hover {
+    border-color: @PRIMARY@;
+    background-color: @BACKGROUND@;
+}
+
+QMessageBox QPushButton:pressed {
+    background-color: @SURFACE_2@;
+}
+
+QMessageBox QPushButton:default {
+    background-color: @PRIMARY@;
+    border-color: @PRIMARY@;
+    color: @TEXT_ON_PRIMARY@;
+}
+
+QMessageBox QPushButton:default:hover {
+    background-color: @PRIMARY_DARK@;
+}
+
+/* ========== BOTÓN WARNING ========== */
+/* Dorado oscuro: con el dorado claro el texto blanco se quedaba en 3,6:1. */
+QPushButton[warning="true"] {
+    background-color: @WARNING@;
+    border-color: @WARNING@;
+    color: @TEXT_ON_PRIMARY@;
+}
+
+QPushButton[warning="true"]:hover {
+    background-color: #7A4800;
+    border-color: #7A4800;
+}
+
+QPushButton[warning="true"]:pressed {
+    background-color: #7A4800;
+}
+
+/* ========== PANEL DE RESULTADOS («pizarra») ========== */
+QTextEdit#terminalRetro {
+    background-color: @TERMINAL_BG@;
+    color: @TERMINAL_TEXT@;
+    font-family: @FONT_MONO@;
+    font-size: 13px;
+    padding: 12px;
+    border: 1px solid @TERMINAL_BORDER@;
+    border-radius: 10px;
+    selection-background-color: @PRIMARY@;
+    selection-color: @TEXT_ON_PRIMARY@;
+}
+
+/* ========== INPUTS READ-ONLY ========== */
+QLineEdit:read-only, QDateEdit:read-only, QTimeEdit:read-only {
+    background-color: @SURFACE_2@;
+    color: @TEXT_SECONDARY@;
+    border-color: @BORDER@;
+}
+
+/* ========== SCROLL AREA ========== */
+QScrollArea {
+    border: none;
+    background: transparent;
+}
+
+/* ========== LABELS COMUNES EN FORMULARIOS/DIÁLOGOS ========== */
+/* Etiqueta descriptiva secundaria (desc/descripcion widgets) */
+QLabel#formDescription {
+    color: @TEXT_SECONDARY@;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+/* Título de diálogo pequeño */
+QLabel#dialogTitle {
+    font-family: @FONT_TITULOS@;
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+/* Título de sección modal */
+QLabel#modalSectionTitle {
+    font-family: @FONT_TITULOS@;
+    font-size: 19px;
+    font-weight: 700;
+    color: @TEXT_PRIMARY@;
+}
+
+/* Separador horizontal */
+QFrame#separator {
+    background-color: @BORDER@;
+    max-height: 1px;
+}
+
+/* Label de advertencia de cambios sin guardar */
+QLabel#unsavedChanges {
+    color: @WARNING@;
+    font-weight: 700;
+}
+
+/* ========== FOCO VISIBLE (UXA-002) ==========
+   Sin esto, moverse con el tabulador es moverse a ciegas: Qt marca el foco con
+   un punteado apenas perceptible, y en los botones con estilo propio ni eso.
+   El anillo va en el color primario. */
+
+QPushButton:focus,
+QToolButton:focus,
+QCheckBox:focus,
+QRadioButton:focus,
+QDateEdit:focus,
+QTimeEdit:focus,
+QDateTimeEdit:focus,
+QTabBar::tab:focus,
+QListWidget:focus,
+QTreeWidget:focus,
+QTableWidget:focus,
+QTableView:focus {
+    border: 2px solid @FOCUS_RING@;
+    outline: none;
+}
+
+/* En el menú lateral el anillo va sobre la tarjeta clara. */
+QPushButton#menuButton:focus,
+QPushButton#menuButtonActive:focus {
+    border: 2px solid @FOCUS_RING@;
+}
+
+/* La fila con foco dentro de una tabla también tiene que distinguirse. */
+QTableWidget::item:focus,
+QTableView::item:focus {
+    border: 2px solid @FOCUS_RING@;
+}
+
+/* Campo con error de validación (UXA-006): el borde rojo acompaña al mensaje,
+   para no obligar a buscar a ojo cuál de los campos es el que falla. */
+QLineEdit[error="true"],
+QPlainTextEdit[error="true"],
+QTextEdit[error="true"],
+QComboBox[error="true"],
+QSpinBox[error="true"],
+QDoubleSpinBox[error="true"],
+QDateEdit[error="true"],
+QTimeEdit[error="true"] {
+    border: 2px solid @ERROR@;
+    background-color: @ERROR_BG@;
+}
+
+/* ========== PIEZAS REUTILIZADAS (VIS-001) ==========
+   Estilos que estaban repetidos literalmente en varios ficheros. Se declaran una
+   vez aquí y las vistas sólo marcan el papel de cada widget. */
+
+/* Título de un diálogo */
+QLabel#tituloDialogo {
+    font-family: @FONT_TITULOS@;
+    font-size: 24px;
+    font-weight: 700;
+    color: @TEXT_PRIMARY@;
+    padding: 16px 20px;
+}
+
+/* Recuadro de aviso: algo que hay que leer antes de seguir */
+QLabel[caja="aviso"] {
+    padding: 8px 10px;
+    background-color: @WARNING_BG@;
+    color: @WARNING@;
+    border-left: 3px solid @WARNING_BORDER@;
+    border-radius: 7px;
+}
+
+/* Recuadro de error y de resultado correcto: mismo papel, distinto desenlace */
+QLabel[caja="error"] {
+    padding: 8px 10px;
+    background-color: @ERROR_BG@;
+    border-left: 3px solid @ERROR@;
+    color: @ERROR_ON_BG@;
+    border-radius: 7px;
+}
+
+QLabel[caja="exito"] {
+    padding: 8px 10px;
+    background-color: @SUCCESS_BG@;
+    border-left: 3px solid @SUCCESS@;
+    color: @SUCCESS_DARK@;
+    border-radius: 7px;
+}
+
+/* Recuadro informativo */
+QLabel[caja="info"] {
+    padding: 10px;
+    background-color: @INFO_BG@;
+    border-left: 3px solid @PRIMARY@;
+    border-radius: 7px;
+}
+
+/* Botón principal de un diálogo: misma altura que el resto, ancho mínimo común */
+QPushButton#botonDialogo {
+    min-width: 110px;
+}
+
+/* Acción principal de una vista: misma altura que el resto (34 px), para que
+   quede alineada con los botones de su fila; se distingue por el peso (UXF-006). */
+QPushButton#botonPrimarioDeVista {
+    font-weight: 700;
+}
+
+/* Cabecera de vista: una sola, puesta por el envoltorio, en vez de que cada
+   pantalla pinte la suya (o ninguna) (VIS-006). */
+QLabel#cabeceraDeVista {
+    font-family: @FONT_TITULOS@;
+    font-size: 26px;
+    font-weight: 700;
+    color: @TEXT_PRIMARY@;
+    background-color: @SURFACE_2@;
+    border-bottom: 1px solid @BORDER@;
+    padding: 10px 24px;
+}
+
+/* ========== JERARQUÍA DE BOTONES (VIS-007) ==========
+   Un botón es, por orden de peso:
+     #botonPrimarioDeVista  la acción principal de la pantalla (en negrita)
+     (por defecto)          acción normal, verde primario
+     [secondary="true"]     alternativa o cancelar: blanco con borde
+     [success="true"]       confirma algo que ya está bien encaminado
+     [warning="true"]       acción que conviene mirar dos veces: dorado
+     [danger="true"]        destruye datos
+   No hay más variantes: si hace falta otra, se añade aquí, no en la vista. */
+
+/* Título de un panel dentro de una vista: menos peso que la cabecera, para que
+   se distinga de ella (VIS-006). */
+QLabel#tituloDePanel {
+    font-family: @FONT_TITULOS@;
+    font-size: 19px;
+    font-weight: 700;
+    color: @TEXT_PRIMARY@;
+    background-color: transparent;
+    padding: 4px 0;
+    margin-bottom: 4px;
+}
+
+/* Recuento de guardias junto a «Calcular cuotas»: pastilla verde suave, cifra en
+   la versión condensada. Estaba escrito igual en dos paneles. */
+QLabel#totalGuardias {
+    background-color: @PRIMARY_LIGHT@;
+    color: @PRIMARY_DARK@;
+    font-family: @FONT_TITULOS@;
+    font-weight: 700;
+    font-size: 17px;
+    padding: 6px 16px;
+    border-radius: 8px;
+    border: 1px solid @SUCCESS_BORDER@;
+}
+
+/* ========== TEXTO AUXILIAR (VIS-001) ==========
+   Cuatro papeles para el texto pequeño que acompaña a los controles. */
+
+QLabel[texto="pequeno"] {
+    font-size: 12px;
+}
+
+QLabel[texto="secundario"] {
+    font-size: 12px;
+    color: @TEXT_SECONDARY@;
+}
+
+QLabel[texto="error"] {
+    font-size: 12px;
+    color: @ERROR@;
+}
+
+QLabel[texto="fuerte"] {
+    font-size: 12px;
+    font-weight: 700;
+    color: @TEXT_PRIMARY@;
+}
+
+/* ========== PIEZAS QUE ESTABAN REPETIDAS (lote 8 bis) ========== */
+
+/* Caja informativa bajo un formulario (SFTP, SMTP) */
+QLabel#cajaInformativa {
+    padding: 10px;
+    background-color: @INFO_BG@;
+    border-left: 3px solid @PRIMARY@;
+    border-radius: 7px;
+    color: @TEXT_PRIMARY@;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+/* Botón de confirmación verde de los diálogos de configuración */
+QPushButton#botonConfirmarVerde {
+    min-width: 110px;
+    background-color: @SUCCESS@;
+    color: @TEXT_ON_PRIMARY@;
+    border: 1px solid @SUCCESS@;
+}
+
+QPushButton#botonConfirmarVerde:hover {
+    background-color: @SUCCESS_DARK@;
+    border-color: @SUCCESS_DARK@;
+}
+
+/* Área desplazable con marco, en las pantallas de exportación */
+QScrollArea#areaConMarco {
+    border: 1px solid @BORDER@;
+    border-radius: 10px;
+    background-color: @BACKGROUND@;
+}
+
+/* Aviso de versión nueva: botón dorado, como en Partes de salida */
+QPushButton#botonActualizar {
+    color: @TEXT_ON_PRIMARY@;
+    background-color: @WARNING@;
+    border: 1px solid @WARNING@;
+    border-radius: 7px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    min-height: 0px;
+}
+
+QPushButton#botonActualizar:hover {
+    background-color: #7A4800;
+}
+
+/* Cierre del login: la ventana no tiene barra de título. */
+QPushButton#botonCerrarLogin {
+    background: transparent;
+    border: none;
+    border-radius: 14px;
+    min-height: 0px;
+    padding: 4px;
+}
+
+QPushButton#botonCerrarLogin:hover {
+    background-color: @BORDER@;
+}

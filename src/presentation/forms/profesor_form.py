@@ -1,0 +1,992 @@
+"""
+Formulario de gestión de profesores.
+
+Este módulo implementa la UI para crear, editar, eliminar y buscar profesores.
+Incluye una tabla con búsqueda y un formulario detallado con validaciones.
+"""
+
+import json
+from pathlib import Path
+from typing import Optional
+
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QKeySequence, QShortcut
+from PyQt6.QtWidgets import (
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSplitter,
+    QTableWidget,
+    QVBoxLayout,
+    QWidget,
+)
+from sqlalchemy.exc import SQLAlchemyError
+
+from application.dtos.profesor_dto import ActualizarProfesorDTO, CrearProfesorDTO
+from application.use_cases.profesor import (
+    ActualizarProfesorUseCase,
+    BuscarProfesoresUseCase,
+    CrearProfesorUseCase,
+    EliminarProfesorUseCase,
+    ListarProfesoresUseCase,
+    ObtenerProfesorUseCase,
+)
+from core.logging import get_logger
+from presentation.forms.base_form import BaseForm
+from presentation.forms.profesor_table_helpers import (
+    COL_FIN_GUARDIAS,
+    COL_INICIO_GUARDIAS,
+    COL_VOLUNTARIAS,
+    COLUMNAS_PROFESORES,
+    cargar_tabla_profesores,
+    filtrar_tabla_profesores,
+)
+from presentation.forms.profesor_widgets import (
+    DatosBasicosWidget,
+    HorarioWidget,
+    RestriccionesWidget,
+)
+from presentation.themes.tema_aplicacion import (
+    CONTENT_BG_ALT,
+    FONT_SIZE_SMALL,
+    PRIMARY_BLUE,
+    RADIUS_SMALL,
+    SPACING_MD,
+    SPACING_SM,
+    TEXT_SECONDARY,
+)
+from presentation.widgets.table_manager import TableManager
+from utils.icons import icon_for_button
+from utils.orden import clave_alfabetica
+
+logger = get_logger(__name__)
+
+
+class ProfesorForm(BaseForm):
+    """Formulario para gestión completa de profesores."""
+
+    # Señal que se emite cuando se modifican los datos de profesores
+    datos_modificados = pyqtSignal()
+
+    def __init__(self, session):
+        """
+        Inicializar formulario de profesores.
+
+        Args:
+            session: Sesión de base de datos para operaciones CRUD
+        """
+        super().__init__(session)
+        self.setWindowTitle("Gestión de Profesores")
+
+        # Variable para trackear modo edición
+        self.profesor_editando_id: Optional[int] = None
+        # Profesor cuya cuota oficial explica la línea de ayuda (edición o vista previa)
+        self._profesor_ayuda_id: Optional[int] = None
+
+        # Inicializar Use Cases
+        self.crear_use_case = CrearProfesorUseCase(session)
+        self.actualizar_use_case = ActualizarProfesorUseCase(session)
+        self.eliminar_use_case = EliminarProfesorUseCase(session)
+        self.listar_use_case = ListarProfesoresUseCase(session)
+        self.buscar_use_case = BuscarProfesoresUseCase(session)
+        self.obtener_use_case = ObtenerProfesorUseCase(session)
+
+        # Configurar atajos
+        self._configurar_atajos()
+
+        # Construir UI
+        self.setup_ui()
+
+        # Inicializar gestor de tabla para mejorar UX
+        self.table_manager = None  # Se inicializará después de crear la tabla
+
+        # Cargar datos iniciales
+        self.cargar_profesores()
+
+        self.cargar_zonas()
+
+        # Detectar ediciones sin guardar para el guard de navegación (UXA-004).
+        # Va al final: rellenar los campos con datos no es una edición del usuario.
+        self.vigilar_cambios()
+        # La rejilla de recreos son botones, que `vigilar_cambios` no ve: tocar
+        # sólo la rejilla no avisaba al salir de la vista y se perdía (2026-09-29).
+        self.restricciones_widget.semana_widget.changed.connect(self._al_editar_campo)
+        self.nombrar_campos()
+
+    def setup_ui(self):
+        """Construir la interfaz del formulario con diseño responsivo."""
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        self._splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        left_widget = self._crear_widget_tabla()
+        self._splitter.addWidget(left_widget)
+
+        self._form_panel = self._crear_widget_formulario_con_scroll()
+        self._splitter.addWidget(self._form_panel)
+        self._form_panel.setVisible(False)  # oculto por defecto (UX-07)
+
+        self._splitter.setStretchFactor(0, 70)
+        self._splitter.setStretchFactor(1, 30)
+
+        main_layout.addWidget(self._splitter)
+        self.setLayout(main_layout)
+
+    def _crear_widget_tabla(self) -> QWidget:
+        """Crear widget contenedor para la sección de tabla."""
+        widget = QWidget()
+        layout = self._crear_seccion_tabla()
+        widget.setLayout(layout)
+        return widget
+
+    def _crear_widget_formulario_con_scroll(self) -> QWidget:
+        """Crear widget para el formulario (sin scroll, optimizado horizontalmente)."""
+        # Crear contenedor del formulario sin ScrollArea
+        form_container = QWidget()
+        form_layout = self._crear_seccion_formulario()
+        form_container.setLayout(form_layout)
+
+        return form_container
+
+    def _crear_seccion_tabla(self) -> QVBoxLayout:
+        """Crear sección izquierda con tabla de profesores."""
+        layout = QVBoxLayout()
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
+
+        # Título con contador
+        self.titulo_lista_profesores = QLabel("PROFESORES REGISTRADOS (0)")
+        self.titulo_lista_profesores.setObjectName("tituloDePanel")
+        layout.addWidget(self.titulo_lista_profesores)
+
+        # Campo de búsqueda
+        busqueda_layout = QHBoxLayout()
+        busqueda_layout.setSpacing(8)
+
+        busqueda_label = QLabel("Buscar:")
+        busqueda_label.setObjectName("fieldLabel")
+        busqueda_layout.addWidget(busqueda_label)
+
+        self.busqueda_input = QLineEdit()
+        self.busqueda_input.setPlaceholderText("Buscar por nombre o email...")
+        self.busqueda_input.textChanged.connect(self.filtrar_profesores)
+        busqueda_layout.addWidget(self.busqueda_input)
+
+        self.limpiar_busqueda_btn = QPushButton()
+        self.limpiar_busqueda_btn.setIcon(icon_for_button("close"))
+        self.limpiar_busqueda_btn.setAccessibleName("Limpiar búsqueda")
+        self.limpiar_busqueda_btn.setToolTip("Limpiar búsqueda")
+        self.limpiar_busqueda_btn.setFixedWidth(30)
+        self.limpiar_busqueda_btn.setToolTip("Limpiar búsqueda")
+        self.limpiar_busqueda_btn.clicked.connect(self.limpiar_busqueda)
+        self.limpiar_busqueda_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #D9E0D5;
+                border: none;
+                border-radius: 3px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #D9E0D5;
+            }
+        """)
+        busqueda_layout.addWidget(self.limpiar_busqueda_btn)
+
+        layout.addLayout(busqueda_layout)
+
+        # Tabla de profesores
+        self.tabla_profesores = QTableWidget()
+        # Nombre y descripción para lectores de pantalla (UXA-008)
+        self.tabla_profesores.setAccessibleName("Listado de profesores")
+        self.tabla_profesores.setAccessibleDescription(
+            "Tabla de profesores del centro. Selecciona una fila para editarla o borrarla."
+        )
+        self.tabla_profesores.setColumnCount(len(COLUMNAS_PROFESORES))
+        self.tabla_profesores.setHorizontalHeaderLabels(COLUMNAS_PROFESORES)
+        voluntarias_header = self.tabla_profesores.horizontalHeaderItem(COL_VOLUNTARIAS)
+        if voluntarias_header:
+            voluntarias_header.setToolTip("Guardias voluntarias hechas antes del reparto oficial")
+
+        # Configurar anchos de columnas para ver todo el contenido
+        header = self.tabla_profesores.horizontalHeader()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Nombre - Stretch
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Email - Stretch
+
+        # Columnas con ancho fijo más estrecho
+        self.tabla_profesores.setColumnWidth(2, 70)  # Horas - más estrecho
+        self.tabla_profesores.setColumnWidth(3, 80)  # Turno - más estrecho
+        self.tabla_profesores.setColumnWidth(4, 60)  # Tutor - más estrecho
+        self.tabla_profesores.setColumnWidth(COL_VOLUNTARIAS, 60)  # Voluntarias - estrecha
+        self.tabla_profesores.setColumnWidth(COL_INICIO_GUARDIAS, 110)  # Inicio Guardias
+        self.tabla_profesores.setColumnWidth(COL_FIN_GUARDIAS, 110)  # Fin Guardias
+
+        self.tabla_profesores.setSortingEnabled(True)
+        self.tabla_profesores.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        # Permitir selección múltiple (Ctrl+clic o Shift+clic)
+        self.tabla_profesores.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
+        # Doble click: activar modo edición
+        self.tabla_profesores.doubleClicked.connect(self.editar_profesor)
+
+        # Hacer la tabla de solo lectura (no editable directamente)
+        self.tabla_profesores.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+
+        layout.addWidget(self.tabla_profesores)
+
+        # Label informativo de multiselección
+        info_label = QLabel(
+            "<b>Selección múltiple:</b> Ctrl+clic (individual) | "
+            "Shift+clic (rango) | Ctrl+A (todos) | Supr (eliminar)"
+        )
+        info_label.setStyleSheet(f"""
+            QLabel {{
+                background-color: {CONTENT_BG_ALT};
+                color: {TEXT_SECONDARY};
+                font-size: {FONT_SIZE_SMALL}px;
+                padding: {SPACING_SM}px {SPACING_MD}px;
+                border-left: 3px solid {PRIMARY_BLUE};
+                border-radius: {RADIUS_SMALL}px;
+            }}
+        """)
+        info_label.setWordWrap(True)
+        layout.addWidget(info_label)
+
+        # Botones de gestión
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(8)
+
+        # Botón "Actualizar" eliminado - la tabla se actualiza automáticamente
+        # después de cada operación (crear, editar, eliminar)
+
+        self.nuevo_btn = QPushButton("Nuevo")
+        self.nuevo_btn.setIcon(icon_for_button("add"))
+        self.nuevo_btn.setProperty("success", "true")
+        self.nuevo_btn.clicked.connect(self._abrir_formulario_nuevo)
+
+        self.editar_btn = QPushButton("Editar")
+        self.editar_btn.setIcon(icon_for_button("edit"))
+        self.editar_btn.setProperty("warning", "true")
+        self.editar_btn.clicked.connect(self.editar_profesor)
+        self.editar_btn.setToolTip("Editar el profesor seleccionado")
+
+        self.delete_btn = QPushButton("Eliminar")
+        self.delete_btn.setIcon(icon_for_button("delete"))
+        self.delete_btn.setProperty("danger", "true")
+        self.delete_btn.clicked.connect(self.eliminar_profesor)
+        self.delete_btn.setToolTip(
+            "Eliminar profesor(es) seleccionado(s)\n"
+            "Ctrl+clic: selección múltiple\n"
+            "Shift+clic: rango de selección"
+        )
+
+        btn_layout.addWidget(self.nuevo_btn)
+        btn_layout.addWidget(self.editar_btn)
+        btn_layout.addWidget(self.delete_btn)
+        btn_layout.addStretch()
+        layout.addLayout(btn_layout)
+
+        # Inicializar TableManager para mejorar UX
+        self.table_manager = TableManager(
+            table=self.tabla_profesores, edit_btn=self.editar_btn, delete_btn=self.delete_btn
+        )
+
+        return layout
+
+    def _crear_seccion_formulario(self) -> QVBoxLayout:
+        """Crear sección derecha con formulario de alta/edición optimizado sin scroll."""
+        layout = QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)  # Márgenes mínimos
+        layout.setSpacing(4)  # Espaciado mínimo entre elementos
+
+        # Cabecera: título + botón cerrar
+        header_layout = QHBoxLayout()
+        self.titulo_seccion = QLabel("ALTA DE PROFESOR")
+        self.titulo_seccion.setObjectName("tituloDePanel")
+        header_layout.addWidget(self.titulo_seccion)
+        header_layout.addStretch()
+        cerrar_btn = QPushButton()
+        cerrar_btn.setIcon(icon_for_button("close"))
+        cerrar_btn.setAccessibleName("Cerrar el formulario")
+        cerrar_btn.setToolTip("Cerrar el formulario")
+        cerrar_btn.setFixedWidth(28)
+        cerrar_btn.setToolTip("Cerrar formulario")
+        cerrar_btn.setProperty("danger", "true")
+        cerrar_btn.clicked.connect(self._cerrar_formulario)
+        header_layout.addWidget(cerrar_btn)
+        layout.addLayout(header_layout)
+
+        # Widgets del formulario (layout vertical simple para no comprimir tabla)
+        self.datos_basicos_widget = DatosBasicosWidget(self)
+        layout.addWidget(self.datos_basicos_widget)
+
+        self.horario_widget = HorarioWidget(self)
+        layout.addWidget(self.horario_widget)
+
+        self.restricciones_widget = RestriccionesWidget(self)
+        layout.addWidget(self.restricciones_widget)
+
+        # Conectar señal de cambio de turno para actualizar matriz de restricciones
+        self.horario_widget.turno_changed.connect(self._actualizar_matriz_restricciones_por_turno)
+
+        # Línea de ayuda de la cuota oficial: se recalcula poco después de cambiar las
+        # voluntarias, para no repartir todo el curso en cada pulsación
+        self._ayuda_cuota_timer = QTimer(self)
+        self._ayuda_cuota_timer.setSingleShot(True)
+        self._ayuda_cuota_timer.setInterval(300)
+        self._ayuda_cuota_timer.timeout.connect(self._actualizar_ayuda_cuota)
+        self.horario_widget.voluntarias_changed.connect(
+            lambda _valor: self._ayuda_cuota_timer.start()
+        )
+
+        # Botones de acción más compactos
+        botones_accion = QHBoxLayout()
+        botones_accion.setSpacing(6)
+
+        self.submit_btn = QPushButton("Guardar")
+        self.submit_btn.setIcon(icon_for_button("save"))
+        self.submit_btn.setProperty("success", "true")
+        self.submit_btn.clicked.connect(self.guardar_profesor)
+        self.submit_btn.setMaximumHeight(34)  # Altura reducida
+
+        self.cancelar_btn = QPushButton("Cancelar")
+        self.cancelar_btn.setIcon(icon_for_button("close"))
+        self.cancelar_btn.setProperty("danger", "true")
+        self.cancelar_btn.clicked.connect(self.cancelar_edicion)
+        self.cancelar_btn.setVisible(False)
+        self.cancelar_btn.setMaximumHeight(34)  # Altura reducida
+
+        botones_accion.addStretch()
+        botones_accion.addWidget(self.submit_btn)
+        botones_accion.addWidget(self.cancelar_btn)
+        layout.addLayout(botones_accion)
+
+        layout.addStretch()  # Push todo hacia arriba
+
+        return layout
+
+    def _abrir_formulario_nuevo(self):
+        self._limpiar_formulario()
+        self._mostrar_formulario()
+
+    def _mostrar_formulario(self):
+        self._ajustar_rejilla_a_los_turnos()
+        self._form_panel.setVisible(True)
+        self._splitter.setStretchFactor(0, 60)
+        self._splitter.setStretchFactor(1, 40)
+
+    def _ajustar_rejilla_a_los_turnos(self) -> None:
+        """Solo los recreos de los turnos con guardias en Ajustes (2026-10-06)."""
+        try:
+            from services.calculador_guardias import turnos_con_recreos_guardados
+
+            self.restricciones_widget.set_turnos_con_recreos(
+                *turnos_con_recreos_guardados(self.session)
+            )
+        except SQLAlchemyError as e:
+            logger.warning(f"No se pudieron leer los turnos con recreos: {e}")
+
+    def _cerrar_formulario(self):
+        self._form_panel.setVisible(False)
+        self._splitter.setStretchFactor(0, 100)
+        self._splitter.setStretchFactor(1, 0)
+        self._limpiar_formulario()
+
+    def _configurar_atajos(self):
+        """Configurar atajos de teclado."""
+        QShortcut(QKeySequence("Ctrl+S"), self).activated.connect(self.guardar_profesor)
+        QShortcut(QKeySequence("Ctrl+F"), self).activated.connect(
+            lambda: self.busqueda_input.setFocus()
+        )
+        QShortcut(QKeySequence("F5"), self).activated.connect(self.cargar_profesores)
+        QShortcut(QKeySequence("Esc"), self).activated.connect(self.cancelar_edicion)
+        QShortcut(QKeySequence("Del"), self).activated.connect(self.eliminar_profesor)
+        QShortcut(QKeySequence("Ctrl+A"), self).activated.connect(self.seleccionar_todos)
+
+    def seleccionar_todos(self):
+        """Seleccionar todos los profesores de la tabla."""
+        if self.tabla_profesores.rowCount() > 0:
+            self.tabla_profesores.selectAll()
+
+    def _limpiar_formulario(self):
+        """Limpiar todos los campos del formulario y preseleccionar matriz según turno."""
+        # La vista se crea al arrancar y el combo de zonas se quedaba con las de
+        # entonces: una zona creada o descargada después no aparecía, la ficha
+        # mostraba «Sin preferencia» y al guardar se borraba (2026-10-03).
+        self.cargar_zonas()
+
+        # Delegar limpieza a los widgets
+        self.datos_basicos_widget.limpiar()
+        self.horario_widget.limpiar()
+        self.restricciones_widget.limpiar()
+
+        # Preseleccionar matriz de restricciones según el turno por defecto (Mañana)
+        turno_por_defecto = self.horario_widget.get_turno()
+        if turno_por_defecto:
+            self.restricciones_widget.preseleccionar_segun_turno(turno_por_defecto)
+
+        # Actualizar estado del formulario
+        self.profesor_editando_id = None
+        self._profesor_ayuda_id = None
+        self._ayuda_cuota_timer.stop()
+        self.horario_widget.set_ayuda_cuota(None)
+        self.titulo_seccion.setText("ALTA DE PROFESOR")
+        self.submit_btn.setText("Guardar nuevo profesor")
+        self.cancelar_btn.setVisible(False)
+
+        # Re-habilitar interacción con la tabla después de cancelar/guardar
+        self.tabla_profesores.setEnabled(True)
+        self.editar_btn.setEnabled(True)
+        self.delete_btn.setEnabled(True)
+        self.busqueda_input.setEnabled(True)
+
+        # Formulario vacío = sin cambios pendientes (UXA-004)
+        self.descartar_cambios()
+
+    def cancelar_edicion(self):
+        """Cancelar edición y volver a modo creación (sin recargar tabla)."""
+        self._cerrar_formulario()
+        # NO recargar tabla - es más rápido y no se han guardado cambios
+        # self.cargar_profesores()  # ELIMINADO - innecesario
+
+    def revertir_cambios(self) -> None:
+        """«Descartar» cierra la ficha; antes quedaba abierta con lo descartado."""
+        self.cancelar_edicion()
+
+    def guardar_cambios_pendientes(self) -> bool:
+        """Permite al guard de navegación ofrecer «Guardar» (UXA-004)."""
+        self.guardar_profesor()
+        return not self.tiene_cambios()
+
+    def guardar_profesor(self):
+        """Crear o actualizar profesor según el modo actual."""
+        try:
+            # Validar widgets
+            valido_basicos, error_basicos = self.datos_basicos_widget.validar()
+            if not valido_basicos:
+                self.mostrar_advertencia("Validación", error_basicos)
+                return
+
+            valido_horario, error_horario = self.horario_widget.validar()
+            if not valido_horario:
+                self.mostrar_advertencia("Validación", error_horario)
+                return
+
+            valido_restricciones, error_restricciones = self.restricciones_widget.validar()
+            if not valido_restricciones:
+                self.mostrar_advertencia("Validación", error_restricciones)
+                return
+
+            # Obtener datos de los widgets
+            datos_basicos = self.datos_basicos_widget.get_datos()
+            datos_horario = self.horario_widget.get_datos()
+            datos_restricciones = self.restricciones_widget.get_datos()
+
+            # ✅ Obtener restricciones de horario (matriz de recreos)
+            matriz_json = datos_restricciones.get("recreos_permitidos", "")
+            recreos_dict = {}
+
+            if matriz_json:
+                # Hay restricciones personalizadas (checkbox activado)
+                try:
+                    recreos_dict = json.loads(matriz_json)
+                    # Convertir claves a int si es necesario
+                    recreos_dict = {int(k): v for k, v in recreos_dict.items()}
+                except (json.JSONDecodeError, ValueError):
+                    pass
+            else:
+                # ✅ NO hay restricciones personalizadas (checkbox desactivado)
+                # GUARDAR configuración por defecto según turno
+                turno = datos_horario["turno"]
+                recreos_dict = self.restricciones_widget._obtener_recreos_por_defecto(turno)
+                # Los días también vuelven a los del turno: si no, quitar la
+                # personalización dejaba vetados los días que se habían quitado.
+                datos_restricciones["dias_permitidos"] = sorted(
+                    dia for dia, recreos in recreos_dict.items() if recreos
+                ) or None
+
+            # Guardar profesor
+            if self.profesor_editando_id:
+                # Modo edición
+                dto = ActualizarProfesorDTO(
+                    nombre_completo=datos_basicos["nombre_completo"],
+                    email_corporativo=datos_basicos["email"] or None,
+                    horas_contrato=datos_horario["horas_contrato"],
+                    turno=datos_horario["turno"],
+                    horas_manana=datos_horario.get("horas_manana"),
+                    horas_tarde=datos_horario.get("horas_tarde"),
+                    tutor=datos_basicos["es_tutor"],
+                    fecha_inicio_guardias=datos_restricciones.get("fecha_inicio"),
+                    fecha_fin_guardias=datos_restricciones.get("fecha_fin"),
+                    guardias_voluntarias=datos_horario.get("guardias_voluntarias", 0),
+                    zona_preferida_id=datos_restricciones.get("zona_preferida_id"),
+                    # Pasar la matriz completa
+                    recreos_permitidos=recreos_dict if recreos_dict else {},
+                    dias_semana_permitidos=datos_restricciones.get("dias_permitidos"),
+                )
+                self.actualizar_use_case.execute(self.profesor_editando_id, dto)
+                self.session.expire_all()
+            else:
+                # Modo creación
+                dto = CrearProfesorDTO(
+                    nombre_completo=datos_basicos["nombre_completo"],
+                    email_corporativo=datos_basicos["email"] or None,
+                    horas_contrato=datos_horario["horas_contrato"],
+                    turno=datos_horario["turno"],
+                    horas_manana=datos_horario.get("horas_manana"),
+                    horas_tarde=datos_horario.get("horas_tarde"),
+                    tutor=datos_basicos["es_tutor"],
+                    fecha_inicio_guardias=datos_restricciones.get("fecha_inicio"),
+                    fecha_fin_guardias=datos_restricciones.get("fecha_fin"),
+                    guardias_voluntarias=datos_horario.get("guardias_voluntarias", 0),
+                    zona_preferida_id=datos_restricciones.get("zona_preferida_id"),
+                    recreos_permitidos=recreos_dict if recreos_dict else {},  # Pasar matriz
+                    dias_semana_permitidos=datos_restricciones.get("dias_permitidos"),
+                )
+                profesor_creado = self.crear_use_case.execute(dto)
+
+            # Guardar selección antes de recargar
+            if self.table_manager:
+                if self.profesor_editando_id:
+                    # En modo edición, guardar el ID que estamos editando
+                    self.table_manager._last_selected_id = self.profesor_editando_id
+                else:
+                    # En modo creación, guardar el ID del nuevo profesor si existe
+                    if profesor_creado:
+                        self.table_manager._last_selected_id = profesor_creado.id
+
+            # Recargar tabla y emitir señal
+            self.cargar_profesores()
+            self.datos_modificados.emit()
+
+            # Manejar modo edición
+            if self.profesor_editando_id:
+                self.profesor_editando_id = None
+                self.titulo_seccion.setText("ALTA DE PROFESOR")
+                self.submit_btn.setText("Guardar nuevo profesor")
+                self.cancelar_btn.setVisible(False)
+                # Limpiar formulario después de actualizar para evitar confusión
+                self._limpiar_formulario()
+                if self.table_manager:
+                    self.table_manager.enable_table_interactions(True)
+                self.busqueda_input.setEnabled(True)
+
+                # La selección se restaurará automáticamente en cargar_profesores()
+                self._cerrar_formulario()
+                self.mostrar_exito("Profesor actualizado", "El profesor ha sido actualizado correctamente.")
+            else:
+                self._cerrar_formulario()
+                self.mostrar_exito("Profesor creado", "El profesor ha sido creado correctamente.")
+
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
+            self.manejar_excepcion(e, "guardar profesor")
+
+    def cargar_profesores(self):
+        """Cargar tabla de profesores desde la base de datos."""
+        try:
+            cargar_tabla_profesores(
+                session=self.session,
+                table=self.tabla_profesores,
+                titulo_label=self.titulo_lista_profesores,
+                table_manager=self.table_manager,
+            )
+
+        except (ValueError, TypeError, OSError) as e:
+            self.manejar_excepcion(e, "cargar profesores")
+
+    def cargar_zonas(self):
+        """Cargar zonas disponibles en el combo del widget de restricciones."""
+        try:
+            from application.app_services import AppServices
+
+            zonas_all = sorted(
+                AppServices(self.session).zonas.get_all(),
+                key=lambda z: clave_alfabetica(z.nombre_zona),
+            )
+            zonas_list = [(z.id, z.nombre_zona) for z in zonas_all]
+            # Poblar el widget no es una edición del usuario (UXA-004).
+            with self.cargando():
+                self.restricciones_widget.cargar_zonas(zonas_list)
+
+        except (ValueError, TypeError, OSError) as e:
+            self.manejar_excepcion(e, "cargar zonas")
+
+    def filtrar_profesores(self):
+        """Filtrar profesores en la tabla según búsqueda."""
+        filtrar_tabla_profesores(
+            table=self.tabla_profesores,
+            texto_busqueda=self.busqueda_input.text(),
+        )
+
+    def limpiar_busqueda(self):
+        """Limpiar campo de búsqueda."""
+        self.busqueda_input.clear()
+
+    def mostrar_profesor(self):
+        """
+        Mostrar datos del profesor seleccionado en modo lectura (sin editar).
+
+        NOTA: Este método ya NO se llama desde click simple de la tabla.
+        Solo se usa internamente en editar_profesor().
+        """
+        if self.profesor_editando_id is not None:
+            return
+
+        fila_actual = self.tabla_profesores.currentRow()
+        if fila_actual < 0:
+            return
+
+        id_item = self.tabla_profesores.item(fila_actual, 0)
+        if not id_item:
+            return
+
+        id_profesor = id_item.data(Qt.ItemDataRole.UserRole)
+
+        try:
+            # Usar Use Case para obtener el profesor
+            profesor_dto = self.obtener_use_case.execute(id_profesor)
+
+            recreos_raw = self._recreos_guardados(id_profesor)
+
+            # Limpiar formulario
+            self._limpiar_formulario()
+
+            # Cargar datos en widgets desde el DTO
+            self.datos_basicos_widget.set_datos(
+                {
+                    "nombre_completo": profesor_dto.nombre_completo or "",
+                    "email": profesor_dto.email_corporativo or "",
+                    "es_tutor": profesor_dto.tutor or False,
+                }
+            )
+
+            self.horario_widget.set_datos(
+                {
+                    "horas_contrato": profesor_dto.horas_contrato,
+                    "turno": profesor_dto.turno,
+                    "horas_manana": profesor_dto.horas_manana,
+                    "horas_tarde": profesor_dto.horas_tarde,
+                    "guardias_voluntarias": profesor_dto.guardias_voluntarias,
+                }
+            )
+
+            self.restricciones_widget.set_datos(
+                {
+                    "fecha_inicio": profesor_dto.fecha_inicio_guardias,
+                    "fecha_fin": profesor_dto.fecha_fin_guardias,
+                    "zona_preferida_id": profesor_dto.zona_preferida_id,
+                    # ✅ Pasar JSON raw en lugar del DTO procesado
+                    "recreos_permitidos": recreos_raw,
+                    "turno": profesor_dto.turno,
+                }
+            )
+
+            self._profesor_ayuda_id = id_profesor
+            self._actualizar_ayuda_cuota()
+
+            # Actualizar título - modo lectura
+            self.titulo_seccion.setText("VISTA PREVIA")
+            self.submit_btn.setText("Guardar Cambios")
+            self.cancelar_btn.setVisible(False)
+
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
+            self.manejar_excepcion(e, "cargar datos del profesor")
+
+    def _actualizar_ayuda_cuota(self):
+        """Explica la cuota oficial con las voluntarias del campo, sin guardarlas.
+
+        Sin profesor guardado (alta) o sin configuración, la línea no se muestra.
+        """
+        texto = None
+        id_profesor = self.profesor_editando_id or self._profesor_ayuda_id
+        if id_profesor:
+            try:
+                from services.distribucion_cuotas_service import DistribucionCuotasService
+
+                desglose = DistribucionCuotasService(self.session).desglose_cuota(
+                    id_profesor, self.horario_widget.get_guardias_voluntarias()
+                )
+            except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
+                logger.debug(f"No se pudo calcular la cuota oficial: {e}")
+                desglose = None
+            if desglose:
+                texto = (
+                    f"Cuota oficial: {desglose['cuota']} "
+                    f"(le tocan {desglose['parte_curso']} en el curso "
+                    f"− {desglose['voluntarias']} ya hechas)"
+                )
+                if desglose["ha_hecho_de_mas"]:
+                    texto += " · ha hecho más de las que le tocan"
+        self.horario_widget.set_ayuda_cuota(texto)
+
+    def _recreos_guardados(self, id_profesor: int):
+        """Matriz de recreos por día tal como está en la base de datos.
+
+        El DTO de `ObtenerProfesorUseCase` pasa por la entidad de dominio, que
+        junta los recreos de todos los días en una sola lista: al reabrir la
+        ficha se perdía qué recreo era de qué día, la rejilla enseñaba otra cosa
+        y el siguiente guardado pisaba la personalización (2026-09-29).
+        """
+        from application.use_cases.profesor.parsers import parse_json_field
+        from infrastructure.database.models import Profesor
+
+        fila = (
+            self.session.query(Profesor.recreos_permitidos)
+            .filter(Profesor.id == id_profesor)
+            .first()
+        )
+        valor = parse_json_field(fila[0] if fila else None, None)
+        return valor if isinstance(valor, (dict, list)) else None
+
+    def editar_profesor(self):
+        """Cargar profesor seleccionado en formulario para edición."""
+        try:
+            fila_actual = self.tabla_profesores.currentRow()
+            if fila_actual < 0:
+                self.mostrar_advertencia(
+                    "Selección requerida", "Selecciona un profesor para editar."
+                )
+                return
+
+            id_item = self.tabla_profesores.item(fila_actual, 0)
+            if not id_item:
+                return
+
+            id_profesor = id_item.data(Qt.ItemDataRole.UserRole)
+
+            # Cargar datos del profesor seleccionado
+            try:
+                # Obtener a través del use case (sin query directa a BD)
+                profesor_dto = self.obtener_use_case.execute(id_profesor)
+
+                if not profesor_dto:
+                    self.mostrar_error("Error", f"No se encontró el profesor con ID {id_profesor}")
+                    return
+
+                # Limpiar formulario
+                self._limpiar_formulario()
+
+                # Cargar datos en widgets desde el DTO
+                self.datos_basicos_widget.set_datos(
+                    {
+                        "nombre_completo": profesor_dto.nombre_completo or "",
+                        "email": profesor_dto.email_corporativo or "",
+                        "es_tutor": profesor_dto.tutor or False,
+                    }
+                )
+
+                self.horario_widget.set_datos(
+                    {
+                        "horas_contrato": profesor_dto.horas_contrato,
+                        "turno": profesor_dto.turno,
+                        "horas_manana": profesor_dto.horas_manana,
+                        "horas_tarde": profesor_dto.horas_tarde,
+                        "guardias_voluntarias": profesor_dto.guardias_voluntarias,
+                    }
+                )
+
+                self.restricciones_widget.set_datos(
+                    {
+                        "fecha_inicio": profesor_dto.fecha_inicio_guardias,
+                        "fecha_fin": profesor_dto.fecha_fin_guardias,
+                        "zona_preferida_id": profesor_dto.zona_preferida_id,
+                        "recreos_permitidos": self._recreos_guardados(id_profesor),
+                        "turno": profesor_dto.turno,
+                    }
+                )
+
+            except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
+                self.manejar_excepcion(e, "cargar datos del profesor")
+                return
+
+            # Activar modo edición
+            self.profesor_editando_id = id_profesor
+            self._profesor_ayuda_id = id_profesor
+            self._actualizar_ayuda_cuota()
+            self.titulo_seccion.setText(f"EDITAR PROFESOR [ID: {id_profesor}]")
+            self.submit_btn.setText("Actualizar Profesor")
+            self.cancelar_btn.setVisible(True)
+
+            # Deshabilitar interacción con la tabla mientras se edita
+            if self.table_manager:
+                self.table_manager.enable_table_interactions(False)
+            self.busqueda_input.setEnabled(False)
+
+            self._mostrar_formulario()
+            # Lo que se acaba de volcar en los campos no son cambios del usuario.
+            self.descartar_cambios()
+
+        except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
+            self.manejar_excepcion(e, "editar profesor")
+
+    def eliminar_profesor(self):
+        """Eliminar profesor(es) seleccionado(s)."""
+        filas_seleccionadas = self.tabla_profesores.selectionModel().selectedRows()
+
+        if not filas_seleccionadas:
+            self.mostrar_advertencia(
+                "Selección requerida",
+                "Selecciona uno o más profesores para eliminar.\n\n"
+                "Usa Ctrl+clic para seleccionar múltiples profesores\n"
+                "Usa Shift+clic para seleccionar un rango",
+            )
+            return
+
+        # Recopilar información de los profesores seleccionados
+        profesores_a_eliminar = []
+        for index in filas_seleccionadas:
+            fila = index.row()
+            nombre_item = self.tabla_profesores.item(fila, 0)
+            if nombre_item:
+                id_profesor = nombre_item.data(Qt.ItemDataRole.UserRole)
+                nombre_profesor = nombre_item.text()
+                profesores_a_eliminar.append((id_profesor, nombre_profesor))
+
+        if not profesores_a_eliminar:
+            return
+
+        # Confirmar eliminación
+        if len(profesores_a_eliminar) == 1:
+            nombre_profesor = profesores_a_eliminar[0][1]
+            mensaje = (
+                f"¿Eliminar al profesor "
+                f"<span style='color: #2C7A3A; font-style: italic;'>{nombre_profesor}</span>?"
+            )
+        else:
+            nombres_html = "<br>• ".join(
+                [
+                    f"<span style='color: #2C7A3A; font-style: italic;'>{nombre}</span>"
+                    for _, nombre in profesores_a_eliminar
+                ]
+            )
+            mensaje = (
+                f"¿Eliminar <b>{len(profesores_a_eliminar)}</b> profesores?<br><br>• {nombres_html}"
+            )
+
+        # Lo que cuelga de cada persona se borra con ella: hay que decirlo antes
+        # y ofrecer una copia (PRIV-003).
+        detalle = self._detalle_de_lo_que_se_borra(profesores_a_eliminar)
+        if detalle:
+            mensaje += f"<br><br>Se borrará también:<br>• {detalle}"
+        mensaje += "<br><br>Esta acción no se puede deshacer."
+
+        if self.confirmar_accion("Confirmar eliminación", mensaje):
+            if detalle and not self._ofrecer_copia_antes_de_borrar(profesores_a_eliminar):
+                return
+            try:
+                eliminados = 0
+                errores = []
+
+                # Verificar si algún profesor eliminado está actualmente en edición
+                ids_a_eliminar = [id_prof for id_prof, _ in profesores_a_eliminar]
+                limpiar_form = self.profesor_editando_id in ids_a_eliminar
+
+                for id_profesor, nombre_profesor in profesores_a_eliminar:
+                    try:
+                        self.eliminar_use_case.execute(id_profesor)
+                        eliminados += 1
+                    except (ValueError, TypeError) as e:
+                        errores.append(f"{nombre_profesor}: {str(e)}")
+
+                # Mostrar resultado
+                if eliminados > 0:
+                    if errores:
+                        self.mostrar_advertencia(
+                            "Eliminación parcial",
+                            f"Se eliminaron {eliminados} profesor(es).\n\n"
+                            f"Errores:\n• " + "\n• ".join(errores),
+                        )
+                    else:
+                        self.mostrar_exito(
+                            "Profesores eliminados",
+                            f"Se eliminaron {eliminados} profesor(es) correctamente.",
+                        )
+
+                    # Si el profesor eliminado estaba en edición, limpiar formulario
+                    if limpiar_form:
+                        self._limpiar_formulario()
+
+                    self.cargar_profesores()
+                    # Emitir señal de modificación de datos
+                    self.datos_modificados.emit()
+                else:
+                    self.mostrar_error(
+                        "Error", "No se pudo eliminar ningún profesor:\n• " + "\n• ".join(errores)
+                    )
+
+            except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
+                self.manejar_excepcion(e, "eliminar profesores")
+
+    def _detalle_de_lo_que_se_borra(self, profesores) -> str:
+        """Enumera guardias, ausencias y registro que se irán con estas personas."""
+        from services.datos_de_una_persona import resumen_de_persona, texto_de_lo_que_se_pierde
+
+        piezas = []
+        for id_profesor, nombre in profesores:
+            try:
+                texto = texto_de_lo_que_se_pierde(resumen_de_persona(self.session, id_profesor))
+            except SQLAlchemyError as e:
+                self.logger.warning(f"No se pudo resumir lo que cuelga de un profesor: {e}")
+                continue
+            if texto:
+                piezas.append(f"{nombre}: {texto}" if len(profesores) > 1 else texto)
+        return "<br>• ".join(piezas)
+
+    def _ofrecer_copia_antes_de_borrar(self, profesores) -> bool:
+        """Propone guardar una copia de lo que se va a borrar.
+
+        Devuelve False sólo si la persona cancela: entonces no se borra nada.
+        """
+        from PyQt6.QtWidgets import QFileDialog, QMessageBox
+
+        from services.datos_de_una_persona import exportar_persona
+
+        aviso = QMessageBox(self)
+        aviso.setIcon(QMessageBox.Icon.Question)
+        aviso.setWindowTitle("¿Guardar una copia antes de borrar?")
+        aviso.setText(
+            "Puedes guardar en un archivo todo lo que la aplicación sabe de "
+            f"{'estas personas' if len(profesores) > 1 else 'esta persona'} antes de borrarlo."
+        )
+        exportar = aviso.addButton("Guardar copia y borrar", QMessageBox.ButtonRole.AcceptRole)
+        aviso.addButton("Borrar sin copia", QMessageBox.ButtonRole.DestructiveRole)
+        cancelar = aviso.addButton("Cancelar", QMessageBox.ButtonRole.RejectRole)
+        aviso.setDefaultButton(exportar)
+        aviso.exec()
+
+        pulsado = aviso.clickedButton()
+        if pulsado is cancelar:
+            return False
+        if pulsado is not exportar:
+            return True
+
+        carpeta = QFileDialog.getExistingDirectory(self, "¿Dónde guardo la copia?")
+        if not carpeta:
+            return False
+
+        guardados = 0
+        for id_profesor, nombre in profesores:
+            seguro = "".join(c if c.isalnum() else "_" for c in nombre).strip("_")
+            destino = Path(carpeta) / f"datos_{seguro}_{id_profesor}.json"
+            if exportar_persona(self.session, id_profesor, destino):
+                guardados += 1
+        if guardados < len(profesores):
+            self.mostrar_error(
+                "No se pudo guardar la copia",
+                "No se han borrado los datos: primero hay que poder guardar la copia.",
+            )
+            return False
+        self.mostrar_exito("Copia guardada", f"Se guardaron {guardados} archivo(s) en {carpeta}.")
+        return True
+
+    def _actualizar_matriz_restricciones_por_turno(self, turno: str):
+        """
+        Actualizar la matriz de restricciones según el turno seleccionado.
+
+        Solo actualiza si NO hay restricciones personalizadas activas.
+        """
+        # Solo actualizar si el checkbox de restricciones NO está activado
+        if not self.restricciones_widget.get_usar_restricciones():
+            self.restricciones_widget.preseleccionar_segun_turno(turno)
