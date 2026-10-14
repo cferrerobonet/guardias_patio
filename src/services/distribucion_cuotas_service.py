@@ -1,0 +1,859 @@
+"""
+Domain Service: Distribución de Cuotas
+
+Calcula y distribuye las cuotas de guardias entre profesores
+considerando múltiples factores de equidad.
+
+Factores considerados:
+- Turno (mañana, tarde, mixto) según recreos disponibles
+- Horas de contrato (proporción respecto a 30h jornada completa)
+- Factor de tutoría (ajuste_tutores / ajuste_no_tutores de configuración)
+- Fechas de inicio/fin de guardias: NO reducen la cuota. Quien sólo está parte del
+  curso hace la del curso entero dentro de su periodo (decisión de CarlosFB,
+  2026-10-03); si no le cabe, el generador reparte el sobrante
+  (`services.reparto_agrupado.cuotas_alcanzables`)
+- Total de slots disponibles (sólo días lectivos desde el inicio del reparto oficial)
+- Guardias voluntarias hechas antes del reparto oficial
+
+Fórmula de cálculo:
+    factor_total = factor_horas × factor_tutoria   (el turno decide la bolsa de huecos)
+    parte_i = round((S + W) × factor_i / suma_factores)   (S = ranuras oficiales,
+                                                           W = voluntarias del grupo)
+    cuota_i = parte_i − voluntarias_i                     (suma de cuotas = S)
+
+Este servicio implementa el mismo algoritmo que calculador_guardias.py
+pero siguiendo principios de Clean Architecture (Domain Service).
+"""
+
+from dataclasses import dataclass
+from datetime import date
+from typing import Dict, List, Optional, Set, Tuple
+
+from sqlalchemy.orm import joinedload
+
+from infrastructure.database.models import Configuracion, Profesor, Zona
+from infrastructure.repositories.repository_factory import RepositoryFactory
+from services.calculador_guardias import (
+    _parse_recreos_config,
+    listar_dias_reparto,
+    voluntarias_de,
+)
+from utils import get_logger
+
+logger = get_logger(__name__)
+
+
+@dataclass
+class CuotaInfo:
+    """Información detallada de una cuota calculada."""
+
+    profesor_id: int
+    nombre_profesor: str
+    cuota: int
+    porcentaje_jornada: float
+    turno: str
+    factor_participacion: float
+    slots_disponibles: int
+    fecha_inicio_guardias: Optional[date]
+    observaciones: List[str]
+    guardias_voluntarias: int = 0
+    parte_curso: int = 0
+    ha_hecho_de_mas: bool = False
+
+
+OBS_HA_HECHO_DE_MAS = "Ha hecho más voluntarias de las que le tocan en el curso"
+
+
+class DistribucionCuotasService:
+    """
+    Servicio de dominio para calcular y distribuir cuotas de guardias.
+
+    Algoritmo de distribución:
+    1. Calcular slots totales (días × recreos × zonas)
+    2. Calcular factor de participación por profesor:
+       - Factor turno: proporción de recreos según turno (mañana/tarde/mixto)
+       - Factor horas: horas_contrato / 30h (jornada completa)
+       - Factor tutoría: ajuste_tutores o ajuste_no_tutores (de configuración)
+       - Proporción tiempo: días disponibles según fechas inicio/fin
+    3. Factor total = turno × horas × tutoría × tiempo
+    4. Distribuir slots proporcionalmente según factor total
+    5. Redondear y compensar diferencias
+    6. Descontar las guardias voluntarias (ver `_distribuir_slots_por_turno`)
+
+    Principios:
+    - Equidad: Mismas condiciones → misma cuota (aproximadamente)
+    - Precisión: Considera todas las restricciones reales
+    - Transparencia: Explica cómo se calculó cada cuota
+    - Equivalencia: Produce resultados idénticos a calculador_guardias.py
+    """
+
+    def __init__(self, session_or_factory):
+        """
+        Inicializa el servicio.
+
+        Args:
+            session: Sesión de SQLAlchemy
+        """
+        self.session = (
+            session_or_factory.session
+            if isinstance(session_or_factory, RepositoryFactory)
+            else session_or_factory
+        )
+        self.logger = logger
+        # Desglose del último cálculo (lo leen la ficha del profesor y obtener_info_cuota)
+        self.ultima_parte_curso: Dict[int, int] = {}
+        self.ultimas_voluntarias: Dict[int, int] = {}
+        self.ultimos_excedidos: Set[int] = set()
+        #: Huecos que se dejan sin cubrir a propósito, por turno (equidad primero).
+        self.ultimos_huecos_previstos: Dict[str, int] = {}
+
+    def calcular_cuotas(
+        self,
+        profesores: Optional[List[Profesor]] = None,
+        voluntarias: Optional[Dict[int, int]] = None,
+    ) -> Dict[int, int]:
+        """
+        Calcula cuotas para todos los profesores activos.
+
+        La distribución se basa en:
+        - Porcentaje de jornada (factor principal)
+        - Factor de tutoría (ajuste desde configuración)
+        - Turno del profesor (mañana/tarde/mixto) para garantizar cuotas alcanzables
+
+        IMPORTANTE: El turno SÍ afecta el cálculo de cuotas para garantizar
+        que las cuotas calculadas sean matemáticamente alcanzables.
+        - Profesores de mañana: solo pueden cubrir slots de mañana
+        - Profesores de tarde: solo pueden cubrir slots de tarde
+        - Profesores mixtos: pueden cubrir ambos turnos
+
+        Las ranuras son sólo las del reparto oficial y la cuota devuelta es la oficial:
+        la parte del curso que le toca a cada profesor menos las voluntarias que ya hizo.
+
+        Args:
+            profesores: Lista de profesores (si None, consulta todos los activos)
+            voluntarias: Sustituye las guardias voluntarias de algunos profesores
+                (profesor_id -> número) sin tocar la BD; sirve para simular un cambio.
+
+        Returns:
+            Dict[profesor_id, cuota oficial]
+
+        Examples:
+            >>> service = DistribucionCuotasService(session)
+            >>> cuotas = service.calcular_cuotas()
+            >>> print(f"Profesor 1: {cuotas[1]} guardias")
+        """
+        if profesores is None:
+            profesores = (
+                self.session.query(Profesor)
+                .options(joinedload(Profesor.zona_preferida))
+                .filter(Profesor.activo)
+                .all()
+            )
+
+        if not profesores:
+            self.logger.warning("No hay profesores activos para calcular cuotas")
+            return {}
+
+        # Obtener configuración
+        config = self.session.query(Configuracion).first()
+        if not config:
+            raise ValueError("No se encontró configuración activa")
+
+        # Calcular slots por turno
+        slots_por_turno = self._calcular_slots_por_turno(config)
+        total_slots = slots_por_turno.get("mañana", 0) + slots_por_turno.get("tarde", 0)
+        self.logger.info(
+            f"Slots por turno: mañana={slots_por_turno.get('mañana', 0)}, "
+            f"tarde={slots_por_turno.get('tarde', 0)}, total={total_slots}"
+        )
+
+        # Calcular factores de participación
+        factores = self._calcular_factores_participacion(profesores, config)
+
+        sustituir = voluntarias or {}
+        mapa_voluntarias = {
+            p.id: max(0, int(sustituir[p.id])) if p.id in sustituir else voluntarias_de(p)
+            for p in profesores
+        }
+
+        # Distribuir slots POR TURNO para garantizar cuotas alcanzables
+        cuotas = self._distribuir_slots_por_turno(
+            profesores, factores, slots_por_turno, mapa_voluntarias
+        )
+
+        # Log de resumen
+        self._log_resumen_distribucion(profesores, cuotas, total_slots)
+
+        return cuotas
+
+    def calcular_cuota_profesor(
+        self, profesor: Profesor, total_slots: int, profesores_activos: List[Profesor]
+    ) -> int:
+        """
+        Calcula la cuota para un profesor específico.
+
+        Args:
+            profesor: Profesor para calcular cuota
+            total_slots: Total de slots disponibles
+            profesores_activos: Todos los profesores activos
+
+        Returns:
+            Cuota calculada (número de guardias)
+        """
+        config = self.session.query(Configuracion).first()
+        if not config:
+            raise ValueError("No se encontró configuración activa")
+
+        factores = self._calcular_factores_participacion(profesores_activos, config)
+        factor_profesor = factores.get(profesor.id, 0.0)
+
+        # Calcular cuota proporcional
+        suma_factores = sum(factores.values())
+        if suma_factores == 0:
+            return 0
+
+        cuota = int(round(total_slots * factor_profesor / suma_factores))
+
+        return max(0, cuota)
+
+    def obtener_info_cuota(self, profesor: Profesor) -> CuotaInfo:
+        """
+        Obtiene información detallada sobre la cuota de un profesor.
+
+        Args:
+            profesor: Profesor a analizar
+
+        Returns:
+            CuotaInfo con detalles de la cuota
+        """
+        config = self.session.query(Configuracion).first()
+        if not config:
+            raise ValueError("No se encontró configuración activa")
+
+        profesores = (
+            self.session.query(Profesor)
+            .options(joinedload(Profesor.zona_preferida))
+            .filter(Profesor.activo)
+            .all()
+        )
+        total_slots = self._calcular_total_slots(config)
+        factores = self._calcular_factores_participacion(profesores, config)
+
+        cuota = self.calcular_cuotas(profesores).get(profesor.id, 0)
+        voluntarias = self.ultimas_voluntarias.get(profesor.id, 0)
+        ha_hecho_de_mas = profesor.id in self.ultimos_excedidos
+
+        observaciones = []
+        if profesor.fecha_inicio_guardias:
+            observaciones.append(f"Fecha inicio: {profesor.fecha_inicio_guardias}")
+        if profesor.turno != "mixto":
+            observaciones.append(f"Turno restringido: {profesor.turno}")
+        if voluntarias:
+            observaciones.append(f"Guardias voluntarias ya hechas: {voluntarias}")
+        if ha_hecho_de_mas:
+            observaciones.append(OBS_HA_HECHO_DE_MAS)
+
+        return CuotaInfo(
+            profesor_id=profesor.id,
+            nombre_profesor=profesor.nombre_completo,
+            cuota=cuota,
+            porcentaje_jornada=profesor.porcentaje_jornada,
+            turno=profesor.turno,
+            factor_participacion=factores.get(profesor.id, 0.0),
+            slots_disponibles=total_slots,
+            fecha_inicio_guardias=profesor.fecha_inicio_guardias,
+            observaciones=observaciones,
+            guardias_voluntarias=voluntarias,
+            parte_curso=self.ultima_parte_curso.get(profesor.id, cuota + voluntarias),
+            ha_hecho_de_mas=ha_hecho_de_mas,
+        )
+
+    def desglose_cuota(
+        self, profesor_id: int, guardias_voluntarias: Optional[int] = None
+    ) -> Optional[Dict[str, object]]:
+        """
+        Cuota oficial de un profesor activo y de dónde sale, sin guardar nada.
+
+        Si se pasa `guardias_voluntarias`, se usa en lugar del valor guardado en su
+        ficha (para enseñar el efecto de un cambio antes de guardarlo).
+
+        Returns:
+            {"cuota", "parte_curso", "voluntarias", "ha_hecho_de_mas"} o None si el
+            profesor no está activo, falta configuración o no hay ranuras que repartir.
+        """
+        config = self.session.query(Configuracion).first()
+        if not config:
+            return None
+        profesores = (
+            self.session.query(Profesor)
+            .options(joinedload(Profesor.zona_preferida))
+            .filter(Profesor.activo)
+            .all()
+        )
+        if not any(p.id == profesor_id for p in profesores):
+            return None
+        sustituir = None if guardias_voluntarias is None else {profesor_id: guardias_voluntarias}
+        cuotas = self.calcular_cuotas(profesores, voluntarias=sustituir)
+        if not any(self.ultima_parte_curso.values()):
+            return None
+        cuota = cuotas.get(profesor_id, 0)
+        voluntarias = self.ultimas_voluntarias.get(profesor_id, 0)
+        return {
+            "cuota": cuota,
+            "parte_curso": self.ultima_parte_curso.get(profesor_id, cuota + voluntarias),
+            "voluntarias": voluntarias,
+            "ha_hecho_de_mas": profesor_id in self.ultimos_excedidos,
+        }
+
+    # Métodos privados auxiliares
+
+    def _calcular_total_slots(self, config: Configuracion) -> int:
+        """
+        Calcula el total de slots a distribuir.
+
+        IMPORTANTE: Usa la misma lógica que el algoritmo de asignación,
+        considerando las fechas de inicio/fin de cada zona. Sólo cuenta los días
+        lectivos del reparto oficial (`listar_dias_reparto`).
+        """
+        dias_lectivos = listar_dias_reparto(config)
+        recreos = _parse_recreos_config(config)
+        zonas = self.session.query(Zona).filter(Zona.activa.is_(True)).all()
+
+        if not dias_lectivos or not recreos or not zonas:
+            return 0
+
+        # Contar slots REALES considerando fechas de cada zona
+        total = 0
+        for dia in dias_lectivos:
+            for recreo in recreos:
+                # Número de zonas a cubrir en este recreo (default: todas)
+                num_zonas_recreo = min(recreo.get("zonas", len(zonas)), len(zonas))
+
+                for i, zona in enumerate(zonas):
+                    if i >= num_zonas_recreo:
+                        break
+
+                    # Verificar si la zona está activa en esta fecha
+                    if zona.fecha_inicio and dia < zona.fecha_inicio:
+                        continue
+                    if zona.fecha_fin and dia > zona.fecha_fin:
+                        continue
+
+                    total += 1
+
+        return total
+
+    def _calcular_slots_por_turno(self, config: Configuracion) -> Dict[str, int]:
+        """
+        Calcula los slots disponibles por turno.
+
+        IMPORTANTE: Usa la misma lógica que _calcular_total_slots para
+        garantizar consistencia, considerando fechas de inicio/fin de zonas y sólo
+        los días lectivos del reparto oficial.
+
+        Returns:
+            Dict con 'mañana' y 'tarde' como claves y número de slots como valores.
+        """
+        dias_lectivos = listar_dias_reparto(config)
+        recreos = _parse_recreos_config(config)
+        zonas = self.session.query(Zona).filter(Zona.activa.is_(True)).all()
+
+        if not dias_lectivos or not recreos or not zonas:
+            return {"mañana": 0, "tarde": 0}
+
+        slots_manana = 0
+        slots_tarde = 0
+
+        for dia in dias_lectivos:
+            for recreo in recreos:
+                turno_recreo = recreo.get("turno", "mañana")
+                # Número de zonas a cubrir en este recreo (default: todas)
+                num_zonas_recreo = min(recreo.get("zonas", len(zonas)), len(zonas))
+
+                for i, zona in enumerate(zonas):
+                    if i >= num_zonas_recreo:
+                        break
+
+                    # Verificar si la zona está activa en esta fecha
+                    if zona.fecha_inicio and dia < zona.fecha_inicio:
+                        continue
+                    if zona.fecha_fin and dia > zona.fecha_fin:
+                        continue
+
+                    if turno_recreo == "mañana":
+                        slots_manana += 1
+                    else:
+                        slots_tarde += 1
+
+        return {"mañana": slots_manana, "tarde": slots_tarde}
+
+    def _get_turno_profesor(self, profesor: Profesor) -> str:
+        """
+        Determina el turno efectivo de un profesor.
+
+        Returns:
+            'mañana', 'tarde' o 'mixto'
+        """
+        turno = profesor.turno or "mixto"
+        if turno in ("completo", "ambos"):
+            return "mixto"
+        return turno
+
+    def _calcular_factores_participacion(
+        self, profesores: List[Profesor], config: Configuracion
+    ) -> Dict[int, float]:
+        """
+        Calcula el factor de participación de cada profesor.
+
+        Factor completo = factor_horas × factor_tutoria
+
+        Considera:
+        - Horas de contrato (proporción respecto a 30h jornada completa)
+        - Factor de tutoría (ajuste_tutores / ajuste_no_tutores)
+
+        NOTA: El turno afecta qué slots puede cubrir cada profesor,
+        pero el factor de participación es independiente del turno.
+        La distribución por turno se hace en _distribuir_slots_por_turno.
+        """
+        factores = {}
+
+        for profesor in profesores:
+            if not profesor.activo:
+                factores[profesor.id] = 0.0
+                continue
+
+            # 1. Factor por porcentaje de jornada (ya normalizado 0-100%)
+            factor_horas = profesor.porcentaje_jornada / 100.0
+
+            # 2. Factor de tutoría (desde configuración)
+            factor_tutoria = (
+                getattr(config, "ajuste_tutores", 1.0)
+                if getattr(profesor, "tutor", False)
+                else getattr(config, "ajuste_no_tutores", 1.0)
+            )
+
+            # Factor total combinado
+            factor = factor_horas * factor_tutoria
+            factores[profesor.id] = factor
+
+            self.logger.debug(
+                f"{profesor.nombre_completo}: "
+                f"jornada={factor_horas:.2f} ({profesor.porcentaje_jornada}%), "
+                f"tutoria={factor_tutoria:.2f} → factor={factor:.4f}"
+            )
+
+        return factores
+
+    def _distribuir_slots_equitativamente(
+        self,
+        profesores: List[Profesor],
+        factores: Dict[int, float],
+        total_slots: int,
+    ) -> Dict[int, int]:
+        """
+        Distribuye slots entre TODOS los profesores proporcionalmente.
+
+        NO considera el turno - todos los profesores compiten por el mismo
+        pool de slots. La asignación real respetará el turno, pero la cuota
+        objetivo es equitativa basada solo en jornada y tutoría.
+
+        Args:
+            profesores: Lista de profesores activos
+            factores: Factor de participación de cada profesor
+            total_slots: Total de slots a distribuir
+
+        Returns:
+            Dict[profesor_id, cuota]
+        """
+        if not profesores or total_slots == 0:
+            return {}
+
+        suma_factores = sum(factores.get(p.id, 0) for p in profesores)
+        if suma_factores == 0:
+            self.logger.warning("Suma de factores es 0")
+            return {p.id: 0 for p in profesores}
+
+        cuotas = {}
+        slots_asignados = 0
+
+        # Primera pasada: asignar proporcional redondeado
+        for profesor in profesores:
+            factor = factores.get(profesor.id, 0)
+            cuota = int(round(total_slots * factor / suma_factores))
+            cuotas[profesor.id] = cuota
+            slots_asignados += cuota
+
+        # Ajustar diferencia por redondeo
+        diferencia = total_slots - slots_asignados
+        if diferencia != 0:
+            self.logger.debug(f"Ajustando {abs(diferencia)} slots por redondeo")
+            # Distribuir diferencia entre profesores con mayor factor
+            profesores_ordenados = sorted(
+                profesores, key=lambda p: factores.get(p.id, 0), reverse=True
+            )
+
+            for i in range(abs(diferencia)):
+                profesor = profesores_ordenados[i % len(profesores_ordenados)]
+                if diferencia > 0:
+                    cuotas[profesor.id] += 1
+                else:
+                    cuotas[profesor.id] = max(0, cuotas[profesor.id] - 1)
+
+        self.logger.info(
+            f"Distribución equitativa: {total_slots} slots → "
+            f"{sum(cuotas.values())} cuotas entre {len(profesores)} profesores"
+        )
+
+        return cuotas
+
+    def _distribuir_slots_por_turno(
+        self,
+        profesores: List[Profesor],
+        factores: Dict[int, float],
+        slots_por_turno: Dict[str, int],
+        voluntarias: Optional[Dict[int, int]] = None,
+    ) -> Dict[int, int]:
+        """
+        Distribuye slots considerando el turno EFECTIVO de cada profesor.
+
+        El turno efectivo se determina por:
+        1. El campo 'turno' del profesor (mañana/tarde/mixto)
+        2. Los recreos permitidos del profesor
+
+        Un profesor "mixto" que solo tiene recreos de tarde [3,4] realmente
+        solo puede cubrir slots de tarde, así que su turno efectivo es "tarde".
+
+        Esto garantiza que las cuotas calculadas sean realmente alcanzables.
+
+        Guardias voluntarias (hechas antes del reparto oficial):
+        - Cada grupo de turno reparte S_g + W_g, donde S_g son sus ranuras oficiales
+          y W_g las voluntarias de sus miembros; la cuota oficial es la parte de cada
+          uno menos sus voluntarias, así que las cuotas del grupo suman S_g.
+        - Los profesores de mañana o de tarde (efectivos) llevan todas sus voluntarias
+          a su único grupo.
+        - Los mixtos están en los dos grupos con su factor completo (igual que sin
+          voluntarias), así que sus voluntarias se reparten entre los dos turnos en
+          la misma proporción que su parte sin voluntarias en cada uno
+          (S_g × factor / suma de factores del grupo), redondeando la de mañana y
+          dejando el resto a la tarde. Si ninguna parte es positiva, van al turno
+          con más ranuras.
+        - Quien hizo más voluntarias de las que le tocan en un grupo queda con cuota 0
+          en él y el grupo se vuelve a repartir sin él (iterativo hasta que no quede
+          ninguna cuota negativa); se anota en `ultimos_excedidos`.
+        - Los profesores sin turno efectivo ('ninguno') no reparten ni cuentan sus
+          voluntarias.
+
+        Con todas las voluntarias a 0 el resultado es idéntico al reparto sin ellas.
+        """
+        import json
+
+        config = self.session.query(Configuracion).first()
+        recreos_config = []
+        if config and hasattr(config, 'recreos_config') and config.recreos_config:
+            try:
+                recreos_config = json.loads(config.recreos_config)
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        # Crear mapeo de recreo_id -> turno
+        recreo_a_turno = {}
+        for r in recreos_config:
+            recreo_a_turno[r.get('id')] = r.get('turno', 'mañana')
+
+        # Si no hay configuración de recreos, asumir: 1,2=mañana, 3,4=tarde
+        if not recreo_a_turno:
+            recreo_a_turno = {1: 'mañana', 2: 'mañana', 3: 'tarde', 4: 'tarde'}
+
+        cuotas = {p.id: 0 for p in profesores}
+
+        # Determinar turno EFECTIVO de cada profesor basándose en sus recreos permitidos
+        def get_turno_efectivo(profesor: Profesor) -> str:
+            """
+            Determina qué turnos puede REALMENTE cubrir un profesor.
+
+            Returns:
+                'mañana' - solo puede cubrir mañana
+                'tarde' - solo puede cubrir tarde
+                'mixto' - puede cubrir ambos
+            """
+            turno_base = self._get_turno_profesor(profesor)
+
+            # Obtener recreos permitidos
+            recreos_permitidos = set()
+            if profesor.recreos_permitidos:
+                try:
+                    recreos_raw = json.loads(profesor.recreos_permitidos)
+                    if isinstance(recreos_raw, dict):
+                        for r_list in recreos_raw.values():
+                            recreos_permitidos.update(r_list)
+                    elif isinstance(recreos_raw, list):
+                        recreos_permitidos = set(recreos_raw)
+                except (json.JSONDecodeError, TypeError):
+                    recreos_permitidos = {1, 2, 3, 4}
+            else:
+                recreos_permitidos = {1, 2, 3, 4}
+
+            # Determinar qué turnos cubren sus recreos
+            puede_manana = any(recreo_a_turno.get(r) == 'mañana' for r in recreos_permitidos)
+            puede_tarde = any(recreo_a_turno.get(r) == 'tarde' for r in recreos_permitidos)
+
+            # Combinar con turno base
+            if turno_base == 'mañana':
+                return 'mañana' if puede_manana else 'ninguno'
+            elif turno_base == 'tarde':
+                return 'tarde' if puede_tarde else 'ninguno'
+            else:  # mixto
+                if puede_manana and puede_tarde:
+                    return 'mixto'
+                elif puede_manana:
+                    return 'mañana'
+                elif puede_tarde:
+                    return 'tarde'
+                else:
+                    return 'ninguno'
+
+        # Clasificar profesores por turno EFECTIVO
+        profs_manana = []
+        profs_tarde = []
+        profs_mixtos = []
+
+        for p in profesores:
+            turno_efectivo = get_turno_efectivo(p)
+            if turno_efectivo == 'mañana':
+                profs_manana.append(p)
+            elif turno_efectivo == 'tarde':
+                profs_tarde.append(p)
+            elif turno_efectivo == 'mixto':
+                profs_mixtos.append(p)
+            # turno_efectivo == 'ninguno' no se asigna a ningún grupo
+
+        self.logger.info(
+            f"Distribución por turno EFECTIVO: {len(profs_manana)} mañana, "
+            f"{len(profs_tarde)} tarde, {len(profs_mixtos)} mixto"
+        )
+
+        voluntarias = voluntarias or {}
+        slots_manana = slots_por_turno.get("mañana", 0)
+        slots_tarde = slots_por_turno.get("tarde", 0)
+
+        # Equidad primero (2026-10-06, `reparto_equitativo`): los mixtos sólo ponen
+        # lo que el profesorado fijo de cada turno no cubre, sin pasar del nivel
+        # del turno fijo más cargado; lo que no quepa queda sin cubrir. Antes cada
+        # turno se repartía entero entre sus fijos y los mixtos, y sin fijos de un
+        # turno sus huecos caían todos en los pocos mixtos.
+        from services.reparto_equitativo import reparto_equitativo
+
+        suma_f = lambda grupo: sum(factores.get(p.id, 0) for p in grupo)  # noqa: E731
+        f_mixtos = suma_f(profs_mixtos)
+        suma_v = lambda grupo: sum(voluntarias.get(p.id, 0) for p in grupo)  # noqa: E731
+        reparto = reparto_equitativo(
+            {"mañana": slots_manana, "tarde": slots_tarde},
+            {"mañana": suma_f(profs_manana), "tarde": suma_f(profs_tarde)},
+            f_mixtos,
+            {"mañana": suma_v(profs_manana), "tarde": suma_v(profs_tarde)},
+            suma_v(profs_mixtos),
+        )
+        self.ultimos_huecos_previstos = {
+            t: max(0, slots_por_turno.get(t, 0) - int(round(r.cubiertos)))
+            for t, r in reparto.items()
+        }
+        if any(self.ultimos_huecos_previstos.values()):
+            self.logger.info(
+                "Equidad primero: quedan sin cubrir "
+                + ", ".join(f"{n} de {t}" for t, n in self.ultimos_huecos_previstos.items() if n)
+                + " (los mixtos no pasan del reparto del profesorado fijo)"
+            )
+
+        vol_manana: Dict[int, int] = {p.id: voluntarias.get(p.id, 0) for p in profs_manana}
+        vol_tarde: Dict[int, int] = {p.id: voluntarias.get(p.id, 0) for p in profs_tarde}
+        for p in profs_mixtos:
+            v = voluntarias.get(p.id, 0)
+            base_m = reparto["mañana"].de_mixtos
+            base_t = reparto["tarde"].de_mixtos
+            if base_m + base_t > 0:
+                v_m = int(round(v * base_m / (base_m + base_t)))
+            else:
+                v_m = v if slots_manana >= slots_tarde else 0
+            vol_manana[p.id] = v_m
+            vol_tarde[p.id] = v - v_m
+
+        def factores_del_turno(turno: str, fijos: List[Profesor], vol: Dict[int, int]):
+            """Factores del reparto de un turno: los mixtos, escalados a lo que ponen en él.
+
+            El reparto de un grupo es proporcional a los factores, contando las
+            voluntarias; la escala hace que el mixto reciba, en este turno, justo su
+            parte (lo que pone más sus voluntarias asignadas a este turno).
+            """
+            r = reparto[turno]
+            hechas = sum(vol.get(p.id, 0) for p in profs_mixtos)
+            if (r.de_mixtos <= 0 and hechas <= 0) or not f_mixtos:
+                return fijos, factores
+            nivel_mixtos = (r.de_mixtos + hechas) / f_mixtos
+            escala = nivel_mixtos / r.nivel_fijos if r.nivel_fijos > 0 else 1.0
+            propios = dict(factores)
+            for p in profs_mixtos:
+                propios[p.id] = factores.get(p.id, 0) * escala
+            return fijos + profs_mixtos, propios
+
+        elegibles_manana, factores_manana = factores_del_turno("mañana", profs_manana, vol_manana)
+        elegibles_tarde, factores_tarde = factores_del_turno("tarde", profs_tarde, vol_tarde)
+
+        # Distribuir lo que se cubre de mañana entre fijos de mañana y mixtos
+        cuotas_manana, partes_manana, exc_manana = self._distribuir_grupo_con_voluntarias(
+            elegibles_manana, factores_manana, int(round(reparto["mañana"].cubiertos)),
+            vol_manana, "mañana",
+        )
+
+        # Distribuir lo que se cubre de tarde entre fijos de tarde y mixtos
+        cuotas_tarde, partes_tarde, exc_tarde = self._distribuir_grupo_con_voluntarias(
+            elegibles_tarde, factores_tarde, int(round(reparto["tarde"].cubiertos)),
+            vol_tarde, "tarde",
+        )
+
+        # Combinar cuotas
+        self.ultima_parte_curso = {}
+        self.ultimas_voluntarias = {}
+        for p in profesores:
+            cuotas[p.id] = cuotas_manana.get(p.id, 0) + cuotas_tarde.get(p.id, 0)
+            self.ultima_parte_curso[p.id] = partes_manana.get(p.id, 0) + partes_tarde.get(
+                p.id, 0
+            )
+            self.ultimas_voluntarias[p.id] = voluntarias.get(p.id, 0)
+        self.ultimos_excedidos = exc_manana | exc_tarde
+        if self.ultimos_excedidos:
+            self.logger.info(
+                f"{len(self.ultimos_excedidos)} profesores han hecho más voluntarias "
+                "de las que les tocan: cuota oficial 0"
+            )
+
+        return cuotas
+
+    def _distribuir_grupo_con_voluntarias(
+        self,
+        profesores: List[Profesor],
+        factores: Dict[int, float],
+        total_slots: int,
+        voluntarias: Dict[int, int],
+        nombre_grupo: str,
+    ) -> Tuple[Dict[int, int], Dict[int, int], Set[int]]:
+        """
+        Reparte las ranuras oficiales de un grupo contando las voluntarias como hechas.
+
+        Returns:
+            (cuotas oficiales, parte de cada uno en el curso, excedidos). Las cuotas
+            suman `total_slots`; los excedidos quedan con cuota 0 y su parte es la que
+            tenían en la vuelta en que se les sacó del reparto.
+        """
+        if not profesores or total_slots <= 0:
+            return {}, {}, set()
+
+        activos = list(profesores)
+        partes_finales: Dict[int, int] = {}
+        excedidos: Set[int] = set()
+        partes: Dict[int, int] = {}
+        while activos:
+            extra = sum(voluntarias.get(p.id, 0) for p in activos)
+            partes = self._distribuir_slots_grupo(
+                activos, factores, total_slots + extra, nombre_grupo
+            )
+            negativos = [
+                p for p in activos if partes.get(p.id, 0) - voluntarias.get(p.id, 0) < 0
+            ]
+            if not negativos:
+                break
+            for p in negativos:
+                excedidos.add(p.id)
+                partes_finales[p.id] = partes.get(p.id, 0)
+            activos = [p for p in activos if p.id not in excedidos]
+
+        cuotas: Dict[int, int] = {p.id: 0 for p in profesores}
+        for p in activos:
+            cuotas[p.id] = partes.get(p.id, 0) - voluntarias.get(p.id, 0)
+            partes_finales[p.id] = partes.get(p.id, 0)
+        return cuotas, partes_finales, excedidos
+
+    def _distribuir_slots_grupo(
+        self,
+        profesores: List[Profesor],
+        factores: Dict[int, float],
+        total_slots: int,
+        nombre_grupo: str,
+    ) -> Dict[int, int]:
+        """Distribuye slots entre un grupo de profesores según sus factores."""
+        if not profesores or total_slots == 0:
+            return {}
+
+        suma_factores = sum(factores.get(p.id, 0) for p in profesores)
+        if suma_factores == 0:
+            self.logger.warning(f"Suma de factores es 0 para grupo {nombre_grupo}")
+            return {p.id: 0 for p in profesores}
+
+        cuotas = {}
+        slots_asignados = 0
+
+        # Primera pasada: asignar proporcional redondeado
+        for profesor in profesores:
+            factor = factores.get(profesor.id, 0)
+            cuota = int(round(total_slots * factor / suma_factores))
+            cuotas[profesor.id] = cuota
+            slots_asignados += cuota
+
+        # Ajustar diferencia por redondeo
+        diferencia = total_slots - slots_asignados
+        if diferencia != 0:
+            self.logger.debug(
+                f"Ajustando {abs(diferencia)} slots en grupo {nombre_grupo}"
+            )
+            # Distribuir diferencia entre profesores con mayor factor
+            profesores_ordenados = sorted(
+                profesores, key=lambda p: factores.get(p.id, 0), reverse=True
+            )
+
+            for i in range(abs(diferencia)):
+                profesor = profesores_ordenados[i % len(profesores_ordenados)]
+                if diferencia > 0:
+                    cuotas[profesor.id] += 1
+                else:
+                    cuotas[profesor.id] = max(0, cuotas[profesor.id] - 1)
+
+        self.logger.info(
+            f"Grupo {nombre_grupo}: {total_slots} slots → "
+            f"{sum(cuotas.values())} cuotas asignadas a {len(profesores)} profesores"
+        )
+
+        return cuotas
+
+    def _log_resumen_distribucion(
+        self, profesores: List[Profesor], cuotas: Dict[int, int], total_slots: int
+    ):
+        """Registra resumen de la distribución en el log."""
+        total_cuotas = sum(cuotas.values())
+        self.logger.info("")
+        self.logger.info("=" * 70)
+        self.logger.info("RESUMEN DE DISTRIBUCIÓN DE CUOTAS")
+        self.logger.info("=" * 70)
+        self.logger.info(f"Total slots: {total_slots}")
+        self.logger.info(f"Total cuotas asignadas: {total_cuotas}")
+        self.logger.info(f"Diferencia: {total_slots - total_cuotas}")
+        self.logger.info("")
+
+        # Agrupar por porcentaje de jornada
+        grupos_jornada = {}
+        for profesor in profesores:
+            cuota = cuotas.get(profesor.id, 0)
+            jornada = int(profesor.porcentaje_jornada)
+            if jornada not in grupos_jornada:
+                grupos_jornada[jornada] = []
+            grupos_jornada[jornada].append((profesor, cuota))
+
+        for jornada in sorted(grupos_jornada.keys(), reverse=True):
+            profs = grupos_jornada[jornada]
+            if not profs:
+                continue
+            cuotas_grupo = [c for _, c in profs]
+            self.logger.info(
+                f"Jornada {jornada}%: {len(profs)} profesores, "
+                f"cuota ~{cuotas_grupo[0]} guardias"
+            )
+
+        self.logger.info("=" * 70)

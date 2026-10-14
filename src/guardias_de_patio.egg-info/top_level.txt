@@ -1,0 +1,14 @@
+api
+application
+config
+core
+database
+domain
+infrastructure
+main
+models
+presentation
+services
+sync
+ui_styles
+utils

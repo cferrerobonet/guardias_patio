@@ -1,0 +1,45 @@
+# Dependencias de ejecución, fijadas (SUP-002). Las de desarrollo van en requirements-dev.txt.
+# Para actualizar: cambiar la versión aquí y en pyproject.toml, `make venv`, pasar la suite
+# y regenerar requirements.lock con `pip freeze --all`.
+
+# Base de datos y configuración
+SQLAlchemy==2.0.52
+alembic==1.19.2
+python-dateutil==2.9.0.post0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+structlog==26.1.0
+python-dotenv==1.2.3
+keyring==25.7.0
+
+# Interfaz
+PyQt6==6.7.0
+PyQt6-Qt6==6.7.3
+matplotlib==3.11.1
+reportlab==5.0.1
+openpyxl==3.1.5
+
+# API REST
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+PyJWT==2.15.0
+python-multipart==0.0.32
+httpx==0.28.1
+slowapi==0.1.10
+
+# Sincronización SFTP, resiliencia y seguridad
+paramiko==5.0.0
+tenacity==9.1.4
+cachetools==7.1.8
+pybreaker==1.4.1
+bcrypt==5.0.0
+cryptography==50.0.1
+certifi==2026.7.22
+
+# Solver y arquitectura
+ortools==9.15.6755
+dependency-injector==4.49.1
+
+# Observabilidad (OBS-001: pendiente de decidir si se retiran)
+prometheus-client==0.26.0
+psutil==7.2.2

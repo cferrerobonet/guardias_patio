@@ -1,0 +1,163 @@
+# ============================================================================
+# .gitignore - Configuración Conservadora
+# Solo ignora archivos que NO son parte del proyecto y pueden regenerarse
+# ============================================================================
+
+# Entornos Virtuales de Python (se crean con: python -m venv .venv)
+venv/
+.venv/
+.venv-win/
+.venv-unix/
+env/
+ENV/
+
+# Archivos compilados de Python (se regeneran automáticamente)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Cachés de herramientas (se regeneran automáticamente)
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDEs y Editores (configuraciones locales del usuario)
+.idea/
+# Configuración del editor: se versiona lo compartido para que funcione igual en
+# macOS y en el PC de Windows. settings.json queda fuera por ser de cada equipo.
+# Debe ser `.vscode/*` y no `.vscode/`: git no entra en un directorio excluido y
+# las excepciones de dentro no llegarían a aplicarse.
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+*.bak
+
+# Sistema Operativo
+.DS_Store
+**/. DS_Store
+Thumbs.db
+desktop.ini
+
+# Variables de entorno locales (¡pueden contener secretos!)
+.env
+.env.local
+*.env
+
+# Archivos de configuración con credenciales encriptadas
+sftp_config.json
+smtp_config.json
+
+# Base de datos de desarrollo (se regenera con: alembic upgrade head)
+guardias_patio.db
+*.db
+
+# Archivos temporales de SQLite en modo WAL
+*.db-shm
+*.db-wal
+
+# Directorio de datos locales (bases de datos, archivos de usuarios)
+data/
+# Mantener la estructura del directorio
+!data/.gitkeep
+
+# Archivos de sincronización y sesión
+session.lock
+last_sync.json
+# En cualquier subdirectorio
+**/last_sync.json
+guardias_patio_data.json
+# En cualquier subdirectorio
+**/guardias_patio_data.json
+
+# Archivos de demostración y testing (obsoletos tras Sprint 12)
+demo_*.py
+
+# Reportes de cobertura de tests
+coverage.xml
+.coverage
+htmlcov/
+
+# Logs de desarrollo
+logs/
+*.log
+regeneracion*.log
+test_v3_output.log
+benchmark_results.log
+
+# Build y distribución (PyInstaller, DMG, EXE)
+build/
+!scripts/build/
+dist/
+*.dmg
+*.exe
+# Los .spec son entrada del build, no un artefacto: sin ellos no se puede
+# compilar desde un clon limpio ni desde integración continua.
+*.spec
+!Guardias de Patio.spec
+!GuardiasDePatio.spec
+checksums*.txt
+imagenes/*.iconset
+# Directorio de salida de Inno Setup
+Output/
+
+# Archivos históricos comprimidos (muy grandes para git)
+ARCHIVO_HISTORICO_*.tar.gz
+ARCHIVO_HISTORICO_*.zip
+
+# PDFs generados como ejemplos o pruebas
+documentacion/datos ejemplo/*.pdf
+Calendario_*.pdf
+
+# Documentos con credenciales de producción
+docs/Configuración inicial*.pdf
+
+# ============================================================================
+# NOTA IMPORTANTE: 
+# Los siguientes archivos SÍ se suben a Git (NO están en .gitignore):
+# 
+# ✅ src/**/*.py                - Código fuente de la aplicación
+# ✅ tests/**/*.py              - Tests del proyecto (44+ tests)
+# ✅ documentacion/**/*         - Documentación completa
+# ✅ alembic/versions/*.py      - Migraciones de base de datos
+# ✅ requirements.txt           - Dependencias del proyecto
+# ✅ pyproject.toml             - Configuración del proyecto
+# ✅ *.sh                       - Scripts de ejecución
+# ✅ imagenes/*                 - Imágenes del proyecto
+# ✅ .coveragerc, pytest.ini    - Configuración de herramientas
+# 
+# ❌ guardias_patio.db          - Base de datos (se regenera localmente)
+# ❌ demo_*.py                  - Archivos de demo (obsoletos tras Sprint 12)
+# ❌ htmlcov/, coverage.xml     - Reportes de cobertura (se regeneran)
+# ❌ __pycache__/, *.pyc        - Archivos compilados (se regeneran)
+# ============================================================================
+
+# Datos reales del centro: nunca al repositorio (es público). El volcado de
+# sincronización lleva nombres y correos del claustro, y las versiones antiguas
+# llevaban además las credenciales.
+guardias_patio_data.json
+guardias_patio_data.json.*
+last_sync.json
+session.lock
+cuenta.json
+docs/examples/
+*.xlsx
+*.xls
+docs/**/*.pdf
+
+
+# Copias de seguridad manuales: van en la carpeta «COPIAS DE SEGURIDAD» de la app,
+# al lado de la de código y fuera del repositorio. Esto es solo la segunda barrera.
+*.sql
+*.sql.gz
+*.dump
+*.tgz
+*.tar.gz
+*.zip
+*.dup

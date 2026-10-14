@@ -1,0 +1,186 @@
+﻿# Script de compilación automática para Windows
+#
+# IMPORTANTE: este fichero se guarda en UTF-8 CON marca de orden de bytes (BOM).
+# Windows PowerShell 5.1 lee los ficheros sin marca usando la codificación ANSI
+# del sistema, y entonces una «Ó» se convierte en dos caracteres, el segundo de
+# los cuales es una comilla tipográfica que PowerShell acepta como delimitador
+# de cadena. El script deja de analizarse y falla con «missing the terminator».
+
+param(
+    [string]$Version = "",
+    [switch]$SkipClean = $false,
+    [switch]$SkipInstaller = $false,
+    # Compila una variante con consola visible y faulthandler activo, para
+    # diagnosticar cierres silenciosos. No genera instalador.
+    # Uso: powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1 -Diagnostico
+    [switch]$Diagnostico = $false
+)
+
+$WorkspacePath = $PSScriptRoot | Split-Path -Parent
+$DistPath = Join-Path $WorkspacePath "dist"
+$BuildPath = Join-Path $WorkspacePath "build"
+$OutputPath = Join-Path $WorkspacePath "Output"
+$SettingsPath = Join-Path $WorkspacePath "src\config\settings.py"
+$InstallerScript = Join-Path $WorkspacePath "installer_windows.iss"
+
+function Write-Success { Write-Host "[OK] $args" -ForegroundColor Green }
+function Write-ErrorMsg { Write-Host "[ERROR] $args" -ForegroundColor Red }
+function Write-Info { Write-Host "[INFO] $args" -ForegroundColor Cyan }
+function Write-Step { Write-Host "`n=== $args ===" -ForegroundColor Yellow }
+
+function Resolve-PythonPath {
+    $Candidates = @(
+        (Join-Path $WorkspacePath ".venv-win\Scripts\python.exe"),
+        (Join-Path $WorkspacePath ".venv\Scripts\python.exe")
+    )
+
+    foreach ($candidate in $Candidates) {
+        if (Test-Path $candidate) {
+            return $candidate
+        }
+    }
+
+    $pythonCmd = Get-Command python -ErrorAction SilentlyContinue
+    if ($pythonCmd) {
+        return $pythonCmd.Source
+    }
+
+    return $null
+}
+
+function Resolve-AppVersion {
+    if ($Version) {
+        return $Version
+    }
+
+    if (-not (Test-Path $SettingsPath)) {
+        return "0.0.0"
+    }
+
+    $settingsContent = Get-Content $SettingsPath -Raw
+    $match = [regex]::Match($settingsContent, 'app_version\s*:\s*str\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+)"')
+    if ($match.Success) {
+        return $match.Groups[1].Value
+    }
+
+    return "0.0.0"
+}
+
+Set-Location $WorkspacePath
+
+$ResolvedVersion = Resolve-AppVersion
+$PythonPath = Resolve-PythonPath
+
+if (-not $PythonPath) {
+    Write-ErrorMsg "No se encontró Python. Crea .venv-win o instala Python en PATH."
+    exit 1
+}
+
+Write-Step "PASO 1: Preparar entorno"
+Write-Info "Python seleccionado: $PythonPath"
+Write-Info "Versión de app: $ResolvedVersion"
+
+& $PythonPath -m pip install --upgrade pip setuptools | Out-Null
+& $PythonPath -m pip install -r "requirements.txt"
+if ($LASTEXITCODE -ne 0) {
+    Write-ErrorMsg "Falló instalación de requirements.txt"
+    exit 1
+}
+
+& $PythonPath -m pip install pyinstaller
+if ($LASTEXITCODE -ne 0) {
+    Write-ErrorMsg "Falló instalación de PyInstaller"
+    exit 1
+}
+
+Write-Step "PASO 2: Limpiar directorios de compilación"
+if (-not $SkipClean) {
+    if (Test-Path $BuildPath) {
+        Remove-Item -Path $BuildPath -Recurse -Force
+        Write-Success "Limpiado $BuildPath"
+    }
+    if (Test-Path (Join-Path $DistPath "GuardiasDePatio")) {
+        Remove-Item -Path (Join-Path $DistPath "GuardiasDePatio") -Recurse -Force
+        Write-Success "Limpiado dist\\GuardiasDePatio"
+    }
+    if (Test-Path $OutputPath) {
+        Remove-Item -Path $OutputPath -Recurse -Force
+        Write-Success "Limpiado $OutputPath"
+    }
+}
+
+New-Item -ItemType Directory -Path $OutputPath -Force | Out-Null
+
+Write-Step "PASO 3: Compilar ejecutable con PyInstaller"
+
+# Se compila desde GuardiasDePatio.spec, el mismo que usa macOS (BLD-008). Hasta
+# v6.3.0 este script pasaba a PyInstaller una lista de argumentos sueltos y el
+# punto de entrada: PyInstaller generaba entonces su propio spec ENCIMA del del
+# repositorio y el exe de Windows salía sin nada de lo que se arregla en el spec
+# (sin la hoja de estilos, sin `upx=False`, con los almacenes del llavero y las
+# migraciones a medias). El spec lleva `keyring.backends` y lo demás (BLD-016).
+$AppName = if ($Diagnostico) { "GuardiasDePatio-debug" } else { "GuardiasDePatio" }
+if ($Diagnostico) {
+    Write-Info "Modo diagnostico: consola visible, nombre $AppName, sin instalador"
+    $env:PYTHONFAULTHANDLER = "1"
+    $env:GUARDIAS_BUILD_DIAGNOSTICO = "1"
+} else {
+    Remove-Item Env:GUARDIAS_BUILD_DIAGNOSTICO -ErrorAction SilentlyContinue
+}
+
+$SpecPath = Join-Path $WorkspacePath "GuardiasDePatio.spec"
+& $PythonPath -m PyInstaller --noconfirm --clean --distpath $DistPath --workpath $BuildPath $SpecPath
+$ExeGenerado = Join-Path $DistPath "$AppName\$AppName.exe"
+if (-not (Test-Path $ExeGenerado)) {
+    Write-ErrorMsg "PyInstaller fallo: no se genero $ExeGenerado"
+    exit 1
+}
+Write-Success "Ejecutable generado: $ExeGenerado"
+
+if ($Diagnostico) {
+    Write-Info "Lanza el exe desde cmd y reproduce el fallo:"
+    Write-Info "  $ExeGenerado 2>&1 | Tee-Object -FilePath crash.txt"
+    Write-Info "Revisa tambien %APPDATA%\GuardiasDePatio\logs\faulthandler.log"
+    exit 0
+}
+
+if ($SkipInstaller) {
+    Write-Success "Compilación completa sin instalador (--SkipInstaller)"
+    exit 0
+}
+
+Write-Step "PASO 4: Compilar instalador con Inno Setup"
+
+if (-not (Test-Path $InstallerScript)) {
+    Write-ErrorMsg "No existe $InstallerScript"
+    exit 1
+}
+
+$InnoSetup = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+if (-not (Test-Path $InnoSetup)) {
+    $InnoSetup = Get-ChildItem -Path "C:\Program Files*" -Recurse -Filter "ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+}
+
+if (-not $InnoSetup) {
+    Write-ErrorMsg "Inno Setup no encontrado"
+    exit 1
+}
+
+& $InnoSetup "/DMyAppVersion=$ResolvedVersion" $InstallerScript
+if ($LASTEXITCODE -ne 0) {
+    Write-ErrorMsg "Inno Setup falló con código $LASTEXITCODE"
+    exit 1
+}
+
+$InstallerPath = Join-Path $OutputPath "GuardiasDePatio-$ResolvedVersion-Windows-Setup.exe"
+if (-not (Test-Path $InstallerPath)) {
+    Write-ErrorMsg "Instalador no generado en $InstallerPath"
+    exit 1
+}
+
+$InstallerInfo = Get-Item $InstallerPath
+Write-Step "COMPILACIÓN COMPLETADA"
+Write-Success "Instalador creado"
+Write-Info "Archivo: $($InstallerInfo.Name)"
+Write-Info "Tamaño: $([math]::Round($InstallerInfo.Length / 1MB, 2)) MB"
+Write-Info "Ruta: $InstallerPath"
