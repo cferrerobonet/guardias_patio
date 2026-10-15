@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.4.1] - 2026-10-15
+
+### 🎯 Resumen
+El aviso de versión nueva lleva el logo del centro en lugar de un «?» suelto, y el botón «Mostrar los detalles…» se lee entero (en macOS y en Windows).
+
+### Fixed
+- **Icono del aviso de versión nueva** (`src/presentation/dialogs/actualizacion.py`): el logo corporativo, como el resto de confirmaciones, en vez del icono estándar de pregunta.
+- **«Mostrar los detalles…» cortado**: Qt mide ese botón con la fuente del sistema y sin la hoja de estilos (Barlow seminegrita y su relleno). Ahora se ensancha según el texto traducido más largo (`Mostrar…` / `Ocultar…`).
+
+### 🧪 Tests
+- `tests/test_dialogo_actualizacion.py`: el diálogo lleva el logo y el botón de detalles cabe entero con la traducción, la fuente y la hoja de la app (las dos fallan sin el arreglo). `setMinimum` del ratchet visual 139 → 140, anotado.
+
 ## [7.4.0] - 2026-10-15
 
 ### 🎯 Resumen

@@ -16,6 +16,7 @@ from PyQt6.QtCore import QThread
 from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtWidgets import QApplication, QMessageBox, QProgressDialog
 
+from utils.ui_helpers import get_corporate_pixmap
 from utils.update_checker import abrir_instalador, contexto_ssl, url_de_confianza
 
 logger = logging.getLogger(__name__)
@@ -25,8 +26,19 @@ PAGINA_DE_RELEASES = "https://github.com/cferrerobonet/guardias_patio/releases/l
 
 def confirmar(parent, version: str, notas: str = "") -> bool:
     """Enseña qué trae la versión nueva antes de bajar nada (FUN-011)."""
+    return dialogo_de_confirmacion(parent, version, notas).exec() == QMessageBox.StandardButton.Yes
+
+
+def dialogo_de_confirmacion(parent, version: str, notas: str = "") -> QMessageBox:
+    """El diálogo de `confirmar`, sin mostrarlo (así se puede comprobar en los tests)."""
     caja = QMessageBox(parent)
-    caja.setIcon(QMessageBox.Icon.Question)
+    # Logo de la app, como el resto de confirmaciones (base_form): el icono
+    # estándar de pregunta salía como un «?» suelto en macOS y Windows.
+    pixmap = get_corporate_pixmap(64)
+    if pixmap:
+        caja.setIconPixmap(pixmap)
+    else:
+        caja.setIcon(QMessageBox.Icon.Question)
     caja.setWindowTitle(f"Guardias de Patio {version}")
     caja.setText(f"Hay una versión nueva: {version}. ¿Descargarla e instalarla?")
     notas = (notas or "").strip()
@@ -36,7 +48,26 @@ def confirmar(parent, version: str, notas: str = "") -> bool:
         caja.setInformativeText("Esta versión no trae notas publicadas.")
     caja.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
     caja.setDefaultButton(QMessageBox.StandardButton.Yes)
-    return caja.exec() == QMessageBox.StandardButton.Yes
+    _ancho_del_boton_de_detalles(caja)
+    return caja
+
+
+def _ancho_del_boton_de_detalles(caja: QMessageBox) -> None:
+    """Que «Mostrar los detalles…» quepa entero.
+
+    Qt calcula el ancho de ese botón con la fuente del sistema, sin la hoja de
+    estilos (Barlow seminegrita y 14 px de relleno a cada lado), y el texto se
+    cortaba por los dos lados en macOS y Windows. Se mide con la fuente real
+    y con el texto más largo de los dos que alterna («Mostrar…» / «Ocultar…»).
+    """
+    for boton in caja.buttons():
+        if caja.buttonRole(boton) != QMessageBox.ButtonRole.ActionRole:
+            continue
+        boton.ensurePolished()
+        medida = boton.fontMetrics()
+        texto = boton.text()
+        textos = (texto, texto.replace("Mostrar", "Ocultar"), texto.replace("Show", "Hide"))
+        boton.setMinimumWidth(max(medida.horizontalAdvance(t) for t in textos) + 2 * 14 + 16)
 
 
 class _Descargador(QThread):
