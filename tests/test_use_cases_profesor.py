@@ -376,7 +376,7 @@ class TestEliminarProfesorUseCase:
     def test_eliminar_profesor_con_guardias(
         self, session: Session, profesor_factory, zona_factory, guardia_factory
     ):
-        """Test: no se puede eliminar profesor con guardias asignadas."""
+        """Test: el profesor se borra con sus guardias (decisión del 2026-10-15)."""
         profesor = profesor_factory(nombre_completo="Con Guardias")
         zona = zona_factory(nombre_zona="Zona Test")
         session.add_all([profesor, zona])
@@ -387,10 +387,13 @@ class TestEliminarProfesorUseCase:
         session.add(guardia)
         session.commit()
 
-        use_case = EliminarProfesorUseCase(session)
+        from infrastructure.database.models import Guardia, Profesor
 
-        with pytest.raises(BusinessLogicError, match=r"guardia.*asignada"):
-            use_case.execute(profesor.id)
+        profesor_id = profesor.id
+        EliminarProfesorUseCase(session).execute(profesor_id)
+
+        assert session.query(Profesor).filter(Profesor.id == profesor_id).count() == 0
+        assert session.query(Guardia).filter(Guardia.profesor_id == profesor_id).count() == 0
 
 
 # ===============================

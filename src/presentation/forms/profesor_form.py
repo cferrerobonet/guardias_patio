@@ -33,6 +33,7 @@ from application.use_cases.profesor import (
     ListarProfesoresUseCase,
     ObtenerProfesorUseCase,
 )
+from core.exceptions import GuardiasBaseException
 from core.logging import get_logger
 from presentation.forms.base_form import BaseForm
 from presentation.forms.profesor_table_helpers import (
@@ -887,8 +888,10 @@ class ProfesorForm(BaseForm):
                     try:
                         self.eliminar_use_case.execute(id_profesor)
                         eliminados += 1
-                    except (ValueError, TypeError) as e:
-                        errores.append(f"{nombre_profesor}: {str(e)}")
+                    except (ValueError, TypeError, GuardiasBaseException) as e:
+                        # Un rechazo del caso de uso es un aviso para la persona,
+                        # no un error técnico con traza (2026-10-15).
+                        errores.append(f"{nombre_profesor}: {getattr(e, 'message', None) or e}")
 
                 # Mostrar resultado
                 if eliminados > 0:

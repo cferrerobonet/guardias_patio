@@ -45,9 +45,11 @@ class TestEliminarProfesor:
         profesor = MagicMock()
         profesor.nombre_completo = "Test Prof"
         session.query.return_value.filter.return_value.first.return_value = profesor
-        session.query.return_value.filter.return_value.count.return_value = 3
-        with pytest.raises(BusinessLogicError):
-            uc.execute(1)
+        session.query.return_value.filter.return_value.delete.return_value = 3
+        uc.execute(1)  # ya no se niega: borra sus guardias con él (2026-10-15)
+        session.query.return_value.filter.return_value.delete.assert_called_once()
+        session.delete.assert_called_with(profesor)
+        session.commit.assert_called()
 
     def test_elimina_ok(self):
         uc, session = self._make_uc()
