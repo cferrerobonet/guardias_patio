@@ -961,6 +961,53 @@ class TestIntegrationZonasMultiples:
             count = session.query(Guardia).filter(Guardia.zona_id == zona.id).count()
             assert count > 0, f"Zona {zona.nombre_zona} no tiene guardias"
 
+    def test_deficit_repartido_entre_zonas(
+        self,
+        session,
+        config_uc,
+        profesor_uc,
+        zona_uc,
+        generar_uc,
+    ):
+        """
+        Con menos profesores que huecos, ninguna zona carga con todo el déficit.
+
+        60 huecos (5 días × 2 recreos × 3 zonas × 2 turnos) y 6 profesores con
+        una guardia al día: se cubren 30 como mucho. Antes del 2026-10-15 cualquier
+        reparto de esas 30 valía lo mismo, y en la CI una zona se quedó sin
+        ninguna; ahora cada zona tiene su mitad (10 de 20).
+        """
+        config_uc.execute(ActualizarConfiguracionDTO(
+            fecha_inicio_curso=date(2024, 9, 9),
+            fecha_fin_curso=date(2024, 9, 13),
+            hora_recreo1_manana=time(10, 30),
+            hora_recreo2_manana=time(12, 30),
+            hora_recreo1_tarde=time(16, 0),
+            hora_recreo2_tarde=time(17, 30),
+        ))
+        for i in range(1, 4):
+            for turno in ("mañana", "tarde"):
+                profesor_uc.execute(CrearProfesorDTO(
+                    nombre_completo=f"Profesor {turno} {i}",
+                    horas_contrato=25,
+                    porcentaje_jornada=100,
+                    turno=turno,
+                    tutor=False,
+                ))
+        zonas = [
+            zona_uc.execute(CrearZonaDTO(nombre_zona=f"Zona {i}", descripcion=f"Zona {i}"))
+            for i in range(1, 4)
+        ]
+
+        generar_uc.execute()
+
+        cubiertas = {
+            z.nombre_zona: session.query(Guardia).filter(Guardia.zona_id == z.id).count()
+            for z in zonas
+        }
+        assert sum(cubiertas.values()) == 30, cubiertas
+        assert all(n == 10 for n in cubiertas.values()), f"Déficit mal repartido: {cubiertas}"
+
     def test_zona_preferida_profesor(
         self,
         session,

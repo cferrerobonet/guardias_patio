@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.4.0] - 2026-10-15
+
+### 🎯 Resumen
+Cuando no hay profesores suficientes para cubrir todos los huecos, el reparto reparte lo que falta entre las zonas: ninguna se queda toda la semana sin vigilancia.
+
+### Changed
+- **Déficit repartido entre zonas** (objetivo 4 de `src/services/asignador_guardias_cpsat.py`): se minimiza el mayor porcentaje de huecos vacíos de una zona. Antes, con déficit, cualquier reparto que cubriera el máximo valía lo mismo y uno dejó una zona sin ninguna guardia. Pesa menos que una guardia de equidad entre profesores y más que la agrupación; sin déficit no cambia nada (comprobado con un volcado real: el mismo reparto que la 7.3.0).
+
+### 🧪 Tests
+- `tests/test_integration_guardias.py::test_deficit_repartido_entre_zonas`: con 60 huecos y 30 guardias posibles, cada zona recibe 10. Con la 7.3.0 fallaba de forma intermitente, como `test_cobertura_todas_zonas` en la compilación de GitHub de la 7.3.0; estable con 1, 2, 4, 8 y 16 hilos del solver.
+
 ## [7.3.0] - 2026-10-10
 
 ### 🎯 Resumen
