@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.4.2] - 2026-10-15
+
+### 🎯 Resumen
+Ya se puede borrar un profesor que tiene guardias: se borran con él, como avisa la pantalla, y sus huecos quedan sin cubrir hasta que se regenere.
+
+### Fixed
+- **Borrar un profesor con guardias** (`application/use_cases/profesor/eliminar_profesor.py`): se negaba («tiene N guardia(s) asignada(s)»), aunque la confirmación ya anunciaba que se borrarían y ofrecía una copia (PRIV-003). Ahora se borran sus guardias con él; las guardias en las que sólo figura como sustituido se conservan.
+- **El rechazo salía como error técnico con traza** (`presentation/forms/profesor_form.py`): cualquier error del caso de uso se recoge y se muestra como aviso normal, sin el código interno.
+
+### 🧪 Tests
+- `test_eliminar_profesor_con_guardias` y `TestEliminarProfesor.test_tiene_guardias`: el profesor y sus guardias se borran (fallan con la 7.4.1).
+
 ## [7.4.1] - 2026-10-15
 
 ### 🎯 Resumen

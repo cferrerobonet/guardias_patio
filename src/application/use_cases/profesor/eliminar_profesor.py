@@ -43,7 +43,7 @@ class EliminarProfesorUseCase:
 
         Raises:
             NotFoundError: Si no existe un profesor con ese ID
-            BusinessLogicError: Si el profesor tiene guardias asignadas
+            BusinessLogicError: Si falla el borrado en la base de datos
         """
         # Buscar el profesor
         profesor = self.session.query(Profesor).filter(Profesor.id == profesor_id).first()
@@ -51,20 +51,18 @@ class EliminarProfesorUseCase:
         if not profesor:
             raise NotFoundError(entity_type="Profesor", entity_id=profesor_id)
 
-        # Verificar que no tenga guardias asignadas
-        guardias_count = (
-            self.session.query(Guardia).filter(Guardia.profesor_id == profesor_id).count()
-        )
-
-        if guardias_count > 0:
-            raise BusinessLogicError(
-                f"No se puede eliminar el profesor '{profesor.nombre_completo}' "
-                f"porque tiene {guardias_count} guardia(s) asignada(s). "
-                "Elimine primero las guardias asociadas."
-            )
-
         try:
             nombre_profesor = profesor.nombre_completo
+            # Sus guardias se van con él (decisión de CarlosFB, 2026-10-15): la
+            # pantalla ya avisa de que se borran y ofrece una copia (PRIV-003), y
+            # negarse aquí salía como error técnico. Sus huecos quedan sin cubrir
+            # hasta que se regenere. Las guardias en las que sólo figura como
+            # sustituido no son suyas y se conservan.
+            guardias_borradas = (
+                self.session.query(Guardia)
+                .filter(Guardia.profesor_id == profesor_id)
+                .delete(synchronize_session=False)
+            )
             # Sus ausencias se van con él: si no, el ORM intentaba dejarlas sin
             # profesor y el borrado fallaba con un error técnico (2026-10-03).
             for ausencia in self.session.query(Ausencia).filter_by(profesor_id=profesor_id):
@@ -75,7 +73,8 @@ class EliminarProfesorUseCase:
             # Invalidar cache de profesores
             invalidate_profesores_cache()
             logger.info(
-                f"Profesor eliminado y cache invalidado: {nombre_profesor} (ID: {profesor_id})"
+                f"Profesor eliminado y cache invalidado: {nombre_profesor} (ID: {profesor_id}), "
+                f"con {guardias_borradas} guardia(s)"
             )
 
         except SQLAlchemyError as e:
