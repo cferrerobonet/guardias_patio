@@ -266,11 +266,15 @@ def generar_guardias_cpsat(
     # imposible y no se generaba nada. Ahora se cubre todo lo posible y lo que
     # falta queda en el resumen (2026-10-03).
     huecos_vacios = []
+    # Por zona, para repartir el déficit (objetivo 4)
+    vacios_por_zona: Dict[int, list] = defaultdict(list)
     for s_idx in range(len(slots)):
         profs_elegibles = slot_profs[s_idx]
         if profs_elegibles:
             model.AddAtMostOne(x[(p_id, s_idx)] for p_id in profs_elegibles)
-            huecos_vacios.append(1 - sum(x[(p_id, s_idx)] for p_id in profs_elegibles))
+            vacio = 1 - sum(x[(p_id, s_idx)] for p_id in profs_elegibles)
+            huecos_vacios.append(vacio)
+            vacios_por_zona[slots[s_idx].zona_id].append(vacio)
 
     logger.info("  ✓ Restricción: cada slot, como mucho 1 profesor")
 
@@ -418,6 +422,23 @@ def generar_guardias_cpsat(
         logger.info(f"  ✓ Objetivo 3b: zona preferida explícita ({n_pen_zona_pref} profesores)")
 
     # -------------------------------------------------------------------------
+    # OBJETIVO 4: SI FALTAN PROFESORES, QUE EL DÉFICIT SE REPARTA ENTRE ZONAS
+    # -------------------------------------------------------------------------
+    # Con menos profesores que huecos, cualquier solución que cubra el máximo
+    # valía lo mismo, y una dejó una zona sin ninguna guardia en toda la semana
+    # (test_cobertura_todas_zonas, en la CI de la 7.3.0, 2026-10-14). Se minimiza
+    # el mayor porcentaje (en milésimas) de huecos vacíos de una zona. Su peso
+    # máximo (3 × 1000) queda por debajo de una guardia de equidad (5000) y por
+    # encima de la agrupación: decisión de CarlosFB del 2026-10-15. Sin déficit
+    # vale 0. No volver a dejar el déficit sin repartir.
+    PESO_REPARTO_ZONAS = 3
+    peor_zona_vacia = model.NewIntVar(0, 1000, "peor_zona_vacia_milesimas")
+    for vacios in vacios_por_zona.values():
+        model.Add(peor_zona_vacia * len(vacios) >= 1000 * sum(vacios))
+    if vacios_por_zona:
+        logger.info(f"  ✓ Objetivo 4: déficit repartido entre {len(vacios_por_zona)} zonas")
+
+    # -------------------------------------------------------------------------
     # COMBINAR OBJETIVOS CON PESOS
     # -------------------------------------------------------------------------
     # Una guardia de diferencia con el objetivo pesa más que cualquier mejora de
@@ -433,6 +454,7 @@ def generar_guardias_cpsat(
         + PESO_EQUIDAD_SUMA * sum(desviaciones)
         + sum(agrupacion)
         + PESO_ZONA_PREF * sum(penalizacion_zona_preferida)
+        + PESO_REPARTO_ZONAS * peor_zona_vacia
     )
 
     model.Minimize(objetivo_modelo)
