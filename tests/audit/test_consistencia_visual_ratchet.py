@@ -2,6 +2,9 @@
 Sólo pueden bajar, salvo subida deliberada y anotada aquí. Ver auditoria/04 y 05.
 
 Subidas registradas:
+- 2026-10-15, v7.4.1: `setMinimum` 139 → 140. El botón «Mostrar los detalles…» del
+  diálogo de versión nueva: Qt lo mide sin la hoja de estilos y se cortaba; no se puede
+  arreglar en `light.qss` porque el ancho depende del texto traducido.
 - 2026-09-06, v5.75.0: `setMinimum` 139 → 140. El diálogo de permutar guardias
   necesita un ancho mínimo para que quepan los dos desplegables; es superficie
   nueva, no deuda que crece.
@@ -49,7 +52,7 @@ UMBRALES = {
     # previo de importación, que necesita una tabla de cuatro columnas legible.
     # Ya van tres subidas seguidas por diálogos nuevos: el mínimo de un diálogo
     # con tabla debería salir de un sitio común en vez de repetirse en cada uno.
-    "setMinimum": 139,
+    "setMinimum": 140,
 }
 EMOJI = re.compile("[\U0001f300-\U0001faff☀-➿]")
 
