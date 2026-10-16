@@ -5,6 +5,29 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.5.0] - 2026-10-16
+
+### 🎯 Resumen
+Las tablas largas se buscan, filtran y paginan; el calendario se corrige a mano con las reglas del reparto y se puede deshacer; los avisos por correo salen de una plantilla editable con el PDF individual y el iCal adjuntos; los PDF de guardias se rediseñan para imprimir; y la sincronización deja de reintentar en bucle tras un fallo de conexión.
+
+### ✨ Added
+- **Listados con buscador, filtros y paginación** (`presentation/widgets/listado_filtrable.py`) en profesores, zonas, sustituciones e historial de cambios: buscador, filtros por columna, «Limpiar filtros», cabeceras ordenables, 10 filas por página (5/10/15/20/50) y pie «Mostrando 1–10 de N». Filtros, filas por página y orden se recuerdan entre sesiones (`preferencias_listados.json`).
+- **Edición manual del calendario** (`services/edicion_manual_calendario.py`, `dialogs/editar_guardia_dialog.py`): desde el detalle del día, «Mover…» lleva una guardia a otro día, recreo, zona o profesor y «Asignar…» cubre un hueco vacío. Se valida con las mismas reglas del reparto (hueco existente y libre, profesor activo y elegible, una guardia al día), se pide confirmación, queda en el historial de cambios y se puede deshacer en el acto (GUA-CON-001).
+- **Plantilla de los avisos por correo** (`services/plantilla_avisos.py`, `dialogs/plantilla_avisos_dialog.py`, botón «Editar plantilla…» del envío): asunto y cuerpo editables con `{nombre}`, `{periodo}`, `{num_guardias}` y `{tabla}`, y opción de adjuntar a cada aviso el calendario individual en PDF y el archivo iCal (GUA-CON-002).
+
+### Changed
+- **PDF de guardias rediseñados** (`services/pdf_styles.py`, `_pdf_individual_optimizado.py`, `_pdf_mes_consolidado.py`, `_pdf_mini_calendario.py`): A4 con el estilo de Partes de salida y legibles en blanco y negro. El individual lleva la ficha del destinatario y un calendario por mes con recreo, hora, turno y zona en cada día, festivos con trama y leyenda; el del mes, cifras, calendario con el recuento diario y cuadrante recreo × zona (apaisado con más de 6 zonas). Los textos que no caben encogen; logos ya reducidos en `imagenes/`.
+
+### Fixed
+- **Sin reintentos en bucle de la sincronización** (`sync/limite_conexiones.py`): tras un fallo de conexión SFTP la espera se dobla (30 s → 15 min como máximo) y, tras cinco fallos seguidos, la app deja de intentarlo sola hasta el próximo arranque. La cuenta se guarda en disco y una conexión buena la pone a cero. Evita que el servidor corte el puerto 22 al centro.
+- **Ctrl+A y Supr solo sobre las filas visibles**: `selectAll` de Qt seleccionaba también las filas ocultas por el filtro.
+
+### 🧪 Tests
+- `tests/test_listado_filtrable.py`, `tests/test_edicion_manual_calendario.py`, `tests/test_avisos_con_plantilla.py`, `tests/test_pdf_guardias_impreso.py` y `tests/test_limite_conexiones.py`. Barreras nuevas en `tests/conftest.py`: `limite_de_conexiones_aislado`, `preferencias_de_listados_aisladas` y `plantilla_de_avisos_aislada`.
+
+### 🧹 Housekeeping
+- `AGENTS.md` deja las reglas comunes al archivo de usuario; las skills de compilación solo describen la vía de GitHub; el permiso de push no admite el forzado; barrera de secretos v3.
+
 ## [7.4.2] - 2026-10-15
 
 ### 🎯 Resumen
