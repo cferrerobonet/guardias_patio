@@ -8,10 +8,15 @@ Author: Sistema de Guardias de Patio
 Version: 1.0
 """
 
+from functools import lru_cache
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import cm
+from reportlab.lib.units import cm, mm
+from reportlab.lib.utils import ImageReader, simpleSplit
+from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.pdfgen.canvas import Canvas
 
 
 def _registrar_fuentes() -> tuple[str, str, str]:
@@ -32,6 +37,9 @@ def _registrar_fuentes() -> tuple[str, str, str]:
             ("Barlow-Bold", "Barlow-Bold.ttf"),
             ("Barlow-SemiBold", "Barlow-SemiBold.ttf"),
             ("BarlowCondensed-Bold", "BarlowCondensed-Bold.ttf"),
+            ("BarlowCondensed-SemiBold", "BarlowCondensed-SemiBold.ttf"),
+            ("BarlowCondensed-ExtraBold", "BarlowCondensed-ExtraBold.ttf"),
+            ("Barlow-Medium", "Barlow-Medium.ttf"),
         ):
             if nombre not in pdfmetrics.getRegisteredFontNames():
                 pdfmetrics.registerFont(TTFont(nombre, str(carpeta / archivo)))
@@ -367,3 +375,242 @@ class PDFStyles:
             Lista de strings con días de la semana abreviados
         """
         return ["L", "M", "X", "J", "V", "S", "D"]
+
+
+# ==========================================
+# DOCUMENTO IMPRESO (A4 vertical, estilo Partes de salida)
+# ==========================================
+# El papel no sigue el tema: tinta oscura sobre blanco. Todo lo que distingue algo
+# (guardia, festivo, fin de semana, recreo, zona) lleva también texto, borde o trama,
+# para que se lea igual impreso en blanco y negro.
+
+_CONDENSADA = "BarlowCondensed-Bold" if _NORMAL == "Barlow" else "Helvetica-Bold"
+
+
+class Papel:
+    """Tintas y medidas del documento impreso."""
+
+    TINTA = colors.HexColor("#1b1f1c")
+    TINTA_SUAVE = colors.HexColor("#5a625c")
+    LINEA = colors.HexColor("#c9d1c5")
+    LINEA_SUAVE = colors.HexColor("#e1e6dd")
+    FONDO = colors.HexColor("#f3f5f1")
+    FINDE = colors.HexColor("#e4e7e1")
+    TRAMA = colors.HexColor("#8f988f")
+    VERDE = colors.HexColor("#2c7a3a")
+    VERDE_OSCURO = colors.HexColor("#1c5226")
+    VERDE_SUAVE = colors.HexColor("#e2f0e3")
+    VERDE_CELDA = colors.HexColor("#eef6ee")  # día con guardia: en gris queda casi blanco
+    DORADO = colors.HexColor("#b97a12")
+    DORADO_SUAVE = colors.HexColor("#fbf0d9")
+    BLANCO = colors.white
+
+    TEXTO = _NORMAL
+    MEDIA = "Barlow-Medium" if _NORMAL == "Barlow" else _NORMAL
+    SEMI = "Barlow-SemiBold" if _NORMAL == "Barlow" else _NEGRITA
+    NEGRITA = _NEGRITA
+    CONDENSADA = _CONDENSADA
+    CONDENSADA_SEMI = "BarlowCondensed-SemiBold" if _NORMAL == "Barlow" else _NEGRITA
+    TITULAR = "BarlowCondensed-ExtraBold" if _NORMAL == "Barlow" else _NEGRITA
+
+    PAGINA = A4
+    MARGEN_X = 15 * mm
+    MARGEN_ARRIBA = 14 * mm
+    MARGEN_ARRIBA_RESTO = 24 * mm
+    MARGEN_ABAJO = 19 * mm
+    AUTOR = "EPLA · Guardias de patio"
+
+    MESES = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
+             "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+    DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+
+
+def ajustar(texto: str, fuente: str, tam: float, tam_min: float, ancho: float,
+            lineas: int = 1) -> tuple[list[str], float]:
+    """Parte y encoge el texto hasta que cabe en `lineas` de `ancho`; nunca lo recorta
+    salvo que ni al cuerpo mínimo quepa (entonces la última línea acaba en «…»)."""
+    t = tam
+    while True:
+        partes = simpleSplit(texto, fuente, t, ancho)
+        if len(partes) <= lineas and all(stringWidth(p, fuente, t) <= ancho for p in partes):
+            return partes, t
+        if t - 0.25 < tam_min:
+            break
+        t -= 0.25
+    partes = simpleSplit(texto, fuente, tam_min, ancho)[:lineas]
+    ultima = partes[-1]
+    while ultima and stringWidth(ultima + "…", fuente, tam_min) > ancho:
+        ultima = ultima[:-1]
+    partes[-1] = ultima.rstrip() + "…"
+    return partes, tam_min
+
+
+# Logos ya reducidos y sobre blanco (JPEG): ReportLab los lee sin Pillow y el adjunto
+# no lleva los originales de varios MB. El escudo grande (`logo.png`) es el de la app.
+LOGO_IZQUIERDO = "escudo_epla_documentos.jpg"
+LOGO_DERECHO = "logo_colegios_amigo.jpg"
+
+
+@lru_cache(maxsize=4)
+def logo(nombre: str):
+    """Logo de `imagenes/` listo para dibujar, o None si falta (el PDF sale sin él)."""
+    try:
+        from core.paths import get_resources_directory
+
+        ruta = get_resources_directory() / nombre
+        return ImageReader(str(ruta)) if ruta.is_file() else None
+    except OSError:
+        return None
+
+
+def dibujar_logo(c, nombre: str, x: float, y: float, ancho: float, alto: float,
+                 alinear: str = "izquierda") -> None:
+    img = logo(nombre)
+    if img is None:
+        return
+    iw, ih = img.getSize()
+    escala = min(ancho / iw, alto / ih)
+    w, h = iw * escala, ih * escala
+    dx = 0 if alinear == "izquierda" else (ancho - w if alinear == "derecha" else (ancho - w) / 2)
+    c.drawImage(img, x + dx, y + (alto - h) / 2, w, h)
+
+
+def trama(c, x: float, y: float, w: float, h: float, paso: float = 1.7 * mm) -> None:
+    """Rayado diagonal (festivos y días no lectivos): se distingue sin color."""
+    c.saveState()
+    p = c.beginPath()
+    p.rect(x, y, w, h)
+    c.clipPath(p, stroke=0, fill=0)
+    c.setStrokeColor(Papel.TRAMA)
+    c.setLineWidth(0.45)
+    d = -h
+    while d < w:
+        c.line(x + d, y, x + d + h, y + h)
+        d += paso
+    c.restoreState()
+
+
+def dibujar_cabecera(c, titulo: str, subtitulo: str, x0: float, x1: float, arriba: float) -> float:
+    """Cabecera de la primera página: escudo, título, subtítulo y Colegios Amigó.
+
+    Devuelve la altura ocupada (para el marco de la página).
+    """
+    alto_logo = 17 * mm
+    y = arriba - alto_logo
+    dibujar_logo(c, LOGO_IZQUIERDO, x0, y, alto_logo, alto_logo)
+    dibujar_logo(c, LOGO_DERECHO, x1 - 31 * mm, y + 1.5 * mm, 31 * mm, 14 * mm,
+                 "derecha")
+    centro = (x0 + x1) / 2
+    ancho = (x1 - x0) - 2 * 36 * mm
+    lineas, t = ajustar(titulo, Papel.TITULAR, 22, 14, ancho)
+    c.setFillColor(Papel.TINTA)
+    c.setFont(Papel.TITULAR, t)
+    c.drawCentredString(centro, arriba - 9.2 * mm, lineas[0])
+    c.setFont(Papel.TEXTO, 8.6)
+    c.setFillColor(Papel.TINTA_SUAVE)
+    c.drawCentredString(centro, arriba - 14.6 * mm, subtitulo)
+    base = y - 3 * mm
+    c.setFillColor(Papel.VERDE)
+    c.rect(x0, base, x1 - x0, 1.1 * mm, stroke=0, fill=1)
+    c.setFillColor(Papel.DORADO)
+    c.rect(x0, base - 0.9 * mm, x1 - x0, 0.45 * mm, stroke=0, fill=1)
+    return arriba - (base - 0.9 * mm)
+
+
+def dibujar_cabecera_resto(c, izquierda: str, derecha: str, x0: float, x1: float,
+                           arriba: float) -> None:
+    """Cabecera corta de las páginas siguientes: quién y de qué, por si la hoja va suelta."""
+    dibujar_logo(c, LOGO_IZQUIERDO, x0, arriba - 8 * mm, 8 * mm, 8 * mm)
+    ancho = (x1 - x0) - 10 * mm - 45 * mm
+    lineas, t = ajustar(izquierda, Papel.CONDENSADA, 11, 7.5, ancho)
+    c.setFont(Papel.CONDENSADA, t)
+    c.setFillColor(Papel.TINTA)
+    c.drawString(x0 + 10 * mm, arriba - 5.4 * mm, lineas[0])
+    c.setFont(Papel.TEXTO, 8)
+    c.setFillColor(Papel.TINTA_SUAVE)
+    c.drawRightString(x1, arriba - 5.4 * mm, derecha)
+    c.setStrokeColor(Papel.VERDE)
+    c.setLineWidth(0.8)
+    c.line(x0, arriba - 10 * mm, x1, arriba - 10 * mm)
+
+
+class CanvasNumerado(Canvas):
+    """Canvas que conoce el total de páginas para el pie «Página n de N»."""
+
+    def __init__(self, *args, pie_izquierda: str = "", **kwargs):
+        super().__init__(*args, **kwargs)
+        self._paginas = []
+        self.pie_izquierda = pie_izquierda
+
+    def showPage(self):
+        self._paginas.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        total = len(self._paginas)
+        for estado in self._paginas:
+            self.__dict__.update(estado)
+            self._pie(total)
+            super().showPage()
+        super().save()
+
+    def _pie(self, total: int) -> None:
+        ancho, _ = self._pagesize
+        x0, x1 = Papel.MARGEN_X, ancho - Papel.MARGEN_X
+        y = 11 * mm
+        self.saveState()
+        self.setStrokeColor(Papel.DORADO)
+        self.setLineWidth(0.7)
+        self.line(x0, y + 3.6 * mm, x1, y + 3.6 * mm)
+        self.setFillColor(Papel.TINTA_SUAVE)
+        self.setFont(Papel.TEXTO, 7.5)
+        self.drawString(x0, y, self.pie_izquierda)
+        self.setFont(Papel.SEMI, 7.5)
+        self.drawRightString(x1, y, f"Página {self._pageNumber} de {total}")
+        self.restoreState()
+
+
+def canvas_con_pie(pie_izquierda: str):
+    def fabrica(*args, **kwargs):
+        return CanvasNumerado(*args, pie_izquierda=pie_izquierda, **kwargs)
+
+    return fabrica
+
+
+def construir_documento(ruta: str, piezas: list, *, titulo: str, subtitulo: str,
+                        resto_izquierda: str, resto_derecha: str, pie: str,
+                        titulo_pdf: str, asunto: str, pagesize=A4) -> None:
+    """Documento A4 con cabecera completa en la primera página y corta en las demás."""
+    from reportlab.platypus import BaseDocTemplate, Frame, NextPageTemplate, PageTemplate
+
+    ancho, alto = pagesize
+    x0, x1 = Papel.MARGEN_X, ancho - Papel.MARGEN_X
+    alto_cabecera = 26 * mm
+
+    def primera(c, _doc):
+        c.saveState()
+        dibujar_cabecera(c, titulo, subtitulo, x0, x1, alto - Papel.MARGEN_ARRIBA)
+        c.restoreState()
+
+    def resto(c, _doc):
+        c.saveState()
+        dibujar_cabecera_resto(c, resto_izquierda, resto_derecha, x0, x1,
+                               alto - Papel.MARGEN_ARRIBA)
+        c.restoreState()
+
+    abajo = Papel.MARGEN_ABAJO
+    marco1 = Frame(x0, abajo, x1 - x0, alto - Papel.MARGEN_ARRIBA - alto_cabecera - abajo,
+                   leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0, id="primera")
+    marco2 = Frame(x0, abajo, x1 - x0, alto - Papel.MARGEN_ARRIBA_RESTO - abajo,
+                   leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0, id="resto")
+    doc = BaseDocTemplate(
+        ruta, pagesize=pagesize, leftMargin=x0, rightMargin=x0,
+        topMargin=Papel.MARGEN_ARRIBA, bottomMargin=abajo,
+        title=titulo_pdf, author=Papel.AUTOR, subject=asunto, creator=Papel.AUTOR,
+        producer=Papel.AUTOR, keywords="",
+    )
+    doc.addPageTemplates([
+        PageTemplate(id="primera", frames=[marco1], onPage=primera),
+        PageTemplate(id="resto", frames=[marco2], onPage=resto),
+    ])
+    doc.build([NextPageTemplate("resto")] + piezas, canvasmaker=canvas_con_pie(pie))
