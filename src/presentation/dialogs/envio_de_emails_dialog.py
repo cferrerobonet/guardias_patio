@@ -8,6 +8,7 @@ Aquí se ve la lista de destinatarios, el mensaje tal cual le llegará a cada un
 y al terminar qué pasó con cada envío.
 """
 
+from contextlib import contextmanager
 from typing import Optional
 
 from PyQt6.QtCore import Qt
@@ -15,8 +16,10 @@ from PyQt6.QtWidgets import (
     QAbstractItemView,
     QDialog,
     QDialogButtonBox,
+    QHBoxLayout,
     QHeaderView,
     QLabel,
+    QPushButton,
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
@@ -25,9 +28,18 @@ from PyQt6.QtWidgets import (
 )
 
 from core.logging import get_logger
-from services import notificador_guardias
+from services import notificador_guardias, plantilla_avisos
 
 logger = get_logger(__name__)
+
+
+@contextmanager
+def sesion_de_trabajo():
+    """Sesión propia para el hilo del envío: los adjuntos leen la base (CRW-003)."""
+    from database.db_manager import get_db_session
+
+    with get_db_session() as sesion:
+        yield sesion
 
 COL_NOMBRE, COL_CORREO, COL_GUARDIAS, COL_ESTADO = range(4)
 
@@ -38,7 +50,9 @@ class EnvioDeEmailsDialog(QDialog):
     def __init__(self, session, parent=None, mes_anio: Optional[str] = None):
         super().__init__(parent)
         self.session = session
-        self.preparacion = notificador_guardias.preparar_envios(session, mes_anio)
+        self.mes_anio = mes_anio
+        self.plantilla = plantilla_avisos.cargar()
+        self.preparacion = notificador_guardias.preparar_envios(session, mes_anio, self.plantilla)
         self.resultados: list = []
         self._construir()
         self._rellenar_tabla()
@@ -55,6 +69,19 @@ class EnvioDeEmailsDialog(QDialog):
         self.label_resumen.setWordWrap(True)
         self.label_resumen.setAccessibleName("Resumen del envío")
         layout.addWidget(self.label_resumen)
+
+        # Plantilla editable y adjuntos (GUA-CON-002)
+        fila_plantilla = QHBoxLayout()
+        self.label_adjuntos = QLabel()
+        self.label_adjuntos.setWordWrap(True)
+        self.label_adjuntos.setAccessibleName("Adjuntos de cada aviso")
+        fila_plantilla.addWidget(self.label_adjuntos, 1)
+        self.boton_plantilla = QPushButton("Editar plantilla…")
+        self.boton_plantilla.setProperty("secondary", "true")
+        self.boton_plantilla.setAccessibleName("Editar el asunto, el mensaje y los adjuntos")
+        self.boton_plantilla.clicked.connect(self._editar_plantilla)
+        fila_plantilla.addWidget(self.boton_plantilla)
+        layout.addLayout(fila_plantilla)
 
         divisor = QSplitter(Qt.Orientation.Horizontal)
 
@@ -96,8 +123,32 @@ class EnvioDeEmailsDialog(QDialog):
         self.boton_cerrar.clicked.connect(self.reject)
         layout.addWidget(botones)
 
+    def _texto_adjuntos(self) -> str:
+        partes = []
+        if self.plantilla.adjuntar_pdf:
+            partes.append("su calendario en PDF")
+        if self.plantilla.adjuntar_ical:
+            partes.append("el archivo iCal (.ics)")
+        if not partes:
+            return "Cada aviso va sin adjuntos."
+        return "Cada aviso lleva adjuntos " + " y ".join(partes) + "."
+
+    def _editar_plantilla(self) -> None:
+        from presentation.dialogs.plantilla_avisos_dialog import PlantillaAvisosDialog
+
+        dialogo = PlantillaAvisosDialog(self)
+        if dialogo.exec() != QDialog.DialogCode.Accepted:
+            return
+        self.plantilla = dialogo.plantilla
+        self.preparacion = notificador_guardias.preparar_envios(
+            self.session, self.mes_anio, self.plantilla
+        )
+        self._rellenar_tabla()
+        self._mostrar_vista_previa()
+
     def _rellenar_tabla(self) -> None:
         envios = self.preparacion.envios
+        self.label_adjuntos.setText(self._texto_adjuntos())
         self.tabla.setRowCount(len(envios))
         for fila, envio in enumerate(envios):
             self.tabla.setItem(fila, COL_NOMBRE, QTableWidgetItem(envio.nombre))
@@ -128,9 +179,13 @@ class EnvioDeEmailsDialog(QDialog):
         if envio is None:
             self.vista_previa.clear()
             return
+        import html as _html
+
+        adjuntos = self._texto_adjuntos()
         self.vista_previa.setHtml(
-            f"<p style='font-family:sans-serif'><b>Para:</b> {envio.email}<br>"
-            f"<b>Asunto:</b> {envio.asunto}</p><hr>{envio.html}"
+            f"<p style='font-family:sans-serif'><b>Para:</b> {_html.escape(envio.email)}<br>"
+            f"<b>Asunto:</b> {_html.escape(envio.asunto)}<br>"
+            f"<b>Adjuntos:</b> {_html.escape(adjuntos)}</p><hr>{envio.html}"
         )
 
     def _envio_seleccionado(self):
@@ -146,13 +201,27 @@ class EnvioDeEmailsDialog(QDialog):
         if not envios:
             return
 
+        plantilla = self.plantilla
+
         def tarea(callback_progreso, cancelacion=None):
+            import tempfile
+
             def avisar(numero, total, nombre):
                 callback_progreso(numero, total, f"Enviando a {nombre}...")
 
-            return notificador_guardias.enviar(
-                envios, progreso=avisar, cancelacion=cancelacion
-            )
+            if not (plantilla.adjuntar_pdf or plantilla.adjuntar_ical):
+                return notificador_guardias.enviar(
+                    envios, progreso=avisar, cancelacion=cancelacion
+                )
+            with sesion_de_trabajo() as sesion, tempfile.TemporaryDirectory() as carpeta:
+                return notificador_guardias.enviar(
+                    envios,
+                    progreso=avisar,
+                    cancelacion=cancelacion,
+                    generar_adjuntos=lambda envio: notificador_guardias.adjuntos_para(
+                        sesion, envio.profesor_id, envio.nombre, plantilla, carpeta
+                    ),
+                )
 
         self.boton_enviar.setEnabled(False)
         resultados = ejecutar_con_progreso(
