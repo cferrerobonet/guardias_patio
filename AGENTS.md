@@ -36,7 +36,7 @@ $PY -m pytest tests/ -q --no-cov --timeout=120 -p no:cacheprovider    # todo (re
 $PY -m ruff check src --statistics
 $PY -m bandit -r src -q -ll · $PY -m pip_audit --progress-spinner off · $PY -m radon cc src -s -n C · $PY -m vulture src --min-confidence 80
 ```
-Reglas de tests (barreras, secreto de la API de 16+ caracteres, `timeout` en macOS): `.claude/rules/tests.md`. La suite completa pasa de una sola pasada (unos 2 minutos sin `tests/benchmarks`); el repositorio no se formatea con `ruff format`: la barrera es `ruff check`.
+Reglas de tests (barreras, secreto de la API de 16+ caracteres, `timeout` en macOS): `.claude/rules/tests.md`. La suite completa pasa de una sola pasada (unos 2 minutos sin `tests/test_benchmark_cpsat.py`); el repositorio no se formatea con `ruff format`: la barrera es `ruff check`.
 
 ## Patrón polimórfico (Session | RepositoryFactory)
 Servicios en `src/services/` y clases en `src/presentation/` aceptan ambos; normalizar en `__init__`:
@@ -60,7 +60,7 @@ En funciones standalone, sin anotación `: Session` en el parámetro.
 Al completar un ítem de un guion: tacharlo (`~~texto~~ ✅ RESUELTO vX.Y.Z`) en el documento fuente; commit junto al código.
 
 ## Archivos protegidos (no modificar)
-`sftp_config.json`, `smtp_config.json`, `data/`, `alembic/versions/` existentes (sólo crear nuevas), `.env`.
+`data/`, `alembic/versions/` existentes (sólo crear nuevas), `.env`.
 
 ## Entorno
 El intérprete vive en `~/.venvs/guardias-patio`, **fuera de iCloud**: dentro del repositorio iCloud duplica y altera los binarios (402 copias " 2" en `.venv`), Qt deja de reconocer sus complementos y la app aborta al crear la `QApplication`. El `.venv` del repo está corrupto y se puede borrar. Recrear con:

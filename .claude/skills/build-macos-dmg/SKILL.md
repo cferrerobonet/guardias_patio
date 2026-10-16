@@ -22,7 +22,6 @@ instaladores se encarga el paso final del flujo.
 | --- | --- | --- |
 | Flujo de GitHub, a mano | Artefacto del run, pestaña Actions | 90 días |
 | Flujo de GitHub, al publicar etiqueta | Adjunto al release, junto al otro instalador | Permanente |
-| En local | `dist/` y `Output/` del proyecto | Hasta `make clean`; no se versionan |
 
 Descargar los de un run sin pasar por el navegador:
 
@@ -30,30 +29,7 @@ Descargar los de un run sin pasar por el navegador:
 gh run download <id-del-run> --dir /tmp/instaladores
 ```
 
-El resto describe la compilación en local.
-
-
-Scripts canónicos: `Makefile` (`make icon`, `make app`, `make dmg`, `make release`) y `scripts/build/build_dmg.sh`. Ignorar `scripts/build/create_dmg.sh` y `build_simple.sh` (obsoletos, versión fija).
-
-## Requisitos
-
-- macOS 12+, Xcode Command Line Tools (`xcode-select --install`).
-- Python 3.11 de Homebrew: `/opt/homebrew/bin/python3.11` con `pip install -r requirements-dev.txt`.
-- `gh` autenticado para publicar.
-- El spec es `GuardiasDePatio.spec`, en la raíz y **versionado** (desde v5.97.0 es el único: el antiguo `Guardias de Patio.spec` se retiró porque el build de macOS lo usaba mientras los cambios se hacían en el nuevo). Lleva los almacenes del llavero (`collect_submodules('keyring.backends')`); sin ellos la app empaquetada no puede guardar contraseñas.
-
-## Pasos
-
-```bash
-cd "<raíz del repo>"
-export PATH="/opt/homebrew/bin:$PATH"
-python3.11 -m pytest tests/audit -q --no-cov          # comprobación rápida
-make dmg                                              # icono + app + firma + DMG + release
-# Sólo app:        make app
-# Sólo publicar:   make release  (usa el DMG existente)
-```
-
-`build_dmg.sh` copia la app a un directorio temporal fuera de iCloud, elimina atributos extendidos (`xattr -cr`), firma ad-hoc con `codesign --deep`, verifica con `--strict` y crea `GuardiasPatio_v<versión>_macOS.dmg`.
+Compilar en local está prohibido (`.claude/rules/empaquetado.md`): ni `make dmg`, que además publica el release por su cuenta, ni `make app` ni `pyinstaller`. Los fallos de la compilación se corrigen y se mueve la etiqueta.
 
 ## Verificación
 
@@ -61,18 +37,9 @@ make dmg                                              # icono + app + firma + DM
 2. Flujo mínimo: login, curso, zonas, profesores, cuotas, generar (CP-SAT), exportar PDF, cerrar con sync.
 3. Logs en `~/Library/Application Support/GuardiasDePatio/logs`.
 
-## Notarización (cuando exista cuenta Apple Developer)
-
-```bash
-codesign --deep --force --options runtime --sign "Developer ID Application: <nombre>" "dist/Guardias de Patio.app"
-xcrun notarytool submit GuardiasPatio_v<versión>_macOS.dmg --keychain-profile "AC_PASSWORD" --wait
-xcrun stapler staple GuardiasPatio_v<versión>_macOS.dmg
-```
 
 ## Errores conocidos
 
 | Síntoma | Causa | Solución |
 | --- | --- | --- |
-| `codesign` falla con "resource fork, Finder information" | atributos de iCloud | `build_dmg.sh` ya copia fuera de iCloud |
-| PyInstaller se cuelga | ruta en iCloud/OneDrive con ficheros bloqueados | clonar en `~/dev` y compilar allí |
-| App abre y cierra | protocolo de cierre en `build-windows-exe` | ejecutar `dist/Guardias de Patio.app/Contents/MacOS/Guardias\ de\ Patio` desde Terminal para ver la traza |
+| App abre y cierra | protocolo de cierre en `build-windows-exe` | abrir el binario del `.app` desde Terminal para ver la traza |
