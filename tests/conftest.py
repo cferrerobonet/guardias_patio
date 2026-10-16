@@ -775,3 +775,19 @@ def limite_de_conexiones_aislado(tmp_path):
     )
     yield
     limite_conexiones.usar_limite(None)
+
+
+@pytest.fixture(autouse=True)
+def preferencias_de_listados_aisladas(monkeypatch, tmp_path):
+    """Los filtros que recuerdan los listados (GUA-UXI-005) van a una carpeta temporal.
+
+    Sin esto, la búsqueda escrita en un test aparecería en el siguiente y acabaría en
+    `data/` del repositorio.
+    """
+    from presentation.widgets import listado_filtrable
+
+    monkeypatch.setattr(
+        listado_filtrable,
+        "_ruta_de_preferencias",
+        lambda: tmp_path / "preferencias_listados.json",
+    )

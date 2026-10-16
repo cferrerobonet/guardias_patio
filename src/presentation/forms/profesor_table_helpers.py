@@ -112,22 +112,3 @@ def cargar_tabla_profesores(*, session, table: QTableWidget, titulo_label, table
     if table_manager:
         table_manager.restore_selection()
 
-
-def filtrar_tabla_profesores(*, table: QTableWidget, texto_busqueda: str) -> None:
-    """Filtrar filas por nombre o email."""
-    texto = texto_busqueda.lower().strip()
-
-    if not texto:
-        for i in range(table.rowCount()):
-            table.setRowHidden(i, False)
-        return
-
-    for i in range(table.rowCount()):
-        nombre_item = table.item(i, 0)
-        email_item = table.item(i, 1)
-
-        nombre = nombre_item.text().lower() if nombre_item else ""
-        email = email_item.text().lower() if email_item else ""
-
-        coincide = texto in nombre or texto in email
-        table.setRowHidden(i, not coincide)
