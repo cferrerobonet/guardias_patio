@@ -26,7 +26,6 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 | Modelos ORM | `infrastructure/database/models.py` |
 | Versión canónica | `src/config/settings.py` → `app_version`, igual que `pyproject.toml` (lo vigila `tests/audit/test_calidad_estatica.py`). La insignia del README no se mantiene |
 | Build y empaquetado | Regla `.claude/rules/empaquetado.md` (se carga al tocar spec, scripts de build o workflows). Publicar etiqueta `vX.Y.Z` compila las dos plataformas. **Nunca compilar en local** (ni `make dmg`, que publica el release, ni `pyinstaller`): solo GitHub |
-| Auditoría vigente | `auditoria/00_INDICE.md` → `30_REGISTRO_HALLAZGOS.md` (estado) · `17_PLAN_DE_ATAQUE.md` (backlog) · **`21_PLAN_DE_AUDITORIA_AMPLIADO.md`** (checks con comando, para auditar con modelos más pequeños) · `22_RECURSOS_DE_IA.md` (qué skill usar cuándo) |
 
 ## Comandos que funcionan
 ```bash
@@ -55,10 +54,10 @@ En funciones standalone, sin anotación `: Session` en el parámetro.
 1. Tests: `$PY -m pytest tests/ --tb=no -q --no-cov --timeout=120 -p no:cacheprovider` (corregir sólo fallos nuevos; sin `--timeout` se cuelga QA-008).
 2. Bump `app_version`.
 3. Entrada en `CHANGELOG.md` con fecha.
-4. `git add -A && git commit -m "tipo(scope): descripción" && git tag v{versión} && git push && git push --tags`.
+4. `git add <rutas> && git commit -m "tipo(scope): descripción" && git tag v{versión} && git push && git push --tags`.
 
-## Seguimiento de auditorías/guiones (obligatorio)
-Al completar un ítem de un documento de auditoría o guion: tacharlo (`~~texto~~ ✅ RESUELTO vX.Y.Z`) en el documento fuente y en `auditoria/30_REGISTRO_HALLAZGOS.md`; commit junto al código.
+## Seguimiento de guiones (obligatorio)
+Al completar un ítem de un guion: tacharlo (`~~texto~~ ✅ RESUELTO vX.Y.Z`) en el documento fuente; commit junto al código.
 
 ## Archivos protegidos (no modificar)
 `sftp_config.json`, `smtp_config.json`, `data/`, `alembic/versions/` existentes (sólo crear nuevas), `.env`.
@@ -74,13 +73,14 @@ python3.11 -m venv ~/.venvs/guardias-patio
 Configuraciones de depuración y tareas versionadas (`launch.json`, `tasks.json`); usan el intérprete `~/.venvs/guardias-patio/bin/python`, no el `.venv` del repo.
 
 ## Comprobación tras editar
-Un hook (`.claude/settings.json` → `.claude/hooks/compilar_py.py`) pasa `py_compile` a cada `.py` editado y devuelve el error de sintaxis al momento. No sustituye a `ruff` ni a los tests.
+Ganchos comunes (`.claude/hooks/`, registrados en `.claude/settings.json`): `tras_editar.sh` compila cada `.py` editado y `guardia_bash.sh` bloquea las órdenes vetadas (`git add -A`, push forzado, `--no-verify`). No sustituyen a `ruff` ni a los tests.
 
 ## Datos de ejemplo
 Están fuera del repositorio, en `../DATOS DE EJEMPLO (fuera del repositorio)/`. No copiarlos dentro: son datos reales del centro.
 
 ## Skills del proyecto
-En `.claude/skills/`: `/build-windows-exe` · `/build-macos-dmg` · `/tests-locales` · `/auditoria-desktop`. No cargar `.agents/AGENTE_AUDITORIA_INTEGRAL_PORTABLE.md` completo: usar `auditoria/02_PLAN_MAESTRO_AUDITORIA.md`.
+En `.claude/skills/`: `/build-windows-exe` · `/build-macos-dmg` · `/tests-locales`.
+Auditoría: skill de usuario `auditoria-apps`; hallazgos en la bóveda, `GUARDIAS DE PATIO — Auditoría.md`.
 
 ## Tokens
 Leer por rangos con `grep -n`; no releer; no listar `src/` (usar el mapa); un fichero de tests a la vez; suite completa sólo al final.

@@ -1,5 +1,5 @@
 """Guardarraíles de flujo: lo que debe hacerse antes que otra cosa tiene que ser visible y
-verificable desde dominio, no un flag de sesión de UI. Ver auditoria/03 (UXF-001/002/008)."""
+verificable desde dominio, no un flag de sesión de UI (UXF-001/002/008)."""
 
 import pytest
 from PyQt6.QtWidgets import QApplication

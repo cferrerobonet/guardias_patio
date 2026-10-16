@@ -75,4 +75,4 @@ xcrun stapler staple GuardiasPatio_v<versión>_macOS.dmg
 | --- | --- | --- |
 | `codesign` falla con "resource fork, Finder information" | atributos de iCloud | `build_dmg.sh` ya copia fuera de iCloud |
 | PyInstaller se cuelga | ruta en iCloud/OneDrive con ficheros bloqueados | clonar en `~/dev` y compilar allí |
-| App abre y cierra | ver `auditoria/06` | ejecutar `dist/Guardias de Patio.app/Contents/MacOS/Guardias\ de\ Patio` desde Terminal para ver la traza |
+| App abre y cierra | protocolo de cierre en `build-windows-exe` | ejecutar `dist/Guardias de Patio.app/Contents/MacOS/Guardias\ de\ Patio` desde Terminal para ver la traza |

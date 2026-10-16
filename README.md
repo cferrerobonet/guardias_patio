@@ -103,7 +103,6 @@ powershell scripts/build_windows.ps1
 
 | Documento | Descripción |
 |-----------|-------------|
-| [docs/AUDITORIA_INTEGRAL_2026.md](docs/AUDITORIA_INTEGRAL_2026.md) | Auditoría completa: seguridad, performance, arquitectura, roadmap |
 | [CHANGELOG.md](CHANGELOG.md) | Historial de versiones |
 | [tests/README.md](tests/README.md) | Guía de testing y buenas prácticas |
 | [scripts/README.md](scripts/README.md) | Documentación de scripts |

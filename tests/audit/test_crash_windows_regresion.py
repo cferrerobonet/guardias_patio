@@ -2,7 +2,6 @@
 
 Los tests marcados xfail(strict=True) describen el comportamiento objetivo. Cuando el fix
 llegue pasarán, `strict` los convertirá en fallo y habrá que retirar la marca en el mismo commit.
-Ver auditoria/06_CRASH_WINDOWS_GENERACION.md.
 """
 
 import inspect

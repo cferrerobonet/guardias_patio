@@ -1,7 +1,7 @@
 """Sincronización en la nube: escenarios de dos equipos y hallazgos pendientes.
 
 El modelo es «la copia de la nube es la buena»: una cuenta la usa una persona, que
-puede cambiar de equipo, y el flujo es descargar, editar y subir. Ver auditoria/12.
+puede cambiar de equipo, y el flujo es descargar, editar y subir.
 
 Los tests marcados xfail(strict=True) describen lo que aún falta (Fase 2).
 """
