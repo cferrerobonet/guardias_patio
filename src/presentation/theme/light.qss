@@ -832,3 +832,32 @@ QPushButton#botonCerrarLogin {
 QPushButton#botonCerrarLogin:hover {
     background-color: @BORDER@;
 }
+
+/* Paginación de los listados (GUA-UXI-005): como los chips de Partes de salida.
+   Los extremos se desactivan, no desaparecen; la página actual va marcada. */
+QPushButton[pagina="true"] {
+    background-color: @BACKGROUND@;
+    color: @TEXT_PRIMARY@;
+    border: 1px solid @BORDER_DARK@;
+    border-radius: 13px;
+    padding: 4px 11px;
+    font-size: 13px;
+    min-height: 0px;
+    min-width: 14px;
+}
+
+QPushButton[pagina="true"]:hover {
+    border-color: @PRIMARY@;
+}
+
+QPushButton[pagina="true"]:checked {
+    background-color: @PRIMARY@;
+    border-color: @PRIMARY@;
+    color: @TEXT_ON_PRIMARY@;
+}
+
+QPushButton[pagina="true"]:disabled {
+    background-color: @SURFACE@;
+    border-color: @BORDER@;
+    color: @TEXT_DISABLED@;
+}

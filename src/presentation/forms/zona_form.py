@@ -32,8 +32,36 @@ from core.exceptions import BusinessLogicError, NotFoundError
 from presentation.forms.base_form import BaseForm
 from presentation.forms.zona_widgets import DatosZonaWidget
 from presentation.theme.tokens import Spacing
+from presentation.widgets.listado_filtrable import (
+    Filtro,
+    ListadoFiltrable,
+    filas_visibles_seleccionadas,
+    seleccionar_visibles,
+)
 from presentation.widgets.table_manager import TableManager
 from utils.icons import icon_for_button, icon_for_form
+
+
+def estado_de_la_zona(tabla, fila: int, hoy=None) -> str:
+    """«Vigente», «Programada», «Terminada» o «Todo el curso», según sus fechas."""
+    from datetime import date, datetime
+
+    def _fecha(columna: int):
+        item = tabla.item(fila, columna)
+        try:
+            return datetime.strptime(item.text().strip(), "%d/%m/%Y").date() if item else None
+        except ValueError:
+            return None
+
+    hoy = hoy or date.today()
+    inicio, fin = _fecha(3), _fecha(4)
+    if inicio is None and fin is None:
+        return "Todo el curso"
+    if inicio is not None and hoy < inicio:
+        return "Programada"
+    if fin is not None and hoy > fin:
+        return "Terminada"
+    return "Vigente"
 
 
 class ZonaForm(BaseForm):
@@ -120,8 +148,9 @@ class ZonaForm(BaseForm):
 
     def seleccionar_todas(self):
         """Seleccionar todas las zonas de la tabla."""
+        # Solo lo que se ve: `selectAll` también coge las filas ocultas.
         if self.tabla_zonas.rowCount() > 0:
-            self.tabla_zonas.selectAll()
+            seleccionar_visibles(self.tabla_zonas)
 
     def setup_ui(self):
         """Configurar la interfaz de usuario del formulario"""
@@ -232,7 +261,17 @@ class ZonaForm(BaseForm):
         self.tabla_zonas.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         # Doble click: activar modo edición
         self.tabla_zonas.doubleClicked.connect(self.editar_zona)
+        self.listado = ListadoFiltrable(
+            self.tabla_zonas,
+            "zonas",
+            entidad="zonas",
+            marcador="Buscar por nombre o descripción…",
+            columnas_busqueda=(1, 2),
+            filtros=(Filtro("Estado", estado_de_la_zona),),
+        )
+        left_section.addWidget(self.listado.barra)
         left_section.addWidget(self.tabla_zonas)
+        left_section.addWidget(self.listado.pie)
 
         # Label informativo de multiselección
         from presentation.themes.tema_aplicacion import (
@@ -387,6 +426,7 @@ class ZonaForm(BaseForm):
 
                 # ✅ Recargar tabla ANTES de salir del modo edición
                 self.cargar_zonas()
+                self.listado.mostrar(self.zona_editando_id)
                 self.datos_modificados.emit()
 
                 # Salir del modo edición
@@ -416,6 +456,8 @@ class ZonaForm(BaseForm):
 
                 # ✅ Recargar tabla ANTES de limpiar formulario
                 self.cargar_zonas()
+                if zona_creada:
+                    self.listado.resaltar(zona_creada.id)
                 self.datos_modificados.emit()
 
                 # Limpiar formulario
@@ -563,7 +605,9 @@ class ZonaForm(BaseForm):
             # Ejecutar Use Case (ya viene ordenado por nombre_zona)
             zonas = self.listar_zonas_uc.execute()
 
-            # Limpiar tabla actual
+            # Limpiar tabla actual. Se llena con el orden suspendido: con él
+            # activo, Qt recoloca la fila a cada celda y las celdas se cruzan.
+            self.tabla_zonas.setSortingEnabled(False)
             self.tabla_zonas.setRowCount(0)
 
             # Actualizar contador en el título
@@ -606,17 +650,20 @@ class ZonaForm(BaseForm):
                 item_fecha_fin.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.tabla_zonas.setItem(row, 4, item_fecha_fin)
 
+            self.tabla_zonas.setSortingEnabled(True)
+
             # Restaurar selección si existe
             if self.table_manager:
                 self.table_manager.restore_selection()
 
         except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
+            self.tabla_zonas.setSortingEnabled(True)
             self.manejar_excepcion(e, "cargar las zonas")
 
     def eliminar_zona(self):
         """Eliminar las zonas seleccionadas usando el Use Case"""
         # Obtener filas seleccionadas
-        filas_seleccionadas = self.tabla_zonas.selectionModel().selectedRows()
+        filas_seleccionadas = filas_visibles_seleccionadas(self.tabla_zonas)
 
         if not filas_seleccionadas:
             self.mostrar_advertencia(
@@ -630,8 +677,7 @@ class ZonaForm(BaseForm):
 
         # Recopilar información de las zonas a eliminar
         zonas_a_eliminar = []
-        for index in filas_seleccionadas:
-            fila = index.row()
+        for fila in filas_seleccionadas:
             item_id = self.tabla_zonas.item(fila, 0)
             item_nombre = self.tabla_zonas.item(fila, 1)
 

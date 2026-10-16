@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
 
 from presentation.forms.base_form import BaseForm
 from presentation.themes.tema_aplicacion import TEXT_SECONDARY, get_table_style
+from presentation.widgets.listado_filtrable import Filtro, ListadoFiltrable
 from utils.icons import icon_for_button
 from utils.orden import clave_alfabetica
 from utils.ui_helpers import dotar_de_contrato, llenando_tabla, pintar_tabla_vacia
@@ -311,7 +312,16 @@ class AusenciasSustitucionesWidget(BaseForm):
         hh.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         hh.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
         hh.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+        self.listado_historial = ListadoFiltrable(
+            self.tabla_historial,
+            "historial_sustituciones",
+            entidad="sustituciones",
+            marcador="Buscar por profesor, zona o fecha…",
+            filtros=(Filtro.columna("Turno", 1), Filtro.columna("Zona", 3)),
+        )
+        lay.addWidget(self.listado_historial.barra)
         lay.addWidget(self.tabla_historial)
+        lay.addWidget(self.listado_historial.pie)
 
         grupo.setLayout(lay)
         return grupo
@@ -631,7 +641,7 @@ class AusenciasSustitucionesWidget(BaseForm):
     def deshacer_seleccion(self):
         """Devuelve la sustitución seleccionada a su profesor original (UXF-009)."""
         fila = self.tabla_historial.currentRow()
-        if fila < 0:
+        if fila < 0 or self.tabla_historial.isRowHidden(fila):
             self.mostrar_advertencia(
                 "Nada seleccionado",
                 "Selecciona en el historial la sustitución que quieres deshacer.",

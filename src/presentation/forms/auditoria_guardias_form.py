@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from infrastructure.database.models import GuardiaAuditLog, Profesor
+from presentation.widgets.listado_filtrable import ListadoFiltrable
 from utils.ui_helpers import dotar_de_contrato, llenando_tabla, pintar_tabla_vacia
 
 _ACCIONES = ["Todas", "CREADA", "MODIFICADA", "ELIMINADA", "SUSTITUIDA", "GENERADA_BULK"]
@@ -69,11 +70,13 @@ class AuditoriaGuardiasForm(QWidget):
 
         filtros.addWidget(QLabel("Acción:"))
         self.combo_accion = QComboBox()
+        self.combo_accion.setObjectName("accion")
         self.combo_accion.addItems(_ACCIONES)
         filtros.addWidget(self.combo_accion)
 
         filtros.addWidget(QLabel("Profesor:"))
         self.input_profesor = QLineEdit()
+        self.input_profesor.setObjectName("profesor")
         self.input_profesor.setPlaceholderText("Buscar por nombre...")
         self.input_profesor.setMaximumWidth(200)
         filtros.addWidget(self.input_profesor)
@@ -111,7 +114,19 @@ class AuditoriaGuardiasForm(QWidget):
         self.tabla.setColumnWidth(2, 90)
         self.tabla.setColumnWidth(3, 220)
         self.tabla.setColumnWidth(4, 120)
+        # Paginación, orden y filtros que se recuerdan (GUA-UXI-005). La acción y
+        # el profesor filtran ya en la consulta: el listado solo los recuerda.
+        self.listado = ListadoFiltrable(
+            self.tabla,
+            "auditoria_guardias",
+            entidad="cambios",
+            con_buscador=False,
+            con_limpiar=False,
+            recordar=(self.combo_accion, self.input_profesor),
+        )
+        layout.addWidget(self.listado.barra)
         layout.addWidget(self.tabla)
+        layout.addWidget(self.listado.pie)
 
         self.label_total = QLabel("")
         layout.addWidget(self.label_total)
@@ -219,4 +234,5 @@ class AuditoriaGuardiasForm(QWidget):
         self.fecha_hasta.setDate(date.today())
         self.combo_accion.setCurrentIndex(0)
         self.input_profesor.clear()
+        self.listado.limpiar_filtros()
         self.cargar_datos()

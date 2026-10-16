@@ -42,7 +42,6 @@ from presentation.forms.profesor_table_helpers import (
     COL_VOLUNTARIAS,
     COLUMNAS_PROFESORES,
     cargar_tabla_profesores,
-    filtrar_tabla_profesores,
 )
 from presentation.forms.profesor_widgets import (
     DatosBasicosWidget,
@@ -57,6 +56,12 @@ from presentation.themes.tema_aplicacion import (
     SPACING_MD,
     SPACING_SM,
     TEXT_SECONDARY,
+)
+from presentation.widgets.listado_filtrable import (
+    Filtro,
+    ListadoFiltrable,
+    filas_visibles_seleccionadas,
+    seleccionar_visibles,
 )
 from presentation.widgets.table_manager import TableManager
 from utils.icons import icon_for_button
@@ -173,27 +178,15 @@ class ProfesorForm(BaseForm):
 
         self.busqueda_input = QLineEdit()
         self.busqueda_input.setPlaceholderText("Buscar por nombre o email...")
-        self.busqueda_input.textChanged.connect(self.filtrar_profesores)
+        self.busqueda_input.setClearButtonEnabled(True)
+        self.busqueda_input.setAccessibleName("Buscar profesores")
         busqueda_layout.addWidget(self.busqueda_input)
 
-        self.limpiar_busqueda_btn = QPushButton()
-        self.limpiar_busqueda_btn.setIcon(icon_for_button("close"))
-        self.limpiar_busqueda_btn.setAccessibleName("Limpiar búsqueda")
-        self.limpiar_busqueda_btn.setToolTip("Limpiar búsqueda")
-        self.limpiar_busqueda_btn.setFixedWidth(30)
-        self.limpiar_busqueda_btn.setToolTip("Limpiar búsqueda")
-        self.limpiar_busqueda_btn.clicked.connect(self.limpiar_busqueda)
-        self.limpiar_busqueda_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #D9E0D5;
-                border: none;
-                border-radius: 3px;
-                padding: 5px;
-            }
-            QPushButton:hover {
-                background-color: #D9E0D5;
-            }
-        """)
+        # La búsqueda, los filtros y la paginación los lleva `ListadoFiltrable`
+        # (GUA-UXI-005): este botón es su «Limpiar filtros».
+        self.limpiar_busqueda_btn = QPushButton("Limpiar filtros")
+        self.limpiar_busqueda_btn.setProperty("secondary", "true")
+        self.limpiar_busqueda_btn.setAccessibleName("Limpiar la búsqueda y los filtros")
         busqueda_layout.addWidget(self.limpiar_busqueda_btn)
 
         layout.addLayout(busqueda_layout)
@@ -235,7 +228,18 @@ class ProfesorForm(BaseForm):
         # Hacer la tabla de solo lectura (no editable directamente)
         self.tabla_profesores.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
+        self.listado = ListadoFiltrable(
+            self.tabla_profesores,
+            "profesores",
+            entidad="profesores",
+            buscador=self.busqueda_input,
+            columnas_busqueda=(0, 1),
+            boton_limpiar=self.limpiar_busqueda_btn,
+            filtros=(Filtro.columna("Turno", 3), Filtro.columna("Tutor", 4)),
+        )
+        layout.addWidget(self.listado.barra)
         layout.addWidget(self.tabla_profesores)
+        layout.addWidget(self.listado.pie)
 
         # Label informativo de multiselección
         info_label = QLabel(
@@ -408,8 +412,10 @@ class ProfesorForm(BaseForm):
 
     def seleccionar_todos(self):
         """Seleccionar todos los profesores de la tabla."""
+        # Solo lo que se ve: `selectAll` también coge las filas filtradas u
+        # ocultas por la paginación, y Supr las borraría sin verlas.
         if self.tabla_profesores.rowCount() > 0:
-            self.tabla_profesores.selectAll()
+            seleccionar_visibles(self.tabla_profesores)
 
     def _limpiar_formulario(self):
         """Limpiar todos los campos del formulario y preseleccionar matriz según turno."""
@@ -560,6 +566,10 @@ class ProfesorForm(BaseForm):
 
             # Recargar tabla y emitir señal
             self.cargar_profesores()
+            if self.profesor_editando_id:
+                self.listado.mostrar(self.profesor_editando_id)
+            elif profesor_creado:
+                self.listado.resaltar(profesor_creado.id)
             self.datos_modificados.emit()
 
             # Manejar modo edición
@@ -615,15 +625,12 @@ class ProfesorForm(BaseForm):
             self.manejar_excepcion(e, "cargar zonas")
 
     def filtrar_profesores(self):
-        """Filtrar profesores en la tabla según búsqueda."""
-        filtrar_tabla_profesores(
-            table=self.tabla_profesores,
-            texto_busqueda=self.busqueda_input.text(),
-        )
+        """Volver a aplicar la búsqueda, los filtros y la página."""
+        self.listado.aplicar()
 
     def limpiar_busqueda(self):
-        """Limpiar campo de búsqueda."""
-        self.busqueda_input.clear()
+        """Quitar la búsqueda y los filtros."""
+        self.listado.limpiar_filtros()
 
     def mostrar_profesor(self):
         """
@@ -824,7 +831,7 @@ class ProfesorForm(BaseForm):
 
     def eliminar_profesor(self):
         """Eliminar profesor(es) seleccionado(s)."""
-        filas_seleccionadas = self.tabla_profesores.selectionModel().selectedRows()
+        filas_seleccionadas = filas_visibles_seleccionadas(self.tabla_profesores)
 
         if not filas_seleccionadas:
             self.mostrar_advertencia(
@@ -837,8 +844,7 @@ class ProfesorForm(BaseForm):
 
         # Recopilar información de los profesores seleccionados
         profesores_a_eliminar = []
-        for index in filas_seleccionadas:
-            fila = index.row()
+        for fila in filas_seleccionadas:
             nombre_item = self.tabla_profesores.item(fila, 0)
             if nombre_item:
                 id_profesor = nombre_item.data(Qt.ItemDataRole.UserRole)
