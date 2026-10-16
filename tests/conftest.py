@@ -791,3 +791,11 @@ def preferencias_de_listados_aisladas(monkeypatch, tmp_path):
         "_ruta_de_preferencias",
         lambda: tmp_path / "preferencias_listados.json",
     )
+
+
+@pytest.fixture(autouse=True)
+def plantilla_de_avisos_aislada(monkeypatch, tmp_path):
+    """La plantilla de los avisos (GUA-CON-002) se guarda en una carpeta temporal."""
+    from services import plantilla_avisos
+
+    monkeypatch.setattr(plantilla_avisos, "_ruta", lambda: tmp_path / "plantilla_avisos.json")

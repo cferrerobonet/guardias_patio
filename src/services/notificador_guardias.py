@@ -14,7 +14,8 @@ from datetime import date
 from typing import Callable, Optional
 
 from core.logging import get_logger
-from infrastructure.database.models import Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor
+from services import plantilla_avisos
 from utils.orden import clave_alfabetica
 
 logger = get_logger(__name__)
@@ -31,6 +32,15 @@ class Envio:
     asunto: str
     html: str
     texto: str
+
+
+@dataclass
+class Adjunto:
+    """Un archivo que viaja con el aviso: el PDF individual o el iCal."""
+
+    nombre: str
+    datos: bytes
+    tipo: str  # «application/pdf», «text/calendar»
 
 
 @dataclass
@@ -56,10 +66,17 @@ class Resultado:
     detalle: str
 
 
-def preparar_envios(session, mes_anio: Optional[str] = None) -> Preparacion:
-    """Redacta el aviso de cada profesor activo con guardias y correo válido."""
+def preparar_envios(
+    session, mes_anio: Optional[str] = None, plantilla: Optional[plantilla_avisos.Plantilla] = None
+) -> Preparacion:
+    """Redacta el aviso de cada profesor activo con guardias y correo válido.
+
+    Con la plantilla guardada (GUA-CON-002) si no se pasa otra.
+    """
     if mes_anio is None:
         mes_anio = date.today().strftime("%B %Y").capitalize()
+    if plantilla is None:
+        plantilla = plantilla_avisos.cargar()
 
     preparacion = Preparacion()
     profesores = (
@@ -85,7 +102,9 @@ def preparar_envios(session, mes_anio: Optional[str] = None) -> Preparacion:
             preparacion.excluidos.append(Excluido(profesor.nombre_completo, "sin guardias"))
             continue
 
-        asunto, cuerpo_html, cuerpo_texto = redactar(profesor.nombre_completo, guardias, mes_anio)
+        asunto, cuerpo_html, cuerpo_texto = redactar(
+            profesor.nombre_completo, guardias, mes_anio, plantilla
+        )
         preparacion.envios.append(
             Envio(
                 profesor_id=profesor.id,
@@ -105,9 +124,16 @@ def preparar_envios(session, mes_anio: Optional[str] = None) -> Preparacion:
     return preparacion
 
 
-def redactar(nombre: str, guardias: list, mes_anio: str) -> tuple:
+def redactar(
+    nombre: str,
+    guardias: list,
+    mes_anio: str,
+    plantilla: Optional[plantilla_avisos.Plantilla] = None,
+) -> tuple:
     """Devuelve `(asunto, html, texto)` del aviso de un profesor."""
     import html as _html
+
+    plantilla = plantilla or plantilla_avisos.Plantilla()
 
     from services.email_service import generar_plantilla_email_html
 
@@ -125,33 +151,58 @@ def redactar(nombre: str, guardias: list, mes_anio: str) -> tuple:
     cabecera = "padding:8px 10px;text-align:left"
     tabla = (
         "<table style='border-collapse:collapse;width:100%;font-size:13px'>"
-        "<thead><tr style='background:#0E5FA8;color:white'>"
+        "<thead><tr style='background:#2C7A3A;color:white'>"
         f"<th style='{cabecera}'>Día</th><th style='{cabecera}'>Turno</th>"
         f"<th style='{cabecera}'>Recreo</th><th style='{cabecera}'>Zona</th>"
         "</tr></thead><tbody>" + filas + "</tbody></table>"
     )
 
-    seguro = _html.escape(nombre)
-    contenido = (
-        f"<p>Estimado/a <strong>{seguro}</strong>,</p>"
-        f"<p>A continuación encontrarás tus guardias de patio asignadas para "
-        f"<strong>{_html.escape(mes_anio)}</strong>:</p>"
-        f"{tabla}"
-        "<p style='margin-top:20px'>Si tienes alguna duda, contacta con la dirección "
-        "del centro.</p>"
-    )
-    asunto = f"Guardias de patio — {mes_anio}"
+    valores = {"nombre": nombre, "periodo": mes_anio, "num_guardias": len(guardias)}
+    contenido = plantilla_avisos.rellenar_html(plantilla, valores, tabla)
+    asunto = plantilla_avisos.rellenar_asunto(plantilla, valores)
     cuerpo_html = generar_plantilla_email_html(titulo=asunto, contenido_principal=contenido)
 
-    cuerpo_texto = (
-        f"Hola {nombre},\n\nTus guardias de patio para {mes_anio}:\n\n"
-        + "\n".join(
-            f"- {g.fecha} | {g.turno} | Recreo {g.recreo} | {nombre_de_zona(g)}"
-            for g in guardias
-        )
-        + "\n\nGuardias de Patio"
+    lista = "\n".join(
+        f"- {g.fecha} | {g.turno} | Recreo {g.recreo} | {nombre_de_zona(g)}" for g in guardias
     )
+    cuerpo_texto = plantilla_avisos.rellenar_texto(plantilla, valores, lista) + "\n\nGuardias de Patio"
     return asunto, cuerpo_html, cuerpo_texto
+
+
+def adjuntos_para(
+    session, profesor_id: int, nombre: str, plantilla: plantilla_avisos.Plantilla, carpeta
+) -> list:
+    """El PDF individual y el iCal del profesor, según pida la plantilla.
+
+    Se generan en `carpeta` (una temporal) y se leen enteros: el mensaje no
+    depende de que el archivo siga ahí al enviarlo. Si uno no se puede generar,
+    `ValueError` con el motivo: mejor no enviar que enviar sin lo prometido.
+    """
+    from pathlib import Path
+
+    from services.icalendar_service import ICalendarService
+
+    carpeta = Path(carpeta)
+    nombre_base = ICalendarService.obtener_nombre_archivo_ics(nombre)[: -len(".ics")]
+    adjuntos = []
+    if plantilla.adjuntar_pdf:
+        from services._pdf_individual_optimizado import exportar_profesor_individual_optimizado
+
+        config = session.query(Configuracion).first()
+        if config is None:
+            raise ValueError("No hay configuración del curso para hacer el PDF")
+        ruta = carpeta / f"{nombre_base}.pdf"
+        if not exportar_profesor_individual_optimizado(
+            session, profesor_id, config.fecha_inicio_curso, config.fecha_fin_curso, str(ruta)
+        ):
+            raise ValueError("No se pudo generar el PDF individual")
+        adjuntos.append(Adjunto(ruta.name, ruta.read_bytes(), "application/pdf"))
+    if plantilla.adjuntar_ical:
+        ruta = carpeta / f"{nombre_base}.ics"
+        if not ICalendarService.generar_icalendar_profesor(session, profesor_id, str(ruta)):
+            raise ValueError("No se pudo generar el archivo iCal")
+        adjuntos.append(Adjunto(ruta.name, ruta.read_bytes(), "text/calendar"))
+    return adjuntos
 
 
 def nombre_de_zona(guardia) -> str:
@@ -169,15 +220,13 @@ def enviar(
     servicio=None,
     progreso: Optional[Callable] = None,
     cancelacion=None,
+    generar_adjuntos: Optional[Callable] = None,
 ) -> list:
     """Manda los avisos por una sola conexión SMTP y cuenta qué pasó con cada uno.
 
     Si la conexión no se puede abrir, devuelve un resultado fallido por cada
     destinatario en vez de una excepción: así la vista puede decir qué no llegó.
     """
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
-
     from services.email_service import get_email_service
 
     servicio = servicio or get_email_service()
@@ -196,12 +245,15 @@ def enviar(
                 if progreso:
                     progreso(numero, len(envios), envio.nombre)
 
-                mensaje = MIMEMultipart("alternative")
-                mensaje["Subject"] = envio.asunto
-                mensaje["From"] = f"{servicio.from_name} <{servicio.from_email}>"
-                mensaje["To"] = envio.email
-                mensaje.attach(MIMEText(envio.texto, "plain", "utf-8"))
-                mensaje.attach(MIMEText(envio.html, "html", "utf-8"))
+                adjuntos = []
+                if generar_adjuntos is not None:
+                    try:
+                        adjuntos = generar_adjuntos(envio)
+                    except (ValueError, OSError) as e:
+                        resultados.append(_fallo(envio, f"Sin enviar: {e}"))
+                        continue
+
+                mensaje = _mensaje(envio, servicio, adjuntos)
 
                 try:
                     servidor.send_message(mensaje)
@@ -222,6 +274,32 @@ def enviar(
 
     logger.info(f"Avisos enviados: {sum(1 for r in resultados if r.enviado)}/{len(envios)}")
     return resultados
+
+
+def _mensaje(envio, servicio, adjuntos: list):
+    """El correo de un aviso: texto y HTML, y los adjuntos si los hay."""
+    from email.mime.application import MIMEApplication
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    cuerpo = MIMEMultipart("alternative")
+    cuerpo.attach(MIMEText(envio.texto, "plain", "utf-8"))
+    cuerpo.attach(MIMEText(envio.html, "html", "utf-8"))
+    mensaje = cuerpo
+    if adjuntos:
+        mensaje = MIMEMultipart("mixed")
+        mensaje.attach(cuerpo)
+        for adjunto in adjuntos:
+            principal, sub = adjunto.tipo.split("/", 1)
+            parte = MIMEApplication(adjunto.datos, _subtype=sub)
+            if principal != "application":
+                parte.replace_header("Content-Type", f"{adjunto.tipo}; charset=utf-8")
+            parte.add_header("Content-Disposition", "attachment", filename=adjunto.nombre)
+            mensaje.attach(parte)
+    mensaje["Subject"] = envio.asunto
+    mensaje["From"] = f"{servicio.from_name} <{servicio.from_email}>"
+    mensaje["To"] = envio.email
+    return mensaje
 
 
 def _fallo(envio, detalle: str) -> Resultado:
