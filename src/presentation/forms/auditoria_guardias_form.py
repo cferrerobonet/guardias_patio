@@ -19,7 +19,10 @@ from infrastructure.database.models import GuardiaAuditLog, Profesor
 from presentation.widgets.listado_filtrable import ListadoFiltrable
 from utils.ui_helpers import dotar_de_contrato, llenando_tabla, pintar_tabla_vacia
 
-_ACCIONES = ["Todas", "CREADA", "MODIFICADA", "ELIMINADA", "SUSTITUIDA", "GENERADA_BULK"]
+_ACCIONES = [
+    "Todas", "CREADA", "MODIFICADA", "ELIMINADA", "SUSTITUIDA", "GENERADA_BULK",
+    "ASIGNADA_A_MANO", "MOVIDA_A_MANO", "EDICION_DESHECHA",
+]
 
 _ETIQUETAS_ACCION = {
     "CREADA": "✚ Creada",
@@ -27,6 +30,9 @@ _ETIQUETAS_ACCION = {
     "ELIMINADA": "✕ Eliminada",
     "SUSTITUIDA": "⇄ Sustitución",
     "GENERADA_BULK": "⚡ Generación",
+    "ASIGNADA_A_MANO": "Asignada a mano",
+    "MOVIDA_A_MANO": "Movida a mano",
+    "EDICION_DESHECHA": "Edición deshecha",
 }
 
 _COLORES_ACCION = {

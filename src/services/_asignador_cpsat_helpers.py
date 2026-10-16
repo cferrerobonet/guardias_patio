@@ -98,9 +98,17 @@ def _generar_recreos_fallback(config: Configuracion) -> List[dict]:
     return recreos
 
 
-def _generar_slots(config: Configuracion, session) -> List[Slot]:
-    """Genera todos los slots a cubrir (sólo días lectivos del reparto oficial)."""
+def _generar_slots(config: Configuracion, session, solo_dia: Optional[date] = None) -> List[Slot]:
+    """Genera todos los slots a cubrir (sólo días lectivos del reparto oficial).
+
+    Con `solo_dia`, los de ese día: la edición manual del calendario valida contra
+    los mismos huecos que reparte el algoritmo (GUA-CON-001).
+    """
     dias_lectivos = listar_dias_reparto(config)
+    if solo_dia is not None:
+        dias_lectivos = [d for d in dias_lectivos if d == solo_dia]
+        if not dias_lectivos:
+            return []
     zonas = session.query(Zona).filter(Zona.activa.is_(True)).all()
     recreos = _parse_recreos_config(config)
 
