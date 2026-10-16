@@ -7,6 +7,8 @@ paths:
   - "src/infrastructure/database/models.py"
   - "alembic/versions/**"
   - "tests/test_ida_y_vuelta_completa.py"
+  - "src/presentation/forms/config_widgets/sftp_widget.py"
+  - "src/presentation/dialogs/initial_config_dialog.py"
 ---
 
 # Sincronización e importación/exportación: no pueden fallar
@@ -16,5 +18,6 @@ CarlosFB (2026-10-03): la sincronización en la nube y la importación/exportaci
 - La descarga de arranque reconstruye la base desde cero (`clear_existing=True`): lo que no viaja se pierde sin aviso.
 - **Columna nueva en un modelo** → añadirla a `sync/dtos.py`, `sync/data_exporter.py`, `services/exportador.py` y `services/_exportador_import.py`, y a las filas de `tests/test_ida_y_vuelta_completa.py` (el test falla si falta).
 - **El importador nuevo acepta todo lo que aceptaba el anterior**: `.get()` con valor por defecto y referencias huérfanas a `None`.
-- Bajar copias del SFTP de otras cuentas lo bloquea el clasificador de permisos (datos personales): la comprobación la decide y ejecuta CarlosFB. Mismo host IONOS que AutoExam: no sondear ni abrir conexiones de más (puerto 22).
+- Bajar copias del SFTP de otras cuentas lo bloquea el clasificador de permisos (datos personales): la comprobación la decide y ejecuta CarlosFB. El servidor es compartido con otras apps del centro: no sondear ni abrir conexiones de más (puerto 22).
+- **Límite de reintentos** (`sync/limite_conexiones.py`, GUA-GIT-005): toda conexión SFTP nueva (backend, huella, «Probar conexión») pregunta antes a `limite_sftp()` y le apunta el resultado. Tras un fallo, espera de 30 s que se dobla hasta 15 min; tras 5 fallos seguidos en la sesión, la app no lo intenta sola hasta el próximo arranque. El estado vive en `limite_conexiones.json` de la carpeta de datos. Una conexión nueva que no pase por ahí es un fallo.
 - `sync/sync_manager.py` tiene techo de líneas (`tests/audit/test_modulos_grandes.py`): lo nuevo de sync va a módulos aparte. `tests/audit/test_manejo_de_errores.py` tiene un techo de `except Exception` que solo puede bajar.

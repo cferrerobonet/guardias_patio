@@ -20,6 +20,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from sync.backends import ERRORES_DE_TRANSPORTE
+from sync.limite_conexiones import limite_sftp
 from utils import get_logger
 from utils.icons import icon_for_button
 
@@ -379,11 +381,23 @@ class SFTPConfigWidget(QGroupBox):
                 )
                 return
 
+            # Tras un fallo, el servidor bloquea a quien prueba sin parar (GUA-GIT-005)
+            limite = limite_sftp()
+            if not limite.puede_intentar(automatico=False):
+                self._show_error("Espera antes de volver a probar", limite.motivo(automatico=False))
+                return
+
             # Intentar conectar al servidor SFTP
             self.logger.info(f"Probando conexión SFTP a {sftp_host}:{sftp_port}")
 
             transport = paramiko.Transport((sftp_host, int(sftp_port)))
-            transport.connect(username=sftp_user, password=sftp_password)
+            try:
+                transport.connect(username=sftp_user, password=sftp_password)
+            except ERRORES_DE_TRANSPORTE:
+                limite.registrar_fallo()
+                transport.close()
+                raise
+            limite.registrar_exito()
 
             sftp = paramiko.SFTPClient.from_transport(transport)
 

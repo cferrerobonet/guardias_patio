@@ -54,12 +54,20 @@ def clave_del_servidor(host: str, port: int = 22, timeout: int = 15) -> Tuple[st
     import paramiko
 
     from sync.backends import ERRORES_DE_TRANSPORTE
+    from sync.limite_conexiones import limite_sftp
+
+    limite = limite_sftp()
+    if not limite.puede_intentar(automatico=False):
+        raise ConnectionError(limite.motivo(automatico=False))
 
     transport = paramiko.Transport((host, int(port)))
     try:
         transport.start_client(timeout=timeout)
         clave = transport.get_remote_server_key()
         return clave.get_name(), clave
+    except ERRORES_DE_TRANSPORTE:
+        limite.registrar_fallo()
+        raise
     finally:
         try:
             transport.close()

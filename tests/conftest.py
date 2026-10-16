@@ -758,3 +758,20 @@ def sin_env_de_verdad(request, monkeypatch, tmp_path):
     from core import credenciales
 
     monkeypatch.setattr(credenciales, "_ruta_del_env", lambda: tmp_path / ".env")
+
+
+@pytest.fixture(autouse=True)
+def limite_de_conexiones_aislado(tmp_path):
+    """Cada test empieza con el límite de conexiones SFTP a cero y en una carpeta temporal.
+
+    El límite (GUA-GIT-005) se guarda en disco y es común a todo el proceso: sin
+    esto, el fallo simulado de un test haría esperar al siguiente y la cuenta
+    acabaría en `data/` del repositorio.
+    """
+    from sync import limite_conexiones
+
+    limite_conexiones.usar_limite(
+        limite_conexiones.LimiteDeConexiones(ruta=tmp_path / "limite_conexiones.json")
+    )
+    yield
+    limite_conexiones.usar_limite(None)
