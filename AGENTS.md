@@ -6,7 +6,7 @@ Fuente única de instrucciones para cualquier asistente de código. El `CLAUDE.m
 - Español. Respuestas mínimas: sin explicaciones no pedidas, sin código de ejemplo no solicitado.
 - No añadir docstrings, comentarios, type hints ni error handling a código no modificado. No refactorizar lo no pedido.
 - No crear archivos nuevos (ni `.md`) salvo necesidad estricta o petición explícita.
-- Nunca escribir la palabra prohibida por la bóveda (nombre del asistente) en ningún archivo del proyecto.
+- Reglas comunes (puerto 22, barrera de secretos, datos ficticios en tests, palabra prohibida, coautoría): CLAUDE.md de usuario.
 
 ## Stack
 Python 3.11 · PyQt6 6.7.0 · SQLAlchemy 2.0 + Alembic · FastAPI · OR-Tools CP-SAT · Pydantic v2 · Ruff (100 cols, comillas dobles) · mypy estricto sólo en `domain/` · pytest + pytest-qt.
@@ -86,5 +86,4 @@ Auditoría: skill de usuario `auditoria-apps`; hallazgos en la bóveda, `GUARDIA
 Leer por rangos con `grep -n`; no releer; no listar `src/` (usar el mapa); un fichero de tests a la vez; suite completa sólo al final.
 
 ## Secretos y datos personales
-
-- Barrera común contra secretos y datos personales: `scripts/comprobar_secretos.sh` (gancho de git y CI «Secretos» con gitleaks sobre el árbol y todo el historial). Ni contraseñas, ni datos del hosting, ni datos reales de personas, ni documentos del centro en el repositorio; tests con datos ficticios (móviles 600…, `12345678Z`, `@example.com`). Excepciones en `.secretos-ignorar`, siempre con su motivo. Reglas completas: skill de usuario `barrera-secretos`.
+Barrera: `scripts/comprobar_secretos.sh` (gancho de git y CI «Secretos»); excepciones en `.secretos-ignorar`, siempre con su motivo. La sincronización SFTP de la app cuenta en el presupuesto de conexiones: límite de reintentos en `.claude/rules/sincronizacion.md`.
