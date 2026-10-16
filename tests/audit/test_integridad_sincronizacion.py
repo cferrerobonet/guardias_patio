@@ -382,7 +382,7 @@ def test_la_primera_conexion_no_hace_esperar_media_sesion(tmp_path):
     quedaba medio minuto en la pantalla de arranque sin decir nada."""
     intentos = []
 
-    def _apuntar(self, timeout=30):
+    def _apuntar(self, timeout=30, **_kwargs):
         intentos.append(timeout)
         return False
 

@@ -35,6 +35,8 @@ except ImportError:
     _sftp_breaker = None
     _smtp_breaker = None
 
+from sync.limite_conexiones import limite_sftp
+
 logger = logging.getLogger(__name__)
 
 
@@ -182,6 +184,11 @@ except ImportError:  # paramiko es opcional: sin él no hay backend SFTP
         """Sustituto cuando paramiko no está instalado."""
 
 
+def _es_servidor_desconocido(error: BaseException) -> bool:
+    """El rechazo de `RejectPolicy`: el servidor no está en `known_hosts`."""
+    return "not found in known_hosts" in str(error)
+
+
 #: Lo que puede fallar al hablar con el servidor. `SSHException` **no** hereda de
 #: `OSError`, así que los manejadores que sólo listaban `(OSError, ValueError)`
 #: dejaban escapar el error más típico —banner ilegible, clave de host cambiada—
@@ -223,7 +230,10 @@ class SFTPSyncBackend(SyncBackend):
         # con los 30 s de éstas, un equipo sin acceso al servidor se quedaba medio
         # minuto en «Comprobando que la cuenta no esté abierta en otro equipo…»
         # antes de decir nada (SYNC-024).
-        if not self._connect_once(timeout=timeout_inicial):
+        if not self._connect_once(timeout=timeout_inicial, automatico=False):
+            motivo = limite_sftp().motivo(automatico=False)
+            if motivo:
+                raise ConnectionError(motivo)
             # Devolver un backend que no conecta dejaba a la aplicación creyendo
             # que tenía nube: no se ofrecía confirmar la huella del servidor
             # (SEC-008), no se avisaba de que no habría sincronización y el fallo
@@ -248,8 +258,16 @@ class SFTPSyncBackend(SyncBackend):
             return self._connect_with_retry()
         return self._connect_once()
 
-    def _connect_once(self, timeout: int = 30) -> bool:
-        """Lógica de conexión SFTP sin retry."""
+    def _connect_once(self, timeout: int = 30, automatico: bool = True) -> bool:
+        """Un intento de conexión SFTP, si el límite de intentos lo permite.
+
+        Tras un fallo no se reintenta en bucle: `limite_conexiones` impone una
+        espera creciente y un tope de intentos automáticos (GUA-GIT-005).
+        """
+        limite = limite_sftp()
+        if not limite.puede_intentar(automatico=automatico):
+            logger.warning(f"SFTP: no se conecta todavía. {limite.motivo(automatico=automatico)}")
+            return False
         try:
             import paramiko
 
@@ -284,12 +302,18 @@ class SFTPSyncBackend(SyncBackend):
             logger.info(
                 f"SFTP conectado a {self._host}:{self._port} con verificación de host key ✅"
             )
+            limite.registrar_exito()
             return True
         except ImportError:
             logger.error("Paramiko no instalado. Ejecutar: pip install paramiko")
             return False
         except ERRORES_DE_TRANSPORTE as e:
             logger.error(f"Error conectando SFTP: {e}")
+            if not _es_servidor_desconocido(e):
+                # Un servidor que no está entre los conocidos lo rechaza este
+                # equipo, no el servidor, y lo siguiente es preguntar por su
+                # huella: no cuenta como fallo.
+                limite.registrar_fallo()
             if "paramiko" in str(type(e).__module__):
                 logger.error("El servidor no está en known_hosts. Agregarlo con:")
                 logger.error(f"  ssh-keyscan -H {self._host} >> ~/.ssh/known_hosts")

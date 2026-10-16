@@ -33,6 +33,8 @@ from PyQt6.QtWidgets import (
 
 from core.paths import get_base_directory
 from presentation.dialogs._initial_config_tabs import create_sftp_tab, create_smtp_tab
+from sync.backends import ERRORES_DE_TRANSPORTE
+from sync.limite_conexiones import limite_sftp
 from utils import get_logger
 from utils.icons import icon_for_button
 from utils.ui_helpers import aplicar_caja
@@ -343,10 +345,20 @@ class InitialConfigDialog(QDialog):
         if not all([host, port, user, password]):
             return False, "Faltan datos: completa servidor, puerto, usuario y contraseña."
 
+        # Tras un fallo, el servidor bloquea a quien prueba sin parar (GUA-GIT-005)
+        limite = limite_sftp()
+        if not limite.puede_intentar(automatico=False):
+            return False, limite.motivo(automatico=False)
+
         transport = None
         try:
             transport = paramiko.Transport((host, int(port)))
-            transport.connect(username=user, password=password)
+            try:
+                transport.connect(username=user, password=password)
+            except ERRORES_DE_TRANSPORTE:
+                limite.registrar_fallo()
+                raise
+            limite.registrar_exito()
             sftp = paramiko.SFTPClient.from_transport(transport)
 
             # El directorio base tiene que existir o poder crearse
