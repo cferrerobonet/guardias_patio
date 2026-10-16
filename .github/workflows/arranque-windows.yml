@@ -26,8 +26,8 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           architecture: x64
@@ -80,7 +80,7 @@ jobs:
           ./scripts/prueba_arranque_windows.ps1 -Exe "$env:LOCALAPPDATA\Programs\Guardias de Patio\GuardiasDePatio.exe" -Modo ventana -ConServidor -Copia registros/4-con-servidor-otra-vez
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Get-ChildItem -Recurse (Join-Path $env:RUNNER_TEMP "sftp") | Select-Object -ExpandProperty FullName
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: registros-arranque-windows
