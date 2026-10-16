@@ -1,5 +1,5 @@
 """Ratchets de consistencia visual. Umbrales = valor medido en el commit auditado (2026-09-04).
-Sólo pueden bajar, salvo subida deliberada y anotada aquí. Ver auditoria/04 y 05.
+Sólo pueden bajar, salvo subida deliberada y anotada aquí.
 
 Subidas registradas:
 - 2026-10-15, v7.4.1: `setMinimum` 139 → 140. El botón «Mostrar los detalles…» del
