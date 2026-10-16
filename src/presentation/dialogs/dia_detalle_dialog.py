@@ -7,7 +7,7 @@ del día seleccionado en el calendario.
 
 import locale
 from datetime import date
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
@@ -40,6 +40,9 @@ class DiaDetalleDialog(QDialog):
 
     #: Se ha intercambiado una guardia: quien escuche debe repintar el calendario.
     permuta_realizada = pyqtSignal()
+    #: Se ha movido o asignado una guardia a mano: lleva la entrada del historial
+    #: para que el calendario ofrezca deshacerla (GUA-CON-001).
+    calendario_editado = pyqtSignal(int)
     """Ventana modal con detalles completos del día seleccionado."""
 
     def __init__(
@@ -147,11 +150,23 @@ class DiaDetalleDialog(QDialog):
         scroll_area.setWidget(contenido_widget)
         layout.addWidget(scroll_area)
 
-        # Botón cerrar
+        # Botones de abajo: cubrir a mano un hueco (también de un recreo que se
+        # ha quedado sin nadie, que no sale en la lista) y cerrar.
+        pie = QHBoxLayout()
+        if self.session is not None and self.es_dia_lectivo:
+            self.btn_asignar = QPushButton("Asignar guardia…")
+            self.btn_asignar.setProperty("secondary", "true")
+            self.btn_asignar.setAccessibleName("Asignar a mano una guardia de este día")
+            self.btn_asignar.setToolTip(
+                "Cubrir a mano un hueco del reparto, con las mismas reglas que el reparto"
+            )
+            self.btn_asignar.clicked.connect(lambda: self._editar(None))
+            pie.addWidget(self.btn_asignar)
         btn_cerrar = QPushButton("Cerrar")
         btn_cerrar.setMinimumHeight(34)
         btn_cerrar.clicked.connect(self.accept)
-        layout.addWidget(btn_cerrar)
+        pie.addWidget(btn_cerrar, 1)
+        layout.addLayout(pie)
 
         self.setLayout(layout)
 
@@ -295,12 +310,16 @@ class DiaDetalleDialog(QDialog):
         # Mostrar zonas faltantes (solo en días lectivos)
         if self.es_dia_lectivo and zonas_faltantes:
             for zona in zonas_faltantes:
-                zona_faltante_widget = self._crear_widget_zona_faltante(zona)
+                zona_faltante_widget = self._crear_widget_zona_faltante(
+                    zona, turno=turno, recreo=numero_recreo
+                )
                 layout.addWidget(zona_faltante_widget)
 
         return widget
 
-    def _crear_widget_zona_faltante(self, zona: Zona) -> QWidget:
+    def _crear_widget_zona_faltante(
+        self, zona: Zona, turno: str = "", recreo: int = 0
+    ) -> QWidget:
         """Crear widget para una zona sin guardia asignada."""
         widget = QWidget()
         layout = QHBoxLayout(widget)
@@ -329,6 +348,17 @@ class DiaDetalleDialog(QDialog):
         label_alerta.setFont(font_alerta)
         label_alerta.setStyleSheet("color: #8A2424; padding-left: 8px;")
         layout.addWidget(label_alerta, 2)
+
+        if self.session is not None and turno and recreo:
+            from services.edicion_manual_calendario import Hueco
+
+            boton = QPushButton("Asignar…")
+            boton.setProperty("secondary", "true")
+            boton.setAccessibleName(f"Asignar a mano la guardia de {zona.nombre_zona}")
+            boton.setToolTip("Cubrir este hueco con un profesor que pueda hacerlo")
+            hueco = Hueco(self.fecha, turno, int(recreo), zona.id)
+            boton.clicked.connect(lambda _=False, h=hueco: self._editar(None, h))
+            layout.addWidget(boton)
 
         # Estilo del widget
         widget.setStyleSheet("""
@@ -419,6 +449,17 @@ class DiaDetalleDialog(QDialog):
             boton.clicked.connect(lambda _=False, g=guardia: self._permutar(g))
             layout.addWidget(boton)
 
+            mover = QPushButton("Mover…")
+            mover.setProperty("secondary", "true")
+            mover.setAccessibleName(
+                f"Mover la guardia de {guardia.profesor.nombre_completo} a otro hueco o profesor"
+            )
+            mover.setToolTip(
+                "Llevar esta guardia a otro día, recreo, zona o profesor, con las reglas del reparto"
+            )
+            mover.clicked.connect(lambda _=False, g=guardia: self._editar(g))
+            layout.addWidget(mover)
+
         widget.setStyleSheet("""
             QWidget {
                 background-color: white;
@@ -444,6 +485,18 @@ class DiaDetalleDialog(QDialog):
         dialogo = PermutarGuardiaDialog(self.session, guardia, parent=self)
         if dialogo.exec() == QDialog.DialogCode.Accepted:
             self.permuta_realizada.emit()
+            self.accept()
+
+    def _editar(self, guardia: Optional[Guardia], hueco=None) -> None:
+        """Mueve una guardia o cubre un hueco a mano (GUA-CON-001)."""
+        from presentation.dialogs.editar_guardia_dialog import EditarGuardiaDialog
+
+        dialogo = EditarGuardiaDialog(
+            self.session, self.fecha, guardia=guardia, hueco=hueco, parent=self
+        )
+        if dialogo.exec() == QDialog.DialogCode.Accepted and dialogo.entrada is not None:
+            self.permuta_realizada.emit()
+            self.calendario_editado.emit(dialogo.entrada.id)
             self.accept()
 
     def _crear_seccion_ausencias(self) -> QGroupBox:

@@ -708,7 +708,33 @@ class VistaCalendario(BaseForm):
         )
         # Tras una permuta hay que repintar: han cambiado dos días, no sólo éste.
         dialog.permuta_realizada.connect(self._recargar_tras_permuta)
+        dialog.calendario_editado.connect(self._ofrecer_deshacer)
         dialog.exec()
+
+    def _ofrecer_deshacer(self, entrada_id: int) -> None:
+        """Tras mover o asignar a mano, deja deshacerlo en el acto (GUA-CON-001)."""
+        from PyQt6.QtWidgets import QMessageBox
+
+        from services.edicion_manual_calendario import deshacer_edicion_manual
+
+        aviso = QMessageBox(self)
+        aviso.setIcon(QMessageBox.Icon.Information)
+        aviso.setWindowTitle("Calendario cambiado")
+        aviso.setText("Cambio guardado en el calendario.")
+        aviso.setInformativeText("Si no era lo que querías, puedes deshacerlo ahora.")
+        deshacer = aviso.addButton("Deshacer", QMessageBox.ButtonRole.DestructiveRole)
+        aceptar = aviso.addButton(QMessageBox.StandardButton.Ok)
+        aviso.setDefaultButton(aceptar)
+        aviso.exec()
+        if aviso.clickedButton() is not deshacer:
+            return
+        try:
+            deshacer_edicion_manual(self.session, entrada_id)
+        except ValueError as e:
+            self.session.rollback()
+            QMessageBox.warning(self, "No se puede deshacer", str(e))
+            return
+        self.refrescar()
 
     def _seleccionar_mes(self, mes: int):
         """Cambiar a vista mensual del mes seleccionado."""
