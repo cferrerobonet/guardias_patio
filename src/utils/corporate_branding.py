@@ -1,16 +1,15 @@
 """
 Corporate Branding Patch
 
-Aplica de forma discreta el logo corporativo a todos los QMessageBox
-de la aplicación sin necesidad de modificar cada archivo.
+Pone el icono de la app a todos los QMessageBox de la aplicación sin necesidad
+de modificar cada archivo. El logo de EPLA no es el icono: se queda dentro de la
+app (cabeceras, pantalla de inicio, PDF y correos).
 """
 
-from pathlib import Path
-
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QApplication, QMessageBox
 
 from core.logging import get_logger
+from utils.ui_helpers import get_app_icon
 
 logger = get_logger(__name__)
 
@@ -18,20 +17,21 @@ logger = get_logger(__name__)
 _original_methods = {}
 
 
-def _get_corporate_logo_path() -> Path:
-    """Obtiene la ruta al logo corporativo."""
-    # Desde src/utils/ subir dos niveles y entrar en imagenes/
-    return Path(__file__).parent.parent.parent / "imagenes" / "logo.png"
+def aplicar_icono_de_la_app(app: QApplication) -> None:
+    """Icono de todas las ventanas; en Windows es también el de la barra de tareas."""
+    icono = get_app_icon()
+    if not icono.isNull():
+        app.setWindowIcon(icono)
 
 
-def _apply_corporate_icon(msg_box: QMessageBox) -> None:
-    """Aplica el icono corporativo a un QMessageBox."""
+def _apply_app_icon(msg_box: QMessageBox) -> None:
+    """Aplica el icono de la app a un QMessageBox."""
     try:
-        logo_path = _get_corporate_logo_path()
-        if logo_path.exists():
-            msg_box.setWindowIcon(QIcon(str(logo_path)))
+        icono = get_app_icon()
+        if not icono.isNull():
+            msg_box.setWindowIcon(icono)
     except (OSError, RuntimeError) as e:
-        logger.debug(f"No se pudo aplicar icono corporativo: {e}")
+        logger.debug(f"No se pudo aplicar el icono de la app: {e}")
 
 
 # Wrapper para los métodos estáticos
@@ -51,7 +51,7 @@ def _wrap_exec(original_exec):
     """Wrapper para exec() que aplica el icono antes de mostrar."""
 
     def wrapper(self, *args, **kwargs):
-        _apply_corporate_icon(self)
+        _apply_app_icon(self)
         return original_exec(self, *args, **kwargs)
 
     return wrapper

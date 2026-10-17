@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
 )
 
 from sync.sync_manager import UserAuth
-from utils.ui_helpers import get_corporate_icon
+from utils.ui_helpers import get_app_icon
 
 
 class ChangePasswordDialog(QDialog):
@@ -41,7 +41,7 @@ class ChangePasswordDialog(QDialog):
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
         self.setWindowTitle("Cambiar Contraseña")
-        self.setWindowIcon(get_corporate_icon())
+        self.setWindowIcon(get_app_icon())
         self.setModal(True)
         self.setFixedWidth(500)
 

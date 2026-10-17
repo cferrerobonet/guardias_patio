@@ -30,7 +30,7 @@ from PyQt6.QtWidgets import (
 from core.logging import get_logger
 from presentation.widgets.progress_handlers import DecisionDialogHandler, ProgressLogHandler
 from presentation.widgets.progress_worker import WorkerThread
-from utils.ui_helpers import get_corporate_icon
+from utils.ui_helpers import get_app_icon
 
 _logger = get_logger(__name__)
 
@@ -96,7 +96,7 @@ class ProgressDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle(title)
-        self.setWindowIcon(get_corporate_icon())
+        self.setWindowIcon(get_app_icon())
         self.setModal(True)  # Bloquear interacción con ventana padre
         self.setMinimumWidth(600)
         self.setMinimumHeight(400 if show_details else 200)

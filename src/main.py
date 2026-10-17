@@ -52,7 +52,7 @@ from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
 from core.autodiagnostico import debe_avisar_al_usuario, revisar_entorno
-from utils.corporate_branding import apply_corporate_branding
+from utils.corporate_branding import aplicar_icono_de_la_app, apply_corporate_branding
 
 # Las vistas, el login y la sincronización se importan dentro de `main()`, con la
 # pantalla de arranque ya a la vista: importarlas aquí arrastra OR-Tools, pandas y
@@ -161,6 +161,9 @@ def main():
 
     # Crear la aplicación
     app = QApplication(sys.argv)
+    # El icono de la app (no el logo de EPLA) en todas las ventanas y, en Windows,
+    # en la barra de tareas.
+    aplicar_icono_de_la_app(app)
 
     # Claro u oscuro según el sistema, antes de que nadie ponga estilos: cada hoja
     # se traduce al aplicarse y se rehace si el sistema cambia de modo.
@@ -371,13 +374,13 @@ def main():
 
     if sin_sincronizacion is not None:
         logger.error(f"Sin sincronización: {sin_sincronizacion}")
-        from utils.ui_helpers import get_corporate_icon
+        from utils.ui_helpers import get_app_icon
 
         ocultar_arranque()
         aviso = QMessageBox()
         aviso.setIcon(QMessageBox.Icon.Warning)
         aviso.setWindowTitle("Sin sincronización con la nube")
-        aviso.setWindowIcon(get_corporate_icon())
+        aviso.setWindowIcon(get_app_icon())
         aviso.setText("Esta sesión NO se sincronizará con la nube.")
         aviso.setInformativeText(
             f"{sin_sincronizacion}\n\nPodrás entrar con las cuentas de este equipo, pero "
@@ -550,12 +553,12 @@ def main():
         sync_manager = None
         logger.error(f"Sin sincronización: {e}")
         ocultar_arranque()
-        from utils.ui_helpers import get_corporate_icon
+        from utils.ui_helpers import get_app_icon
 
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Icon.Warning)
         msg.setWindowTitle("Sin sincronización con la nube")
-        msg.setWindowIcon(get_corporate_icon())
+        msg.setWindowIcon(get_app_icon())
         msg.setWindowFlags(
             Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint
         )

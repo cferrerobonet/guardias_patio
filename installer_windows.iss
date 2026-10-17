@@ -28,7 +28,7 @@ PrivilegesRequiredOverridesAllowed=dialog
 CloseApplications=yes
 CloseApplicationsFilter=*.exe,*.dll,*.pyd
 RestartApplications=no
-SetupIconFile=imagenes\logo.ico
+SetupIconFile=imagenes\icono.ico
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"

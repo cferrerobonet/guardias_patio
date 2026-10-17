@@ -47,6 +47,7 @@ En funciones standalone, sin anotación `: Session` en el parámetro.
 
 ## Interfaz
 - Listados sin paginación por decisión de CarlosFB (2026-10-17): todas las filas, con buscador, filtros y orden (`widgets/listado_filtrable.py`; cada etiqueta de filtro va pegada a su desplegable).
+- **Icono de la app ≠ logo de EPLA** (7.5.3): ventanas, diálogos, barra de tareas, Dock e instaladores llevan `imagenes/icono.png` (`ui_helpers.get_app_icon`, `corporate_branding.aplicar_icono_de_la_app`); de él salen `icono.ico` (Pillow, 16-256) e `icono.icns` (`scripts/build/create_icon.sh`, que `make icon` rehace en cada compilación). El logo (`logo.png`, `get_corporate_pixmap`) solo va dentro: cabeceras, pantalla de inicio, PDF y correos.
 - **Recreos**: la guardia guarda el id global del recreo (con la lista de Ajustes, 1-2 mañana y 3-4 tarde; sin ella, numeración compacta del reparto). Toda salida (PDF, .ics, web, correo, diálogos) lo traduce con `services/recreos.py` (`resolver`, `recreos_de`): «Recreo 1 de tarde · 16:30». Nunca pintar `guardia.recreo` tal cual. Zonas en los PDF compactos: `pdf_styles.abreviatura_zona`, nunca un código secuencial.
 
 ## Versionado, commits, changelog

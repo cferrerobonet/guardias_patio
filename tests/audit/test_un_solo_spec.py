@@ -57,10 +57,16 @@ def test_el_spec_conserva_el_nombre_que_espera_el_instalador_de_windows():
 
 def test_cada_plataforma_usa_su_icono():
     fuente = _fuente_spec()
-    assert 'ICONO = "imagenes/icono.icns" if ES_MACOS else "imagenes/logo.ico"' in fuente
-    assert (RAIZ / "imagenes" / "logo.ico").exists()
-    # El .icns no se versiona: lo genera `make icon` antes de compilar.
+    assert 'ICONO = "imagenes/icono.icns" if ES_MACOS else "imagenes/icono.ico"' in fuente
+    assert (RAIZ / "imagenes" / "icono.ico").exists()
+    instalador = (RAIZ / "installer_windows.iss").read_text(encoding="utf-8")
+    assert "SetupIconFile=imagenes\\icono.ico" in instalador
+    # `make icon` rehace el .icns antes de compilar, y lo tiene que sacar del icono
+    # de la app, no del logo de EPLA (7.5.3).
     assert "icon" in (RAIZ / "Makefile").read_text(encoding="utf-8")
+    script = (RAIZ / "scripts" / "build" / "create_icon.sh").read_text(encoding="utf-8")
+    assert 'ORIGEN="imagenes/icono.png"' in script
+    assert "imagenes/logo.png" not in script
 
 
 def test_el_flujo_publica_tambien_la_version_portable():

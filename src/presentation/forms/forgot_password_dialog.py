@@ -21,7 +21,7 @@ from PyQt6.QtWidgets import (
 from services.email_service import get_email_service
 from sync.sync_manager import UserAuth
 from utils.icons import icon_for_button
-from utils.ui_helpers import get_corporate_icon
+from utils.ui_helpers import get_app_icon
 
 
 class ForgotPasswordDialog(QDialog):
@@ -35,7 +35,7 @@ class ForgotPasswordDialog(QDialog):
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
         self.setWindowTitle("Recuperar Contraseña")
-        self.setWindowIcon(get_corporate_icon())
+        self.setWindowIcon(get_app_icon())
         self.setModal(True)
         self.setFixedWidth(500)
 

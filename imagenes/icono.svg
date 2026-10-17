@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<rect x="100" y="100" width="824" height="824" rx="190" fill="#2F5F8F"/>
+
+<rect x="215" y="270" width="594" height="480" rx="40" fill="#FFFFFF"/>
+<path d="M255 360 H769" stroke="#D6E3F0" stroke-width="10" stroke-linecap="round"/>
+<line x1="350" y1="225" x2="350" y2="315" stroke="#1C2A20" stroke-width="34" stroke-linecap="round"/>
+<line x1="674" y1="225" x2="674" y2="315" stroke="#1C2A20" stroke-width="34" stroke-linecap="round"/>
+<rect x="287" y="420" width="90" height="90" rx="18" fill="#D6E3F0"/><rect x="407" y="420" width="90" height="90" rx="18" fill="#D6E3F0"/><rect x="527" y="420" width="90" height="90" rx="18" fill="#E3A84B"/><rect x="647" y="420" width="90" height="90" rx="18" fill="#D6E3F0"/><rect x="287" y="540" width="90" height="90" rx="18" fill="#D6E3F0"/><rect x="407" y="540" width="90" height="90" rx="18" fill="#D6E3F0"/><rect x="527" y="540" width="90" height="90" rx="18" fill="#D6E3F0"/><rect x="647" y="540" width="90" height="90" rx="18" fill="#D6E3F0"/>
+<!-- silbato -->
+<g transform="rotate(-14 680 690)">
+  <path id="sil" d="M478 592 H680 A112 112 0 1 1 568 704 V690 H478 a49 49 0 0 1 0 -98 Z" fill="#1C2A20" stroke="#2F5F8F" stroke-width="26" stroke-linejoin="round" paint-order="stroke"/>
+  <rect x="598" y="614" width="54" height="28" rx="14" fill="#D6E3F0"/>
+  <circle cx="680" cy="704" r="46" fill="#E3A84B"/>
+</g>
+
+</svg>
