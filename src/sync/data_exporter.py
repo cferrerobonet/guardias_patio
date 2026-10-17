@@ -23,7 +23,7 @@ from infrastructure.database.models import (
     Profesor,
     Zona,
 )
-from sync import cifrado
+from sync import cifrado, plantilla_sync
 from sync.data_exporter_helpers import (
     desencriptar_password,
     encriptar_password,
@@ -143,6 +143,11 @@ class DataExporter:
                 dto["motivo"] = cifrado.cifrar(dto["motivo"], clave)
                 data["ausencias"].append(dto)
             logger.info(f"✓ {len(ausencias)} ausencias exportadas")
+
+            # La plantilla de los avisos viaja con los datos (GUA-CON-004)
+            plantilla = plantilla_sync.para_exportar()
+            if plantilla is not None:
+                data[plantilla_sync.CLAVE] = plantilla
 
             # Guardar JSON
             output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -500,6 +505,9 @@ class DataExporter:
                 ausencias_importadas += 1
             session.commit()
             logger.info(f"✓ {ausencias_importadas} ausencias importadas/actualizadas")
+
+            # Plantilla de los avisos: gana la edición más reciente (GUA-CON-004)
+            plantilla_sync.aplicar_descargada(data.get(plantilla_sync.CLAVE))
 
             logger.info("✅ Importación completada exitosamente")
             return True

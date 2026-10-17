@@ -2,8 +2,9 @@
 
 Asunto y cuerpo los escribe Jefatura con unos pocos marcadores, y se elige si cada
 aviso lleva adjuntos el calendario individual en PDF y el archivo iCal para el
-calendario del móvil. Vive junto a la configuración de correo de este equipo, en
-`plantilla_avisos.json` de la carpeta de datos.
+calendario del móvil. Se guarda en `plantilla_avisos.json` de la carpeta de datos,
+con la fecha de su última edición, y viaja con la sincronización: gana la edición
+más reciente (`sync/plantilla_sync.py`, GUA-CON-004).
 
 Marcadores: `{nombre}`, `{periodo}`, `{num_guardias}` y `{tabla}` (dónde va la
 lista de guardias; si no está, va al final).
@@ -15,6 +16,7 @@ import html as _html
 import json
 import re
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
@@ -94,13 +96,15 @@ def cargar() -> Plantilla:
     return serie if plantilla.errores() else plantilla
 
 
-def guardar(plantilla: Plantilla) -> None:
+def guardar(plantilla: Plantilla, editada: str | None = None) -> None:
+    """Guarda la plantilla con la fecha de edición (ahora, si no se da otra)."""
     errores = plantilla.errores()
     if errores:
         raise ValueError("\n".join(errores))
     ruta = _ruta()
     ruta.parent.mkdir(parents=True, exist_ok=True)
-    ruta.write_text(json.dumps(asdict(plantilla), ensure_ascii=False, indent=1), encoding="utf-8")
+    datos = {**asdict(plantilla), "editada": editada or datetime.now(timezone.utc).isoformat()}
+    ruta.write_text(json.dumps(datos, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 # --- Rellenar ---------------------------------------------------------------
