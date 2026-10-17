@@ -5,6 +5,25 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.5.2] - 2026-10-17
+
+### 🎯 Resumen
+Las guardias de tarde salen como recreo 1 o 2 de tarde y con su hora en los PDF, el calendario del móvil, la web y los correos (el calendario del móvil las dejaba fuera); las zonas aparecen con su nombre real en el PDF personal; el registro de cambios en guardias se consulta desde Ajustes; y la plantilla de los avisos viaja con la sincronización.
+
+### ✨ Added
+- **Registro de cambios en guardias desde Ajustes** (GUA-UXI-009): botón «Registro de cambios» que abre la ventana del historial, solo de lectura, con buscador, filtros de acción y usuario, periodo Desde/Hasta, cabeceras que ordenan por fecha y número reales y «Limpiar filtros», sin paginación (`forms/auditoria_guardias_form.py`, `RegistroDeCambiosDialog`).
+- **La plantilla de los avisos viaja con la sincronización** (GUA-CON-004, `sync/plantilla_sync.py`): se guarda con la fecha de su última edición y va en el volcado de la nube; al descargar gana la edición más reciente. Si la nube no trae plantilla, el equipo conserva la suya y la sube; la local que se sustituye queda en `plantilla_avisos.anterior.json`.
+
+### Fixed
+- **Recreos de tarde sin hora o desaparecidos** (`services/recreos.py`): la guardia guarda el id global del recreo (3 y 4 de tarde con la lista de Ajustes) y las salidas lo leían como 1 o 2 de cada turno. El .ics dejaba fuera todas las guardias de tarde; el PDF personal decía «Recreo 3» o «T3» sin hora; el PDF del mes, «Tarde · R3»; la web, el correo, el PDF general y los diálogos, «Recreo 3». Ahora todas dicen «Recreo 1 de tarde · 16:30» (o «R1», «T1» en lo compacto), igual que la leyenda. Una sola función resuelve turno, número y hora desde `recreos_config` o, sin ella, con la numeración del reparto; también entiende datos antiguos numerados dentro del turno. No cambia ningún dato guardado.
+- **Zonas duplicadas en el PDF personal**: numeraba las zonas Z1, Z2… en cada PDF, y una zona llamada «Z2» salía como «Z1 · Z2» en la tabla y como Z1 en el calendario. Ahora usa el nombre si es corto o una abreviatura estable («Patio Norte» → «PN»), la tabla muestra «nombre — descripción» y la leyenda cada zona una vez.
+
+### 🧪 Tests
+- `tests/test_recreos.py` (la función con y sin `recreos_config`, datos antiguos, abreviaturas, .ics y correo de tarde), `tests/test_pdf_guardias_impreso.py` (PDF personal y del mes con la tarde numerada y con hora, zona «Z2» que no sale como «Z1 · Z2»), `tests/test_sync_plantilla_avisos.py` y `tests/test_auditoria_guardias_form.py` (registro desde Ajustes).
+
+### 🧹 Housekeeping
+- Reglas en `AGENTS.md` (recreos y zonas en las salidas) y en `.claude/rules/sincronizacion.md` (plantilla de avisos).
+
 ## [7.5.1] - 2026-10-17
 
 ### 🎯 Resumen
