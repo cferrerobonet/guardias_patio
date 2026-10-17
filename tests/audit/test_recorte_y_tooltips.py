@@ -173,12 +173,8 @@ def test_las_etiquetas_de_recreo_siguen_a_la_izquierda(qapp):
     rejilla.show()
     qapp.processEvents()
 
-    from PyQt6.QtWidgets import QLabel
-
     primera_casilla = rejilla._celdas[(0, 1)]
-    etiquetas = [
-        w for w in rejilla.findChildren(QLabel) if w.text() in ("R1", "R2", "R3", "R4")
-    ]
-    assert etiquetas, "no se encuentran las etiquetas R1…R4"
+    etiquetas = list(rejilla._etiquetas.values())
+    assert [e.text() for e in etiquetas] == ["R1 mañana", "R2 mañana", "R1 tarde", "R2 tarde"]
     assert all(e.x() < primera_casilla.x() for e in etiquetas)
     rejilla.close()

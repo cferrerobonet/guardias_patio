@@ -386,10 +386,12 @@ class ProfesorForm(BaseForm):
         """Solo los recreos de los turnos con guardias en Ajustes (2026-10-06)."""
         try:
             from services.calculador_guardias import turnos_con_recreos_guardados
+            from services.recreos import configuracion_de
 
             self.restricciones_widget.set_turnos_con_recreos(
                 *turnos_con_recreos_guardados(self.session)
             )
+            self.restricciones_widget.set_configuracion_recreos(configuracion_de(self.session))
         except SQLAlchemyError as e:
             logger.warning(f"No se pudieron leer los turnos con recreos: {e}")
 
