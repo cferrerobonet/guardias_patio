@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.5.1] - 2026-10-17
+
+### 🎯 Resumen
+Las listas muestran todos los registros, sin páginas, y cada filtro queda junto a su nombre.
+
+### Changed
+- **Listados sin paginación** (`presentation/widgets/listado_filtrable.py`), por decisión de CarlosFB: profesores, zonas, sustituciones e historial de cambios muestran todas las filas que pasan la búsqueda y los filtros. Se quitan el selector «Por página» y el pie de páginas; quedan el buscador, los filtros, «Limpiar filtros», el orden por cabecera, el recuento («12 profesores», «5 de 12 profesores») y la fila nueva resaltada, que la tabla lleva a la vista. Se siguen recordando la búsqueda, los filtros y el orden; las filas por página guardadas antes se ignoran.
+
+### Fixed
+- **Etiquetas de filtro lejos de su desplegable**: la fila repartía el ancho sobrante entre todos los controles y «Turno:» o «Tutor:» quedaban a más de 200 px del suyo. Cada etiqueta va ahora pegada a su desplegable y el sobrante lo toma el buscador o un hueco al final.
+
+### 🧪 Tests
+- `tests/test_listado_filtrable.py`: todas las filas visibles con y sin filtro, fila nueva resaltada y a la vista, preferencias antiguas sin efecto y maquetación de las etiquetas en Profesores, Zonas y una barra con dos filtros.
+
+### 🧹 Housekeeping
+- Regla en `AGENTS.md` (listados sin paginación) y estilos de los botones de página retirados de `theme/light.qss`.
+
 ## [7.5.0] - 2026-10-16
 
 ### 🎯 Resumen
