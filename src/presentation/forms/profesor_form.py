@@ -182,7 +182,7 @@ class ProfesorForm(BaseForm):
         self.busqueda_input.setAccessibleName("Buscar profesores")
         busqueda_layout.addWidget(self.busqueda_input)
 
-        # La búsqueda, los filtros y la paginación los lleva `ListadoFiltrable`
+        # La búsqueda, los filtros y el orden los lleva `ListadoFiltrable`
         # (GUA-UXI-005): este botón es su «Limpiar filtros».
         self.limpiar_busqueda_btn = QPushButton("Limpiar filtros")
         self.limpiar_busqueda_btn.setProperty("secondary", "true")
@@ -413,7 +413,7 @@ class ProfesorForm(BaseForm):
     def seleccionar_todos(self):
         """Seleccionar todos los profesores de la tabla."""
         # Solo lo que se ve: `selectAll` también coge las filas filtradas u
-        # ocultas por la paginación, y Supr las borraría sin verlas.
+        # ocultas por el filtro, y Supr las borraría sin verlas.
         if self.tabla_profesores.rowCount() > 0:
             seleccionar_visibles(self.tabla_profesores)
 

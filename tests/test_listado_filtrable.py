@@ -1,16 +1,16 @@
-"""GUA-UXI-005: búsqueda, filtros que se recuerdan, orden y paginación en las tablas.
+"""GUA-UXI-005: búsqueda, filtros que se recuerdan y orden en las tablas.
 
-El patrón es el de la web de pedidos (`list-view-utils.js`) y el de Partes de salida:
-buscador, filtros, «Limpiar filtros», cabeceras ordenables, 10 filas por página con
-selector 5/10/15/20/50, pie «Mostrando 1–10 de N» con los extremos desactivados (no
-ocultos) y la fila nueva resaltada.
+Buscador, filtros, «Limpiar filtros», cabeceras ordenables, recuento «N de M» y la
+fila nueva resaltada y a la vista. Sin paginación por decisión de CarlosFB
+(2026-10-17): se ven todas las filas que pasan los filtros. Las etiquetas de los
+filtros van pegadas a su desplegable.
 """
 
 from datetime import date
 
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QTableWidget, QTableWidgetItem
+from PyQt6.QtWidgets import QApplication, QComboBox, QPushButton, QTableWidget, QTableWidgetItem
 
 from presentation.widgets.listado_filtrable import (
     Filtro,
@@ -18,7 +18,6 @@ from presentation.widgets.listado_filtrable import (
     filas_visibles_seleccionadas,
     seleccionar_visibles,
     texto_recuento,
-    ventana_paginas,
 )
 from utils.ui_helpers import pintar_tabla_vacia
 
@@ -63,64 +62,51 @@ def _listado(tabla, clave="prueba", **kw) -> ListadoFiltrable:
 # --- Cálculos ---------------------------------------------------------------
 
 
-def test_cinco_numeros_desde_la_actual_menos_dos():
-    assert ventana_paginas(1, 10) == [1, 2, 3, 4, 5]
-    assert ventana_paginas(6, 10) == [4, 5, 6, 7, 8]
-    assert ventana_paginas(10, 10) == [8, 9, 10]
-    assert ventana_paginas(1, 1) == [1]
+def test_recuento_de_lo_que_se_ve():
+    assert texto_recuento(23, 23, "profesores") == "23 profesores"
+    assert texto_recuento(5, 23, "profesores") == "5 de 23 profesores"
+    assert texto_recuento(0, 23, "profesores") == "Sin resultados"
 
 
-def test_recuento_como_en_la_web_de_pedidos():
-    assert texto_recuento(1, 10, 23, "profesores") == "Mostrando 1–10 de 23 profesores"
-    assert texto_recuento(3, 10, 23, "profesores") == "Mostrando 21–23 de 23 profesores"
-    assert texto_recuento(1, 10, 0, "profesores") == "Sin resultados"
+# --- Sin paginación ---------------------------------------------------------
 
 
-# --- Paginación -------------------------------------------------------------
-
-
-def test_diez_por_pagina_de_serie_y_pie_con_recuento(qapp):
-    tabla = _tabla(23)
+def test_sin_paginacion_se_ven_todas_las_filas(qapp):
+    tabla = _tabla(60)
     listado = _listado(tabla)
 
-    assert listado.por_pagina.currentData() == 10
-    assert [listado.por_pagina.itemData(i) for i in range(listado.por_pagina.count())] == [
-        5, 10, 15, 20, 50,
-    ]
+    assert len(_visibles(tabla)) == 60
+    assert listado.total == 60
+    assert listado.recuento.text() == "60 profesores"
+    assert not hasattr(listado, "por_pagina")
+    assert not hasattr(listado, "ir")
+    assert listado.pie.findChildren(QPushButton) == []
+    assert listado.barra.findChildren(QComboBox) == [listado.filtros[0].combo]
+
+
+def test_con_filtro_se_ven_todas_las_que_coinciden(qapp):
+    tabla = _tabla(60)
+    listado = _listado(tabla)
+
+    listado.filtros[0].combo.setCurrentText("Tarde")
+
+    assert len(_visibles(tabla)) == 30
+    assert listado.recuento.text() == "30 de 60 profesores"
+    listado.buscador.setText("5")
     assert len(_visibles(tabla)) == 10
-    assert listado.recuento.text() == "Mostrando 1–10 de 23 profesores"
-    assert listado.paginas == 3
+    assert listado.recuento.text() == "10 de 60 profesores"
 
 
-def test_los_extremos_se_desactivan_pero_no_desaparecen(qapp):
-    tabla = _tabla(23)
-    listado = _listado(tabla)
-    listado.pie.show()
+def test_las_filas_por_pagina_de_antes_no_estorban(qapp):
+    from presentation.widgets.listado_filtrable import guardar_preferencias, leer_preferencias
 
-    b = listado.botones
-    assert not b["primera"].isEnabled() and not b["anterior"].isEnabled()
-    assert b["siguiente"].isEnabled() and b["ultima"].isEnabled()
-    assert all(not boton.isHidden() for boton in b.values())
+    guardar_preferencias("antigua", {"por_pagina": 5, "filtros": {"turno": "Tarde"}})
+    tabla = _tabla(30)
+    listado = _listado(tabla, clave="antigua")
 
-    b["ultima"].click()
-    assert listado.pagina == 3
-    assert _visibles(tabla) == ["Profesor 20", "Profesor 21", "Profesor 22"]
-    assert not b["siguiente"].isEnabled() and not b["ultima"].isEnabled()
-    assert all(not boton.isHidden() for boton in b.values())
-    assert [n.text() for n in listado.numeros if not n.isHidden()] == ["1", "2", "3"]
-    assert [n.isChecked() for n in listado.numeros if not n.isHidden()] == [False, False, True]
-
-
-def test_cambiar_las_filas_por_pagina_vuelve_a_la_primera(qapp):
-    tabla = _tabla(23)
-    listado = _listado(tabla)
-    listado.ir(3)
-
-    listado.por_pagina.setCurrentIndex(listado.por_pagina.findData(5))
-
-    assert listado.pagina == 1
-    assert len(_visibles(tabla)) == 5
-    assert listado.paginas == 5
+    assert len(_visibles(tabla)) == 15
+    listado.buscador.setText("Profesor")
+    assert "por_pagina" not in leer_preferencias("antigua")
 
 
 # --- Búsqueda y filtros -----------------------------------------------------
@@ -134,7 +120,7 @@ def test_la_busqueda_no_distingue_tildes_ni_mayusculas(qapp):
     listado.buscador.setText("garcia ANA")
 
     assert _visibles(tabla) == ["García López, Ana"]
-    assert listado.recuento.text() == "Mostrando 1–1 de 1 profesores"
+    assert listado.recuento.text() == "1 de 3 profesores"
 
 
 def test_el_filtro_ofrece_los_valores_de_la_tabla_y_filtra(qapp):
@@ -173,7 +159,6 @@ def test_sin_resultados_lo_dice(qapp):
 
     assert _visibles(tabla) == []
     assert listado.recuento.text() == "Sin resultados"
-    assert listado.paginas == 1
 
 
 def test_la_fila_que_explica_la_tabla_vacia_no_se_esconde(qapp):
@@ -189,18 +174,16 @@ def test_la_fila_que_explica_la_tabla_vacia_no_se_esconde(qapp):
 # --- Lo que se recuerda -----------------------------------------------------
 
 
-def test_busqueda_filtros_y_filas_por_pagina_se_recuerdan(qapp):
+def test_busqueda_y_filtros_se_recuerdan(qapp):
     primero = _listado(_tabla(30), clave="recordar")
     primero.buscador.setText("Profesor 2")
     primero.filtros[0].combo.setCurrentText("Tarde")
-    primero.por_pagina.setCurrentIndex(primero.por_pagina.findData(5))
 
     tabla = _tabla(30)
     segundo = _listado(tabla, clave="recordar")
 
     assert segundo.buscador.text() == "Profesor 2"
     assert segundo.filtros[0].combo.currentText() == "Tarde"
-    assert segundo.por_pagina.currentData() == 5
     assert _visibles(tabla) == ["Profesor 21", "Profesor 23", "Profesor 25", "Profesor 27", "Profesor 29"]
 
 
@@ -244,30 +227,49 @@ def test_las_preferencias_no_van_a_la_carpeta_de_datos_del_repositorio(qapp, tmp
 # --- Fila nueva ---------------------------------------------------------------
 
 
-def test_la_fila_nueva_sale_resaltada_y_en_su_pagina(qapp):
-    tabla = _tabla(25)
+def _en_la_vista(tabla: QTableWidget, fila: int) -> bool:
+    rect = tabla.visualItemRect(tabla.item(fila, 0))
+    return tabla.viewport().rect().intersects(rect)
+
+
+def _tabla_baja(filas: int) -> QTableWidget:
+    tabla = _tabla(filas)
+    tabla.resize(400, 200)
+    tabla.show()
+    QApplication.processEvents()
+    return tabla
+
+
+def test_la_fila_nueva_sale_resaltada_y_a_la_vista(qapp):
+    tabla = _tabla_baja(60)
     listado = _listado(tabla)
+    fila = next(r for r in range(tabla.rowCount()) if tabla.item(r, 0).text() == "Profesor 55")
+    assert not _en_la_vista(tabla, fila)
 
-    listado.resaltar(123)  # «Profesor 23», en la página 3
+    listado.resaltar(155)
+    QApplication.processEvents()
 
-    assert listado.pagina == 3
-    fila = next(r for r in range(tabla.rowCount()) if tabla.item(r, 0).text() == "Profesor 23")
+    assert len(_visibles(tabla)) == 60
     assert not tabla.isRowHidden(fila)
+    assert _en_la_vista(tabla, fila)
     assert tabla.item(fila, 0).font().bold()
     assert tabla.item(fila, 0).background().style() != Qt.BrushStyle.NoBrush
-    otra = next(r for r in range(tabla.rowCount()) if tabla.item(r, 0).text() == "Profesor 22")
+    otra = next(r for r in range(tabla.rowCount()) if tabla.item(r, 0).text() == "Profesor 54")
     assert not tabla.item(otra, 0).font().bold()
+    tabla.close()
 
 
-def test_editar_lleva_a_su_pagina_sin_resaltar(qapp):
-    tabla = _tabla(25)
+def test_editar_la_lleva_a_la_vista_sin_resaltar(qapp):
+    tabla = _tabla_baja(60)
     listado = _listado(tabla)
 
-    listado.mostrar(112)
+    listado.mostrar(148)
+    QApplication.processEvents()
 
-    assert listado.pagina == 2
-    fila = next(r for r in range(tabla.rowCount()) if tabla.item(r, 0).text() == "Profesor 12")
+    fila = next(r for r in range(tabla.rowCount()) if tabla.item(r, 0).text() == "Profesor 48")
+    assert _en_la_vista(tabla, fila)
     assert not tabla.item(fila, 0).font().bold()
+    tabla.close()
 
 
 # --- Seleccionar todo -------------------------------------------------------
@@ -277,20 +279,21 @@ def test_seleccionar_todo_no_coge_lo_que_no_se_ve(qapp):
     """`selectAll` de Qt selecciona también las filas ocultas: con un filtro
     puesto, Ctrl+A y Supr borraban registros que no estaban a la vista."""
     tabla = _tabla(23)
-    _listado(tabla)
+    listado = _listado(tabla)
+    listado.filtros[0].combo.setCurrentText("Tarde")
 
     tabla.selectAll()
     assert len({i.row() for i in tabla.selectionModel().selectedRows()}) == 23
-    assert len(filas_visibles_seleccionadas(tabla)) == 10
+    assert len(filas_visibles_seleccionadas(tabla)) == 11
 
     seleccionar_visibles(tabla)
-    assert len({i.row() for i in tabla.selectionModel().selectedRows()}) == 10
+    assert len({i.row() for i in tabla.selectionModel().selectedRows()}) == 11
 
 
 # --- En las vistas ------------------------------------------------------------
 
 
-def test_profesores_pagina_filtra_por_turno_y_resalta_el_nuevo(qapp, session, profesor_factory):
+def test_profesores_sin_paginas_filtra_por_turno_y_resalta_el_nuevo(qapp, session, profesor_factory):
     from presentation.forms.profesor_form import ProfesorForm
 
     for i in range(12):
@@ -303,8 +306,8 @@ def test_profesores_pagina_filtra_por_turno_y_resalta_el_nuevo(qapp, session, pr
     QApplication.processEvents()
     tabla = form.tabla_profesores
 
-    assert len(_visibles(tabla)) == 10
-    assert form.listado.recuento.text() == "Mostrando 1–10 de 12 profesores"
+    assert len(_visibles(tabla)) == 12
+    assert form.listado.recuento.text() == "12 profesores"
     turno = next(f for f in form.listado.filtros if f.etiqueta == "Turno").combo
     turno.setCurrentText("Tarde")
     assert len(_visibles(tabla)) == 6
@@ -350,3 +353,72 @@ def test_estado_de_la_zona_segun_sus_fechas(qapp):
     assert [estado_de_la_zona(tabla, f, hoy) for f in range(4)] == [
         "Todo el curso", "Vigente", "Programada", "Terminada",
     ]
+
+
+# --- Maquetación: cada etiqueta pegada a su desplegable ---------------------
+
+
+def _distancias(listado) -> dict[str, int]:
+    """Hueco horizontal entre el final del texto de cada etiqueta y su desplegable.
+
+    Antes la fila repartía el ancho sobrante y la etiqueta de Profesores medía
+    257 px para un texto de 37: «Turno:» quedaba a más de 200 px de su control.
+    """
+    huecos = {}
+    for etiqueta, filtro in zip(listado.etiquetas, listado.filtros):
+        combo = filtro.combo
+        assert etiqueta.buddy() is combo
+        izquierda = etiqueta.mapTo(listado.barra, etiqueta.rect().topLeft()).x()
+        fin = izquierda + etiqueta.sizeHint().width()
+        inicio = combo.mapTo(listado.barra, combo.rect().topLeft()).x()
+        huecos[filtro.etiqueta] = inicio - fin
+        assert etiqueta.width() <= etiqueta.sizeHint().width() + 2, filtro.etiqueta
+    return huecos
+
+
+def _mostrar_ancha(form) -> None:
+    form.resize(1600, 900)
+    form.show()
+    QApplication.processEvents()
+
+
+def test_profesores_cada_etiqueta_pegada_a_su_desplegable(qapp, session, profesor_factory):
+    from presentation.forms.profesor_form import ProfesorForm
+
+    profesor_factory("Apellido, Nombre", turno="tarde", email_corporativo="profe@example.com")
+    form = ProfesorForm(session)
+    _mostrar_ancha(form)
+
+    huecos = _distancias(form.listado)
+    assert set(huecos) == {"Turno", "Tutor"}
+    assert all(0 <= h <= 12 for h in huecos.values()), huecos
+    form.close()
+
+
+def test_zonas_cada_etiqueta_pegada_a_su_desplegable(qapp, session):
+    from presentation.forms.zona_form import ZonaForm
+
+    form = ZonaForm(session)
+    _mostrar_ancha(form)
+
+    huecos = _distancias(form.listado)
+    assert set(huecos) == {"Estado"}
+    assert all(0 <= h <= 12 for h in huecos.values()), huecos
+    buscador = form.listado.buscador
+    assert buscador.width() > form.listado.filtros[0].combo.width()
+    form.close()
+
+
+def test_sustituciones_cada_etiqueta_pegada_a_su_desplegable(qapp):
+    from PyQt6.QtWidgets import QVBoxLayout, QWidget
+
+    tabla = _tabla(4)
+    listado = _listado(tabla, filtros=(Filtro.columna("Turno", 1), Filtro.columna("Horas", 2)))
+    ventana = QWidget()
+    capa = QVBoxLayout(ventana)
+    capa.addWidget(listado.barra)
+    capa.addWidget(tabla)
+    _mostrar_ancha(ventana)
+
+    assert all(0 <= h <= 12 for h in _distancias(listado).values())
+    ventana.close()

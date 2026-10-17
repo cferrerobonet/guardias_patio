@@ -45,6 +45,9 @@ self.session = session_or_factory.session if isinstance(session_or_factory, Repo
 ```
 En funciones standalone, sin anotación `: Session` en el parámetro.
 
+## Interfaz
+- Listados sin paginación por decisión de CarlosFB (2026-10-17): todas las filas, con buscador, filtros y orden (`widgets/listado_filtrable.py`; cada etiqueta de filtro va pegada a su desplegable).
+
 ## Versionado, commits, changelog
 - SemVer en `app_version` **y en `pyproject.toml`** (un test vigila que coincidan): fix → patch · feat → minor · breaking → major.
 - Conventional Commits en español, minúscula tras los dos puntos: `tipo(scope): descripción`. Tipos: feat, fix, refactor, style, perf, test, chore, docs. Scopes: ui, api, domain, sync, db, algo, config, build.
