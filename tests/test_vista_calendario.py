@@ -479,6 +479,26 @@ class TestVistaCalendarioAusencias:
             assert vista.calendario_layout.count() > 0
 
 
+def test_celda_ordena_zonas_con_cualquier_nombre(qapp):
+    """Las zonas se ordenaban con `int(nombre_zona[1])`: «Zaguán» lanzaba ValueError."""
+    from types import SimpleNamespace
+
+    def guardia(zona_id, nombre):
+        return SimpleNamespace(
+            turno="mañana", recreo=1, zona_id=zona_id,
+            zona=SimpleNamespace(id=zona_id, nombre_zona=nombre),
+            profesor=SimpleNamespace(nombre_completo=f"PROFESOR {zona_id}"),
+        )
+
+    guardias = [guardia(3, "Zaguán"), guardia(1, "Patio"), guardia(2, "Z2")]
+    celda = CeldaDia(fecha=date(2026, 10, 20), guardias=guardias, ausencias=[],
+                     sustituciones=[], es_dia_lectivo=True)
+
+    zonas = [lbl.text() for lbl in celda.findChildren(QLabel)
+             if lbl.text() in {"Zaguán", "Patio", "Z2"}]
+    assert zonas == ["Patio", "Z2", "Zaguán"]
+
+
 # ========================================
 # TESTS DE ESTILOS (usando CeldaDia)
 # ========================================

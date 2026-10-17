@@ -29,6 +29,7 @@ from PyQt6.QtWidgets import (
 from core.logging import get_logger
 from presentation.theme import legacy_styles as styles
 from presentation.themes.tema_aplicacion import TEXT_SECONDARY
+from services import recreos as recreos_srv
 
 logger = get_logger(__name__)
 
@@ -87,7 +88,7 @@ class SemanaRestriccionesWidget(QWidget):
         # Rejilla. Las casillas se estiran para llenar el ancho disponible: con
         # tamaño fijo ocupaban un tercio del panel y dejaban un hueco grande a la
         # derecha (petición de CarlosFB, 2026-09-06). La columna de las etiquetas
-        # R1…R4 se queda estrecha y a la izquierda.
+        # de los recreos se queda estrecha y a la izquierda.
         grid = QGridLayout()
         grid.setSpacing(4)
         grid.setColumnStretch(0, 0)
@@ -104,10 +105,9 @@ class SemanaRestriccionesWidget(QWidget):
 
         # Filas de recreos
         for row, recreo in enumerate(self._recreos):
-            lbl = QLabel(f"R{recreo}")
+            lbl = QLabel()
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             lbl.setStyleSheet("font-size: 12px; color: #46524A;")
-            lbl.setToolTip(f"Recreo {recreo} ({'mañana' if recreo <= 2 else 'tarde'})")
             self._etiquetas[recreo] = lbl
             grid.addWidget(lbl, row + 1, 0)
             for col in range(5):
@@ -118,13 +118,6 @@ class SemanaRestriccionesWidget(QWidget):
                 btn.setSizePolicy(
                     QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
                 )
-                # Un botón cuyo único texto es la marca de verificación no dice
-                # nada por sí solo: sin nombre, el lector de pantalla anuncia
-                # veinte casillas idénticas.
-                btn.setAccessibleName(f"Recreo {recreo} del {_DIAS_COMPLETOS[col]}")
-                btn.setToolTip(
-                    f"Puede hacer guardia en el recreo {recreo} del {_DIAS_COMPLETOS[col]}"
-                )
                 self._actualizar_estado_accesible(btn, True)
                 self._aplicar_color(btn, True)
                 btn.toggled.connect(lambda checked, b=btn: self._on_toggle(b, checked))
@@ -134,6 +127,37 @@ class SemanaRestriccionesWidget(QWidget):
         grid_widget = QWidget()
         grid_widget.setLayout(grid)
         layout.addWidget(grid_widget)
+        self.set_configuracion_recreos(None)
+
+    @staticmethod
+    def _recreo_de_fila(config, recreo: int) -> "recreos_srv.Recreo":
+        """La fila guarda el id de Ajustes (1-2 mañana, 3-4 tarde); se enseña su
+        número dentro del turno y su hora, sacados de `recreos_de`."""
+        turno, ordinal = recreos_srv.IDS_DE_AJUSTES.get(
+            recreo, (recreos_srv.MANANA if recreo <= 2 else recreos_srv.TARDE, recreo)
+        )
+        for r in recreos_srv.recreos_de(config):
+            if (r.turno, r.ordinal) == (turno, ordinal):
+                return recreos_srv.Recreo(recreo, turno, ordinal, r.hora)
+        return recreos_srv.Recreo(recreo, turno, ordinal)
+
+    def set_configuracion_recreos(self, config) -> None:
+        """Rotula cada fila «R1 tarde» con la hora en la ayuda; el valor no cambia."""
+        for recreo, lbl in self._etiquetas.items():
+            datos = self._recreo_de_fila(config, recreo)
+            lbl.setText(f"{datos.corta} {datos.turno}")
+            lbl.setToolTip(datos.etiqueta_con_hora)
+            for col in range(5):
+                btn = self._celdas[(col, recreo)]
+                # Un botón cuyo único texto es la marca de verificación no dice
+                # nada por sí solo: sin nombre, el lector de pantalla anuncia
+                # veinte casillas idénticas.
+                btn.setAccessibleName(f"{datos.etiqueta} del {_DIAS_COMPLETOS[col]}")
+                hora = f" ({datos.hora_texto})" if datos.hora else ""
+                btn.setToolTip(
+                    f"Puede hacer guardia el {_DIAS_COMPLETOS[col]} "
+                    f"en el {datos.etiqueta.lower()}{hora}"
+                )
 
     @staticmethod
     def _actualizar_estado_accesible(btn: QPushButton, activo: bool) -> None:
@@ -222,7 +246,7 @@ class RestriccionesWidget(QGroupBox):
 
     # Constantes
     DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
-    RECREOS = [1, 2, 3, 4]  # R1, R2, R3, R4
+    RECREOS = [1, 2, 3, 4]  # ids de Ajustes: R1 y R2 de mañana, R1 y R2 de tarde
 
     def __init__(self, parent=None):
         """Inicializar widget de restricciones."""
@@ -466,6 +490,10 @@ class RestriccionesWidget(QGroupBox):
     def set_turnos_con_recreos(self, manana: bool, tarde: bool) -> None:
         """La rejilla enseña solo los recreos de los turnos con guardias."""
         self.semana_widget.set_turnos_con_recreos(manana, tarde)
+
+    def set_configuracion_recreos(self, config) -> None:
+        """Etiquetas y horas de los recreos de la rejilla, según la configuración."""
+        self.semana_widget.set_configuracion_recreos(config)
 
     def preseleccionar_segun_turno(self, turno: str):
         """Pre-seleccionar recreos según el turno del profesor."""

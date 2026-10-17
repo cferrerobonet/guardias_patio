@@ -165,3 +165,23 @@ def test_el_correo_dice_el_recreo_de_tarde_con_su_hora(session, centro):
     assert "Recreo 1 de tarde · 16:30" in envio.texto
     assert "Recreo 2 de tarde · 18:30" in envio.html
     assert "Recreo 3" not in envio.texto + envio.html
+
+
+def test_la_rejilla_del_profesor_rotula_la_tarde_con_su_numero_y_su_hora(qapp):
+    """La rejilla de restricciones ponía «R3» y «R4» para la tarde; el valor que
+    guarda sigue siendo el id global."""
+    from presentation.forms.profesor_widgets.restricciones_widget import RestriccionesWidget
+
+    widget = RestriccionesWidget()
+    rejilla = widget.semana_widget
+    etiquetas = {r: lbl.text() for r, lbl in rejilla._etiquetas.items()}
+    assert etiquetas == {1: "R1 mañana", 2: "R2 mañana", 3: "R1 tarde", 4: "R2 tarde"}
+
+    widget.set_configuracion_recreos(SimpleNamespace(recreos_config=None, **HORAS))
+    assert rejilla._etiquetas[3].toolTip() == "Recreo 1 de tarde · 16:30"
+    assert "18:30" in rejilla._celdas[(0, 4)].toolTip()
+    assert rejilla._celdas[(0, 4)].accessibleName() == "Recreo 2 de tarde del lunes"
+
+    rejilla.set_restricciones_dias({0: [3]})
+    assert rejilla.get_restricciones_dias() == {0: [3]}
+    widget.deleteLater()

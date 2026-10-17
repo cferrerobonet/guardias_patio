@@ -9,38 +9,45 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Optional
+
+from services import recreos
 
 logger = logging.getLogger(__name__)
 
 RUTA_REMOTA = "web/datos/{cuenta}.json"
 NOMBRE_LOCAL = "pantalla_guardias.json"
 
-_RECREOS_POR_DEFECTO = (
-    (1, "Recreo 1 Mañana", "mañana", "hora_recreo1_manana"),
-    (2, "Recreo 2 Mañana", "mañana", "hora_recreo2_manana"),
-    (3, "Recreo 1 Tarde", "tarde", "hora_recreo1_tarde"),
-    (4, "Recreo 2 Tarde", "tarde", "hora_recreo2_tarde"),
-)
+_CAMPO_DE_HORA = {(turno, n): campo for turno, n, campo in recreos.CAMPOS_DE_HORA}
 
 
 def _recreos(configuracion: dict) -> list:
-    """Recreos con su hora: los configurados a mano o, si no, los de las cuatro horas fijas."""
+    """Recreos con su hora: los configurados a mano o, si no, los del reparto.
+
+    Sin `recreos_config` el reparto numera de forma compacta los recreos con hora
+    (`recreos.recreos_de`): si falta alguna hora, la tarde no es 3 y 4.
+    """
     try:
         configurados = json.loads(configuracion.get("recreos_config") or "[]")
     except (TypeError, ValueError):
         configurados = []
-    recreos = [
+    lista = [
         {k: r.get(k) for k in ("id", "etiqueta", "turno", "hora")}
         for r in configurados
         if isinstance(r, dict) and "id" in r
-    ]
-    if recreos:
-        return recreos
+    ] if isinstance(configurados, list) else []
+    if lista:
+        return lista
+    horas = SimpleNamespace(**{c: configuracion.get(c) for c in _CAMPO_DE_HORA.values()})
     return [
-        {"id": id_, "etiqueta": etiqueta, "turno": turno, "hora": configuracion.get(campo)}
-        for id_, etiqueta, turno, campo in _RECREOS_POR_DEFECTO
-        if configuracion.get(campo)
+        {
+            "id": r.id,
+            "etiqueta": f"Recreo {r.ordinal} {r.turno.capitalize()}",
+            "turno": r.turno,
+            "hora": configuracion.get(_CAMPO_DE_HORA[(r.turno, r.ordinal)]),
+        }
+        for r in recreos.recreos_de(horas)
     ]
 
 

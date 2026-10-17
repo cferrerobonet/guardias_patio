@@ -26,6 +26,23 @@ from presentation.theme.tokens import FontSize
 from services import recreos
 
 
+def _clave_de_zona(guardia) -> tuple:
+    """Orden estable por zona: su orden (o su id) y después su nombre; sin zona, al final.
+
+    Antes se leía el número del nombre («Z1») y un nombre como «Zaguán» lanzaba
+    una excepción al pintar el calendario.
+    """
+    zona = getattr(guardia, "zona", None)
+    if zona is None:
+        return (1, 0, "")
+    orden = getattr(zona, "orden", None)
+    if not isinstance(orden, int) or isinstance(orden, bool):
+        orden = getattr(zona, "id", None)
+    if not isinstance(orden, int) or isinstance(orden, bool):
+        orden = 0
+    return (0, orden, str(getattr(zona, "nombre_zona", "") or "").casefold())
+
+
 class CeldaDia(QGroupBox):
     """Celda individual para un día del calendario con scroll interno."""
 
@@ -227,14 +244,7 @@ class CeldaDia(QGroupBox):
         for turno, recreo in claves_ordenadas:
             guardias_grupo = grupos.get((turno, recreo), [])
 
-            guardias_ordenadas = sorted(
-                guardias_grupo,
-                key=lambda g: (
-                    int(g.zona.nombre_zona[1])
-                    if g.zona and g.zona.nombre_zona.startswith("Z")
-                    else 999
-                ),
-            )
+            guardias_ordenadas = sorted(guardias_grupo, key=_clave_de_zona)
 
             icono_turno = "☀" if turno == "mañana" else "🌙"
             datos_recreo = (recreos.de_guardia(guardias_grupo[0]) if guardias_grupo
