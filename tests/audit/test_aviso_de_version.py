@@ -365,3 +365,34 @@ def test_el_paquete_de_macos_lleva_la_version():
 
     spec = (Path(__file__).resolve().parents[2] / "GuardiasDePatio.spec").read_text("utf-8")
     assert "CFBundleShortVersionString" in spec
+
+
+def test_en_macos_se_sustituye_la_app_donde_esta_instalada(monkeypatch, tmp_path):
+    """El DMG ya no se abre sin más: `actualizar_mac` cambia la app en su carpeta
+    (también /Applications/EPLA) después de cerrar las ventanas."""
+    from presentation.dialogs import actualizacion
+    from utils import actualizar_mac
+
+    fuente = inspect.getsource(actualizacion.instalar_y_salir)
+    assert fuente.index("closeAllWindows") < fuente.index("actualizar_mac.instalar(")
+
+    pedidas, abiertos, avisos = [], [], []
+    monkeypatch.setattr(actualizacion.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(actualizacion, "abrir_instalador", abiertos.append)
+    monkeypatch.setattr(actualizacion, "get_logs_directory", lambda: tmp_path)
+    monkeypatch.setattr(
+        actualizar_mac,
+        "instalar",
+        lambda dmg, registros: pedidas.append((dmg, registros))
+        or actualizar_mac.Resultado(False, "arrástrala"),
+    )
+    monkeypatch.setattr(
+        actualizacion.QMessageBox, "information", lambda *a: avisos.append(a[-1])
+    )
+    monkeypatch.setattr(actualizacion.QApplication, "instance", lambda: None)
+
+    actualizacion.instalar_y_salir(None, str(tmp_path / "GuardiasPatio_v9_macOS.dmg"))
+
+    assert pedidas == [(tmp_path / "GuardiasPatio_v9_macOS.dmg", tmp_path)]
+    assert abiertos == []
+    assert avisos == ["arrástrala"], "en la vía manual se dice a qué carpeta arrastrarla"

@@ -8,6 +8,8 @@ paths:
   - "scripts/prueba_arranque_windows.ps1"
   - ".github/workflows/**"
   - "src/utils/update_checker.py"
+  - "src/utils/actualizar_mac.py"
+  - "src/presentation/dialogs/actualizacion.py"
   - "src/presentation/widgets/__init__.py"
 ---
 
@@ -21,3 +23,4 @@ paths:
 - No editar ficheros mientras se compila o corre la suite: bash lee el script a trozos y `settings.py` se relee; el fallo despista. `build_dmg.sh` copia el bundle fuera de iCloud antes de firmarlo.
 - Versión: `app_version` y `pyproject.toml` coinciden (ver `AGENTS.md`).
 - **Sin LÉEME en el DMG** (desde la 7.3.0, pedido de CarlosFB el 2026-10-10). La app va firmada ad-hoc y sin notarizar: en otro Mac que la descargue, macOS puede decir «está dañada» (Gatekeeper, no un fallo de la app). Remedio: `xattr -dr com.apple.quarantine "/Applications/Guardias de Patio.app"`. Si vuelve a ser un problema, la solución de fondo es la notarización (`APPLE_DEVELOPER_ID` en `build_dmg.sh`), no recuperar el texto.
+- **Actualización en macOS** (desde la versión posterior a la 7.5.3): `utils/actualizar_mac.py` sustituye la app en la carpeta donde está instalada (no siempre `/Applications`; en el centro, `/Applications/EPLA`), con el nombre del `.app` nuevo, y la vuelve a abrir; si falla, restaura la anterior y avisa con un diálogo del sistema. Sin permiso de escritura, abre el DMG y dice a qué carpeta arrastrarla. Registro: `actualizacion_mac_*.log` en la carpeta de registros. Es el mismo archivo en Partes de salida y el Asistente: un arreglo se lleva a los tres. Windows: el instalador sustituye en la carpeta previa por el `AppId` (no cambiarlo).

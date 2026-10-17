@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+### 🎯 Resumen
+En macOS, la actualización sustituye la app allí donde está instalada (también `/Applications/EPLA`) en vez de abrir el DMG. **Solo funciona a partir de la versión que lo lleve**: la actualización *a* esa versión todavía se hace como hasta ahora, arrastrando la app del DMG a la carpeta donde está instalada y sustituyendo la anterior.
+
+### Fixed
+- **macOS: la versión nueva ya no queda en otra carpeta** (`utils/actualizar_mac.py`, el mismo módulo que Partes de salida y el Asistente documental). Al arrastrar al acceso «Applications» del DMG, la nueva quedaba en `/Applications` mientras el Dock seguía abriendo la vieja de `/Applications/EPLA`, que volvía a avisar de la misma actualización. Ahora, tras la descarga y con las ventanas ya cerradas, el DMG se monta sin el Finder y un script auxiliar espera a que la app termine, copia la nueva con `ditto` junto a la vieja, la pone en su sitio con el nombre del `.app` nuevo, le quita la cuarentena, desmonta el DMG y la abre. Si la copia falla, deja la anterior en su sitio, la abre y avisa. Sin permiso de escritura en la carpeta (o en desarrollo), abre el DMG como antes y dice a qué carpeta arrastrarla. Registro: `actualizacion_mac_*.log` en la carpeta de registros de la app.
+- Windows no cambia: el instalador ya sustituye en la carpeta de antes (mismo `AppId`).
+
+### 🧪 Tests
+- `tests/audit/test_actualizar_mac.py`: bundles falsos y `hdiutil`, `ditto`, `open`, `xattr` y `osascript` simulados (caso correcto, cambio de nombre, copia fallida con restauración, nueva que no se puede colocar, carpeta sin permiso, modo desarrollo, DMG de otra app y espera al cierre). `tests/audit/test_aviso_de_version.py`: `instalar_y_salir` en macOS.
+
 ## [7.5.3] - 2026-10-17
 
 ### 🎯 Resumen
