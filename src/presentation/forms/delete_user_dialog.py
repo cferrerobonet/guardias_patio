@@ -20,7 +20,7 @@ from presentation.theme.tokens import Colors
 from sync.backend_factory import SyncConfigurationError, get_default_backend
 from sync.sync_manager import UserAuth
 from utils.icons import icon_for_button
-from utils.ui_helpers import get_corporate_icon
+from utils.ui_helpers import get_app_icon
 
 
 class DeleteUserDialog(QDialog):
@@ -35,7 +35,7 @@ class DeleteUserDialog(QDialog):
     def setup_ui(self):
         """Configura la interfaz del diálogo."""
         self.setWindowTitle("Eliminar Usuario")
-        self.setWindowIcon(get_corporate_icon())
+        self.setWindowIcon(get_app_icon())
         self.setModal(True)
         self.setFixedWidth(500)
 

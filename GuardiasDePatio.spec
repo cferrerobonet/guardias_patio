@@ -24,7 +24,7 @@ import re  # noqa: E402
 VERSION = re.search(
     r'^version = "([^"]+)"', (Path(SPECPATH) / "pyproject.toml").read_text(encoding="utf-8"), re.M
 ).group(1)
-ICONO = "imagenes/icono.icns" if ES_MACOS else "imagenes/logo.ico"
+ICONO = "imagenes/icono.icns" if ES_MACOS else "imagenes/icono.ico"
 
 # La variante de diagnóstico de Windows sale de este mismo spec: consola visible
 # para ver la traza de un cierre y otro nombre para que no se confunda con la

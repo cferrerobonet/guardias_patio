@@ -28,7 +28,7 @@ from core.exceptions import BusinessLogicError, NotFoundError, ValidationError
 from utils.logger import get_logger
 from utils.ui_helpers import (
     apply_corporate_icon_to_messagebox,
-    get_corporate_icon,
+    get_app_icon,
     get_corporate_pixmap,
 )
 
@@ -247,7 +247,7 @@ class BaseForm(QWidget):
         msg_box.setWindowTitle(titulo)
         msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.setText(mensaje)
-        msg_box.setWindowIcon(get_corporate_icon())
+        msg_box.setWindowIcon(get_app_icon())
 
         # Aplicar icono corporativo
         apply_corporate_icon_to_messagebox(msg_box)
@@ -271,7 +271,7 @@ class BaseForm(QWidget):
         msg_box.setWindowTitle(titulo)
         msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.setText(mensaje)
-        msg_box.setWindowIcon(get_corporate_icon())
+        msg_box.setWindowIcon(get_app_icon())
 
         # Aplicar icono corporativo
         apply_corporate_icon_to_messagebox(msg_box)
@@ -295,7 +295,7 @@ class BaseForm(QWidget):
         msg_box.setWindowTitle(titulo)
         msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.setText(mensaje)
-        msg_box.setWindowIcon(get_corporate_icon())
+        msg_box.setWindowIcon(get_app_icon())
 
         # Aplicar icono corporativo
         apply_corporate_icon_to_messagebox(msg_box)
@@ -321,7 +321,7 @@ class BaseForm(QWidget):
         msg_box.setWindowTitle(titulo)
         msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.setText(mensaje)
-        msg_box.setWindowIcon(get_corporate_icon())
+        msg_box.setWindowIcon(get_app_icon())
 
         # Aplicar icono corporativo
         apply_corporate_icon_to_messagebox(msg_box)
@@ -358,7 +358,7 @@ class BaseForm(QWidget):
         msg_box.setWindowTitle(titulo)
         msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.setText(mensaje)
-        msg_box.setWindowIcon(get_corporate_icon())
+        msg_box.setWindowIcon(get_app_icon())
 
         # Usar logo corporativo en lugar del icono estándar
         pixmap = get_corporate_pixmap(64)

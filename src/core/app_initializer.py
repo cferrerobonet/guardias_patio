@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Optional
 
 from core.logging import get_logger
 from utils import setup_logging
-from utils.corporate_branding import apply_corporate_branding
+from utils.corporate_branding import aplicar_icono_de_la_app, apply_corporate_branding
 
 logger = get_logger(__name__)
 
@@ -56,6 +56,7 @@ def initialize_application() -> Optional["QApplication"]:
 
         configure_qt_plugins()
         app = QApplication(sys.argv)
+        aplicar_icono_de_la_app(app)
         apply_corporate_branding()
         return app
     except ImportError:

@@ -13,6 +13,7 @@ from PyQt6.QtGui import QIcon, QPixmap, QPixmapCache
 from PyQt6.QtWidgets import QApplication, QMessageBox, QWidget
 
 from core.logging import get_logger
+from core.paths import get_resources_directory
 
 logger = get_logger(__name__)
 
@@ -78,7 +79,13 @@ MESSAGEBOX_STYLE = """
 
 
 def _get_logo_path() -> Path:
-    return Path(__file__).parent.parent.parent / "imagenes" / "logo.png"
+    """Logo de EPLA: cabeceras, pantalla de inicio, PDF y correos. No es el icono."""
+    return get_resources_directory() / "logo.png"
+
+
+def _get_app_icon_path() -> Path:
+    """Icono de la app: ventanas, diálogos, barra de tareas y Dock."""
+    return get_resources_directory() / "icono.png"
 
 
 def _get_icons_dir() -> Path:
@@ -131,20 +138,21 @@ def _get_cached_pixmap(path: Path) -> Optional[QPixmap]:
     return pixmap
 
 
-def get_corporate_icon() -> QIcon:
+def get_app_icon() -> QIcon:
     """
-    Obtiene el icono corporativo de forma discreta.
+    Icono de la app para ventanas y diálogos (en Windows, también el de la barra
+    de tareas). El logo de EPLA se queda dentro de la app: `get_corporate_pixmap`.
 
     Returns:
-        QIcon con el logo corporativo si existe, icono vacío si no.
+        QIcon con el icono de la app si existe, icono vacío si no.
     """
     try:
-        icon_path = _get_logo_path()
+        icon_path = _get_app_icon_path()
         if icon_path.exists():
             return QIcon(str(icon_path))
     except (OSError, ValueError, RuntimeError):
         pass
-    return QIcon()  # Fallback a icono por defecto
+    return QIcon()
 
 
 def get_corporate_pixmap(size: int = 64) -> Optional[QPixmap]:
@@ -218,7 +226,7 @@ def show_info(parent: Optional[QWidget], title: str, message: str) -> None:
     msg_box = QMessageBox(parent)
     msg_box.setWindowTitle(title)
     msg_box.setText(message)
-    msg_box.setWindowIcon(get_corporate_icon())
+    msg_box.setWindowIcon(get_app_icon())
 
     # Aplicar icono corporativo sin establecer icono estándar primero
     apply_corporate_icon_to_messagebox(msg_box)
@@ -241,7 +249,7 @@ def show_warning(parent: Optional[QWidget], title: str, message: str) -> None:
     msg_box = QMessageBox(parent)
     msg_box.setWindowTitle(title)
     msg_box.setText(message)
-    msg_box.setWindowIcon(get_corporate_icon())
+    msg_box.setWindowIcon(get_app_icon())
 
     # Aplicar icono corporativo
     apply_corporate_icon_to_messagebox(msg_box)
@@ -264,7 +272,7 @@ def show_error(parent: Optional[QWidget], title: str, message: str) -> None:
     msg_box = QMessageBox(parent)
     msg_box.setWindowTitle(title)
     msg_box.setText(message)
-    msg_box.setWindowIcon(get_corporate_icon())
+    msg_box.setWindowIcon(get_app_icon())
 
     # Aplicar icono corporativo
     apply_corporate_icon_to_messagebox(msg_box)
@@ -293,7 +301,7 @@ def show_question(
     msg_box = QMessageBox(parent)
     msg_box.setWindowTitle(title)
     msg_box.setText(message)
-    msg_box.setWindowIcon(get_corporate_icon())
+    msg_box.setWindowIcon(get_app_icon())
 
     # Aplicar icono corporativo
     apply_corporate_icon_to_messagebox(msg_box)
@@ -328,7 +336,7 @@ def show_question_with_cancel(
     msg_box = QMessageBox(parent)
     msg_box.setWindowTitle(title)
     msg_box.setText(message)
-    msg_box.setWindowIcon(get_corporate_icon())
+    msg_box.setWindowIcon(get_app_icon())
 
     # Aplicar icono corporativo
     apply_corporate_icon_to_messagebox(msg_box)
@@ -370,7 +378,7 @@ def show_confirmation(
     msg_box = QMessageBox(parent)
     msg_box.setWindowTitle(title)
     msg_box.setText(message)
-    msg_box.setWindowIcon(get_corporate_icon())
+    msg_box.setWindowIcon(get_app_icon())
 
     # Aplicar icono corporativo
     apply_corporate_icon_to_messagebox(msg_box)

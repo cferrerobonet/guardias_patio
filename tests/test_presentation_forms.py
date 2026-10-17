@@ -208,6 +208,21 @@ class TestCorporateBranding:
 
         assert apply_corporate_branding is not None
 
+    def test_el_icono_de_la_app_no_es_el_logo(self, qapp):
+        """7.5.3 · ventanas, diálogos y barra de tareas llevan el icono; el logo sigue dentro."""
+        from utils import ui_helpers
+        from utils.corporate_branding import aplicar_icono_de_la_app
+
+        assert ui_helpers._get_app_icon_path().name == "icono.png"
+        assert ui_helpers._get_app_icon_path().exists()
+        assert ui_helpers._get_logo_path().name == "logo.png"
+        assert ui_helpers._get_logo_path().exists()
+        assert not ui_helpers.get_app_icon().isNull()
+        assert ui_helpers.get_corporate_pixmap(64) is not None
+
+        aplicar_icono_de_la_app(qapp)
+        assert not qapp.windowIcon().isNull()
+
 
 # ===========================================================================
 # AjustesForm

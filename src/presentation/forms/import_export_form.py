@@ -332,12 +332,12 @@ class ImportExportForm(BaseForm):
             # Confirmación previa
             limpiar = self.limpiar_checkbox.isChecked()
             if limpiar:
-                from utils.ui_helpers import get_corporate_icon
+                from utils.ui_helpers import get_app_icon
 
                 msg = QMessageBox(self)
                 msg.setIcon(QMessageBox.Icon.Question)
                 msg.setWindowTitle("Confirmar restauración")
-                msg.setWindowIcon(get_corporate_icon())
+                msg.setWindowIcon(get_app_icon())
                 msg.setWindowFlags(
                     Qt.WindowType.Dialog
                     | Qt.WindowType.CustomizeWindowHint

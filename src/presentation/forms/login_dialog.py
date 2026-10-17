@@ -24,7 +24,7 @@ from sync.cifrado import derivar_clave
 from sync.sync_manager import UserAuth
 from utils.icon_manager import get_icon
 from utils.icons import icon_for_button
-from utils.ui_helpers import get_corporate_icon
+from utils.ui_helpers import get_app_icon
 
 
 def _azul_texto() -> str:
@@ -49,7 +49,7 @@ class RegisterDialog(QDialog):
     def setup_ui(self):
         """Configura la interfaz del diálogo de registro."""
         self.setWindowTitle("Registrar Nuevo Usuario")
-        self.setWindowIcon(get_corporate_icon())
+        self.setWindowIcon(get_app_icon())
         self.setModal(True)
         self.setMinimumWidth(500)
         self.setMaximumWidth(500)
@@ -155,7 +155,7 @@ class RegisterDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
             msg.setWindowTitle("Campo vacío")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setText("Por favor introduce un nombre de usuario")
             msg.exec()
             self.username_input.setFocus()
@@ -166,7 +166,7 @@ class RegisterDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
             msg.setWindowTitle("Email obligatorio")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setText(
                 "El email es obligatorio para poder recuperar la contraseña en caso de olvido"
             )
@@ -180,7 +180,7 @@ class RegisterDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
             msg.setWindowTitle("Email inválido")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setText("Por favor introduce un email válido (ej: usuario@ejemplo.com)")
             msg.exec()
             self.email_input.setFocus()
@@ -191,7 +191,7 @@ class RegisterDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
             msg.setWindowTitle("Campo vacío")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setText("Por favor introduce una contraseña")
             msg.exec()
             self.password_input.setFocus()
@@ -202,7 +202,7 @@ class RegisterDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
             msg.setWindowTitle("Campo vacío")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setText("Por favor introduce una contraseña")
             msg.exec()
             self.password_input.setFocus()
@@ -215,7 +215,7 @@ class RegisterDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
             msg.setWindowTitle("Contraseña débil")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setText(policy_msg)
             msg.exec()
             self.password_input.setFocus()
@@ -226,7 +226,7 @@ class RegisterDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
             msg.setWindowTitle("Contraseñas no coinciden")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setText(
                 "Las contraseñas introducidas no son iguales.\n"
                 "Por favor, verifica que sean idénticas."
@@ -243,7 +243,7 @@ class RegisterDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
             msg.setWindowTitle("Registro exitoso")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
                 Qt.WindowType.Dialog
@@ -262,7 +262,7 @@ class RegisterDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
             msg.setWindowTitle("No se puede registrar ese usuario")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setWindowFlags(
                 Qt.WindowType.Dialog
                 | Qt.WindowType.CustomizeWindowHint
@@ -664,7 +664,7 @@ class LoginDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Information)
             msg.setWindowTitle("Datos actualizados")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setTextFormat(Qt.TextFormat.RichText)
             msg.setWindowFlags(
                 Qt.WindowType.Dialog
@@ -687,7 +687,7 @@ class LoginDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Warning)
             msg.setWindowTitle("Campos vacíos")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setText("Por favor introduce usuario y contraseña")
             msg.exec()
             return
@@ -704,7 +704,7 @@ class LoginDialog(QDialog):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Icon.Critical)
             msg.setWindowTitle("Error de autenticación")
-            msg.setWindowIcon(get_corporate_icon())
+            msg.setWindowIcon(get_app_icon())
             msg.setText(auth_msg)
             msg.exec()
             self.password_input.clear()
