@@ -7,6 +7,7 @@ necesita actualizarse. Una sola copia para las dos pantallas.
 """
 
 import logging
+import platform
 import tempfile
 import urllib.request
 import webbrowser
@@ -16,6 +17,8 @@ from PyQt6.QtCore import QThread
 from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtWidgets import QApplication, QMessageBox, QProgressDialog
 
+from core.paths import get_logs_directory
+from utils import actualizar_mac
 from utils.ui_helpers import get_corporate_pixmap
 from utils.update_checker import abrir_instalador, contexto_ssl, url_de_confianza
 
@@ -147,7 +150,7 @@ def descargar_e_instalar(parent, url: str, version: str = "") -> None:
 
 
 def instalar_y_salir(parent, ruta: str) -> None:
-    """Lanza el instalador y cierra la aplicación.
+    """Lanza el instalador (en macOS, la sustitución) y cierra la aplicación.
 
     Mientras la aplicación corre, su ejecutable está en uso y el instalador no
     puede reemplazarlo: en Windows se quedaba en «DeleteFile falló; código 5» y
@@ -168,7 +171,14 @@ def instalar_y_salir(parent, ruta: str) -> None:
             )
             return
 
-    abrir_instalador(ruta)
+    if platform.system() == "Darwin":
+        # Se sustituye la app allí donde está instalada (también /Applications/EPLA):
+        # el script auxiliar espera a que se cierre. Si no se puede, se abre el DMG.
+        resultado = actualizar_mac.instalar(Path(ruta), get_logs_directory())
+        if not resultado.sustituida:
+            QMessageBox.information(None, "Actualización", resultado.aviso)
+    else:
+        abrir_instalador(ruta)
 
     if app is not None:
         app.quit()
