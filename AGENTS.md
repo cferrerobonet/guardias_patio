@@ -19,13 +19,13 @@ Arquitectura: Clean Architecture híbrida + DDD táctico. BD: SQLite por usuario
 | Ventana y navegación | `src/presentation/ventana_principal.py` (10 vistas en `create_views`; `ContentWrapper` con margen inferior), `components/menu_lateral.py` |
 | Vista de generación **real** | `forms/asignacion_calculo_form.py` → `asignacion_widgets/calculo_panel.py` (cuotas) + `generacion_panel.py` (generar, resultados, emails) |
 | Progreso / hilos | `widgets/progress_indicators.py` (`ejecutar_con_progreso`, `ProgressDialog`), `progress_worker.py` (`WorkerThread`), `progress_handlers.py` |
-| Caso de uso generación | `application/use_cases/asignacion_guardias/generar_guardias.py` → `services/asignador_guardias_cpsat.py` (+ `_asignador_cpsat_helpers.py`, `reparto_agrupado.py`: cuotas alcanzables, reparto justo y carriles). Único algoritmo desde v6.7.0; criterios en `.claude/rules/reparto-guardias.md` |
+| Caso de uso generación | `application/use_cases/asignacion_guardias/generar_guardias.py` → `services/asignador_guardias_cpsat.py` (+ `_asignador_cpsat_helpers.py`, `reparto_agrupado.py`: cuotas alcanzables, reparto justo y carriles). Criterios: `.claude/rules/reparto-guardias.md` |
 | Sesión BD y PRAGMAs | `database/db_manager.py` (`initialize_user_database`, NullPool, `check_same_thread=False`, journal DELETE) |
 | Sync SFTP y bloqueo | `sync/sync_manager.py` (qué se sube y cuándo), `sync/backends.py` (SFTP y carpeta local), `sync/cuentas.py` (ficha remota), `sync/session_lock.py`, `widgets/sync_progress_dialog.py` (`SyncWorker`). Reglas: `.claude/rules/sincronizacion.md` |
-| Tema y tokens | `presentation/theme/tokens.py` (paleta clara y oscura, fuentes Barlow de `imagenes/fuentes`), `theme/light.qss` (medidas comunes: 34 px), `themes/tema_aplicacion.py` (solo lo propio de la ventana) + inline. Documentos impresos (A4, estilo Partes de salida, legibles en blanco y negro): `services/pdf_styles.py` (`Papel`, `ajustar`, cabeceras, pie «Página n de N», `construir_documento`; logos ya reducidos en `imagenes/*.jpg`), `_pdf_mini_calendario.py` (`CalendarioMes`, leyenda, festivos), `_pdf_individual_optimizado.py` (el del aviso) y `_pdf_mes_consolidado.py`; prueba: `tests/test_pdf_guardias_impreso.py` |
+| Tema, tokens y PDF impresos | `presentation/theme/tokens.py`, `theme/light.qss`, `services/pdf_styles.py` y `_pdf_*.py`. Detalle: `.claude/rules/interfaz-y-documentos.md` |
 | Modelos ORM | `infrastructure/database/models.py` |
 | Versión canónica | `src/config/settings.py` → `app_version`, igual que `pyproject.toml` (lo vigila `tests/audit/test_calidad_estatica.py`). La insignia del README no se mantiene |
-| Build y empaquetado | Regla `.claude/rules/empaquetado.md` (se carga al tocar spec, scripts de build o workflows). Publicar etiqueta `vX.Y.Z` compila las dos plataformas. **Nunca compilar en local** (ni `make dmg`, que publica el release, ni `pyinstaller`): solo GitHub |
+| Build y empaquetado | `.claude/rules/empaquetado.md`. La etiqueta `vX.Y.Z` compila las dos plataformas en GitHub. **Nunca compilar en local** (ni `make dmg`, que publica el release, ni `pyinstaller`) |
 
 ## Comandos que funcionan
 ```bash
@@ -46,9 +46,10 @@ self.session = session_or_factory.session if isinstance(session_or_factory, Repo
 En funciones standalone, sin anotación `: Session` en el parámetro.
 
 ## Interfaz
-- Listados sin paginación por decisión de CarlosFB (2026-10-17): todas las filas, con buscador, filtros y orden (`widgets/listado_filtrable.py`; cada etiqueta de filtro va pegada a su desplegable).
-- **Icono de la app ≠ logo de EPLA** (7.5.3): ventanas, diálogos, barra de tareas, Dock e instaladores llevan `imagenes/icono.png` (`ui_helpers.get_app_icon`, `corporate_branding.aplicar_icono_de_la_app`); de él salen `icono.ico` (Pillow, 16-256) e `icono.icns` (`scripts/build/create_icon.sh`, que `make icon` rehace en cada compilación). El logo (`logo.png`, `get_corporate_pixmap`) solo va dentro: cabeceras, pantalla de inicio, PDF y correos.
-- **Recreos**: la guardia guarda el id global del recreo (con la lista de Ajustes, 1-2 mañana y 3-4 tarde; sin ella, numeración compacta del reparto). Toda salida (PDF, .ics, web, correo, diálogos) lo traduce con `services/recreos.py` (`resolver`, `recreos_de`): «Recreo 1 de tarde · 16:30». Nunca pintar `guardia.recreo` tal cual. Zonas en los PDF compactos: `pdf_styles.abreviatura_zona`, nunca un código secuencial.
+Detalle en `.claude/rules/interfaz-y-documentos.md`. Lo esencial:
+- Listados sin paginación (CarlosFB, 2026-10-17): todas las filas, con buscador, filtros y orden (`widgets/listado_filtrable.py`).
+- **Icono de la app (`imagenes/icono.png`) ≠ logo de EPLA**: el icono en ventanas, Dock e instaladores; el logo solo dentro (cabeceras, inicio, PDF, correos).
+- **Recreos**: toda salida traduce el id con `services/recreos.py`; nunca pintar `guardia.recreo` tal cual.
 
 ## Versionado, commits, changelog
 - SemVer en `app_version` **y en `pyproject.toml`** (un test vigila que coincidan): fix → patch · feat → minor · breaking → major.
@@ -68,7 +69,7 @@ Al completar un ítem de un guion: tacharlo (`~~texto~~ ✅ RESUELTO vX.Y.Z`) en
 `data/`, `alembic/versions/` existentes (sólo crear nuevas), `.env`.
 
 ## Entorno
-El intérprete vive en `~/.venvs/guardias-patio`, **fuera de iCloud**: dentro del repositorio iCloud duplica y altera los binarios (402 copias " 2" en `.venv`), Qt deja de reconocer sus complementos y la app aborta al crear la `QApplication`. El `.venv` del repo está corrupto y se puede borrar. Recrear con:
+Intérprete en `~/.venvs/guardias-patio`, **fuera de iCloud** (dentro, iCloud duplica los binarios con copias « 2» y Qt aborta al crear la `QApplication`). El `.venv` del repo está corrupto y se puede borrar. Recrear con:
 ```bash
 python3.11 -m venv ~/.venvs/guardias-patio
 ~/.venvs/guardias-patio/bin/python -m pip install -r requirements-dev.txt
