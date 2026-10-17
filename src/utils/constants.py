@@ -14,7 +14,7 @@ APP_AUTHOR = "Carlos Ferrero Bonet"
 from config.settings import get_settings as _get_settings  # noqa: E402
 
 APP_VERSION = _get_settings().app_version
-APP_LAST_UPDATE = "2026-10-16"
+APP_LAST_UPDATE = "2026-10-17"
 
 # Lista de reproducción (YouTube, en modo oculto) con los videotutoriales de la aplicación.
 URL_VIDEOTUTORIALES = "https://www.youtube.com/playlist?list=PLVrZfNdQ4sWg"
