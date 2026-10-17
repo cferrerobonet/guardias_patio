@@ -1,14 +1,22 @@
+"""Registro de cambios en guardias (GUA-UXI-009): se abre desde Ajustes, solo lectura.
+
+El periodo (Desde/Hasta) se consulta en la base, con un tope de 500 cambios; el
+buscador, los filtros de acción y usuario, el orden y «Limpiar filtros» son los del
+patrón común de listados (`ListadoFiltrable`), sin paginación.
+"""
+
 import json
 from datetime import date, timedelta
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QComboBox,
     QDateEdit,
+    QDialog,
+    QDialogButtonBox,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
+    QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -16,13 +24,18 @@ from PyQt6.QtWidgets import (
 )
 
 from infrastructure.database.models import GuardiaAuditLog, Profesor
-from presentation.widgets.listado_filtrable import ListadoFiltrable
+from presentation.widgets.listado_filtrable import (
+    ESPACIO_ETIQUETA,
+    Filtro,
+    ListadoFiltrable,
+)
 from utils.ui_helpers import dotar_de_contrato, llenando_tabla, pintar_tabla_vacia
 
-_ACCIONES = [
-    "Todas", "CREADA", "MODIFICADA", "ELIMINADA", "SUSTITUIDA", "GENERADA_BULK",
-    "ASIGNADA_A_MANO", "MOVIDA_A_MANO", "EDICION_DESHECHA",
-]
+LIMITE = 500
+DIAS_DE_SERIE = 30
+COL_ACCION = 1
+COL_USUARIO = 4
+_ORDEN = Qt.ItemDataRole.UserRole + 1
 
 _ETIQUETAS_ACCION = {
     "CREADA": "✚ Creada",
@@ -44,12 +57,23 @@ _COLORES_ACCION = {
 }
 
 
+class _Celda(QTableWidgetItem):
+    """Celda que ordena por su clave (fecha real, número) y no por el texto."""
+
+    def __lt__(self, other):
+        propia, ajena = self.data(_ORDEN), other.data(_ORDEN)
+        if propia is not None and ajena is not None and type(propia) is type(ajena):
+            return propia < ajena
+        return super().__lt__(other)
+
+
 class AuditoriaGuardiasForm(QWidget):
     re_sustituir_solicitada = pyqtSignal(int)
 
-    def __init__(self, session, parent=None):
+    def __init__(self, session, parent=None, *, solo_lectura: bool = False):
         super().__init__(parent)
         self.session = session
+        self.solo_lectura = solo_lectura
         self._setup_ui()
         self.cargar_datos()
 
@@ -58,46 +82,13 @@ class AuditoriaGuardiasForm(QWidget):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(16)
 
-        # Barra de filtros
-        filtros = QHBoxLayout()
-        filtros.setSpacing(12)
-
-        filtros.addWidget(QLabel("Desde:"))
         self.fecha_desde = QDateEdit()
         self.fecha_desde.setCalendarPopup(True)
-        self.fecha_desde.setDate(date.today() - timedelta(days=30))
-        filtros.addWidget(self.fecha_desde)
-
-        filtros.addWidget(QLabel("Hasta:"))
+        self.fecha_desde.setAccessibleName("Cambios desde")
         self.fecha_hasta = QDateEdit()
         self.fecha_hasta.setCalendarPopup(True)
-        self.fecha_hasta.setDate(date.today())
-        filtros.addWidget(self.fecha_hasta)
-
-        filtros.addWidget(QLabel("Acción:"))
-        self.combo_accion = QComboBox()
-        self.combo_accion.setObjectName("accion")
-        self.combo_accion.addItems(_ACCIONES)
-        filtros.addWidget(self.combo_accion)
-
-        filtros.addWidget(QLabel("Profesor:"))
-        self.input_profesor = QLineEdit()
-        self.input_profesor.setObjectName("profesor")
-        self.input_profesor.setPlaceholderText("Buscar por nombre...")
-        self.input_profesor.setMaximumWidth(200)
-        filtros.addWidget(self.input_profesor)
-
-        btn_filtrar = QPushButton("Filtrar")
-        btn_filtrar.clicked.connect(self.cargar_datos)
-        filtros.addWidget(btn_filtrar)
-
-        btn_limpiar = QPushButton("Limpiar")
-        btn_limpiar.setObjectName("secondaryButton")
-        btn_limpiar.clicked.connect(self._limpiar_filtros)
-        filtros.addWidget(btn_limpiar)
-
-        filtros.addStretch()
-        layout.addLayout(filtros)
+        self.fecha_hasta.setAccessibleName("Cambios hasta")
+        self._poner_fechas_de_serie()
 
         # Tabla
         self.tabla = QTableWidget()
@@ -120,46 +111,77 @@ class AuditoriaGuardiasForm(QWidget):
         self.tabla.setColumnWidth(2, 90)
         self.tabla.setColumnWidth(3, 220)
         self.tabla.setColumnWidth(4, 120)
-        # Orden y filtros que se recuerdan (GUA-UXI-005), sin paginación. La acción y
-        # el profesor filtran ya en la consulta: el listado solo los recuerda.
+        # Patrón común de listados (GUA-UXI-005), sin paginación: buscador,
+        # acción y usuario, orden por cabecera y «Limpiar filtros», que también
+        # devuelve el periodo a los últimos 30 días.
         self.listado = ListadoFiltrable(
             self.tabla,
             "auditoria_guardias",
             entidad="cambios",
-            con_buscador=False,
-            con_limpiar=False,
-            recordar=(self.combo_accion, self.input_profesor),
+            marcador="Buscar por profesor, usuario o detalle…",
+            filtros=(Filtro.columna("Acción", COL_ACCION), Filtro.columna("Usuario", COL_USUARIO)),
+            filtros_propios=self._periodo_cambiado,
         )
+        capa = self.listado.barra.layout()
+        for i, (texto, editor) in enumerate(
+            (("Desde:", self.fecha_desde), ("Hasta:", self.fecha_hasta))
+        ):
+            capa.insertLayout(1 + i, _par(texto, editor))
+        self.listado.limpiar.clicked.connect(self._limpiar_periodo)
+        self.fecha_desde.dateChanged.connect(lambda _d: self.cargar_datos())
+        self.fecha_hasta.dateChanged.connect(lambda _d: self.cargar_datos())
         layout.addWidget(self.listado.barra)
         layout.addWidget(self.tabla)
         layout.addWidget(self.listado.pie)
 
-        self.label_total = QLabel("")
-        layout.addWidget(self.label_total)
+        self.aviso_limite = QLabel(
+            f"Se muestran los {LIMITE} cambios más recientes del periodo: "
+            "acorta las fechas para ver los anteriores."
+        )
+        self.aviso_limite.setObjectName("secondary")
+        self.aviso_limite.setWordWrap(True)
+        self.aviso_limite.setVisible(False)
+        layout.addWidget(self.aviso_limite)
 
         self.btn_resustituir = QPushButton("Re-sustituir seleccionada")
         self.btn_resustituir.setObjectName("secondaryButton")
         self.btn_resustituir.setEnabled(False)
         self.btn_resustituir.clicked.connect(self._emitir_resustituir)
         layout.addWidget(self.btn_resustituir)
+        # Desde Ajustes es solo de consulta: sin acciones sobre las guardias
+        self.btn_resustituir.setVisible(not self.solo_lectura)
 
         self.tabla.itemSelectionChanged.connect(self._actualizar_boton_resustituir)
+
+    def _poner_fechas_de_serie(self) -> None:
+        for editor, valor in (
+            (self.fecha_desde, date.today() - timedelta(days=DIAS_DE_SERIE)),
+            (self.fecha_hasta, date.today()),
+        ):
+            editor.blockSignals(True)
+            editor.setDate(valor)
+            editor.blockSignals(False)
+
+    def _periodo_cambiado(self) -> bool:
+        return self.fecha_desde.date().toPyDate() != date.today() - timedelta(
+            days=DIAS_DE_SERIE
+        ) or self.fecha_hasta.date().toPyDate() != date.today()
+
+    def _limpiar_periodo(self) -> None:
+        self._poner_fechas_de_serie()
+        self.cargar_datos()
 
     def cargar_datos(self):
         desde = self.fecha_desde.date().toPyDate()
         hasta = self.fecha_hasta.date().toPyDate() + timedelta(days=1)
-        accion_filtro = self.combo_accion.currentText()
-        texto_prof = self.input_profesor.text().strip().lower()
 
-        query = (
+        registros = (
             self.session.query(GuardiaAuditLog)
             .filter(GuardiaAuditLog.timestamp >= desde, GuardiaAuditLog.timestamp < hasta)
             .order_by(GuardiaAuditLog.timestamp.desc())
+            .limit(LIMITE)
+            .all()
         )
-        if accion_filtro != "Todas":
-            query = query.filter(GuardiaAuditLog.accion == accion_filtro)
-
-        registros = query.limit(500).all()
 
         # Cargar nombres de profesores en una pasada
         ids_prof = {r.profesor_id for r in registros if r.profesor_id}
@@ -167,13 +189,6 @@ class AuditoriaGuardiasForm(QWidget):
         if ids_prof:
             for p in self.session.query(Profesor).filter(Profesor.id.in_(ids_prof)).all():
                 nombres_prof[p.id] = p.nombre_completo
-
-        # Filtrar por nombre si hay texto
-        if texto_prof:
-            registros = [
-                r for r in registros
-                if texto_prof in nombres_prof.get(r.profesor_id, "").lower()
-            ]
 
         with llenando_tabla(self.tabla):
             self.tabla.setRowCount(len(registros))
@@ -189,10 +204,14 @@ class AuditoriaGuardiasForm(QWidget):
                     except (json.JSONDecodeError, AttributeError):
                         detalle = reg.detalle
 
+                celda_fecha = _Celda(ts)
+                celda_fecha.setData(_ORDEN, reg.timestamp.isoformat() if reg.timestamp else "")
+                celda_guardia = _Celda(str(reg.guardia_id) if reg.guardia_id else "-")
+                celda_guardia.setData(_ORDEN, reg.guardia_id or 0)
                 items = [
-                    QTableWidgetItem(ts),
+                    celda_fecha,
                     QTableWidgetItem(etiqueta),
-                    QTableWidgetItem(str(reg.guardia_id) if reg.guardia_id else "-"),
+                    celda_guardia,
                     QTableWidgetItem(nombre),
                     QTableWidgetItem(reg.usuario or "-"),
                     QTableWidgetItem(detalle),
@@ -213,9 +232,10 @@ class AuditoriaGuardiasForm(QWidget):
                 )
 
         pintar_tabla_vacia(
-            self.tabla, "No hay cambios registrados con estos filtros"
+            self.tabla, "No hay cambios registrados en este periodo"
         )
-        self.label_total.setText(f"{len(registros)} registros")
+        self.aviso_limite.setVisible(len(registros) >= LIMITE)
+        self.listado.aplicar()
 
     def _actualizar_boton_resustituir(self):
         rows = self.tabla.selectedItems()
@@ -227,6 +247,8 @@ class AuditoriaGuardiasForm(QWidget):
         self.btn_resustituir.setEnabled(accion == "SUSTITUIDA" and guardia_id is not None)
 
     def _emitir_resustituir(self):
+        if self.solo_lectura:
+            return
         rows = self.tabla.selectedItems()
         if not rows:
             return
@@ -236,9 +258,36 @@ class AuditoriaGuardiasForm(QWidget):
             self.re_sustituir_solicitada.emit(guardia_id)
 
     def _limpiar_filtros(self):
-        self.fecha_desde.setDate(date.today() - timedelta(days=30))
-        self.fecha_hasta.setDate(date.today())
-        self.combo_accion.setCurrentIndex(0)
-        self.input_profesor.clear()
         self.listado.limpiar_filtros()
-        self.cargar_datos()
+        self._limpiar_periodo()
+
+
+def _par(texto: str, editor: QWidget) -> QHBoxLayout:
+    """Etiqueta pegada a su control, como en la barra del listado."""
+    etiqueta = QLabel(texto)
+    etiqueta.setObjectName("etiquetaDeFiltro")
+    etiqueta.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+    etiqueta.setBuddy(editor)
+    par = QHBoxLayout()
+    par.setContentsMargins(0, 0, 0, 0)
+    par.setSpacing(ESPACIO_ETIQUETA)
+    par.addWidget(etiqueta)
+    par.addWidget(editor)
+    return par
+
+
+class RegistroDeCambiosDialog(QDialog):
+    """La ventana que abre «Registro de cambios» en Ajustes: solo de lectura."""
+
+    def __init__(self, session, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Registro de cambios en guardias")
+        self.resize(1150, 700)
+        capa = QVBoxLayout(self)
+        capa.setContentsMargins(0, 0, 12, 12)
+        self.registro = AuditoriaGuardiasForm(session, self, solo_lectura=True)
+        capa.addWidget(self.registro)
+        botones = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        botones.button(QDialogButtonBox.StandardButton.Close).setText("Cerrar")
+        botones.rejected.connect(self.reject)
+        capa.addWidget(botones)

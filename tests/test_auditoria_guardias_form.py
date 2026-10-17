@@ -1,15 +1,16 @@
 """
 Tests para AuditoriaGuardiasForm.
 
-Cubre: botón Re-sustituir, filtros, detalle JSON, señal re_sustituir_solicitada.
+Cubre: botón Re-sustituir, filtros, detalle JSON, señal re_sustituir_solicitada y
+la ventana de solo lectura que se abre desde Ajustes (GUA-UXI-009).
 """
 
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QPushButton, QTableWidget
 
 from infrastructure.database.models import GuardiaAuditLog, Profesor
 from presentation.forms.auditoria_guardias_form import AuditoriaGuardiasForm
@@ -20,6 +21,14 @@ pytestmark = pytest.mark.ui
 # ============================================================================
 # FIXTURES
 # ============================================================================
+
+
+def _filtro(form, etiqueta):
+    return next(f for f in form.listado.filtros if f.etiqueta == etiqueta).combo
+
+
+def _visibles(tabla):
+    return [r for r in range(tabla.rowCount()) if not tabla.isRowHidden(r)]
 
 
 @pytest.fixture
@@ -170,39 +179,169 @@ class TestAuditoriaFiltros:
     def test_filtro_por_accion_sustituida_solo_muestra_sustituidas(
         self, form_audit, logs_variados
     ):
-        """Filtrar por SUSTITUIDA solo muestra filas de ese tipo."""
-        form_audit.combo_accion.setCurrentText("SUSTITUIDA")
+        """Filtrar por «Sustitución» solo deja a la vista filas de ese tipo."""
         form_audit.cargar_datos()
+        _filtro(form_audit, "Acción").setCurrentText("⇄ Sustitución")
 
-        for row in range(form_audit.tabla.rowCount()):
+        visibles = _visibles(form_audit.tabla)
+        assert len(visibles) == 1
+        for row in visibles:
             data = form_audit.tabla.item(row, 0).data(Qt.ItemDataRole.UserRole)
             assert data is not None and data[1] == "SUSTITUIDA"
 
     def test_detalle_json_se_muestra_parseado(self, form_audit, logs_variados):
         """El campo detalle muestra el JSON expandido, no el texto crudo."""
-        form_audit.combo_accion.setCurrentText("SUSTITUIDA")
         form_audit.cargar_datos()
+        _filtro(form_audit, "Acción").setCurrentText("⇄ Sustitución")
 
-        assert form_audit.tabla.rowCount() >= 1
-        detalle_text = form_audit.tabla.item(0, 5).text()
+        fila = _visibles(form_audit.tabla)[0]
+        detalle_text = form_audit.tabla.item(fila, 5).text()
         assert "{" not in detalle_text, "El JSON no debe mostrarse sin parsear"
         assert "origen" in detalle_text or "profesor_anterior" in detalle_text
 
-    def test_label_total_refleja_cantidad(self, form_audit, logs_variados):
-        """El label de total refleja el número de registros cargados."""
+    def test_recuento_refleja_cantidad(self, form_audit, logs_variados):
+        """El pie dice cuántos cambios hay."""
         form_audit.cargar_datos()
-        total = form_audit.tabla.rowCount()
-        assert str(total) in form_audit.label_total.text()
+        assert form_audit.listado.recuento.text() == "4 cambios"
 
-    def test_filtro_todas_muestra_todos_los_tipos(self, form_audit, logs_variados):
-        """El filtro 'Todas' muestra registros de todos los tipos."""
-        form_audit.combo_accion.setCurrentText("Todas")
+    def test_sin_filtros_muestra_todos_los_tipos(self, form_audit, logs_variados):
         form_audit.cargar_datos()
 
-        acciones = set()
-        for row in range(form_audit.tabla.rowCount()):
-            data = form_audit.tabla.item(row, 0).data(Qt.ItemDataRole.UserRole)
-            if data:
-                acciones.add(data[1])
+        acciones = {
+            form_audit.tabla.item(r, 0).data(Qt.ItemDataRole.UserRole)[1]
+            for r in _visibles(form_audit.tabla)
+        }
+        assert acciones == {"CREADA", "SUSTITUIDA", "ELIMINADA", "GENERADA_BULK"}
 
-        assert len(acciones) > 1, "Con filtro 'Todas' deben aparecer varios tipos"
+
+# ============================================================================
+# TESTS: Desde Ajustes, solo lectura y patrón común de listado (GUA-UXI-009)
+# ============================================================================
+
+
+@pytest.fixture
+def muchos_cambios(session, profesor_factory):
+    prof = profesor_factory(nombre_completo="Ficticio, Profesor")
+    ahora = datetime.now()
+    session.add_all(
+        GuardiaAuditLog(
+            guardia_id=100 + i,
+            accion="MODIFICADA" if i % 2 else "CREADA",
+            profesor_id=prof.id,
+            usuario="jefatura" if i % 3 else "otra_cuenta",
+            timestamp=ahora - timedelta(hours=i),
+        )
+        for i in range(40)
+    )
+    session.commit()
+
+
+class TestRegistroDesdeAjustes:
+    @pytest.fixture
+    def dialogo(self, qtbot, session, muchos_cambios):
+        from presentation.forms.ajustes_form import AjustesForm
+
+        ajustes = AjustesForm(session)
+        qtbot.addWidget(ajustes)
+        assert ajustes.registro_btn.text() == "Registro de cambios"
+        dialogo = ajustes.crear_registro_de_cambios()
+        assert dialogo.parent() is ajustes
+        yield dialogo  # `ajustes` sigue vivo: es el padre del diálogo
+        dialogo.close()
+
+    def test_el_boton_de_ajustes_abre_el_registro(self, qtbot, session, dialogos_modales):
+        from presentation.forms.ajustes_form import AjustesForm
+
+        ajustes = AjustesForm(session)
+        qtbot.addWidget(ajustes)
+        ajustes.registro_btn.click()
+
+        assert [d.titulo for d in dialogos_modales] == ["Registro de cambios en guardias"]
+
+    def test_es_solo_de_lectura(self, dialogo):
+        registro = dialogo.registro
+        tabla = registro.tabla
+
+        assert registro.solo_lectura
+        assert tabla.editTriggers() == QTableWidget.EditTrigger.NoEditTriggers
+        assert registro.btn_resustituir.isHidden()
+        a_la_vista = {b.text() for b in dialogo.findChildren(QPushButton) if not b.isHidden()}
+        assert a_la_vista == {"Limpiar filtros", "Cerrar"}
+        tabla.selectRow(0)
+        recibidas = []
+        registro.re_sustituir_solicitada.connect(recibidas.append)
+        registro._emitir_resustituir()
+        assert recibidas == []
+
+    def test_lleva_el_patron_comun_sin_paginacion(self, dialogo):
+        registro = dialogo.registro
+        listado = registro.listado
+        tabla = registro.tabla
+
+        assert listado.buscador.parent() is listado.barra
+        assert {f.etiqueta for f in listado.filtros} == {"Acción", "Usuario"}
+        assert listado.limpiar.text() == "Limpiar filtros"
+        assert tabla.isSortingEnabled()
+        assert not hasattr(listado, "por_pagina")
+        assert listado.pie.findChildren(QPushButton) == []
+        assert len(_visibles(tabla)) == 40
+        assert listado.recuento.text() == "40 cambios"
+
+    def test_buscador_filtros_y_limpiar(self, dialogo):
+        registro = dialogo.registro
+        listado = registro.listado
+        tabla = registro.tabla
+        assert not listado.limpiar.isEnabled()
+
+        _filtro(registro, "Acción").setCurrentText("✎ Modificada")
+        assert len(_visibles(tabla)) == 20
+        _filtro(registro, "Usuario").setCurrentText("otra_cuenta")
+        assert all(tabla.item(r, 4).text() == "otra_cuenta" for r in _visibles(tabla))
+        listado.buscador.setText("115")
+        assert [tabla.item(r, 2).text() for r in _visibles(tabla)] == ["115"]
+        assert listado.limpiar.isEnabled()
+
+        listado.limpiar.click()
+        QApplication.processEvents()
+
+        assert listado.buscador.text() == ""
+        assert len(_visibles(tabla)) == 40
+        assert not listado.limpiar.isEnabled()
+
+    def test_limpiar_devuelve_el_periodo_de_serie(self, dialogo):
+        registro = dialogo.registro
+        hoy = date.today()
+        registro.fecha_desde.setDate(hoy)
+        assert registro.listado.limpiar.isEnabled()
+
+        registro.listado.limpiar.click()
+        QApplication.processEvents()
+
+        assert registro.fecha_desde.date().toPyDate() == hoy - timedelta(days=30)
+        assert len(_visibles(registro.tabla)) == 40
+
+    def test_las_cabeceras_ordenan_por_fecha_y_numero_de_verdad(self, dialogo):
+        tabla = dialogo.registro.tabla
+
+        tabla.sortItems(0, Qt.SortOrder.AscendingOrder)
+        assert tabla.item(0, 2).text() == "139"  # el más antiguo
+        tabla.sortItems(2, Qt.SortOrder.AscendingOrder)
+        assert [tabla.item(r, 2).text() for r in range(3)] == ["100", "101", "102"]
+        tabla.sortItems(2, Qt.SortOrder.DescendingOrder)
+        assert tabla.item(0, 2).text() == "139"
+
+    def test_cada_etiqueta_pegada_a_su_control(self, dialogo):
+        from PyQt6.QtWidgets import QLabel
+
+        dialogo.resize(1500, 700)
+        dialogo.show()
+        QApplication.processEvents()
+        barra = dialogo.registro.listado.barra
+        etiquetas = [e for e in barra.findChildren(QLabel) if e.buddy() is not None]
+        assert {e.text() for e in etiquetas} == {"Desde:", "Hasta:", "Acción:", "Usuario:"}
+        for etiqueta in etiquetas:
+            control = etiqueta.buddy()
+            fin = etiqueta.mapTo(barra, etiqueta.rect().topLeft()).x() + etiqueta.sizeHint().width()
+            inicio = control.mapTo(barra, control.rect().topLeft()).x()
+            assert 0 <= inicio - fin <= 12, etiqueta.text()
+        dialogo.close()
