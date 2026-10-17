@@ -5,6 +5,26 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.5.3] - 2026-10-17
+
+### 🎯 Resumen
+Icono nuevo de la aplicación (un calendario con un silbato) en el Dock, la barra de tareas, las ventanas y los instaladores; el logo de EPLA se queda dentro de la app. La pantalla de guardias de la web numera los recreos como el reparto, la rejilla de disponibilidad del profesor dice «R1 tarde» con su hora y el calendario ya no falla con zonas cuyo nombre no empieza por «Z» y un número.
+
+### Changed
+- **Icono nuevo de la app** (`imagenes/icono.png` e `icono.svg`): el `.app` y el DMG llevan `icono.icns`; el exe, el instalador y el portable de Windows, `icono.ico` (16 a 256 px). `scripts/build/create_icon.sh` rehace el `.icns` desde `icono.png` y no desde el logo. Al arrancar, `QApplication.setWindowIcon` pone el icono en todas las ventanas y, en Windows, en la barra de tareas; diálogos y avisos usan `get_app_icon()` en lugar del logo.
+- **El logo de EPLA se queda dentro**: cabeceras, pantalla de inicio, PDF y correos lo siguen usando (`get_corporate_pixmap`). Icono y logo son ahora funciones distintas.
+
+### Fixed
+- **Recreos de la pantalla de guardias** (`sync/pantalla.py`): sin lista de recreos en Ajustes, la pantalla daba por hecho que la tarde eran los recreos 3 y 4; si faltaba alguna hora, no casaba con la numeración del reparto. Ahora usa la misma (`recreos.recreos_de`).
+- **Rejilla de disponibilidad del profesor** (`profesor_widgets/restricciones_widget.py`): las filas decían «R3» y «R4» para la tarde. Ahora dicen «R1 tarde» y «R2 tarde», con la hora en la ayuda y en el nombre accesible de cada casilla.
+- **Calendario con zonas de cualquier nombre** (`widgets/_celda_dia.py`): el orden de las zonas leía el número del nombre («Z1») y una zona como «Zaguán» lanzaba una excepción al pintar el día. Ahora ordena por el orden de la zona (o su id) y después por el nombre.
+
+### 🧪 Tests
+- `tests/test_pantalla_guardias.py`, `tests/test_recreos.py` y `tests/test_vista_calendario.py` (los tres arreglos); `tests/audit/test_un_solo_spec.py` (spec, instalador y `create_icon.sh` con el icono nuevo) y `tests/test_presentation_forms.py` (icono de la app distinto del logo).
+
+### 🧹 Housekeeping
+- Las rutas del icono y del logo salen de `core.paths.get_resources_directory()`, como el resto de recursos empaquetados. Regla en `AGENTS.md` (icono de la app frente a logo).
+
 ## [7.5.2] - 2026-10-17
 
 ### 🎯 Resumen
