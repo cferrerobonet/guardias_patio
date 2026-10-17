@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
 
 from infrastructure.database.models import Ausencia, Guardia, Zona
 from presentation.theme.tokens import FontSize
+from services import recreos
 
 # Configurar locale para fechas en español
 try:
@@ -280,7 +281,10 @@ class DiaDetalleDialog(QDialog):
         turno = guardias[0].turno if guardias else "mañana"
 
         # Header del recreo
-        header = QLabel(f"Recreo {numero_recreo} ({len(guardias)} profesores)")
+        recreo = (recreos.de_guardia(guardias[0]) if guardias
+                  else recreos.resolver(recreos.configuracion_de(self.session), numero_recreo,
+                                        turno))
+        header = QLabel(f"{recreo.etiqueta_con_hora} ({len(guardias)} profesores)")
         font_header = QFont()
         font_header.setBold(True)
         header.setFont(font_header)

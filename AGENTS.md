@@ -47,6 +47,7 @@ En funciones standalone, sin anotación `: Session` en el parámetro.
 
 ## Interfaz
 - Listados sin paginación por decisión de CarlosFB (2026-10-17): todas las filas, con buscador, filtros y orden (`widgets/listado_filtrable.py`; cada etiqueta de filtro va pegada a su desplegable).
+- **Recreos**: la guardia guarda el id global del recreo (con la lista de Ajustes, 1-2 mañana y 3-4 tarde; sin ella, numeración compacta del reparto). Toda salida (PDF, .ics, web, correo, diálogos) lo traduce con `services/recreos.py` (`resolver`, `recreos_de`): «Recreo 1 de tarde · 16:30». Nunca pintar `guardia.recreo` tal cual. Zonas en los PDF compactos: `pdf_styles.abreviatura_zona`, nunca un código secuencial.
 
 ## Versionado, commits, changelog
 - SemVer en `app_version` **y en `pyproject.toml`** (un test vigila que coincidan): fix → patch · feat → minor · breaking → major.

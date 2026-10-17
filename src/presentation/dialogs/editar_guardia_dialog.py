@@ -129,7 +129,10 @@ class EditarGuardiaDialog(QDialog):
         self.combo_recreo.blockSignals(True)
         self.combo_recreo.clear()
         for turno, recreo in recreos:
-            self.combo_recreo.addItem(f"{self._etiqueta(recreo)} ({turno})", (turno, recreo))
+            # La etiqueta ya dice el turno («Recreo 1 de tarde · 16:30»)
+            texto = (self._etiquetas[int(recreo)] if int(recreo) in self._etiquetas
+                     else f"Recreo {recreo} ({turno})")
+            self.combo_recreo.addItem(texto, (turno, recreo))
         if self._inicial is not None:
             i = self.combo_recreo.findData((self._inicial.turno, self._inicial.recreo))
             if i >= 0:

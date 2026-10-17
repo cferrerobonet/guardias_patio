@@ -26,28 +26,21 @@ class ICalendarService:
     def _obtener_hora_recreo(
         config: Configuracion, turno: str, recreo: int
     ) -> Optional[datetime.time]:
-        """
-        Obtiene la hora configurada para un recreo específico.
+        """Hora del recreo con ese id global, o None si no está configurada.
 
-        Args:
-            config: Configuración del curso
-            turno: "mañana" o "tarde"
-            recreo: Número de recreo (1 o 2)
-
-        Returns:
-            Hora del recreo o None si no está configurada
+        El id es el que guarda la guardia (3 y 4 de tarde con la lista de Ajustes):
+        tratarlo como 1 o 2 de cada turno dejaba fuera del .ics todas las guardias
+        de tarde (`services.recreos`).
         """
-        if turno.lower() == "mañana":
-            if recreo == 1 and config.hora_recreo1_manana:
-                return config.hora_recreo1_manana
-            elif recreo == 2 and config.hora_recreo2_manana:
-                return config.hora_recreo2_manana
-        elif turno.lower() == "tarde":
-            if recreo == 1 and config.hora_recreo1_tarde:
-                return config.hora_recreo1_tarde
-            elif recreo == 2 and config.hora_recreo2_tarde:
-                return config.hora_recreo2_tarde
-        return None
+        from services.recreos import resolver
+
+        return resolver(config, recreo, turno).hora
+
+    @staticmethod
+    def _etiqueta_recreo(config: Configuracion, guardia: Guardia) -> str:
+        from services.recreos import resolver
+
+        return resolver(config, guardia.recreo, guardia.turno).etiqueta_con_hora
 
     @staticmethod
     def _formatear_datetime_ical(dt: datetime) -> str:
@@ -239,7 +232,7 @@ class ICalendarService:
         descripcion_parts = [
             f"Guardia de patio en {zona_nombre}",
             f"Turno: {guardia.turno.capitalize()}",
-            f"Recreo: {guardia.recreo}",
+            f"Recreo: {ICalendarService._etiqueta_recreo(config, guardia)}",
         ]
 
         if zona_descripcion:

@@ -74,16 +74,13 @@ def huecos_del_dia(session, fecha: date) -> List[Hueco]:
 
 
 def etiquetas_de_recreos(session) -> dict:
-    """{id de recreo: «R1 Mañana»} según la configuración."""
-    from services.calculador_guardias import _parse_recreos_config
+    """{id de recreo: «Recreo 1 de tarde · 16:30»} según la configuración."""
+    from services.recreos import recreos_de
 
     config = session.query(Configuracion).first()
     if config is None:
         return {}
-    return {
-        int(r["id"]): (r.get("etiqueta") or f"Recreo {r['id']}")
-        for r in _parse_recreos_config(config)
-    }
+    return {r.id: r.etiqueta_con_hora for r in recreos_de(config)}
 
 
 def guardia_en_hueco(session, hueco: Hueco, salvo_id: Optional[int] = None) -> Optional[Guardia]:

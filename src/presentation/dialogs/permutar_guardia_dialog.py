@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 )
 
 from infrastructure.database.models import Guardia, Profesor
+from services import recreos
 from utils import get_logger
 from utils.orden import clave_alfabetica
 from utils.ui_helpers import aplicar_caja
@@ -48,7 +49,8 @@ class PermutarGuardiaDialog(QDialog):
         zona = self.guardia.zona.nombre_zona if self.guardia.zona else "?"
         cabecera = QLabel(
             f"<b>{cede}</b> cede su guardia del "
-            f"<b>{self.guardia.fecha:%d/%m/%Y}</b>, recreo {self.guardia.recreo} ({zona})."
+            f"<b>{self.guardia.fecha:%d/%m/%Y}</b>, "
+            f"{recreos.de_guardia(self.guardia).etiqueta_con_hora.lower()} ({zona})."
         )
         cabecera.setWordWrap(True)
         layout.addWidget(cabecera)
@@ -127,7 +129,9 @@ class PermutarGuardiaDialog(QDialog):
         for otra in guardias:
             zona = otra.zona.nombre_zona if otra.zona else "?"
             self.combo_guardia.addItem(
-                f"{otra.fecha:%d/%m/%Y} · recreo {otra.recreo} · {zona}", otra.id
+                f"{otra.fecha:%d/%m/%Y} · {recreos.de_guardia(otra).etiqueta_con_hora.lower()} "
+                f"· {zona}",
+                otra.id,
             )
 
         hay = bool(guardias)

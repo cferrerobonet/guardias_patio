@@ -210,7 +210,9 @@ class TestPdfIndividual:
         _individual(session, profes[0], tmp_path / "p.pdf")
         textos = _texto(texto_pdf)
         assert {"Octubre 2026", "Noviembre 2026", "Diciembre 2026"} <= set(textos)
-        assert "T2·Z2" in textos  # código de turno, recreo y zona, explicado en la leyenda
+        # Turno y recreo dentro del turno, y la abreviatura real de la zona
+        # («Pistas deportivas» → «PD»), explicados en la leyenda
+        assert "T2·PD" in textos
         assert "ZONAS" in textos
         assert _dentro_de_margenes(texto_pdf) == []
 
@@ -273,3 +275,86 @@ class TestAjustar:
                 partes, tam = ajustar(texto, Papel.TEXTO, 9, 4.5, ancho, lineas)
                 assert len(partes) <= lineas
                 assert all(stringWidth(p, Papel.TEXTO, tam) <= ancho + 0.01 for p in partes)
+
+
+# --- Recreos de tarde y zonas con nombre corto (2026-10-17) -----------------------
+
+RECREOS_DE_AJUSTES = [
+    {"id": 1, "etiqueta": "Recreo 1 Mañana", "turno": "mañana", "hora": "10:30"},
+    {"id": 2, "etiqueta": "Recreo 2 Mañana", "turno": "mañana", "hora": "12:20"},
+    {"id": 3, "etiqueta": "Recreo 1 Tarde", "turno": "tarde", "hora": "16:30"},
+    {"id": 4, "etiqueta": "Recreo 2 Tarde", "turno": "tarde", "hora": "18:30"},
+]
+
+
+def _centro_de_tarde(session, meses=(10,)):
+    """Zonas «Z2» y «Z3», recreos de Ajustes (3 y 4 de tarde) y un profesor de tarde."""
+    import json
+
+    curso = CursoEscolar(anio_inicio=2026, anio_fin=2027, fecha_inicio=date(2026, 9, 1),
+                         fecha_fin=date(2027, 6, 30), nombre="Curso 2026/2027", activo=True)
+    session.add(curso)
+    session.flush()
+    session.add(Configuracion(
+        anio_inicio_curso=2026, fecha_inicio_curso=date(2026, 9, 1),
+        fecha_fin_curso=date(2027, 6, 30),
+        hora_recreo1_manana=time(10, 30), hora_recreo2_manana=time(12, 20),
+        hora_recreo1_tarde=time(16, 30), hora_recreo2_tarde=time(18, 30),
+        recreos_config=json.dumps(RECREOS_DE_AJUSTES),
+        activar_festivos_automaticos=True, curso_activo_id=curso.id,
+    ))
+    zonas = [Zona(nombre_zona="Z2", descripcion="Patio delantero"),
+             Zona(nombre_zona="Z3", descripcion="Pistas del fondo")]
+    profe = Profesor(nombre_completo="Profesor/a Tarde", email_corporativo="t@example.com",
+                     horas_contrato=25, porcentaje_jornada=100, turno="tarde", tutor=False,
+                     activo=True, curso_id=curso.id)
+    session.add_all(zonas + [profe])
+    session.flush()
+    for mes in meses:
+        session.add_all([
+            Guardia(curso_id=curso.id, profesor_id=profe.id, fecha=date(2026, mes, 6),
+                    turno="tarde", recreo=3, zona_id=zonas[0].id),
+            Guardia(curso_id=curso.id, profesor_id=profe.id, fecha=date(2026, mes, 14),
+                    turno="tarde", recreo=4, zona_id=zonas[1].id),
+        ])
+    session.flush()
+    return profe
+
+
+class TestRecreoDeTardeYZonas:
+    def test_la_guardia_de_tarde_sale_con_su_numero_y_su_hora(self, session, tmp_path,
+                                                               texto_pdf):
+        profe = _centro_de_tarde(session)
+        _individual(session, profe, tmp_path / "p.pdf")
+        textos = _texto(texto_pdf)
+        todo = " ".join(textos)
+
+        assert "R1 · 16:30" in textos and "R2 · 18:30" in textos  # calendario
+        assert "Recreo 1 ·" in todo and "Recreo 2 ·" in todo      # tabla
+        assert "Recreo 3" not in todo and "Recreo 4" not in todo
+        assert "R3" not in todo and "T3" not in todo
+        # La leyenda dice lo mismo que se pinta
+        assert "R1 16:30" in todo and "R2 18:30" in todo
+
+    def test_una_zona_z2_no_sale_como_z1_z2(self, session, tmp_path, texto_pdf):
+        profe = _centro_de_tarde(session, meses=(10, 11, 12))
+        _individual(session, profe, tmp_path / "p.pdf")
+        textos = _texto(texto_pdf)
+        todo = " ".join(textos)
+
+        assert "T1·Z2" in textos and "T2·Z3" in textos   # calendario compacto
+        assert "Z1" not in todo
+        assert not re.search(r"Z\d\s*·\s*Z\d", todo)
+        # Tabla: «nombre — descripción»; leyenda: cada zona una vez
+        assert textos.count("Z2") >= 1
+        assert todo.count("Patio delantero") >= 1
+        assert "En el calendario," in todo and "T2" in todo
+
+    def test_pdf_del_mes_con_la_tarde_numerada_y_con_hora(self, session, tmp_path, texto_pdf):
+        _centro_de_tarde(session)
+        assert exportar_mes_consolidado(session, 10, 2026, str(tmp_path / "m.pdf"))
+        todo = " ".join(_texto(texto_pdf))
+
+        assert "Tarde · R1" in todo and "Tarde · R2" in todo
+        assert "16:30" in todo and "18:30" in todo
+        assert "R3" not in todo and "R4" not in todo

@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
 
 from infrastructure.database.models import Ausencia, Guardia, Zona
 from presentation.theme.tokens import FontSize
+from services import recreos
 
 
 class CeldaDia(QGroupBox):
@@ -236,7 +237,9 @@ class CeldaDia(QGroupBox):
             )
 
             icono_turno = "☀" if turno == "mañana" else "🌙"
-            label_grupo = QLabel(f"{icono_turno} Recreo {recreo} ({turno})")
+            datos_recreo = (recreos.de_guardia(guardias_grupo[0]) if guardias_grupo
+                            else recreos.resolver(None, recreo, turno))
+            label_grupo = QLabel(f"{icono_turno} {datos_recreo.etiqueta_con_hora}")
             label_grupo.setStyleSheet(
                 "font-size: 12px; font-weight: bold; color: #1C5226; "
                 "background-color: #E2F0E3; padding: 3px 5px; border-radius: 2px;"
