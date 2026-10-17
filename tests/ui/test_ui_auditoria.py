@@ -45,6 +45,14 @@ def form_con_registros(qapp, session, profesor_factory, zona_factory):
     f.close()
 
 
+def _visibles(tabla) -> int:
+    return sum(1 for r in range(tabla.rowCount()) if not tabla.isRowHidden(r))
+
+
+def _accion(form):
+    return next(f for f in form.listado.filtros if f.etiqueta == "Acción").combo
+
+
 def _esta_vacia(tabla) -> bool:
     """Sin resultados: o ninguna fila, o la única fila es el mensaje de vacío."""
     if tabla.rowCount() == 0:
@@ -71,55 +79,50 @@ class TestAuditoriaRenderizado:
     def test_filtros_visibles(self, form):
         assert hasattr(form, "fecha_desde")
         assert hasattr(form, "fecha_hasta")
-        assert hasattr(form, "combo_accion")
-        assert hasattr(form, "input_profesor")
+        assert {f.etiqueta for f in form.listado.filtros} == {"Acción", "Usuario"}
+        assert not form.listado.buscador.isHidden()
 
     def test_bd_vacia_no_crashea(self, form):
         # Desde v5.84.0 la tabla vacía escribe una fila que lo explica: en
         # blanco no se distinguía de «aún no ha cargado» (UXA-008).
         assert _esta_vacia(form.tabla)
-        assert "0 registros" in form.label_total.text()
+        assert form.listado.recuento.text() == "Sin resultados"
 
 
 class TestAuditoriaConDatos:
     def test_registros_se_cargan_en_tabla(self, form_con_registros):
         assert form_con_registros.tabla.rowCount() == 3
 
-    def test_label_total_muestra_conteo(self, form_con_registros):
-        assert "3 registros" in form_con_registros.label_total.text()
+    def test_recuento_muestra_conteo(self, form_con_registros):
+        assert form_con_registros.listado.recuento.text() == "3 cambios"
 
     def test_filtrar_por_accion_creada(self, qtbot, form_con_registros):
-        """Filtrar por 'CREADA' reduce las filas a 1."""
-        idx = form_con_registros.combo_accion.findText("CREADA")
-        form_con_registros.combo_accion.setCurrentIndex(idx)
-        form_con_registros.cargar_datos()
+        """Filtrar por «Creada» deja una fila a la vista."""
+        _accion(form_con_registros).setCurrentText("✚ Creada")
         QApplication.processEvents()
-        assert form_con_registros.tabla.rowCount() == 1
+        assert _visibles(form_con_registros.tabla) == 1
 
-    def test_filtrar_por_texto_profesor(self, qtbot, form_con_registros):
-        """Filtrar por nombre de profesor devuelve sus registros."""
-        form_con_registros.input_profesor.setText("Auditor")
-        form_con_registros.cargar_datos()
+    def test_buscar_por_profesor(self, qtbot, form_con_registros):
+        """Buscar por nombre de profesor devuelve sus registros."""
+        form_con_registros.listado.buscador.setText("Auditor")
         QApplication.processEvents()
-        assert form_con_registros.tabla.rowCount() == 3
+        assert _visibles(form_con_registros.tabla) == 3
 
-    def test_filtrar_texto_inexistente_da_cero(self, qtbot, form_con_registros):
-        form_con_registros.input_profesor.setText("XYZ_no_existe")
-        form_con_registros.cargar_datos()
+    def test_buscar_texto_inexistente_da_cero(self, qtbot, form_con_registros):
+        form_con_registros.listado.buscador.setText("XYZ_no_existe")
         QApplication.processEvents()
-        assert _esta_vacia(form_con_registros.tabla)
+        assert _visibles(form_con_registros.tabla) == 0
+        assert form_con_registros.listado.recuento.text() == "Sin resultados"
 
     def test_limpiar_filtros_restaura_todos(self, qtbot, form_con_registros):
         """Después de filtrar, limpiar restaura todos los registros."""
-        idx = form_con_registros.combo_accion.findText("ELIMINADA")
-        form_con_registros.combo_accion.setCurrentIndex(idx)
-        form_con_registros.cargar_datos()
+        _accion(form_con_registros).setCurrentText("✕ Eliminada")
         QApplication.processEvents()
-        assert form_con_registros.tabla.rowCount() == 1
+        assert _visibles(form_con_registros.tabla) == 1
 
         form_con_registros._limpiar_filtros()
         QApplication.processEvents()
-        assert form_con_registros.tabla.rowCount() == 3
+        assert _visibles(form_con_registros.tabla) == 3
 
     def test_filtro_rango_fechas_excluye_futuros(self, qtbot, form_con_registros):
         """Rango de fechas que excluye ayer no devuelve registros."""

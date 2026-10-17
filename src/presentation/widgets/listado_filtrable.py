@@ -189,6 +189,7 @@ class ListadoFiltrable(QObject):
         con_buscador: bool = True,
         con_limpiar: bool = True,
         recordar: tuple | list = (),
+        filtros_propios: Optional[Callable[[], bool]] = None,
     ):
         super().__init__(tabla)
         self.tabla = tabla
@@ -198,6 +199,7 @@ class ListadoFiltrable(QObject):
         self._columnas_busqueda = columnas_busqueda
         self._clave_fila = clave_fila or _clave_de_la_primera_columna
         self._recordar = list(recordar)
+        self._filtros_propios = filtros_propios
         self._total = 0
         self._resaltada: Any = None
         self._a_mostrar: Any = None
@@ -299,6 +301,9 @@ class ListadoFiltrable(QObject):
         return self._total
 
     def hay_filtros(self) -> bool:
+        """Hay búsqueda, algún desplegable elegido o un filtro propio de la vista."""
+        if self._filtros_propios is not None and self._filtros_propios():
+            return True
         return bool(self.buscador.text().strip()) or any(
             f.combo is not None and f.combo.currentText() != TODOS for f in self.filtros
         )

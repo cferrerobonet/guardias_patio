@@ -218,11 +218,28 @@ class AjustesForm(BaseForm):
         self.load_btn.setIcon(icon_for_button("refresh"))
         self.load_btn.clicked.connect(self.cargar_configuracion)
 
+        # Registro de cambios en guardias, solo de consulta (GUA-UXI-009)
+        self.registro_btn = QPushButton("Registro de cambios")
+        self.registro_btn.setProperty("secondary", "true")
+        self.registro_btn.setToolTip("Ver los cambios hechos en las guardias (solo lectura)")
+        self.registro_btn.setAccessibleName("Abrir el registro de cambios en guardias")
+        self.registro_btn.clicked.connect(self.abrir_registro_de_cambios)
+
         layout.addWidget(self.save_btn)
         layout.addWidget(self.load_btn)
         layout.addStretch()
+        layout.addWidget(self.registro_btn)
 
         return layout
+
+    def crear_registro_de_cambios(self):
+        from presentation.forms.auditoria_guardias_form import RegistroDeCambiosDialog
+
+        return RegistroDeCambiosDialog(self.session, self)
+
+    def abrir_registro_de_cambios(self) -> None:
+        """Abre el registro de cambios en guardias, solo de lectura."""
+        self.crear_registro_de_cambios().exec()
 
     def guardar_configuracion(self) -> None:
         """
