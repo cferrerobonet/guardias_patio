@@ -1,16 +1,13 @@
-"""Buscador, filtros, orden y paginación para las tablas que crecen (GUA-UXI-005).
+"""Buscador, filtros y orden para las tablas que crecen (GUA-UXI-005).
 
-El mismo patrón que los listados de la web de pedidos (`list-view-utils.js`) y que
-la tabla paginada de Partes de salida: buscador, filtros por columna (profesor,
-zona, turno, estado), «Limpiar filtros», cabeceras ordenables, filas por página
-(5/10/15/20/50, 10 de serie), pie «Mostrando 1–10 de N» con primera, anterior,
-cinco números, siguiente y última —los extremos se desactivan, no desaparecen— y
-la fila nueva resaltada.
+Buscador, filtros por columna (profesor, zona, turno, estado), «Limpiar filtros»,
+cabeceras ordenables, recuento «N de M» y la fila nueva resaltada y a la vista.
+**Sin paginación** por decisión de CarlosFB (2026-10-17): la tabla muestra todas
+las filas que pasan los filtros.
 
 Se monta **encima** de un `QTableWidget` ya existente: la vista lo sigue llenando
-como siempre y aquí solo se ocultan las filas que no tocan. Los filtros, las filas
-por página y el orden se recuerdan entre sesiones, en `preferencias_listados.json`
-de la carpeta de datos.
+como siempre y aquí solo se ocultan las filas que no tocan. Los filtros y el orden
+se recuerdan entre sesiones, en `preferencias_listados.json` de la carpeta de datos.
 """
 
 from __future__ import annotations
@@ -29,6 +26,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QSizePolicy,
     QTableWidget,
     QWidget,
 )
@@ -37,29 +35,21 @@ from utils.orden import clave_alfabetica
 
 logger = logging.getLogger(__name__)
 
-POR_PAGINA = (5, 10, 15, 20, 50)
-POR_PAGINA_DE_SERIE = 10
 TODOS = "Todos"
+ESPACIO_ETIQUETA = 6
+ESPACIO_ENTRE_CONTROLES = 12
 
 
 # --- Cálculos sin interfaz --------------------------------------------------
 
 
-def ventana_paginas(actual: int, total: int) -> list[int]:
-    """Los cinco números del pie, como en la web de pedidos: desde la actual − 2."""
-    total = max(1, total)
-    actual = max(1, min(actual, total))
-    inicio = max(1, actual - 2)
-    return list(range(inicio, min(total, inicio + 4) + 1))
-
-
-def texto_recuento(pagina: int, por_pagina: int, total: int, entidad: str = "") -> str:
-    """«Mostrando 1–10 de 42 profesores», o «Sin resultados» a cero."""
-    if total <= 0:
+def texto_recuento(visibles: int, total: int, entidad: str = "") -> str:
+    """«42 profesores», «5 de 42 profesores» con filtros, o «Sin resultados» a cero."""
+    if visibles <= 0:
         return "Sin resultados"
-    desde = (pagina - 1) * por_pagina + 1
-    hasta = min(pagina * por_pagina, total)
-    return f"Mostrando {desde}–{hasta} de {total} {entidad}".rstrip()
+    if visibles >= total:
+        return f"{visibles} {entidad}".rstrip()
+    return f"{visibles} de {total} {entidad}".rstrip()
 
 
 def _normalizar(texto: str) -> str:
@@ -161,7 +151,7 @@ def filas_visibles_seleccionadas(tabla: QTableWidget) -> list[int]:
 
 
 def seleccionar_visibles(tabla: QTableWidget) -> None:
-    """Ctrl+A sobre una tabla filtrada o paginada: solo lo que está a la vista."""
+    """Ctrl+A sobre una tabla filtrada: solo lo que está a la vista."""
     tabla.clearSelection()
     modo = tabla.selectionMode()
     tabla.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
@@ -177,11 +167,11 @@ def seleccionar_visibles(tabla: QTableWidget) -> None:
 
 
 class ListadoFiltrable(QObject):
-    """Buscador, filtros y paginación sobre un `QTableWidget` que llena su vista.
+    """Buscador, filtros y orden sobre un `QTableWidget` que llena su vista.
 
-    La vista coloca `barra` encima de la tabla y `pie` debajo. Para resaltar la
-    fila recién creada, llama a `resaltar(clave)` después de recargar la tabla;
-    `clave_fila(tabla, fila)` dice qué clave tiene cada fila.
+    La vista coloca `barra` encima de la tabla y `pie` (el recuento) debajo. Para
+    resaltar la fila recién creada, llama a `resaltar(clave)` después de recargar
+    la tabla; `clave_fila(tabla, fila)` dice qué clave tiene cada fila.
     """
 
     def __init__(
@@ -208,8 +198,6 @@ class ListadoFiltrable(QObject):
         self._columnas_busqueda = columnas_busqueda
         self._clave_fila = clave_fila or _clave_de_la_primera_columna
         self._recordar = list(recordar)
-        self._pagina = 1
-        self._paginas = 1
         self._total = 0
         self._resaltada: Any = None
         self._a_mostrar: Any = None
@@ -222,41 +210,41 @@ class ListadoFiltrable(QObject):
         # Barra de filtros
         self.barra = QWidget()
         self.barra.setObjectName("barraDeListado")
+        # Cada etiqueta va pegada a su desplegable: el ancho sobrante lo toma el
+        # buscador o, si no lo hay, un muelle al final (antes se repartía entre
+        # todos y la etiqueta quedaba lejos de su control).
         capa = QHBoxLayout(self.barra)
         capa.setContentsMargins(0, 0, 0, 0)
-        capa.setSpacing(8)
+        capa.setSpacing(ESPACIO_ENTRE_CONTROLES)
         self._buscador_propio = buscador is None
         self.buscador = buscador or QLineEdit()
-        if self._buscador_propio and con_buscador:
+        con_buscador_en_barra = self._buscador_propio and con_buscador
+        if con_buscador_en_barra:
             self.buscador.setPlaceholderText(marcador)
             self.buscador.setClearButtonEnabled(True)
             self.buscador.setAccessibleName(f"Buscar en {entidad or 'la tabla'}")
             capa.addWidget(self.buscador, 1)
         self.buscador.textChanged.connect(self._al_cambiar_filtro)
 
+        self.etiquetas: list[QLabel] = []
         for filtro in self.filtros:
             etiqueta = QLabel(f"{filtro.etiqueta}:")
-            etiqueta.setObjectName("smallFieldLabel")
+            etiqueta.setObjectName("etiquetaDeFiltro")
+            etiqueta.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
             combo = QComboBox()
             combo.setAccessibleName(f"Filtrar por {filtro.etiqueta.lower()}")
             combo.addItem(TODOS)
+            combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
             combo.currentTextChanged.connect(lambda texto, f=filtro: self._al_elegir(f, texto))
             filtro.combo = combo
             etiqueta.setBuddy(combo)
-            capa.addWidget(etiqueta)
-            capa.addWidget(combo)
-
-        etiqueta_pp = QLabel("Por página:")
-        etiqueta_pp.setObjectName("smallFieldLabel")
-        self.por_pagina = QComboBox()
-        self.por_pagina.setAccessibleName("Filas por página")
-        for n in POR_PAGINA:
-            self.por_pagina.addItem(str(n), n)
-        self.por_pagina.setCurrentIndex(POR_PAGINA.index(POR_PAGINA_DE_SERIE))
-        self.por_pagina.currentIndexChanged.connect(self._al_cambiar_filtro)
-        etiqueta_pp.setBuddy(self.por_pagina)
-        capa.addWidget(etiqueta_pp)
-        capa.addWidget(self.por_pagina)
+            par = QHBoxLayout()
+            par.setContentsMargins(0, 0, 0, 0)
+            par.setSpacing(ESPACIO_ETIQUETA)
+            par.addWidget(etiqueta)
+            par.addWidget(combo)
+            capa.addLayout(par)
+            self.etiquetas.append(etiqueta)
 
         self._con_limpiar = con_limpiar
         if boton_limpiar is None:
@@ -266,46 +254,24 @@ class ListadoFiltrable(QObject):
                 capa.addWidget(self.limpiar)
         else:
             self.limpiar = boton_limpiar
+        if capa.count() == 0:
+            self.barra.hide()  # nada que filtrar: ni buscador ni desplegables
+        if not con_buscador_en_barra:
+            capa.addStretch(1)
         if con_limpiar:
             self.limpiar.setToolTip("Quitar la búsqueda y los filtros")
             self.limpiar.clicked.connect(self.limpiar_filtros)
 
-        # Pie: recuento y paginación
+        # Pie: el recuento
         self.pie = QWidget()
         self.pie.setObjectName("pieDeListado")
         capa_pie = QHBoxLayout(self.pie)
         capa_pie.setContentsMargins(0, 0, 0, 0)
-        capa_pie.setSpacing(4)
         self.recuento = QLabel("")
         self.recuento.setObjectName("secondary")
         self.recuento.setAccessibleName("Recuento de filas")
         capa_pie.addWidget(self.recuento)
         capa_pie.addStretch(1)
-        self.botones: dict[str, QPushButton] = {}
-        for nombre, texto, ayuda in (
-            ("primera", "«", "Primera página"),
-            ("anterior", "‹", "Página anterior"),
-        ):
-            self.botones[nombre] = self._boton(texto, ayuda)
-            capa_pie.addWidget(self.botones[nombre])
-        self.numeros: list[QPushButton] = []
-        for _ in range(5):
-            b = self._boton("", "Número de página")
-            b.setCheckable(True)
-            self.numeros.append(b)
-            capa_pie.addWidget(b)
-        for nombre, texto, ayuda in (
-            ("siguiente", "›", "Página siguiente"),
-            ("ultima", "»", "Última página"),
-        ):
-            self.botones[nombre] = self._boton(texto, ayuda)
-            capa_pie.addWidget(self.botones[nombre])
-        self.botones["primera"].clicked.connect(lambda: self.ir(1))
-        self.botones["anterior"].clicked.connect(lambda: self.ir(self._pagina - 1))
-        self.botones["siguiente"].clicked.connect(lambda: self.ir(self._pagina + 1))
-        self.botones["ultima"].clicked.connect(lambda: self.ir(self._paginas))
-        for b in self.numeros:
-            b.clicked.connect(lambda _=False, boton=b: self.ir(int(boton.text() or 1)))
 
         # Cambios de la tabla: se recalcula una sola vez, al volver al bucle de eventos
         modelo = tabla.model()
@@ -328,14 +294,6 @@ class ListadoFiltrable(QObject):
     # --- API ---------------------------------------------------------------
 
     @property
-    def pagina(self) -> int:
-        return self._pagina
-
-    @property
-    def paginas(self) -> int:
-        return self._paginas
-
-    @property
     def total(self) -> int:
         """Filas que pasan la búsqueda y los filtros."""
         return self._total
@@ -355,20 +313,19 @@ class ListadoFiltrable(QObject):
                     f.combo.setCurrentIndex(0)
         finally:
             self._cargando_preferencias = False
-        self._pagina = 1
         self.aplicar()
         self._guardar()
 
     def resaltar(self, clave: Any) -> None:
-        """Resalta la fila con esa clave y salta a su página (la fila nueva)."""
+        """Resalta la fila con esa clave y la lleva a la vista (la fila nueva)."""
         self._resaltada = clave
         self.mostrar(clave)
 
     def mostrar(self, clave: Any) -> None:
-        """Salta a la página de la fila con esa clave (la que se acaba de editar).
+        """Desplaza la tabla hasta la fila con esa clave (la que se acaba de editar).
 
         Se llama justo después de recargar la tabla: el orden elegido se repone
-        aquí mismo, para que la página sea la de su sitio definitivo.
+        aquí mismo, para que el desplazamiento sea a su sitio definitivo.
         """
         self._a_mostrar = clave
         if self._recargada:
@@ -376,12 +333,8 @@ class ListadoFiltrable(QObject):
             self._restaurar_orden()
         self.aplicar()
 
-    def ir(self, pagina: int) -> None:
-        self._pagina = pagina
-        self.aplicar()
-
     def aplicar(self) -> None:
-        """Oculta lo que no pasa los filtros o no cabe en la página actual."""
+        """Oculta lo que no pasa la búsqueda o los filtros; el resto se ve entero."""
         if self._aplicando:
             return
         self._aplicando = True
@@ -395,29 +348,19 @@ class ListadoFiltrable(QObject):
                 coincidentes: list[int] = []
             else:
                 coincidentes = [f for f in range(filas) if self._coincide(f)]
-            n = int(self.por_pagina.currentData() or POR_PAGINA_DE_SERIE)
             self._total = len(coincidentes)
-            self._paginas = max(1, -(-self._total // n))
-            if self._a_mostrar is not None:
-                indice = next(
-                    (
-                        i
-                        for i, f in enumerate(coincidentes)
-                        if self._tiene_clave(f, self._a_mostrar)
-                    ),
-                    None,
-                )
-                if indice is not None:
-                    self._pagina = indice // n + 1
-                self._a_mostrar = None
-            self._pagina = max(1, min(self._pagina, self._paginas))
-            visibles = set(coincidentes[(self._pagina - 1) * n : self._pagina * n])
+            visibles = set(coincidentes)
             if not self._es_aviso_de_vacia():
                 for f in range(filas):
                     tabla.setRowHidden(f, f not in visibles)
             self._pintar_resaltado(visibles)
-            self.recuento.setText(texto_recuento(self._pagina, n, self._total, self.entidad))
-            self._pintar_pie()
+            if self._a_mostrar is not None:
+                fila = next((f for f in coincidentes if self._tiene_clave(f, self._a_mostrar)), None)
+                if fila is not None:
+                    self._llevar_a_la_vista(fila)
+                self._a_mostrar = None
+            registros = 0 if self._es_aviso_de_vacia() else filas
+            self.recuento.setText(texto_recuento(self._total, registros, self.entidad))
             if self._con_limpiar:
                 self.limpiar.setEnabled(self.hay_filtros())
         finally:
@@ -425,13 +368,12 @@ class ListadoFiltrable(QObject):
 
     # --- Interno -----------------------------------------------------------
 
-    def _boton(self, texto: str, ayuda: str) -> QPushButton:
-        b = QPushButton(texto)
-        b.setProperty("pagina", "true")
-        b.setToolTip(ayuda)
-        b.setAccessibleName(ayuda)
-        b.setCursor(Qt.CursorShape.PointingHandCursor)
-        return b
+    def _llevar_a_la_vista(self, fila: int) -> None:
+        for c in range(self.tabla.columnCount()):
+            item = self.tabla.item(fila, c)
+            if item is not None and not self.tabla.isColumnHidden(c):
+                self.tabla.scrollToItem(item, QTableWidget.ScrollHint.EnsureVisible)
+                return
 
     def _programar_recarga(self, *_args) -> None:
         if self._aplicando:
@@ -532,7 +474,6 @@ class ListadoFiltrable(QObject):
     def _al_cambiar_filtro(self, *_args) -> None:
         if self._cargando_preferencias:
             return
-        self._pagina = 1
         self.aplicar()
         self._guardar()
 
@@ -575,27 +516,7 @@ class ListadoFiltrable(QObject):
                 fuente.setBold(True)
                 item.setFont(fuente)
                 self._items_resaltados.append(item)
-            primera = self.tabla.item(fila, 0)
-            if primera is not None:
-                self.tabla.scrollToItem(primera)
-
-    def _pintar_pie(self) -> None:
-        actual, total = self._pagina, self._paginas
-        self.botones["primera"].setEnabled(actual > 1)
-        self.botones["anterior"].setEnabled(actual > 1)
-        self.botones["siguiente"].setEnabled(actual < total)
-        self.botones["ultima"].setEnabled(actual < total)
-        numeros = ventana_paginas(actual, total)
-        for i, b in enumerate(self.numeros):
-            if i < len(numeros):
-                p = numeros[i]
-                b.setText(str(p))
-                b.setChecked(p == actual)
-                b.setToolTip(f"Página {p}")
-                b.setAccessibleName(f"Página {p}" + (", actual" if p == actual else ""))
-                b.setVisible(True)
-            else:
-                b.setVisible(False)
+            self._llevar_a_la_vista(fila)
 
     # --- Recordar ----------------------------------------------------------
 
@@ -612,9 +533,6 @@ class ListadoFiltrable(QObject):
                     valor = filtros.get(f.clave)
                     if isinstance(valor, str) and valor:
                         f.deseado = valor
-            n = prefs.get("por_pagina")
-            if n in POR_PAGINA:
-                self.por_pagina.setCurrentIndex(POR_PAGINA.index(n))
             extra = prefs.get("extra", {})
             if isinstance(extra, dict):
                 for widget in self._recordar:
@@ -641,7 +559,6 @@ class ListadoFiltrable(QObject):
         valores: dict = {
             "busqueda": self.buscador.text(),
             "filtros": {f.clave: f.deseado for f in self.filtros if f.deseado != TODOS},
-            "por_pagina": int(self.por_pagina.currentData() or POR_PAGINA_DE_SERIE),
         }
         if self.tabla.isSortingEnabled():
             cabecera = self.tabla.horizontalHeader()

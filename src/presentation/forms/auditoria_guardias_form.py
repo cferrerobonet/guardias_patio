@@ -120,7 +120,7 @@ class AuditoriaGuardiasForm(QWidget):
         self.tabla.setColumnWidth(2, 90)
         self.tabla.setColumnWidth(3, 220)
         self.tabla.setColumnWidth(4, 120)
-        # Paginación, orden y filtros que se recuerdan (GUA-UXI-005). La acción y
+        # Orden y filtros que se recuerdan (GUA-UXI-005), sin paginación. La acción y
         # el profesor filtran ya en la consulta: el listado solo los recuerda.
         self.listado = ListadoFiltrable(
             self.tabla,
