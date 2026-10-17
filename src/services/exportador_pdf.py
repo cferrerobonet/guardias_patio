@@ -26,6 +26,7 @@ from sqlalchemy.orm import joinedload
 from infrastructure.database.models import Guardia, Profesor
 from services.gestor_cursos import GestorCursos
 from services.pdf_styles import PDFStyles
+from services.recreos import configuracion_de, resolver
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -66,6 +67,7 @@ class ExportadorPDF:
             if not curso_activo:
                 logger.warning("No hay curso activo para exportar PDF")
                 return False
+            config = configuracion_de(session)
 
             guardias = (
                 session.query(Guardia)
@@ -164,7 +166,7 @@ class ExportadorPDF:
                                 fecha_str,
                                 dia_semana,
                                 guardia.turno.capitalize(),
-                                f"Recreo {guardia.recreo}",
+                                resolver(config, guardia.recreo, guardia.turno).etiqueta_con_hora,
                                 zona_nombre,
                                 "",  # Observaciones vacías
                             ]

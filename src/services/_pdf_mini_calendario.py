@@ -285,32 +285,24 @@ def leyenda(ancho: float, horarios: str, zonas: list | None = None,
 
 
 def obtener_hora_recreo(config: Configuracion, turno: str, recreo: int) -> str:
-    """Obtiene la hora formateada del recreo."""
-    try:
-        if turno == "mañana":
-            if recreo == 1 and config.hora_recreo1_manana:
-                return config.hora_recreo1_manana.strftime("%H:%M")
-            elif recreo == 2 and config.hora_recreo2_manana:
-                return config.hora_recreo2_manana.strftime("%H:%M")
-        elif turno == "tarde":
-            if recreo == 1 and config.hora_recreo1_tarde:
-                return config.hora_recreo1_tarde.strftime("%H:%M")
-            elif recreo == 2 and config.hora_recreo2_tarde:
-                return config.hora_recreo2_tarde.strftime("%H:%M")
-    except (ValueError, TypeError, OSError) as e:
-        logger.debug(f"No se pudo obtener hora de recreo ({turno}, recreo {recreo}): {e}")
-    return ""
+    """Hora «HH:MM» del recreo con ese id global (`services.recreos`)."""
+    from services.recreos import resolver
+
+    return resolver(config, recreo, turno).hora_texto
 
 
 def texto_horarios(config) -> str:
-    """«Mañana: R1 10:30 · R2 12:20   Tarde: …» con las horas que haya configuradas."""
+    """«Mañana: R1 10:30 · R2 12:20   Tarde: …» con las horas que haya configuradas.
+
+    Sale de la misma lista que resuelve cada guardia: lo que dice la leyenda es lo
+    que se pinta en el calendario y en la tabla.
+    """
+    from services.recreos import recreos_de
+
     partes = []
     for turno in ("mañana", "tarde"):
-        horas = []
-        for r in (1, 2):
-            h = obtener_hora_recreo(config, turno, r) if config else ""
-            if h:
-                horas.append(f"R{r} {h}")
+        horas = [f"{r.corta} {r.hora_texto}" for r in recreos_de(config)
+                 if r.turno == turno and r.hora]
         if horas:
             partes.append(f"<b>{turno.capitalize()}:</b> " + " · ".join(horas))
     return " &nbsp;&nbsp;&nbsp; ".join(partes) or "Sin horas configuradas"

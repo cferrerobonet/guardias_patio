@@ -24,6 +24,7 @@ from typing import Optional
 
 from core.logging import get_logger
 from infrastructure.database.models import Guardia, Profesor
+from services.recreos import configuracion_de, resolver
 from utils.orden import clave_alfabetica
 
 logger = get_logger(__name__)
@@ -95,6 +96,7 @@ def publicar(session, destino, nombre_centro: str = "EPLA") -> dict:
         )
 
     resumen = {"publicados": 0, "sin_guardias": 0, "enlaces": [], "carpeta": carpeta}
+    config = configuracion_de(session)
     profesores = (
         session.query(Profesor)
         .filter(Profesor.activo.is_(True))
@@ -115,7 +117,7 @@ def publicar(session, destino, nombre_centro: str = "EPLA") -> dict:
 
         enlace = enlace_de(profesor.id, clave)
         (carpeta / f"{enlace}.html").write_text(
-            _pagina(profesor, guardias, enlace, nombre_centro), encoding="utf-8"
+            _pagina(profesor, guardias, enlace, nombre_centro, config), encoding="utf-8"
         )
         ICalendarService.generar_icalendar_profesor(
             session, profesor.id, str(carpeta / f"{enlace}.ics"), nombre_centro
@@ -136,7 +138,7 @@ def _fecha_larga(fecha) -> str:
     return f"{DIAS[fecha.weekday()]} {fecha.day} de {MESES[fecha.month - 1]}"
 
 
-def _pagina(profesor, guardias, enlace: str, nombre_centro: str) -> str:
+def _pagina(profesor, guardias, enlace: str, nombre_centro: str, config=None) -> str:
     """Una página por profesor, sin scripts ni recursos externos.
 
     Se abre igual desde el móvil que desde un ordenador y no depende de que el
@@ -152,7 +154,7 @@ def _pagina(profesor, guardias, enlace: str, nombre_centro: str) -> str:
             "<tr>"
             f"<td>{html.escape(_fecha_larga(g.fecha))}</td>"
             f"<td>{html.escape(str(g.turno))}</td>"
-            f"<td>Recreo {g.recreo}</td>"
+            f"<td>{html.escape(resolver(config, g.recreo, g.turno).etiqueta_con_hora)}</td>"
             f"<td>{html.escape(getattr(g.zona, 'nombre_zona', None) or '—')}</td>"
             "</tr>"
             for g in guardias_del_mes

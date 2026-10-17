@@ -36,11 +36,11 @@ from services._pdf_mini_calendario import (
     DiaCalendario,
     leyenda,
     no_lectivos_del_mes,
-    obtener_hora_recreo,
     texto_horarios,
 )
 from services.gestor_cursos import GestorCursos
 from services.pdf_styles import Papel, PDFStyles, construir_documento, trama
+from services.recreos import resolver
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -157,8 +157,9 @@ def exportar_mes_consolidado(
         reportar_progreso(40, f"Procesando {len(guardias)} guardias...")
         config = session.query(Configuracion).first()
 
+        # Id global del recreo (3 y 4 de tarde) → «Tarde · R1 · 16:30» (`services.recreos`)
         def hora(turno, recreo):
-            return obtener_hora_recreo(config, turno, recreo) if config else ""
+            return resolver(config, recreo, turno).hora_texto
 
         por_fecha = defaultdict(list)
         for g in guardias:
@@ -258,7 +259,8 @@ def exportar_mes_consolidado(
                 estilos.append(("LINEABOVE", (j, 1), (j, 1), 2.4, PDFStyles.get_color_zona(z.id)))
             for turno, recreo in franjas:
                 h = hora(turno, recreo)
-                fila_datos = [Paragraph(f"{turno.capitalize()} · R{recreo}"
+                fila_datos = [Paragraph(f"{turno.capitalize()} · "
+                                        f"{resolver(config, recreo, turno).corta}"
                                         + (f" · <font name='{Papel.TEXTO}'>{h}</font>" if h
                                            else ""), franja_st)]
                 for z in zonas:
@@ -336,6 +338,7 @@ def exportar_curso_completo(
 
         carpeta = Path(carpeta_salida)
         carpeta.mkdir(parents=True, exist_ok=True)
+        config = session.query(Configuracion).first()
 
         # Definir meses del curso escolar: Septiembre a Junio
         meses_curso = [
@@ -501,7 +504,7 @@ def exportar_curso_completo(
                                 fecha_str,
                                 dia_semana,
                                 guardia.turno.capitalize(),
-                                f"R{guardia.recreo}",
+                                resolver(config, guardia.recreo, guardia.turno).corta_con_hora,
                                 profesor_nombre,
                                 zona_nombre,
                             ]

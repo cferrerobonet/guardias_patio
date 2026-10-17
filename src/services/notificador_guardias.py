@@ -16,6 +16,7 @@ from typing import Callable, Optional
 from core.logging import get_logger
 from infrastructure.database.models import Configuracion, Guardia, Profesor
 from services import plantilla_avisos
+from services.recreos import configuracion_de, resolver
 from utils.orden import clave_alfabetica
 
 logger = get_logger(__name__)
@@ -79,6 +80,7 @@ def preparar_envios(
         plantilla = plantilla_avisos.cargar()
 
     preparacion = Preparacion()
+    config = configuracion_de(session)
     profesores = (
         session.query(Profesor)
         .filter(Profesor.activo.is_(True))
@@ -103,7 +105,7 @@ def preparar_envios(
             continue
 
         asunto, cuerpo_html, cuerpo_texto = redactar(
-            profesor.nombre_completo, guardias, mes_anio, plantilla
+            profesor.nombre_completo, guardias, mes_anio, plantilla, config=config
         )
         preparacion.envios.append(
             Envio(
@@ -129,8 +131,12 @@ def redactar(
     guardias: list,
     mes_anio: str,
     plantilla: Optional[plantilla_avisos.Plantilla] = None,
+    config=None,
 ) -> tuple:
-    """Devuelve `(asunto, html, texto)` del aviso de un profesor."""
+    """Devuelve `(asunto, html, texto)` del aviso de un profesor.
+
+    El recreo sale como «Recreo 1 de tarde · 16:30», con su hora (`services.recreos`).
+    """
     import html as _html
 
     plantilla = plantilla or plantilla_avisos.Plantilla()
@@ -144,7 +150,8 @@ def redactar(
         filas += (
             f"<tr><td style='{celda}'>{fecha}</td>"
             f"<td style='{celda}'>{_html.escape(str(guardia.turno))}</td>"
-            f"<td style='{celda}'>{guardia.recreo}</td>"
+            f"<td style='{celda}'>"
+            f"{_html.escape(resolver(config, guardia.recreo, guardia.turno).etiqueta_con_hora)}</td>"
             f"<td style='{celda}'>{_html.escape(nombre_de_zona(guardia))}</td></tr>"
         )
 
@@ -163,7 +170,9 @@ def redactar(
     cuerpo_html = generar_plantilla_email_html(titulo=asunto, contenido_principal=contenido)
 
     lista = "\n".join(
-        f"- {g.fecha} | {g.turno} | Recreo {g.recreo} | {nombre_de_zona(g)}" for g in guardias
+        f"- {g.fecha} | {g.turno} | {resolver(config, g.recreo, g.turno).etiqueta_con_hora} | "
+        f"{nombre_de_zona(g)}"
+        for g in guardias
     )
     cuerpo_texto = plantilla_avisos.rellenar_texto(plantilla, valores, lista) + "\n\nGuardias de Patio"
     return asunto, cuerpo_html, cuerpo_texto

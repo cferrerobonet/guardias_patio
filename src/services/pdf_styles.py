@@ -614,3 +614,61 @@ def construir_documento(ruta: str, piezas: list, *, titulo: str, subtitulo: str,
         PageTemplate(id="resto", frames=[marco2], onPage=resto),
     ])
     doc.build([NextPageTemplate("resto")] + piezas, canvasmaker=canvas_con_pie(pie))
+
+
+# --- Abreviatura de las zonas ----------------------------------------------------
+
+_PALABRAS_VACIAS = {"de", "del", "la", "el", "los", "las", "y", "e"}
+
+
+def abreviatura_zona(nombre: str) -> str:
+    """La abreviatura de una zona para los calendarios compactos.
+
+    El nombre tal cual si es corto (hasta 4 caracteres: «Z2», «Gim»);
+    si no, las iniciales de sus palabras («Patio Norte» → «PN», «Patio 2» → «P2») o
+    las tres primeras letras («Gimnasio» → «GIM»). Siempre la misma para el mismo
+    nombre, en todos los PDF.
+    """
+    import re
+    import unicodedata
+
+    limpio = " ".join(str(nombre or "").split())
+    if 0 < len(limpio) <= 4:
+        return limpio
+    sin_tildes = "".join(
+        c for c in unicodedata.normalize("NFD", limpio) if unicodedata.category(c) != "Mn"
+    )
+    palabras = re.findall(r"[0-9A-Za-z]+", sin_tildes)
+    utiles = [w for w in palabras if w.lower() not in _PALABRAS_VACIAS] or palabras
+    if not utiles:
+        return "Z"
+    if len(utiles) == 1:
+        return utiles[0][:3].upper()
+    return "".join(w if w.isdigit() else w[0] for w in utiles)[:4].upper()
+
+
+def abreviaturas_de_zonas(zonas) -> dict:
+    """{id de zona: abreviatura}, sin repetidas: si dos coinciden, llevan su id detrás.
+
+    Se calcula sobre todas las zonas del centro, no solo las de un PDF, para que una
+    zona se abrevie igual en cualquier documento.
+    """
+    propuestas = {z.id: abreviatura_zona(z.nombre_zona) for z in zonas}
+    cuentas: dict = {}
+    for abrev in propuestas.values():
+        cuentas[abrev] = cuentas.get(abrev, 0) + 1
+    return {
+        id_: (abrev if cuentas[abrev] == 1 else f"{abrev}{id_}")
+        for id_, abrev in propuestas.items()
+    }
+
+
+def zona_para_leyenda(zona, abrev: str) -> str:
+    """Lo que acompaña a la abreviatura en la leyenda: nombre (si no es ella) y descripción."""
+    partes = []
+    if zona.nombre_zona and zona.nombre_zona.strip() != abrev:
+        partes.append(zona.nombre_zona.strip())
+    if getattr(zona, "descripcion", None):
+        partes.append(zona.descripcion.strip())
+    return " — ".join(partes)
+

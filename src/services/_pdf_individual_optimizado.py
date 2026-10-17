@@ -24,18 +24,25 @@ from reportlab.platypus import (
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
-from infrastructure.database.models import Configuracion, Guardia, Profesor
+from infrastructure.database.models import Configuracion, Guardia, Profesor, Zona
 from services._pdf_mini_calendario import (
     Bloque,
     CalendarioMes,
     DiaCalendario,
     leyenda,
     no_lectivos_del_mes,
-    obtener_hora_recreo,
     texto_horarios,
 )
 from services.gestor_cursos import GestorCursos
-from services.pdf_styles import Papel, PDFStyles, ajustar, construir_documento
+from services.pdf_styles import (
+    Papel,
+    PDFStyles,
+    abreviaturas_de_zonas,
+    ajustar,
+    construir_documento,
+    zona_para_leyenda,
+)
+from services.recreos import resolver
 from utils import get_logger
 
 logger = get_logger(__name__)
@@ -181,8 +188,13 @@ def exportar_profesor_individual_optimizado(
 
         reportar_progreso(30, f"Encontradas {len(guardias)} guardias...")
 
+        # El id del recreo es global (3 y 4 de tarde): turno, número y hora, de
+        # `services.recreos`, igual que la leyenda.
+        def recreo(g):
+            return resolver(config, g.recreo, g.turno)
+
         def hora(g):
-            return obtener_hora_recreo(config, g.turno, g.recreo) if config else ""
+            return recreo(g).hora_texto
 
         # Dentro de cada día, por hora real (la tarde después de la mañana)
         guardias = sorted(guardias, key=lambda g: (g.fecha, hora(g) or "99", g.recreo))
@@ -194,7 +206,9 @@ def exportar_profesor_individual_optimizado(
         for g in sorted(guardias, key=lambda g: g.zona.id if g.zona else 0):
             if g.zona and g.zona not in zonas:
                 zonas.append(g.zona)
-        codigo_zona = {z.id: f"Z{i + 1}" for i, z in enumerate(zonas)}
+        # Abreviatura real de cada zona («Z2» se queda «Z2»), igual en todos los PDF.
+        # Antes se numeraban Z1, Z2… por PDF y una zona «Z2» salía como «Z1 · Z2».
+        abrev_zona = abreviaturas_de_zonas(session.query(Zona).all())
 
         # ---------------------------------------------------------- ficha
         nombre_mes = Papel.MESES
@@ -230,12 +244,12 @@ def exportar_profesor_individual_optimizado(
         def bloque(g):
             color = PDFStyles.get_color_zona(g.zona.id) if g.zona else None
             zona = g.zona.nombre_zona if g.zona else "Sin zona"
+            r = recreo(g)
             if compacto:
-                cod = codigo_zona.get(g.zona.id, "Z?") if g.zona else "Z?"
-                return Bloque(f"{g.turno[0].upper()}{g.recreo}·{cod}", color=color)
-            h = hora(g)
+                cod = abrev_zona.get(g.zona.id, "—") if g.zona else "—"
+                return Bloque(f"{r.codigo}·{cod}", color=color)
             return Bloque(
-                f"R{g.recreo} · {h}" if h else f"Recreo {g.recreo}",
+                r.corta_con_hora,
                 detalle=zona, etiqueta=g.turno.upper(), etiqueta_corta=g.turno[0].upper(),
                 color=color,
             )
@@ -290,7 +304,9 @@ def exportar_profesor_individual_optimizado(
         zonas_ley = None
         horarios = texto_horarios(config)
         if compacto:
-            zonas_ley = [(codigo_zona[z.id], z.nombre_zona, PDFStyles.get_color_zona(z.id))
+            zonas_ley = [(abrev_zona.get(z.id, z.nombre_zona),
+                          zona_para_leyenda(z, abrev_zona.get(z.id, "")),
+                          PDFStyles.get_color_zona(z.id))
                          for z in zonas]
             horarios += (" &nbsp;&nbsp;&nbsp; En el calendario, <b>M1</b> = mañana, recreo 1; "
                          "<b>T2</b> = tarde, recreo 2")
@@ -334,11 +350,9 @@ def exportar_profesor_individual_optimizado(
                 lista = por_mes[(anio, mes)][d]
                 inicio = fila
                 for g in lista:
-                    h = hora(g)
+                    r = recreo(g)
                     zona = g.zona.nombre_zona if g.zona else "Sin zona"
                     desc = g.zona.descripcion if g.zona and g.zona.descripcion else ""
-                    if compacto and g.zona:
-                        zona = f"{codigo_zona[g.zona.id]} · {zona}"
                     texto_zona = f"{zona}"
                     if desc:
                         texto_zona += (f" <font name='{Papel.TEXTO}' size='7.8' "
@@ -347,7 +361,8 @@ def exportar_profesor_individual_optimizado(
                         Paragraph(g.fecha.strftime("%d/%m/%Y"), celda_b),
                         Paragraph(Papel.DIAS[g.fecha.weekday()], celda),
                         Paragraph(g.turno.capitalize(), celda),
-                        Paragraph(f"Recreo {g.recreo}" + (f" · <b>{h}</b>" if h else ""), celda),
+                        Paragraph(f"Recreo {r.ordinal}"
+                                  + (f" · <b>{r.hora_texto}</b>" if r.hora else ""), celda),
                         Paragraph(texto_zona, zona_st),
                     ])
                     if g.zona:
