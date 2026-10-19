@@ -5,6 +5,17 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.5.5] - 2026-10-19
+
+### 🎯 Resumen
+Los avisos de guardias vuelven a llevar los dos adjuntos que anuncia el mensaje: el calendario en PDF y el archivo .ics para el calendario.
+
+### Fixed
+- **El .ics no aparecía en el correo** (`services/notificador_guardias.py`): desde la 7.5 se adjuntaba como `text/calendar` y, como el archivo lleva `METHOD:PUBLISH`, Outlook, Exchange y Gmail lo tomaban por una invitación de calendario y no lo enseñaban como adjunto: el profesor solo veía el PDF. Vuelve a ir como `application/ics`, igual que antes de la 7.5, con su nombre también en el tipo; se abre con cualquier calendario (Google, Apple, Outlook).
+
+### 🧪 Tests
+- `tests/test_avisos_con_plantilla.py`: el .ics va como `application/ics` y cada adjunto lleva un solo tipo, su nombre y la disposición de adjunto.
+
 ## [7.5.4] - 2026-10-19
 
 ### 🎯 Resumen

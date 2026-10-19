@@ -150,7 +150,7 @@ def test_se_generan_el_pdf_individual_y_el_ical(claustro, tmp_path):
     pdf, ics = adjuntos
     assert pdf.tipo == "application/pdf" and pdf.datos.startswith(b"%PDF")
     assert pdf.nombre.endswith(".pdf")
-    assert ics.tipo == "text/calendar" and b"BEGIN:VCALENDAR" in ics.datos
+    assert ics.tipo == "application/ics" and b"BEGIN:VCALENDAR" in ics.datos
     assert ics.nombre.endswith(".ics")
 
 
@@ -158,14 +158,14 @@ def test_solo_lo_que_pide_la_plantilla(claustro, tmp_path):
     ana = claustro.query(Profesor).filter_by(nombre_completo="Prueba, Ana").one()
     sin_pdf = Plantilla(adjuntar_pdf=False)
     adjuntos = notificador_guardias.adjuntos_para(claustro, ana.id, ana.nombre_completo, sin_pdf, tmp_path)
-    assert [a.tipo for a in adjuntos] == ["text/calendar"]
+    assert [a.tipo for a in adjuntos] == ["application/ics"]
 
 
 def test_el_mensaje_lleva_los_adjuntos(claustro, servidor):
     envios = notificador_guardias.preparar_envios(claustro, "Octubre 2026").envios
     adjunto = [
         notificador_guardias.Adjunto("guardias.pdf", b"%PDF-1.4", "application/pdf"),
-        notificador_guardias.Adjunto("guardias.ics", b"BEGIN:VCALENDAR", "text/calendar"),
+        notificador_guardias.Adjunto("guardias.ics", b"BEGIN:VCALENDAR", "application/ics"),
     ]
 
     resultados = notificador_guardias.enviar(
@@ -176,7 +176,13 @@ def test_el_mensaje_lleva_los_adjuntos(claustro, servidor):
     mensaje = servidor.mensajes[0]
     assert mensaje.get_content_type() == "multipart/mixed"
     partes = {p.get_filename(): p.get_content_type() for p in mensaje.walk() if p.get_filename()}
-    assert partes == {"guardias.pdf": "application/pdf", "guardias.ics": "text/calendar"}
+    assert partes == {"guardias.pdf": "application/pdf", "guardias.ics": "application/ics"}
+    # Un solo Content-Type por parte y el nombre también en él: si no, Outlook, Exchange y Gmail
+    # se quedan solo con el PDF (el .ics como text/calendar lo toman por una invitación).
+    for parte in (p for p in mensaje.walk() if p.get_filename()):
+        assert len(parte.get_all("Content-Type")) == 1
+        assert parte.get_param("name") == parte.get_filename()
+        assert parte.get_content_disposition() == "attachment"
     assert mensaje["To"] == "ana@example.com"
 
 

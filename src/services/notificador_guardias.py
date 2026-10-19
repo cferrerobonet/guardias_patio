@@ -41,7 +41,7 @@ class Adjunto:
 
     nombre: str
     datos: bytes
-    tipo: str  # «application/pdf», «text/calendar»
+    tipo: str  # «application/pdf», «application/ics»
 
 
 @dataclass
@@ -210,7 +210,10 @@ def adjuntos_para(
         ruta = carpeta / f"{nombre_base}.ics"
         if not ICalendarService.generar_icalendar_profesor(session, profesor_id, str(ruta)):
             raise ValueError("No se pudo generar el archivo iCal")
-        adjuntos.append(Adjunto(ruta.name, ruta.read_bytes(), "text/calendar"))
+        # «application/ics», no «text/calendar»: con text/calendar y METHOD:PUBLISH, Outlook,
+        # Exchange y Gmail lo toman por una invitación y no lo enseñan como adjunto (solo
+        # se veía el PDF). Así llegaba antes de la 7.5 y así se abre con cualquier calendario.
+        adjuntos.append(Adjunto(ruta.name, ruta.read_bytes(), "application/ics"))
     return adjuntos
 
 
@@ -303,6 +306,7 @@ def _mensaje(envio, servicio, adjuntos: list):
             parte = MIMEApplication(adjunto.datos, _subtype=sub)
             if principal != "application":
                 parte.replace_header("Content-Type", f"{adjunto.tipo}; charset=utf-8")
+            parte.set_param("name", adjunto.nombre)
             parte.add_header("Content-Disposition", "attachment", filename=adjunto.nombre)
             mensaje.attach(parte)
     mensaje["Subject"] = envio.asunto
