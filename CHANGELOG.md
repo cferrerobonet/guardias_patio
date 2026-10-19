@@ -5,7 +5,7 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
-## [Sin publicar]
+## [7.5.4] - 2026-10-19
 
 ### 🎯 Resumen
 En macOS, la actualización sustituye la app allí donde está instalada (también `/Applications/EPLA`) en vez de abrir el DMG. **Solo funciona a partir de la versión que lo lleve**: la actualización *a* esa versión todavía se hace como hasta ahora, arrastrando la app del DMG a la carpeta donde está instalada y sustituyendo la anterior.
