@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.5.6] - 2026-10-19
+
+### 🎯 Resumen
+El correo de Reportes («Exportar PDF individual» con envío) vuelve a llevar el archivo .ics junto al PDF. La 7.5.5 arregló los avisos de la plantilla, pero Reportes manda el calendario por otro camino, que seguía fallando.
+
+### Fixed
+- **Reportes no generaba el .ics** (`presentation/forms/reportes_form.py`): llamaba al generador con un parámetro que ya no se llama así (`session=` en vez de `session_or_factory`), el error se trataba como «no se pudo generar» y el correo salía solo con el PDF.
+- **El .ics de ese correo iba con dos tipos** (`services/email_service.py`): `application/ics` y, añadido encima, `text/calendar`. Outlook, Exchange y Gmail lo tomaban por una invitación y no lo enseñaban como adjunto. Va solo como `application/ics`, con su nombre.
+
+### 🧪 Tests
+- `tests/test_envio_calendario_reportes.py`: el correo de Reportes lleva el PDF y el .ics (un solo tipo, con nombre), sin .ics solo el PDF, y Reportes llama al generador con sus parámetros.
+
 ## [7.5.5] - 2026-10-19
 
 ### 🎯 Resumen

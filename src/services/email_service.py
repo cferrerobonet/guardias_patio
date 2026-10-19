@@ -397,15 +397,17 @@ Sistema de Gestión de Guardias
             # Adjuntar el archivo .ics si está disponible
             if ics_path and os.path.exists(ics_path):
                 with open(ics_path, "rb") as f:
+                    # application/ics, con un solo Content-Type: con un segundo «text/calendar»
+                    # añadido, Outlook, Exchange y Gmail lo tomaban por una invitación y no lo
+                    # enseñaban como adjunto (solo se veía el PDF)
                     ics_attachment = MIMEApplication(f.read(), _subtype="ics")
                     ics_filename = os.path.basename(ics_path)
+                    ics_attachment.set_param("name", ics_filename)
                     ics_attachment.add_header(
                         "Content-Disposition",
                         "attachment",
                         filename=ics_filename,
                     )
-                    # Agregar header específico para calendarios
-                    ics_attachment.add_header("Content-Type", "text/calendar", charset="utf-8")
                     msg.attach(ics_attachment)
                     logger.info(f"Archivo iCalendar adjunto: {ics_filename}")
 

@@ -546,12 +546,11 @@ class ReportesForm(BaseForm):
                                         if config_db and hasattr(config_db, "nombre_centro"):
                                             nombre_centro = config_db.nombre_centro
 
-                                        # Generar archivo .ics
+                                        # Generar archivo .ics (el primer parámetro se llama
+                                        # session_or_factory: con «session=» daba TypeError, se
+                                        # tragaba abajo y el correo salía sin el .ics)
                                         if ICalendarService.generar_icalendar_profesor(
-                                            session=sesion,
-                                            profesor_id=profesor.id,
-                                            ruta_salida=ics_path,
-                                            nombre_centro=nombre_centro,
+                                            sesion, profesor.id, ics_path, nombre_centro
                                         ):
                                             logger.info(f"Archivo iCalendar generado: {ics_path}")
                                         else:
