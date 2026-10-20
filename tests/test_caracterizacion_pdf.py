@@ -193,3 +193,81 @@ def test_pdf_individual_error_al_escribir(sesion, tmp_path, invariante):
         (60, "Generando tabla de guardias..."),
         (90, "Construyendo PDF..."),
     ]
+
+
+# --------------------------------------------------------------------- mes
+def _mes(sesion, mes, anio, ruta, mensajes):
+    from services._pdf_mes_consolidado import exportar_mes_consolidado
+
+    return exportar_mes_consolidado(sesion, mes, anio, str(ruta),
+                                    lambda pct, msg: mensajes.append((pct, msg)))
+
+
+HUELLAS_MES = {  # (PDF, mensajes de progreso)
+    "vertical": (
+        "75a5d4c4bdfa7f477fdc1c09718933ace71d1f13bdebf2b5fb79917cfdf49068",
+        "92b0ac1fd760d1e8eec9729a408100e4864585b3eb92689457ba58ba4ac2f63f",
+    ),
+    "apaisado": (
+        "d723f87a4c43193ebdcc71f09745fa0d26ff86e1073c5730ff0fdb4860fc0ae9",
+        "c5174f47f5164d390afddb06977e11cdf1ad61932ec96cff4370a95f0bf2d161",
+    ),
+    "seis_semanas": (
+        "e0568ca4f5d24fd182bc117d2031da283419799168ced95f807b26969e38b194",
+        "8adf62edd02c6bd9b5d1f7e40ced49aa376452a5b32ae6ee909bc144bb4562a0",
+    ),
+    "tarde_ajustes": (
+        "fb55a7ecff12f28ba74d85cf7f963fbfbbb2bad158ea43e920e435bf85e73002",
+        "92b0ac1fd760d1e8eec9729a408100e4864585b3eb92689457ba58ba4ac2f63f",
+    ),
+}
+
+
+@pytest.mark.parametrize("caso", ["vertical", "apaisado", "seis_semanas", "tarde_ajustes"])
+def test_pdf_del_mes_igual_byte_a_byte(sesion, tmp_path, invariante, caso):
+    recreos = RECREOS_DE_AJUSTES if caso == "tarde_ajustes" else None
+    n_zonas = 7 if caso == "apaisado" else 5
+    curso, profes, zonas = _centro(sesion, n_zonas=n_zonas, recreos=recreos)
+    mes = 11 if caso == "seis_semanas" else 10
+    _guardias_de_un_mes(sesion, curso, profes, zonas, mes=mes)
+    for k, z in enumerate(zonas):
+        _guardia(sesion, curso, profes[1 + k % 7], date(2026, mes, 8), "mañana", 1, z)
+    # Dos personas en el mismo sitio y la misma franja
+    _guardia(sesion, curso, profes[2], date(2026, mes, 8), "mañana", 1, zonas[0])
+    _guardia(sesion, curso, profes[3], date(2026, mes, 20), "tarde", 3 if recreos else 1,
+             zonas[-1])
+    sesion.flush()
+    mensajes = []
+    assert _mes(sesion, mes, 2026, tmp_path / "m.pdf", mensajes)
+    obtenido = (_huella(tmp_path / "m.pdf"),
+                hashlib.sha256(json.dumps(mensajes).encode()).hexdigest())
+    assert obtenido == HUELLAS_MES[caso]
+    assert mensajes[:3] == [
+        (0, "Preparando exportación consolidada del mes..."),
+        (20, "Consultando guardias del mes..."),
+        (40, f"Procesando {sesion.query(Guardia).count()} guardias..."),
+    ]
+    assert mensajes[-2:] == [(95, "Finalizando documento..."),
+                             (100, "PDF consolidado generado exitosamente")]
+
+
+def test_pdf_del_mes_sin_datos_y_con_error(sesion, tmp_path, invariante):
+    mensajes = []
+    curso, profes, zonas = _centro(sesion, curso_activo=False)
+    assert not _mes(sesion, 10, 2026, tmp_path / "a.pdf", mensajes)
+    curso.activo = True
+    sesion.flush()
+    assert not _mes(sesion, 10, 2026, tmp_path / "b.pdf", mensajes)
+    assert mensajes == [
+        (0, "Preparando exportación consolidada del mes..."),
+        (0, "Preparando exportación consolidada del mes..."),
+        (20, "Consultando guardias del mes..."),
+        (100, "No hay guardias en este mes"),
+    ]
+    _guardias_de_un_mes(sesion, curso, profes, zonas)
+    sesion.flush()
+    mensajes.clear()
+    assert not _mes(sesion, 10, 2026, tmp_path / "no" / "existe.pdf", mensajes)
+    assert not any(p.exists() for p in tmp_path.iterdir())
+    assert mensajes[-1][0] == 100 and mensajes[-1][1].startswith("Error: ")
+    assert mensajes[-2] == (95, "Finalizando documento...")

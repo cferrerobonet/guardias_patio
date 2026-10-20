@@ -6,7 +6,7 @@ con los logos, cifras, calendario del mes con las guardias de cada día y, día 
 una rejilla recreo × zona con quién está en cada sitio. Se lee igual en blanco y negro.
 """
 
-from calendar import monthrange
+from calendar import monthcalendar, monthrange
 from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
@@ -108,6 +108,227 @@ def _fecha_larga(f: date) -> str:
     return f"{Papel.DIAS[f.weekday()]} {f.day} de {Papel.MESES[f.month].lower()}"
 
 
+def _reportador(progress_callback: Optional[Callable[[int, str], None]]):
+    """Función que anuncia el progreso sin dejar que un fallo del aviso corte el PDF."""
+
+    def reportar_progreso(porcentaje: int, mensaje: str = ""):
+        if progress_callback:
+            try:
+                progress_callback(porcentaje, mensaje)
+            except (ValueError, TypeError, OSError) as e:
+                logger.warning(f"Error al reportar progreso: {e}")
+
+    return reportar_progreso
+
+
+def _hora(config, turno, recreo):
+    """Id global del recreo (3 y 4 de tarde) → «Tarde · R1 · 16:30» (`services.recreos`)."""
+    return resolver(config, recreo, turno).hora_texto
+
+
+def _guardias_del_mes(session, curso_id, primer_dia: date, ultimo_dia: date) -> list:
+    return (
+        session.query(Guardia)
+        .options(joinedload(Guardia.zona), joinedload(Guardia.profesor))
+        .filter(
+            Guardia.curso_id == curso_id,
+            Guardia.fecha >= primer_dia,
+            Guardia.fecha <= ultimo_dia,
+        )
+        .order_by(Guardia.fecha, Guardia.turno, Guardia.recreo, Guardia.profesor_id)
+        .all()
+    )
+
+
+def _cifras(ancho, guardias, por_fecha) -> Cifras:
+    return Cifras(ancho, [
+        (len(guardias), "guardias"),
+        (len({g.profesor_id for g in guardias if g.profesor_id}), "profesores"),
+        (len(por_fecha), "días con guardias"),
+    ])
+
+
+def _calendario(anio, mes, ancho, apaisado: bool, por_fecha, no_lectivos, nombre_mes):
+    """Calendario del mes: cuántas guardias hay cada día, y de qué turno."""
+    dias = {}
+    for f, lista in por_fecha.items():
+        m = sum(1 for g in lista if g.turno == "mañana")
+        t = len(lista) - m
+        partes = [p for p in (f"{m} mañana" if m else "", f"{t} tarde" if t else "") if p]
+        dias[f.day] = DiaCalendario(
+            [Bloque(f"{len(lista)} guardias", detalle=" · ".join(partes))]
+        )
+    semanas = 6 if len(monthcalendar(anio, mes)) > 5 else 5
+    fila = (17 if apaisado else 13.5) * mm if semanas == 5 else (14 if apaisado else 11.5) * mm
+    return CalendarioMes(anio, mes, ancho, fila, dias, no_lectivos,
+                         titulo=nombre_mes, titulo_derecha="Guardias de cada día")
+
+
+def _estilos_del_dia() -> dict:
+    dia_st = ParagraphStyle("dia", fontName=Papel.CONDENSADA, fontSize=11.5, leading=13,
+                            textColor=Papel.BLANCO)
+    dia_n = ParagraphStyle("dian", parent=dia_st, fontName=Papel.SEMI, fontSize=8.5,
+                           leading=10, alignment=2)
+    cab = ParagraphStyle("cab", fontName=Papel.NEGRITA, fontSize=7.6, leading=9,
+                         textColor=Papel.TINTA)
+    franja_st = ParagraphStyle("fr", fontName=Papel.NEGRITA, fontSize=8.2, leading=9.8,
+                               textColor=Papel.TINTA)
+    nombre_st = ParagraphStyle("nom", fontName=Papel.TEXTO, fontSize=8.2, leading=9.8,
+                               textColor=Papel.TINTA)
+    vacio_st = ParagraphStyle("vac", parent=nombre_st, textColor=Papel.TINTA_SUAVE,
+                              alignment=1)
+    return {"dia": dia_st, "dia_n": dia_n, "cab": cab, "franja": franja_st,
+            "nombre": nombre_st, "vacio": vacio_st}
+
+
+def _estilos_de_la_tabla_del_dia(zonas) -> list:
+    estilos = [
+        ("SPAN", (0, 0), (-2, 0)),
+        ("VALIGN", (0, 0), (-1, 0), "BOTTOM"),
+        ("BACKGROUND", (0, 0), (-1, 0), Papel.VERDE_OSCURO),
+        ("BACKGROUND", (0, 1), (-1, 1), Papel.FONDO),
+        ("VALIGN", (0, 1), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 2 * mm),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 1.6 * mm),
+        ("TOPPADDING", (0, 0), (-1, -1), 1.0 * mm),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 1.3 * mm),
+        ("BOX", (0, 0), (-1, -1), 0.8, Papel.TINTA),
+        ("INNERGRID", (0, 1), (-1, -1), 0.4, Papel.LINEA),
+        ("LINEBELOW", (0, 1), (-1, 1), 0.8, Papel.TINTA),
+    ]
+    for j, z in enumerate(zonas, start=1):
+        estilos.append(("LINEABOVE", (j, 1), (j, 1), 2.4, PDFStyles.get_color_zona(z.id)))
+    return estilos
+
+
+def _fila_de_franja(turno, recreo, zonas, celdas, config, est) -> list:
+    """Una franja (turno y recreo) del día: quién está en cada zona."""
+    h = _hora(config, turno, recreo)
+    fila_datos = [Paragraph(f"{turno.capitalize()} · "
+                            f"{resolver(config, recreo, turno).corta}"
+                            + (f" · <font name='{Papel.TEXTO}'>{h}</font>" if h
+                               else ""), est["franja"])]
+    for z in zonas:
+        nombres = sorted(celdas.get((turno, recreo, z.id), []))
+        if len(nombres) > 1:  # dos personas en el mismo sitio: que se vea que son dos
+            nombres = [f"• {n}" for n in nombres]
+        fila_datos.append(Paragraph("<br/>".join(nombres), est["nombre"]) if nombres
+                          else Paragraph("—", est["vacio"]))
+    return fila_datos
+
+
+def _tabla_del_dia(f: date, lista, zonas, franjas, config, est, columnas) -> Table:
+    """Rejilla recreo × zona de un día con guardias."""
+    celdas = defaultdict(list)
+    for g in lista:
+        nombre = g.profesor.nombre_completo if g.profesor else "Sin asignar"
+        celdas[(g.turno, g.recreo, g.zona.id if g.zona else None)].append(nombre)
+    data = [
+        [Paragraph(_fecha_larga(f), est["dia"])] + [""] * (len(zonas) - 1)
+        + [Paragraph(f"{len(lista)} guardias", est["dia_n"])],
+        [Paragraph("RECREO", est["cab"])] + [Paragraph(z.nombre_zona, est["cab"]) for z in zonas],
+    ]
+    for turno, recreo in franjas:
+        data.append(_fila_de_franja(turno, recreo, zonas, celdas, config, est))
+    tabla = Table(data, colWidths=columnas)
+    tabla.setStyle(TableStyle(_estilos_de_la_tabla_del_dia(zonas)))
+    return tabla
+
+
+def _dia_a_dia(anio, mes, ultimo_dia: date, por_fecha, no_lectivos, zonas, franjas, config,
+               ancho, reportar_progreso) -> list:
+    """Cada laborable del mes: su rejilla, la franja de no lectivo o nada."""
+    est = _estilos_del_dia()
+    col_franja = 31 * mm
+    col_zona = (ancho - col_franja) / max(len(zonas), 1)
+    columnas = [col_franja] + [col_zona] * len(zonas)
+    piezas = []
+    laborables = [date(anio, mes, d) for d in range(1, ultimo_dia.day + 1)
+                  if date(anio, mes, d).weekday() < 5]
+    total_dias = len(laborables)
+    for i, f in enumerate(laborables):
+        reportar_progreso(60 + int(i / total_dias * 30), f"Procesando {f:%d/%m/%Y}...")
+        lista = por_fecha.get(f)
+        if not lista:
+            if f.day in no_lectivos:
+                piezas += [FranjaNoLectiva(ancho, f"{_fecha_larga(f)} · festivo o no lectivo"),
+                           Spacer(1, 3 * mm)]
+            continue
+        tabla = _tabla_del_dia(f, lista, zonas, franjas, config, est, columnas)
+        piezas += [KeepTogether([tabla]), Spacer(1, 3 * mm)]
+    return piezas
+
+
+def _construir(ruta_salida, piezas, curso_activo, nombre_mes, pagina) -> None:
+    generado = datetime.now()
+    curso = getattr(curso_activo, "nombre", "") or ""
+    construir_documento(
+        ruta_salida, piezas,
+        titulo=f"CALENDARIO DE GUARDIAS · {nombre_mes.upper()}",
+        subtitulo="Escuelas Profesionales Luis Amigó · Godella"
+        + (f" · {curso}" if curso else ""),
+        resto_izquierda=f"Guardias de patio · {nombre_mes}",
+        resto_derecha=curso,
+        pie=f"EPLA · Guardias de patio · Generado el {generado:%d/%m/%Y} "
+        f"a las {generado:%H:%M}",
+        titulo_pdf=f"Guardias de patio · {nombre_mes}",
+        asunto="Calendario de guardias de patio del mes",
+        pagesize=pagina,
+    )
+
+
+def _exportar(session, mes: int, anio: int, ruta_salida: str, reportar_progreso) -> bool:
+    reportar_progreso(0, "Preparando exportación consolidada del mes...")
+    curso_activo = GestorCursos.from_session(session).obtener_curso_activo()
+    if not curso_activo:
+        logger.warning("No hay curso activo para exportar PDF consolidado")
+        return False
+
+    primer_dia = date(anio, mes, 1)
+    ultimo_dia = date(anio, mes, monthrange(anio, mes)[1])
+    reportar_progreso(20, "Consultando guardias del mes...")
+    guardias = _guardias_del_mes(session, curso_activo.id, primer_dia, ultimo_dia)
+    if not guardias:
+        reportar_progreso(100, "No hay guardias en este mes")
+        return False
+
+    reportar_progreso(40, f"Procesando {len(guardias)} guardias...")
+    config = session.query(Configuracion).first()
+
+    por_fecha = defaultdict(list)
+    for g in guardias:
+        por_fecha[g.fecha].append(g)
+    zonas = sorted({g.zona for g in guardias if g.zona}, key=lambda z: z.id)
+    franjas = sorted({(g.turno, g.recreo) for g in guardias},
+                     key=lambda tr: (_hora(config, *tr) or "99", tr[1]))
+    no_lectivos = no_lectivos_del_mes(config, anio, mes)
+    nombre_mes = f"{Papel.MESES[mes]} {anio}"
+
+    apaisado = len(zonas) > 6
+    pagina = landscape(A4) if apaisado else A4
+    ancho = pagina[0] - 2 * Papel.MARGEN_X
+
+    piezas = [_cifras(ancho, guardias, por_fecha), Spacer(1, 5 * mm)]
+    piezas.append(_calendario(anio, mes, ancho, apaisado, por_fecha, no_lectivos, nombre_mes))
+    piezas.append(Spacer(1, 2 * mm))
+    piezas.append(leyenda(ancho, texto_horarios(config), None, guardia=None))
+
+    # Día a día: rejilla recreo × zona
+    reportar_progreso(60, "Generando el cuadrante día a día...")
+    titulo_sec = ParagraphStyle("h", fontName=Papel.CONDENSADA, fontSize=14, leading=17,
+                                textColor=Papel.VERDE_OSCURO, spaceBefore=5 * mm,
+                                spaceAfter=2 * mm)
+    piezas += [CondPageBreak(60 * mm), Paragraph("Guardias día a día", titulo_sec)]
+    piezas += _dia_a_dia(anio, mes, ultimo_dia, por_fecha, no_lectivos, zonas, franjas,
+                         config, ancho, reportar_progreso)
+
+    reportar_progreso(95, "Finalizando documento...")
+    _construir(ruta_salida, piezas, curso_activo, nombre_mes, pagina)
+    reportar_progreso(100, "PDF consolidado generado exitosamente")
+    logger.info(f"PDF consolidado generado: {ruta_salida}")
+    return True
+
+
 def exportar_mes_consolidado(
     session,
     mes: int,
@@ -121,179 +342,9 @@ def exportar_mes_consolidado(
     Returns:
         True si se generó correctamente, False en caso contrario
     """
-
-    def reportar_progreso(porcentaje: int, mensaje: str = ""):
-        if progress_callback:
-            try:
-                progress_callback(porcentaje, mensaje)
-            except (ValueError, TypeError, OSError) as e:
-                logger.warning(f"Error al reportar progreso: {e}")
-
+    reportar_progreso = _reportador(progress_callback)
     try:
-        reportar_progreso(0, "Preparando exportación consolidada del mes...")
-        curso_activo = GestorCursos.from_session(session).obtener_curso_activo()
-        if not curso_activo:
-            logger.warning("No hay curso activo para exportar PDF consolidado")
-            return False
-
-        primer_dia = date(anio, mes, 1)
-        ultimo_dia = date(anio, mes, monthrange(anio, mes)[1])
-        reportar_progreso(20, "Consultando guardias del mes...")
-        guardias = (
-            session.query(Guardia)
-            .options(joinedload(Guardia.zona), joinedload(Guardia.profesor))
-            .filter(
-                Guardia.curso_id == curso_activo.id,
-                Guardia.fecha >= primer_dia,
-                Guardia.fecha <= ultimo_dia,
-            )
-            .order_by(Guardia.fecha, Guardia.turno, Guardia.recreo, Guardia.profesor_id)
-            .all()
-        )
-        if not guardias:
-            reportar_progreso(100, "No hay guardias en este mes")
-            return False
-
-        reportar_progreso(40, f"Procesando {len(guardias)} guardias...")
-        config = session.query(Configuracion).first()
-
-        # Id global del recreo (3 y 4 de tarde) → «Tarde · R1 · 16:30» (`services.recreos`)
-        def hora(turno, recreo):
-            return resolver(config, recreo, turno).hora_texto
-
-        por_fecha = defaultdict(list)
-        for g in guardias:
-            por_fecha[g.fecha].append(g)
-        zonas = sorted({g.zona for g in guardias if g.zona}, key=lambda z: z.id)
-        franjas = sorted({(g.turno, g.recreo) for g in guardias},
-                         key=lambda tr: (hora(*tr) or "99", tr[1]))
-        no_lectivos = no_lectivos_del_mes(config, anio, mes)
-        nombre_mes = f"{Papel.MESES[mes]} {anio}"
-
-        apaisado = len(zonas) > 6
-        pagina = landscape(A4) if apaisado else A4
-        ancho = pagina[0] - 2 * Papel.MARGEN_X
-
-        piezas = [
-            Cifras(ancho, [
-                (len(guardias), "guardias"),
-                (len({g.profesor_id for g in guardias if g.profesor_id}), "profesores"),
-                (len(por_fecha), "días con guardias"),
-            ]),
-            Spacer(1, 5 * mm),
-        ]
-
-        # Calendario del mes: cuántas guardias hay cada día, y de qué turno
-        dias = {}
-        for f, lista in por_fecha.items():
-            m = sum(1 for g in lista if g.turno == "mañana")
-            t = len(lista) - m
-            partes = [p for p in (f"{m} mañana" if m else "", f"{t} tarde" if t else "") if p]
-            dias[f.day] = DiaCalendario(
-                [Bloque(f"{len(lista)} guardias", detalle=" · ".join(partes))]
-            )
-        semanas = 6 if len(__import__("calendar").monthcalendar(anio, mes)) > 5 else 5
-        fila = (17 if apaisado else 13.5) * mm if semanas == 5 else (14 if apaisado else 11.5) * mm
-        piezas.append(CalendarioMes(anio, mes, ancho, fila, dias, no_lectivos,
-                                    titulo=nombre_mes, titulo_derecha="Guardias de cada día"))
-        piezas.append(Spacer(1, 2 * mm))
-        piezas.append(leyenda(ancho, texto_horarios(config), None, guardia=None))
-
-        # Día a día: rejilla recreo × zona
-        reportar_progreso(60, "Generando el cuadrante día a día...")
-        titulo_sec = ParagraphStyle("h", fontName=Papel.CONDENSADA, fontSize=14, leading=17,
-                                    textColor=Papel.VERDE_OSCURO, spaceBefore=5 * mm,
-                                    spaceAfter=2 * mm)
-        dia_st = ParagraphStyle("dia", fontName=Papel.CONDENSADA, fontSize=11.5, leading=13,
-                                textColor=Papel.BLANCO)
-        dia_n = ParagraphStyle("dian", parent=dia_st, fontName=Papel.SEMI, fontSize=8.5,
-                               leading=10, alignment=2)
-        cab = ParagraphStyle("cab", fontName=Papel.NEGRITA, fontSize=7.6, leading=9,
-                             textColor=Papel.TINTA)
-        franja_st = ParagraphStyle("fr", fontName=Papel.NEGRITA, fontSize=8.2, leading=9.8,
-                                   textColor=Papel.TINTA)
-        nombre_st = ParagraphStyle("nom", fontName=Papel.TEXTO, fontSize=8.2, leading=9.8,
-                                   textColor=Papel.TINTA)
-        vacio_st = ParagraphStyle("vac", parent=nombre_st, textColor=Papel.TINTA_SUAVE,
-                                  alignment=1)
-
-        col_franja = 31 * mm
-        col_zona = (ancho - col_franja) / max(len(zonas), 1)
-        piezas += [CondPageBreak(60 * mm), Paragraph("Guardias día a día", titulo_sec)]
-
-        laborables = [date(anio, mes, d) for d in range(1, ultimo_dia.day + 1)
-                      if date(anio, mes, d).weekday() < 5]
-        total_dias = len(laborables)
-        for i, f in enumerate(laborables):
-            reportar_progreso(60 + int(i / total_dias * 30), f"Procesando {f:%d/%m/%Y}...")
-            lista = por_fecha.get(f)
-            if not lista:
-                if f.day in no_lectivos:
-                    piezas += [FranjaNoLectiva(ancho, f"{_fecha_larga(f)} · festivo o no lectivo"),
-                               Spacer(1, 3 * mm)]
-                continue
-            celdas = defaultdict(list)
-            for g in lista:
-                nombre = g.profesor.nombre_completo if g.profesor else "Sin asignar"
-                celdas[(g.turno, g.recreo, g.zona.id if g.zona else None)].append(nombre)
-            data = [
-                [Paragraph(_fecha_larga(f), dia_st)] + [""] * (len(zonas) - 1)
-                + [Paragraph(f"{len(lista)} guardias", dia_n)],
-                [Paragraph("RECREO", cab)] + [Paragraph(z.nombre_zona, cab) for z in zonas],
-            ]
-            estilos = [
-                ("SPAN", (0, 0), (-2, 0)),
-                ("VALIGN", (0, 0), (-1, 0), "BOTTOM"),
-                ("BACKGROUND", (0, 0), (-1, 0), Papel.VERDE_OSCURO),
-                ("BACKGROUND", (0, 1), (-1, 1), Papel.FONDO),
-                ("VALIGN", (0, 1), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 2 * mm),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 1.6 * mm),
-                ("TOPPADDING", (0, 0), (-1, -1), 1.0 * mm),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 1.3 * mm),
-                ("BOX", (0, 0), (-1, -1), 0.8, Papel.TINTA),
-                ("INNERGRID", (0, 1), (-1, -1), 0.4, Papel.LINEA),
-                ("LINEBELOW", (0, 1), (-1, 1), 0.8, Papel.TINTA),
-            ]
-            for j, z in enumerate(zonas, start=1):
-                estilos.append(("LINEABOVE", (j, 1), (j, 1), 2.4, PDFStyles.get_color_zona(z.id)))
-            for turno, recreo in franjas:
-                h = hora(turno, recreo)
-                fila_datos = [Paragraph(f"{turno.capitalize()} · "
-                                        f"{resolver(config, recreo, turno).corta}"
-                                        + (f" · <font name='{Papel.TEXTO}'>{h}</font>" if h
-                                           else ""), franja_st)]
-                for z in zonas:
-                    nombres = sorted(celdas.get((turno, recreo, z.id), []))
-                    if len(nombres) > 1:  # dos personas en el mismo sitio: que se vea que son dos
-                        nombres = [f"• {n}" for n in nombres]
-                    fila_datos.append(Paragraph("<br/>".join(nombres), nombre_st) if nombres
-                                      else Paragraph("—", vacio_st))
-                data.append(fila_datos)
-            tabla = Table(data, colWidths=[col_franja] + [col_zona] * len(zonas))
-            tabla.setStyle(TableStyle(estilos))
-            piezas += [KeepTogether([tabla]), Spacer(1, 3 * mm)]
-
-        reportar_progreso(95, "Finalizando documento...")
-        generado = datetime.now()
-        curso = getattr(curso_activo, "nombre", "") or ""
-        construir_documento(
-            ruta_salida, piezas,
-            titulo=f"CALENDARIO DE GUARDIAS · {nombre_mes.upper()}",
-            subtitulo="Escuelas Profesionales Luis Amigó · Godella"
-            + (f" · {curso}" if curso else ""),
-            resto_izquierda=f"Guardias de patio · {nombre_mes}",
-            resto_derecha=curso,
-            pie=f"EPLA · Guardias de patio · Generado el {generado:%d/%m/%Y} "
-            f"a las {generado:%H:%M}",
-            titulo_pdf=f"Guardias de patio · {nombre_mes}",
-            asunto="Calendario de guardias de patio del mes",
-            pagesize=pagina,
-        )
-        reportar_progreso(100, "PDF consolidado generado exitosamente")
-        logger.info(f"PDF consolidado generado: {ruta_salida}")
-        return True
-
+        return _exportar(session, mes, anio, ruta_salida, reportar_progreso)
     except (SQLAlchemyError, ValueError, TypeError, OSError) as e:
         logger.error(f"Error al exportar mes consolidado: {e}", exc_info=True)
         reportar_progreso(100, f"Error: {str(e)}")
