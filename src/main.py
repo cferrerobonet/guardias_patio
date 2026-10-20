@@ -91,9 +91,58 @@ def _avisar_de_fallos(fallos: list, ruta_del_registro) -> None:
     )
 
 
-def main():
-    """Función principal"""
-    # Limpiar threads residuales de PyQt antes de crear la aplicación
+def exception_hook(exctype, value, tb):
+    """Captura excepciones no manejadas."""
+    import traceback
+
+    logger.critical("=" * 80)
+    logger.critical("🚨 EXCEPCIÓN NO MANEJADA DETECTADA")
+    logger.critical("=" * 80)
+    logger.critical(f"Tipo: {exctype.__name__}")
+    logger.critical(f"Valor: {value}")
+    logger.critical("Traceback:")
+    for line in traceback.format_tb(tb):
+        logger.critical(line.rstrip())
+    logger.critical("=" * 80)
+
+    # Mostrar diálogo de error al usuario si la app Qt ya está en marcha.
+    # PyQt llama a este hook en el hilo donde ocurrió la excepción, así que crear
+    # aquí un widget sin comprobarlo tumba el proceso: es justo lo que pasaba con
+    # los errores de paramiko en SyncWorker (CRW-005).
+    try:
+        from PyQt6.QtCore import QThread
+        from PyQt6.QtWidgets import QApplication, QMessageBox
+
+        app_qt = QApplication.instance()
+        en_hilo_gui = app_qt is not None and QThread.currentThread() is app_qt.thread()
+
+        if app_qt is not None and not en_hilo_gui:
+            logger.critical(
+                "Excepción en un hilo secundario: no se muestra diálogo "
+                "(crear widgets fuera del hilo GUI cierra la aplicación)"
+            )
+
+        if en_hilo_gui:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.setWindowTitle("Error inesperado")
+            msg.setText(
+                "Se ha producido un error inesperado en la aplicación.\n"
+                "El incidente ha sido registrado en el log."
+            )
+            msg.setDetailedText(
+                f"{exctype.__name__}: {value}\n\n" + "".join(traceback.format_tb(tb))
+            )
+            msg.exec()
+    except (RuntimeError, AttributeError):
+        pass  # Si Qt no está disponible, solo loguear
+
+    # Llamar al manejador original
+    sys.__excepthook__(exctype, value, tb)
+
+
+def _registrar_hilos_activos() -> None:
+    """Hilos vivos al arrancar, por si quedan residuos de PyQt."""
     import threading
 
     logger.debug(f"🧹 Threads activos al inicio: {threading.active_count()}")
@@ -101,59 +150,9 @@ def main():
         thread_name = getattr(thread, "name", "Unknown")
         logger.debug(f"   - Thread: {thread_name} (tipo: {type(thread).__name__})")
 
-    # Instalar manejador global de excepciones
-    def exception_hook(exctype, value, tb):
-        """Captura excepciones no manejadas."""
-        import traceback
 
-        logger.critical("=" * 80)
-        logger.critical("🚨 EXCEPCIÓN NO MANEJADA DETECTADA")
-        logger.critical("=" * 80)
-        logger.critical(f"Tipo: {exctype.__name__}")
-        logger.critical(f"Valor: {value}")
-        logger.critical("Traceback:")
-        for line in traceback.format_tb(tb):
-            logger.critical(line.rstrip())
-        logger.critical("=" * 80)
-
-        # Mostrar diálogo de error al usuario si la app Qt ya está en marcha.
-        # PyQt llama a este hook en el hilo donde ocurrió la excepción, así que crear
-        # aquí un widget sin comprobarlo tumba el proceso: es justo lo que pasaba con
-        # los errores de paramiko en SyncWorker (CRW-005).
-        try:
-            from PyQt6.QtCore import QThread
-            from PyQt6.QtWidgets import QApplication, QMessageBox
-
-            app_qt = QApplication.instance()
-            en_hilo_gui = app_qt is not None and QThread.currentThread() is app_qt.thread()
-
-            if app_qt is not None and not en_hilo_gui:
-                logger.critical(
-                    "Excepción en un hilo secundario: no se muestra diálogo "
-                    "(crear widgets fuera del hilo GUI cierra la aplicación)"
-                )
-
-            if en_hilo_gui:
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Icon.Critical)
-                msg.setWindowTitle("Error inesperado")
-                msg.setText(
-                    "Se ha producido un error inesperado en la aplicación.\n"
-                    "El incidente ha sido registrado en el log."
-                )
-                msg.setDetailedText(
-                    f"{exctype.__name__}: {value}\n\n" + "".join(traceback.format_tb(tb))
-                )
-                msg.exec()
-        except (RuntimeError, AttributeError):
-            pass  # Si Qt no está disponible, solo loguear
-
-        # Llamar al manejador original
-        sys.__excepthook__(exctype, value, tb)
-
-    sys.excepthook = exception_hook
-    logger.info("✓ Manejador global de excepciones instalado")
-
+def _crear_aplicacion():
+    """La `QApplication` con icono, tema, señales de salida, fuente y hoja de estilos."""
     # UX-04: DPI awareness — PassThrough evita escalado redondeado en pantallas HiDPI
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
@@ -207,6 +206,19 @@ def main():
     hoja = construir_hoja_de_estilos()
     if hoja:
         app.setStyleSheet(hoja)
+    return app
+
+
+def main():
+    """Función principal"""
+    # Limpiar threads residuales de PyQt antes de crear la aplicación
+    _registrar_hilos_activos()
+
+    # Instalar manejador global de excepciones
+    sys.excepthook = exception_hook
+    logger.info("✓ Manejador global de excepciones instalado")
+
+    app = _crear_aplicacion()
 
     # Lo primero que se pinta, antes de cargar las vistas y de hablar con el
     # servidor. Hasta aquí la pantalla de arranque se abría después del login, y
@@ -238,17 +250,90 @@ def main():
 
     paso("Cargando la aplicación…")
 
+    # Lo pesado se carga aquí, con la pantalla ya a la vista. La sincronización se
+    # importa en este punto aunque la usen las fases de después.
     from presentation.forms.login_dialog import LoginDialog
     from presentation.ventana_principal import VentanaPrincipal
-    from sync import SyncConfigurationError, SyncManager, get_default_backend
+    from sync import SyncConfigurationError, SyncManager, get_default_backend  # noqa: F401
 
-    # Lo que PyInstaller no empaqueta no rompe el arranque: desactiva una
-    # funcionalidad en silencio y sólo se ve en el equipo del usuario (BLD-012).
-    # Va en segundo plano y con la aplicación ya creada: hacerlo antes retrasaba
-    # más de ocho segundos la primera ventana —importar el backend de gráficas y
-    # resolver un modelo del solucionador es lo caro— y si una de esas librerías
-    # nativas se cae, se llevaba por delante un arranque que aún no había pintado
-    # nada, así que la aplicación parecía no abrirse (BLD-014).
+    _revisar_el_entorno_en_segundo_plano(app, ocultar_arranque)
+
+    if not _configuracion_inicial(paso, ocultar_arranque):
+        return 0
+    _traducir_al_espanol(app)
+    backend = _conectar_con_el_servidor(paso, ocultar_arranque)
+
+    # Mostrar diálogo de login
+    ocultar_arranque()
+    login_dialog = LoginDialog(backend=backend)
+    if login_dialog.exec() != LoginDialog.DialogCode.Accepted:
+        logger.info("Usuario canceló el login. Saliendo de la aplicación.")
+        return 0
+
+    username = login_dialog.authenticated_user
+    logger.info(f"Usuario autenticado: {username}")
+
+    # Entre aquí y la ventana principal hay pasos que hablan con la red y pueden
+    # tardar. Sin esto la pantalla se queda vacía y parece que no arranca (ESC-006).
+    paso("Preparando la base de datos…")
+    session = _abrir_base_de_datos(username)
+    if session is None:
+        return 1
+    _migrar_a_multi_curso(session, paso)
+
+    sync_manager, session_lock_manager, salida = _iniciar_sincronizacion(
+        backend, username, login_dialog, session, paso, ocultar_arranque
+    )
+    if salida is not None:
+        return salida
+
+    # ==========================================
+    # Ventana Principal
+    # ==========================================
+
+    exit_code = 1  # Código de salida por defecto (error)
+
+    try:
+        # Crear ventana principal
+        paso("Abriendo la ventana…")
+        window = VentanaPrincipal(session, sync_manager=sync_manager)  # noqa: F841
+        logger.info("Ventana principal creada exitosamente")
+        if arranque is not None:
+            arranque.terminar(window)
+
+        # La ventana ya se muestra maximizada desde su __init__
+
+        # Iniciar sistema de heartbeat para mantener el bloqueo activo
+        if session_lock_manager:
+            session_lock_manager.start_heartbeat(app)
+
+        # Ejecutar la aplicación
+        logger.info("Iniciando event loop de Qt...")
+        exit_code = app.exec()
+
+    except Exception as e:
+        logger.exception(f"Error fatal al crear o ejecutar la ventana principal: {e}")
+        import traceback
+
+        traceback.print_exc()
+        exit_code = 1  # Código de error
+
+    finally:
+        _cerrar(session, sync_manager, session_lock_manager)
+        return exit_code
+
+
+def _revisar_el_entorno_en_segundo_plano(app, ocultar_arranque) -> None:
+    """Comprueba en otro hilo que el paquete trae todo lo que necesita.
+
+    Lo que PyInstaller no empaqueta no rompe el arranque: desactiva una
+    funcionalidad en silencio y sólo se ve en el equipo del usuario (BLD-012).
+    Va en segundo plano y con la aplicación ya creada: hacerlo antes retrasaba
+    más de ocho segundos la primera ventana —importar el backend de gráficas y
+    resolver un modelo del solucionador es lo caro— y si una de esas librerías
+    nativas se cae, se llevaba por delante un arranque que aún no había pintado
+    nada, así que la aplicación parecía no abrirse (BLD-014).
+    """
     revision = _RevisionDeEntorno()
 
     def avisar_de_fallos(fallos: list) -> None:
@@ -261,10 +346,12 @@ def main():
     app._revision_de_entorno = revision  # que no lo recoja el recolector de basura
     revision.start()
 
-    # ==========================================
-    # Validar Configuración Inicial (SFTP/SMTP)
-    # ==========================================
 
+def _configuracion_inicial(paso, ocultar_arranque) -> bool:
+    """Carga el `.env`, limpia rastros y, si falta, pide la configuración (SFTP/SMTP).
+
+    Devuelve False si el usuario prefiere salir antes que trabajar sin servidor.
+    """
     paso("Comprobando la configuración…")
 
     from core.paths import get_base_directory
@@ -314,16 +401,16 @@ def main():
 
             if eleccion.clickedButton() is not boton_local:
                 logger.info("El usuario prefiere salir a trabajar sin servidor.")
-                return 0
+                return False
 
             logger.warning("Arrancando en modo local: esta sesión no sincroniza.")
         else:
             logger.info("✓ Configuración inicial completada")
+    return True
 
-    # ==========================================
-    # Configurar traducción al español
-    # ==========================================
 
+def _traducir_al_espanol(app) -> None:
+    """Locale español para toda la aplicación y traducción de los botones de Qt."""
     # Configurar el locale para toda la aplicación (calendarios, fechas, números)
     spanish_locale = QLocale(QLocale.Language.Spanish, QLocale.Country.Spain)
     QLocale.setDefault(spanish_locale)
@@ -340,15 +427,15 @@ def main():
     else:
         logger.warning("⚠ No se pudo cargar la traducción de Qt al español")
 
-    # ==========================================
-    # Sistema de Login y Sincronización SFTP
-    # ==========================================
 
-    # ==========================================
-    # Conexión con el servidor, antes del login
-    # ==========================================
-    # La cuenta vive junto a los datos del usuario en el servidor, así que hace
-    # falta la conexión ya para poder validarla desde cualquier equipo.
+def _conectar_con_el_servidor(paso, ocultar_arranque):
+    """Conexión con el servidor, antes del login; None si esta sesión va sin nube.
+
+    La cuenta vive junto a los datos del usuario en el servidor, así que hace
+    falta la conexión ya para poder validarla desde cualquier equipo.
+    """
+    from sync import SyncConfigurationError, get_default_backend
+
     paso("Conectando con el servidor…")
     backend = None
     sin_sincronizacion = None
@@ -388,22 +475,11 @@ def main():
             "verás desde otro ordenador.\n\nRevisa los datos de conexión en Ajustes."
         )
         aviso.exec()
+    return backend
 
-    # Mostrar diálogo de login
-    ocultar_arranque()
-    login_dialog = LoginDialog(backend=backend)
-    if login_dialog.exec() != LoginDialog.DialogCode.Accepted:
-        logger.info("Usuario canceló el login. Saliendo de la aplicación.")
-        return 0
 
-    username = login_dialog.authenticated_user
-    logger.info(f"Usuario autenticado: {username}")
-
-    # Entre aquí y la ventana principal hay pasos que hablan con la red y pueden
-    # tardar. Sin esto la pantalla se queda vacía y parece que no arranca (ESC-006).
-    paso("Preparando la base de datos…")
-
-    # Inicializar base de datos específica del usuario
+def _abrir_base_de_datos(username):
+    """Base de datos del usuario y su sesión; None (tras avisar) si no se puede abrir."""
     from database.db_manager import initialize_user_database
 
     try:
@@ -416,7 +492,7 @@ def main():
             "Error de inicialización",
             f"No se pudo inicializar la base de datos del usuario.\n\nDetalle: {e}",
         )
-        return 1
+        return None
 
     # 🔧 ARQ-04: Wiring DI (Fase 2 — Opcional, sin romper compatibilidad legacy)
     # Descomenta estas líneas para usar inyección de dependencias en servicios:
@@ -426,7 +502,7 @@ def main():
 
     # Crear sesión de base de datos (necesaria para sync)
     try:
-        session = SessionFactory()
+        return SessionFactory()
     except Exception as e:
         logger.exception(f"Error creando sesión de base de datos: {e}")
         QMessageBox.critical(
@@ -434,9 +510,11 @@ def main():
             "Error de base de datos",
             f"No se pudo abrir la sesión de base de datos.\n\nDetalle: {e}",
         )
-        return 1
+        return None
 
-    # 🔄 Ejecutar migración automática al sistema Multi-Curso si es necesario
+
+def _migrar_a_multi_curso(session, paso) -> None:
+    """🔄 Migración automática al sistema Multi-Curso si es necesario."""
     paso("Comprobando el formato de los datos…")
     try:
         from services.migrar_a_multi_curso import ejecutar_migracion_si_necesario
@@ -449,7 +527,15 @@ def main():
         logger.error(f"⚠ Error en migración Multi-Curso: {e}")
         # Continuar de todos modos - la migración no es crítica para funcionar
 
-    # Inicializar sistema de sincronización
+
+def _iniciar_sincronizacion(backend, username, login_dialog, session, paso, ocultar_arranque):
+    """Gestor de sincronización, bloqueo de sesión única y descarga inicial.
+
+    Devuelve `(sync_manager, session_lock_manager, salida)`: `salida` es el código
+    con el que hay que cerrar la aplicación, o None para seguir.
+    """
+    from sync import SyncConfigurationError, SyncManager
+
     sync_manager = None
     session_lock_manager = None
     disable_session_lock = os.getenv("DISABLE_SESSION_LOCK", "0") == "1"
@@ -467,61 +553,9 @@ def main():
         else:
             paso("Comprobando que la cuenta no esté abierta en otro equipo…")
             session_lock = SessionLock(backend, username, sync_manager.user_hash)
-
-            # Intentar adquirir el bloqueo de sesión
-            max_retries = 3
-            for attempt in range(max_retries):
-                if session_lock.acquire_lock():
-                    logger.info(f"✅ Bloqueo de sesión adquirido (intento {attempt + 1})")
-                    break
-                elif session_lock.motivo_del_fallo == "sin_servidor":
-                    # No es que la cuenta esté abierta en otro sitio: es que el
-                    # servidor no responde. Anunciarlo como «no se ha podido
-                    # comprobar» y no abrir dejaba el equipo inutilizable sin
-                    # decir por qué (SYNC-024). Se entra sin nube, y como no hay
-                    # gestor de sincronización no se sube nada: sin riesgo para
-                    # el trabajo de quien sí esté dentro.
-                    raise SyncConfigurationError(
-                        "No se ha podido dejar la marca de sesión en el servidor."
-                    )
-                else:
-                    # Mostrar diálogo informativo
-                    lock_info = session_lock.get_lock_info()
-                    if lock_info:
-                        locked_dialog = SessionLockedDialog(lock_info)
-                        ocultar_arranque()
-                        result = locked_dialog.exec()
-
-                        if result == SessionLockedDialog.DialogCode.Rejected:
-                            # Usuario canceló
-                            logger.info("Usuario canceló debido a sesión bloqueada")
-                            session.close()
-                            return 0
-                        # Si aceptó (Reintentar), continúa el loop
-                    else:
-                        # Sin poder leer el bloqueo no se puede saber si hay otra
-                        # sesión abierta. Ante la duda no se entra: entrar y subir
-                        # después machacaría el trabajo de quien esté dentro.
-                        logger.error("No se pudo obtener información del bloqueo")
-                        QMessageBox.critical(
-                            None,
-                            "No se puede comprobar la sesión",
-                            "No se ha podido comprobar si la cuenta está abierta en otro "
-                            "equipo.\n\nPara no arriesgar los datos, la aplicación no se "
-                            "abrirá. Inténtalo de nuevo cuando haya conexión.",
-                        )
-                        session.close()
-                        return 1
-            else:
-                # Se agotaron los reintentos
-                QMessageBox.critical(
-                    None,
-                    "Sesión Bloqueada",
-                    "No se pudo iniciar sesión después de varios intentos.\n"
-                    "El usuario está activo en otro dispositivo.",
-                )
-                session.close()
-                return 1
+            salida = _adquirir_bloqueo(session_lock, SessionLockedDialog, session, ocultar_arranque)
+            if salida is not None:
+                return None, None, salida
 
             # Crear gestor de heartbeat
             session_lock_manager = SessionLockManager(session_lock)
@@ -581,119 +615,160 @@ def main():
             f"{e}\n\nTodo lo que hagas se guardará únicamente en este equipo."
         )
         msg.exec()
+    return sync_manager, session_lock_manager, None
 
-    # ==========================================
-    # Ventana Principal
-    # ==========================================
 
-    exit_code = 1  # Código de salida por defecto (error)
+def _adquirir_bloqueo(session_lock, SessionLockedDialog, session, ocultar_arranque):
+    """Intenta dejar la marca de sesión única; devuelve el código de salida si no se entra.
 
-    try:
-        # Crear ventana principal
-        paso("Abriendo la ventana…")
-        window = VentanaPrincipal(session, sync_manager=sync_manager)  # noqa: F841
-        logger.info("Ventana principal creada exitosamente")
-        if arranque is not None:
-            arranque.terminar(window)
+    None es que el bloqueo está adquirido. Si el servidor no responde lanza
+    `SyncConfigurationError`: se entra sin nube.
+    """
+    from sync import SyncConfigurationError
 
-        # La ventana ya se muestra maximizada desde su __init__
-        # No necesitamos hacer nada más aquí
+    max_retries = 3
+    for attempt in range(max_retries):
+        if session_lock.acquire_lock():
+            logger.info(f"✅ Bloqueo de sesión adquirido (intento {attempt + 1})")
+            return None
+        elif session_lock.motivo_del_fallo == "sin_servidor":
+            # No es que la cuenta esté abierta en otro sitio: es que el
+            # servidor no responde. Anunciarlo como «no se ha podido
+            # comprobar» y no abrir dejaba el equipo inutilizable sin
+            # decir por qué (SYNC-024). Se entra sin nube, y como no hay
+            # gestor de sincronización no se sube nada: sin riesgo para
+            # el trabajo de quien sí esté dentro.
+            raise SyncConfigurationError(
+                "No se ha podido dejar la marca de sesión en el servidor."
+            )
+        else:
+            # Mostrar diálogo informativo
+            lock_info = session_lock.get_lock_info()
+            if lock_info:
+                locked_dialog = SessionLockedDialog(lock_info)
+                ocultar_arranque()
+                result = locked_dialog.exec()
 
-        # Iniciar sistema de heartbeat para mantener el bloqueo activo
-        if session_lock_manager:
-            session_lock_manager.start_heartbeat(app)
-
-        # Ejecutar la aplicación
-        logger.info("Iniciando event loop de Qt...")
-        exit_code = app.exec()
-
-    except Exception as e:
-        logger.exception(f"Error fatal al crear o ejecutar la ventana principal: {e}")
-        import traceback
-
-        traceback.print_exc()
-        exit_code = 1  # Código de error
-
-    finally:
-        # Detener heartbeat
-        if session_lock_manager:
-            session_lock_manager.stop_heartbeat()
-
-        # Sincronizar datos al cerrar (exportar DB a JSON y subir a la nube)
-        if sync_manager:
-            # Siempre intentar sincronizar - el backend puede reconectar si es necesario
-            # No verificar si sftp es None porque _ensure_connected() puede reconectar
-            backend_disponible = True
-            if hasattr(sync_manager.backend, "base_path"):
-                # Solo verificar LocalBackend
-                backend_disponible = sync_manager.backend.base_path is not None
-
-            if backend_disponible:
-                logger.info("Cerrando aplicación. Sincronizando cambios...")
-
-                from presentation.widgets.sync_progress_dialog import SyncProgressDialog, SyncWorker
-
-                progress_dialog = SyncProgressDialog()
-
-                # Worker ejecuta la sync en hilo separado — no bloquea GUI
-                worker = SyncWorker(sync_manager)  # abre su propia sesión (CRW-003)
-
-                def on_progress(step: str, details: dict):
-                    if step == "exporting":
-                        from application.app_services import AppServices
-
-                        try:
-                            svc = AppServices(session)
-                            total = (
-                                len(svc.profesores.get_all())
-                                + len(svc.zonas.get_all())
-                                + svc.contar_guardias()
-                            )
-                        except (ValueError, TypeError, AttributeError):
-                            total = 0
-                        progress_dialog.set_step_exporting(total)
-                    elif step == "connecting":
-                        progress_dialog.set_step_connecting()
-                    elif step == "uploading":
-                        progress_dialog.set_step_uploading(details.get("file_size_kb", 0))
-                    elif step == "complete":
-                        progress_dialog.set_step_complete(success=True)
-                    elif step == "error":
-                        progress_dialog.set_step_error(details.get("message", "Error desconocido"))
-
-                def on_finished(success: bool):
-                    if success:
-                        logger.info("✓ Sincronización final completada")
-                    else:
-                        logger.warning("⚠ La sincronización final tuvo problemas")
-                        progress_dialog.set_step_complete(success=False)
-
-                worker.progress_updated.connect(on_progress)
-                worker.finished.connect(on_finished)
-                worker.start()
-
-                progress_dialog.exec()
-                worker.wait()  # Asegurar que el hilo termina antes de liberar recursos
+                if result == SessionLockedDialog.DialogCode.Rejected:
+                    # Usuario canceló
+                    logger.info("Usuario canceló debido a sesión bloqueada")
+                    session.close()
+                    return 0
+                # Si aceptó (Reintentar), continúa el loop
             else:
-                logger.info(
-                    "Backend de sincronización no disponible. Omitiendo sincronización final."
+                # Sin poder leer el bloqueo no se puede saber si hay otra
+                # sesión abierta. Ante la duda no se entra: entrar y subir
+                # después machacaría el trabajo de quien esté dentro.
+                logger.error("No se pudo obtener información del bloqueo")
+                QMessageBox.critical(
+                    None,
+                    "No se puede comprobar la sesión",
+                    "No se ha podido comprobar si la cuenta está abierta en otro "
+                    "equipo.\n\nPara no arriesgar los datos, la aplicación no se "
+                    "abrirá. Inténtalo de nuevo cuando haya conexión.",
                 )
+                session.close()
+                return 1
 
-        # Liberar bloqueo de sesión
-        if session_lock_manager:
-            session_lock_manager.cleanup()
+    # Se agotaron los reintentos
+    QMessageBox.critical(
+        None,
+        "Sesión Bloqueada",
+        "No se pudo iniciar sesión después de varios intentos.\n"
+        "El usuario está activo en otro dispositivo.",
+    )
+    session.close()
+    return 1
 
-        # Cerrar sesión de base de datos
-        session.close()
 
-        # Cerrar backend de sincronización si existe
-        if sync_manager and hasattr(sync_manager.backend, "close"):
-            try:
-                sync_manager.backend.close()
-            except Exception as e:
-                logger.error(f"Error al cerrar backend de sincronización: {e}")
+def _mostrar_paso_de_sync(progress_dialog, session, step: str, details: dict) -> None:
+    """Lleva al diálogo de cierre el paso en el que va la subida."""
+    if step == "exporting":
+        from application.app_services import AppServices
 
-        return exit_code
+        try:
+            svc = AppServices(session)
+            total = (
+                len(svc.profesores.get_all())
+                + len(svc.zonas.get_all())
+                + svc.contar_guardias()
+            )
+        except (ValueError, TypeError, AttributeError):
+            total = 0
+        progress_dialog.set_step_exporting(total)
+    elif step == "connecting":
+        progress_dialog.set_step_connecting()
+    elif step == "uploading":
+        progress_dialog.set_step_uploading(details.get("file_size_kb", 0))
+    elif step == "complete":
+        progress_dialog.set_step_complete(success=True)
+    elif step == "error":
+        progress_dialog.set_step_error(details.get("message", "Error desconocido"))
+
+
+def _sincronizar_al_cerrar(sync_manager, session) -> None:
+    """Exporta la base a JSON y la sube a la nube, con su diálogo de progreso."""
+    # Siempre intentar sincronizar - el backend puede reconectar si es necesario
+    # No verificar si sftp es None porque _ensure_connected() puede reconectar
+    backend_disponible = True
+    if hasattr(sync_manager.backend, "base_path"):
+        # Solo verificar LocalBackend
+        backend_disponible = sync_manager.backend.base_path is not None
+
+    if not backend_disponible:
+        logger.info("Backend de sincronización no disponible. Omitiendo sincronización final.")
+        return
+
+    logger.info("Cerrando aplicación. Sincronizando cambios...")
+
+    from presentation.widgets.sync_progress_dialog import SyncProgressDialog, SyncWorker
+
+    progress_dialog = SyncProgressDialog()
+
+    # Worker ejecuta la sync en hilo separado — no bloquea GUI
+    worker = SyncWorker(sync_manager)  # abre su propia sesión (CRW-003)
+
+    def on_progress(step: str, details: dict):
+        _mostrar_paso_de_sync(progress_dialog, session, step, details)
+
+    def on_finished(success: bool):
+        if success:
+            logger.info("✓ Sincronización final completada")
+        else:
+            logger.warning("⚠ La sincronización final tuvo problemas")
+            progress_dialog.set_step_complete(success=False)
+
+    worker.progress_updated.connect(on_progress)
+    worker.finished.connect(on_finished)
+    worker.start()
+
+    progress_dialog.exec()
+    worker.wait()  # Asegurar que el hilo termina antes de liberar recursos
+
+
+def _cerrar(session, sync_manager, session_lock_manager) -> None:
+    """Detiene el heartbeat, sube los cambios, libera el bloqueo y cierra sesión y backend."""
+    # Detener heartbeat
+    if session_lock_manager:
+        session_lock_manager.stop_heartbeat()
+
+    # Sincronizar datos al cerrar (exportar DB a JSON y subir a la nube)
+    if sync_manager:
+        _sincronizar_al_cerrar(sync_manager, session)
+
+    # Liberar bloqueo de sesión
+    if session_lock_manager:
+        session_lock_manager.cleanup()
+
+    # Cerrar sesión de base de datos
+    session.close()
+
+    # Cerrar backend de sincronización si existe
+    if sync_manager and hasattr(sync_manager.backend, "close"):
+        try:
+            sync_manager.backend.close()
+        except Exception as e:
+            logger.error(f"Error al cerrar backend de sincronización: {e}")
 
 
 if __name__ == "__main__":
