@@ -145,7 +145,7 @@ def test_las_cuotas_descuentan_lo_ya_hecho(curso_con_guardias):
 
     from services import asignador_guardias_cpsat
 
-    fuente = inspect.getsource(asignador_guardias_cpsat.generar_guardias_cpsat)
+    fuente = inspect.getsource(asignador_guardias_cpsat)
     assert "ya_asignadas" in fuente
     assert "cuotas_ideales[p_id] - ya_asignadas" in fuente
 

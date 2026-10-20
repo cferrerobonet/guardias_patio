@@ -118,7 +118,7 @@ def test_los_hilos_del_solver_salen_del_equipo_no_de_una_constante():
     from config.settings import Settings, hilos_del_solver
     from services import asignador_guardias_cpsat
 
-    fuente = inspect.getsource(asignador_guardias_cpsat.generar_guardias_cpsat)
+    fuente = inspect.getsource(asignador_guardias_cpsat)
     assert "num_search_workers = 8" not in fuente
     assert "hilos_del_solver()" in fuente
 
