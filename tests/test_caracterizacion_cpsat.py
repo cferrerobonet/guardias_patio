@@ -5,7 +5,11 @@ escenario se guarda la huella del modelo CP-SAT exacto (variables, restricciones
 pesos, objetivo y punto de partida), los parámetros del solucionador, el reparto que
 sale y el progreso que se anuncia. Los dos solves (reparto justo y modelo principal)
 se fuerzan a un hilo después de anotar los parámetros que pone el código: con un
-hilo y la semilla por defecto CP-SAT es reproducible.
+hilo y la semilla por defecto CP-SAT es reproducible en un mismo sistema. Entre
+soluciones igual de buenas no elige la misma en macOS y en Linux, así que lo que
+depende de la solución (el reparto, las asignadas y el modelo que parte del reparto
+justo) se guarda para cada sistema en el que se ejecuta: el Mac de desarrollo y el
+Linux de la CI. En otro sistema se comprueba lo que no depende de la solución.
 
 Si un cambio en el algoritmo es intencionado, las huellas se recalculan a propósito.
 Datos ficticios: «Profesor/a NN» y zonas inventadas.
@@ -13,6 +17,7 @@ Datos ficticios: «Profesor/a NN» y zonas inventadas.
 
 import hashlib
 import json
+import platform
 import threading
 from datetime import date, time
 
@@ -165,6 +170,10 @@ def _generar(sesion, registro, **kw):
     }
 
 
+SISTEMA = f"{platform.system()}-{platform.machine()}"
+GRABADO_EN = "Darwin-arm64"
+
+
 def _comprobar(resultado, esperado):
     for s in resultado["solves"]:
         assert s["estado"] == "OPTIMAL", "con un hilo y sin agotar el tiempo"
@@ -175,7 +184,15 @@ def _comprobar(resultado, esperado):
         "asignadas": resultado["asignadas"],
         "progreso": resultado["progreso"],
     }
-    assert obtenido == esperado
+    propios = esperado.get("por_sistema", {})
+    base = {k: v for k, v in esperado.items() if k != "por_sistema"}
+    if SISTEMA == GRABADO_EN or SISTEMA in propios:
+        assert obtenido == {**base, **propios.get(SISTEMA, {})}
+        return
+    assert obtenido["modelos"][0] == base["modelos"][0]
+    assert obtenido["parametros"] == base["parametros"]
+    assert obtenido["progreso"] == base["progreso"]
+    assert sorted(n for _, n in obtenido["asignadas"]) == sorted(n for _, n in base["asignadas"])
 
 
 ESPERADO_COMPLETO = {
@@ -186,6 +203,16 @@ ESPERADO_COMPLETO = {
     "parametros": "d494d5e2c26fa0fe8b519565862edfcf6a28ba13a37780bc980326b615126450",
     "reparto": "18be006ee49fd6dd2169074c07ea67cfb33a7bb3c60c54f7a60360a51f4c528e",
     "asignadas": [(1, 5), (2, 5), (3, 4), (4, 6), (5, 7), (6, 8), (7, 5)],
+    "por_sistema": {
+        "Linux-x86_64": {
+            "modelos": [
+                "4226ceec334cfdf6e249356174ddcfea1fff0039bfc8c1eedde8baa44220eeca",
+                "1a25054a7c0374c654bfe915d567345d8d430ed761dba810fc391777306b609f",
+            ],
+            "reparto": "a876d520ac30617e96255cca57a5b4b76717aef60999cd9818da8598d084736f",
+            "asignadas": [(1, 4), (2, 5), (3, 5), (4, 6), (5, 8), (6, 7), (7, 5)],
+        },
+    },
     "progreso": [
         (0, "Iniciando generación con CP-SAT..."),
         (5, "Cargando configuración..."),
@@ -209,6 +236,11 @@ ESPERADO_DEFICIT_SIN_PISTAS = {
     ],
     "parametros": "d494d5e2c26fa0fe8b519565862edfcf6a28ba13a37780bc980326b615126450",
     "reparto": "ace7a02c3998c7aa79247a3619ff12edcd31d2c2b113c41c8bc3f4c4dfc1c739",
+    "por_sistema": {
+        "Linux-x86_64": {
+            "reparto": "9ba4df016686026d3882994fd4f2dda0ee2b1736e9a32c5317a9646927c33cb1",
+        },
+    },
     "asignadas": [(1, 10), (2, 10)],
     "progreso": [
         (0, "Iniciando generación con CP-SAT..."),
@@ -232,6 +264,11 @@ ESPERADO_INCREMENTAL = {
     ],
     "parametros": "d494d5e2c26fa0fe8b519565862edfcf6a28ba13a37780bc980326b615126450",
     "reparto": "ad55cb7cd7fbc15b74828b30b6f0dc54eebfafd791e1a215e0469f70cdd198d0",
+    "por_sistema": {
+        "Linux-x86_64": {
+            "reparto": "e47af7456bd7d5f063a01e0cce77dad889bb5f97c43de82311d4be4e74694819",
+        },
+    },
     "asignadas": [(1, 3), (2, 3), (3, 1), (4, 3), (5, 4), (6, 3), (7, 3)],
     "progreso": [
         (0, "Iniciando generación con CP-SAT..."),
