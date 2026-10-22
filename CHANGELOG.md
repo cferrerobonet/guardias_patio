@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [7.5.7] - 2026-10-22
+
+### 🎯 Resumen
+La equidad del reparto ya no depende del equipo. En los Windows del centro (y en cualquier equipo de 2-4 núcleos) salía bastante peor que en un Mac potente: el primer paso, que calcula cuántas guardias le tocan a cada uno, se quedaba sin tiempo con una solución a 10-25 guardias de la justa, y el resto del reparto la seguía. Ahora ese paso llega al reparto justo en menos de un segundo en cualquier equipo.
+
+### Fixed
+- **Reparto justo en equipos modestos** (`services/reparto_agrupado.py`): se planteaba hueco a hueco, y las zonas de un mismo recreo eran huecos distintos con los mismos profesores; el solucionador gastaba sus 30 s en combinaciones equivalentes. Ahora los huecos de un mismo día que admiten a los mismos profesores forman un grupo que admite tantos como huecos tiene. Es el mismo problema, con las mismas reglas (una guardia al día, equidad antes que cobertura, una de más por redondeo) y el mismo óptimo. Con dos hilos y un claustro de 31 profesores, menos de un segundo; antes, 18 s en un Mac y sin llegar en 30 s en Windows, Linux o un Mac de 3 núcleos.
+
+### 🧹 Housekeeping
+- Funciones largas partidas en piezas con nombre propio, sin cambiar lo que hacen: el generador de guardias (por fases), el PDF individual, el PDF mensual consolidado y el arranque y cierre de la app. Lo vigila una comprobación nueva del comportamiento del generador.
+- La comprobación del comportamiento del generador guarda por sistema (macOS y Linux) lo que depende de la solución elegida entre empates igual de justos; el modelo, los parámetros y el progreso son comunes.
+- `certifi` 2026.10.19 (PYSEC-2026-4320).
+
+### 🧪 Tests
+- `tests/test_reparto_justo_rapido.py`: con un claustro ficticio del tamaño del real y dos hilos, el reparto justo llega al óptimo en 10 s (con el planteamiento anterior se quedaba en «factible»).
+
 ## [7.5.6] - 2026-10-19
 
 ### 🎯 Resumen

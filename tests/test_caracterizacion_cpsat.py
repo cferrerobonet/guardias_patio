@@ -206,11 +206,11 @@ ESPERADO_COMPLETO = {
     "por_sistema": {
         "Linux-x86_64": {
             "modelos": [
-                "4226ceec334cfdf6e249356174ddcfea1fff0039bfc8c1eedde8baa44220eeca",
-                "1a25054a7c0374c654bfe915d567345d8d430ed761dba810fc391777306b609f",
+                "3eec22804915b7e423e1756606016a823d4b5d4ff91b80cc48054133658c3751",
+                "cdb3d536d25c523d92b809ba34647876148f63649558bad637f41ef73236837a",
             ],
-            "reparto": "a876d520ac30617e96255cca57a5b4b76717aef60999cd9818da8598d084736f",
-            "asignadas": [(1, 4), (2, 5), (3, 5), (4, 6), (5, 8), (6, 7), (7, 5)],
+            "reparto": "cdd828fe2cbbb02699fd9d0baa9cb33e524294b68bd4d9fce89662bbf5eea8fa",
+            "asignadas": [(1, 5), (2, 5), (3, 5), (4, 6), (5, 7), (6, 8), (7, 4)],
         },
     },
     "progreso": [
@@ -266,7 +266,7 @@ ESPERADO_INCREMENTAL = {
     "reparto": "0a7a26a28e32577dbd521b5febc2ccf7953877c1cf51f640081d51f36422ead3",
     "por_sistema": {
         "Linux-x86_64": {
-            "reparto": "e47af7456bd7d5f063a01e0cce77dad889bb5f97c43de82311d4be4e74694819",
+            "reparto": "59373a5b60ecee7b515b466267662e3a93d6c08b7ae8ff88893238ed334bd514",
         },
     },
     "asignadas": [(1, 3), (2, 3), (3, 1), (4, 4), (5, 3), (6, 3), (7, 3)],

@@ -16,7 +16,7 @@ bcrypt==5.0.0
 boolean.py==5.0
 CacheControl==0.14.4
 cachetools==7.1.8
-certifi==2026.7.22
+certifi==2026.10.19
 cffi==2.1.1
 charset-normalizer==3.5.1
 click==8.5.0
