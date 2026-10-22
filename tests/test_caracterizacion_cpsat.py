@@ -197,7 +197,7 @@ def _comprobar(resultado, esperado):
 
 ESPERADO_COMPLETO = {
     "modelos": [
-        "4226ceec334cfdf6e249356174ddcfea1fff0039bfc8c1eedde8baa44220eeca",
+        "3eec22804915b7e423e1756606016a823d4b5d4ff91b80cc48054133658c3751",
         "ecd8239fb3bdaf2ecd2a1c46798ddce58a68d3e4d2200f1654847949a2baa113",
     ],
     "parametros": "d494d5e2c26fa0fe8b519565862edfcf6a28ba13a37780bc980326b615126450",
@@ -231,7 +231,7 @@ ESPERADO_COMPLETO = {
 }
 ESPERADO_DEFICIT_SIN_PISTAS = {
     "modelos": [
-        "0f549a9f8577d0d3f41333729d8de96de90fbd590780d08ad6ca2769eb3d7a53",
+        "0f4d29e6166ac11fd96e2b751d0985866d55aff552e7f04e1adc50a907377541",
         "160da95d4f95940381d9bd221a7c02b1dd9cdaa9cbacd5c5dc26ffc7e1b3d6cd",
     ],
     "parametros": "d494d5e2c26fa0fe8b519565862edfcf6a28ba13a37780bc980326b615126450",
@@ -259,17 +259,17 @@ ESPERADO_DEFICIT_SIN_PISTAS = {
 }
 ESPERADO_INCREMENTAL = {
     "modelos": [
-        "f5492e14ac40cf550fca083fa73aa3026b96252c3af1db6395adac2978a59cf0",
-        "f949833f273391e95282a30ce3c6af4cf0b95cb8f63a7c28545ee925ebd5d2ea",
+        "f2425bdd7d71b3da536077b30650aaf1e4917e4af9f61a62e723f4f1dde5fe64",
+        "4edcafb4a11c0c047c7a558cb13ab5e1fb56d7d75a7f2502d589f9b72f409bf8",
     ],
     "parametros": "d494d5e2c26fa0fe8b519565862edfcf6a28ba13a37780bc980326b615126450",
-    "reparto": "ad55cb7cd7fbc15b74828b30b6f0dc54eebfafd791e1a215e0469f70cdd198d0",
+    "reparto": "0a7a26a28e32577dbd521b5febc2ccf7953877c1cf51f640081d51f36422ead3",
     "por_sistema": {
         "Linux-x86_64": {
             "reparto": "e47af7456bd7d5f063a01e0cce77dad889bb5f97c43de82311d4be4e74694819",
         },
     },
-    "asignadas": [(1, 3), (2, 3), (3, 1), (4, 3), (5, 4), (6, 3), (7, 3)],
+    "asignadas": [(1, 3), (2, 3), (3, 1), (4, 4), (5, 3), (6, 3), (7, 3)],
     "progreso": [
         (0, "Iniciando generación con CP-SAT..."),
         (5, "Cargando configuración..."),

@@ -93,22 +93,39 @@ def objetivos_justos(
         resolver_con_progreso,
     )
 
+    # Aquí solo cuenta cuántas guardias hace cada uno, así que los huecos de un mismo día
+    # que admiten a los mismos profesores (las zonas de un recreo) son intercambiables:
+    # se agrupan y cada grupo admite tantos profesores como huecos tiene. Es el mismo
+    # problema con el mismo óptimo, sin las simetrías que dejaban a un equipo modesto,
+    # al agotar el tiempo, con una solución a 10-25 guardias de la justa (2026-10-22).
+    grupos: Dict[tuple, int] = Counter(
+        (slots[i].fecha, frozenset(pids)) for i, pids in slot_profs.items() if pids
+    )
     modelo = cp_model.CpModel()
-    x = {(pid, i): modelo.NewBoolVar("") for pid, ids in prof_slots.items() for i in ids}
+    x = {(pid, g): modelo.NewBoolVar("") for g in grupos for pid in g[1]}
+    prof_grupos: Dict[int, list] = defaultdict(list)
+    for pid, g in x:
+        prof_grupos[pid].append(g)
     vacios = []
-    for i, pids in slot_profs.items():
-        if pids:
-            modelo.AddAtMostOne(x[pid, i] for pid in pids)
-            vacios.append(1 - sum(x[pid, i] for pid in pids))
-    _una_al_dia(modelo, x, slots, prof_slots)
-    desviaciones, maxima = _desviaciones(modelo, x, prof_slots, profesores, cuotas)
+    for g, huecos in grupos.items():
+        ocupados = sum(x[pid, g] for pid in g[1])
+        modelo.Add(ocupados <= huecos)
+        vacios.append(huecos - ocupados)
+    for pid, gs in prof_grupos.items():
+        por_dia = defaultdict(list)
+        for g in gs:
+            por_dia[g[0]].append(x[pid, g])
+        for lista in por_dia.values():
+            if len(lista) > 1:
+                modelo.AddAtMostOne(lista)
+    desviaciones, maxima = _desviaciones(modelo, x, prof_grupos, profesores, cuotas)
     # Equidad primero (CarlosFB, 2026-10-06): pasar de la cuota en más de una
     # guardia cuesta más que dejar un hueco. Antes cubrir iba antes que todo y,
     # sin profesorado fijo de un turno, los mixtos acababan con una guardia diaria
     # todo el curso. Una de más se admite: es el redondeo de las cuotas.
     # Sin cuotas (todas a 0: el cálculo no tenía huecos que repartir) no hay
     # referencia de equidad y no se limita a nadie.
-    excesos = _excesos(modelo, x, prof_slots, profesores, cuotas) if any(cuotas.values()) else []
+    excesos = _excesos(modelo, x, prof_grupos, profesores, cuotas) if any(cuotas.values()) else []
     modelo.Minimize(
         10_000_000 * sum(excesos) + 1_000_000 * sum(vacios) + 100 * maxima + sum(desviaciones)
     )
@@ -300,16 +317,6 @@ def terminos_de_agrupacion(modelo, x, slots: list, prof_slots: Dict[int, List[in
                     modelo.AddImplication(x[pid, i], usa)
                 terminos.append(peso * usa)
     return terminos
-
-
-def _una_al_dia(modelo, x, slots, prof_slots) -> None:
-    for pid, ids in prof_slots.items():
-        por_dia = defaultdict(list)
-        for i in ids:
-            por_dia[slots[i].fecha].append(i)
-        for lista in por_dia.values():
-            if len(lista) > 1:
-                modelo.AddAtMostOne(x[pid, i] for i in lista)
 
 
 def _excesos(modelo, x, prof_slots, profesores, cuotas):
