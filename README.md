@@ -106,6 +106,7 @@ powershell scripts/build_windows.ps1
 | [CHANGELOG.md](CHANGELOG.md) | Historial de versiones |
 | [tests/README.md](tests/README.md) | Guía de testing y buenas prácticas |
 | [scripts/README.md](scripts/README.md) | Documentación de scripts |
+| [pantalla_patio/](pantalla_patio/) | Pantalla del patio (web de la smart TV que lee los resúmenes que publica la app): se configura con `web/config.example.php` y `.env.example` y se sube con `scripts/deploy.sh` |
 
 ---
 

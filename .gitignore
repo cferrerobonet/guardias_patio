@@ -161,3 +161,7 @@ docs/**/*.pdf
 *.tar.gz
 *.zip
 *.dup
+
+# Pantalla del patio (web): token y cuentas de la pantalla y resúmenes publicados por la app
+pantalla_patio/web/config.php
+pantalla_patio/web/datos/*.json

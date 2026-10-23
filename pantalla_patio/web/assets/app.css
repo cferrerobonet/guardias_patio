@@ -1,0 +1,64 @@
+@font-face{font-family:"Barlow";font-weight:400;src:url("fuentes/Barlow-Regular.ttf")}
+@font-face{font-family:"Barlow";font-weight:600;src:url("fuentes/Barlow-SemiBold.ttf")}
+@font-face{font-family:"Barlow";font-weight:700;src:url("fuentes/Barlow-Bold.ttf")}
+@font-face{font-family:"Barlow Condensed";font-weight:700;src:url("fuentes/BarlowCondensed-Bold.ttf")}
+@font-face{font-family:"Barlow Condensed";font-weight:800;src:url("fuentes/BarlowCondensed-ExtraBold.ttf")}
+
+:root{
+  --verde:#2C7A3A; --verde-osc:#1C5226; --verde-claro:#E2F0E3;
+  --dorado:#B97A12; --dorado-suave:#FBF0D9;
+  --texto:#1D2A20; --texto-2:#5D6B60;
+  --fondo:#F3F5F1; --superficie:#EEF2EC; --borde:#D9E0D5;
+}
+*{box-sizing:border-box}
+html{font-size:1vw;font-size:min(1vw,1.7778vh)}
+body{margin:0;height:100vh;overflow:hidden;background:var(--fondo);color:var(--texto);
+  font-family:"Barlow","Helvetica Neue",Arial,sans-serif;font-weight:600;cursor:none;
+  display:flex;flex-direction:column}
+
+#cab{flex:none;height:11rem;display:flex;align-items:center;padding:0 3rem;background:#fff;
+  border-bottom:.6rem solid var(--verde);box-shadow:0 .35rem 0 var(--dorado)}
+#cab .logo{height:9rem;width:auto}
+.titulo{margin-left:2.5rem;flex:1}
+h1{margin:0;font-family:"Barlow Condensed","Barlow",sans-serif;font-weight:800;font-size:5.4rem;
+  line-height:1;text-transform:uppercase;color:var(--verde-osc);letter-spacing:.02em}
+.turno{display:inline-block;margin-top:.6rem;padding:.2rem 1.4rem;border-radius:2rem;
+  background:var(--dorado-suave);color:#9A5B00;border:.15rem solid var(--dorado);
+  font-size:2rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.fecha-hora{text-align:right}
+.fecha{font-size:2.6rem;font-weight:600;color:var(--texto)}
+.reloj{font-family:"Barlow Condensed","Barlow",sans-serif;font-weight:800;font-size:5.6rem;line-height:1;
+  color:var(--verde);font-variant-numeric:tabular-nums}
+.fecha:first-letter{text-transform:uppercase}
+
+#tabla{flex:1;min-height:0;overflow:hidden;display:none;grid-gap:1.2rem;padding:2rem 3rem}
+.cabecera,.celda,.zona{border-radius:.8rem;display:flex}
+.zona{background:var(--verde);color:#fff;flex-direction:column;justify-content:center;padding:0 2rem}
+.zona b{font-family:"Barlow Condensed","Barlow",sans-serif;font-weight:800;font-size:4rem;line-height:1}
+.zona small{margin-top:.3rem;font-size:1.35rem;font-weight:400;opacity:.92;line-height:1.15}
+.cabecera{background:var(--superficie);border:.15rem solid var(--borde);align-items:center;
+  justify-content:space-between;padding:0 2rem;position:relative}
+.cabecera .hora{font-family:"Barlow Condensed","Barlow",sans-serif;font-weight:800;font-size:4.4rem;
+  color:var(--verde-osc);font-variant-numeric:tabular-nums}
+.cabecera .etiqueta{font-size:2rem;font-weight:600;color:var(--texto-2);text-transform:uppercase}
+.cabecera.ahora{border-color:var(--dorado);background:var(--dorado-suave)}
+.cabecera .marca{position:absolute;top:-1rem;right:1.4rem;padding:.1rem 1rem;border-radius:1rem;
+  background:var(--dorado);color:#fff;font-size:1.4rem;font-weight:700;letter-spacing:.08em}
+.celda{background:#fff;border:.15rem solid var(--borde);align-items:center;padding:0 2rem;
+  font-size:2.8rem;line-height:1.1;font-weight:700;color:var(--texto)}
+.celda.vacia{color:var(--texto-2);font-weight:400;background:transparent;border-style:dashed}
+.pasado{opacity:.5}
+
+#espera{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:0 10rem}
+.logo-grande{height:38rem;width:auto}
+.fecha-espera{margin-top:1.5rem;font-size:2.6rem;color:var(--texto-2);font-weight:600}
+.fecha-espera:first-letter{text-transform:uppercase}
+.frase{margin:2rem 0 0;max-width:75rem;font-size:4rem;line-height:1.2;font-weight:600;color:var(--verde-osc);
+  transition:opacity .8s}
+.mensaje{margin:1.5rem 0 0;font-size:2.4rem;color:var(--dorado);font-weight:700}
+.mensaje:empty{display:none}
+body.espera #cab,body.espera #tabla{display:none}
+body.guardias #espera{display:none}
+body.guardias #tabla{display:grid}
+.oculto{opacity:0}

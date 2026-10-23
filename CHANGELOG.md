@@ -5,6 +5,11 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+### 🧹 Housekeeping
+- **La pantalla del patio entra en el repositorio** (`pantalla_patio/`): la web que la smart TV abre para ver las guardias del día y su despliegue. El token de la pantalla, las cuentas y los datos del servidor quedan fuera de git (`web/config.php` y `.env`, con sus plantillas `config.example.php` y `.env.example`); `deploy.sh` ya no lleva ninguna ruta del servidor por defecto.
+
 ## [7.5.7] - 2026-10-22
 
 ### 🎯 Resumen
