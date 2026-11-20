@@ -468,6 +468,18 @@ def test_obtener_profesores_disponibles_excluye_profesor(mock_session, profesor_
     assert len(disponibles) == 0
 
 
+def test_obtener_profesores_disponibles_excluye_inactivos(mock_session, profesor_fixture):
+    """Quien está de baja en la app no se ofrece como sustituto."""
+    profesor_fixture.turno = "mañana"
+    profesor_fixture.activo = False
+    mock_query = Mock()
+    mock_session.query.return_value = mock_query
+    mock_query.options.return_value = mock_query
+    mock_query.all.return_value = [profesor_fixture]
+
+    assert obtener_profesores_disponibles(mock_session, date(2025, 10, 23), "mañana", 1) == []
+
+
 def test_obtener_profesores_disponibles_turno_incompatible(mock_session, profesor_fixture):
     """Test: no incluir profesores con turno incompatible."""
     # Arrange

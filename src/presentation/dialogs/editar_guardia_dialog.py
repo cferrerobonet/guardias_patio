@@ -1,8 +1,8 @@
 """Mover una guardia o cubrir a mano un hueco del calendario (GUA-CON-001).
 
 Solo ofrece lo que el reparto permitiría: los recreos y zonas que ese día entran
-en el reparto y, para cada hueco, los profesores que pueden hacerlo. Los que no,
-aparecen desactivados y, al elegir uno, se dice por qué. Antes de guardar se pide
+en el reparto y, para cada hueco, solo los profesores libres que pueden hacerlo
+(sin otra guardia ese día, no ausentes y elegibles). Antes de guardar se pide
 confirmación; después, el calendario ofrece deshacer.
 """
 
@@ -169,28 +169,14 @@ class EditarGuardiaDialog(QDialog):
         actual = self.combo_profesor.currentData()
         self.combo_profesor.blockSignals(True)
         self.combo_profesor.clear()
-        self._motivos: dict = {}
         if hueco is not None:
-            lista = edicion.candidatos(self.session, hueco, self._propia_id())
-            # Primero los que pueden; los que no, al final y desactivados.
-            for profesor, motivos in sorted(lista, key=lambda pm: bool(pm[1])):
-                texto = profesor.nombre_completo + ("" if not motivos else " — no puede")
-                self.combo_profesor.addItem(texto, profesor.id)
-                self._motivos[profesor.id] = motivos
-                if motivos:
-                    item = self.combo_profesor.model().item(self.combo_profesor.count() - 1)
-                    item.setEnabled(False)
-                    item.setToolTip(" ".join(motivos))
+            # Solo quien está libre ese día: sin guardia, ni ausencia, ni restricciones.
+            for profesor, motivos in edicion.candidatos(self.session, hueco, self._propia_id()):
+                if not motivos:
+                    self.combo_profesor.addItem(profesor.nombre_completo, profesor.id)
             preferido = actual or (self.guardia.profesor_id if self.guardia else None)
             i = self.combo_profesor.findData(preferido) if preferido else -1
-            if i < 0 or self._motivos.get(self.combo_profesor.itemData(i)):
-                i = next(
-                    (k for k in range(self.combo_profesor.count())
-                     if not self._motivos.get(self.combo_profesor.itemData(k))),
-                    i,
-                )
-            if i >= 0:
-                self.combo_profesor.setCurrentIndex(i)
+            self.combo_profesor.setCurrentIndex(max(i, 0) if self.combo_profesor.count() else -1)
         self.combo_profesor.blockSignals(False)
         self._comprobar()
 
@@ -211,8 +197,7 @@ class EditarGuardiaDialog(QDialog):
             return ["Elige un recreo y una zona."]
         motivos = edicion.motivos_del_hueco(self.session, hueco, self._propia_id())
         if profesor_id is None:
-            return motivos + ["No hay profesores activos."]
-        motivos += self._motivos.get(profesor_id, [])
+            return motivos + ["Nadie está libre para esa guardia ese día."]
         if (
             not motivos
             and self.guardia is not None

@@ -5,7 +5,14 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
-## [Sin publicar]
+## [7.5.8] - 2026-11-20
+
+### 🎯 Resumen
+Al cubrir o mover una guardia desde el calendario, el desplegable de profesor ya solo ofrece a quien está libre ese día: sin otra guardia, no ausente y que pueda hacer ese recreo. Antes salía todo el claustro, con los que no podían al final y en gris, y parecía que cualquiera era una alternativa.
+
+### Fixed
+- **Mover o asignar una guardia** (`dialogs/editar_guardia_dialog.py`): la lista de profesores deja fuera a quien no puede hacer la guardia ese día; si no queda nadie libre, se dice así y no deja guardar.
+- **Ausencias y sustituciones** (`services/gestor_ausencias.py`): los profesores dados de baja en la app ya no salen como sustitutos ni los elige la auto-asignación.
 
 ### 🧹 Housekeeping
 - **La pantalla del patio entra en el repositorio** (`pantalla_patio/`): la web que la smart TV abre para ver las guardias del día y su despliegue. El token de la pantalla, las cuentas y los datos del servidor quedan fuera de git (`web/config.php` y `.env`, con sus plantillas `config.example.php` y `.env.example`); `deploy.sh` ya no lleva ninguna ruta del servidor por defecto.

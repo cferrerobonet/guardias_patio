@@ -323,6 +323,8 @@ def obtener_profesores_disponibles(
         # Excluir profesor específico si se indica
         if excluir_profesor_id and p.id == excluir_profesor_id:
             continue
+        if p.activo is False:
+            continue
 
         # Verificar turno compatible usando el validador centralizado
         if _turno_validator.es_compatible(p.turno, turno):

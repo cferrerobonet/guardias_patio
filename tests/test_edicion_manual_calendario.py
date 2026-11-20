@@ -243,7 +243,7 @@ def test_no_se_deshace_encima_de_un_cambio_posterior(session, escenario):
 
 
 @pytest.mark.ui
-def test_el_dialogo_desactiva_a_quien_no_puede_y_no_deja_guardar_un_hueco_ocupado(
+def test_el_dialogo_solo_ofrece_a_los_libres_y_no_deja_guardar_un_hueco_ocupado(
     qapp, session, escenario
 ):
     from presentation.dialogs.editar_guardia_dialog import EditarGuardiaDialog
@@ -251,13 +251,12 @@ def test_el_dialogo_desactiva_a_quien_no_puede_y_no_deja_guardar_un_hueco_ocupad
     edicion.asignar_guardia(session, _hueco(escenario), escenario["ana"].id)
     dialogo = EditarGuardiaDialog(session, LUNES, hueco=_hueco(escenario))
 
-    modelo = dialogo.combo_profesor.model()
-    estados = {
-        dialogo.combo_profesor.itemText(i): modelo.item(i).isEnabled()
-        for i in range(dialogo.combo_profesor.count())
-    }
-    assert estados["Teo, Tarde — no puede"] is False
-    assert estados["Bea, Libre"] is True
+    nombres = [dialogo.combo_profesor.itemText(i) for i in range(dialogo.combo_profesor.count())]
+    libres = [p.nombre_completo for p, m in edicion.candidatos(session, _hueco(escenario)) if not m]
+    assert nombres == libres
+    assert "Bea, Libre" in nombres
+    assert "Ana, Libre" not in nombres  # ya tiene guardia ese día
+    assert "Teo, Tarde" not in nombres  # turno de tarde
     assert "ya tiene guardia en ese recreo" in dialogo.aviso.text()
     assert not dialogo.boton_ok.isEnabled()
 
