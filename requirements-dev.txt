@@ -24,5 +24,5 @@ radon==6.0.1
 vulture==2.16
 
 # Empaquetado (SUP-001: setuptools < 83 tiene PYSEC-2026-3447)
-setuptools==84.0.0
+setuptools==84.1.0
 pyinstaller==6.22.2

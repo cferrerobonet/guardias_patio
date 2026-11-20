@@ -5,6 +5,11 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+### 🧹 Housekeeping
+- `setuptools` 84.1.0 (GHSA-xmj3-9gf7-h52w): solo para desarrollo y compilación; no cambia la app publicada.
+
 ## [7.5.8] - 2026-11-20
 
 ### 🎯 Resumen
