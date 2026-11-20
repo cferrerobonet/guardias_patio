@@ -9,6 +9,7 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### 🧹 Housekeeping
 - `setuptools` 84.1.0 (GHSA-xmj3-9gf7-h52w): solo para desarrollo y compilación; no cambia la app publicada.
+- `requirements.lock` al día con el entorno de desarrollo: Pillow 13.0.0, filelock 4.2.12 y msgpack 1.2.4, entre otros, sin avisos de seguridad.
 
 ## [7.5.8] - 2026-11-20
 
